@@ -5,12 +5,16 @@ interface StatsCardProps {
   title: string;
   value: number;
   change: number;
+  icon?: React.ReactNode;
 }
 
-export function StatsCard({ title, value, change }: StatsCardProps) {
+export function StatsCard({ title, value, change, icon }: StatsCardProps) {
   return (
-    <Card className="p-6">
-      <h3 className="text-sm font-medium text-muted-foreground mb-2">{title}</h3>
+    <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/10">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        {icon && <div className="text-primary">{icon}</div>}
+      </div>
       <div className="flex items-center justify-between">
         <p className="text-2xl font-bold">{value?.toLocaleString() ?? '-'}</p>
         {change !== 0 && (
