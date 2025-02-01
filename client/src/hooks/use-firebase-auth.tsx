@@ -20,13 +20,23 @@ export function useFirebaseAuth() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log('Firebase Auth: Usuario autenticado correctamente');
+      } else {
+        console.log('Firebase Auth: No hay usuario autenticado');
+      }
       setUser(user);
       setLoading(false);
     }, (error) => {
-      console.error("Auth state change error:", error);
+      console.error("Firebase Auth Error:", error);
+      // Mensaje más descriptivo del error
+      let errorMessage = "Hubo un problema con la autenticación";
+      if (error.code === 'auth/invalid-api-key') {
+        errorMessage = "Error de configuración de Firebase. Por favor, verifica que el dominio esté autorizado en la consola de Firebase.";
+      }
       toast({
         title: "Error de autenticación",
-        description: "Hubo un problema con la autenticación",
+        description: errorMessage,
         variant: "destructive",
       });
       setLoading(false);
@@ -37,17 +47,27 @@ export function useFirebaseAuth() {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Iniciando proceso de autenticación con Google...');
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('Autenticación exitosa:', result.user.email);
       toast({
         title: "¡Bienvenido!",
         description: `Has iniciado sesión como ${result.user.email}`,
       });
       return result.user;
     } catch (error: any) {
-      console.error('Error signing in with Google:', error);
+      console.error('Error en autenticación con Google:', error);
+      let errorMessage = "No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.";
+
+      if (error.code === 'auth/popup-blocked') {
+        errorMessage = "El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes para este sitio.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Proceso de inicio de sesión cancelado. Por favor, completa el proceso de autenticación.";
+      }
+
       toast({
         title: "Error de inicio de sesión",
-        description: "No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -62,7 +82,7 @@ export function useFirebaseAuth() {
         description: "Has cerrado sesión exitosamente",
       });
     } catch (error: any) {
-      console.error('Error signing out:', error);
+      console.error('Error al cerrar sesión:', error);
       toast({
         title: "Error",
         description: "No se pudo cerrar sesión. Por favor, intenta de nuevo.",
