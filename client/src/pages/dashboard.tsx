@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Music2, Users2, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ["/api/metrics"]
-  });
+  // Datos de ejemplo para desarrollo
+  const mockMetrics = {
+    spotifyFollowers: 1234,
+    instagramFollowers: 5678,
+    playlistPlacements: 15,
+    monthlyListeners: 9876
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-background to-background/95">
@@ -31,41 +35,30 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {isLoading ? (
-                  Array(4).fill(0).map((_, i) => (
-                    <Card key={i} className="p-6 bg-card/50 backdrop-blur-sm">
-                      <Skeleton className="h-4 w-24 mb-2" />
-                      <Skeleton className="h-8 w-16" />
-                    </Card>
-                  ))
-                ) : (
-                  <>
-                    <StatsCard
-                      title="Spotify Followers"
-                      value={metrics?.spotifyFollowers ?? 0}
-                      change={12}
-                      icon={<Music2 className="h-4 w-4" />}
-                    />
-                    <StatsCard
-                      title="Monthly Listeners"
-                      value={metrics?.monthlyListeners ?? 0}
-                      change={-5}
-                      icon={<Music2 className="h-4 w-4" />}
-                    />
-                    <StatsCard
-                      title="Playlist Placements"
-                      value={metrics?.playlistPlacements ?? 0}
-                      change={3}
-                      icon={<Music2 className="h-4 w-4" />}
-                    />
-                    <StatsCard
-                      title="Instagram Followers"
-                      value={metrics?.instagramFollowers ?? 0}
-                      change={25}
-                      icon={<Users2 className="h-4 w-4" />}
-                    />
-                  </>
-                )}
+                <StatsCard
+                  title="Spotify Followers"
+                  value={mockMetrics.spotifyFollowers}
+                  change={12}
+                  icon={<Music2 className="h-4 w-4" />}
+                />
+                <StatsCard
+                  title="Monthly Listeners"
+                  value={mockMetrics.monthlyListeners}
+                  change={-5}
+                  icon={<Music2 className="h-4 w-4" />}
+                />
+                <StatsCard
+                  title="Playlist Placements"
+                  value={mockMetrics.playlistPlacements}
+                  change={3}
+                  icon={<Music2 className="h-4 w-4" />}
+                />
+                <StatsCard
+                  title="Instagram Followers"
+                  value={mockMetrics.instagramFollowers}
+                  change={25}
+                  icon={<Users2 className="h-4 w-4" />}
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -83,13 +76,7 @@ export default function Dashboard() {
                     Recent Activity
                   </h2>
                   <div className="space-y-4">
-                    {isLoading ? (
-                      Array(3).fill(0).map((_, i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground">No recent activity</p>
-                    )}
+                    <p className="text-muted-foreground">No recent activity</p>
                   </div>
                 </Card>
               </div>

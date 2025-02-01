@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { 
   BarChart3, 
@@ -21,7 +20,6 @@ const navigation = [
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { logoutMutation } = useAuth();
 
   return (
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
@@ -59,10 +57,9 @@ export function Sidebar() {
           <Button
             variant="ghost"
             className="w-full justify-start gap-2"
-            onClick={() => logoutMutation.mutate()}
           >
             <LogOut className="h-5 w-5" />
-            Logout
+            Iniciar Sesión
           </Button>
         </div>
       </div>
