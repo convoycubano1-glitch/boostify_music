@@ -2,17 +2,20 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { StatsCard } from "@/components/marketing/stats-card";
 import { PlaylistManager } from "@/components/spotify/playlist-manager";
 import { InstagramConnect } from "@/components/instagram/instagram-connect";
-import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Music2, Users2, TrendingUp, FileText } from "lucide-react";
+import { Music2, TrendingUp } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
 
 export default function Dashboard() {
-  const { data: metrics } = useQuery({
-    queryKey: ["/api/metrics"],
-  });
+  // Datos de ejemplo para desarrollo
+  const mockMetrics = {
+    spotifyFollowers: 1234,
+    instagramFollowers: 5678,
+    playlistPlacements: 15,
+    monthlyListeners: 9876
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-background to-background/95">
@@ -34,25 +37,25 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard
                   title="Spotify Followers"
-                  value={metrics?.spotifyFollowers ?? 0}
+                  value={mockMetrics.spotifyFollowers}
                   change={12}
                   icon={<Music2 className="h-4 w-4" />}
                 />
                 <StatsCard
                   title="Monthly Listeners"
-                  value={metrics?.monthlyListeners ?? 0}
+                  value={mockMetrics.monthlyListeners}
                   change={-5}
                   icon={<Music2 className="h-4 w-4" />}
                 />
                 <StatsCard
                   title="Instagram Followers"
-                  value={metrics?.instagramFollowers ?? 0}
+                  value={mockMetrics.instagramFollowers}
                   change={25}
                   icon={<SiInstagram className="h-4 w-4" />}
                 />
                 <StatsCard
                   title="Playlist Placements"
-                  value={metrics?.playlistPlacements ?? 0}
+                  value={mockMetrics.playlistPlacements}
                   change={3}
                   icon={<Music2 className="h-4 w-4" />}
                 />
