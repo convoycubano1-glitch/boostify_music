@@ -1,14 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { SiSpotify } from "react-icons/si";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getSpotifyData } from "@/lib/spotify-store";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export function PlaylistManager() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [showDialog, setShowDialog] = useState(false);
 
   const { data: spotifyData, isLoading } = useQuery({
     queryKey: ["spotify", user?.uid],
@@ -69,7 +72,7 @@ export function PlaylistManager() {
           <Button 
             className="bg-[#1DB954] hover:bg-[#1ed760] text-white gap-2 px-8"
             size="lg"
-            onClick={handleConnect}
+            onClick={() => setShowDialog(true)}
           >
             <SiSpotify className="w-5 h-5" />
             {isConnected ? 'Refresh Connection' : 'Connect Spotify'}
@@ -94,6 +97,30 @@ export function PlaylistManager() {
           </div>
         )}
       </div>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogTitle>Conectar con Spotify</DialogTitle>
+          <div className="space-y-4">
+            <p>Al conectar tu cuenta de Spotify, podrás:</p>
+            <ul className="list-disc list-inside space-y-2">
+              <li>Ver estadísticas detalladas de tus oyentes</li>
+              <li>Gestionar tus playlists</li>
+              <li>Analizar el rendimiento de tu música</li>
+            </ul>
+            <Button 
+              className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-white"
+              onClick={() => {
+                handleConnect();
+                setShowDialog(false);
+              }}
+            >
+              <SiSpotify className="w-5 h-5 mr-2" />
+              Conectar Spotify
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

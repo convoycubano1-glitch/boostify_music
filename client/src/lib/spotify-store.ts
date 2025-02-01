@@ -40,41 +40,19 @@ export interface SpotifyAnalytics {
   demographics: SpotifyData['demographics'];
 }
 
-export async function saveSpotifyData(user: User, data: Partial<SpotifyData>) {
-  if (!user) throw new Error('User must be authenticated');
-
-  const userSpotifyRef = doc(db, 'spotify_data', user.uid);
-
-  try {
-    const docSnap = await getDoc(userSpotifyRef);
-
-    if (docSnap.exists()) {
-      await updateDoc(userSpotifyRef, {
-        ...data,
-        lastUpdated: new Date()
-      });
-    } else {
-      await setDoc(userSpotifyRef, {
-        ...data,
-        lastUpdated: new Date()
-      });
-    }
-  } catch (error) {
-    console.error('Error saving Spotify data:', error);
-    throw error;
-  }
-}
-
 export async function getSpotifyData(user: User): Promise<SpotifyData | null> {
   if (!user) return null;
 
-  const userSpotifyRef = doc(db, 'spotify_data', user.uid);
-
   try {
-    const docSnap = await getDoc(userSpotifyRef);
+    const spotifyDocRef = doc(db, 'spotify_data', user.uid);
+    const spotifyDoc = await getDoc(spotifyDocRef);
 
-    if (docSnap.exists()) {
-      return docSnap.data() as SpotifyData;
+    if (spotifyDoc.exists()) {
+      const data = spotifyDoc.data() as SpotifyData;
+      return {
+        ...data,
+        lastUpdated: data.lastUpdated.toDate(),
+      };
     }
 
     return null;
