@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role", { enum: ["artist", "admin"] }).default("artist").notNull(),
   spotifyToken: text("spotify_token"),
+  instagramToken: text("instagram_token"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
