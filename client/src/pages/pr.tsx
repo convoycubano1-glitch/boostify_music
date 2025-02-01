@@ -129,12 +129,14 @@ export default function PRPage() {
 
           <TabsContent value="contacts" className="space-y-4">
             <div className="flex gap-4">
-              <Input
-                placeholder="Buscar contactos..."
-                className="max-w-sm"
-                type="search"
-                icon={<Search className="h-4 w-4" />}
-              />
+              <div className="relative max-w-sm">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar contactos..."
+                  className="pl-8"
+                  type="search"
+                />
+              </div>
             </div>
 
             <Card>
