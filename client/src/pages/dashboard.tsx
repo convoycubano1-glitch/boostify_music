@@ -2,11 +2,40 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { StatsCard } from "@/components/marketing/stats-card";
 import { PlaylistManager } from "@/components/spotify/playlist-manager";
 import { InstagramConnect } from "@/components/instagram/instagram-connect";
+import { TrendChart } from "@/components/analytics/trend-chart";
+import { EngagementMetrics } from "@/components/analytics/engagement-metrics";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Music2, TrendingUp } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
+
+// Datos de ejemplo para los gráficos
+const trendData = Array.from({ length: 30 }, (_, i) => ({
+  date: new Date(2024, 0, i + 1).toLocaleDateString(),
+  value: Math.floor(Math.random() * 1000) + 500
+}));
+
+const engagementData = [
+  {
+    platform: "Spotify",
+    likes: 1234,
+    comments: 321,
+    shares: 123
+  },
+  {
+    platform: "Instagram",
+    likes: 2345,
+    comments: 432,
+    shares: 234
+  },
+  {
+    platform: "YouTube",
+    likes: 3456,
+    comments: 543,
+    shares: 345
+  }
+];
 
 export default function Dashboard() {
   // Datos de ejemplo para desarrollo
@@ -34,6 +63,7 @@ export default function Dashboard() {
                 </Button>
               </div>
 
+              {/* Metrics Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard
                   title="Spotify Followers"
@@ -61,6 +91,18 @@ export default function Dashboard() {
                 />
               </div>
 
+              {/* Analytics Section */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <TrendChart
+                  title="Crecimiento de Seguidores"
+                  data={trendData}
+                  description="Evolución del número total de seguidores en el último mes"
+                  valuePrefix="+"
+                />
+                <EngagementMetrics data={engagementData} />
+              </div>
+
+              {/* Platform Connections */}
               <div className="grid md:grid-cols-2 gap-6">
                 <PlaylistManager />
                 <InstagramConnect />
