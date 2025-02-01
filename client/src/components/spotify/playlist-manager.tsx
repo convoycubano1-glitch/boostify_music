@@ -3,7 +3,7 @@ import { SiSpotify } from "react-icons/si";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { getSpotifyData, saveSpotifyData } from "@/lib/spotify-store";
+import { getSpotifyData } from "@/lib/spotify-store";
 import { useToast } from "@/hooks/use-toast";
 
 export function PlaylistManager() {
@@ -29,9 +29,11 @@ export function PlaylistManager() {
       return;
     }
 
-    // TODO: Implementar OAuth de Spotify
+    // Redirigir al usuario al flujo de OAuth de Spotify
     window.location.href = `/api/spotify/auth`;
   };
+
+  const isConnected = !!spotifyData?.accessToken;
 
   return (
     <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/10 relative overflow-hidden">
@@ -54,9 +56,13 @@ export function PlaylistManager() {
           </div>
         </div>
 
-        <h3 className="text-2xl font-bold mb-3">Connect Spotify</h3>
+        <h3 className="text-2xl font-bold mb-3">
+          {isConnected ? 'Spotify Connected' : 'Connect Spotify'}
+        </h3>
         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-          Link your Spotify account to manage playlists, track performance, and grow your audience reach.
+          {isConnected 
+            ? 'Your Spotify account is connected. View your analytics and manage your music.'
+            : 'Link your Spotify account to manage playlists, track performance, and grow your audience reach.'}
         </p>
 
         <div className="flex flex-col items-center gap-4">
@@ -66,26 +72,27 @@ export function PlaylistManager() {
             onClick={handleConnect}
           >
             <SiSpotify className="w-5 h-5" />
-            Connect Spotify
+            {isConnected ? 'Refresh Connection' : 'Connect Spotify'}
           </Button>
           <span className="text-xs text-muted-foreground">
             Powered by Spotify Web API
           </span>
         </div>
 
-        {/* Stats Preview */}
-        <div className="mt-8 grid grid-cols-3 gap-4 max-w-sm mx-auto">
-          {[
-            { label: "Monthly Listeners", value: spotifyData?.monthlyListeners ?? "0" },
-            { label: "Followers", value: spotifyData?.followers ?? "0" },
-            { label: "Total Streams", value: spotifyData?.totalStreams ?? "0" }
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-xl font-bold">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+        {isConnected && (
+          <div className="mt-8 grid grid-cols-3 gap-4 max-w-sm mx-auto">
+            {[
+              { label: "Monthly Listeners", value: spotifyData?.monthlyListeners ?? "0" },
+              { label: "Followers", value: spotifyData?.followers ?? "0" },
+              { label: "Total Streams", value: spotifyData?.totalStreams ?? "0" }
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-xl font-bold">{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );

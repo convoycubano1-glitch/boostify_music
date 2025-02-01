@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
+import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
 import { marketingMetrics } from "@db/schema";
 import { eq } from "drizzle-orm";
@@ -9,6 +10,7 @@ import { eq } from "drizzle-orm";
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
   setupInstagramRoutes(app);
+  setupSpotifyRoutes(app);
 
   app.get("/api/metrics", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
