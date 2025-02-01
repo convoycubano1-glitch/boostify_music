@@ -37,9 +37,10 @@ export function Sidebar() {
 
             return (
               <Link key={item.name} href={item.href}>
-                <a
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
+                    "w-full justify-start gap-x-3",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -47,7 +48,7 @@ export function Sidebar() {
                 >
                   <Icon className="h-6 w-6 shrink-0" />
                   {item.name}
-                </a>
+                </Button>
               </Link>
             );
           })}
