@@ -8,10 +8,16 @@ import { useForm } from "react-hook-form";
 import { Redirect } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@db/schema";
-import { SiSpotify } from "react-icons/si";
+import { SiSpotify, SiGoogle } from "react-icons/si";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
+  const { signInWithGoogle } = useFirebaseAuth();
+  const { toast } = useToast();
+
   const loginForm = useForm({
     defaultValues: { username: "", password: "" }
   });
@@ -19,6 +25,18 @@ export default function AuthPage() {
     resolver: zodResolver(insertUserSchema),
     defaultValues: { username: "", password: "" }
   });
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      toast({
+        title: "Error de autenticación",
+        description: "No se pudo iniciar sesión con Google",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (user) {
     return <Redirect to="/" />;
@@ -28,6 +46,26 @@ export default function AuthPage() {
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md p-6">
+          <Button 
+            variant="outline" 
+            className="w-full mb-6 gap-2"
+            onClick={handleGoogleSignIn}
+          >
+            <SiGoogle className="w-5 h-5" />
+            Continuar con Google
+          </Button>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                O continúa con
+              </span>
+            </div>
+          </div>
+
           <Tabs defaultValue="login">
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="login">Login</TabsTrigger>

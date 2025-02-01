@@ -9,9 +9,11 @@ import {
   Settings,
   LogOut 
 } from "lucide-react";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3 },
+  { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { name: "Spotify", href: "/spotify", icon: Music2 },
   { name: "Contracts", href: "/contracts", icon: FileText },
   { name: "PR Management", href: "/pr", icon: Users2 },
@@ -20,6 +22,20 @@ const navigation = [
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { logout } = useFirebaseAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar sesión",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
@@ -58,9 +74,10 @@ export function Sidebar() {
           <Button
             variant="ghost"
             className="w-full justify-start gap-2"
+            onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
-            Iniciar Sesión
+            Cerrar Sesión
           </Button>
         </div>
       </div>
