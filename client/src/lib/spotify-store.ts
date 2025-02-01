@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, doc, setDoc, getDoc, updateDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 
 export interface SpotifyData {
@@ -10,7 +10,6 @@ export interface SpotifyData {
   playlistPlacements: number;
   totalStreams: number;
   lastUpdated: Date;
-  // Nuevos campos para análisis detallado
   topTracks: Array<{
     name: string;
     streams: number;
@@ -48,11 +47,13 @@ export async function getSpotifyData(user: User): Promise<SpotifyData | null> {
     const spotifyDoc = await getDoc(spotifyDocRef);
 
     if (spotifyDoc.exists()) {
-      const data = spotifyDoc.data() as SpotifyData;
+      const data = spotifyDoc.data();
+      // Convertir Timestamp de Firestore a Date de JavaScript
+      const lastUpdated = data.lastUpdated?.toDate?.() || new Date();
       return {
         ...data,
-        lastUpdated: data.lastUpdated.toDate(),
-      };
+        lastUpdated,
+      } as SpotifyData;
     }
 
     return null;
