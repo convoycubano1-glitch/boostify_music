@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Datos de ejemplo para los gráficos
+// Example data for charts
 const trendData = Array.from({ length: 30 }, (_, i) => ({
   date: new Date(2024, 0, i + 1).toLocaleDateString(),
   spotify: Math.floor(Math.random() * 1000) + 500,
@@ -45,7 +45,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    // Suscribirse a actualizaciones en tiempo real de las métricas generales
+    // Subscribe to real-time metrics updates
     const metricsRef = collection(db, 'metrics');
     const metricsQuery = query(metricsRef, where("userId", "==", user.uid));
 
@@ -59,7 +59,7 @@ export default function Dashboard() {
       });
     });
 
-    // Suscribirse a actualizaciones en tiempo real de las métricas de engagement
+    // Subscribe to real-time engagement updates
     const engagementRef = collection(db, 'engagement');
     const engagementQuery = query(engagementRef, where("userId", "==", user.uid));
 
@@ -78,61 +78,29 @@ export default function Dashboard() {
   }, [user]);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-background to-background/95">
-      <Sidebar />
-      <main className="flex-1 overflow-hidden w-full">
-        <ScrollArea className="h-full">
-          <div className="p-4 sm:p-6 md:p-8">
-            <div className="mx-auto max-w-7xl space-y-6 md:space-y-8">
-              {/* Header with Actions */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                    Dashboard
-                  </h1>
-                  <p className="text-muted-foreground mt-1">
-                    Welcome back! Here's your music performance overview.
-                  </p>
-                </div>
-                <div className="flex gap-3 w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto bg-orange-500/10 text-orange-500 hover:bg-orange-500/20">
-                    <Activity className="mr-2 h-4 w-4" />
-                    Live Analytics
-                  </Button>
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    This Month
-                  </Button>
-                </div>
+    <div className="min-h-screen bg-background">
+      <div className="flex flex-col lg:flex-row">
+        <Sidebar className="lg:w-64 shrink-0" />
+        <main className="flex-1">
+          <ScrollArea className="h-[100vh]">
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+              {/* Header Section */}
+              <div className="mb-8 text-center">
+                <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
+                  Dashboard
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Welcome back! Here's your music performance overview.
+                </p>
               </div>
 
-              {/* Platform Quick Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <Card className="p-4 bg-orange-500/10 border-orange-500/20">
-                  <SiSpotify className="h-5 w-5 text-orange-500 mb-2" />
-                  <p className="text-sm text-muted-foreground">Spotify</p>
-                  <p className="text-lg font-semibold">Connected</p>
-                </Card>
-                <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
-                  <SiInstagram className="h-5 w-5 text-orange-500 mb-2" />
-                  <p className="text-sm text-muted-foreground">Instagram</p>
-                  <p className="text-lg font-semibold">Active</p>
-                </Card>
-                <Card className="p-4 bg-orange-500/10 border-orange-500/20">
-                  <SiYoutube className="h-5 w-5 text-orange-500 mb-2" />
-                  <p className="text-sm text-muted-foreground">YouTube</p>
-                  <p className="text-lg font-semibold">Growing</p>
-                </Card>
-              </div>
-
-              {/* Main Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {/* Quick Stats Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatsCard
                   title="Spotify Followers"
                   value={metrics.spotifyFollowers}
                   change={12}
                   icon={<Music2 className="h-4 w-4" />}
-                  trend="up"
                   className="bg-gradient-to-br from-orange-500/10 to-orange-600/5"
                 />
                 <StatsCard
@@ -140,7 +108,6 @@ export default function Dashboard() {
                   value={metrics.monthlyListeners}
                   change={-5}
                   icon={<Users className="h-4 w-4" />}
-                  trend="down"
                   className="bg-gradient-to-br from-orange-500/10 to-orange-600/5"
                 />
                 <StatsCard
@@ -148,7 +115,6 @@ export default function Dashboard() {
                   value={metrics.totalEngagement}
                   change={25}
                   icon={<Activity className="h-4 w-4" />}
-                  trend="up"
                   className="bg-gradient-to-br from-orange-500/10 to-orange-600/5"
                 />
                 <StatsCard
@@ -156,30 +122,40 @@ export default function Dashboard() {
                   value={metrics.reachGrowth}
                   change={8}
                   icon={<Globe className="h-4 w-4" />}
-                  trend="up"
                   className="bg-gradient-to-br from-orange-500/10 to-orange-600/5"
                 />
               </div>
 
+              {/* Platform Quick Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                <Card className="p-6 bg-orange-500/10 border-orange-500/20">
+                  <SiSpotify className="h-6 w-6 text-orange-500 mb-4" />
+                  <p className="text-sm text-muted-foreground">Spotify</p>
+                  <p className="text-lg font-semibold">Connected</p>
+                </Card>
+                <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
+                  <SiInstagram className="h-6 w-6 text-orange-500 mb-4" />
+                  <p className="text-sm text-muted-foreground">Instagram</p>
+                  <p className="text-lg font-semibold">Active</p>
+                </Card>
+                <Card className="p-6 bg-orange-500/10 border-orange-500/20">
+                  <SiYoutube className="h-6 w-6 text-orange-500 mb-4" />
+                  <p className="text-sm text-muted-foreground">YouTube</p>
+                  <p className="text-lg font-semibold">Growing</p>
+                </Card>
+              </div>
+
               {/* Growth Chart */}
-              <Card className="p-6">
+              <Card className="p-6 mb-8">
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-2">Platform Growth Overview</h3>
+                  <h3 className="text-xl font-semibold mb-2">Platform Growth Overview</h3>
                   <p className="text-sm text-muted-foreground">30-day performance across platforms</p>
                 </div>
-                <div className="h-[300px] mt-4">
+                <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={trendData}>
                       <defs>
                         <linearGradient id="spotify" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="youtube" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="instagram" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
                           <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
                         </linearGradient>
@@ -202,37 +178,21 @@ export default function Dashboard() {
                         fill="url(#spotify)"
                         strokeWidth={2}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="youtube"
-                        stroke="hsl(24, 95%, 53%)"
-                        fillOpacity={1}
-                        fill="url(#youtube)"
-                        strokeWidth={2}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="instagram"
-                        stroke="hsl(24, 95%, 53%)"
-                        fillOpacity={1}
-                        fill="url(#instagram)"
-                        strokeWidth={2}
-                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </Card>
 
               {/* Platform Details */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <PlaylistManager />
                 <InstagramConnect />
               </div>
 
               {/* Engagement Metrics */}
               <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-6">Engagement Breakdown</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <h3 className="text-xl font-semibold mb-6">Engagement Breakdown</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                   {engagementMetrics.map((platform, index) => (
                     <div key={index} className="space-y-4">
                       <div className="flex items-center gap-2">
@@ -260,9 +220,9 @@ export default function Dashboard() {
                 </div>
               </Card>
             </div>
-          </div>
-        </ScrollArea>
-      </main>
+          </ScrollArea>
+        </main>
+      </div>
     </div>
   );
 }
