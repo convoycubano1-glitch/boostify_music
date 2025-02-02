@@ -1,7 +1,20 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, type User } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  getDocs, 
+  orderBy, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  serverTimestamp,
+  enableIndexedDbPersistence 
+} from "firebase/firestore";
 import type { ContractFormValues } from "@/components/contracts/contract-form";
 
 const firebaseConfig = {
@@ -14,9 +27,15 @@ const firebaseConfig = {
   measurementId: "G-ERCSSWTXCJ"
 };
 
+// Initialize Firebase
 export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+
+// Enable offline persistence
+enableIndexedDbPersistence(db).catch((err) => {
+  console.error('Firebase persistence error:', err);
+});
 
 let analytics = null;
 if (import.meta.env.PROD) {
@@ -46,7 +65,7 @@ export interface Contract {
   userId: string;
 }
 
-// Save contract to Firestore
+// Save contract to Firestore with better error handling
 export async function saveContract(contractData: {
   title: string;
   type: string;
@@ -54,32 +73,49 @@ export async function saveContract(contractData: {
   status: string;
 }): Promise<Contract> {
   const currentUser = auth.currentUser;
-  if (!currentUser) throw new Error('User not authenticated');
+  if (!currentUser) {
+    throw new Error('Usuario no autenticado');
+  }
 
   try {
-    const docRef = await addDoc(collection(db, 'contracts'), {
+    // Reference to the contracts collection
+    const contractsRef = collection(db, 'contracts');
+
+    // Add the document with proper typing
+    const docRef = await addDoc(contractsRef, {
       ...contractData,
       userId: currentUser.uid,
       createdAt: serverTimestamp()
     });
 
+    // Get the newly created document
     const newContract = await getDoc(docRef);
+
+    if (!newContract.exists()) {
+      throw new Error('Error al crear el contrato');
+    }
+
+    // Return the contract data with proper typing
     return {
       id: newContract.id,
-      ...newContract.data()
+      ...newContract.data(),
+      createdAt: new Date(), // Convert timestamp to Date
     } as Contract;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving contract:', error);
-    throw error;
+    throw new Error(error.message || 'Error al guardar el contrato');
   }
 }
 
-// Get user's contracts
+// Get user's contracts with better error handling
 export async function getUserContracts(): Promise<Contract[]> {
   const currentUser = auth.currentUser;
-  if (!currentUser) throw new Error('User not authenticated');
+  if (!currentUser) {
+    throw new Error('Usuario no autenticado');
+  }
 
   try {
+    // Create a query against the collection
     const q = query(
       collection(db, 'contracts'),
       where('userId', '==', currentUser.uid),
@@ -89,18 +125,21 @@ export async function getUserContracts(): Promise<Contract[]> {
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date(), // Convert timestamp to Date
     })) as Contract[];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching contracts:', error);
-    throw error;
+    throw new Error(error.message || 'Error al obtener los contratos');
   }
 }
 
-// Get a single contract
+// Get a single contract with better error handling
 export async function getContract(contractId: string): Promise<Contract | null> {
   const currentUser = auth.currentUser;
-  if (!currentUser) throw new Error('User not authenticated');
+  if (!currentUser) {
+    throw new Error('Usuario no autenticado');
+  }
 
   try {
     const docRef = doc(db, 'contracts', contractId);
@@ -109,13 +148,14 @@ export async function getContract(contractId: string): Promise<Contract | null> 
     if (docSnap.exists() && docSnap.data().userId === currentUser.uid) {
       return {
         id: docSnap.id,
-        ...docSnap.data()
+        ...docSnap.data(),
+        createdAt: docSnap.data().createdAt?.toDate() || new Date(), // Convert timestamp to Date
       } as Contract;
     }
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching contract:', error);
-    throw error;
+    throw new Error(error.message || 'Error al obtener el contrato');
   }
 }
 
