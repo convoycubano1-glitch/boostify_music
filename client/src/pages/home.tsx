@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SiSpotify, SiYoutube, SiGoogle } from "react-icons/si";
+import { SiGoogle } from "react-icons/si";
 import { ArrowRight, Music2, Users2, TrendingUp, FileText, Star, Home } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -148,15 +148,11 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <SiSpotify className="w-8 h-8 text-[#1DB954]" />
-              <SiYoutube className="w-10 h-10 text-red-500" />
-            </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 leading-tight">
               Elevate Your Music Career
             </h1>
             <p className="text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              The ultimate platform for artists to manage their marketing, connect with Spotify, and grow their audience.
+              The ultimate platform for artists to manage their marketing and grow their audience.
             </p>
             <motion.div 
               className="flex justify-center items-center mt-8"
@@ -167,9 +163,10 @@ export default function HomePage() {
               <Button 
                 size="lg" 
                 onClick={handleGoogleLogin}
-                className="bg-white hover:bg-gray-100 text-gray-900 gap-2"
+                className="relative overflow-hidden group bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 hover:from-orange-600 hover:via-red-600 hover:to-orange-600 text-white shadow-xl transition-all duration-300 scale-100 hover:scale-105"
               >
-                <SiGoogle className="w-5 h-5" />
+                <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                <SiGoogle className="w-5 h-5 mr-2" />
                 Login with Google
               </Button>
             </motion.div>
@@ -292,7 +289,7 @@ export default function HomePage() {
           >
             <div className="flex-1 space-y-6">
               <div className="flex items-center gap-2 text-orange-500">
-                <SiSpotify className="h-8 w-8" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M3 18V6h1.5l1.5 7 1.5-7H9v12h-1.5l-1.5-7-1.5 7H3zm6 0V6h1.5l1.5 7 1.5-7H15v12h-1.5l-1.5-7-1.5 7H9zM16 12h5l-1.5 3.5L20 18h-5l1.5-3.5L16 12z"></path></svg>
                 <span className="text-lg font-medium">Spotify Integration</span>
               </div>
               <h2 className="text-4xl font-bold">Connect With Your Audience</h2>
@@ -300,7 +297,7 @@ export default function HomePage() {
                 Seamlessly integrate with Spotify to manage your playlists, track performance metrics, and grow your listener base.
               </p>
               <Button className="bg-orange-500 hover:bg-orange-600 text-white gap-2">
-                <SiSpotify className="h-5 w-5" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M3 18V6h1.5l1.5 7 1.5-7H9v12h-1.5l-1.5-7-1.5 7H3zm6 0V6h1.5l1.5 7 1.5-7H15v12h-1.5l-1.5-7-1.5 7H9zM16 12h5l-1.5 3.5L20 18h-5l1.5-3.5L16 12z"></path></svg>
                 Connect Spotify
               </Button>
             </div>

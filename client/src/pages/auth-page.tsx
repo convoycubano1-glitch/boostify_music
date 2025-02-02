@@ -1,10 +1,10 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
 import { Redirect } from "wouter";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useToast } from "@/hooks/use-toast";
+import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4';
 
 export default function AuthPage() {
   const { user } = useAuth();
@@ -16,8 +16,8 @@ export default function AuthPage() {
       await signInWithGoogle();
     } catch (error: any) {
       toast({
-        title: "Error de autenticación",
-        description: "No se pudo iniciar sesión con Google",
+        title: "Authentication Error",
+        description: "Could not sign in with Google",
         variant: "destructive",
       });
     }
@@ -28,41 +28,34 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      <div className="flex items-center justify-center p-8">
-        <Card className="w-full max-w-md p-6 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold">Bienvenido</h1>
-            <p className="text-muted-foreground">
-              Inicia sesión para acceder a tu cuenta
-            </p>
-          </div>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+      <video 
+        autoPlay 
+        loop 
+        muted 
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        src={backgroundVideo}
+      />
+      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
-          <Button 
-            variant="outline" 
-            className="w-full gap-2"
-            onClick={handleGoogleSignIn}
-          >
-            <SiGoogle className="w-5 h-5" />
-            Continuar con Google
-          </Button>
-        </Card>
-      </div>
+      <div className="relative z-10 text-center space-y-6 max-w-md mx-auto px-4">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-white">Welcome Back</h1>
+          <p className="text-lg text-gray-300">
+            Sign in to access your dashboard and manage your music career
+          </p>
+        </div>
 
-      <div 
-        className="hidden md:flex flex-col justify-center p-12 bg-black"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${encodeURI("https://images.unsplash.com/photo-1484972759836-b93f9ef2b293")})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      >
-        <h1 className="text-4xl font-bold text-white mb-6">
-          Impulsa tu Carrera Musical
-        </h1>
-        <p className="text-lg text-gray-300">
-          Únete a la próxima generación de marketing musical. Conecta con Spotify, gestiona tu marca y haz crecer tu audiencia.
-        </p>
+        <Button 
+          variant="outline" 
+          className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
+          onClick={handleGoogleSignIn}
+        >
+          <SiGoogle className="w-5 h-5" />
+          Continue with Google
+        </Button>
       </div>
     </div>
   );
