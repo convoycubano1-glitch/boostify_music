@@ -78,9 +78,9 @@ export default function SpotifyPage() {
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-4">
-          <SiSpotify className="w-12 h-12 text-[#1DB954]" />
+          <SiSpotify className="w-12 h-12 text-orange-500" />
           <div>
-            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-[#1DB954] to-[#1DB954]/70 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
               Monthly Listeners Tracker
             </h2>
             <p className="text-muted-foreground mt-2">
@@ -104,23 +104,23 @@ export default function SpotifyPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-[#1DB954]/10">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/10 via-[#1DB954]/5 to-transparent" />
+          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-4">
-                <Radio className="h-5 w-5 text-[#1DB954]" />
+                <Radio className="h-5 w-5 text-orange-500" />
                 <h3 className="text-lg font-semibold">Progress Tracker</h3>
               </div>
               <div className="flex items-center justify-between">
                 <div className="w-32 h-32 relative">
-                  <div className="absolute inset-0 bg-[#1DB954]/5 rounded-full animate-pulse" />
+                  <div className="absolute inset-0 bg-orange-500/5 rounded-full animate-pulse" />
                   <CircularProgressbar
                     value={progress}
                     text={`${Math.round(progress)}%`}
                     styles={buildStyles({
-                      pathColor: '#1DB954',
-                      textColor: '#1DB954',
+                      pathColor: 'hsl(24, 95%, 53%)',
+                      textColor: 'hsl(24, 95%, 53%)',
                       trailColor: 'rgba(255,255,255,0.1)',
                       pathTransition: 'stroke-dashoffset 0.5s ease 0s',
                     })}
@@ -132,11 +132,11 @@ export default function SpotifyPage() {
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="text-4xl font-bold tabular-nums bg-gradient-to-r from-[#1DB954] to-[#1DB954]/70 bg-clip-text text-transparent"
+                      className="text-4xl font-bold tabular-nums bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent"
                     >
                       {currentListeners.toLocaleString()}
                     </motion.div>
-                    <p className="text-sm text-green-500 flex items-center">
+                    <p className="text-sm text-orange-500 flex items-center">
                       <TrendingUp className="w-4 h-4 mr-1" />
                       Target: {targetListeners.toLocaleString()}
                     </p>
@@ -152,8 +152,8 @@ export default function SpotifyPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-[#1DB954]/10">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/10 via-[#1DB954]/5 to-transparent" />
+          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
             <div className="relative">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -162,7 +162,7 @@ export default function SpotifyPage() {
                     placeholder="https://open.spotify.com/track/..."
                     value={songUrl}
                     onChange={(e) => setSongUrl(e.target.value)}
-                    className="bg-background/50 border-[#1DB954]/10 focus:border-[#1DB954]"
+                    className="bg-background/50 border-orange-500/10 focus:border-orange-500"
                   />
                 </div>
                 <div className="space-y-2">
@@ -171,11 +171,11 @@ export default function SpotifyPage() {
                     type="number"
                     value={targetListeners}
                     onChange={(e) => setTargetListeners(parseInt(e.target.value))}
-                    className="bg-background/50 border-[#1DB954]/10 focus:border-[#1DB954]"
+                    className="bg-background/50 border-orange-500/10 focus:border-orange-500"
                   />
                 </div>
                 <Button
-                  className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-white"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                   onClick={startMonthlyListenersTracker}
                 >
                   Start Tracking
@@ -191,7 +191,7 @@ export default function SpotifyPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
-        <Card className="p-6 backdrop-blur-sm border-[#1DB954]/10">
+        <Card className="p-6 backdrop-blur-sm border-orange-500/10">
           <h3 className="text-lg font-semibold mb-4">Growth Analytics</h3>
           <div className="h-[300px]">
             <TrendChart

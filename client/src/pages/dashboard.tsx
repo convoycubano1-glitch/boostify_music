@@ -108,18 +108,18 @@ export default function Dashboard() {
 
               {/* Platform Quick Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <Card className="p-4 bg-[#1DB954]/10 border-[#1DB954]/20">
-                  <SiSpotify className="h-5 w-5 text-[#1DB954] mb-2" />
+                <Card className="p-4 bg-orange-500/10 border-orange-500/20">
+                  <SiSpotify className="h-5 w-5 text-orange-500 mb-2" />
                   <p className="text-sm text-muted-foreground">Spotify</p>
                   <p className="text-lg font-semibold">Connected</p>
                 </Card>
-                <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
-                  <SiInstagram className="h-5 w-5 text-purple-500 mb-2" />
+                <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
+                  <SiInstagram className="h-5 w-5 text-orange-500 mb-2" />
                   <p className="text-sm text-muted-foreground">Instagram</p>
                   <p className="text-lg font-semibold">Active</p>
                 </Card>
-                <Card className="p-4 bg-red-500/10 border-red-500/20">
-                  <SiYoutube className="h-5 w-5 text-red-500 mb-2" />
+                <Card className="p-4 bg-orange-500/10 border-orange-500/20">
+                  <SiYoutube className="h-5 w-5 text-orange-500 mb-2" />
                   <p className="text-sm text-muted-foreground">YouTube</p>
                   <p className="text-lg font-semibold">Growing</p>
                 </Card>
@@ -172,16 +172,16 @@ export default function Dashboard() {
                     <AreaChart data={trendData}>
                       <defs>
                         <linearGradient id="spotify" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1DB954" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="#1DB954" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
                         </linearGradient>
                         <linearGradient id="youtube" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#FF0000" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="#FF0000" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
                         </linearGradient>
                         <linearGradient id="instagram" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#E1306C" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="#E1306C" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -197,7 +197,7 @@ export default function Dashboard() {
                       <Area
                         type="monotone"
                         dataKey="spotify"
-                        stroke="#1DB954"
+                        stroke="hsl(24, 95%, 53%)"
                         fillOpacity={1}
                         fill="url(#spotify)"
                         strokeWidth={2}
@@ -205,7 +205,7 @@ export default function Dashboard() {
                       <Area
                         type="monotone"
                         dataKey="youtube"
-                        stroke="#FF0000"
+                        stroke="hsl(24, 95%, 53%)"
                         fillOpacity={1}
                         fill="url(#youtube)"
                         strokeWidth={2}
@@ -213,7 +213,7 @@ export default function Dashboard() {
                       <Area
                         type="monotone"
                         dataKey="instagram"
-                        stroke="#E1306C"
+                        stroke="hsl(24, 95%, 53%)"
                         fillOpacity={1}
                         fill="url(#instagram)"
                         strokeWidth={2}
@@ -236,9 +236,9 @@ export default function Dashboard() {
                   {engagementMetrics.map((platform, index) => (
                     <div key={index} className="space-y-4">
                       <div className="flex items-center gap-2">
-                        {platform.platform === "Spotify" && <SiSpotify className="h-5 w-5 text-[#1DB954]" />}
-                        {platform.platform === "Instagram" && <SiInstagram className="h-5 w-5 text-purple-500" />}
-                        {platform.platform === "YouTube" && <SiYoutube className="h-5 w-5 text-red-500" />}
+                        {platform.platform === "Spotify" && <SiSpotify className="h-5 w-5 text-orange-500" />}
+                        {platform.platform === "Instagram" && <SiInstagram className="h-5 w-5 text-orange-500" />}
+                        {platform.platform === "YouTube" && <SiYoutube className="h-5 w-5 text-orange-500" />}
                         <h4 className="font-medium">{platform.platform}</h4>
                       </div>
                       <div className="grid grid-cols-3 gap-4">
