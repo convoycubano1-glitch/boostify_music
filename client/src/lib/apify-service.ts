@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { db } from './firebase';
+import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { User } from 'firebase/auth';
 
 // Define la estructura de datos esperada de la API de Apollo
 interface ApolloResult {
@@ -24,7 +27,9 @@ const contactSchema = z.object({
     linkedin: z.string().optional(),
     twitter: z.string().optional(),
     instagram: z.string().optional()
-  }).optional()
+  }).optional(),
+  userId: z.string().optional(),
+  savedAt: z.date().optional()
 });
 
 export type Contact = z.infer<typeof contactSchema>;
@@ -136,6 +141,36 @@ export async function searchContacts(category: string, query: string): Promise<C
        contact.company?.toLowerCase().includes(query.toLowerCase()))
     );
   }
+}
+
+export async function saveContact(user: User, contact: Contact): Promise<void> {
+  if (!user?.uid) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  const contactData = {
+    ...contact,
+    userId: user.uid,
+    savedAt: new Date()
+  };
+
+  const contactRef = doc(collection(db, 'contacts'));
+  await setDoc(contactRef, contactData);
+}
+
+export async function getSavedContacts(user: User): Promise<Contact[]> {
+  if (!user?.uid) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  const contactsRef = collection(db, 'contacts');
+  const q = query(contactsRef, where('userId', '==', user.uid));
+  const querySnapshot = await getDocs(q);
+
+  return querySnapshot.docs.map(doc => ({
+    ...doc.data() as Contact,
+    id: doc.id
+  }));
 }
 
 export async function checkApifyRun(runId: string): Promise<any> {
