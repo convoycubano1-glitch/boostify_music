@@ -195,6 +195,7 @@ export default function ArtistDashboardPage() {
       uploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log("Upload progress:", progress);
           setUploadProgress(progress);
         },
         (error) => {
@@ -208,9 +209,11 @@ export default function ArtistDashboardPage() {
         },
         async () => {
           try {
+            console.log("Upload completed, getting download URL...");
             // Obtener la URL de descarga
             const downloadURL = await getDownloadURL(storageRef);
 
+            console.log("Got download URL, saving to Firestore...");
             const songData = {
               name: selectedFile.name,
               audioUrl: downloadURL,
@@ -222,6 +225,7 @@ export default function ArtistDashboardPage() {
             const songsRef = collection(db, "songs");
             await addDoc(songsRef, songData);
 
+            console.log("Song saved successfully");
             toast({
               title: "Success",
               description: "Song added successfully",
