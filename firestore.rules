@@ -29,5 +29,20 @@ service cloud.firestore {
     match /plans/{planId} {
       allow read: if true;  // Allow public read access to plan information
     }
+
+    // Reglas para los contratos
+    match /contracts/{contractId} {
+      // Permitir lectura solo al propietario del contrato
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+
+      // Permitir creación si el usuario está autenticado y es el propietario
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+
+      // Permitir actualización y eliminación solo al propietario
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
   }
 }
