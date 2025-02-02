@@ -871,58 +871,26 @@ const ArtistDashboardPage: React.FC = () => {
                     <DollarSign className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">My Budget</h2>
-                    <p className="text-sm text-muted-foreground">Track your finances</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Monthly Budget</p>
-                      <p className="text-lg font-semibold">$2,500</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Spent</p>
-                      <p className="text-lg font-semibold">$1,200</p>
-                    </div>
-                  </div>
-                  <Button className="w-full">Manage Budget</Button>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* My Contacts Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-orange-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">My Contacts</h2>
-                    <p className="text-sm text-muted-foreground">Manage your network</p>
+                    <h2 className="text-xl font-semibold">Recent Contacts</h2>
+                    <p className="text-sm text-muted-foreground">View your network</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <p className`className="font-medium">Recent Contacts</p                      <span className="text-sm text-muted-foreground">Total: 24</span>
+                      <p className="font-medium">Recent Contacts</p>
+                      <span className="text-sm text-muted-foreground">Total: 24</span>
                     </div>
                     <div className="space-y-2">
                       <div className="text-sm text-muted-foreground">
-                        • Sarah Johnson - Producer
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        • Mike Smith - Studio Manager
+                        No contacts to display
                       </div>
                     </div>
                   </div>
                   <Link href="/contacts">
-                    <Button className="w-full">View All Contacts</Button>
+                    <Button className="w-full">
+                      View All Contacts
+                    </Button>
                   </Link>
                 </div>
               </Card>
