@@ -1,13 +1,14 @@
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getAuthToken } from "@/lib/firebase";
+import { createYouTubeViewsOrder, checkApifyRun, YouTubeViewsData } from "@/lib/youtube-store";
 import {
   LineChart,
   Line,
@@ -19,14 +20,6 @@ import {
 } from "recharts";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
-interface ApifyRun {
-  status: string;
-  stats: {
-    viewsGenerated: number;
-    remainingViews: number;
-  };
-}
 
 const viewsPackages = [
   {
@@ -49,33 +42,22 @@ const viewsPackages = [
   }
 ];
 
-// Datos de ejemplo para el gráfico
-const generateChartData = () => {
-  return Array.from({ length: 7 }, (_, i) => ({
-    day: `Day ${i + 1}`,
-    views: Math.floor(Math.random() * 5000) + 1000
-  }));
-};
-
 export default function YoutubeViewsPage() {
   const [videoUrl, setVideoUrl] = useState("");
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-
-  const chartData = generateChartData();
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const { data: apifyData, refetch } = useQuery({
-    queryKey: ["apify-run"],
+    queryKey: ["apify-run", orderId],
     queryFn: async () => {
-      const response = await fetch("https://api.apify.com/v2/actor-runs/bzOMo18w7llC41Yij?token=apify_api_nrudThRO1hQ9XCTFzUZkRI0VKCcSkv2h3mYq");
-      if (!response.ok) {
-        throw new Error("Error fetching Apify data");
-      }
-      return response.json() as Promise<ApifyRun>;
+      if (!orderId) return null;
+      return checkApifyRun(orderId);
     },
-    enabled: false
+    enabled: !!orderId,
+    refetchInterval: orderId ? 5000 : false
   });
 
   const handlePackageSelect = async (packageIndex: number) => {
@@ -83,6 +65,15 @@ export default function YoutubeViewsPage() {
       toast({
         title: "Error",
         description: "Por favor, ingresa una URL de YouTube válida",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para continuar",
         variant: "destructive"
       });
       return;
@@ -100,6 +91,13 @@ export default function YoutubeViewsPage() {
         });
         return;
       }
+
+      // Crear orden en Firestore
+      const orderData = await createYouTubeViewsOrder(user, {
+        videoUrl,
+        purchasedViews: viewsPackages[packageIndex].views,
+        apifyRunId: '',
+      });
 
       const stripe = await stripePromise;
       if (!stripe) {
@@ -129,6 +127,7 @@ export default function YoutubeViewsPage() {
         throw new Error('No se recibió el ID de sesión de Stripe');
       }
 
+      setOrderId(`${user.uid}_${Date.now()}`);
       const result = await stripe.redirectToCheckout({
         sessionId: session.id,
       });
@@ -145,6 +144,11 @@ export default function YoutubeViewsPage() {
       });
     }
   };
+    const chartData = Array.from({ length: 7 }, (_, i) => ({
+        day: `Day ${i + 1}`,
+        views: Math.floor(Math.random() * 5000) + 1000
+      }));
+    
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
@@ -207,7 +211,6 @@ export default function YoutubeViewsPage() {
                   setSelectedPackage(index);
                   setShowDialog(true);
                 }}
-                disabled={isGenerating}
               >
                 Seleccionar Plan
               </Button>
