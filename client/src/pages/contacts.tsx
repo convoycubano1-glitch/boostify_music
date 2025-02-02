@@ -46,6 +46,7 @@ export default function ContactsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [isAddingContact, setIsAddingContact] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<AddContactFormData>({
     name: "",
     email: "",
@@ -76,6 +77,7 @@ export default function ContactsPage() {
           createdAt: doc.data().createdAt?.toDate() || new Date(),
         })) as Contact[];
       } catch (error) {
+        console.error("Error fetching contacts:", error);
         toast({
           title: "Error",
           description: "Could not load contacts. Please try again.",
@@ -89,8 +91,28 @@ export default function ContactsPage() {
     retry: false
   });
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      company: "",
+      role: "",
+      notes: ""
+    });
+    setIsDialogOpen(false);
+    setIsAddingContact(false);
+  };
+
   const handleAddContact = async () => {
-    if (!auth.currentUser?.uid) return;
+    if (!auth.currentUser?.uid) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add contacts",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsAddingContact(true);
@@ -110,6 +132,7 @@ export default function ContactsPage() {
         createdAt: serverTimestamp()
       };
 
+      console.log("Adding contact:", contactData);
       const contactsRef = collection(db, "contacts");
       await addDoc(contactsRef, contactData);
 
@@ -118,20 +141,11 @@ export default function ContactsPage() {
         description: "Contact added successfully",
       });
 
-      // Reset form and close dialog
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        company: "",
-        role: "",
-        notes: ""
-      });
-
-      // Refresh contacts list
+      resetForm();
       refetch();
 
     } catch (error) {
+      console.error("Error adding contact:", error);
       toast({
         title: "Error",
         description: "Failed to add contact. Please try again.",
@@ -171,6 +185,7 @@ export default function ContactsPage() {
         return contact;
       });
 
+      console.log("Importing contacts:", contacts);
       const contactsRef = collection(db, "contacts");
       let importedCount = 0;
 
@@ -189,9 +204,9 @@ export default function ContactsPage() {
         description: `Imported ${importedCount} contacts successfully`,
       });
 
-      // Refresh the contacts list
       refetch();
     } catch (error) {
+      console.error("Error importing contacts:", error);
       toast({
         title: "Error",
         description: "Failed to import contacts. Please check your CSV file format.",
@@ -221,7 +236,7 @@ export default function ContactsPage() {
               </p>
             </div>
             <div className="flex gap-4">
-              <Dialog>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-orange-500 hover:bg-orange-600">
                     <UserPlus className="mr-2 h-4 w-4" />
@@ -295,16 +310,7 @@ export default function ContactsPage() {
                   <div className="flex justify-end gap-4">
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        setFormData({
-                          name: "",
-                          email: "",
-                          phone: "",
-                          company: "",
-                          role: "",
-                          notes: ""
-                        });
-                      }}
+                      onClick={resetForm}
                     >
                       <X className="mr-2 h-4 w-4" />
                       Cancel
