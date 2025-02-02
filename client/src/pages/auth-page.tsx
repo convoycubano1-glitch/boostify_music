@@ -42,7 +42,7 @@ export default function AuthPage() {
 
       <div className="relative z-10 text-center space-y-6 max-w-md mx-auto px-4">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-white">Welcome Back</h1>
+          <h1 className="text-4xl font-bold text-white">Welcome </h1>
           <p className="text-lg text-gray-300">
             Sign in to access your dashboard and manage your music career
           </p>

@@ -84,7 +84,8 @@ export default function YoutubeViewsPage() {
   };
 
     const currentPrice = getPackagePrice(desiredViews);
-  const handlePackageSelect = async (packageIndex: number) => {
+  
+    const handlePayment = async () => {
     if (!videoUrl) {
       toast({
         title: "Error",
@@ -93,7 +94,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-
+  
     if (!user) {
       toast({
         title: "Error",
@@ -102,9 +103,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-
-    setSelectedPackage(packageIndex);
-
+  
     try {
       const token = await getAuthToken();
       if (!token) {
@@ -115,18 +114,18 @@ export default function YoutubeViewsPage() {
         });
         return;
       }
-
+  
       const orderData = await createYouTubeViewsOrder(user, {
         videoUrl,
-        purchasedViews: viewsPackages[packageIndex].views,
+        purchasedViews: desiredViews,
         apifyRunId: '',
       });
-
+  
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Could not initialize Stripe");
       }
-
+  
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -135,26 +134,26 @@ export default function YoutubeViewsPage() {
         },
         body: JSON.stringify({
           videoUrl,
-          views: viewsPackages[packageIndex].views,
-          price: viewsPackages[packageIndex].price
+          views: desiredViews,
+          price: currentPrice
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error creating payment session');
       }
-
+  
       const session = await response.json();
       if (!session.id) {
         throw new Error('Stripe session ID was not received');
       }
-
+  
       setOrderId(`${user.uid}_${Date.now()}`);
       const result = await stripe.redirectToCheckout({
         sessionId: session.id,
       });
-
+  
       if (result.error) {
         throw new Error(result.error.message);
       }
@@ -171,7 +170,7 @@ export default function YoutubeViewsPage() {
         day: `Day ${i + 1}`,
         views: Math.floor(Math.random() * 5000) + 1000
       }));
-
+  
   const progress = 75;
   const currentViews = 7500;
 
@@ -652,12 +651,21 @@ export default function YoutubeViewsPage() {
             <div className="space-y-4">
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium">Order details:</h4>
-                  <ul className="list-disc list-inside space-y-2 text-sm">
-                    <li>Video URL: {videoUrl}</li>
-                      <li>Price: ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}</li>
-                      <li>Views: {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''}</li>
-                  </ul>
+                  <h4 className="font-medium">Order details</h4>
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Video URL:</span>
+                      <span className="text-sm font-medium">{videoUrl}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Views:</span>
+                      <span className="text-sm font-medium">{desiredViews.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Price:</span>
+                      <span className="text-lg font-bold">${currentPrice}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-4">
@@ -665,12 +673,8 @@ export default function YoutubeViewsPage() {
                   Cancel
                 </Button>
                 <Button 
-                  onClick={() => {
-                    if (selectedPackage !== null) {
-                      handlePackageSelect(selectedPackage);
-                      setShowDialog(false);
-                    }
-                  }}
+                  onClick={handlePayment}
+                  className="bg-orange-500 hover:bg-orange-600"
                 >
                   Confirm Purchase
                 </Button>
