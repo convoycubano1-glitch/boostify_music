@@ -111,7 +111,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Artist Platform. All rights reserved.
+              © {new Date().getFullYear()} Boostify Music. All rights reserved.
             </p>
             <div className="flex gap-4">
               <Button variant="ghost" size="sm">

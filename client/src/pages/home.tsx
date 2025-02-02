@@ -1,3 +1,4 @@
+import { WaitlistModal } from "@/components/marketing/waitlist-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
@@ -178,6 +179,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 text-white">
+      <WaitlistModal />
       {/* HERO SECTION */}
       <section className="relative min-h-[100svh] flex items-center overflow-hidden">
         <video
