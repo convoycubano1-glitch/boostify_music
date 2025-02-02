@@ -202,6 +202,7 @@ export default function ArtistDashboardPage() {
           if (e.target?.result) {
             const audio = new Audio();
             audio.src = e.target.result as string;
+            audio.dataset.fileName = file.name; // Guardamos el nombre original del archivo
             setCurrentAudio(audio);
             setIsPlaying(false);
           }
@@ -243,11 +244,8 @@ export default function ArtistDashboardPage() {
     try {
       setIsSubmittingSong(true);
 
-      // Extraer el nombre del archivo
-      const fileName = currentAudio.src.split("/").pop()?.split(";")[0] || "Untitled Song";
-
       const songData = {
-        name: fileName,
+        name: currentAudio.dataset.fileName || "Untitled Song", // Usamos el nombre original del archivo
         audio: currentAudio.src, // Guardamos el audio en base64
         userId: auth.currentUser.uid,
         createdAt: serverTimestamp()
