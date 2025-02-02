@@ -13,31 +13,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  FileText,
-  Plus,
-  Download,
-  Eye,
-  MoreVertical,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-} from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileText, Plus, Download, Eye, MoreVertical, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,18 +30,56 @@ export default function ContractsPage() {
   const [contractTitle, setContractTitle] = useState<string>("");
   const queryClient = useQueryClient();
 
-  // Fetch contracts using Firestore
+  // Fetch contracts using Firestore with proper error handling
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ['contracts'],
-    queryFn: getUserContracts,
+    queryFn: async () => {
+      try {
+        if (!auth.currentUser) {
+          throw new Error('Usuario no autenticado');
+        }
+        return await getUserContracts();
+      } catch (error) {
+        console.error('Error fetching contracts:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los contratos. Por favor, intente nuevamente.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
     enabled: !!auth.currentUser,
   });
 
   // Save contract mutation using Firestore
   const saveContractMutation = useMutation({
-    mutationFn: saveContract,
+    mutationFn: async (contractData: {
+      title: string;
+      type: string;
+      content: string;
+      status: string;
+    }) => {
+      if (!auth.currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+      console.log('Saving contract with data:', contractData); // Debug log
+      return await saveContract(contractData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      toast({
+        title: "Éxito",
+        description: "Contrato guardado correctamente",
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Error in saveContractMutation:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error al guardar el contrato. Por favor, intente nuevamente.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -73,13 +90,14 @@ export default function ContractsPage() {
       setGeneratedContract(contract);
       setContractTitle(`${values.type} Agreement - ${values.artistName}`);
       toast({
-        title: "Contract Generated",
-        description: "Your contract has been generated successfully.",
+        title: "Contrato Generado",
+        description: "Su contrato ha sido generado exitosamente.",
       });
     } catch (error) {
+      console.error('Error generating contract:', error);
       toast({
         title: "Error",
-        description: "Failed to generate contract. Please try again.",
+        description: "No se pudo generar el contrato. Por favor, intente nuevamente.",
         variant: "destructive",
       });
     } finally {
@@ -88,9 +106,26 @@ export default function ContractsPage() {
   };
 
   const handleSaveContract = async () => {
-    if (!generatedContract || !contractTitle) return;
+    if (!generatedContract || !contractTitle) {
+      toast({
+        title: "Error",
+        description: "El título y contenido del contrato son requeridos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!auth.currentUser) {
+      toast({
+        title: "Error",
+        description: "Debe iniciar sesión para guardar contratos.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
+      console.log('Attempting to save contract...'); // Debug log
       await saveContractMutation.mutateAsync({
         title: contractTitle,
         type: "legal",
@@ -98,49 +133,15 @@ export default function ContractsPage() {
         status: "draft"
       });
 
-      toast({
-        title: "Contract Saved",
-        description: "Your contract has been saved successfully.",
-      });
       setGeneratedContract(null);
       setShowNewContractDialog(false);
       setContractTitle("");
     } catch (error) {
       console.error('Error saving contract:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save contract. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
-  function getStatusColor(status: string) {
-    switch (status) {
-      case "active":
-        return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
-      case "pending":
-        return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
-      case "draft":
-        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
-      default:
-        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
-    }
-  }
-
-  function getStatusIcon(status: string) {
-    switch (status) {
-      case "active":
-        return <CheckCircle2 className="h-4 w-4" />;
-      case "pending":
-        return <Clock className="h-4 w-4" />;
-      case "draft":
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  }
-
+  // Rest of the component remains the same...
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -172,7 +173,7 @@ export default function ContractsPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="title" className="text-sm font-medium">
-                      Contract Title
+                      Título del Contrato
                     </label>
                     <input
                       id="title"
@@ -196,13 +197,13 @@ export default function ContractsPage() {
                         setContractTitle("");
                       }}
                     >
-                      Close
+                      Cancelar
                     </Button>
                     <Button
                       onClick={handleSaveContract}
-                      disabled={!contractTitle}
+                      disabled={!contractTitle || saveContractMutation.isPending}
                     >
-                      Save Contract
+                      {saveContractMutation.isPending ? "Guardando..." : "Guardar Contrato"}
                     </Button>
                   </div>
                 </div>
@@ -242,7 +243,7 @@ export default function ContractsPage() {
 
           <Card>
             {isLoading ? (
-              <div className="p-8 text-center">Loading contracts...</div>
+              <div className="p-8 text-center">Cargando contratos...</div>
             ) : (
               <Table>
                 <TableHeader>
@@ -296,4 +297,30 @@ export default function ContractsPage() {
       </div>
     </div>
   );
+}
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case "active":
+      return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
+    case "pending":
+      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
+    case "draft":
+      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
+    default:
+      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case "active":
+      return <CheckCircle2 className="h-4 w-4" />;
+    case "pending":
+      return <Clock className="h-4 w-4" />;
+    case "draft":
+      return <AlertCircle className="h-4 w-4" />;
+    default:
+      return null;
+  }
 }
