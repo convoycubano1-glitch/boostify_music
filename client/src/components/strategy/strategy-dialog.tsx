@@ -34,7 +34,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
     if (!auth.currentUser) {
       toast({
         title: "Error",
-        description: "Por favor, inicia sesión para generar una estrategia.",
+        description: "Please log in to generate a strategy.",
         variant: "destructive",
       });
       return;
@@ -56,12 +56,12 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al generar estrategia');
+        throw new Error(errorData.error || 'Error generating strategy');
       }
 
       const data = await response.json();
       if (!Array.isArray(data.strategy)) {
-        throw new Error('Formato de respuesta inválido');
+        throw new Error('Invalid response format');
       }
 
       setGeneratedStrategy(data.strategy);
@@ -69,7 +69,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       console.error('Error generating strategy:', error);
       toast({
         title: "Error",
-        description: "No se pudo generar la estrategia. Por favor, intenta nuevamente.",
+        description: "Could not generate strategy. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -81,7 +81,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
     if (!auth.currentUser || !generatedStrategy.length) {
       toast({
         title: "Error",
-        description: "No hay estrategia para guardar o no has iniciado sesión.",
+        description: "No strategy to save or not logged in.",
         variant: "destructive",
       });
       return;
@@ -98,8 +98,8 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       });
 
       toast({
-        title: "Éxito",
-        description: "Estrategia actualizada exitosamente",
+        title: "Success",
+        description: "Strategy updated successfully",
       });
 
       onOpenChange(false);
@@ -108,7 +108,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       console.error('Error saving strategy:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar la estrategia. Por favor, intenta nuevamente.",
+        description: "Could not save strategy. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -120,9 +120,9 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Actualizar Estrategia</DialogTitle>
+          <DialogTitle>Update Strategy</DialogTitle>
           <DialogDescription>
-            Genera y personaliza tu estrategia de crecimiento con asistencia de IA
+            Generate and customize your growth strategy with AI assistance
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -135,16 +135,16 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando...
+                  Generating...
                 </>
               ) : (
-                'Generar Estrategia con IA'
+                'Generate Strategy with AI'
               )}
             </Button>
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <h3 className="font-medium">Estrategia Generada:</h3>
+                <h3 className="font-medium">Generated Strategy:</h3>
                 <ul className="space-y-2 text-sm">
                   {generatedStrategy.map((item, index) => (
                     <li key={index} className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
                   onClick={() => setGeneratedStrategy([])}
                   disabled={isLoading}
                 >
-                  Generar Nueva
+                  Generate New
                 </Button>
                 <Button
                   onClick={saveStrategy}
@@ -168,10 +168,10 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Guardando...
+                      Saving...
                     </>
                   ) : (
-                    'Guardar Estrategia'
+                    'Save Strategy'
                   )}
                 </Button>
               </div>

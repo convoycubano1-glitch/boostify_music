@@ -455,11 +455,11 @@ const ArtistDashboardPage: React.FC = () => {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Bienvenido a tu Centro Creativo
+            Welcome to Your Creative Hub
           </h1>
           <p className="text-lg text-white/90 max-w-2xl">
-            Gestiona tu contenido, estrategia y crecimiento desde un solo lugar. 
-            Aprovecha nuestras herramientas de IA para optimizar tu presencia artística.
+            Manage your content, strategy, and growth from one place.
+            Leverage our AI tools to optimize your artistic presence.
           </p>
         </div>
       </div>
@@ -471,7 +471,7 @@ const ArtistDashboardPage: React.FC = () => {
             <Card className="p-6 border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Videos Publicados</p>
+                  <p className="text-sm font-medium text-muted-foreground">Published Videos</p>
                   <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -482,7 +482,7 @@ const ArtistDashboardPage: React.FC = () => {
             <Card className="p-6 border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Canciones Subidas</p>
+                  <p className="text-sm font-medium text-muted-foreground">Uploaded Songs</p>
                   <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -493,7 +493,7 @@ const ArtistDashboardPage: React.FC = () => {
             <Card className="p-6 border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Estrategias Activas</p>
+                  <p className="text-sm font-medium text-muted-foreground">Active Strategies</p>
                   <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -510,19 +510,19 @@ const ArtistDashboardPage: React.FC = () => {
                 <Info className="h-5 w-5 text-orange-500" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2">Consejos para Optimizar tu Dashboard</h3>
+                <h3 className="text-lg font-semibold mb-2">Tips to Optimize Your Dashboard</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <ChevronRight className="h-4 w-4 text-orange-500" />
-                    Mantén tu contenido actualizado subiendo videos y música regularmente
+                    Keep your content fresh by regularly uploading videos and music
                   </li>
                   <li className="flex items-center gap-2">
                     <ChevronRight className="h-4 w-4 text-orange-500" />
-                    Revisa y actualiza tu estrategia mensualmente para mantener el enfoque
+                    Review and update your strategy monthly to maintain focus
                   </li>
                   <li className="flex items-center gap-2">
                     <ChevronRight className="h-4 w-4 text-orange-500" />
-                    Utiliza nuestras herramientas de IA para generar ideas y optimizar tu contenido
+                    Use our AI tools to generate ideas and optimize your content
                   </li>
                 </ul>
               </div>
@@ -544,8 +544,8 @@ const ArtistDashboardPage: React.FC = () => {
                       <Video className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-semibold">Mis Videos</h2>
-                      <p className="text-sm text-muted-foreground">Gestiona tu contenido visual</p>
+                      <h2 className="text-xl font-semibold">My Videos</h2>
+                      <p className="text-sm text-muted-foreground">Manage your video content</p>
                     </div>
                   </div>
                   {videos.length > 0 && (
@@ -744,8 +744,8 @@ const ArtistDashboardPage: React.FC = () => {
                     <Music2 className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">Mi Música</h2>
-                    <p className="text-sm text-muted-foreground">Administra tu portafolio musical</p>
+                    <h2 className="text-xl font-semibold">My Music</h2>
+                    <p className="text-sm text-muted-foreground">Manage your music portfolio</p>
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -754,7 +754,6 @@ const ArtistDashboardPage: React.FC = () => {
                       <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                     </div>
                   ) : songs.length > 0 ? (
-                    
                     <div className="space-y-3">
                       {songs.map((song) => (
                         <div key={song.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
@@ -839,47 +838,57 @@ const ArtistDashboardPage: React.FC = () => {
                                   {isPlaying ? "⏸️" : "▶️"}
                                 </Button>
                                 <div className="space-y-1">
-                                  <p className="text-sm font-medium leading-none">
-                                    Preview
+                                  <p className="text-sm font-medium">
+                                    {selectedFile?.name}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
-                                     {selectedFile?.name}
-                                  </p>
+                                  {uploadProgress > 0 && uploadProgress < 100 && (
+                                    <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-orange-500 transition-all duration-300"
+                                        style={{ width: `${uploadProgress}%` }}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
                           </div>
                         )}
-                        {isSubmittingSong && (
-                          <div className="space-y-2">
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-orange-500 transition-all duration-300"
-                                style={{ width: `${uploadProgress}%` }}
-                              />
-                            </div>
-                            <p className="text-sm text-muted-foreground text-center">
-                              Uploading... {Math.round(uploadProgress)}%
-                            </p>
-                          </div>
-                        )}
-                        <Button 
-                          className="w-full"
-                          disabled={isSubmittingSong || !currentAudio}
-                          onClick={handleSongUpload}
-                        >
-                          {isSubmittingSong ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Uploading...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload Song
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex justify-end gap-4">
+                           <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsSongDialogOpen(false);
+                              if (currentAudio) {
+                                currentAudio.pause();
+                                URL.revokeObjectURL(currentAudio.src);
+                                setCurrentAudio(null);
+                              }
+                              setSelectedFile(null);
+                              setIsPlaying(false);
+                              setUploadProgress(0);
+                            }}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleSongUpload}
+                            disabled={isSubmittingSong || !selectedFile}
+                          >
+                            {isSubmittingSong ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload Song
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -899,8 +908,8 @@ const ArtistDashboardPage: React.FC = () => {
                     <BarChart2 className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">Mi Estrategia</h2>
-                    <p className="text-sm text-muted-foreground">Planifica tu crecimiento</p>
+                    <h2 className="text-xl font-semibold">My Strategy</h2>
+                    <p className="text-sm text-muted-foreground">Plan your growth</p>
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -910,7 +919,7 @@ const ArtistDashboardPage: React.FC = () => {
                     </div>
                   ) : currentStrategy.length > 0 ? (
                     <div className="p-3 bg-muted/50 rounded-lg">
-                      <h3 className="font-medium mb-2">Enfoque Actual</h3>
+                      <h3 className="font-medium mb-2">Current Focus</h3>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         {currentStrategy.map((point: string, index: number) => (
                           <li key={index} className="flex items-start gap-2">
@@ -922,14 +931,14 @@ const ArtistDashboardPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">
-                      No hay estrategia definida. Crea una para comenzar.
+                      No strategy set. Create one to get started.
                     </div>
                   )}
                   <Button 
                     className="w-full" 
                     onClick={() => setIsStrategyDialogOpen(true)}
                   >
-                    Actualizar Estrategia
+                    Update Strategy
                   </Button>
                 </div>
               </Card>
