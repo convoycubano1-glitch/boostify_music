@@ -42,15 +42,16 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
 
     setIsLoading(true);
     try {
+      const token = await auth.currentUser.getIdToken();
       const response = await fetch('/api/generate-strategy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           userId: auth.currentUser.uid,
-        }),
-        credentials: 'include' // Importante: incluir credenciales
+        })
       });
 
       if (!response.ok) {
@@ -59,8 +60,11 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       }
 
       const data = await response.json();
-      setGeneratedStrategy(data.strategy);
+      if (!Array.isArray(data.strategy)) {
+        throw new Error('Formato de respuesta inválido');
+      }
 
+      setGeneratedStrategy(data.strategy);
     } catch (error) {
       console.error('Error generating strategy:', error);
       toast({
@@ -85,18 +89,12 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
 
     setIsLoading(true);
     try {
-      const strategyData: Partial<Strategy> = {
-        focus: generatedStrategy,
-        userId: auth.currentUser.uid,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
       const strategiesRef = collection(db, "strategies");
       await addDoc(strategiesRef, {
-        ...strategyData,
+        focus: generatedStrategy,
+        userId: auth.currentUser.uid,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
 
       toast({
@@ -106,7 +104,6 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
 
       onOpenChange(false);
       onStrategyUpdate();
-
     } catch (error) {
       console.error('Error saving strategy:', error);
       toast({

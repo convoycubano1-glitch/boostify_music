@@ -114,11 +114,11 @@ export function registerRoutes(app: Express): Server {
         messages: [
           {
             role: "system",
-            content: "You are a music industry expert specialized in artist growth strategies. Generate 3-5 actionable focus points for the artist's growth strategy in Spanish. Format your response as JSON with a 'strategy' array containing string items."
+            content: "You are a music industry expert specialized in artist growth strategies. Generate 3-5 actionable focus points for the artist's growth strategy in Spanish. Format your response as JSON with a 'strategy' array containing string items. Each strategy point should be specific and actionable."
           },
           {
             role: "user",
-            content: "Generate a strategic growth plan for an emerging music artist focusing on social media presence, music releases, and collaborations. Provide the response in Spanish."
+            content: "Generate a strategic growth plan for an emerging music artist focusing on social media presence, music releases, and collaborations. Consider aspects like content creation, audience engagement, and promotional activities. Provide the response in Spanish."
           }
         ],
         response_format: { type: "json_object" }
@@ -130,11 +130,11 @@ export function registerRoutes(app: Express): Server {
         throw new Error('Invalid AI response format');
       }
 
-      res.json({ strategy: result.strategy });
+      return res.json({ strategy: result.strategy });
     } catch (error: any) {
       console.error('Error generating strategy:', error);
-      res.status(500).json({ 
-        error: "Failed to generate strategy",
+      return res.status(500).json({ 
+        error: "Error al generar estrategia",
         details: error.message 
       });
     }
@@ -169,7 +169,6 @@ export function registerRoutes(app: Express): Server {
           console.log('Subscription successful for user:', userId, 'plan:', planName);
           // Additional subscription processing logic here
         }
-
       } catch (error) {
         console.error('Error processing successful payment:', error);
       }
