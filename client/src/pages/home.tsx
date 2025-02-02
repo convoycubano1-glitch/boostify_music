@@ -96,15 +96,14 @@ export default function HomePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    if (user) {
-      setLocation('/dashboard');
-    }
-  }, [user, setLocation]);
-
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
+      toast({
+        title: "Success",
+        description: "Successfully logged in. Redirecting to dashboard...",
+      });
+      setLocation('/dashboard');
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -113,10 +112,6 @@ export default function HomePage() {
       });
     }
   };
-
-  if (user) {
-    return null;
-  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -188,11 +183,13 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Link href="/dashboard">
-            <Button variant="outline" size="icon" className="bg-background/20 backdrop-blur-lg border-orange-500/20 hover:bg-orange-500/10">
-              <Home className="h-5 w-5" />
-            </Button>
-          </Link>
+          {user && (
+            <Link href="/dashboard">
+              <Button variant="outline" size="icon" className="bg-background/20 backdrop-blur-lg border-orange-500/20 hover:bg-orange-500/10">
+                <Home className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
         </motion.div>
       </section>
 
