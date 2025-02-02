@@ -91,10 +91,12 @@ export function PricingPlans() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           priceId: plan.priceId,
-          planName: plan.name
+          planName: plan.name,
+          price: plan.price
         }),
       });
 

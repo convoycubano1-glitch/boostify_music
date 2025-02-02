@@ -67,11 +67,11 @@ export function registerRoutes(app: Express): Server {
       const session = event.data.object as Stripe.Checkout.Session;
 
       try {
-        const { orderId, videoUrl, views } = session.metadata || {};
+        const { userId, planName } = session.metadata || {};
 
-        if (orderId) {
-          console.log('Payment successful for order:', orderId);
-          // Additional order processing logic here
+        if (userId && planName) {
+          console.log('Subscription successful for user:', userId, 'plan:', planName);
+          // Additional subscription processing logic here
         }
 
       } catch (error) {
