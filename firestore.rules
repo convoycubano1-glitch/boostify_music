@@ -3,20 +3,31 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Reglas para los datos de Spotify
     match /spotify_data/{userId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Reglas para las órdenes de vistas de YouTube
     match /youtube_views_orders/{orderId} {
       // Permitir lectura si el usuario está autenticado y es el propietario
       allow read: if request.auth != null;
-      
+
       // Permitir creación si el usuario está autenticado
       allow create: if request.auth != null;
 
       // Permitir actualización y eliminación solo al propietario
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para las suscripciones
+    match /subscriptions/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Reglas para los planes
+    match /plans/{planId} {
+      allow read: if true;  // Allow public read access to plan information
     }
   }
 }
