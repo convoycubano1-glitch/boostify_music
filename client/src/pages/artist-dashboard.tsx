@@ -12,7 +12,7 @@ import {
   Plus,
   PlayCircle,
   Mic2,
-  Link as LinkIcon,
+  LinkIcon,
   Upload,
   Loader2,
   X,
@@ -173,12 +173,10 @@ const ArtistDashboardPage: React.FC = () => {
         );
 
         const querySnapshot = await getDocs(q);
-        const strategyDoc = querySnapshot.docs[0];
+        if (querySnapshot.empty) return [];
 
-        if (strategyDoc) {
-          return strategyDoc.data().focus;
-        }
-        return [];
+        const strategyDoc = querySnapshot.docs[0];
+        return strategyDoc.data().focus;
       } catch (error) {
         console.error("Error fetching strategy:", error);
         toast({
@@ -808,57 +806,58 @@ const ArtistDashboardPage: React.FC = () => {
             </motion.div>
 
             {/* My Strategy Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <BarChart2 className="h-6 w-6 text-orange-500" />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <BarChart2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold">My Strategy</h2>
+                      <p className="text-sm text-muted-foreground">Plan your growth</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">My Strategy</h2>
-                    <p className="text-sm text-muted-foreground">Plan your growth</p>
+                  <div className="space-y-4">
+                    {isLoadingStrategy ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                      </div>
+                    ) : currentStrategy.length > 0 ? (
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <h3 className="font-medium mb-2">Current Focus</h3>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          {currentStrategy.map((point: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="mt-1">•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No strategy set. Create one to get started.
+                      </div>
+                    )}
+                    <Button 
+                      className="w-full" 
+                      onClick={() => setIsStrategyDialogOpen(true)}
+                    >
+                      Update Strategy
+                    </Button>
                   </div>
-                </div>
-                <div className="space-y-4">
-                  {isLoadingStrategy ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                    </div>
-                  ) : currentStrategy.length > 0 ? (
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <h3 className="font-medium mb-2">Current Focus</h3>
-                      <ul className="space-y-2 text-sm text-muted-foreground">
-                        {currentStrategy.map((point, index) => (
-                          <li key={index}>• {point}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No strategy set. Create one to get started.
-                    </div>
-                  )}
-                  <Button 
-                    className="w-full" 
-                    onClick={() => setIsStrategyDialogOpen(true)}
-                  >
-                    Update Strategy
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
+                </Card>
+              </motion.div>
 
-            {/* Strategy Dialog */}
-            <StrategyDialog
-              open={isStrategyDialogOpen}
-              onOpenChange={setIsStrategyDialogOpen}
-              onStrategyUpdate={refetchStrategy}
-            />
-
+              <StrategyDialog 
+                open={isStrategyDialogOpen}
+                onOpenChange={setIsStrategyDialogOpen}
+                onStrategyUpdate={refetchStrategy}
+              />
 
             {/* My Budget Section */}
             <motion.div
@@ -911,8 +910,7 @@ const ArtistDashboardPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-<p className="font-medium">Recent Contacts</p>
-                      <span className="text-sm text-muted-foreground">Total: 24</span>
+                      <p className`className="font-medium">Recent Contacts</p                      <span className="text-sm text-muted-foreground">Total: 24</span>
                     </div>
                     <div className="space-y-2">
                       <div className="text-sm text-muted-foreground">
