@@ -65,7 +65,7 @@ export interface Contract {
   userId: string;
 }
 
-// Save contract to Firestore with better error handling
+// Save contract to Firestore with better error handling and debugging
 export async function saveContract(contractData: {
   title: string;
   type: string;
@@ -74,62 +74,104 @@ export async function saveContract(contractData: {
 }): Promise<Contract> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
+    console.log('No hay usuario autenticado al intentar guardar');
     throw new Error('Usuario no autenticado');
   }
+
+  console.log('Intentando guardar contrato para usuario:', currentUser.uid);
 
   try {
     // Reference to the contracts collection
     const contractsRef = collection(db, 'contracts');
 
-    // Add the document with proper typing
-    const docRef = await addDoc(contractsRef, {
+    const newContract = {
       ...contractData,
       userId: currentUser.uid,
       createdAt: serverTimestamp()
-    });
+    };
+
+    console.log('Datos del contrato a guardar:', newContract);
+
+    // Add the document with proper typing
+    const docRef = await addDoc(contractsRef, newContract);
+    console.log('Contrato guardado con ID:', docRef.id);
 
     // Get the newly created document
-    const newContract = await getDoc(docRef);
+    const docSnap = await getDoc(docRef);
+    console.log('Document exists:', docSnap.exists());
 
-    if (!newContract.exists()) {
-      throw new Error('Error al crear el contrato');
+    if (!docSnap.exists()) {
+      throw new Error('Error al crear el contrato - documento no existe');
     }
 
     // Return the contract data with proper typing
-    return {
-      id: newContract.id,
-      ...newContract.data(),
+    const savedContract = {
+      id: docSnap.id,
+      ...docSnap.data(),
       createdAt: new Date(), // Convert timestamp to Date
     } as Contract;
+
+    console.log('Contrato guardado exitosamente:', savedContract);
+    return savedContract;
   } catch (error: any) {
-    console.error('Error saving contract:', error);
+    console.error('Error detallado al guardar contrato:', {
+      code: error.code,
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
     throw new Error(error.message || 'Error al guardar el contrato');
   }
 }
 
-// Get user's contracts with better error handling
+
+// Get user's contracts with better error handling and debugging
 export async function getUserContracts(): Promise<Contract[]> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
+    console.log('No hay usuario autenticado');
     throw new Error('Usuario no autenticado');
   }
 
+  console.log('Firebase Auth: Usuario autenticado:', currentUser.uid);
+
   try {
     // Create a query against the collection
+    const contractsRef = collection(db, 'contracts');
+    console.log('Consultando colección contracts');
+
+    // First check if the collection exists
+    const testDoc = await getDocs(contractsRef);
+    console.log('Collection exists:', !testDoc.empty);
+
     const q = query(
-      collection(db, 'contracts'),
+      contractsRef,
       where('userId', '==', currentUser.uid),
       orderBy('createdAt', 'desc')
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(), // Convert timestamp to Date
-    })) as Contract[];
+    console.log('Documentos encontrados:', querySnapshot.size);
+
+    const contracts = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log('Document data:', data);
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+      };
+    }) as Contract[];
+
+    console.log('Contratos procesados:', contracts.length);
+    return contracts;
   } catch (error: any) {
-    console.error('Error fetching contracts:', error);
+    console.error('Error detallado al obtener contratos:', {
+      code: error.code,
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
     throw new Error(error.message || 'Error al obtener los contratos');
   }
 }
