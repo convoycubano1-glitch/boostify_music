@@ -82,9 +82,23 @@ export default function YoutubeViewsPage() {
     if (views <= 10000) return 450;
     return Math.ceil(views * 0.04); // $0.04 per view for custom amounts
   };
-
-    const currentPrice = getPackagePrice(desiredViews);
   
+    const currentPrice = getPackagePrice(desiredViews);
+    
+  const handlePackageSelect = async (packageIndex: number) => {
+    if (!videoUrl) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid YouTube URL",
+        variant: "destructive"
+      });
+      return;
+    }
+  
+    setDesiredViews(viewsPackages[packageIndex].views);
+    setShowDialog(true);
+  };
+
     const handlePayment = async () => {
     if (!videoUrl) {
       toast({
@@ -589,7 +603,7 @@ export default function YoutubeViewsPage() {
             </div>
           </Card>
         </motion.div>
-
+        
         <div className="grid gap-6 md:grid-cols-3" id="packages">
           {viewsPackages.map((pkg, index) => (
             <motion.div
@@ -619,18 +633,7 @@ export default function YoutubeViewsPage() {
 
                   <Button 
                     className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => {
-                      if (!videoUrl) {
-                        toast({
-                          title: "Error",
-                          description: "Please enter a valid YouTube URL",
-                          variant: "destructive"
-                        });
-                        return;
-                      }
-                      setSelectedPackage(index);
-                      setShowDialog(true);
-                    }}
+                    onClick={() => handlePackageSelect(index)}
                   >
                     Select Plan
                   </Button>
