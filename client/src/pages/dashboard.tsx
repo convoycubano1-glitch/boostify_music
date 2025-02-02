@@ -14,9 +14,11 @@ import { Card } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Header } from "@/components/layout/header";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [metrics, setMetrics] = useState({
     spotifyFollowers: 0,
     instagramFollowers: 0,
@@ -81,15 +83,54 @@ export default function Dashboard() {
     const metricsRef = collection(db, 'metrics');
     const metricsQuery = query(metricsRef, where("userId", "==", user.uid));
 
-    const unsubscribeMetrics = onSnapshot(metricsQuery, (snapshot) => {
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        setMetrics(prev => ({
-          ...prev,
-          ...data
-        }));
-      });
-    });
+    const unsubscribeMetrics = onSnapshot(metricsQuery, 
+      (snapshot) => {
+        const metricsData = {
+          spotifyFollowers: 0,
+          instagramFollowers: 0,
+          youtubeViews: 0,
+          contractsCreated: 0,
+          prCampaigns: 0,
+          totalEngagement: 0
+        };
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          Object.assign(metricsData, data);
+        });
+
+        setMetrics(metricsData);
+      },
+      (error) => {
+        console.error('Error al obtener métricas:', error);
+        if (error.code === 'permission-denied') {
+          // Crear documento inicial de métricas para el usuario
+          const initialMetrics = {
+            userId: user.uid,
+            spotifyFollowers: 0,
+            instagramFollowers: 0,
+            youtubeViews: 0,
+            contractsCreated: 0,
+            prCampaigns: 0,
+            totalEngagement: 0,
+            createdAt: new Date()
+          };
+
+          metricsRef.add(initialMetrics)
+            .then(() => {
+              console.log('Documento de métricas inicializado');
+            })
+            .catch((error) => {
+              console.error('Error al inicializar métricas:', error);
+              toast({
+                title: "Error al cargar métricas",
+                description: "No se pudieron cargar tus métricas. Por favor, intenta recargar la página.",
+                variant: "destructive"
+              });
+            });
+        }
+      }
+    );
 
     return () => {
       unsubscribeMetrics();

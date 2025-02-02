@@ -1,28 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Reglas para las métricas
+    match /metrics/{docId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+
+      // Permitir creación de métricas para el usuario autenticado
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+
     // Reglas para los datos de Spotify
     match /spotify_data/{userId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && 
+        userId == request.auth.uid;
     }
 
     // Reglas para las órdenes de vistas de YouTube
     match /youtube_views_orders/{orderId} {
-      // Permitir lectura si el usuario está autenticado
-      allow read: if request.auth != null;
+      // Permitir lectura si el usuario está autenticado y es el propietario
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
 
       // Permitir creación si el usuario está autenticado
-      allow create: if request.auth != null;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
 
       // Permitir actualización y eliminación solo al propietario
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
 
+    // Reglas para el engagement
+    match /engagement/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+
     // Reglas para las suscripciones
     match /subscriptions/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && 
+        userId == request.auth.uid;
+      allow write: if request.auth != null && 
+        userId == request.auth.uid;
     }
 
     // Reglas para los planes
@@ -32,8 +54,10 @@ service cloud.firestore {
 
     // Reglas para los contratos
     match /contracts/{contractId} {
-      // Permitir lectura y escritura si el usuario está autenticado
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
     }
   }
 }
