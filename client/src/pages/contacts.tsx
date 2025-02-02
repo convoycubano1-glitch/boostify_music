@@ -3,12 +3,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Upload, UserPlus, Users, FileSpreadsheet, Loader2, Mail, Building2, Phone } from "lucide-react";
+import { Upload, UserPlus, Users, FileSpreadsheet, Loader2, Mail, Building2, Phone, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Contact {
   id: string;
@@ -21,10 +32,28 @@ interface Contact {
   createdAt: Date;
 }
 
+interface AddContactFormData {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  role: string;
+  notes: string;
+}
+
 export default function ContactsPage() {
   const { toast } = useToast();
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [isAddingContact, setIsAddingContact] = useState(false);
+  const [formData, setFormData] = useState<AddContactFormData>({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    role: "",
+    notes: ""
+  });
 
   // Query for contacts with loading state
   const { data: contacts = [], isLoading, refetch } = useQuery({
@@ -59,6 +88,59 @@ export default function ContactsPage() {
     staleTime: 30000,
     retry: false
   });
+
+  const handleAddContact = async () => {
+    if (!auth.currentUser?.uid) return;
+
+    try {
+      setIsAddingContact(true);
+
+      if (!formData.name || !formData.email) {
+        toast({
+          title: "Error",
+          description: "Name and email are required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const contactData = {
+        ...formData,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp()
+      };
+
+      const contactsRef = collection(db, "contacts");
+      await addDoc(contactsRef, contactData);
+
+      toast({
+        title: "Success",
+        description: "Contact added successfully",
+      });
+
+      // Reset form and close dialog
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        company: "",
+        role: "",
+        notes: ""
+      });
+
+      // Refresh contacts list
+      refetch();
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add contact. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingContact(false);
+    }
+  };
 
   const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -139,10 +221,108 @@ export default function ContactsPage() {
               </p>
             </div>
             <div className="flex gap-4">
-              <Button className="bg-orange-500 hover:bg-orange-600">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Contact
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="bg-orange-500 hover:bg-orange-600">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Contact
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Contact</DialogTitle>
+                    <DialogDescription>
+                      Fill in the contact details below. Required fields are marked with *
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Name *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Enter contact name"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="company">Company</Label>
+                      <Input
+                        id="company"
+                        value={formData.company}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                        placeholder="Enter company name"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="role">Role</Label>
+                      <Input
+                        id="role"
+                        value={formData.role}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                        placeholder="Enter role or position"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        placeholder="Add any additional notes"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setFormData({
+                          name: "",
+                          email: "",
+                          phone: "",
+                          company: "",
+                          role: "",
+                          notes: ""
+                        });
+                      }}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleAddContact}
+                      disabled={isAddingContact}
+                    >
+                      {isAddingContact ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserPlus className="mr-2 h-4 w-4" />
+                      )}
+                      {isAddingContact ? "Adding..." : "Add Contact"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <div className="relative">
                 <input
                   type="file"
