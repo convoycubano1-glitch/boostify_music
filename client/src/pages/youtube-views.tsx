@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -186,6 +187,47 @@ export default function YoutubeViewsPage() {
             </Button>
           </Link>
         </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card className="overflow-hidden border-orange-500/10">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-6 flex flex-col justify-center">
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                Boost Your YouTube Presence
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Get real, high-retention views from genuine users. Our service helps you increase your video's visibility and engagement organically.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button className="bg-orange-500 hover:bg-orange-600">
+                  <Play className="w-4 h-4 mr-2" />
+                  Get Started
+                </Button>
+                <Button variant="outline">
+                  Learn More
+                </Button>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-orange-500/5" />
+              <AspectRatio ratio={16 / 9} className="bg-muted">
+                <div className="h-full w-full flex items-center justify-center bg-orange-500/10 backdrop-blur">
+                  <div className="text-center">
+                    <SiYoutube className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">
+                      YouTube Promotion Image
+                    </p>
+                  </div>
+                </div>
+              </AspectRatio>
+            </div>
+          </div>
+        </Card>
       </motion.div>
 
       <div className="grid gap-6 md:grid-cols-2">
