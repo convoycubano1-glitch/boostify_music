@@ -3,7 +3,7 @@ import { db } from './firebase';
 import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 
-// Define la estructura de datos esperada de la API de Apollo
+// Define the expected data structure from the Apollo API
 interface ApolloResult {
   name?: string;
   email?: string;
@@ -35,30 +35,30 @@ const contactSchema = z.object({
 export type Contact = z.infer<typeof contactSchema>;
 
 export const contactCategories = [
-  'Sellos Discográficos',
-  'Medios de Comunicación',
-  'Promotores de Eventos',
+  'Record Labels',
+  'Media',
+  'Event Promoters',
   'Managers',
-  'Agencias de PR',
-  'Influencers Musicales',
-  'Blogs de Música',
+  'PR Agencies',
+  'Music Influencers',
+  'Music Blogs',
   'Radio',
-  'Plataformas Streaming'
+  'Streaming Platforms'
 ] as const;
 
-// Lista de contactos locales precargada desde el CSV
+// Preloaded local contacts from CSV
 const localContacts: Contact[] = [
   {
     name: "RAULEETO 🇵🇷",
     email: "booking@duars.com",
     phone: "+17876446046",
-    category: "Artistas"
+    category: "Artists"
   },
   {
     name: "Eladio Carrion",
     email: "Eladio@mtbooking.com",
     phone: "+14074011159",
-    category: "Artistas"
+    category: "Artists"
   },
   {
     name: "DIMELO FLOW",
@@ -70,25 +70,25 @@ const localContacts: Contact[] = [
     name: "LOS CHAPUSEROS",
     email: "Loschapuserosoficial@gmail.com",
     phone: "+5351948026",
-    category: "Artistas"
+    category: "Artists"
   },
   {
     name: "Vibra Urbana",
     email: "help@vibraurbanafest.com",
     phone: "+13055752722",
-    category: "Promotores de Eventos"
+    category: "Event Promoters"
   },
   {
     name: "Trap House Latino 🏚",
     email: "TrapHouseLatino@gmail.com",
     phone: "+17875293480",
-    category: "Medios de Comunicación"
+    category: "Media"
   },
   {
     name: "GLAD Empire",
     email: "info@gladempire.com",
     phone: "+18337774523",
-    category: "Sellos Discográficos"
+    category: "Record Labels"
   },
   {
     name: "Radio Moda",
@@ -100,29 +100,29 @@ const localContacts: Contact[] = [
     name: "PINA RECORDS 🎼",
     email: "booking@pinarecords.net",
     phone: "+17877431100",
-    category: "Sellos Discográficos"
+    category: "Record Labels"
   },
   {
     name: "Los Dos Carnales",
     email: "2carnalesoficial@gmail.com",
     phone: "+524431878559",
-    category: "Artistas"
+    category: "Artists"
   }
 ];
 
 export async function searchContacts(category: string, query: string): Promise<Contact[]> {
   try {
     if (!import.meta.env.VITE_APIFY_API_KEY) {
-      // Si no hay API key, devolver solo resultados locales filtrados
+      // If no API key, return only filtered local results
       return localContacts.filter(contact => 
-        (category === 'Todos' || contact.category === category) &&
+        (category === 'All' || contact.category === category) &&
         (contact.name.toLowerCase().includes(query.toLowerCase()) ||
          contact.email?.toLowerCase().includes(query.toLowerCase()) ||
          contact.company?.toLowerCase().includes(query.toLowerCase()))
       );
     }
 
-    // Si hay API key, combinar resultados locales con búsqueda en Apify
+    // If API key exists, combine local results with Apify search
     const response = await fetch('https://api.apify.com/v2/acts/jljBwyyQakqrL1wae/runs', {
       method: 'POST',
       headers: {
@@ -142,7 +142,7 @@ export async function searchContacts(category: string, query: string): Promise<C
     });
 
     if (!response.ok) {
-      throw new Error('Error al buscar contactos');
+      throw new Error('Error searching contacts');
     }
 
     const runData = await response.json();
@@ -153,7 +153,7 @@ export async function searchContacts(category: string, query: string): Promise<C
     );
 
     if (!itemsResponse.ok) {
-      throw new Error('Error al obtener resultados');
+      throw new Error('Error getting results');
     }
 
     const items = await itemsResponse.json() as ApolloResult[];
@@ -170,19 +170,19 @@ export async function searchContacts(category: string, query: string): Promise<C
       }
     }));
 
-    // Combinar y filtrar resultados locales y de Apify
+    // Combine and filter local and Apify results
     return [...localContacts, ...apifyContacts].filter(contact => 
-      (category === 'Todos' || contact.category === category) &&
+      (category === 'All' || contact.category === category) &&
       (contact.name.toLowerCase().includes(query.toLowerCase()) ||
        contact.email?.toLowerCase().includes(query.toLowerCase()) ||
        contact.company?.toLowerCase().includes(query.toLowerCase()))
     );
 
   } catch (error) {
-    console.error('Error en la búsqueda de contactos:', error);
-    // En caso de error, devolver solo resultados locales filtrados
+    console.error('Error searching contacts:', error);
+    // In case of error, return only filtered local results
     return localContacts.filter(contact => 
-      (category === 'Todos' || contact.category === category) &&
+      (category === 'All' || contact.category === category) &&
       (contact.name.toLowerCase().includes(query.toLowerCase()) ||
        contact.email?.toLowerCase().includes(query.toLowerCase()) ||
        contact.company?.toLowerCase().includes(query.toLowerCase()))
@@ -192,7 +192,7 @@ export async function searchContacts(category: string, query: string): Promise<C
 
 export async function saveContact(user: User, contact: Contact): Promise<void> {
   if (!user?.uid) {
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
   const contactData = {
@@ -207,7 +207,7 @@ export async function saveContact(user: User, contact: Contact): Promise<void> {
 
 export async function getSavedContacts(user: User): Promise<Contact[]> {
   if (!user?.uid) {
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
   const contactsRef = collection(db, 'contacts');
@@ -226,7 +226,7 @@ export async function checkApifyRun(runId: string): Promise<any> {
   );
 
   if (!response.ok) {
-    throw new Error('Error al verificar el estado del proceso de vistas');
+    throw new Error('Error checking view process status');
   }
 
   return response.json();

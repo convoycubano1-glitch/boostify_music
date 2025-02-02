@@ -63,7 +63,7 @@ export default function PRPage() {
       const contacts = await getSavedContacts(user!);
       setSavedContacts(contacts);
     } catch (error) {
-      console.error('Error al cargar contactos guardados:', error);
+      console.error('Error loading saved contacts:', error);
     }
   };
 
@@ -71,14 +71,14 @@ export default function PRPage() {
     try {
       await saveContact(user!, contact);
       toast({
-        title: "Contacto guardado",
-        description: "El contacto se ha guardado exitosamente.",
+        title: "Contact saved",
+        description: "The contact has been saved successfully.",
       });
       await loadSavedContacts();
     } catch (error) {
       toast({
-        title: "Error al guardar",
-        description: "No se pudo guardar el contacto. Por favor, intenta de nuevo.",
+        title: "Save error",
+        description: "Could not save the contact. Please try again.",
         variant: "destructive"
       });
     }
@@ -87,8 +87,8 @@ export default function PRPage() {
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       toast({
-        title: "Búsqueda vacía",
-        description: "Por favor, ingresa un término de búsqueda",
+        title: "Empty search",
+        description: "Please enter a search term",
         variant: "destructive"
       });
       return;
@@ -107,10 +107,10 @@ export default function PRPage() {
       setContacts(results);
       setCurrentPage(1);
     } catch (error) {
-      console.error('Error en la búsqueda:', error);
+      console.error('Search error:', error);
       toast({
-        title: "Error en la búsqueda",
-        description: "No se pudieron obtener los contactos. Por favor, intenta de nuevo.",
+        title: "Search error",
+        description: "Could not retrieve contacts. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -125,76 +125,76 @@ export default function PRPage() {
 
   const services = [
     {
-      name: "Contactos",
-      description: "Gestiona tu red de contactos",
+      name: "Contacts",
+      description: "Manage your network of contacts",
       icon: Users2,
       color: "text-orange-500",
       route: "/pr",
       stats: 500,
-      statsLabel: "contactos",
+      statsLabel: "contacts",
     },
     {
-      name: "Noticias",
-      description: "Entérate de las últimas noticias de la industria",
+      name: "News",
+      description: "Stay updated with industry news",
       icon: Newspaper,
       color: "text-green-500",
       route: "/news",
       stats: 120,
-      statsLabel: "noticias",
+      statsLabel: "news",
     },
     {
-      name: "Eventos",
-      description: "Organiza o encuentra eventos",
+      name: "Events",
+      description: "Organize or find events",
       icon: Calendar,
       color: "text-blue-500",
       route: "/events",
       stats: 50,
-      statsLabel: "eventos",
+      statsLabel: "events",
     },
     {
-      name: "Análisis",
-      description: "Analiza tu presencia en línea",
+      name: "Analytics",
+      description: "Analyze your online presence",
       icon: TrendingUp,
       color: "text-pink-500",
       route: "/analytics",
-       stats: 1500,
-      statsLabel: "visitas",
+      stats: 1500,
+      statsLabel: "visits",
     },
-        {
+    {
       name: "Global",
-      description: "Visibilidad global",
+      description: "Global visibility",
       icon: Globe,
       color: "text-sky-500",
       route: "/global",
       stats: 25,
-      statsLabel: "países",
+      statsLabel: "countries",
     },
     {
       name: "Videos",
-      description: "Gestiona tus videos",
+      description: "Manage your videos",
       icon: Youtube,
       color: "text-red-500",
       route: "/videos",
       stats: 100,
-       statsLabel: "videos",
+      statsLabel: "videos",
     },
     {
       name: "Blog",
-      description: "Escribe y gestiona tus articulos",
+      description: "Write and manage your articles",
       icon: FileText,
       color: "text-violet-500",
       route: "/blog",
       stats: 75,
-      statsLabel: "artículos",
+      statsLabel: "articles",
     },
     {
-      name: "Promoción",
-      description: "Promociona tu contenido",
-       icon: Megaphone,
-       color: "text-yellow-500",
+      name: "Promotion",
+      description: "Promote your content",
+      icon: Megaphone,
+      color: "text-yellow-500",
       route: "/promotion",
       stats: 400,
-      statsLabel: "promociones",
+      statsLabel: "promotions",
     }
   ];
 
@@ -209,12 +209,12 @@ export default function PRPage() {
                 Music Marketing Hub
               </h1>
               <p className="text-muted-foreground mt-2">
-                Gestiona y potencia tu presencia musical desde un solo lugar
+                Manage and enhance your music presence from one place
               </p>
             </div>
             <Button className="bg-orange-500 hover:bg-orange-600">
               <Activity className="mr-2 h-4 w-4" />
-              Vista en Vivo
+              Live View
             </Button>
           </div>
 
@@ -250,9 +250,9 @@ export default function PRPage() {
 
           <Card className="p-6 mb-8">
             <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Actividad General</h3>
+              <h3 className="text-xl font-semibold mb-2">General Activity</h3>
               <p className="text-sm text-muted-foreground">
-                Seguimiento de métricas en todas las plataformas
+                Tracking metrics across all platforms
               </p>
             </div>
             <div className="h-[400px]">
@@ -307,181 +307,181 @@ export default function PRPage() {
               </ResponsiveContainer>
             </div>
           </Card>
-          
-           <Card className="p-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Buscar Contactos</h3>
-            <div className="flex gap-4">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Selecciona categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contactCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex-1 relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar contactos..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
-              </div>
-              <Button 
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="min-w-[100px]"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Buscando...
-                  </>
-                ) : (
-                  'Buscar'
-                )}
-              </Button>
-            </div>
-            {isLoading && (
-              <div className="space-y-2">
-                <Progress value={progress} className="w-full" />
-                <p className="text-sm text-muted-foreground text-center">
-                  {progress}% Completado
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
 
-        <Tabs defaultValue="resultados" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="resultados">Resultados</TabsTrigger>
-            <TabsTrigger value="guardados">Contactos Guardados</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="resultados">
-            <Card>
-              <ScrollArea className="h-[500px]">
-                <div className="p-4 space-y-4">
-                  {currentContacts.map((contact, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <div className="bg-primary/10 text-primary rounded-full h-full w-full flex items-center justify-center">
-                            {contact.name.charAt(0)}
-                          </div>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-semibold">{contact.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {contact.role || contact.category}
-                            {contact.company && ` at ${contact.company}`}
-                          </p>
-                          {contact.email && (
-                            <p className="text-sm text-muted-foreground">
-                              {contact.email}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSaveContact(contact)}
-                      >
-                        Guardar Contacto
-                      </Button>
-                    </div>
-                  ))}
-                  {contacts.length === 0 && !isLoading && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No hay contactos para mostrar. Realiza una búsqueda para encontrar contactos.
-                    </div>
-                  )}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Search Contacts</h3>
+              <div className="flex gap-4">
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex-1 relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search contacts..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
                 </div>
-              </ScrollArea>
-              {contacts.length > 0 && (
-                <div className="p-4 border-t flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Siguiente
-                  </Button>
+                <Button 
+                  onClick={handleSearch}
+                  disabled={isLoading}
+                  className="min-w-[100px]"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Searching...
+                    </>
+                  ) : (
+                    'Search'
+                  )}
+                </Button>
+              </div>
+              {isLoading && (
+                <div className="space-y-2">
+                  <Progress value={progress} className="w-full" />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {progress}% Complete
+                  </p>
                 </div>
               )}
-            </Card>
-          </TabsContent>
+            </div>
+          </Card>
 
-          <TabsContent value="guardados">
-            <Card>
-              <ScrollArea className="h-[500px]">
-                <div className="p-4 space-y-4">
-                  {savedContacts.map((contact, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <div className="bg-primary/10 text-primary rounded-full h-full w-full flex items-center justify-center">
-                            {contact.name.charAt(0)}
-                          </div>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-semibold">{contact.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {contact.role || contact.category}
-                            {contact.company && ` at ${contact.company}`}
-                          </p>
-                          {contact.email && (
+          <Tabs defaultValue="results" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="results">Results</TabsTrigger>
+              <TabsTrigger value="saved">Saved Contacts</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="results">
+              <Card>
+                <ScrollArea className="h-[500px]">
+                  <div className="p-4 space-y-4">
+                    {currentContacts.map((contact, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-10 w-10">
+                            <div className="bg-primary/10 text-primary rounded-full h-full w-full flex items-center justify-center">
+                              {contact.name.charAt(0)}
+                            </div>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-semibold">{contact.name}</h4>
                             <p className="text-sm text-muted-foreground">
-                              {contact.email}
+                              {contact.role || contact.category}
+                              {contact.company && ` at ${contact.company}`}
                             </p>
-                          )}
-                          {contact.savedAt && (
-                            <p className="text-xs text-muted-foreground">
-                              Guardado el: {new Date(contact.savedAt).toLocaleDateString()}
+                            {contact.email && (
+                              <p className="text-sm text-muted-foreground">
+                                {contact.email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSaveContact(contact)}
+                        >
+                          Save Contact
+                        </Button>
+                      </div>
+                    ))}
+                    {contacts.length === 0 && !isLoading && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No contacts to display. Perform a search to find contacts.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+                {contacts.length > 0 && (
+                  <div className="p-4 border-t flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="saved">
+              <Card>
+                <ScrollArea className="h-[500px]">
+                  <div className="p-4 space-y-4">
+                    {savedContacts.map((contact, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-10 w-10">
+                            <div className="bg-primary/10 text-primary rounded-full h-full w-full flex items-center justify-center">
+                              {contact.name.charAt(0)}
+                            </div>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-semibold">{contact.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {contact.role || contact.category}
+                              {contact.company && ` at ${contact.company}`}
                             </p>
-                          )}
+                            {contact.email && (
+                              <p className="text-sm text-muted-foreground">
+                                {contact.email}
+                              </p>
+                            )}
+                            {contact.savedAt && (
+                              <p className="text-xs text-muted-foreground">
+                                Saved on: {new Date(contact.savedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {savedContacts.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No tienes contactos guardados.
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    ))}
+                    {savedContacts.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        You have no saved contacts.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </ScrollArea>
     </div>
