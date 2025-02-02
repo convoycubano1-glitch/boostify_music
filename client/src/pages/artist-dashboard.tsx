@@ -196,13 +196,12 @@ export default function ArtistDashboardPage() {
     const file = event.target.files?.[0];
     if (file) {
       try {
-        // Convertir el archivo a base64
         const reader = new FileReader();
-        reader.onload = async (e) => {
+        reader.onload = (e) => {
           if (e.target?.result) {
             const audio = new Audio();
             audio.src = e.target.result as string;
-            audio.dataset.fileName = file.name; // Guardamos el nombre original del archivo
+            audio.dataset.fileName = file.name;
             setCurrentAudio(audio);
             setIsPlaying(false);
           }
@@ -219,25 +218,6 @@ export default function ArtistDashboardPage() {
     }
   };
 
-  const togglePlay = (audioData?: string) => {
-    if (audioData && (!currentAudio || currentAudio.src !== audioData)) {
-      if (currentAudio) {
-        currentAudio.pause();
-      }
-      const audio = new Audio(audioData);
-      setCurrentAudio(audio);
-      audio.play();
-      setIsPlaying(true);
-    } else if (currentAudio) {
-      if (isPlaying) {
-        currentAudio.pause();
-      } else {
-        currentAudio.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
   const handleSongUpload = async () => {
     if (!auth.currentUser?.uid || !currentAudio) return;
 
@@ -245,8 +225,8 @@ export default function ArtistDashboardPage() {
       setIsSubmittingSong(true);
 
       const songData = {
-        name: currentAudio.dataset.fileName || "Untitled Song", // Usamos el nombre original del archivo
-        audio: currentAudio.src, // Guardamos el audio en base64
+        name: currentAudio.dataset.fileName || "Untitled Song",
+        audio: currentAudio.src,
         userId: auth.currentUser.uid,
         createdAt: serverTimestamp()
       };
@@ -276,6 +256,25 @@ export default function ArtistDashboardPage() {
       });
     } finally {
       setIsSubmittingSong(false);
+    }
+  };
+
+  const togglePlay = (audioData?: string) => {
+    if (audioData && (!currentAudio || currentAudio.src !== audioData)) {
+      if (currentAudio) {
+        currentAudio.pause();
+      }
+      const audio = new Audio(audioData);
+      setCurrentAudio(audio);
+      audio.play();
+      setIsPlaying(true);
+    } else if (currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause();
+      } else {
+        currentAudio.play();
+      }
+      setIsPlaying(!isPlaying);
     }
   };
 
