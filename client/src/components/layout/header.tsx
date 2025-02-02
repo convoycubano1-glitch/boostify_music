@@ -34,7 +34,7 @@ export function Header() {
             <Link href="/">
               <a className="flex items-center space-x-2">
                 <SiMusicbrainz className="h-6 w-6 text-orange-500" />
-                <span className="hidden md:inline-block font-bold text-lg">MusicPro</span>
+                <span className="hidden md:inline-block font-bold text-lg">Boostify</span>
               </a>
             </Link>
 
