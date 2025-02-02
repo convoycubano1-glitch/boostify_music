@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,8 @@ export function Header() {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
     { name: "Spotify", href: "/spotify", icon: Music2 },
+    { name: "Instagram Boost", href: "/instagram-boost", icon: Instagram },
+    { name: "YouTube Views", href: "/youtube-views", icon: Youtube },
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
   ];
