@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
-import { Music2, Users2, TrendingUp, FileText, Star, Home } from "lucide-react";
+import { Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe, MessageCircle, BarChart2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { Footer } from "@/components/layout/footer";
 import backgroundVideo from "../images/videos/Standard_Mode_Generated_Video.mp4";
 
 /* =============================
@@ -24,7 +25,6 @@ const itemVariants = {
 
 /* =============================
    COMPONENTE PRINCIPAL: HOME PAGE
-   (Todo en un solo componente sin separar secciones)
 ============================= */
 export default function HomePage() {
   const { signInWithGoogle } = useFirebaseAuth();
@@ -51,27 +51,34 @@ export default function HomePage() {
 
   const features = [
     {
+      icon: <Youtube className="h-6 w-6" />,
+      title: "YouTube Views Boost",
+      description: "Increase your video visibility and engagement through our advanced promotion strategies"
+    },
+    {
       icon: <Music2 className="h-6 w-6" />,
       title: "Spotify Integration",
-      description:
-        "Connect your Spotify account to manage playlists and track performance metrics"
+      description: "Connect your Spotify account to manage playlists and track performance metrics"
     },
     {
       icon: <Users2 className="h-6 w-6" />,
       title: "PR Management",
-      description:
-        "Manage your public relations and grow your audience effectively"
+      description: "Manage your public relations and grow your audience effectively"
     },
     {
       icon: <TrendingUp className="h-6 w-6" />,
       title: "Analytics Dashboard",
-      description:
-        "Track your growth with comprehensive analytics and insights"
+      description: "Track your growth with comprehensive analytics and insights"
     },
     {
-      icon: <FileText className="h-6 w-6" />,
-      title: "Contract Management",
-      description: "Handle your contracts and legal documents in one place"
+      icon: <Globe className="h-6 w-6" />,
+      title: "Global Reach",
+      description: "Expand your audience worldwide with our international promotion tools"
+    },
+    {
+      icon: <MessageCircle className="h-6 w-6" />,
+      title: "Artist Community",
+      description: "Connect with other artists and industry professionals in our vibrant community"
     }
   ];
 
@@ -137,7 +144,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 text-white">
-
       {/* HERO SECTION */}
       <section className="relative min-h-[100svh] flex items-center overflow-hidden">
         <video
@@ -207,14 +213,17 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* FEATURES SECTION */}
-      <section className="py-24 container mx-auto px-4">
+      {/* Features Section - Enhanced with modern design */}
+      <section className="py-24 container mx-auto px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
         <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="space-y-12"
+          className="space-y-12 relative"
         >
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
@@ -225,7 +234,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {features.map((feature, i) => (
               <motion.div
                 key={i}
@@ -246,6 +255,114 @@ export default function HomePage() {
             ))}
           </div>
         </motion.div>
+      </section>
+
+      {/* YouTube Views Section */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col md:flex-row items-center gap-12"
+          >
+            <div className="flex-1 space-y-6">
+              <div className="flex items-center gap-2 text-orange-500">
+                <Youtube className="h-8 w-8" />
+                <span className="text-lg font-medium">YouTube Growth</span>
+              </div>
+              <h2 className="text-4xl font-bold">Boost Your Video Presence</h2>
+              <p className="text-lg text-muted-foreground">
+                Our advanced YouTube promotion strategies help you reach wider audiences and increase engagement on your videos. Get real views, likes, and subscribers through our targeted promotion campaigns.
+              </p>
+              <div className="flex gap-4">
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-2xl font-bold text-orange-500">500K+</h3>
+                  <p className="text-sm text-muted-foreground">Monthly Views</p>
+                </div>
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-2xl font-bold text-orange-500">50K+</h3>
+                  <p className="text-sm text-muted-foreground">New Subscribers</p>
+                </div>
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-2xl font-bold text-orange-500">90%</h3>
+                  <p className="text-sm text-muted-foreground">Engagement Rate</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg blur opacity-75" />
+              <div className="relative bg-background rounded-lg p-8">
+                <h3 className="text-xl font-semibold mb-4">Growth Analytics</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Views Growth</span>
+                    <div className="w-48 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="w-4/5 h-full bg-orange-500" />
+                    </div>
+                    <span className="text-sm font-medium">80%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Engagement Rate</span>
+                    <div className="w-48 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="w-11/12 h-full bg-orange-500" />
+                    </div>
+                    <span className="text-sm font-medium">90%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Subscriber Growth</span>
+                    <div className="w-48 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="w-3/4 h-full bg-orange-500" />
+                    </div>
+                    <span className="text-sm font-medium">75%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Career Management Section */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-8 max-w-4xl mx-auto"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+              Take Control of Your Career
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Our platform provides all the tools you need to manage and grow your music career professionally. From analytics to promotion, we've got you covered.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10">
+                <BarChart2 className="h-8 w-8 text-orange-500 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Data-Driven Growth</h3>
+                <p className="text-muted-foreground">
+                  Make informed decisions with comprehensive analytics and insights
+                </p>
+              </Card>
+              <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10">
+                <Globe className="h-8 w-8 text-orange-500 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Global Reach</h3>
+                <p className="text-muted-foreground">
+                  Connect with fans worldwide through our international network
+                </p>
+              </Card>
+              <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10">
+                <MessageCircle className="h-8 w-8 text-orange-500 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Artist Community</h3>
+                <p className="text-muted-foreground">
+                  Network with other artists and industry professionals
+                </p>
+              </Card>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* TESTIMONIALS SECTION */}
@@ -295,7 +412,7 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-
+      
       {/* SPOTIFY SECTION */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-background to-background" />
@@ -453,6 +570,7 @@ export default function HomePage() {
           </div>
         </motion.div>
       </section>
+      <Footer />
     </div>
   );
 }
