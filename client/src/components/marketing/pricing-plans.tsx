@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Crown } from "lucide-react";
+import { Check, Crown, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { loadStripe } from "@stripe/stripe-js";
 import { getAuthToken } from "@/lib/firebase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -59,9 +59,32 @@ export function PricingPlans() {
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const canceled = params.get('canceled');
+
+    if (success === 'true') {
+      setPaymentStatus('success');
+      toast({
+        title: "Payment Successful",
+        description: "Your subscription has been activated successfully.",
+        variant: "default",
+      });
+    } else if (canceled === 'true') {
+      setPaymentStatus('canceled');
+      toast({
+        title: "Payment Canceled",
+        description: "Your payment was canceled. You can try again when you're ready.",
+        variant: "destructive",
+      });
+    }
+  }, []);
 
   const handlePlanSelect = (plan: typeof plans[0]) => {
-    console.log('Plan selected:', plan.name);
     if (!user) {
       toast({
         title: "Sign in required",
@@ -78,6 +101,8 @@ export function PricingPlans() {
     if (!selectedPlan) return;
 
     try {
+      setIsProcessing(true);
+
       const token = await getAuthToken();
       if (!token) {
         toast({
@@ -93,7 +118,6 @@ export function PricingPlans() {
         throw new Error("Could not initialize Stripe");
       }
 
-      // Create Stripe checkout session
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
         headers: {
@@ -117,7 +141,6 @@ export function PricingPlans() {
         throw new Error('Stripe session ID was not received');
       }
 
-      // Redirect to Stripe checkout
       const { error } = await stripe.redirectToCheckout({
         sessionId
       });
@@ -133,6 +156,7 @@ export function PricingPlans() {
         variant: "destructive"
       });
     } finally {
+      setIsProcessing(false);
       setShowDialog(false);
     }
   };
@@ -150,52 +174,55 @@ export function PricingPlans() {
 
       <div className="grid gap-8 lg:grid-cols-3 max-w-7xl mx-auto">
         {plans.map((plan) => (
-          <div key={plan.name}>
-            <Card className={`p-8 ${plan.popular ? 'border-orange-500' : ''}`}>
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1">
-                    <Crown className="w-4 h-4" />
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold">{plan.name}</h3>
-                <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground ml-2">/mo</span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {plan.description}
-                </p>
+          <Card key={plan.name} className={`p-8 relative ${plan.popular ? 'border-orange-500' : ''}`}>
+            {plan.popular && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1">
+                  <Crown className="w-4 h-4" />
+                  Most Popular
+                </span>
               </div>
+            )}
 
-              <ul className="space-y-3 mb-6">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold">{plan.name}</h3>
+              <div className="mt-4 flex items-baseline">
+                <span className="text-4xl font-bold">${plan.price}</span>
+                <span className="text-muted-foreground ml-2">/mo</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {plan.description}
+              </p>
+            </div>
 
-              <Button 
-                className={`w-full ${
-                  plan.popular 
-                    ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                    : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
-                }`}
-                onClick={() => {
-                  console.log('Button clicked for plan:', plan.name);
-                  handlePlanSelect(plan);
-                }}
-              >
-                Get Started
-              </Button>
-            </Card>
-          </div>
+            <ul className="space-y-3 mb-6">
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                  <span className="text-sm">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Button 
+              className={`w-full ${
+                plan.popular 
+                  ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+                  : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
+              }`}
+              onClick={() => handlePlanSelect(plan)}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Get Started'
+              )}
+            </Button>
+          </Card>
         ))}
       </div>
 
@@ -231,14 +258,54 @@ export function PricingPlans() {
                 <Button 
                   onClick={handlePayment}
                   className="bg-orange-500 hover:bg-orange-600"
+                  disabled={isProcessing}
                 >
-                  Confirm Purchase
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Confirm Purchase'
+                  )}
                 </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {paymentStatus && (
+        <Card className={`mt-8 p-6 ${
+          paymentStatus === 'success' 
+            ? 'border-green-500/20 bg-green-500/5' 
+            : 'border-orange-500/20 bg-orange-500/5'
+        }`}>
+          <div className="flex items-start gap-4">
+            {paymentStatus === 'success' ? (
+              <>
+                <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-green-500">Payment Successful</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Your subscription has been activated successfully.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Crown className="h-5 w-5 text-orange-500 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-orange-500">Payment Canceled</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Your payment was not completed. You can try again when you're ready.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
