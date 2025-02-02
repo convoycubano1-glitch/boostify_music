@@ -7,13 +7,8 @@ import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { loadStripe } from "@stripe/stripe-js";
 import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4';
-import { useState } from "react";
-import { getAuthToken } from "@/lib/firebase";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+import { useEffect } from "react";
 
 const features = [
   {
@@ -61,7 +56,6 @@ const testimonials = [
 
 const plans = [
   {
-    id: "basic",
     name: "Basic",
     price: "19",
     features: [
@@ -72,7 +66,6 @@ const plans = [
     ]
   },
   {
-    id: "pro",
     name: "Pro",
     price: "49",
     popular: true,
@@ -85,7 +78,6 @@ const plans = [
     ]
   },
   {
-    id: "enterprise",
     name: "Enterprise",
     price: "99",
     features: [
@@ -103,8 +95,6 @@ export default function HomePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
@@ -119,75 +109,6 @@ export default function HomePage() {
         title: "Authentication Error",
         description: "Could not sign in with Google. Please try again.",
         variant: "destructive",
-      });
-    }
-  };
-
-  const handlePlanSelect = (plan: typeof plans[0]) => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login first to subscribe to a plan",
-        variant: "destructive",
-      });
-      return;
-    }
-    setSelectedPlan(plan);
-    setShowDialog(true);
-  };
-
-  const handleSubscription = async () => {
-    if (!selectedPlan || !user) return;
-
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to continue",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const response = await fetch('/api/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          planId: selectedPlan.id,
-          priceId: selectedPlan.price
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error creating subscription');
-      }
-
-      const session = await response.json();
-
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error("Could not initialize Stripe");
-      }
-
-      const result = await stripe.redirectToCheckout({
-        sessionId: session.id,
-      });
-
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
-
-    } catch (error: any) {
-      console.error('Subscription process error:', error);
-      toast({
-        title: "Subscription Error",
-        description: error.message || "There was an error processing your subscription. Please try again.",
-        variant: "destructive"
       });
     }
   };
@@ -228,7 +149,7 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 leading-tight">
-              Elevate Your Music Career
+              Boostify Music 
             </h1>
             <p className="text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               The ultimate platform for artists to manage their marketing and grow their audience.
@@ -404,7 +325,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24 container mx-auto px-4" id="pricing">
+      <section className="py-24 container mx-auto px-4">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -466,7 +387,6 @@ export default function HomePage() {
                       plan.popular ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''
                     }`}
                     variant={plan.popular ? 'default' : 'outline'}
-                    onClick={() => handlePlanSelect(plan)}
                   >
                     Get Started
                   </Button>
@@ -476,48 +396,6 @@ export default function HomePage() {
           </div>
         </motion.div>
       </section>
-
-      {/* Subscription Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-[425px] backdrop-blur-sm bg-background/95">
-          <DialogHeader>
-            <DialogTitle>Confirm Subscription</DialogTitle>
-            <DialogDescription>
-              Review your subscription details before proceeding
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedPlan && (
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Subscription details</h4>
-                  <div className="space-y-4 rounded-lg border p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Plan:</span>
-                      <span className="text-sm font-medium">{selectedPlan.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Price:</span>
-                      <span className="text-lg font-bold">${selectedPlan.price}/mo</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="flex justify-end gap-4">
-              <Button variant="outline" onClick={() => setShowDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubscription}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
-                Confirm Subscription
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

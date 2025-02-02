@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users } from "lucide-react";
@@ -66,6 +66,7 @@ export default function YoutubeViewsPage() {
   const [desiredViews, setDesiredViews] = useState(1000);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null);
 
   const { data: apifyData, refetch } = useQuery({
     queryKey: ["apify-run", orderId],
@@ -108,7 +109,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-  
+
     if (!user) {
       toast({
         title: "Error",
@@ -117,7 +118,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-  
+
     try {
       const token = await getAuthToken();
       if (!token) {
@@ -128,18 +129,22 @@ export default function YoutubeViewsPage() {
         });
         return;
       }
-  
+
+      setIsProcessing(true);
+
+      // Create order in Firebase first
       const orderData = await createYouTubeViewsOrder(user, {
         videoUrl,
         purchasedViews: desiredViews,
         apifyRunId: '',
       });
-  
+
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Could not initialize Stripe");
       }
-  
+
+      // Create Stripe checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -149,27 +154,30 @@ export default function YoutubeViewsPage() {
         body: JSON.stringify({
           videoUrl,
           views: desiredViews,
-          price: currentPrice
+          price: currentPrice,
+          orderId: orderData.id // Pass the Firebase order ID to link with Stripe session
         }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error creating payment session');
       }
-  
-      const session = await response.json();
-      if (!session.id) {
+
+      const { sessionId } = await response.json();
+      if (!sessionId) {
         throw new Error('Stripe session ID was not received');
       }
-  
-      setOrderId(`${user.uid}_${Date.now()}`);
-      const result = await stripe.redirectToCheckout({
-        sessionId: session.id,
+
+      setOrderId(orderData.id);
+
+      // Redirect to Stripe checkout
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: sessionId
       });
-  
-      if (result.error) {
-        throw new Error(result.error.message);
+
+      if (error) {
+        throw new Error(error.message);
       }
     } catch (error: any) {
       console.error('Payment process error:', error);
@@ -178,6 +186,9 @@ export default function YoutubeViewsPage() {
         description: error.message || "There was an error processing the payment. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
+      setShowDialog(false);
     }
   };
     const chartData = Array.from({ length: 7 }, (_, i) => ({
@@ -224,6 +235,29 @@ export default function YoutubeViewsPage() {
     }
   };
 
+    // Add URL parameter handling
+    useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      const success = params.get('success');
+      const canceled = params.get('canceled');
+  
+      if (sessionId && success === 'true') {
+        setPaymentStatus('success');
+        toast({
+          title: "Payment Successful",
+          description: "Your order has been processed successfully. You can track your views progress here.",
+          variant: "default",
+        });
+      } else if (canceled === 'true') {
+        setPaymentStatus('canceled');
+        toast({
+          title: "Payment Canceled",
+          description: "Your payment was canceled. You can try again when you're ready.",
+          variant: "destructive",
+        });
+      }
+    }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -686,6 +720,45 @@ export default function YoutubeViewsPage() {
           </DialogContent>
         </Dialog>
 
+         {paymentStatus === 'success' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="p-6 border-green-500/20 bg-green-500/5 backdrop-blur-sm">
+              <div className="flex items-start gap-4">
+                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-green-500">Payment Successful</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Your order is being processed. You can track the progress of your views here.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {paymentStatus === 'canceled' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="p-6 border-orange-500/20 bg-orange-500/5 backdrop-blur-sm">
+              <div className="flex items-start gap-4">
+                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-orange-500">Payment Canceled</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Your payment was not completed. You can try again when you're ready.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -9,6 +9,7 @@ import { eq, and, desc } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
 import { contracts } from "@db/schema";
+import express from 'express';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY must be defined');
@@ -26,10 +27,101 @@ const contractSchema = z.object({
   status: z.string().default('draft')
 });
 
+// Export the configured server
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
   setupInstagramRoutes(app);
   setupSpotifyRoutes(app);
+
+  // Required for Stripe webhook
+  app.post("/api/webhook", express.raw({type: 'application/json'}), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig || '',
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err: any) {
+      console.error('Webhook Error:', err.message);
+      res.status(400).json({ error: `Webhook Error: ${err.message}` });
+      return;
+    }
+
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      try {
+        const { orderId, videoUrl, views } = session.metadata || {};
+
+        if (orderId) {
+          console.log('Payment successful for order:', orderId);
+          // Additional order processing logic here
+        }
+
+      } catch (error) {
+        console.error('Error processing successful payment:', error);
+      }
+    }
+
+    res.json({ received: true });
+  });
+
+  // Create checkout session route
+  app.post("/api/create-checkout-session", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { videoUrl, views, price, orderId } = req.body;
+
+      if (!videoUrl || !views || !price || !orderId) {
+        return res.status(400).json({ 
+          error: "Missing required fields" 
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${views.toLocaleString()} YouTube Views`,
+                description: `Views for video: ${videoUrl}`,
+              },
+              unit_amount: Math.round(price * 100), // Convert to cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/youtube-views?session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/youtube-views?canceled=true`,
+        metadata: {
+          orderId,
+          videoUrl,
+          views: views.toString(),
+          userId: req.user!.id,
+        },
+      });
+
+      return res.json({
+        sessionId: session.id
+      });
+    } catch (error: any) {
+      console.error('Error creating checkout session:', error);
+      return res.status(500).json({ 
+        error: error.message || "Error creating checkout session" 
+      });
+    }
+  });
 
   // Get user's metrics
   app.get("/api/metrics", async (req, res) => {
@@ -108,108 +200,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching contract:', error);
       res.status(500).json({ error: 'Failed to fetch contract' });
-    }
-  });
-
-  // Stripe subscription session creation
-  app.post("/api/create-subscription", async (req, res) => {
-    try {
-      // Validate authentication
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Authentication token not provided' });
-      }
-
-      // Extract token
-      const token = authHeader.split(' ')[1];
-      if (!token) {
-        return res.status(401).json({ error: 'Invalid authentication token' });
-      }
-
-      const { planId, priceId } = req.body;
-
-      // Validate required fields
-      if (!planId || !priceId) {
-        return res.status(400).json({ 
-          error: "Incomplete data. Plan ID and price are required." 
-        });
-      }
-
-      // Create subscription session
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        mode: 'subscription',
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan`,
-                description: 'Monthly subscription plan',
-              },
-              unit_amount: parseInt(priceId) * 100, // Convert to cents
-              recurring: {
-                interval: 'month'
-              }
-            },
-            quantity: 1,
-          },
-        ],
-        success_url: `${req.protocol}://${req.get('host')}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.protocol}://${req.get('host')}/?canceled=true`,
-        client_reference_id: req.headers['user-id'] as string,
-        metadata: {
-          planId,
-          userId: req.headers['user-id'],
-        },
-      });
-
-      // Return session ID
-      return res.status(200).json({ id: session.id });
-    } catch (error: any) {
-      console.error('Error creating subscription session:', error);
-      return res.status(500).json({ 
-        error: error.message || "Error creating subscription session" 
-      });
-    }
-  });
-
-  // Stripe webhook handler for subscriptions
-  app.post("/api/webhook", async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-
-    let event;
-
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig || '',
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
-    } catch (err: any) {
-      console.error('Webhook Error:', err.message);
-      res.status(400).json({ error: `Webhook Error: ${err.message}` });
-      return;
-    }
-
-    // Handle subscription events
-    try {
-      if (event.type === 'checkout.session.completed') {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log('Subscription successful:', session);
-
-        // Here you would typically update the user's subscription status in your database
-        // For example, store the subscription details in Firestore
-        if (session.metadata?.userId) {
-          // Update subscription status in your database
-          console.log('Updating subscription for user:', session.metadata.userId);
-        }
-      }
-
-      res.json({ received: true });
-    } catch (err: any) {
-      console.error('Error handling webhook:', err);
-      res.status(500).json({ error: 'Error handling webhook' });
     }
   });
 

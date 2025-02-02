@@ -1,0 +1,31 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4a82f034:337:18
+    at div
+    at div
+    at div
+    at header
+    at Header (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/layout/header.tsx:32:20)
+    at div
+    at Dashboard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/dashboard.tsx:40:20)
+    at Route (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4a82f034:323:16)
+    at ProtectedRoute (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4a82f034:379:17)
+    at Router
+    at AuthProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/hooks/use-auth.tsx:21:32)
+    at QueryClientProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=4a82f034:2805:3)
+    at App
+Fetching Spotify data for user: coqofMnNMQUmnqU39h5EEO05Lwi1
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+[2025-02-02T05:07:01.533Z]  @firebase/firestore: Firestore (11.2.0): Uncaught Error in snapshot listener: FirebaseError: [code=permission-denied]: Missing or insufficient permissions.
+[2025-02-02T05:07:01.536Z]  @firebase/firestore: Firestore (11.2.0): Uncaught Error in snapshot listener: FirebaseError: [code=permission-denied]: Missing or insufficient permissions.
+Document exists: false
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Payment process error: 
+Error {}
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
