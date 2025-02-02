@@ -20,28 +20,33 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 export default function PromotionPage() {
   const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false);
 
-  const { data: campaigns = [], refetch: refetchCampaigns } = useQuery({
+  const { data: campaigns = [] } = useQuery({
     queryKey: ["campaigns"],
     queryFn: async () => {
       const user = auth.currentUser;
-      if (!user) throw new Error("Not authenticated");
+      if (!user) return [];
 
-      const campaignsRef = collection(db, "campaigns");
-      const q = query(
-        campaignsRef,
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
+      try {
+        const campaignsRef = collection(db, "campaigns");
+        const q = query(
+          campaignsRef,
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
 
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      } catch (error) {
+        console.error("Error fetching campaigns:", error);
+        return []; // Return empty array on error
+      }
     },
     enabled: !!auth.currentUser,
     staleTime: 30000, // Consider data fresh for 30 seconds
-    retry: false, // Don't retry on failure to avoid error message spam
+    retry: false // Don't retry on failure to avoid error message spam
   });
 
   return (
@@ -75,7 +80,6 @@ export default function PromotionPage() {
                 <CampaignForm 
                   onSuccess={() => {
                     setShowNewCampaignDialog(false);
-                    refetchCampaigns();
                   }} 
                 />
               </DialogContent>
@@ -107,7 +111,7 @@ export default function PromotionPage() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Platform</p>
-                        <p className="font-semibold">{campaign.platform}</p>
+                        <p className="font-semibold capitalize">{campaign.platform}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Duration</p>
