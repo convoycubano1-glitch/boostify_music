@@ -18,7 +18,8 @@ import {
   X,
   Grid,
   Info,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
