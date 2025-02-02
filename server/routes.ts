@@ -102,43 +102,43 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-    app.post("/api/generate-strategy", async (req, res) => {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Authentication required' });
+  app.post("/api/generate-strategy", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a music industry expert specialized in artist growth strategies. Generate 3-5 actionable focus points for the artist's growth strategy in Spanish. Format your response as JSON with a 'strategy' array containing string items."
+          },
+          {
+            role: "user",
+            content: "Generate a strategic growth plan for an emerging music artist focusing on social media presence, music releases, and collaborations. Provide the response in Spanish."
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      // Parse the response and ensure it has the expected structure
+      const result = JSON.parse(completion.choices[0].message.content);
+      if (!Array.isArray(result.strategy)) {
+        throw new Error('Invalid AI response format');
       }
-    
-      try {
-          // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: "You are a music industry expert specialized in artist growth strategies. Generate 3-5 actionable focus points for the artist's growth strategy. Format your response as JSON with a 'strategy' array containing string items."
-            },
-            {
-              role: "user",
-              content: "Generate a strategic growth plan for an emerging music artist focusing on social media presence, music releases, and collaborations."
-            }
-          ],
-          response_format: { type: "json_object" }
-        });
-    
-        // Parse the response and ensure it has the expected structure
-        const result = JSON.parse(completion.choices[0].message.content);
-        if (!Array.isArray(result.strategy)) {
-          throw new Error('Invalid AI response format');
-        }
-    
-        res.json({ strategy: result.strategy });
-      } catch (error: any) {
-        console.error('Error generating strategy:', error);
-        res.status(500).json({ 
-          error: "Failed to generate strategy",
-          details: error.message 
-        });
-      }
-    });
+
+      res.json({ strategy: result.strategy });
+    } catch (error: any) {
+      console.error('Error generating strategy:', error);
+      res.status(500).json({ 
+        error: "Failed to generate strategy",
+        details: error.message 
+      });
+    }
+  });
 
   // Required for Stripe webhook
   app.post("/api/webhook", express.raw({type: 'application/json'}), async (req, res) => {
