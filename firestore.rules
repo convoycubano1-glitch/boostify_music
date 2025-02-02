@@ -36,6 +36,16 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
 
+    // Reglas para las estrategias
+    match /strategies/{strategyId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
     // Reglas para las órdenes de vistas de YouTube
     match /youtube_views_orders/{orderId} {
       allow read: if request.auth != null && 
