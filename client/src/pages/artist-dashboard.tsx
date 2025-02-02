@@ -157,7 +157,7 @@ const ArtistDashboardPage: React.FC = () => {
     enabled: !!auth.currentUser?.uid,
   });
 
-  // Query for strategies
+  // Actualizo la consulta de estrategias para que coincida con el índice
   const { data: currentStrategy = [], isLoading: isLoadingStrategy, refetch: refetchStrategy } = useQuery({
     queryKey: ["strategies", auth.currentUser?.uid],
     queryFn: async () => {
@@ -165,6 +165,7 @@ const ArtistDashboardPage: React.FC = () => {
 
       try {
         const strategiesRef = collection(db, "strategies");
+        // Modifico la consulta para usar el índice correctamente
         const q = query(
           strategiesRef,
           where("userId", "==", auth.currentUser.uid),
@@ -173,10 +174,15 @@ const ArtistDashboardPage: React.FC = () => {
         );
 
         const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) return [];
+        if (querySnapshot.empty) {
+          console.log("No strategies found");
+          return [];
+        }
 
         const strategyDoc = querySnapshot.docs[0];
-        return strategyDoc.data().focus;
+        const data = strategyDoc.data();
+        console.log("Strategy data:", data);
+        return data.focus || [];
       } catch (error) {
         console.error("Error fetching strategy:", error);
         toast({
@@ -904,7 +910,7 @@ const ArtistDashboardPage: React.FC = () => {
                     </div>
                   ) : currentStrategy.length > 0 ? (
                     <div className="p-3 bg-muted/50 rounded-lg">
-                      <h3 className="font-medium mb-2">Current Focus</h3>
+                      <h3 className="font-medium mb-2">Enfoque Actual</h3>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         {currentStrategy.map((point: string, index: number) => (
                           <li key={index} className="flex items-start gap-2">
@@ -916,14 +922,14 @@ const ArtistDashboardPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4 text-muted-foreground">
-                      No strategy set. Create one to get started.
+                      No hay estrategia definida. Crea una para comenzar.
                     </div>
                   )}
                   <Button 
                     className="w-full" 
                     onClick={() => setIsStrategyDialogOpen(true)}
                   >
-                    Update Strategy
+                    Actualizar Estrategia
                   </Button>
                 </div>
               </Card>
