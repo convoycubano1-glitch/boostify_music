@@ -12,6 +12,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Header } from "@/components/layout/header";
 
 // Example data for charts
 const trendData = Array.from({ length: 30 }, (_, i) => ({
@@ -76,9 +77,10 @@ export default function Dashboard() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <ScrollArea className="h-[100vh]">
-        <div className="container mx-auto px-6 py-8">
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      <ScrollArea className="flex-1">
+        <div className="container mx-auto px-4 py-6">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-8">
             <div>
