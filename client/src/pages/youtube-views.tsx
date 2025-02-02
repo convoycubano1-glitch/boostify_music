@@ -209,21 +209,24 @@ export default function YoutubeViewsPage() {
 
       {/* Confirmation Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar Compra</DialogTitle>
+            <DialogTitle>Confirmar Compra de Visualizaciones</DialogTitle>
             <DialogDescription>
-              Estás a punto de comprar {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''} views
-              por ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}
+              Revisa los detalles de tu compra antes de continuar
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p>Detalles del pedido:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>URL del video: {videoUrl}</li>
-              <li>Precio: ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}</li>
-              <li>Views: {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''}</li>
-            </ul>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">Detalles del pedido:</h4>
+                <ul className="list-disc list-inside space-y-2 text-sm">
+                  <li>URL del video: {videoUrl}</li>
+                  <li>Precio: ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}</li>
+                  <li>Views: {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''}</li>
+                </ul>
+              </div>
+            </div>
             <div className="flex justify-end gap-4">
               <Button variant="outline" onClick={() => setShowDialog(false)}>
                 Cancelar

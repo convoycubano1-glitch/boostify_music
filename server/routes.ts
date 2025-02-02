@@ -40,13 +40,17 @@ export function registerRoutes(app: Express): Server {
 
   // Stripe checkout session creation
   app.post("/api/create-checkout-session", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ error: "No autorizado" });
-
     try {
-      const { packageId, videoUrl, views, price } = req.body;
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      const { videoUrl, views, price } = req.body;
 
       if (!videoUrl || !views || !price) {
-        return res.status(400).json({ error: "Faltan datos requeridos" });
+        return res.status(400).json({ 
+          error: "Datos incompletos. Se requiere URL del video, cantidad de views y precio." 
+        });
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -59,7 +63,7 @@ export function registerRoutes(app: Express): Server {
                 name: `${views.toLocaleString()} YouTube Views`,
                 description: `Para el video: ${videoUrl}`,
               },
-              unit_amount: price * 100, // Stripe usa centavos
+              unit_amount: Math.round(price * 100), // Stripe usa centavos
             },
             quantity: 1,
           },
@@ -74,10 +78,12 @@ export function registerRoutes(app: Express): Server {
         },
       });
 
-      res.status(200).json({ id: session.id });
+      return res.status(200).json({ id: session.id });
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ 
+        error: error.message || "Error al crear la sesión de pago" 
+      });
     }
   });
 
