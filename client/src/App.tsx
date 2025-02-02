@@ -23,7 +23,7 @@ import YoutubeViewsPage from "@/pages/youtube-views";
 import InstagramBoostPage from "@/pages/instagram-boost";
 import ContactsPage from "@/pages/contacts";
 
-function Router() {
+const Router = () => {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -46,9 +46,9 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
   );
-}
+};
 
-function App() {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -57,6 +57,6 @@ function App() {
       </AuthProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;
