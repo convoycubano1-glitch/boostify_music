@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
+import youtubeVideo from '../images/videos/Standard_Mode_Generated_Video (1).mp4';
 import {
   LineChart,
   Line,
@@ -28,6 +29,7 @@ import {
   AreaChart
 } from "recharts";
 import youtubeImage from '../images/youtube.jpg';
+import { Users2 } from "lucide-react";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -163,6 +165,75 @@ export default function YoutubeViewsPage() {
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
+      {/* Hero Section with Video Background */}
+      <div className="relative w-full h-[70vh] overflow-hidden rounded-xl mb-12">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src={youtubeVideo}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
+        <div className="relative h-full flex items-center justify-start px-8 md:px-12">
+          <div className="max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                Potencia tu Presencia en{" "}
+                <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
+                  YouTube
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-gray-200 mb-8">
+                Impulsa tus videos con vistas orgánicas y de alta retención. Alcanza a tu audiencia ideal y aumenta tu visibilidad.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  size="lg" 
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Comenzar Ahora
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="bg-black/50 hover:bg-black/60 border-white/20 text-white"
+                >
+                  Ver Demostración
+                </Button>
+              </div>
+              <div className="mt-8 flex items-center gap-8">
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">+2M</p>
+                    <p className="text-gray-400 text-sm">Vistas Generadas</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <Users2 className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">10k+</p>
+                    <p className="text-gray-400 text-sm">Clientes Satisfechos</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -363,7 +434,7 @@ export default function YoutubeViewsPage() {
         </Card>
       </motion.div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3" id="packages">
         {viewsPackages.map((pkg, index) => (
           <motion.div
             key={index}
