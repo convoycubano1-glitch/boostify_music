@@ -16,7 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
-import youtubeVideo from '../images/videos/bostify.mp4';
+import mainVideo from '../images/videos/Standard_Mode_Generated_Video (1).mp4';
+import enhanceVideo from '../images/videos/bostify.mp4';
 import {
   LineChart,
   Line,
@@ -173,7 +174,7 @@ export default function YoutubeViewsPage() {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          src={youtubeVideo}
+          src={mainVideo}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
         <div className="relative h-full flex items-center justify-start px-8 md:px-12">
@@ -289,9 +290,12 @@ export default function YoutubeViewsPage() {
               <div className="absolute inset-0 bg-orange-500/5" />
               <AspectRatio ratio={16 / 9} className="bg-muted">
                 <div className="h-full w-full relative overflow-hidden">
-                  <img
-                    src={youtubeImage}
-                    alt="YouTube Views Enhancement"
+                  <video
+                    src={enhanceVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
                     className="object-cover w-full h-full"
                   />
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
