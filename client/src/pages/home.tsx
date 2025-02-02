@@ -8,6 +8,7 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4';
+import { useEffect } from "react";
 
 const features = [
   {
@@ -95,10 +96,15 @@ export default function HomePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (user) {
+      setLocation('/dashboard');
+    }
+  }, [user, setLocation]);
+
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
-      setLocation('/dashboard');
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -109,7 +115,6 @@ export default function HomePage() {
   };
 
   if (user) {
-    setLocation('/dashboard');
     return null;
   }
 
