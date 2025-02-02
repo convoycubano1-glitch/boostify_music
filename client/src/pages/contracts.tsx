@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
 import { generateContract } from "@/lib/openai";
 import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "@/lib/firebase";
+import html2pdf from 'html2pdf.js';
 import {
   Dialog,
   DialogContent,
@@ -24,9 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2, Clock, AlertCircle, FileDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -130,47 +131,82 @@ export default function ContractsPage() {
     setShowDeleteDialog(true);
   };
 
-  // Handle download contract
-  const handleDownloadContract = (contract: Contract) => {
-    const element = document.createElement("a");
-    const file = new Blob([contract.content], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${contract.title}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-    // Save contract mutation using Firestore
-    const saveContractMutation = useMutation({
-      mutationFn: async (contractData: {
-        title: string;
-        type: string;
-        content: string;
-        status: string;
-      }) => {
-        if (!auth.currentUser) {
-          throw new Error('Usuario no autenticado');
-        }
-        console.log('Saving contract with data:', contractData);
-        return await saveContract(contractData);
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['contracts'] });
-        toast({
-          title: "Éxito",
-          description: "Contrato guardado correctamente",
-        });
-      },
-      onError: (error: Error) => {
-        console.error('Error in saveContractMutation:', error);
+    // Handle download contract as PDF
+    const handleDownloadPDF = async (contract: Contract) => {
+      const contractContent = `
+        <div style="padding: 20px; font-family: Arial, sans-serif;">
+          <h1 style="color: #333; margin-bottom: 20px;">${contract.title}</h1>
+          <div style="white-space: pre-wrap; font-family: monospace; font-size: 14px;">
+            ${contract.content}
+          </div>
+        </div>
+      `;
+  
+      const opt = {
+        margin: 1,
+        filename: `${contract.title}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+  
+      try {
+        const element = document.createElement('div');
+        element.innerHTML = contractContent;
+        document.body.appendChild(element);
+        await html2pdf().set(opt).from(element).save();
+        document.body.removeChild(element);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
         toast({
           title: "Error",
-          description: error.message || "Error al guardar el contrato. Por favor, intente nuevamente.",
+          description: "No se pudo generar el PDF. Por favor, intente nuevamente.",
           variant: "destructive",
         });
-      },
-    });
+      }
+    };
+  
+    // Handle download contract as text
+    const handleDownloadText = (contract: Contract) => {
+      const element = document.createElement("a");
+      const file = new Blob([contract.content], { type: 'text/plain' });
+      element.href = URL.createObjectURL(file);
+      element.download = `${contract.title}.txt`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    };
+
+  // Save contract mutation using Firestore
+  const saveContractMutation = useMutation({
+    mutationFn: async (contractData: {
+      title: string;
+      type: string;
+      content: string;
+      status: string;
+    }) => {
+      if (!auth.currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+      console.log('Saving contract with data:', contractData);
+      return await saveContract(contractData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      toast({
+        title: "Éxito",
+        description: "Contrato guardado correctamente",
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Error in saveContractMutation:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error al guardar el contrato. Por favor, intente nuevamente.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleGenerateContract = async (values: ContractFormValues) => {
     setIsGenerating(true);
@@ -369,9 +405,14 @@ export default function ContractsPage() {
                             <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
                               <Eye className="h-4 w-4" /> Ver
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownloadContract(contract)} className="gap-2">
-                              <Download className="h-4 w-4" /> Descargar
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
+                              <FileDown className="h-4 w-4" /> Descargar PDF
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
+                              <Download className="h-4 w-4" /> Descargar TXT
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
                               <Edit className="h-4 w-4" /> Editar
                             </DropdownMenuItem>
@@ -390,15 +431,24 @@ export default function ContractsPage() {
 
           {/* View Dialog */}
           <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-            <DialogContent className="max-w-4xl max-h-[80vh]">
+            <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>{selectedContract?.title}</DialogTitle>
               </DialogHeader>
-              <ScrollArea className="mt-4">
-                <pre className="whitespace-pre-wrap font-mono text-sm p-4">
-                  {selectedContract?.content}
-                </pre>
-              </ScrollArea>
+              <div className="flex-1 min-h-0">
+                <ScrollArea className="h-full">
+                  <div className="p-4">
+                    <pre className="whitespace-pre-wrap font-mono text-sm">
+                      {selectedContract?.content}
+                    </pre>
+                  </div>
+                </ScrollArea>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+                  Cerrar
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
 

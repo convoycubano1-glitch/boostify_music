@@ -60,6 +60,7 @@
     "firebase": "^11.2.0",
     "firebase-admin": "^13.0.2",
     "framer-motion": "^11.18.2",
+    "html2pdf.js": "^0.10.2",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.453.0",
     "openai": "^4.82.0",
