@@ -4,10 +4,16 @@ import { Check, Crown, Loader2, Music2, Star, Rocket, Youtube, FileText, Megapho
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { loadStripe } from "@stripe/stripe-js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SiSpotify, SiInstagram } from "react-icons/si";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Manejar la inicialización de Stripe de manera segura
+const getStripe = async () => {
+  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+    throw new Error("La clave pública de Stripe no está configurada");
+  }
+  return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+};
 
 const plans = [
   {
@@ -115,6 +121,20 @@ export function PricingPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Verificar la configuración de Stripe al cargar el componente
+    getStripe().catch((error) => {
+      console.error('Error al inicializar Stripe:', error);
+      setStripeError(error.message);
+      toast({
+        title: "Error de configuración",
+        description: "Hay un problema con la configuración de pagos. Por favor, inténtelo más tarde.",
+        variant: "destructive"
+      });
+    });
+  }, []);
 
   const handleSubscribe = async (plan: typeof plans[0]) => {
     if (!user) {
@@ -126,16 +146,20 @@ export function PricingPlans() {
       return;
     }
 
+    if (stripeError) {
+      toast({
+        title: "Error de configuración",
+        description: "El sistema de pagos no está disponible en este momento. Por favor, inténtelo más tarde.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      console.log(`Iniciando suscripción para plan ${plan.name}`);
       setProcessingPlanId(plan.priceId);
 
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error("Error al inicializar Stripe");
-      }
+      const stripe = await getStripe();
 
-      console.log('Creando sesión de checkout...');
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
         headers: {
@@ -230,7 +254,7 @@ export function PricingPlans() {
                   : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
               }`}
               onClick={() => handleSubscribe(plan)}
-              disabled={processingPlanId === plan.priceId}
+              disabled={processingPlanId === plan.priceId || !!stripeError}
             >
               {processingPlanId === plan.priceId ? (
                 <>
@@ -240,7 +264,7 @@ export function PricingPlans() {
               ) : (
                 <>
                   <Rocket className="mr-2 h-5 w-5" />
-                  Comenzar Ahora
+                  {stripeError ? "No disponible" : "Comenzar Ahora"}
                 </>
               )}
             </Button>

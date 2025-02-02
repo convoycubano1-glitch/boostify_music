@@ -14,6 +14,7 @@ import passport from 'passport';
 import session from 'express-session';
 
 if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('Error: STRIPE_SECRET_KEY no está configurada');
   throw new Error('STRIPE_SECRET_KEY must be defined');
 }
 
@@ -27,6 +28,12 @@ const contractSchema = z.object({
   type: z.string(),
   content: z.string(),
   status: z.string().default('draft')
+});
+
+// Validate subscription data
+const subscriptionSchema = z.object({
+  priceId: z.string(),
+  planName: z.string()
 });
 
 // Export the configured server
@@ -89,14 +96,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      console.log('Received subscription request:', req.body);
-      const { priceId, planName } = req.body;
-
-      if (!priceId || !planName) {
+      const result = subscriptionSchema.safeParse(req.body);
+      if (!result.success) {
         return res.status(400).json({ 
-          error: "Missing required fields" 
+          error: "Invalid subscription data" 
         });
       }
+
+      const { priceId, planName } = result.data;
 
       console.log('Creating subscription session for:', { priceId, planName });
 
@@ -124,8 +131,13 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error: any) {
       console.error('Error creating subscription session:', error);
+      if (error.type === 'StripeInvalidRequestError') {
+        return res.status(400).json({ 
+          error: "Invalid Stripe configuration. Please try again later." 
+        });
+      }
       return res.status(500).json({ 
-        error: error.message || "Error creating subscription session" 
+        error: "Error creating subscription session" 
       });
     }
   });
