@@ -23,26 +23,12 @@ const trendData = Array.from({ length: 30 }, (_, i) => ({
   instagram: Math.floor(Math.random() * 600) + 200,
 }));
 
-const engagementData = [
-  {
-    platform: "Spotify",
-    likes: 1234,
-    comments: 321,
-    shares: 123
-  },
-  {
-    platform: "Instagram",
-    likes: 2345,
-    comments: 432,
-    shares: 234
-  },
-  {
-    platform: "YouTube",
-    likes: 3456,
-    comments: 543,
-    shares: 345
-  }
-];
+type EngagementMetric = {
+  platform: string;
+  likes: number;
+  comments: number;
+  shares: number;
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -54,15 +40,16 @@ export default function Dashboard() {
     totalEngagement: 0,
     reachGrowth: 0
   });
+  const [engagementMetrics, setEngagementMetrics] = useState<EngagementMetric[]>([]);
 
   useEffect(() => {
     if (!user) return;
 
-    // Suscribirse a actualizaciones en tiempo real de las métricas
+    // Suscribirse a actualizaciones en tiempo real de las métricas generales
     const metricsRef = collection(db, 'metrics');
-    const q = query(metricsRef, where("userId", "==", user.uid));
+    const metricsQuery = query(metricsRef, where("userId", "==", user.uid));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeMetrics = onSnapshot(metricsQuery, (snapshot) => {
       snapshot.forEach((doc) => {
         const data = doc.data();
         setMetrics(prev => ({
@@ -72,7 +59,22 @@ export default function Dashboard() {
       });
     });
 
-    return () => unsubscribe();
+    // Suscribirse a actualizaciones en tiempo real de las métricas de engagement
+    const engagementRef = collection(db, 'engagement');
+    const engagementQuery = query(engagementRef, where("userId", "==", user.uid));
+
+    const unsubscribeEngagement = onSnapshot(engagementQuery, (snapshot) => {
+      const engagementData: EngagementMetric[] = [];
+      snapshot.forEach((doc) => {
+        engagementData.push(doc.data() as EngagementMetric);
+      });
+      setEngagementMetrics(engagementData);
+    });
+
+    return () => {
+      unsubscribeMetrics();
+      unsubscribeEngagement();
+    };
   }, [user]);
 
   return (
@@ -231,7 +233,7 @@ export default function Dashboard() {
               <Card className="p-6">
                 <h3 className="text-lg font-semibold mb-6">Engagement Breakdown</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  {engagementData.map((platform, index) => (
+                  {engagementMetrics.map((platform, index) => (
                     <div key={index} className="space-y-4">
                       <div className="flex items-center gap-2">
                         {platform.platform === "Spotify" && <SiSpotify className="h-5 w-5 text-[#1DB954]" />}
@@ -242,15 +244,15 @@ export default function Dashboard() {
                       <div className="grid grid-cols-3 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Likes</p>
-                          <p className="text-lg font-semibold">{platform.likes}</p>
+                          <p className="text-lg font-semibold">{platform.likes.toLocaleString()}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Comments</p>
-                          <p className="text-lg font-semibold">{platform.comments}</p>
+                          <p className="text-lg font-semibold">{platform.comments.toLocaleString()}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Shares</p>
-                          <p className="text-lg font-semibold">{platform.shares}</p>
+                          <p className="text-lg font-semibold">{platform.shares.toLocaleString()}</p>
                         </div>
                       </div>
                     </div>
