@@ -22,6 +22,7 @@ import SettingsPage from "@/pages/settings";
 import YoutubeViewsPage from "@/pages/youtube-views";
 import InstagramBoostPage from "@/pages/instagram-boost";
 import ContactsPage from "@/pages/contacts";
+import MessagesPage from "@/pages/messages";
 
 const Router = () => {
   return (
@@ -43,6 +44,7 @@ const Router = () => {
       <ProtectedRoute path="/instagram-boost" component={InstagramBoostPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <ProtectedRoute path="/contacts" component={ContactsPage} />
+      <ProtectedRoute path="/messages" component={MessagesPage} />
       <Route component={NotFound} />
     </Switch>
   );

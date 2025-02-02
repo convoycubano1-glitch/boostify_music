@@ -99,5 +99,29 @@ service cloud.firestore {
       allow write: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
     }
+    
+    // Rules for messages
+    match /messages/{messageId} {
+      allow read: if request.auth != null && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.recipientId == request.auth.uid
+      );
+      allow create: if request.auth != null && 
+        request.resource.data.senderId == request.auth.uid;
+      allow update: if false;  // Messages should be immutable
+      allow delete: if false;  // Don't allow message deletion
+    }
+
+    // Rules for conversations
+    match /conversations/{conversationId} {
+      allow read: if request.auth != null && (
+        resource.data.participants[request.auth.uid] == true
+      );
+      allow create: if request.auth != null && 
+        request.resource.data.participants[request.auth.uid] == true;
+      allow update: if request.auth != null && 
+        resource.data.participants[request.auth.uid] == true;
+      allow delete: if false;  // Don't allow conversation deletion
+    }
   }
 }
