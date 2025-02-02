@@ -34,9 +34,9 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Initialize Firestore with persistent cache
+// Initialize Firestore with persistent cache silently
 export const db = initializeFirestore(app, {
-  cache: persistentLocalCache({
+  localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
@@ -69,7 +69,6 @@ export interface Contract {
   userId: string;
 }
 
-// Save contract to Firestore with better error handling and debugging
 export async function saveContract(contractData: {
   title: string;
   type: string;
@@ -78,14 +77,10 @@ export async function saveContract(contractData: {
 }): Promise<Contract> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    console.log('No hay usuario autenticado al intentar guardar');
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
-  console.log('Intentando guardar contrato para usuario:', currentUser.uid);
-
   try {
-    // Reference to the contracts collection
     const contractsRef = collection(db, 'contracts');
 
     const newContract = {
@@ -94,96 +89,56 @@ export async function saveContract(contractData: {
       createdAt: serverTimestamp()
     };
 
-    console.log('Datos del contrato a guardar:', newContract);
-
-    // Add the document with proper typing
     const docRef = await addDoc(contractsRef, newContract);
-    console.log('Contrato guardado con ID:', docRef.id);
-
-    // Get the newly created document
     const docSnap = await getDoc(docRef);
-    console.log('Document exists:', docSnap.exists());
 
     if (!docSnap.exists()) {
-      throw new Error('Error al crear el contrato - documento no existe');
+      throw new Error('Error creating contract - document does not exist');
     }
 
-    // Return the contract data with proper typing
     const savedContract = {
       id: docSnap.id,
       ...docSnap.data(),
-      createdAt: new Date(), // Convert timestamp to Date
+      createdAt: new Date(),
     } as Contract;
 
-    console.log('Contrato guardado exitosamente:', savedContract);
     return savedContract;
   } catch (error: any) {
-    console.error('Error detallado al guardar contrato:', {
-      code: error.code,
-      message: error.message,
-      name: error.name,
-      stack: error.stack
-    });
-    throw new Error(error.message || 'Error al guardar el contrato');
+    throw new Error(error.message || 'Error saving contract');
   }
 }
 
-
-// Get user's contracts with better error handling and debugging
 export async function getUserContracts(): Promise<Contract[]> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    console.log('No hay usuario autenticado');
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
-  console.log('Firebase Auth: Usuario autenticado:', currentUser.uid);
-
   try {
-    // Reference to the contracts collection
     const contractsRef = collection(db, 'contracts');
-    console.log('Consultando colección contracts');
-
-    // Simplified query without orderBy to avoid index requirement
     const q = query(
       contractsRef,
       where('userId', '==', currentUser.uid)
     );
 
     const querySnapshot = await getDocs(q);
-    console.log('Documentos encontrados:', querySnapshot.size);
+    const contracts = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+    })) as Contract[];
 
-    const contracts = querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      console.log('Document data:', data);
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-      };
-    }) as Contract[];
-
-    // Sort on client side instead
     contracts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    console.log('Contratos procesados:', contracts.length);
     return contracts;
   } catch (error: any) {
-    console.error('Error detallado al obtener contratos:', {
-      code: error.code,
-      message: error.message,
-      name: error.name,
-      stack: error.stack
-    });
-    throw new Error(error.message || 'Error al obtener los contratos');
+    throw new Error(error.message || 'Error fetching contracts');
   }
 }
 
-// Get a single contract with better error handling
 export async function getContract(contractId: string): Promise<Contract | null> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
   try {
@@ -194,35 +149,33 @@ export async function getContract(contractId: string): Promise<Contract | null> 
       return {
         id: docSnap.id,
         ...docSnap.data(),
-        createdAt: docSnap.data().createdAt?.toDate() || new Date(), // Convert timestamp to Date
+        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
       } as Contract;
     }
     return null;
   } catch (error: any) {
-    console.error('Error fetching contract:', error);
-    throw new Error(error.message || 'Error al obtener el contrato');
+    throw new Error(error.message || 'Error fetching contract');
   }
 }
 
 export async function deleteContract(contractId: string): Promise<void> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
   try {
     const docRef = doc(db, 'contracts', contractId);
     await deleteDoc(docRef);
   } catch (error: any) {
-    console.error('Error deleting contract:', error);
-    throw new Error(error.message || 'Error al eliminar el contrato');
+    throw new Error(error.message || 'Error deleting contract');
   }
 }
 
 export async function updateContract(contractId: string, updates: Partial<Contract>): Promise<void> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    throw new Error('Usuario no autenticado');
+    throw new Error('User not authenticated');
   }
 
   try {
@@ -232,8 +185,7 @@ export async function updateContract(contractId: string, updates: Partial<Contra
       updatedAt: serverTimestamp()
     });
   } catch (error: any) {
-    console.error('Error updating contract:', error);
-    throw new Error(error.message || 'Error al actualizar el contrato');
+    throw new Error(error.message || 'Error updating contract');
   }
 }
 
