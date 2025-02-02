@@ -10,6 +10,8 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getAuthToken } from "@/lib/firebase";
 import { createYouTubeViewsOrder, checkApifyRun, YouTubeViewsData } from "@/lib/youtube-store";
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 import {
   LineChart,
   Line,
@@ -150,6 +152,8 @@ export default function YoutubeViewsPage() {
         views: Math.floor(Math.random() * 5000) + 1000
       }));
     
+  const progress = 75;
+  const currentViews = 7500;
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
@@ -162,7 +166,69 @@ export default function YoutubeViewsPage() {
         </div>
       </div>
 
-      {/* Video URL Input */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/2 to-transparent" />
+          <div className="relative">
+            <h3 className="text-lg font-semibold mb-4">Progreso de Visualizaciones</h3>
+            <div className="flex items-center justify-between">
+              <div className="w-32 h-32">
+                <CircularProgressbar
+                  value={progress}
+                  text={`${progress}%`}
+                  styles={buildStyles({
+                    pathColor: 'hsl(var(--primary))',
+                    textColor: 'hsl(var(--primary))',
+                    trailColor: 'hsl(var(--muted))',
+                  })}
+                />
+              </div>
+              <div className="flex-1 ml-8">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Vistas Actuales</p>
+                  <div className="text-4xl font-bold tabular-nums">
+                    {currentViews.toLocaleString()}
+                  </div>
+                  <p className="text-sm text-green-500 flex items-center">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    +2.5% desde ayer
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/2 to-transparent" />
+          <div className="relative">
+            <h3 className="text-lg font-semibold mb-4">Rendimiento en Tiempo Real</h3>
+            <div className="h-[150px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[
+                  { time: '1h', views: 120 },
+                  { time: '2h', views: 250 },
+                  { time: '3h', views: 380 },
+                  { time: '4h', views: 470 },
+                  { time: '5h', views: 600 }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="views"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <Card className="p-6">
         <div className="space-y-4">
           <div className="space-y-2">
@@ -179,7 +245,6 @@ export default function YoutubeViewsPage() {
         </div>
       </Card>
 
-      {/* Packages */}
       <div className="grid gap-6 md:grid-cols-3">
         {viewsPackages.map((pkg, index) => (
           <Card key={index} className="p-6 relative overflow-hidden">
@@ -220,7 +285,6 @@ export default function YoutubeViewsPage() {
         ))}
       </div>
 
-      {/* Confirmation Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
@@ -259,7 +323,6 @@ export default function YoutubeViewsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Analytics Chart */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Tendencia de Visualizaciones</h3>
         <div className="h-[300px]">
@@ -280,7 +343,6 @@ export default function YoutubeViewsPage() {
         </div>
       </Card>
 
-      {/* Important Information */}
       <Card className="p-6 border-yellow-500/20 bg-yellow-500/5">
         <div className="flex items-start gap-4">
           <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
@@ -296,7 +358,6 @@ export default function YoutubeViewsPage() {
         </div>
       </Card>
 
-      {/* Status Section */}
       {apifyData && (
         <Card className="p-6">
           <div className="space-y-4">
