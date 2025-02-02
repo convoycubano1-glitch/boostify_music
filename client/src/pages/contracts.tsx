@@ -39,68 +39,60 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
-const contracts = [
-  {
-    id: 1,
-    title: "Contrato de Distribución Digital",
-    status: "active",
-    createdAt: "2024-01-15",
-    type: "Distribution",
-  },
-  {
-    id: 2,
-    title: "Acuerdo de Licencia Musical",
-    status: "pending",
-    createdAt: "2024-01-20",
-    type: "Licensing",
-  },
-  {
-    id: 3,
-    title: "Contrato de Representación",
-    status: "draft",
-    createdAt: "2024-01-25",
-    type: "Management",
-  },
-];
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "active":
-      return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
-    case "pending":
-      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
-    case "draft":
-      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
-    default:
-      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
-  }
-}
-
-function getStatusIcon(status: string) {
-  switch (status) {
-    case "active":
-      return <CheckCircle2 className="h-4 w-4" />;
-    case "pending":
-      return <Clock className="h-4 w-4" />;
-    case "draft":
-      return <AlertCircle className="h-4 w-4" />;
-    default:
-      return null;
-  }
+interface Contract {
+  id: number;
+  title: string;
+  type: string;
+  content: string;
+  status: string;
+  created_at: string;
 }
 
 export default function ContractsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showNewContractDialog, setShowNewContractDialog] = useState(false);
   const [generatedContract, setGeneratedContract] = useState<string | null>(null);
+  const [contractTitle, setContractTitle] = useState<string>("");
+    const queryClient = useQueryClient();
+
+
+  // Fetch contracts
+  const { data: contracts = [], isLoading } = useQuery<Contract[]>({
+    queryKey: ["/api/contracts"],
+    enabled: !!user,
+  });
+
+  // Save contract mutation
+  const saveContractMutation = useMutation({
+    mutationFn: async (contract: { title: string; type: string; content: string }) => {
+      const response = await fetch("/api/contracts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(contract),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to save contract");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+    },
+  });
 
   const handleGenerateContract = async (values: ContractFormValues) => {
     setIsGenerating(true);
     try {
       const contract = await generateContract(values);
       setGeneratedContract(contract);
+      setContractTitle(`${values.type} Agreement - ${values.artistName}`);
       toast({
         title: "Contract Generated",
         description: "Your contract has been generated successfully.",
@@ -115,6 +107,58 @@ export default function ContractsPage() {
       setIsGenerating(false);
     }
   };
+
+  const handleSaveContract = async () => {
+    if (!generatedContract || !contractTitle) return;
+
+    try {
+      await saveContractMutation.mutateAsync({
+        title: contractTitle,
+        type: "contract", // You might want to be more specific based on the contract type
+        content: generatedContract,
+      });
+
+      toast({
+        title: "Contract Saved",
+        description: "Your contract has been saved successfully.",
+      });
+      setGeneratedContract(null);
+      setShowNewContractDialog(false);
+      setContractTitle("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save contract. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case "active":
+        return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
+      case "pending":
+        return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
+      case "draft":
+        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
+      default:
+        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
+    }
+  }
+
+  function getStatusIcon(status: string) {
+    switch (status) {
+      case "active":
+        return <CheckCircle2 className="h-4 w-4" />;
+      case "pending":
+        return <Clock className="h-4 w-4" />;
+      case "draft":
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -145,6 +189,18 @@ export default function ContractsPage() {
                 <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
               ) : (
                 <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="title" className="text-sm font-medium">
+                      Contract Title
+                    </label>
+                    <input
+                      id="title"
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      value={contractTitle}
+                      onChange={(e) => setContractTitle(e.target.value)}
+                    />
+                  </div>
                   <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                     <pre className="whitespace-pre-wrap font-mono text-sm">
                       {generatedContract}
@@ -156,20 +212,14 @@ export default function ContractsPage() {
                       onClick={() => {
                         setGeneratedContract(null);
                         setShowNewContractDialog(false);
+                        setContractTitle("");
                       }}
                     >
                       Close
                     </Button>
                     <Button
-                      onClick={() => {
-                        // Here you would typically save the contract
-                        toast({
-                          title: "Contract Saved",
-                          description: "Your contract has been saved successfully.",
-                        });
-                        setGeneratedContract(null);
-                        setShowNewContractDialog(false);
-                      }}
+                      onClick={handleSaveContract}
+                      disabled={!contractTitle}
                     >
                       Save Contract
                     </Button>
@@ -210,52 +260,56 @@ export default function ContractsPage() {
           </div>
 
           <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead className="w-[100px]">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contracts.map((contract) => (
-                  <TableRow key={contract.id}>
-                    <TableCell className="font-medium">{contract.title}</TableCell>
-                    <TableCell>{contract.type}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={`gap-1 ${getStatusColor(contract.status)}`}
-                      >
-                        {getStatusIcon(contract.status)}
-                        {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{contract.createdAt}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="gap-2">
-                            <Eye className="h-4 w-4" /> Ver
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
-                            <Download className="h-4 w-4" /> Descargar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            {isLoading ? (
+              <div className="p-8 text-center">Loading contracts...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="w-[100px]">Acciones</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {contracts.map((contract) => (
+                    <TableRow key={contract.id}>
+                      <TableCell className="font-medium">{contract.title}</TableCell>
+                      <TableCell>{contract.type}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={`gap-1 ${getStatusColor(contract.status)}`}
+                        >
+                          {getStatusIcon(contract.status)}
+                          {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(contract.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="gap-2">
+                              <Eye className="h-4 w-4" /> Ver
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2">
+                              <Download className="h-4 w-4" /> Descargar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </Card>
         </div>
       </div>

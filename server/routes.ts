@@ -5,8 +5,10 @@ import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
 import { marketingMetrics } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import Stripe from 'stripe';
+import { z } from "zod";
+import { contracts } from "@db/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY must be defined');
@@ -16,11 +18,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
+// Validate contract data
+const contractSchema = z.object({
+  title: z.string(),
+  type: z.string(),
+  content: z.string(),
+  status: z.string().default('draft')
+});
+
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
   setupInstagramRoutes(app);
   setupSpotifyRoutes(app);
 
+  // Get user's metrics
   app.get("/api/metrics", async (req, res) => {
     if (!req.user?.id) return res.sendStatus(401);
 
@@ -36,6 +47,66 @@ export function registerRoutes(app: Express): Server {
       playlistPlacements: 0,
       monthlyListeners: 0
     });
+  });
+
+  // Save a new contract
+  app.post("/api/contracts", async (req, res) => {
+    if (!req.user?.id) return res.sendStatus(401);
+
+    try {
+      const contractData = contractSchema.parse(req.body);
+
+      const result = await db.insert(contracts).values({
+        userId: req.user.id,
+        ...contractData
+      }).returning();
+
+      res.status(201).json(result[0]);
+    } catch (error) {
+      console.error('Error saving contract:', error);
+      res.status(400).json({ error: 'Invalid contract data' });
+    }
+  });
+
+  // Get user's contracts
+  app.get("/api/contracts", async (req, res) => {
+    if (!req.user?.id) return res.sendStatus(401);
+
+    try {
+      const userContracts = await db.query.contracts.findMany({
+        where: eq(contracts.userId, req.user.id),
+        orderBy: desc(contracts.createdAt)
+      });
+
+      res.json(userContracts);
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+      res.status(500).json({ error: 'Failed to fetch contracts' });
+    }
+  });
+
+  // Get a specific contract
+  app.get("/api/contracts/:id", async (req, res) => {
+    if (!req.user?.id) return res.sendStatus(401);
+
+    try {
+      const [contract] = await db.query.contracts.findMany({
+        where: and(
+          eq(contracts.id, parseInt(req.params.id)),
+          eq(contracts.userId, req.user.id)
+        ),
+        limit: 1
+      });
+
+      if (!contract) {
+        return res.status(404).json({ error: 'Contract not found' });
+      }
+
+      res.json(contract);
+    } catch (error) {
+      console.error('Error fetching contract:', error);
+      res.status(500).json({ error: 'Failed to fetch contract' });
+    }
   });
 
   // Stripe subscription session creation
