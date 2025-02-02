@@ -4,9 +4,11 @@ import { Check, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Link } from "wouter";
 import { loadStripe } from "@stripe/stripe-js";
 import { getAuthToken } from "@/lib/firebase";
+import { useState } from "react";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -57,8 +59,10 @@ const plans = [
 export function PricingPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
 
-  const handlePayment = async (plan: typeof plans[0]) => {
+  const handlePlanSelect = (plan: typeof plans[0]) => {
     if (!user) {
       toast({
         title: "Sign in required",
@@ -67,6 +71,12 @@ export function PricingPlans() {
       });
       return;
     }
+    setSelectedPlan(plan);
+    setShowDialog(true);
+  };
+
+  const handlePayment = async () => {
+    if (!selectedPlan) return;
 
     try {
       const token = await getAuthToken();
@@ -92,9 +102,9 @@ export function PricingPlans() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          priceId: plan.priceId,
-          planName: plan.name,
-          price: plan.price
+          priceId: selectedPlan.priceId,
+          planName: selectedPlan.name,
+          price: selectedPlan.price
         }),
       });
 
@@ -123,6 +133,8 @@ export function PricingPlans() {
         description: error.message || "There was an error processing your subscription. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setShowDialog(false);
     }
   };
 
@@ -183,7 +195,7 @@ export function PricingPlans() {
                     ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                     : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
                 }`}
-                onClick={() => handlePayment(plan)}
+                onClick={() => handlePlanSelect(plan)}
               >
                 Get Started
               </Button>
@@ -191,6 +203,47 @@ export function PricingPlans() {
           </div>
         ))}
       </div>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Subscription</DialogTitle>
+            <DialogDescription>
+              Review your subscription details before proceeding
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPlan && (
+            <div className="space-y-4">
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Plan details</h4>
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Plan:</span>
+                      <span className="text-sm font-medium">{selectedPlan.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Price:</span>
+                      <span className="text-lg font-bold">${selectedPlan.price}/mo</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-4">
+                <Button variant="outline" onClick={() => setShowDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePayment}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Confirm Purchase
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
