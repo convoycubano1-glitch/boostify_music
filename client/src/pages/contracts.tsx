@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
 import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
 import { generateContract } from "@/lib/openai";
-import { saveContract, getUserContracts, type Contract } from "@/lib/firebase";
+import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "@/lib/firebase";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Plus, Download, Eye, MoreVertical, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +36,16 @@ export default function ContractsPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showNewContractDialog, setShowNewContractDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [editedContent, setEditedContent] = useState("");
   const [generatedContract, setGeneratedContract] = useState<string | null>(null);
   const [contractTitle, setContractTitle] = useState<string>("");
   const queryClient = useQueryClient();
 
-  // Fetch contracts using Firestore with proper error handling
+  // Fetch contracts
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ['contracts'],
     queryFn: async () => {
@@ -52,36 +67,110 @@ export default function ContractsPage() {
     enabled: !!auth.currentUser,
   });
 
-  // Save contract mutation using Firestore
-  const saveContractMutation = useMutation({
-    mutationFn: async (contractData: {
-      title: string;
-      type: string;
-      content: string;
-      status: string;
-    }) => {
-      if (!auth.currentUser) {
-        throw new Error('Usuario no autenticado');
-      }
-      console.log('Saving contract with data:', contractData); // Debug log
-      return await saveContract(contractData);
+  // Delete contract mutation
+  const deleteContractMutation = useMutation({
+    mutationFn: async (contractId: string) => {
+      await deleteContract(contractId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast({
         title: "Éxito",
-        description: "Contrato guardado correctamente",
+        description: "Contrato eliminado correctamente",
       });
+      setShowDeleteDialog(false);
     },
     onError: (error: Error) => {
-      console.error('Error in saveContractMutation:', error);
       toast({
         title: "Error",
-        description: error.message || "Error al guardar el contrato. Por favor, intente nuevamente.",
+        description: error.message || "Error al eliminar el contrato",
         variant: "destructive",
       });
     },
   });
+
+  // Update contract mutation
+  const updateContractMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Contract> }) => {
+      await updateContract(id, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      toast({
+        title: "Éxito",
+        description: "Contrato actualizado correctamente",
+      });
+      setShowEditDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Error al actualizar el contrato",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle view contract
+  const handleViewContract = (contract: Contract) => {
+    setSelectedContract(contract);
+    setShowViewDialog(true);
+  };
+
+  // Handle edit contract
+  const handleEditContract = (contract: Contract) => {
+    setSelectedContract(contract);
+    setEditedContent(contract.content);
+    setShowEditDialog(true);
+  };
+
+  // Handle delete contract
+  const handleDeleteContract = (contract: Contract) => {
+    setSelectedContract(contract);
+    setShowDeleteDialog(true);
+  };
+
+  // Handle download contract
+  const handleDownloadContract = (contract: Contract) => {
+    const element = document.createElement("a");
+    const file = new Blob([contract.content], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${contract.title}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+    // Save contract mutation using Firestore
+    const saveContractMutation = useMutation({
+      mutationFn: async (contractData: {
+        title: string;
+        type: string;
+        content: string;
+        status: string;
+      }) => {
+        if (!auth.currentUser) {
+          throw new Error('Usuario no autenticado');
+        }
+        console.log('Saving contract with data:', contractData);
+        return await saveContract(contractData);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['contracts'] });
+        toast({
+          title: "Éxito",
+          description: "Contrato guardado correctamente",
+        });
+      },
+      onError: (error: Error) => {
+        console.error('Error in saveContractMutation:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Error al guardar el contrato. Por favor, intente nuevamente.",
+          variant: "destructive",
+        });
+      },
+    });
 
   const handleGenerateContract = async (values: ContractFormValues) => {
     setIsGenerating(true);
@@ -125,7 +214,7 @@ export default function ContractsPage() {
     }
 
     try {
-      console.log('Attempting to save contract...'); // Debug log
+      console.log('Attempting to save contract...');
       await saveContractMutation.mutateAsync({
         title: contractTitle,
         type: "legal",
@@ -141,7 +230,6 @@ export default function ContractsPage() {
     }
   };
 
-  // Rest of the component remains the same...
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -278,11 +366,17 @@ export default function ContractsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="gap-2">
+                            <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
                               <Eye className="h-4 w-4" /> Ver
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
+                            <DropdownMenuItem onClick={() => handleDownloadContract(contract)} className="gap-2">
                               <Download className="h-4 w-4" /> Descargar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
+                              <Edit className="h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
+                              <Trash2 className="h-4 w-4" /> Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -293,6 +387,80 @@ export default function ContractsPage() {
               </Table>
             )}
           </Card>
+
+          {/* View Dialog */}
+          <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+            <DialogContent className="max-w-4xl max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle>{selectedContract?.title}</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="mt-4">
+                <pre className="whitespace-pre-wrap font-mono text-sm p-4">
+                  {selectedContract?.content}
+                </pre>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Dialog */}
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Editar Contrato</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <textarea
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="w-full min-h-[400px] p-4 font-mono text-sm border rounded"
+                />
+                <div className="flex justify-end gap-4">
+                  <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (selectedContract) {
+                        updateContractMutation.mutate({
+                          id: selectedContract.id,
+                          updates: { content: editedContent }
+                        });
+                      }
+                    }}
+                    disabled={updateContractMutation.isPending}
+                  >
+                    {updateContractMutation.isPending ? "Guardando..." : "Guardar Cambios"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Dialog */}
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. El contrato será eliminado permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (selectedContract) {
+                      deleteContractMutation.mutate(selectedContract.id);
+                    }
+                  }}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  {deleteContractMutation.isPending ? "Eliminando..." : "Eliminar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
         </div>
       </div>
     </div>

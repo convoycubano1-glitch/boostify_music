@@ -200,4 +200,37 @@ export async function getContract(contractId: string): Promise<Contract | null> 
   }
 }
 
+export async function deleteContract(contractId: string): Promise<void> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  try {
+    const docRef = doc(db, 'contracts', contractId);
+    await deleteDoc(docRef);
+  } catch (error: any) {
+    console.error('Error deleting contract:', error);
+    throw new Error(error.message || 'Error al eliminar el contrato');
+  }
+}
+
+export async function updateContract(contractId: string, updates: Partial<Contract>): Promise<void> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  try {
+    const docRef = doc(db, 'contracts', contractId);
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error: any) {
+    console.error('Error updating contract:', error);
+    throw new Error(error.message || 'Error al actualizar el contrato');
+  }
+}
+
 export { analytics };
