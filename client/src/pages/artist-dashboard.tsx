@@ -15,7 +15,9 @@ import {
   Link as LinkIcon,
   Upload,
   Loader2,
-  X
+  X,
+  Grid,
+  ArrowLeft
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -39,6 +41,8 @@ interface Video {
   url: string;
   title: string;
   createdAt: Date;
+  thumbnailUrl?: string;
+  videoId?: string;
 }
 
 interface Song {
@@ -48,10 +52,21 @@ interface Song {
   createdAt: Date;
 }
 
+function getYouTubeVideoId(url: string) {
+  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[7].length === 11) ? match[7] : null;
+}
+
+function getYouTubeThumbnailUrl(videoId: string) {
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+}
+
 export default function ArtistDashboardPage() {
   const { toast } = useToast();
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
+  const [isVideoGalleryOpen, setIsVideoGalleryOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
   const [isSubmittingVideo, setIsSubmittingVideo] = useState(false);
   const [isSubmittingSong, setIsSubmittingSong] = useState(false);
@@ -72,11 +87,17 @@ export default function ArtistDashboardPage() {
         );
 
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        })) as Video[];
+        return querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const videoId = getYouTubeVideoId(data.url);
+          return {
+            id: doc.id,
+            ...data,
+            videoId,
+            thumbnailUrl: videoId ? getYouTubeThumbnailUrl(videoId) : undefined,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          };
+        }) as Video[];
       } catch (error) {
         console.error("Error fetching videos:", error);
         toast({
@@ -127,11 +148,23 @@ export default function ArtistDashboardPage() {
 
     try {
       setIsSubmittingVideo(true);
+      const videoId = getYouTubeVideoId(videoUrl);
+
+      if (!videoId) {
+        toast({
+          title: "Error",
+          description: "Invalid YouTube URL. Please check the URL and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const videoData = {
         url: videoUrl,
         userId: auth.currentUser.uid,
         createdAt: serverTimestamp(),
-        title: "YouTube Video" // You could extract this from the URL if needed
+        title: "YouTube Video",
+        thumbnailUrl: getYouTubeThumbnailUrl(videoId)
       };
 
       const videosRef = collection(db, "videos");
@@ -261,14 +294,25 @@ export default function ArtistDashboardPage() {
               transition={{ delay: 0.1 }}
             >
               <Card className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <Video className="h-6 w-6 text-orange-500" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Video className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold">My Videos</h2>
+                      <p className="text-sm text-muted-foreground">Manage your video content</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">My Videos</h2>
-                    <p className="text-sm text-muted-foreground">Manage your video content</p>
-                  </div>
+                  {videos.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setIsVideoGalleryOpen(true)}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-4">
                   {isLoadingVideos ? (
@@ -277,10 +321,18 @@ export default function ArtistDashboardPage() {
                     </div>
                   ) : videos.length > 0 ? (
                     <div className="space-y-3">
-                      {videos.map((video) => (
+                      {videos.slice(0, 3).map((video) => (
                         <div key={video.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            <PlayCircle className="h-5 w-5 text-orange-500" />
+                            {video.thumbnailUrl ? (
+                              <img 
+                                src={video.thumbnailUrl} 
+                                alt={video.title}
+                                className="w-16 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <PlayCircle className="h-5 w-5 text-orange-500" />
+                            )}
                             <div>
                               <p className="font-medium">{video.title}</p>
                               <p className="text-sm text-muted-foreground">
@@ -303,6 +355,49 @@ export default function ArtistDashboardPage() {
                       No videos added yet
                     </div>
                   )}
+
+                  {/* Video Gallery Dialog */}
+                  <Dialog open={isVideoGalleryOpen} onOpenChange={setIsVideoGalleryOpen}>
+                    <DialogContent className="max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle>Video Gallery</DialogTitle>
+                        <DialogDescription>
+                          Browse all your uploaded videos
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
+                        {videos.map((video) => (
+                          <div 
+                            key={video.id} 
+                            className="group relative aspect-video rounded-lg overflow-hidden cursor-pointer"
+                            onClick={() => window.open(video.url, '_blank')}
+                          >
+                            {video.thumbnailUrl ? (
+                              <img 
+                                src={video.thumbnailUrl} 
+                                alt={video.title}
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-muted flex items-center justify-center">
+                                <PlayCircle className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <PlayCircle className="h-12 w-12 text-white" />
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/80 text-white text-sm">
+                              <p className="truncate">{video.title}</p>
+                              <p className="text-xs text-gray-300">
+                                {new Date(video.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
                   <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="w-full gap-2">
@@ -497,7 +592,6 @@ export default function ArtistDashboardPage() {
               </Card>
             </motion.div>
 
-            {/* Rest of the sections remain unchanged */}
             {/* My Strategy Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
