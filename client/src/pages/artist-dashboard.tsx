@@ -74,7 +74,7 @@ function getYouTubeThumbnailUrl(videoId: string) {
   return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
-const ArtistDashboardPage: React.FC = () => {
+export default function ArtistDashboard() {
   const { toast } = useToast();
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
@@ -551,433 +551,439 @@ const ArtistDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Videos Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="p-6 h-full">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <Video className="h-6 w-6 text-orange-500" />
+          {/* Main Content Grid - Updated Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Videos Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card className="p-6 h-full">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                        <Video className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">My Videos</h2>
+                        <p className="text-sm text-muted-foreground">Manage your video content</p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-semibold">My Videos</h2>
-                      <p className="text-sm text-muted-foreground">Manage your video content</p>
-                    </div>
+                    {videos.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setIsVideoGalleryOpen(true)}
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  {videos.length > 0 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setIsVideoGalleryOpen(true)}
-                    >
-                      <Grid className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  {isLoadingVideos ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                    </div>
-                  ) : videos.length > 0 ? (
-                    <div className="space-y-3">
-                      {videos.slice(0, 3).map((video) => (
-                        <div key={video.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            {video.thumbnailUrl ? (
-                              <img 
-                                src={video.thumbnailUrl} 
-                                alt={video.title}
-                                className="w-16 h-12 object-cover rounded"
-                              />
-                            ) : (
-                              <PlayCircle className="h-5 w-5 text-orange-500" />
-                            )}
-                            <div>
-                              <p className="font-medium">{video.title}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(video.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(video.url, '_blank')}
-                            >
-                              View
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteVideo(video.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No videos added yet
-                    </div>
-                  )}
-
-                  {/* Video Gallery Dialog */}
-                  <Dialog open={isVideoGalleryOpen} onOpenChange={setIsVideoGalleryOpen}>
-                    <DialogContent className="max-w-4xl">
-                      <DialogHeader>
-                        <DialogTitle>Video Gallery</DialogTitle>
-                        <DialogDescription>
-                          Browse all your uploaded videos
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
-                        {videos.map((video) => (
-                          <div 
-                            key={video.id} 
-                            className="group relative aspect-video rounded-lg overflow-hidden"
-                          >
-                            {video.thumbnailUrl ? (
-                              <img 
-                                src={video.thumbnailUrl} 
-                                alt={video.title}
-                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-muted flex items-center justify-center">
-                                <PlayCircle className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute top-2 right-2 flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => window.open(video.url, '_blank')}
-                                >
-                                  <PlayCircle className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => handleDeleteVideo(video.id)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                  <div className="space-y-4">
+                    {isLoadingVideos ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                      </div>
+                    ) : videos.length > 0 ? (
+                      <div className="space-y-3">
+                        {videos.slice(0, 3).map((video) => (
+                          <div key={video.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              {video.thumbnailUrl ? (
+                                <img 
+                                  src={video.thumbnailUrl} 
+                                  alt={video.title}
+                                  className="w-16 h-12 object-cover rounded"
+                                />
+                              ) : (
+                                <PlayCircle className="h-5 w-5 text-orange-500" />
+                              )}
+                              <div>
+                                <p className="font-medium">{video.title}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(video.createdAt).toLocaleDateString()}
+                                </p>
                               </div>
                             </div>
-                            <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/80 text-white text-sm">
-                              <p className="truncate">{video.title}</p>
-                              <p className="text-xs text-gray-300">
-                                {new Date(video.createdAt).toLocaleDateString()}
-                              </p>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(video.url, '_blank')}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteVideo(video.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add New Video
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Video</DialogTitle>
-                        <DialogDescription>
-                          Add your YouTube video link below
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="video-url">YouTube URL</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="video-url"
-                              placeholder="https://youtube.com/watch?v=..."
-                              value={videoUrl}
-                              onChange={(e) => setVideoUrl(e.target.value)}
-                              className="flex-1"
-                            />
-                          </div>
-                        </div>
-                        {videoUrl && (
-                          <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                            <iframe
-                              width="100%"
-                              height="100%"
-                              src={`https://www.youtube.com/embed/${videoUrl.split("v=")[1]}`}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            ></iframe>
-                          </div>
-                        )}
-                        <div className="flex justify-end gap-4">
-                          <Button
-                            variant="outline"
-                            onClick={() => setIsVideoDialogOpen(false)}
-                          >
-                            <X className="mr-2 h-4 w-4" />
-                            Cancel
-                          </Button>
-                          <Button 
-                            onClick={handleVideoSubmit}
-                            disabled={isSubmittingVideo || !videoUrl}
-                          >
-                            {isSubmittingVideo ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Plus className="mr-2 h-4 w-4" />
-                            )}
-                            {isSubmittingVideo ? "Adding..." : "Add Video"}
-                          </Button>
-                        </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No videos added yet
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </Card>
-            </motion.div>
+                    )}
 
-            {/* Songs Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="p-6 h-full">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <Music2 className="h-6 w-6 text-orange-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">My Music</h2>
-                    <p className="text-sm text-muted-foreground">Manage your music portfolio</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  {isLoadingSongs ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                    </div>
-                  ) : songs.length > 0 ? (
-                    <div className="space-y-3">
-                      {songs.map((song) => (
-                        <div key={song.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Mic2 className="h-5 w-5 text-orange-500" />
-                            <div>
-                              <p className="font-medium">{song.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(song.createdAt).toLocaleDateString()}
-                              </p>
+                    {/* Video Gallery Dialog */}
+                    <Dialog open={isVideoGalleryOpen} onOpenChange={setIsVideoGalleryOpen}>
+                      <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                          <DialogTitle>Video Gallery</DialogTitle>
+                          <DialogDescription>
+                            Browse all your uploaded videos
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
+                          {videos.map((video) => (
+                            <div 
+                              key={video.id} 
+                              className="group relative aspect-video rounded-lg overflow-hidden"
+                            >
+                              {video.thumbnailUrl ? (
+                                <img 
+                                  src={video.thumbnailUrl} 
+                                  alt={video.title}
+                                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                  <PlayCircle className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute top-2 right-2 flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => window.open(video.url, '_blank')}
+                                  >
+                                    <PlayCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => handleDeleteVideo(video.id)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/80 text-white text-sm">
+                                <p className="truncate">{video.title}</p>
+                                <p className="text-xs text-gray-300">
+                                  {new Date(video.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add New Video
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Video</DialogTitle>
+                          <DialogDescription>
+                            Add your YouTube video link below
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="video-url">YouTube URL</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="video-url"
+                                placeholder="https://youtube.com/watch?v=..."
+                                value={videoUrl}
+                                onChange={(e) => setVideoUrl(e.target.value)}
+                                className="flex-1"
+                              />
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => togglePlay(song.audioUrl)}
-                            >
-                              {currentAudio?.src === song.audioUrl && isPlaying ? "Pause" : "Play"}
-                            </Button>
+                          {videoUrl && (
+                            <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                src={`https://www.youtube.com/embed/${videoUrl.split("v=")[1]}`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              ></iframe>
+                            </div>
+                          )}
+                          <div className="flex justify-end gap-4">
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSong(song.id, song.storageRef)}
-                              className="text-destructive hover:text-destructive"
+                              variant="outline"
+                              onClick={() => setIsVideoDialogOpen(false)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <X className="mr-2 h-4 w-4" />
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={handleVideoSubmit}
+                              disabled={isSubmittingVideo || !videoUrl}
+                            >
+                              {isSubmittingVideo ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Plus className="mr-2 h-4 w-4" />
+                              )}
+                              {isSubmittingVideo ? "Adding..." : "Add Video"}
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </Card>
+              </motion.div>
+
+              {/* Songs Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="p-6 h-full">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Music2 className="h-6 w-6 text-orange-500" />
                     </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No songs added yet
+                    <div>
+                      <h2 className="text-xl font-semibold">My Music</h2>
+                      <p className="text-sm text-muted-foreground">Manage your music portfolio</p>
                     </div>
-                  )}
-                  <Dialog open={isSongDialogOpen} onOpenChange={setIsSongDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add New Song
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Song</DialogTitle>
-                        <DialogDescription>
-                          Upload your MP3 or WAV file (max 10MB)
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="song-file">Audio File (MP3/WAV)</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="song-file"
-                              type="file"
-                              accept=".mp3,.wav"
-                              onChange={handleAudioUpload}
-                              className="flex-1"
-                              disabled={isSubmittingSong}
-                            />
+                  </div>
+                  <div className="space-y-4">
+                    {isLoadingSongs ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                      </div>
+                    ) : songs.length > 0 ? (
+                      <div className="space-y-3">
+                        {songs.map((song) => (
+                          <div key={song.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Mic2 className="h-5 w-5 text-orange-500" />
+                              <div>
+                                <p className="font-medium">{song.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(song.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => togglePlay(song.audioUrl)}
+                              >
+                                {currentAudio?.src === song.audioUrl && isPlaying ? "Pause" : "Play"}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteSong(song.id, song.storageRef)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        {currentAudio && (
-                          <div className="p-4 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => togglePlay()}
-                                  className="h-8 w-8 p-0"
-                                  disabled={isSubmittingSong}
-                                >
-                                  {isPlaying ? (
-                                    <span className="sr-only">Pause</span>
-                                  ) : (
-                                    <span className="sr-only">Play</span>
-                                  )}
-                                  {isPlaying ? "⏸️" : "▶️"}
-                                </Button>
-                                <div className="space-y-1">
-                                  <p className="text-sm font-medium">
-                                    {selectedFile?.name}
-                                  </p>
-                                  {uploadProgress > 0 && uploadProgress < 100 && (
-                                    <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-orange-500 transition-all duration-300"
-                                        style={{ width: `${uploadProgress}%` }}
-                                      />
-                                    </div>
-                                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No songs added yet
+                      </div>
+                    )}
+                    <Dialog open={isSongDialogOpen} onOpenChange={setIsSongDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add New Song
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Song</DialogTitle>
+                          <DialogDescription>
+                            Upload your MP3 or WAV file (max 10MB)
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="song-file">Audio File (MP3/WAV)</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="song-file"
+                                type="file"
+                                accept=".mp3,.wav"
+                                onChange={handleAudioUpload}
+                                className="flex-1"
+                                disabled={isSubmittingSong}
+                              />
+                            </div>
+                          </div>
+                          {currentAudio && (
+                            <div className="p-4 bg-muted rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => togglePlay()}
+                                    className="h-8 w-8 p-0"
+                                    disabled={isSubmittingSong}
+                                  >
+                                    {isPlaying ? (
+                                      <span className="sr-only">Pause</span>
+                                    ) : (
+                                      <span className="sr-only">Play</span>
+                                    )}
+                                    {isPlaying ? "⏸️" : "▶️"}
+                                  </Button>
+                                  <div className="space-y-1">
+                                    <p className="text-sm font-medium">
+                                      {selectedFile?.name}
+                                    </p>
+                                    {uploadProgress > 0 && uploadProgress < 100 && (
+                                      <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                                        <div
+                                          className="h-full bg-orange-500 transition-all duration-300"
+                                          style={{ width: `${uploadProgress}%` }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          )}
+                          <div className="flex justify-end gap-4">
+                             <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsSongDialogOpen(false);
+                                if (currentAudio) {
+                                  currentAudio.pause();
+                                  URL.revokeObjectURL(currentAudio.src);
+                                  setCurrentAudio(null);
+                                }
+                                setSelectedFile(null);
+setIsPlaying(false);
+                                setUploadProgress(0);
+                              }}
+                            >
+                              <X className="mr-2 h-4 w-4" />
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={handleSongUpload}
+                              disabled={isSubmittingSong || !selectedFile}
+                            >
+                              {isSubmittingSong ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Upload Song
+                                </>
+                              )}
+                            </Button>
                           </div>
-                        )}
-                        <div className="flex justify-end gap-4">
-                           <Button
-                            variant="outline"
-                            onClick={() => {
-                              setIsSongDialogOpen(false);
-                              if (currentAudio) {
-                                currentAudio.pause();
-                                URL.revokeObjectURL(currentAudio.src);
-                                setCurrentAudio(null);
-                              }
-                              setSelectedFile(null);
-                              setIsPlaying(false);
-                              setUploadProgress(0);
-                            }}
-                          >
-                            <X className="mr-2 h-4 w-4" />
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleSongUpload}
-                            disabled={isSubmittingSong || !selectedFile}
-                          >
-                            {isSubmittingSong ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Uploading...
-                              </>
-                            ) : (
-                              <>
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Song
-                              </>
-                            )}
-                          </Button>
                         </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Activity Feed Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <ActivityFeed />
+              </motion.div>
+
+              {/* Strategy Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="p-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <BarChart2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold">My Strategy</h2>
+                      <p className="text-sm text-muted-foreground">Plan your growth</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {isLoadingStrategy ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </Card>
-            </motion.div>
-
-             {/* Activity Feed Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <ActivityFeed />
-            </motion.div>
-
-            {/* Strategy Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="p-6 h-full">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <BarChart2 className="h-6 w-6 text-orange-500" />
+                    ) : currentStrategy.length > 0 ? (
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <h3 className="font-medium mb-2">Current Focus</h3>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          {currentStrategy.map((point: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="mt-1">•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No strategy set. Create one to get started.
+                      </div>
+                    )}
+                    <Button 
+                      className="w-full" 
+                      onClick={() => setIsStrategyDialogOpen(true)}
+                    >
+                      Update Strategy
+                    </Button>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">My Strategy</h2>
-                    <p className="text-sm text-muted-foreground">Plan your growth</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  {isLoadingStrategy ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                    </div>
-                  ) : currentStrategy.length > 0 ? (
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <h3 className="font-medium mb-2">Current Focus</h3>
-                      <ul className="space-y-2 text-sm text-muted-foreground">
-                        {currentStrategy.map((point: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="mt-1">•</span>
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No strategy set. Create one to get started.
-                    </div>
-                  )}
-                  <Button 
-                    className="w-full" 
-                    onClick={() => setIsStrategyDialogOpen(true)}
-                  >
-                    Update Strategy
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
+                </Card>
+              </motion.div>
+            </div>
           </div>
         </div>
       </ScrollArea>
-
+    
       <StrategyDialog 
         open={isStrategyDialogOpen}
         onOpenChange={setIsStrategyDialogOpen}
@@ -985,6 +991,4 @@ const ArtistDashboardPage: React.FC = () => {
       />
     </div>
   );
-};
-
-export default ArtistDashboardPage;
+}
