@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
+import { motion } from "framer-motion";
 import { 
   Video,
   Music2,
@@ -12,15 +13,13 @@ import {
   Plus,
   PlayCircle,
   Mic2,
-  LinkIcon,
   Upload,
   Loader2,
   X,
   Grid,
-  ArrowLeft,
-  Trash2
+  Info,
+  ChevronRight
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth, storage } from "@/lib/firebase";
@@ -435,35 +434,111 @@ const ArtistDashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+
+      {/* Hero Section with Video Background */}
+      <div className="relative w-full h-[300px] overflow-hidden">
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/assets/hero-video.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            Bienvenido a tu Centro Creativo
+          </h1>
+          <p className="text-lg text-white/90 max-w-2xl">
+            Gestiona tu contenido, estrategia y crecimiento desde un solo lugar. 
+            Aprovecha nuestras herramientas de IA para optimizar tu presencia artística.
+          </p>
+        </div>
+      </div>
+
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                Artist Dashboard
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Manage your content, strategy, and growth
-              </p>
+        <div className="container mx-auto px-4 py-8">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="p-6 border-l-4 border-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Videos Publicados</p>
+                  <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Video className="h-6 w-6 text-orange-500" />
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6 border-l-4 border-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Canciones Subidas</p>
+                  <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Music2 className="h-6 w-6 text-orange-500" />
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6 border-l-4 border-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Estrategias Activas</p>
+                  <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <BarChart2 className="h-6 w-6 text-orange-500" />
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Tips Section */}
+          <div className="bg-orange-500/5 rounded-lg p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                <Info className="h-5 w-5 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Consejos para Optimizar tu Dashboard</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <ChevronRight className="h-4 w-4 text-orange-500" />
+                    Mantén tu contenido actualizado subiendo videos y música regularmente
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <ChevronRight className="h-4 w-4 text-orange-500" />
+                    Revisa y actualiza tu estrategia mensualmente para mantener el enfoque
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <ChevronRight className="h-4 w-4 text-orange-500" />
+                    Utiliza nuestras herramientas de IA para generar ideas y optimizar tu contenido
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
+          {/* Main Content Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* My Videos Section */}
+            {/* Videos Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
+              <Card className="p-6 h-full">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
                       <Video className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-semibold">My Videos</h2>
-                      <p className="text-sm text-muted-foreground">Manage your video content</p>
+                      <h2 className="text-xl font-semibold">Mis Videos</h2>
+                      <p className="text-sm text-muted-foreground">Gestiona tu contenido visual</p>
                     </div>
                   </div>
                   {videos.length > 0 && (
@@ -650,20 +725,20 @@ const ArtistDashboardPage: React.FC = () => {
               </Card>
             </motion.div>
 
-            {/* My Songs Section */}
+            {/* Songs Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-4">
+              <Card className="p-6 h-full">
+                <div className="flex items-center gap-4 mb-6">
                   <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
                     <Music2 className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">My Songs</h2>
-                    <p className="text-sm text-muted-foreground">Track your music portfolio</p>
+                    <h2 className="text-xl font-semibold">Mi Música</h2>
+                    <p className="text-sm text-muted-foreground">Administra tu portafolio musical</p>
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -805,99 +880,62 @@ const ArtistDashboardPage: React.FC = () => {
               </Card>
             </motion.div>
 
-            {/* My Strategy Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <BarChart2 className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold">My Strategy</h2>
-                      <p className="text-sm text-muted-foreground">Plan your growth</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {isLoadingStrategy ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                      </div>
-                    ) : currentStrategy.length > 0 ? (
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <h3 className="font-medium mb-2">Current Focus</h3>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          {currentStrategy.map((point: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <span className="mt-1">•</span>
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No strategy set. Create one to get started.
-                      </div>
-                    )}
-                    <Button 
-                      className="w-full" 
-                      onClick={() => setIsStrategyDialogOpen(true)}
-                    >
-                      Update Strategy
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-
-              <StrategyDialog 
-                open={isStrategyDialogOpen}
-                onOpenChange={setIsStrategyDialogOpen}
-                onStrategyUpdate={refetchStrategy}
-              />
-
-            {/* My Budget Section */}
+            {/* Strategy Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.3 }}
             >
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-4">
+              <Card className="p-6 h-full">
+                <div className="flex items-center gap-4 mb-6">
                   <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <DollarSign className="h-6 w-6 text-orange-500" />
+                    <BarChart2 className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">Recent Contacts</h2>
-                    <p className="text-sm text-muted-foreground">View your network</p>
+                    <h2 className="text-xl font-semibold">Mi Estrategia</h2>
+                    <p className="text-sm text-muted-foreground">Planifica tu crecimiento</p>
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="font-medium">Recent Contacts</p>
-                      <span className="text-sm text-muted-foreground">Total: 24</span>
+                  {isLoadingStrategy ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                     </div>
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">
-                        No contacts to display
-                      </div>
+                  ) : currentStrategy.length > 0 ? (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <h3 className="font-medium mb-2">Current Focus</h3>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        {currentStrategy.map((point: string, index: number) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <span className="mt-1">•</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                  <Link href="/contacts">
-                    <Button className="w-full">
-                      View All Contacts
-                    </Button>
-                  </Link>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No strategy set. Create one to get started.
+                    </div>
+                  )}
+                  <Button 
+                    className="w-full" 
+                    onClick={() => setIsStrategyDialogOpen(true)}
+                  >
+                    Update Strategy
+                  </Button>
                 </div>
               </Card>
             </motion.div>
           </div>
         </div>
       </ScrollArea>
+
+      <StrategyDialog 
+        open={isStrategyDialogOpen}
+        onOpenChange={setIsStrategyDialogOpen}
+        onStrategyUpdate={refetchStrategy}
+      />
     </div>
   );
 };
