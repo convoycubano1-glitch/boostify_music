@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Footer } from "@/components/layout/footer";
 import backgroundVideo from "../images/videos/Standard_Mode_Generated_Video.mp4";
+import bostifyVideo from "../images/videos/bostify.mp4";
 
 /* =============================
    VARIANTES PARA ANIMACIONES
@@ -236,6 +237,29 @@ export default function HomePage() {
               Comprehensive tools to boost your music career and reach new audiences
             </p>
           </div>
+
+          {/* Add the video section here */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative max-w-4xl mx-auto"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
+            <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
+              <video
+                className="w-full rounded-lg"
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src={bostifyVideo} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {features.map((feature, i) => (
