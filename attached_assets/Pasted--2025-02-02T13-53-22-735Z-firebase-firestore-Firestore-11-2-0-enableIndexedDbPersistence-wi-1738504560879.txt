@@ -1,0 +1,14 @@
+[2025-02-02T13:53:22.735Z]  @firebase/firestore: Firestore (11.2.0): enableIndexedDbPersistence() will be deprecated in the future, you can use `FirestoreSettings.cache` instead.
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+[2025-02-02T13:54:34.595Z]  @firebase/firestore: Firestore (11.2.0): Uncaught Error in snapshot listener: FirebaseError: [code=permission-denied]: Missing or insufficient permissions.
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Payment process error: 
+DOMException {}
+stack: "SecurityError: Failed to set a named property 'href' on 'Location': The current window does not have permission to navigate the target frame to 'https://checkout.stripe.com/c/pay/cs_test_a12j7lPVoyjdk6q3Ha6xHYv5KHyziEteiq8VwgOdC3pDvWVePorTsCPKeW#fidkdWxOYHwnPyd1blpxYHZxWjA0VWFDczU3SXxDdWlSbGhjYlxVcE9dZDZtTEtXT19HMjNiXTBSdF9%2FSm5RQFdfMU1IUHFgVU5GbUNxU1xxU0FkNHM2dEtEZnB0T0NNMl9jNTJhZ2xUZn9TNTVWbkhOdlRuZCcpJ2hsYXYnP34nYnBsYSc%2FJzY2ZjQ9MTA1KGA2NDYoMWdmPChnZjJjKDM9NjM8YT02NDA8MDRmMDMxNScpJ2hwbGEnPyc8PT0zNmQ2Nyg2NzM0KDEwYD0oZ2AxPSg8Y2RmMzIwYWdmYTI8YzEyMzYnKSd2bGEnPyc0PGc1PDRhYygzNzdkKDE3MDAoPGRjYSg9ZGEyZGM0ZGBgZD1hNz0xYT0neCknZ2BxZHYnP15YKSdpZHxqcHFRfHVgJz8ndmxrYmlgWmxxYGgnKSd3YGNgd3dgd0p3bGJsayc%2FJ21xcXV2PyoqYGZnMjwwPGQoNDVkNygxNmY3KGc2YWAoYzxmN2Q3Y2cyNz03KDU1KDB9bW1wfXx8Nmc8bytubHduK3dgdWlscSthYHMneCUl'.↵ at new Promise (<anonymous>)↵ at o (https://js.stripe.com/v3:1:88241)↵ at ku (https://js.stripe.com/v3:1:450332)↵ at https://js.stripe.com/v3:1:535780↵ at async handlePayment (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/youtube-views.tsx:170:25)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: DOMException

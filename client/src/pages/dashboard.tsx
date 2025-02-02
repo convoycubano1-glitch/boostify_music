@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Music2, TrendingUp, Activity, Users, Calendar, Globe, Youtube, FileText, Megaphone } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -79,31 +79,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    // Subscribe to real-time metrics updates
-    const metricsRef = collection(db, 'metrics');
-    const metricsQuery = query(metricsRef, where("userId", "==", user.uid));
+    const fetchMetrics = async () => {
+      try {
+        const metricsDocRef = doc(db, 'metrics', user.uid);
+        const metricsDoc = await getDoc(metricsDocRef);
 
-    const unsubscribeMetrics = onSnapshot(metricsQuery, 
-      (snapshot) => {
-        const metricsData = {
-          spotifyFollowers: 0,
-          instagramFollowers: 0,
-          youtubeViews: 0,
-          contractsCreated: 0,
-          prCampaigns: 0,
-          totalEngagement: 0
-        };
-
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          Object.assign(metricsData, data);
-        });
-
-        setMetrics(metricsData);
-      },
-      (error) => {
-        console.error('Error al obtener métricas:', error);
-        if (error.code === 'permission-denied') {
+        if (!metricsDoc.exists()) {
           // Crear documento inicial de métricas para el usuario
           const initialMetrics = {
             userId: user.uid,
@@ -116,25 +97,22 @@ export default function Dashboard() {
             createdAt: new Date()
           };
 
-          metricsRef.add(initialMetrics)
-            .then(() => {
-              console.log('Documento de métricas inicializado');
-            })
-            .catch((error) => {
-              console.error('Error al inicializar métricas:', error);
-              toast({
-                title: "Error al cargar métricas",
-                description: "No se pudieron cargar tus métricas. Por favor, intenta recargar la página.",
-                variant: "destructive"
-              });
-            });
+          await setDoc(metricsDocRef, initialMetrics);
+          setMetrics(initialMetrics);
+        } else {
+          setMetrics(metricsDoc.data());
         }
+      } catch (error) {
+        console.error('Error al obtener métricas:', error);
+        toast({
+          title: "Error al cargar métricas",
+          description: "No se pudieron cargar tus métricas. Por favor, intenta recargar la página.",
+          variant: "destructive"
+        });
       }
-    );
-
-    return () => {
-      unsubscribeMetrics();
     };
+
+    fetchMetrics();
   }, [user]);
 
   return (
@@ -142,7 +120,6 @@ export default function Dashboard() {
       <Header />
       <ScrollArea className="flex-1">
         <div className="container mx-auto px-4 py-6">
-          {/* Header Section */}
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
@@ -158,7 +135,6 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          {/* Services Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {services.map((service) => (
               <Link key={service.name} href={service.route}>
@@ -189,7 +165,6 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Activity Chart */}
           <Card className="p-6 mb-8">
             <div className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Actividad General</h3>
