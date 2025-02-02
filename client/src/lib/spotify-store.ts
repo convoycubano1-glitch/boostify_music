@@ -40,14 +40,22 @@ export interface SpotifyAnalytics {
 }
 
 export async function getSpotifyData(user: User): Promise<SpotifyData | null> {
-  if (!user) return null;
+  if (!user?.uid) {
+    console.log('No user ID available');
+    return null;
+  }
 
   try {
+    console.log('Fetching Spotify data for user:', user.uid);
     const spotifyDocRef = doc(db, 'spotify_data', user.uid);
     const spotifyDoc = await getDoc(spotifyDocRef);
 
+    console.log('Document exists:', spotifyDoc.exists());
+
     if (spotifyDoc.exists()) {
       const data = spotifyDoc.data();
+      console.log('Retrieved data:', data);
+
       // Convertir Timestamp de Firestore a Date de JavaScript
       const lastUpdated = data.lastUpdated?.toDate?.() || new Date();
       return {
@@ -64,7 +72,7 @@ export async function getSpotifyData(user: User): Promise<SpotifyData | null> {
 }
 
 export async function getSpotifyAnalytics(user: User): Promise<SpotifyAnalytics | null> {
-  if (!user) return null;
+  if (!user?.uid) return null;
 
   try {
     const spotifyData = await getSpotifyData(user);

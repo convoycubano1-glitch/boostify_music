@@ -20,40 +20,35 @@ export function useFirebaseAuth() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+
       if (user) {
-        console.log('Firebase Auth: Usuario autenticado correctamente');
+        console.log('Firebase Auth: Usuario autenticado:', user.uid);
       } else {
         console.log('Firebase Auth: No hay usuario autenticado');
       }
-      setUser(user);
-      setLoading(false);
-    }, (error) => {
-      console.error("Firebase Auth Error:", error);
-      // Mensaje más descriptivo del error
-      let errorMessage = "Hubo un problema con la autenticación";
-      if (error.code === 'auth/invalid-api-key') {
-        errorMessage = "Error de configuración de Firebase. Por favor, verifica que el dominio esté autorizado en la consola de Firebase.";
-      }
-      toast({
-        title: "Error de autenticación",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, []);
 
   const signInWithGoogle = async () => {
     try {
       console.log('Iniciando proceso de autenticación con Google...');
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Autenticación exitosa:', result.user.email);
+
+      // Verificar que el usuario tenga un ID antes de continuar
+      if (!result.user.uid) {
+        throw new Error('No se pudo obtener el ID del usuario');
+      }
+
       toast({
         title: "¡Bienvenido!",
         description: `Has iniciado sesión como ${result.user.email}`,
       });
+
       return result.user;
     } catch (error: any) {
       console.error('Error en autenticación con Google:', error);

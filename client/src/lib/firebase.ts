@@ -1,24 +1,26 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
-  authDomain: "artist-boost.firebaseapp.com",
-  projectId: "artist-boost",
-  storageBucket: "artist-boost.firebasestorage.app",
-  messagingSenderId: "502955771825",
-  appId: "1:502955771825:web:d6746677d851f9b1449f90",
-  measurementId: "G-ERCSSWTXCJ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+// Initialize Firestore with default configuration
 export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
+
+export const auth = getAuth(app);
 
 // Initialize Analytics only in production
 let analytics = null;

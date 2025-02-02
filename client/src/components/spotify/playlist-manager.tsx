@@ -1,25 +1,37 @@
 import { Button } from "@/components/ui/button";
 import { SiSpotify } from "react-icons/si";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getSpotifyData } from "@/lib/spotify-store";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export function PlaylistManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
 
-  const { data: spotifyData, isLoading } = useQuery({
+  const { data: spotifyData, isLoading, error } = useQuery({
     queryKey: ["spotify", user?.uid],
     queryFn: async () => {
       if (!user) return null;
       return getSpotifyData(user);
     },
-    enabled: !!user
+    enabled: !!user,
+    retry: 1,
+    onError: (error: any) => {
+      console.error("Error fetching Spotify data:", error);
+      if (error.code === "permission-denied") {
+        toast({
+          title: "Error de permisos",
+          description: "No tienes permiso para acceder a estos datos. Por favor, inténtalo de nuevo.",
+          variant: "destructive"
+        });
+      }
+    }
   });
 
   const handleConnect = async () => {
@@ -32,24 +44,32 @@ export function PlaylistManager() {
       return;
     }
 
-    // Redirigir al usuario al flujo de OAuth de Spotify
-    window.location.href = `/api/spotify/auth`;
+    try {
+      // Redirigir al usuario al flujo de OAuth de Spotify
+      window.location.href = `/api/spotify/auth`;
+    } catch (error) {
+      console.error("Error connecting to Spotify:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo conectar con Spotify. Por favor, inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    }
   };
 
   const isConnected = !!spotifyData?.accessToken;
 
+  if (isLoading) {
+    return (
+      <Card className="p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/10 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/20 via-[#1DB954]/10 to-transparent" />
-
-      {/* Music Wave Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d="M0,50 Q25,30 50,50 T100,50" className="stroke-current" fill="none" strokeWidth="0.5" />
-          <path d="M0,60 Q25,40 50,60 T100,60" className="stroke-current" fill="none" strokeWidth="0.5" />
-          <path d="M0,40 Q25,20 50,40 T100,40" className="stroke-current" fill="none" strokeWidth="0.5" />
-        </svg>
-      </div>
 
       <div className="relative text-center py-8">
         <div className="relative w-20 h-20 mx-auto mb-6">
@@ -85,9 +105,9 @@ export function PlaylistManager() {
         {isConnected && (
           <div className="mt-8 grid grid-cols-3 gap-4 max-w-sm mx-auto">
             {[
-              { label: "Monthly Listeners", value: spotifyData?.monthlyListeners ?? "0" },
-              { label: "Followers", value: spotifyData?.followers ?? "0" },
-              { label: "Total Streams", value: spotifyData?.totalStreams ?? "0" }
+              { label: "Monthly Listeners", value: spotifyData?.monthlyListeners?.toLocaleString() ?? "0" },
+              { label: "Followers", value: spotifyData?.followers?.toLocaleString() ?? "0" },
+              { label: "Total Streams", value: spotifyData?.totalStreams?.toLocaleString() ?? "0" }
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-xl font-bold">{stat.value}</div>
@@ -100,7 +120,9 @@ export function PlaylistManager() {
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
-          <DialogTitle>Conectar con Spotify</DialogTitle>
+          <DialogHeader>
+            <DialogTitle>Conectar con Spotify</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
             <p>Al conectar tu cuenta de Spotify, podrás:</p>
             <ul className="list-disc list-inside space-y-2">
