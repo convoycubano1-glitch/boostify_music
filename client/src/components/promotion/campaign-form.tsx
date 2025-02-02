@@ -69,7 +69,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Error al obtener sugerencias');
+        throw new Error('Failed to get suggestions');
       }
 
       const data = await response.json();
@@ -78,7 +78,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       console.error("Error getting AI suggestion:", error);
       toast({
         title: "Error",
-        description: "No se pudieron obtener las sugerencias de AI",
+        description: "Failed to get AI suggestions",
         variant: "destructive",
       });
     }
@@ -89,7 +89,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       setIsLoading(true);
       const user = auth.currentUser;
       if (!user) {
-        throw new Error("Usuario no autenticado");
+        throw new Error("User not authenticated");
       }
 
       console.log('Attempting to save campaign:', { ...data, userId: user.uid });
@@ -109,8 +109,8 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       console.log('Campaign saved with ID:', docRef.id);
 
       toast({
-        title: "Éxito",
-        description: "Campaña creada exitosamente",
+        title: "Success",
+        description: "Campaign created successfully",
       });
 
       if (onSuccess) {
@@ -122,7 +122,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       console.error("Error creating campaign:", error);
       toast({
         title: "Error",
-        description: error.message || "Error al crear la campaña",
+        description: error.message || "Failed to create campaign",
         variant: "destructive",
       });
     } finally {
@@ -138,7 +138,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nombre de la campaña</FormLabel>
+              <FormLabel>Campaign Name</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -152,12 +152,12 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descripción</FormLabel>
+              <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea {...field} />
               </FormControl>
               <FormDescription>
-                Describe los objetivos de tu campaña y tu audiencia objetivo
+                Describe your campaign goals and target audience
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -169,20 +169,20 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
           name="platform"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Plataforma</FormLabel>
+              <FormLabel>Platform</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una plataforma" />
+                    <SelectValue placeholder="Select a platform" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="spotify">Spotify</SelectItem>
-                  <SelectItem value="social">Redes Sociales</SelectItem>
-                  <SelectItem value="multiple">Múltiples Plataformas</SelectItem>
+                  <SelectItem value="social">Social Media</SelectItem>
+                  <SelectItem value="multiple">Multiple Platforms</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -195,7 +195,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
           name="budget"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Presupuesto ($)</FormLabel>
+              <FormLabel>Budget ($)</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -214,7 +214,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
             name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Fecha de inicio</FormLabel>
+                <FormLabel>Start Date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -228,7 +228,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
             name="endDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Fecha de fin</FormLabel>
+                <FormLabel>End Date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -240,7 +240,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
 
         {aiSuggestion && (
           <div className="p-4 bg-orange-500/10 rounded-lg">
-            <h4 className="font-semibold mb-2">Sugerencia de IA</h4>
+            <h4 className="font-semibold mb-2">AI Suggestion</h4>
             <p className="text-sm text-muted-foreground">{aiSuggestion}</p>
           </div>
         )}
@@ -251,10 +251,10 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
             variant="outline"
             onClick={() => getAISuggestion(form.getValues())}
           >
-            Obtener sugerencias de IA
+            Get AI Suggestions
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Creando..." : "Crear Campaña"}
+            {isLoading ? "Creating..." : "Create Campaign"}
           </Button>
         </div>
       </form>

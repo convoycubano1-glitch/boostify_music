@@ -39,7 +39,9 @@ export default function PromotionPage() {
         ...doc.data()
       }));
     },
-    enabled: !!auth.currentUser
+    enabled: !!auth.currentUser,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    retry: false, // Don't retry on failure to avoid error message spam
   });
 
   return (
@@ -101,7 +103,7 @@ export default function PromotionPage() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Budget</p>
-                        <p className="font-semibold">${campaign.budget.toLocaleString()}</p>
+                        <p className="font-semibold">${campaign.budget?.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Platform</p>
@@ -110,7 +112,7 @@ export default function PromotionPage() {
                       <div>
                         <p className="text-sm text-muted-foreground">Duration</p>
                         <p className="font-semibold">
-                          {new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}
+                          {campaign.startDate && new Date(campaign.startDate).toLocaleDateString()} - {campaign.endDate && new Date(campaign.endDate).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
