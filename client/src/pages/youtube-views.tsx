@@ -7,6 +7,7 @@ import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle } from "lucide-rea
 import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { getAuthToken } from "@/lib/firebase";
 import {
   LineChart,
   Line,
@@ -92,7 +93,12 @@ export default function YoutubeViewsPage() {
     try {
       const token = await getAuthToken();
       if (!token) {
-        throw new Error("No se pudo obtener el token de autenticación");
+        toast({
+          title: "Error de autenticación",
+          description: "Por favor, inicia sesión para continuar",
+          variant: "destructive"
+        });
+        return;
       }
 
       const stripe = await stripePromise;
@@ -107,7 +113,6 @@ export default function YoutubeViewsPage() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          packageId: packageIndex,
           videoUrl,
           views: viewsPackages[packageIndex].views,
           price: viewsPackages[packageIndex].price
@@ -317,10 +322,4 @@ export default function YoutubeViewsPage() {
       )}
     </div>
   );
-    async function getAuthToken() {
-        // Implement your logic to retrieve the authentication token here.
-        // For example, you might read it from localStorage or a cookie.
-        // This is a placeholder, replace with your actual token retrieval mechanism.
-        return localStorage.getItem("token");
-      }
 }
