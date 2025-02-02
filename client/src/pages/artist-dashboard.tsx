@@ -38,6 +38,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StrategyDialog } from "@/components/strategy/strategy-dialog";
+import { ActivityFeed } from "@/components/activity/activity-feed";
 
 interface Video {
   id: string;
@@ -85,7 +86,8 @@ const ArtistDashboardPage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
+    const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
+
 
   // Query for songs
   const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
@@ -284,6 +286,16 @@ const ArtistDashboardPage: React.FC = () => {
             const songsRef = collection(db, "songs");
             await addDoc(songsRef, songData);
 
+            // Add activity log after song is uploaded
+            const activityData = {
+                type: 'song',
+                action: 'Uploaded new song',
+                title: selectedFile.name,
+                userId: auth.currentUser.uid,
+                createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, "activities"), activityData);
+
             console.log("Song saved successfully");
             toast({
               title: "Success",
@@ -350,6 +362,16 @@ const ArtistDashboardPage: React.FC = () => {
 
       const videosRef = collection(db, "videos");
       await addDoc(videosRef, videoData);
+        // Add activity log after video is uploaded
+        const activityData = {
+            type: 'video',
+            action: 'Added new video',
+            title: videoUrl,
+            userId: auth.currentUser.uid,
+            createdAt: serverTimestamp()
+        };
+        await addDoc(collection(db, "activities"), activityData);
+
 
       toast({
         title: "Success",
@@ -894,6 +916,15 @@ const ArtistDashboardPage: React.FC = () => {
                   </Dialog>
                 </div>
               </Card>
+            </motion.div>
+
+             {/* Activity Feed Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <ActivityFeed />
             </motion.div>
 
             {/* Strategy Section */}
