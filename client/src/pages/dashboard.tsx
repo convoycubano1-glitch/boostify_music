@@ -33,12 +33,10 @@ export default function Dashboard() {
 
     const fetchMetrics = async () => {
       try {
-        // Usar la nueva estructura de subcollecciones
         const userMetricsRef = doc(db, `users/${user.uid}/metrics/current`);
         const metricsDoc = await getDoc(userMetricsRef);
 
         if (!metricsDoc.exists()) {
-          // Crear documento inicial de métricas para el usuario
           const initialMetrics = {
             spotifyFollowers: 0,
             instagramFollowers: 0,
@@ -63,10 +61,10 @@ export default function Dashboard() {
           });
         }
       } catch (error) {
-        console.error('Error al obtener métricas:', error);
+        console.error('Error fetching metrics:', error);
         toast({
-          title: "Error al cargar métricas",
-          description: "No se pudieron cargar tus métricas. Por favor, intenta recargar la página.",
+          title: "Error Loading Metrics",
+          description: "Please try refreshing the page.",
           variant: "destructive"
         });
       }
@@ -78,47 +76,47 @@ export default function Dashboard() {
   const services = [
     {
       name: "Spotify Growth",
-      description: "Impulsa tu presencia en Spotify",
+      description: "Boost your Spotify presence",
       icon: SiSpotify,
       route: "/spotify",
       stats: metrics.spotifyFollowers,
-      statsLabel: "Seguidores",
+      statsLabel: "Followers",
       color: "text-orange-500"
     },
     {
       name: "Instagram Boost",
-      description: "Aumenta tu alcance en Instagram",
+      description: "Increase your Instagram reach",
       icon: SiInstagram,
       route: "/instagram-boost",
       stats: metrics.instagramFollowers,
-      statsLabel: "Seguidores",
+      statsLabel: "Followers",
       color: "text-orange-500"
     },
     {
       name: "YouTube Views",
-      description: "Incrementa tus visualizaciones",
+      description: "Grow your video views",
       icon: SiYoutube,
       route: "/youtube-views",
       stats: metrics.youtubeViews,
-      statsLabel: "Vistas",
+      statsLabel: "Views",
       color: "text-orange-500"
     },
     {
-      name: "Contratos",
-      description: "Gestiona tus acuerdos profesionales",
+      name: "Contracts",
+      description: "Manage professional agreements",
       icon: FileText,
       route: "/contracts",
       stats: metrics.contractsCreated,
-      statsLabel: "Contratos",
+      statsLabel: "Contracts",
       color: "text-orange-500"
     },
     {
       name: "PR Management",
-      description: "Gestiona tu presencia pública",
+      description: "Manage public presence",
       icon: Megaphone,
       route: "/pr",
       stats: metrics.prCampaigns,
-      statsLabel: "Campañas",
+      statsLabel: "Campaigns",
       color: "text-orange-500"
     }
   ];
@@ -127,19 +125,19 @@ export default function Dashboard() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-8">
-            <div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div className="text-center md:text-left">
               <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                Music Marketing Hub
+               Dashboard
               </h1>
               <p className="text-muted-foreground mt-2">
-                Gestiona y potencia tu presencia musical desde un solo lugar
+                Manage and enhance your musical presence from one place
               </p>
             </div>
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
               <Activity className="mr-2 h-4 w-4" />
-              Vista en Vivo
+              Live View
             </Button>
           </div>
 
@@ -175,9 +173,9 @@ export default function Dashboard() {
 
           <Card className="p-6 mb-8">
             <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Actividad General</h3>
+              <h3 className="text-xl font-semibold mb-2">Overall Activity</h3>
               <p className="text-sm text-muted-foreground">
-                Seguimiento de métricas en todas las plataformas
+                Track metrics across all platforms
               </p>
             </div>
             <div className="h-[400px]">
