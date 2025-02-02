@@ -51,17 +51,20 @@ export function registerRoutes(app: Express): Server {
 
   // Save a new contract
   app.post("/api/contracts", async (req, res) => {
-    if (!req.user?.id) return res.sendStatus(401);
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "No token provided" });
 
     try {
       const contractData = contractSchema.parse(req.body);
 
-      const result = await db.insert(contracts).values({
-        userId: req.user.id,
-        ...contractData
+      const [result] = await db.insert(contracts).values({
+        title: contractData.title,
+        type: contractData.type,
+        content: contractData.content,
+        status: contractData.status,
+        userId: req.user!.id,
       }).returning();
 
-      res.status(201).json(result[0]);
+      res.status(201).json(result);
     } catch (error) {
       console.error('Error saving contract:', error);
       res.status(400).json({ error: 'Invalid contract data' });
@@ -70,13 +73,12 @@ export function registerRoutes(app: Express): Server {
 
   // Get user's contracts
   app.get("/api/contracts", async (req, res) => {
-    if (!req.user?.id) return res.sendStatus(401);
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "No token provided" });
 
     try {
-      const userContracts = await db.query.contracts.findMany({
-        where: eq(contracts.userId, req.user.id),
-        orderBy: desc(contracts.createdAt)
-      });
+      const userContracts = await db.select().from(contracts)
+        .where(eq(contracts.userId, req.user!.id))
+        .orderBy(desc(contracts.createdAt));
 
       res.json(userContracts);
     } catch (error) {

@@ -69,7 +69,7 @@ export default function ContractsPage() {
 
   // Save contract mutation
   const saveContractMutation = useMutation({
-    mutationFn: async (contract: { title: string; type: string; content: string }) => {
+    mutationFn: async (contract: { title: string; type: string; content: string, status: string }) => {
       const response = await fetch("/api/contracts", {
         method: "POST",
         headers: {
@@ -114,8 +114,9 @@ export default function ContractsPage() {
     try {
       await saveContractMutation.mutateAsync({
         title: contractTitle,
-        type: "contract", // You might want to be more specific based on the contract type
+        type: "legal", // Using a default type
         content: generatedContract,
+        status: "draft"
       });
 
       toast({
@@ -126,6 +127,7 @@ export default function ContractsPage() {
       setShowNewContractDialog(false);
       setContractTitle("");
     } catch (error) {
+      console.error('Error saving contract:', error);
       toast({
         title: "Error",
         description: "Failed to save contract. Please try again.",
