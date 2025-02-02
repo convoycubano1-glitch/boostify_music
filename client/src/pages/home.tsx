@@ -38,13 +38,11 @@ export default function HomePage() {
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
 
-
   useEffect(() => {
     const viewInterval = setInterval(() => {
       setViewCount(prev => {
         if (prev >= 100000) {
-          clearInterval(viewInterval);
-          return prev;
+          return 0; // Reset to start the loop again
         }
         return prev + 1000;
       });
@@ -53,8 +51,7 @@ export default function HomePage() {
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 85) {
-          clearInterval(progressInterval);
-          return prev;
+          return 0; // Reset to start the loop again
         }
         return prev + 1;
       });
