@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Header } from "@/components/layout/header";
 import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
 import { generateContract } from "@/lib/openai";
@@ -32,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
+import { deleteDoc } from "firebase/firestore";
 
 export default function ContractsPage() {
   const { toast } = useToast();
@@ -76,15 +78,15 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast({
-        title: "Éxito",
-        description: "Contrato eliminado correctamente",
+        title: "Success",
+        description: "Contract deleted successfully",
       });
       setShowDeleteDialog(false);
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Error al eliminar el contrato",
+        description: error.message || "Error deleting the contract",
         variant: "destructive",
       });
     },
@@ -98,15 +100,15 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast({
-        title: "Éxito",
-        description: "Contrato actualizado correctamente",
+        title: "Success",
+        description: "Contract updated successfully",
       });
       setShowEditDialog(false);
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Error al actualizar el contrato",
+        description: error.message || "Error updating the contract",
         variant: "destructive",
       });
     },
@@ -160,7 +162,7 @@ export default function ContractsPage() {
         console.error('Error generating PDF:', error);
         toast({
           title: "Error",
-          description: "No se pudo generar el PDF. Por favor, intente nuevamente.",
+          description: "Failed to generate PDF. Please try again.",
           variant: "destructive",
         });
       }
@@ -194,15 +196,15 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast({
-        title: "Éxito",
-        description: "Contrato guardado correctamente",
+        title: "Success",
+        description: "Contract saved successfully",
       });
     },
     onError: (error: Error) => {
       console.error('Error in saveContractMutation:', error);
       toast({
         title: "Error",
-        description: error.message || "Error al guardar el contrato. Por favor, intente nuevamente.",
+        description: error.message || "Error saving the contract. Please try again.",
         variant: "destructive",
       });
     },
@@ -215,14 +217,14 @@ export default function ContractsPage() {
       setGeneratedContract(contract);
       setContractTitle(`${values.type} Agreement - ${values.artistName}`);
       toast({
-        title: "Contrato Generado",
-        description: "Su contrato ha sido generado exitosamente.",
+        title: "Contract Generated",
+        description: "Your contract has been generated successfully.",
       });
     } catch (error) {
       console.error('Error generating contract:', error);
       toast({
         title: "Error",
-        description: "No se pudo generar el contrato. Por favor, intente nuevamente.",
+        description: "Failed to generate the contract. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -234,7 +236,7 @@ export default function ContractsPage() {
     if (!generatedContract || !contractTitle) {
       toast({
         title: "Error",
-        description: "El título y contenido del contrato son requeridos.",
+        description: "The contract title and content are required.",
         variant: "destructive",
       });
       return;
@@ -243,7 +245,7 @@ export default function ContractsPage() {
     if (!auth.currentUser) {
       toast({
         title: "Error",
-        description: "Debe iniciar sesión para guardar contratos.",
+        description: "You must be logged in to save contracts.",
         variant: "destructive",
       });
       return;
@@ -272,23 +274,25 @@ export default function ContractsPage() {
       <div className="flex-1 space-y-8 p-8 pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Contratos</h2>
+            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Contract Management
+            </h2>
             <p className="text-muted-foreground">
-              Gestiona tus contratos y documentos legales
+              Create, manage, and track your professional agreements efficiently
             </p>
           </div>
           <Dialog open={showNewContractDialog} onOpenChange={setShowNewContractDialog}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Nuevo Contrato
+                New Contract
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Crear Nuevo Contrato</DialogTitle>
+                <DialogTitle>Create New Contract</DialogTitle>
                 <DialogDescription>
-                  Complete el formulario para generar un contrato profesional
+                  Fill out the form below to generate a professional contract using AI
                 </DialogDescription>
               </DialogHeader>
               {!generatedContract ? (
@@ -297,7 +301,7 @@ export default function ContractsPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="title" className="text-sm font-medium">
-                      Título del Contrato
+                      Contract Title
                     </label>
                     <input
                       id="title"
@@ -321,13 +325,13 @@ export default function ContractsPage() {
                         setContractTitle("");
                       }}
                     >
-                      Cancelar
+                      Cancel
                     </Button>
                     <Button
                       onClick={handleSaveContract}
                       disabled={!contractTitle || saveContractMutation.isPending}
                     >
-                      {saveContractMutation.isPending ? "Guardando..." : "Guardar Contrato"}
+                      {saveContractMutation.isPending ? "Saving..." : "Save Contract"}
                     </Button>
                   </div>
                 </div>
@@ -341,89 +345,112 @@ export default function ContractsPage() {
             <Card className="p-6">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-medium">Total Contratos</h3>
+                <h3 className="text-lg font-medium">Total Contracts</h3>
               </div>
               <p className="mt-2 text-3xl font-bold">{contracts.length}</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                View and manage all your contracts in one place
+              </p>
             </Card>
             <Card className="p-6">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <h3 className="text-lg font-medium">Contratos Activos</h3>
+                <h3 className="text-lg font-medium">Active Contracts</h3>
               </div>
               <p className="mt-2 text-3xl font-bold">
                 {contracts.filter((c) => c.status === "active").length}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Currently active and enforced agreements
               </p>
             </Card>
             <Card className="p-6">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-lg font-medium">Pendientes</h3>
+                <h3 className="text-lg font-medium">Pending</h3>
               </div>
               <p className="mt-2 text-3xl font-bold">
                 {contracts.filter((c) => c.status === "draft").length}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Drafts and contracts pending review
               </p>
             </Card>
           </div>
 
           <Card>
             {isLoading ? (
-              <div className="p-8 text-center">Cargando contratos...</div>
+              <div className="p-8 text-center">Loading contracts...</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead className="w-[100px]">Acciones</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contracts.map((contract) => (
-                    <TableRow key={contract.id}>
-                      <TableCell className="font-medium">{contract.title}</TableCell>
-                      <TableCell>{contract.type}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="secondary"
-                          className={`gap-1 ${getStatusColor(contract.status)}`}
-                        >
-                          {getStatusIcon(contract.status)}
-                          {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
-                              <Eye className="h-4 w-4" /> Ver
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
-                              <FileDown className="h-4 w-4" /> Descargar PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
-                              <Download className="h-4 w-4" /> Descargar TXT
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
-                              <Edit className="h-4 w-4" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
-                              <Trash2 className="h-4 w-4" /> Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {contracts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <div className="space-y-3">
+                          <p className="text-lg font-medium">No contracts yet</p>
+                          <p className="text-sm text-muted-foreground">
+                            Click "New Contract" to create your first agreement
+                          </p>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    contracts.map((contract) => (
+                      <TableRow key={contract.id}>
+                        <TableCell className="font-medium">{contract.title}</TableCell>
+                        <TableCell>{contract.type}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={`gap-1 ${getStatusColor(contract.status)}`}
+                          >
+                            {getStatusIcon(contract.status)}
+                            {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
+                                <Eye className="h-4 w-4" /> View
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
+                                <FileDown className="h-4 w-4" /> Download PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
+                                <Download className="h-4 w-4" /> Download TXT
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
+                                <Edit className="h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
+                                <Trash2 className="h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             )}
@@ -433,7 +460,10 @@ export default function ContractsPage() {
           <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
             <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
               <DialogHeader>
-                <DialogTitle>{selectedContract?.title}</DialogTitle>
+                <DialogTitle className="text-xl font-bold">{selectedContract?.title}</DialogTitle>
+                <DialogDescription>
+                  Created on {selectedContract?.createdAt.toLocaleDateString()}
+                </DialogDescription>
               </DialogHeader>
               <div className="flex-1 min-h-0">
                 <ScrollArea className="h-full">
@@ -446,7 +476,7 @@ export default function ContractsPage() {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setShowViewDialog(false)}>
-                  Cerrar
+                  Close
                 </Button>
               </div>
             </DialogContent>
@@ -456,7 +486,10 @@ export default function ContractsPage() {
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
             <DialogContent className="max-w-4xl">
               <DialogHeader>
-                <DialogTitle>Editar Contrato</DialogTitle>
+                <DialogTitle>Edit Contract</DialogTitle>
+                <DialogDescription>
+                  Make changes to your contract content below
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <textarea
@@ -466,7 +499,7 @@ export default function ContractsPage() {
                 />
                 <div className="flex justify-end gap-4">
                   <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                    Cancelar
+                    Cancel
                   </Button>
                   <Button
                     onClick={() => {
@@ -479,7 +512,7 @@ export default function ContractsPage() {
                     }}
                     disabled={updateContractMutation.isPending}
                   >
-                    {updateContractMutation.isPending ? "Guardando..." : "Guardar Cambios"}
+                    {updateContractMutation.isPending ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
               </div>
@@ -490,13 +523,13 @@ export default function ContractsPage() {
           <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta acción no se puede deshacer. El contrato será eliminado permanentemente.
+                  This action cannot be undone. The contract will be permanently deleted.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
                     if (selectedContract) {
@@ -505,12 +538,11 @@ export default function ContractsPage() {
                   }}
                   className="bg-destructive hover:bg-destructive/90"
                 >
-                  {deleteContractMutation.isPending ? "Eliminando..." : "Eliminar"}
+                  {deleteContractMutation.isPending ? "Deleting..." : "Delete"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-
         </div>
       </div>
     </div>

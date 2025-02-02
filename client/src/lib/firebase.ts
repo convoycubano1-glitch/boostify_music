@@ -11,7 +11,8 @@ import {
   orderBy, 
   doc, 
   getDoc, 
-  updateDoc, 
+  updateDoc,
+  deleteDoc,
   serverTimestamp,
   enableIndexedDbPersistence 
 } from "firebase/firestore";
