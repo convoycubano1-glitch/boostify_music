@@ -136,18 +136,14 @@ export async function getUserContracts(): Promise<Contract[]> {
   console.log('Firebase Auth: Usuario autenticado:', currentUser.uid);
 
   try {
-    // Create a query against the collection
+    // Reference to the contracts collection
     const contractsRef = collection(db, 'contracts');
     console.log('Consultando colección contracts');
 
-    // First check if the collection exists
-    const testDoc = await getDocs(contractsRef);
-    console.log('Collection exists:', !testDoc.empty);
-
+    // Simplified query without orderBy to avoid index requirement
     const q = query(
       contractsRef,
-      where('userId', '==', currentUser.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', currentUser.uid)
     );
 
     const querySnapshot = await getDocs(q);
@@ -162,6 +158,9 @@ export async function getUserContracts(): Promise<Contract[]> {
         createdAt: data.createdAt?.toDate() || new Date(),
       };
     }) as Contract[];
+
+    // Sort on client side instead
+    contracts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     console.log('Contratos procesados:', contracts.length);
     return contracts;
