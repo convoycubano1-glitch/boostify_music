@@ -100,7 +100,7 @@ export default function YoutubeViewsPage() {
     setShowDialog(true);
   };
 
-    const handlePayment = async () => {
+  const handlePayment = async () => {
     if (!videoUrl) {
       toast({
         title: "Error",
@@ -109,7 +109,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-
+  
     if (!user) {
       toast({
         title: "Error",
@@ -118,7 +118,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-
+  
     try {
       const token = await getAuthToken();
       if (!token) {
@@ -129,21 +129,25 @@ export default function YoutubeViewsPage() {
         });
         return;
       }
-
+  
       setIsProcessing(true);
-
+  
       // Create order in Firebase first
       const orderData = await createYouTubeViewsOrder(user, {
         videoUrl,
         purchasedViews: desiredViews,
         apifyRunId: '',
       });
-
+  
+      if (!orderData || !orderData.id) {
+        throw new Error('Failed to create order');
+      }
+  
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Could not initialize Stripe");
       }
-
+  
       // Create Stripe checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -155,27 +159,25 @@ export default function YoutubeViewsPage() {
           videoUrl,
           views: desiredViews,
           price: currentPrice,
-          orderId: orderData.id // Pass the Firebase order ID to link with Stripe session
+          orderId: orderData.id
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error creating payment session');
       }
-
+  
       const { sessionId } = await response.json();
       if (!sessionId) {
         throw new Error('Stripe session ID was not received');
       }
-
-      setOrderId(orderData.id);
-
+  
       // Redirect to Stripe checkout
       const { error } = await stripe.redirectToCheckout({
-        sessionId: sessionId
+        sessionId
       });
-
+  
       if (error) {
         throw new Error(error.message);
       }
@@ -755,7 +757,7 @@ export default function YoutubeViewsPage() {
                     Your payment was not completed. You can try again when you're ready.
                   </p>
                 </div>
-              </div>
+</div>
             </Card>
           </motion.div>
         )}
