@@ -24,18 +24,17 @@ export default function ContactsPage() {
   const { toast } = useToast();
   const [isImporting, setIsImporting] = useState(false);
 
+  // Only fetch contacts when auth is ready
   const { data: contacts = [] } = useQuery({
-    queryKey: ["contacts"],
+    queryKey: ["contacts", auth.currentUser?.uid],
     queryFn: async () => {
-      const user = auth.currentUser;
-      if (!user) return [];
+      if (!auth.currentUser?.uid) return [];
 
       try {
         const contactsRef = collection(db, "contacts");
         const q = query(
           contactsRef,
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("userId", "==", auth.currentUser.uid)
         );
 
         const querySnapshot = await getDocs(q);
@@ -45,21 +44,17 @@ export default function ContactsPage() {
           createdAt: doc.data().createdAt?.toDate() || new Date(),
         })) as Contact[];
       } catch (error) {
-        console.error("Error fetching contacts:", error);
         return [];
       }
     },
-    enabled: !!auth.currentUser,
+    enabled: !!auth.currentUser?.uid,
     staleTime: 30000,
     retry: false
   });
 
   const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    const user = auth.currentUser;
-    if (!user) return;
+    if (!file || !auth.currentUser?.uid) return;
 
     setIsImporting(true);
     try {
@@ -67,25 +62,29 @@ export default function ContactsPage() {
       const rows = text.split('\n');
       const headers = rows[0].split(',').map(header => header.trim().toLowerCase());
 
-      const contacts = rows.slice(1).map(row => {
-        const values = row.split(',').map(value => value.trim());
-        const contact: any = {
-          userId: user.uid,
-          createdAt: serverTimestamp()
-        };
-        
-        headers.forEach((header, index) => {
-          if (values[index]) {
-            contact[header] = values[index];
-          }
-        });
+      const contacts = rows.slice(1)
+        .filter(row => row.trim()) // Skip empty rows
+        .map(row => {
+          const values = row.split(',').map(value => value.trim());
+          const contact: any = {
+            userId: auth.currentUser!.uid,
+            createdAt: serverTimestamp()
+          };
 
-        return contact;
-      });
+          headers.forEach((header, index) => {
+            if (values[index]) {
+              contact[header] = values[index];
+            }
+          });
+
+          return contact;
+        });
 
       const contactsRef = collection(db, "contacts");
       for (const contact of contacts) {
-        await addDoc(contactsRef, contact);
+        if (contact.name && contact.email) {  // Only import if required fields exist
+          await addDoc(contactsRef, contact);
+        }
       }
 
       toast({
@@ -93,7 +92,6 @@ export default function ContactsPage() {
         description: `Imported ${contacts.length} contacts successfully`,
       });
     } catch (error) {
-      console.error("Error importing contacts:", error);
       toast({
         title: "Error",
         description: "Failed to import contacts",
@@ -101,7 +99,9 @@ export default function ContactsPage() {
       });
     } finally {
       setIsImporting(false);
-      event.target.value = '';
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
