@@ -32,9 +32,16 @@ export function Header() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="flex items-center space-x-6">
             <Link href="/">
-              <a className="flex items-center space-x-2">
+              <a className="flex items-center space-x-2 hover:opacity-90 transition-opacity">
                 <SiMusicbrainz className="h-6 w-6 text-orange-500" />
-                <span className="hidden md:inline-block font-bold text-lg">Boostify</span>
+                <div className="hidden md:block">
+                  <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                    Boostify
+                  </span>
+                  <span className="text-xs block text-muted-foreground -mt-1">
+                    Music Marketing Platform
+                  </span>
+                </div>
               </a>
             </Link>
 
