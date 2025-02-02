@@ -63,6 +63,9 @@ export default function YoutubeViewsPage() {
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+    const [desiredViews, setDesiredViews] = useState(1000);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processingStep, setProcessingStep] = useState(0);
 
   const { data: apifyData, refetch } = useQuery({
     queryKey: ["apify-run", orderId],
@@ -164,6 +167,43 @@ export default function YoutubeViewsPage() {
 
   const progress = 75;
   const currentViews = 7500;
+
+    const startViewsProcess = () => {
+    if (!videoUrl) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid YouTube URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    // Simulate process steps
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      setProcessingStep(step);
+      if (step >= 3) {
+        clearInterval(interval);
+        setShowDialog(true); // Show payment dialog
+      }
+    }, 1500);
+  };
+
+  const getStepMessage = (step: number) => {
+    switch (step) {
+      case 1:
+        return "Validando URL del video...";
+      case 2:
+        return "Analizando métricas actuales...";
+      case 3:
+        return "Listo para comenzar. Se requiere pago para continuar.";
+      default:
+        return "Iniciando proceso...";
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -416,7 +456,7 @@ export default function YoutubeViewsPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <Card className="p-6 backdrop-blur-sm border-orange-500/10">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="video-url" className="text-sm font-medium">
                   Video URL
@@ -429,6 +469,48 @@ export default function YoutubeViewsPage() {
                   className="bg-background/50 border-orange-500/10 focus:border-orange-500"
                 />
               </div>
+
+              <div className="space-y-2">
+                <label htmlFor="desired-views" className="text-sm font-medium">
+                  Cantidad de Views Deseadas
+                </label>
+                <Input
+                  id="desired-views"
+                  type="number"
+                  min="1000"
+                  step="1000"
+                  value={desiredViews}
+                  onChange={(e) => setDesiredViews(parseInt(e.target.value))}
+                  className="bg-background/50 border-orange-500/10 focus:border-orange-500"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Mínimo: 1,000 views
+                </p>
+              </div>
+
+                {isProcessing ? (
+                  <div className="space-y-4">
+                    <div className="h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-orange-500"
+                        initial={{ width: "0%" }}
+                        animate={{ width: `${(processingStep / 3) * 100}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {getStepMessage(processingStep)}
+                    </p>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={startViewsProcess}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Iniciar Proceso
+                  </Button>
+                )}
             </div>
           </Card>
         </motion.div>
@@ -497,8 +579,8 @@ export default function YoutubeViewsPage() {
                   <h4 className="font-medium">Order details:</h4>
                   <ul className="list-disc list-inside space-y-2 text-sm">
                     <li>Video URL: {videoUrl}</li>
-                    <li>Price: ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}</li>
-                    <li>Views: {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''}</li>
+                      <li>Price: ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}</li>
+                      <li>Views: {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''}</li>
                   </ul>
                 </div>
               </div>
