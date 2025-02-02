@@ -224,65 +224,6 @@ export default function HomePage() {
                 Login with Google
               </Button>
             </motion.div>
-
-            {/* Analytics Simulation */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-            >
-              <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative">
-                  <div className="w-24 h-24 mx-auto mb-4">
-                    <CircularProgressbar
-                      value={progress}
-                      text={`${progress}%`}
-                      styles={buildStyles({
-                        pathColor: `rgba(249, 115, 22, ${progress / 100})`,
-                        textColor: '#fff',
-                        trailColor: '#334155',
-                        pathTransition: 'ease-in-out',
-                      })}
-                    />
-                  </div>
-                  <h3 className="text-xl font-bold text-center mb-2">Views Growth</h3>
-                  <p className="text-2xl font-bold text-center text-orange-500">
-                    {viewCount.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-center text-muted-foreground">Monthly Views</p>
-                </div>
-              </div>
-
-              <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative">
-                  <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                    <Users2 className="w-12 h-12 text-orange-500" />
-                  </div>
-                  <h3 className="text-xl font-bold text-center mb-2">Engagement</h3>
-                  <p className="text-2xl font-bold text-center text-orange-500">
-                    {(viewCount * 0.15).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-center text-muted-foreground">Active Users</p>
-                </div>
-              </div>
-
-              <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative">
-                  <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                    <TrendingUp className="w-12 h-12 text-orange-500" />
-                  </div>
-                  <h3 className="text-xl font-bold text-center mb-2">Growth Rate</h3>
-                  <p className="text-2xl font-bold text-center text-orange-500">
-                    +{progress}%
-                  </p>
-                  <p className="text-sm text-center text-muted-foreground">Month over Month</p>
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         </div>
 
@@ -304,6 +245,69 @@ export default function HomePage() {
             </Link>
           </motion.div>
         )}
+      </section>
+
+      {/* Analytics Section - Moved after hero */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+          >
+            <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <div className="w-24 h-24 mx-auto mb-4">
+                  <CircularProgressbar
+                    value={progress}
+                    text={`${progress}%`}
+                    styles={buildStyles({
+                      pathColor: `rgba(249, 115, 22, ${progress / 100})`,
+                      textColor: '#fff',
+                      trailColor: '#334155',
+                      pathTransition: 'ease-in-out',
+                    })}
+                  />
+                </div>
+                <h3 className="text-xl font-bold text-center mb-2">Views Growth</h3>
+                <p className="text-2xl font-bold text-center text-orange-500">
+                  {viewCount.toLocaleString()}
+                </p>
+                <p className="text-sm text-center text-muted-foreground">Monthly Views</p>
+              </div>
+            </div>
+
+            <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+                  <Users2 className="w-12 h-12 text-orange-500" />
+                </div>
+                <h3 className="text-xl font-bold text-center mb-2">Engagement</h3>
+                <p className="text-2xl font-bold text-center text-orange-500">
+                  {(viewCount * 0.15).toLocaleString()}
+                </p>
+                <p className="text-sm text-center text-muted-foreground">Active Users</p>
+              </div>
+            </div>
+
+            <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+                  <TrendingUp className="w-12 h-12 text-orange-500" />
+                </div>
+                <h3 className="text-xl font-bold text-center mb-2">Growth Rate</h3>
+                <p className="text-2xl font-bold text-center text-orange-500">
+                  +{progress}%
+                </p>
+                <p className="text-sm text-center text-muted-foreground">Month over Month</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Features Section - Enhanced with modern design */}
@@ -648,8 +652,7 @@ export default function HomePage() {
                 <Card
                   className={`p-6 relative ${
                     plan.popular
-                      ? "border-orange-500 bg-orange-500/5"
-                      : "bg-background/50 backdrop-blur-sm border-orange-500/10"
+                      ? "border-orange-500 bg-orange-500/5"                      : "bg-background/50 backdrop-blur-sm border-orange-500/10"
                   }`}
                 >
                   {plan.popular && (
