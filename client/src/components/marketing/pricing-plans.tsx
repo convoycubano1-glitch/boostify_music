@@ -138,71 +138,57 @@ export function PricingPlans() {
       </div>
       <div className="grid gap-8 lg:grid-cols-3 max-w-7xl mx-auto">
         {plans.map((plan, index) => (
-          <motion.div
-            key={plan.name}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Card className={`relative p-8 h-full backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all duration-300 ${
-              plan.popular ? 'border-orange-500/50 shadow-lg' : ''
-            }`}>
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <motion.div
-                    initial={{ scale: 0.9 }}
-                    animate={{ scale: 1 }}
-                    transition={{ 
-                      duration: 0.3,
-                      repeat: Infinity,
-                      repeatType: "reverse"
-                    }}
-                  >
+          <div key={plan.name} className="relative">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className={`relative p-8 h-full backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all duration-300 ${
+                plan.popular ? 'border-orange-500/50 shadow-lg' : ''
+              }`}>
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1">
                       <Crown className="w-4 h-4" />
                       Most Popular
                     </span>
-                  </motion.div>
+                  </div>
+                )}
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold">{plan.name}</h3>
+                  <div className="mt-4 flex items-baseline">
+                    <span className="text-4xl font-bold">${plan.price}</span>
+                    <span className="text-muted-foreground ml-2">/mo</span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {plan.description}
+                  </p>
                 </div>
-              )}
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold">{plan.name}</h3>
-                <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground ml-2">/mo</span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {plan.description}
-                </p>
-              </div>
-              <ul className="space-y-3 mb-6">
-                {plan.features.map((feature) => (
-                  <motion.li 
-                    key={feature} 
-                    className="flex items-center gap-2"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                    <span className="text-sm">{feature}</span>
-                  </motion.li>
-                ))}
-              </ul>
-              <div className="mt-auto">
-                <Button 
-                  className={`w-full ${
-                    plan.popular 
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                      : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
-                  }`}
-                  onClick={() => handlePayment(plan)}
-                >
-                  Get Started
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </motion.div>
+            {/* Button outside of motion.div and card for better click handling */}
+            <div className="mt-4 relative z-10">
+              <Button 
+                className={`w-full ${
+                  plan.popular 
+                    ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+                    : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
+                }`}
+                onClick={() => handlePayment(plan)}
+              >
+                Get Started
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
     </div>
