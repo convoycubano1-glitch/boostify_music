@@ -12,11 +12,15 @@ import { contracts } from "@db/schema";
 import express from 'express';
 import passport from 'passport';
 import session from 'express-session';
+import OpenAI from "openai";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error('Error: STRIPE_SECRET_KEY no está configurada');
   throw new Error('STRIPE_SECRET_KEY must be defined');
 }
+
+// Initialize OpenAI
+const openai = new OpenAI({ apiKey: process.env.VITE_OPENAI_API_KEY });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
@@ -50,6 +54,49 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
   setupInstagramRoutes(app);
   setupSpotifyRoutes(app);
+
+  // AI Campaign Suggestions Route
+  app.post("/api/ai/campaign-suggestion", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      const { name, description, platform, budget } = req.body;
+
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a marketing expert specialized in music promotion campaigns. Provide suggestions to optimize campaign performance."
+          },
+          {
+            role: "user",
+            content: `Please analyze and provide suggestions for this campaign:
+              Name: ${name}
+              Description: ${description}
+              Platform: ${platform}
+              Budget: $${budget}
+
+              Provide specific, actionable suggestions to improve the campaign's effectiveness.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const suggestions = JSON.parse(completion.choices[0].message.content);
+      res.json({ suggestion: suggestions.suggestions });
+    } catch (error: any) {
+      console.error('Error getting AI suggestions:', error);
+      res.status(500).json({ 
+        error: "Error generating campaign suggestions",
+        details: error.message 
+      });
+    }
+  });
+
 
   // Required for Stripe webhook
   app.post("/api/webhook", express.raw({type: 'application/json'}), async (req, res) => {
