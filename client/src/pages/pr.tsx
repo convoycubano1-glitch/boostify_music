@@ -2,204 +2,154 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users2,
   MessageSquare,
   Newspaper,
   TrendingUp,
   Search,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
-
-const prContacts = [
-  {
-    id: 1,
-    name: "María González",
-    role: "Music Journalist",
-    publication: "Revista Musical",
-    status: "active",
-    lastContact: "2024-01-25"
-  },
-  {
-    id: 2,
-    name: "Carlos Rodríguez",
-    role: "Radio Host",
-    publication: "Radio Música",
-    status: "pending",
-    lastContact: "2024-01-20"
-  },
-  {
-    id: 3,
-    name: "Ana López",
-    role: "Blog Editor",
-    publication: "Blog Musical",
-    status: "active",
-    lastContact: "2024-01-15"
-  }
-];
-
-const campaigns = [
-  {
-    id: 1,
-    title: "Lanzamiento Nuevo Single",
-    status: "active",
-    reach: "15K+",
-    engagement: "8.5%",
-    startDate: "2024-02-01"
-  },
-  {
-    id: 2,
-    title: "Tour Promocional",
-    status: "planned",
-    reach: "50K+",
-    engagement: "12%",
-    startDate: "2024-03-15"
-  }
-];
+import { useState, useEffect } from "react";
+import { searchContacts, contactCategories, type Contact } from "@/lib/apify-service";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PRPage() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>(contactCategories[0]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Búsqueda vacía",
+        description: "Por favor, ingresa un término de búsqueda",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const results = await searchContacts(selectedCategory, searchQuery);
+      setContacts(results);
+    } catch (error) {
+      console.error('Error en la búsqueda:', error);
+      toast({
+        title: "Error en la búsqueda",
+        description: "No se pudieron obtener los contactos. Por favor, intenta de nuevo.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">PR Management</h2>
           <p className="text-muted-foreground">
-            Gestiona tus relaciones públicas y campañas de comunicación
+            Gestiona tus relaciones públicas y encuentra contactos en la industria musical
           </p>
-        </div>
-        <div className="flex gap-4">
-          <Button variant="outline" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nueva Campaña
-          </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Contacto
-          </Button>
         </div>
       </div>
 
       <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-6">
-            <div className="flex items-center gap-2">
-              <Users2 className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-medium">Contactos PR</h3>
-            </div>
-            <p className="mt-2 text-3xl font-bold">{prContacts.length}</p>
-          </Card>
-          <Card className="p-6">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-medium">Campañas Activas</h3>
-            </div>
-            <p className="mt-2 text-3xl font-bold">
-              {campaigns.filter(c => c.status === 'active').length}
-            </p>
-          </Card>
-          <Card className="p-6">
-            <div className="flex items-center gap-2">
-              <Newspaper className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-medium">Menciones</h3>
-            </div>
-            <p className="mt-2 text-3xl font-bold">45</p>
-          </Card>
-          <Card className="p-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-medium">Alcance Total</h3>
-            </div>
-            <p className="mt-2 text-3xl font-bold">65K+</p>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="contacts" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="contacts" className="gap-2">
-              <Users2 className="h-4 w-4" />
-              Contactos
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Campañas
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="contacts" className="space-y-4">
+        <Card className="p-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Buscar Contactos</h3>
             <div className="flex gap-4">
-              <div className="relative max-w-sm">
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Selecciona categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contactCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex-1 relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar contactos..."
                   className="pl-8"
-                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
+              <Button 
+                onClick={handleSearch}
+                disabled={isLoading}
+                className="min-w-[100px]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Buscando...
+                  </>
+                ) : (
+                  'Buscar'
+                )}
+              </Button>
             </div>
+          </div>
+        </Card>
 
-            <Card>
-              <ScrollArea className="h-[400px]">
-                <div className="p-4 space-y-4">
-                  {prContacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-10 w-10">
-                          <div className="bg-primary/10 text-primary rounded-full h-full w-full flex items-center justify-center">
-                            {contact.name.charAt(0)}
-                          </div>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-semibold">{contact.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {contact.role} at {contact.publication}
-                          </p>
-                        </div>
+        <Card>
+          <ScrollArea className="h-[500px]">
+            <div className="p-4 space-y-4">
+              {contacts.map((contact, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10">
+                      <div className="bg-primary/10 text-primary rounded-full h-full w-full flex items-center justify-center">
+                        {contact.name.charAt(0)}
                       </div>
-                      <Button variant="outline" size="sm">
-                        Contactar
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="campaigns" className="space-y-4">
-            <div className="grid gap-6 md:grid-cols-2">
-              {campaigns.map((campaign) => (
-                <Card key={campaign.id} className="p-6">
-                  <div className="flex justify-between items-start mb-4">
+                    </Avatar>
                     <div>
-                      <h3 className="text-xl font-semibold">{campaign.title}</h3>
+                      <h4 className="font-semibold">{contact.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Inicia: {campaign.startDate}
+                        {contact.role || contact.category}
+                        {contact.company && ` at ${contact.company}`}
                       </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Ver Detalles
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Alcance</p>
-                      <p className="text-lg font-semibold">{campaign.reach}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Engagement</p>
-                      <p className="text-lg font-semibold">{campaign.engagement}</p>
+                      {contact.email && (
+                        <p className="text-sm text-muted-foreground">
+                          {contact.email}
+                        </p>
+                      )}
                     </div>
                   </div>
-                </Card>
+                  <Button variant="outline" size="sm">
+                    Guardar Contacto
+                  </Button>
+                </div>
               ))}
+              {contacts.length === 0 && !isLoading && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay contactos para mostrar. Realiza una búsqueda para encontrar contactos.
+                </div>
+              )}
             </div>
-          </TabsContent>
-        </Tabs>
+          </ScrollArea>
+        </Card>
       </div>
     </div>
   );
