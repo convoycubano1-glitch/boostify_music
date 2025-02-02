@@ -84,6 +84,8 @@ export function PricingPlans() {
         throw new Error("Could not initialize Stripe");
       }
 
+      console.log('Creating subscription session for plan:', plan.name); // Debug log
+
       // Create Stripe checkout session
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
@@ -106,6 +108,8 @@ export function PricingPlans() {
       if (!sessionId) {
         throw new Error('Stripe session ID was not received');
       }
+
+      console.log('Redirecting to Stripe checkout with session:', sessionId); // Debug log
 
       // Redirect to Stripe checkout
       const { error } = await stripe.redirectToCheckout({ sessionId });
