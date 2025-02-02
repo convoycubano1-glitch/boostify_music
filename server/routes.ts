@@ -10,6 +10,8 @@ import Stripe from 'stripe';
 import { z } from "zod";
 import { contracts } from "@db/schema";
 import express from 'express';
+import passport from 'passport';
+import session from 'express-session';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY must be defined');
@@ -29,6 +31,15 @@ const contractSchema = z.object({
 
 // Export the configured server
 export function registerRoutes(app: Express): Server {
+  // Initialize session and passport middleware
+  app.use(session({
+    secret: process.env.REPL_ID!,
+    resave: false,
+    saveUninitialized: false,
+  }));
+  app.use(passport.initialize());
+  app.use(passport.session());
+
   setupAuth(app);
   setupInstagramRoutes(app);
   setupSpotifyRoutes(app);
