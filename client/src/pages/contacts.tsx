@@ -3,11 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Upload, UserPlus, Users, FileSpreadsheet } from "lucide-react";
+import { Upload, UserPlus, Users, FileSpreadsheet, Loader2, Mail, Building2, Phone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 interface Contact {
   id: string;
@@ -23,9 +24,10 @@ interface Contact {
 export default function ContactsPage() {
   const { toast } = useToast();
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
 
-  // Only fetch contacts when auth is ready
-  const { data: contacts = [], refetch } = useQuery({
+  // Query for contacts with loading state
+  const { data: contacts = [], isLoading, refetch } = useQuery({
     queryKey: ["contacts", auth.currentUser?.uid],
     queryFn: async () => {
       if (!auth.currentUser?.uid) return [];
@@ -63,39 +65,42 @@ export default function ContactsPage() {
     if (!file || !auth.currentUser?.uid) return;
 
     setIsImporting(true);
+    setImportProgress(0);
+
     try {
       const text = await file.text();
       const rows = text.split('\n');
       const headers = rows[0].split(',').map(header => header.trim().toLowerCase());
+      const validRows = rows.slice(1).filter(row => row.trim());
 
-      const contacts = rows.slice(1)
-        .filter(row => row.trim()) // Skip empty rows
-        .map(row => {
-          const values = row.split(',').map(value => value.trim());
-          const contact: any = {
-            userId: auth.currentUser!.uid,
-            createdAt: serverTimestamp()
-          };
+      const contacts = validRows.map(row => {
+        const values = row.split(',').map(value => value.trim());
+        const contact: any = {
+          userId: auth.currentUser!.uid,
+          createdAt: serverTimestamp()
+        };
 
-          headers.forEach((header, index) => {
-            if (values[index]) {
-              contact[header] = values[index];
-            }
-          });
-
-          return contact;
+        headers.forEach((header, index) => {
+          if (values[index]) {
+            contact[header] = values[index];
+          }
         });
 
+        return contact;
+      });
+
       const contactsRef = collection(db, "contacts");
-      const importedCount = await Promise.all(
-        contacts.map(async (contact) => {
-          if (contact.name && contact.email) {
-            await addDoc(contactsRef, contact);
-            return true;
-          }
-          return false;
-        })
-      ).then(results => results.filter(Boolean).length);
+      let importedCount = 0;
+
+      // Process contacts in batches for progress tracking
+      for (let i = 0; i < contacts.length; i++) {
+        const contact = contacts[i];
+        if (contact.name && contact.email) {
+          await addDoc(contactsRef, contact);
+          importedCount++;
+          setImportProgress((i + 1) / contacts.length * 100);
+        }
+      }
 
       toast({
         title: "Success",
@@ -112,6 +117,7 @@ export default function ContactsPage() {
       });
     } finally {
       setIsImporting(false);
+      setImportProgress(0);
       if (event.target) {
         event.target.value = '';
       }
@@ -153,51 +159,88 @@ export default function ContactsPage() {
             </div>
           </div>
 
-          <div className="grid gap-6">
-            {contacts.map((contact) => (
-              <Card key={contact.id} className="p-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-semibold">{contact.name}</h3>
-                        <p className="text-muted-foreground">{contact.email}</p>
-                      </div>
-                      <Button variant="outline">
-                        Edit Contact
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                      {contact.phone && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Phone</p>
-                          <p className="font-semibold">{contact.phone}</p>
-                        </div>
-                      )}
-                      {contact.company && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Company</p>
-                          <p className="font-semibold">{contact.company}</p>
-                        </div>
-                      )}
-                      {contact.role && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Role</p>
-                          <p className="font-semibold">{contact.role}</p>
-                        </div>
-                      )}
-                    </div>
-                    {contact.notes && (
-                      <div className="mt-4">
-                        <p className="text-sm text-muted-foreground">Notes</p>
-                        <p className="mt-1">{contact.notes}</p>
-                      </div>
-                    )}
-                  </div>
+          {/* Import Progress */}
+          {isImporting && (
+            <Card className="p-4 mb-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Importing Contacts...</span>
+                  <span className="text-sm text-muted-foreground">{Math.round(importProgress)}%</span>
                 </div>
-              </Card>
-            ))}
-          </div>
+                <Progress value={importProgress} className="h-2" />
+              </div>
+            </Card>
+          )}
+
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+            </div>
+          ) : contacts.length === 0 ? (
+            <Card className="p-12 text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No Contacts Yet</h3>
+              <p className="text-muted-foreground mt-2">
+                Import your contacts using CSV or add them manually
+              </p>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {contacts.map((contact) => (
+                <Card key={contact.id} className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-semibold">{contact.name}</h3>
+                          <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                            <Mail className="h-4 w-4" />
+                            <p>{contact.email}</p>
+                          </div>
+                        </div>
+                        <Button variant="outline">
+                          Edit Contact
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        {contact.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm text-muted-foreground">Phone</p>
+                              <p className="font-medium">{contact.phone}</p>
+                            </div>
+                          </div>
+                        )}
+                        {contact.company && (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm text-muted-foreground">Company</p>
+                              <p className="font-medium">{contact.company}</p>
+                            </div>
+                          </div>
+                        )}
+                        {contact.role && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Role</p>
+                            <p className="font-medium">{contact.role}</p>
+                          </div>
+                        )}
+                      </div>
+                      {contact.notes && (
+                        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Notes</p>
+                          <p className="mt-1">{contact.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
