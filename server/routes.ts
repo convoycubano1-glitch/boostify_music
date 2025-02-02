@@ -40,10 +40,14 @@ export function registerRoutes(app: Express): Server {
 
   // Stripe checkout session creation
   app.post("/api/create-checkout-session", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "No autorizado" });
 
     try {
       const { packageId, videoUrl, views, price } = req.body;
+
+      if (!videoUrl || !views || !price) {
+        return res.status(400).json({ error: "Faltan datos requeridos" });
+      }
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -70,7 +74,7 @@ export function registerRoutes(app: Express): Server {
         },
       });
 
-      res.json({ id: session.id });
+      res.status(200).json({ id: session.id });
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
       res.status(500).json({ error: error.message });
@@ -90,15 +94,12 @@ export function registerRoutes(app: Express): Server {
         process.env.STRIPE_WEBHOOK_SECRET!
       );
     } catch (err: any) {
-      res.status(400).send(`Webhook Error: ${err.message}`);
+      res.status(400).json({ error: `Webhook Error: ${err.message}` });
       return;
     }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-
-      // Aquí puedes iniciar el proceso de generación de views
-      // usando la API de Apify y los datos en session.metadata
       console.log('Payment successful:', session);
     }
 

@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   LineChart,
   Line,
@@ -60,6 +61,7 @@ export default function YoutubeViewsPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
 
   const chartData = generateChartData();
 
@@ -184,7 +186,18 @@ export default function YoutubeViewsPage() {
 
               <Button 
                 className="w-full mt-6"
-                onClick={() => handlePackageSelect(index)}
+                onClick={() => {
+                  if (!videoUrl) {
+                    toast({
+                      title: "Error",
+                      description: "Por favor, ingresa una URL de YouTube válida",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  setSelectedPackage(index);
+                  setShowDialog(true);
+                }}
                 disabled={isGenerating}
               >
                 Seleccionar Plan
@@ -193,6 +206,42 @@ export default function YoutubeViewsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Compra</DialogTitle>
+            <DialogDescription>
+              Estás a punto de comprar {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''} views
+              por ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Detalles del pedido:</p>
+            <ul className="list-disc list-inside space-y-2">
+              <li>URL del video: {videoUrl}</li>
+              <li>Precio: ${selectedPackage !== null ? viewsPackages[selectedPackage].price : ''}</li>
+              <li>Views: {selectedPackage !== null ? viewsPackages[selectedPackage].views.toLocaleString() : ''}</li>
+            </ul>
+            <div className="flex justify-end gap-4">
+              <Button variant="outline" onClick={() => setShowDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (selectedPackage !== null) {
+                    handlePackageSelect(selectedPackage);
+                    setShowDialog(false);
+                  }
+                }}
+              >
+                Confirmar Compra
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Analytics Chart */}
       <Card className="p-6">
