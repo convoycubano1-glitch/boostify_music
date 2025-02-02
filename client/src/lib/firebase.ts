@@ -14,7 +14,9 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  enableIndexedDbPersistence 
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
 } from "firebase/firestore";
 import type { ContractFormValues } from "@/components/contracts/contract-form";
 
@@ -31,11 +33,12 @@ const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 
-// Enable offline persistence
-enableIndexedDbPersistence(db).catch((err) => {
-  console.error('Firebase persistence error:', err);
+// Initialize Firestore with persistent cache
+export const db = initializeFirestore(app, {
+  cache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
 });
 
 let analytics = null;

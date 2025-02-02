@@ -19,13 +19,21 @@ const app = initializeApp({
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
-// Configurar las reglas de seguridad de Firestore
+// Configure Firestore security rules
 const rules = `
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /spotify_data/{userId} {
       allow read, write: if request.auth != null;
+    }
+    match /campaigns/{documentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+    match /marketing_metrics/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
