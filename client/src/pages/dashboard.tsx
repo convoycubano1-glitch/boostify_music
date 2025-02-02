@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Header } from "@/components/layout/header";
+import { PricingPlans } from "@/components/marketing/pricing-plans";
 
 // Example data for charts
 const trendData = Array.from({ length: 30 }, (_, i) => ({
@@ -196,6 +197,11 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <PlaylistManager />
             <InstagramConnect />
+          </div>
+
+          {/* Pricing Plans */}
+          <div className="mb-8">
+            <PricingPlans />
           </div>
 
           {/* Engagement Metrics */}
