@@ -13,10 +13,16 @@ import {
   PlayCircle,
   Mic2,
   Link as LinkIcon,
-  Upload
+  Upload,
+  Loader2,
+  X
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { db, auth } from "@/lib/firebase";
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -28,18 +34,128 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface Video {
+  id: string;
+  url: string;
+  title: string;
+  createdAt: Date;
+}
+
+interface Song {
+  id: string;
+  name: string;
+  fileUrl: string;
+  createdAt: Date;
+}
+
 export default function ArtistDashboardPage() {
+  const { toast } = useToast();
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [isSubmittingVideo, setIsSubmittingVideo] = useState(false);
+  const [isSubmittingSong, setIsSubmittingSong] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const handleVideoSubmit = () => {
-    // Here we would handle saving the video URL
-    console.log("Saving video URL:", videoUrl);
-    setIsVideoDialogOpen(false);
-    setVideoUrl("");
+  // Query for videos
+  const { data: videos = [], isLoading: isLoadingVideos, refetch: refetchVideos } = useQuery({
+    queryKey: ["videos", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+
+      try {
+        const videosRef = collection(db, "videos");
+        const q = query(
+          videosRef,
+          where("userId", "==", auth.currentUser.uid)
+        );
+
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        })) as Video[];
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+        toast({
+          title: "Error",
+          description: "Could not load videos. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
+  // Query for songs
+  const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
+    queryKey: ["songs", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+
+      try {
+        const songsRef = collection(db, "songs");
+        const q = query(
+          songsRef,
+          where("userId", "==", auth.currentUser.uid)
+        );
+
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        })) as Song[];
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+        toast({
+          title: "Error",
+          description: "Could not load songs. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
+  const handleVideoSubmit = async () => {
+    if (!auth.currentUser?.uid || !videoUrl) return;
+
+    try {
+      setIsSubmittingVideo(true);
+      const videoData = {
+        url: videoUrl,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp(),
+        title: "YouTube Video" // You could extract this from the URL if needed
+      };
+
+      const videosRef = collection(db, "videos");
+      await addDoc(videosRef, videoData);
+
+      toast({
+        title: "Success",
+        description: "Video added successfully",
+      });
+
+      setIsVideoDialogOpen(false);
+      setVideoUrl("");
+      refetchVideos();
+
+    } catch (error) {
+      console.error("Error adding video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingVideo(false);
+    }
   };
 
   const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,8 +172,16 @@ export default function ArtistDashboardPage() {
     }
   };
 
-  const togglePlay = () => {
-    if (currentAudio) {
+  const togglePlay = (audioUrl?: string) => {
+    if (audioUrl && (!currentAudio || currentAudio.src !== audioUrl)) {
+      if (currentAudio) {
+        currentAudio.pause();
+      }
+      const audio = new Audio(audioUrl);
+      setCurrentAudio(audio);
+      audio.play();
+      setIsPlaying(true);
+    } else if (currentAudio) {
       if (isPlaying) {
         currentAudio.pause();
       } else {
@@ -70,7 +194,7 @@ export default function ArtistDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1">
+      <ScrollArea className="flex-1">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -101,16 +225,38 @@ export default function ArtistDashboardPage() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <PlayCircle className="h-5 w-5 text-orange-500" />
-                      <div>
-                        <p className="font-medium">Latest Upload</p>
-                        <p className="text-sm text-muted-foreground">Music Video - Summer Vibes</p>
-                      </div>
+                  {isLoadingVideos ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                     </div>
-                    <Button variant="ghost" size="sm">View</Button>
-                  </div>
+                  ) : videos.length > 0 ? (
+                    <div className="space-y-3">
+                      {videos.map((video) => (
+                        <div key={video.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <PlayCircle className="h-5 w-5 text-orange-500" />
+                            <div>
+                              <p className="font-medium">{video.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(video.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(video.url, '_blank')}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No videos added yet
+                    </div>
+                  )}
                   <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="w-full gap-2">
@@ -149,9 +295,26 @@ export default function ArtistDashboardPage() {
                             ></iframe>
                           </div>
                         )}
-                        <Button onClick={handleVideoSubmit} className="w-full">
-                          Save Video
-                        </Button>
+                        <div className="flex justify-end gap-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsVideoDialogOpen(false)}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleVideoSubmit}
+                            disabled={isSubmittingVideo || !videoUrl}
+                          >
+                            {isSubmittingVideo ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="mr-2 h-4 w-4" />
+                            )}
+                            {isSubmittingVideo ? "Adding..." : "Add Video"}
+                          </Button>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -176,22 +339,38 @@ export default function ArtistDashboardPage() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Mic2 className="h-5 w-5 text-orange-500" />
-                      <div>
-                        <p className="font-medium">Latest Release</p>
-                        <p className="text-sm text-muted-foreground">Summer Vibes - Single</p>
-                      </div>
+                  {isLoadingSongs ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={togglePlay}
-                    >
-                      {isPlaying ? "Pause" : "Play"}
-                    </Button>
-                  </div>
+                  ) : songs.length > 0 ? (
+                    <div className="space-y-3">
+                      {songs.map((song) => (
+                        <div key={song.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Mic2 className="h-5 w-5 text-orange-500" />
+                            <div>
+                              <p className="font-medium">{song.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(song.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => togglePlay(song.fileUrl)}
+                          >
+                            {currentAudio?.src === song.fileUrl && isPlaying ? "Pause" : "Play"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No songs added yet
+                    </div>
+                  )}
                   <Dialog open={isSongDialogOpen} onOpenChange={setIsSongDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="w-full gap-2">
@@ -226,7 +405,7 @@ export default function ArtistDashboardPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={togglePlay}
+                                  onClick={() => togglePlay()}
                                   className="h-8 w-8 p-0"
                                 >
                                   {isPlaying ? (
@@ -248,7 +427,22 @@ export default function ArtistDashboardPage() {
                             </div>
                           </div>
                         )}
-                        <Button className="w-full">Upload Song</Button>
+                        <Button 
+                          className="w-full"
+                          disabled={isSubmittingSong || !currentAudio}
+                        >
+                          {isSubmittingSong ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Song
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -358,7 +552,7 @@ export default function ArtistDashboardPage() {
             </motion.div>
           </div>
         </div>
-      </main>
+      </ScrollArea>
     </div>
   );
 }
