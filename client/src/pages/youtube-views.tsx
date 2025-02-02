@@ -90,8 +90,12 @@ export default function YoutubeViewsPage() {
     setSelectedPackage(packageIndex);
 
     try {
-      const stripe = await stripePromise;
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("No se pudo obtener el token de autenticación");
+      }
 
+      const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("No se pudo inicializar Stripe");
       }
@@ -100,6 +104,7 @@ export default function YoutubeViewsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           packageId: packageIndex,
@@ -115,7 +120,6 @@ export default function YoutubeViewsPage() {
       }
 
       const session = await response.json();
-
       if (!session.id) {
         throw new Error('No se recibió el ID de sesión de Stripe');
       }
@@ -313,4 +317,10 @@ export default function YoutubeViewsPage() {
       )}
     </div>
   );
+    async function getAuthToken() {
+        // Implement your logic to retrieve the authentication token here.
+        // For example, you might read it from localStorage or a cookie.
+        // This is a placeholder, replace with your actual token retrieval mechanism.
+        return localStorage.getItem("token");
+      }
 }
