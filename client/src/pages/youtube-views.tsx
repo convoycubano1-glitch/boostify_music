@@ -27,6 +27,7 @@ import {
   Area,
   AreaChart
 } from "recharts";
+import youtubeImage from '../images/youtube.jpg';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -216,12 +217,19 @@ export default function YoutubeViewsPage() {
             <div className="relative">
               <div className="absolute inset-0 bg-orange-500/5" />
               <AspectRatio ratio={16 / 9} className="bg-muted">
-                <div className="h-full w-full flex items-center justify-center bg-orange-500/10 backdrop-blur">
-                  <div className="text-center">
-                    <SiYoutube className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                    <p className="text-sm text-muted-foreground">
-                      YouTube Promotion Image
-                    </p>
+                <div className="h-full w-full relative overflow-hidden">
+                  <img
+                    src={youtubeImage}
+                    alt="YouTube Views Enhancement"
+                    className="object-cover w-full h-full"
+                  />
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                    <div className="text-center px-6 py-4 rounded-lg bg-black/40 backdrop-blur-sm">
+                      <SiYoutube className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+                      <p className="text-lg font-medium text-white">
+                        Enhance Your Video Reach
+                      </p>
+                    </div>
                   </div>
                 </div>
               </AspectRatio>
