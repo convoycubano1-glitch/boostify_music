@@ -49,18 +49,65 @@ export const contactCategories = [
 // Lista de contactos locales precargada desde el CSV
 const localContacts: Contact[] = [
   {
-    name: "Andres Shaq",
-    email: "andreshaq@yahoo.com",
-    phone: "+573175746775",
+    name: "RAULEETO 🇵🇷",
+    email: "booking@duars.com",
+    phone: "+17876446046",
+    category: "Artistas"
+  },
+  {
+    name: "Eladio Carrion",
+    email: "Eladio@mtbooking.com",
+    phone: "+14074011159",
+    category: "Artistas"
+  },
+  {
+    name: "DIMELO FLOW",
+    email: "bookings@richmusicltd.com",
+    phone: "+18666072113",
     category: "Managers"
   },
   {
-    name: "Bulin 47",
-    email: "stomlinantonio@gmail.com",
-    phone: "+18293557754",
+    name: "LOS CHAPUSEROS",
+    email: "Loschapuserosoficial@gmail.com",
+    phone: "+5351948026",
     category: "Artistas"
   },
-  // ... más contactos del CSV
+  {
+    name: "Vibra Urbana",
+    email: "help@vibraurbanafest.com",
+    phone: "+13055752722",
+    category: "Promotores de Eventos"
+  },
+  {
+    name: "Trap House Latino 🏚",
+    email: "TrapHouseLatino@gmail.com",
+    phone: "+17875293480",
+    category: "Medios de Comunicación"
+  },
+  {
+    name: "GLAD Empire",
+    email: "info@gladempire.com",
+    phone: "+18337774523",
+    category: "Sellos Discográficos"
+  },
+  {
+    name: "Radio Moda",
+    email: "radiomodatemueve@gmail.com",
+    phone: "+51989001211",
+    category: "Radio"
+  },
+  {
+    name: "PINA RECORDS 🎼",
+    email: "booking@pinarecords.net",
+    phone: "+17877431100",
+    category: "Sellos Discográficos"
+  },
+  {
+    name: "Los Dos Carnales",
+    email: "2carnalesoficial@gmail.com",
+    phone: "+524431878559",
+    category: "Artistas"
+  }
 ];
 
 export async function searchContacts(category: string, query: string): Promise<Contact[]> {
