@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Crown } from "lucide-react";
-import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Link } from "wouter";
 import { loadStripe } from "@stripe/stripe-js";
 import { getAuthToken } from "@/lib/firebase";
 import { useState } from "react";
@@ -63,6 +61,7 @@ export function PricingPlans() {
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
 
   const handlePlanSelect = (plan: typeof plans[0]) => {
+    console.log('Plan selected:', plan.name);
     if (!user) {
       toast({
         title: "Sign in required",
@@ -148,64 +147,60 @@ export function PricingPlans() {
           Flexible plans for every stage of your career
         </p>
       </div>
+
       <div className="grid gap-8 lg:grid-cols-3 max-w-7xl mx-auto">
-        {plans.map((plan, index) => (
-          <div key={plan.name} className="relative">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <Card className={`relative p-8 h-full backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all duration-300 ${
-                plan.popular ? 'border-orange-500/50 shadow-lg' : ''
-              }`}>
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1">
-                      <Crown className="w-4 h-4" />
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold">{plan.name}</h3>
-                  <div className="mt-4 flex items-baseline">
-                    <span className="text-4xl font-bold">${plan.price}</span>
-                    <span className="text-muted-foreground ml-2">/mo</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {plan.description}
-                  </p>
+        {plans.map((plan) => (
+          <div key={plan.name}>
+            <Card className={`p-8 ${plan.popular ? 'border-orange-500' : ''}`}>
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1">
+                    <Crown className="w-4 h-4" />
+                    Most Popular
+                  </span>
                 </div>
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
-            {/* Button outside of motion.div and card for better click handling */}
-            <div className="mt-4 relative z-10">
+              )}
+
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold">{plan.name}</h3>
+                <div className="mt-4 flex items-baseline">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-muted-foreground ml-2">/mo</span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {plan.description}
+                </p>
+              </div>
+
+              <ul className="space-y-3 mb-6">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
               <Button 
                 className={`w-full ${
                   plan.popular 
                     ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                     : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
                 }`}
-                onClick={() => handlePlanSelect(plan)}
+                onClick={() => {
+                  console.log('Button clicked for plan:', plan.name);
+                  handlePlanSelect(plan);
+                }}
               >
                 Get Started
               </Button>
-            </div>
+            </Card>
           </div>
         ))}
       </div>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Subscription</DialogTitle>
             <DialogDescription>
