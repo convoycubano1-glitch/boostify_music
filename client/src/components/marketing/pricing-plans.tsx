@@ -58,7 +58,7 @@ export function PricingPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleGetStarted = async (plan: typeof plans[0]) => {
+  const handlePayment = async (plan: typeof plans[0]) => {
     if (!user) {
       toast({
         title: "Sign in required",
@@ -84,8 +84,6 @@ export function PricingPlans() {
         throw new Error("Could not initialize Stripe");
       }
 
-      console.log('Creating subscription session for plan:', plan.name);
-
       // Create Stripe checkout session
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
@@ -110,8 +108,6 @@ export function PricingPlans() {
         throw new Error('Stripe session ID was not received');
       }
 
-      console.log('Redirecting to Stripe checkout with session:', sessionId);
-
       // Redirect to Stripe checkout
       const { error } = await stripe.redirectToCheckout({
         sessionId
@@ -121,9 +117,9 @@ export function PricingPlans() {
         throw new Error(error.message);
       }
     } catch (error: any) {
-      console.error('Subscription process error:', error);
+      console.error('Payment process error:', error);
       toast({
-        title: "Subscription Error",
+        title: "Payment Error",
         description: error.message || "There was an error processing your subscription. Please try again.",
         variant: "destructive"
       });
@@ -200,7 +196,7 @@ export function PricingPlans() {
                       ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                       : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
                   }`}
-                  onClick={() => handleGetStarted(plan)}
+                  onClick={() => handlePayment(plan)}
                 >
                   Get Started
                 </Button>
