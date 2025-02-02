@@ -88,21 +88,24 @@ export default function HomePage() {
       role: "Independent Artist",
       content:
         "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
-      rating: 5
+      rating: 5,
+      avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
     },
     {
       name: "Michael Rodriguez",
       role: "Music Producer",
       content:
         "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
-      rating: 5
+      rating: 5,
+      avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
     },
     {
       name: "Emma Thompson",
       role: "Band Manager",
       content:
         "Managing multiple artists has never been easier. The contract management system is a game-changer.",
-      rating: 5
+      rating: 5,
+      avatar: "https://i.pravatar.cc/150?u=emma.thompson"
     }
   ];
 
@@ -402,8 +405,20 @@ export default function HomePage() {
                     </div>
                     <p className="mb-4 text-muted-foreground">{testimonial.content}</p>
                     <div className="border-t border-orange-500/10 pt-4">
-                      <p className="font-semibold">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full blur opacity-75" />
+                          <img
+                            src={testimonial.avatar}
+                            alt={testimonial.name}
+                            className="relative w-10 h-10 rounded-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{testimonial.name}</p>
+                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        </div>
+                      </div>
                     </div>
                   </Card>
                 </motion.div>
