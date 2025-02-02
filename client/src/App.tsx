@@ -12,6 +12,7 @@ import ContractsPage from "@/pages/contracts";
 import PRPage from "@/pages/pr";
 import SettingsPage from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
+import YoutubeViewsPage from "@/pages/youtube-views";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/spotify" component={SpotifyPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
       <ProtectedRoute path="/pr" component={PRPage} />
+      <ProtectedRoute path="/youtube-views" component={YoutubeViewsPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>

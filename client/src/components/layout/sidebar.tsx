@@ -9,7 +9,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Youtube
 } from "lucide-react";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Spotify", href: "/spotify", icon: Music2 },
   { name: "Contracts", href: "/contracts", icon: FileText },
   { name: "PR Management", href: "/pr", icon: Users2 },
+  { name: "YouTube Views", href: "/youtube-views", icon: Youtube },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
