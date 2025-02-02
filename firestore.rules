@@ -9,12 +9,8 @@ service cloud.firestore {
     // Reglas para las órdenes de vistas de YouTube
     match /youtube_views_orders/{orderId} {
       // Permitir lectura si el usuario está autenticado y es el propietario
-      allow read: if request.auth != null && 
-        (
-          orderId.split('_')[0] == request.auth.uid || 
-          resource.data.userId == request.auth.uid
-        );
-
+      allow read: if request.auth != null;
+      
       // Permitir creación si el usuario está autenticado
       allow create: if request.auth != null;
 
