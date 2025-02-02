@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SiSpotify, SiYoutube } from "react-icons/si";
+import { SiSpotify, SiYoutube, SiGoogle } from "react-icons/si";
 import { ArrowRight, Music2, Users2, TrendingUp, FileText, Star, Home } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import coverImage from "../images/cover.jpg";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4';
 
 const features = [
   {
@@ -87,6 +90,29 @@ const plans = [
 ];
 
 export default function HomePage() {
+  const { signInWithGoogle } = useFirebaseAuth();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+      setLocation('/dashboard');
+    } catch (error: any) {
+      toast({
+        title: "Authentication Error",
+        description: "Could not sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (user) {
+    setLocation('/dashboard');
+    return null;
+  }
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -102,12 +128,15 @@ export default function HomePage() {
       {/* Hero Section */}
       <section 
         className="relative min-h-[100svh] flex items-center overflow-hidden"
-        style={{
-          backgroundImage: `url(${coverImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
       >
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src={backgroundVideo}
+        />
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
         <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[200%] h-[500px] bg-orange-500/20 rounded-full blur-[100px] rotate-12 opacity-50" />
@@ -130,18 +159,18 @@ export default function HomePage() {
               The ultimate platform for artists to manage their marketing, connect with Spotify, and grow their audience.
             </p>
             <motion.div 
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
+              className="flex justify-center items-center mt-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Link href="/dashboard">
-                <Button size="lg" className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white gap-2">
-                  Get Started <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 border-orange-500/20 hover:bg-orange-500/10 text-white">
-                Learn More
+              <Button 
+                size="lg" 
+                onClick={handleGoogleLogin}
+                className="bg-white hover:bg-gray-100 text-gray-900 gap-2"
+              >
+                <SiGoogle className="w-5 h-5" />
+                Login with Google
               </Button>
             </motion.div>
           </motion.div>
