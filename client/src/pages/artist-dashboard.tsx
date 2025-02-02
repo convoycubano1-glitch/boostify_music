@@ -1,7 +1,8 @@
-import { Header } from "@/components/layout/header";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Header } from "@/components/layout/header";
 import { 
   Video,
   Music2,
@@ -10,12 +11,62 @@ import {
   Users,
   Plus,
   PlayCircle,
-  Mic2
+  Mic2,
+  Link as LinkIcon,
+  Upload
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ArtistDashboardPage() {
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handleVideoSubmit = () => {
+    // Here we would handle saving the video URL
+    console.log("Saving video URL:", videoUrl);
+    setIsVideoDialogOpen(false);
+    setVideoUrl("");
+  };
+
+  const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const audioUrl = URL.createObjectURL(file);
+      if (currentAudio) {
+        currentAudio.pause();
+        URL.revokeObjectURL(currentAudio.src);
+      }
+      const audio = new Audio(audioUrl);
+      setCurrentAudio(audio);
+      setIsPlaying(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause();
+      } else {
+        currentAudio.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -60,10 +111,50 @@ export default function ArtistDashboardPage() {
                     </div>
                     <Button variant="ghost" size="sm">View</Button>
                   </div>
-                  <Button className="w-full gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add New Video
-                  </Button>
+                  <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add New Video
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Video</DialogTitle>
+                        <DialogDescription>
+                          Add your YouTube video link below
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="video-url">YouTube URL</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="video-url"
+                              placeholder="https://youtube.com/watch?v=..."
+                              value={videoUrl}
+                              onChange={(e) => setVideoUrl(e.target.value)}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        {videoUrl && (
+                          <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                            <iframe
+                              width="100%"
+                              height="100%"
+                              src={`https://www.youtube.com/embed/${videoUrl.split("v=")[1]}`}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        )}
+                        <Button onClick={handleVideoSubmit} className="w-full">
+                          Save Video
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </Card>
             </motion.div>
@@ -93,16 +184,79 @@ export default function ArtistDashboardPage() {
                         <p className="text-sm text-muted-foreground">Summer Vibes - Single</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">Play</Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={togglePlay}
+                    >
+                      {isPlaying ? "Pause" : "Play"}
+                    </Button>
                   </div>
-                  <Button className="w-full gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add New Song
-                  </Button>
+                  <Dialog open={isSongDialogOpen} onOpenChange={setIsSongDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add New Song
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Song</DialogTitle>
+                        <DialogDescription>
+                          Upload your MP3 or WAV file
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="song-file">Audio File (MP3/WAV)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="song-file"
+                              type="file"
+                              accept=".mp3,.wav"
+                              onChange={handleAudioUpload}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        {currentAudio && (
+                          <div className="p-4 bg-muted rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={togglePlay}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  {isPlaying ? (
+                                    <span className="sr-only">Pause</span>
+                                  ) : (
+                                    <span className="sr-only">Play</span>
+                                  )}
+                                  {isPlaying ? "⏸️" : "▶️"}
+                                </Button>
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium leading-none">
+                                    Preview
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {currentAudio.src.split("/").pop()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <Button className="w-full">Upload Song</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </Card>
             </motion.div>
 
+            {/* Rest of the sections remain unchanged */}
             {/* My Strategy Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
