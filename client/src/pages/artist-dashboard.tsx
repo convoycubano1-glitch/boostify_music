@@ -24,7 +24,7 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth, storage } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc, orderBy, limit } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StrategyDialog } from "@/components/strategy/strategy-dialog";
 
 interface Video {
   id: string;
@@ -55,6 +56,13 @@ interface Song {
   createdAt: Date;
 }
 
+interface Strategy {
+  focus: string[];
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 function getYouTubeVideoId(url: string) {
   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
   const match = url.match(regExp);
@@ -65,7 +73,7 @@ function getYouTubeThumbnailUrl(videoId: string) {
   return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
-export default function ArtistDashboardPage() {
+const ArtistDashboardPage: React.FC = () => {
   const { toast } = useToast();
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
@@ -77,6 +85,7 @@ export default function ArtistDashboardPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
 
   // Query for songs
   const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
@@ -147,6 +156,42 @@ export default function ArtistDashboardPage() {
     },
     enabled: !!auth.currentUser?.uid,
   });
+
+  // Query for strategies
+  const { data: currentStrategy = [], isLoading: isLoadingStrategy, refetch: refetchStrategy } = useQuery({
+    queryKey: ["strategies", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+
+      try {
+        const strategiesRef = collection(db, "strategies");
+        const q = query(
+          strategiesRef,
+          where("userId", "==", auth.currentUser.uid),
+          orderBy("createdAt", "desc"),
+          limit(1)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const strategyDoc = querySnapshot.docs[0];
+
+        if (strategyDoc) {
+          return strategyDoc.data().focus;
+        }
+        return [];
+      } catch (error) {
+        console.error("Error fetching strategy:", error);
+        toast({
+          title: "Error",
+          description: "Could not load strategy. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
 
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -779,18 +824,41 @@ export default function ArtistDashboardPage() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <h3 className="font-medium mb-2">Current Focus</h3>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li>• Increase social media presence</li>
-                      <li>• Launch new EP campaign</li>
-                      <li>• Collaborate with other artists</li>
-                    </ul>
-                  </div>
-                  <Button className="w-full">Update Strategy</Button>
+                  {isLoadingStrategy ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                    </div>
+                  ) : currentStrategy.length > 0 ? (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <h3 className="font-medium mb-2">Current Focus</h3>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        {currentStrategy.map((point, index) => (
+                          <li key={index}>• {point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No strategy set. Create one to get started.
+                    </div>
+                  )}
+                  <Button 
+                    className="w-full" 
+                    onClick={() => setIsStrategyDialogOpen(true)}
+                  >
+                    Update Strategy
+                  </Button>
                 </div>
               </Card>
             </motion.div>
+
+            {/* Strategy Dialog */}
+            <StrategyDialog
+              open={isStrategyDialogOpen}
+              onOpenChange={setIsStrategyDialogOpen}
+              onStrategyUpdate={refetchStrategy}
+            />
+
 
             {/* My Budget Section */}
             <motion.div
@@ -843,7 +911,7 @@ export default function ArtistDashboardPage() {
                 <div className="space-y-4">
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
-                      <p className="font-medium">Recent Contacts</p>
+<p className="font-medium">Recent Contacts</p>
                       <span className="text-sm text-muted-foreground">Total: 24</span>
                     </div>
                     <div className="space-y-2">
@@ -866,4 +934,6 @@ export default function ArtistDashboardPage() {
       </ScrollArea>
     </div>
   );
-}
+};
+
+export default ArtistDashboardPage;
