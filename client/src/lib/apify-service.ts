@@ -1,4 +1,3 @@
-import { ApifyClient } from 'apify-client';
 import { z } from 'zod';
 
 // Define la estructura de datos esperada de la API de Apollo
@@ -48,26 +47,45 @@ export async function searchContacts(category: string, query: string): Promise<C
       throw new Error('API key not configured');
     }
 
-    const client = new ApifyClient({
-      token: import.meta.env.VITE_APIFY_API_KEY,
+    // Hacer la solicitud directamente a la API de Apify
+    const response = await fetch('https://api.apify.com/v2/acts/jljBwyyQakqrL1wae/runs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_APIFY_API_KEY}`
+      },
+      body: JSON.stringify({
+        url: `https://app.apollo.io/#/people?finderViewId=5b8050d050a3893c382e9360&page=1&sortByField=recommendations_score`,
+        totalRecords: 100,
+        getWorkEmails: true,
+        getPersonalEmails: true,
+        searchQuery: `${category} ${query} music industry`,
+        filters: {
+          industryTags: ['Music', 'Entertainment', 'Media']
+        }
+      })
     });
 
-    const input = {
-      url: `https://app.apollo.io/#/people?finderViewId=5b8050d050a3893c382e9360&page=1&sortByField=recommendations_score`,
-      totalRecords: 100,
-      getWorkEmails: true,
-      getPersonalEmails: true,
-      searchQuery: `${category} ${query} music industry`,
-      filters: {
-        industryTags: ['Music', 'Entertainment', 'Media']
-      }
-    };
+    if (!response.ok) {
+      throw new Error('Error al buscar contactos');
+    }
 
-    const run = await client.actor("jljBwyyQakqrL1wae").call(input);
-    const { items } = await client.dataset(run.defaultDatasetId).listItems();
+    const runData = await response.json();
+    const datasetId = runData.data.defaultDatasetId;
+
+    // Esperar a que la tarea termine y obtener los resultados
+    const itemsResponse = await fetch(
+      `https://api.apify.com/v2/datasets/${datasetId}/items?token=${import.meta.env.VITE_APIFY_API_KEY}`
+    );
+
+    if (!itemsResponse.ok) {
+      throw new Error('Error al obtener resultados');
+    }
+
+    const items = await itemsResponse.json() as ApolloResult[];
 
     // Transformar y validar los resultados
-    return (items as ApolloResult[]).map(item => ({
+    return items.map(item => ({
       name: item.name || 'Unknown',
       email: item.email,
       company: item.organization?.name,
