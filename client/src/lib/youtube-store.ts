@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 
 export interface YouTubeViewsData {
+  id?: string;
   videoUrl: string;
   purchasedViews: number;
   currentViews: number;
@@ -21,7 +22,9 @@ export async function createYouTubeViewsOrder(
     throw new Error('Usuario no autenticado');
   }
 
+  const docId = `${user.uid}_${Date.now()}`;
   const orderData: YouTubeViewsData = {
+    id: docId,
     ...data,
     userId: user.uid,
     currentViews: 0,
@@ -30,7 +33,7 @@ export async function createYouTubeViewsOrder(
     updatedAt: new Date()
   };
 
-  const orderRef = doc(db, 'youtube_views_orders', `${user.uid}_${Date.now()}`);
+  const orderRef = doc(db, 'youtube_views_orders', docId);
   await setDoc(orderRef, orderData);
 
   return orderData;
