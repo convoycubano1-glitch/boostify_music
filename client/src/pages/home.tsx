@@ -4,6 +4,7 @@ import { SiSpotify } from "react-icons/si";
 import { ArrowRight, Music2, Users2, TrendingUp, FileText, Star } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import coverImage from "../images/cover.jpg";
 
 const features = [
   {
@@ -99,9 +100,16 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background to-background" />
+      <section 
+        className="relative min-h-screen flex items-center overflow-hidden"
+        style={{
+          backgroundImage: `url(${coverImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/50" /> {/* Dark overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/50 to-background" />
         <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-orange-500/30 rounded-full blur-3xl" />
 
         <div className="container relative mx-auto px-4 py-24 sm:px-6 lg:px-8">
@@ -114,7 +122,7 @@ export default function HomePage() {
             <h1 className="text-4xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-orange-500">
               Elevate Your Music Career
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
               The ultimate platform for artists to manage their marketing, connect with Spotify, and grow their audience.
             </p>
             <div className="flex gap-4 justify-center">
@@ -123,7 +131,7 @@ export default function HomePage() {
                   Get Started <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="gap-2 border-orange-500/20 hover:bg-orange-500/10">
+              <Button size="lg" variant="outline" className="gap-2 border-orange-500/20 hover:bg-orange-500/10 text-white">
                 Learn More
               </Button>
             </div>
