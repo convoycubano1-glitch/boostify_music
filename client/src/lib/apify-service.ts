@@ -1,4 +1,18 @@
+import { ApifyClient } from 'apify-client';
 import { z } from 'zod';
+
+// Define la estructura de datos esperada de la API de Apollo
+interface ApolloResult {
+  name?: string;
+  email?: string;
+  organization?: {
+    name?: string;
+  };
+  title?: string;
+  linkedin?: string;
+  twitter?: string;
+  instagram?: string;
+}
 
 const contactSchema = z.object({
   name: z.string(),
@@ -30,66 +44,55 @@ export const contactCategories = [
 
 export async function searchContacts(category: string, query: string): Promise<Contact[]> {
   try {
-    const response = await fetch(`https://api.apify.com/v2/acts/apify~web-scraper/runs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_APIFY_API_KEY}`
-      },
-      body: JSON.stringify({
-        startUrls: [{
-          url: `https://www.google.com/search?q=${encodeURIComponent(`${category} ${query} music industry contact`)}`
-        }],
-        pageFunction: `async function pageFunction(context) {
-          const { $, request, log } = context;
-          const results = [];
-          
-          // Extract structured data
-          $('div.g').each((index, element) => {
-            const title = $(element).find('h3').text();
-            const description = $(element).find('.VwiC3b').text();
-            const link = $(element).find('a').first().attr('href');
-            
-            if (title && description) {
-              results.push({
-                name: title,
-                description: description,
-                url: link,
-                category: "${category}"
-              });
-            }
-          });
-          
-          return results;
-        }`
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Error al buscar contactos');
+    if (!import.meta.env.VITE_APIFY_API_KEY) {
+      throw new Error('API key not configured');
     }
 
-    const data = await response.json();
-    return data.items || [];
+    const client = new ApifyClient({
+      token: import.meta.env.VITE_APIFY_API_KEY,
+    });
+
+    const input = {
+      url: `https://app.apollo.io/#/people?finderViewId=5b8050d050a3893c382e9360&page=1&sortByField=recommendations_score`,
+      totalRecords: 100,
+      getWorkEmails: true,
+      getPersonalEmails: true,
+      searchQuery: `${category} ${query} music industry`,
+      filters: {
+        industryTags: ['Music', 'Entertainment', 'Media']
+      }
+    };
+
+    const run = await client.actor("jljBwyyQakqrL1wae").call(input);
+    const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+    // Transformar y validar los resultados
+    return (items as ApolloResult[]).map(item => ({
+      name: item.name || 'Unknown',
+      email: item.email,
+      company: item.organization?.name,
+      role: item.title,
+      category: category,
+      socialMedia: {
+        linkedin: item.linkedin,
+        twitter: item.twitter,
+        instagram: item.instagram
+      }
+    }));
   } catch (error) {
     console.error('Error en la búsqueda de contactos:', error);
-    throw error;
+    throw new Error('Error en la búsqueda de contactos: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 
-export async function getRunStatus(runId: string) {
-  try {
-    const response = await fetch(
-      `https://api.apify.com/v2/actor-runs/${runId}?token=${import.meta.env.VITE_APIFY_API_KEY}`
-    );
+export async function checkApifyRun(runId: string): Promise<any> {
+  const response = await fetch(
+    `https://api.apify.com/v2/actor-runs/${runId}?token=${import.meta.env.VITE_APIFY_API_TOKEN}`
+  );
 
-    if (!response.ok) {
-      throw new Error('Error al verificar el estado de la búsqueda');
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error('Error al obtener estado:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error('Error al verificar el estado del proceso de vistas');
   }
+
+  return response.json();
 }
