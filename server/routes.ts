@@ -41,8 +41,9 @@ export function registerRoutes(app: Express): Server {
   // Stripe checkout session creation
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Usuario no autenticado" });
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token de autenticación no proporcionado' });
       }
 
       const { videoUrl, views, price } = req.body;
@@ -74,7 +75,7 @@ export function registerRoutes(app: Express): Server {
         metadata: {
           videoUrl,
           views,
-          userId: req.user.id,
+          userId: req.headers['user-id'],
         },
       });
 
