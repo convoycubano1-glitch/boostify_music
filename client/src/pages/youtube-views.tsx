@@ -5,7 +5,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home } from "lucide-react";
+import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -63,9 +63,9 @@ export default function YoutubeViewsPage() {
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-    const [desiredViews, setDesiredViews] = useState(1000);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [processingStep, setProcessingStep] = useState(0);
+  const [desiredViews, setDesiredViews] = useState(1000);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
 
   const { data: apifyData, refetch } = useQuery({
     queryKey: ["apify-run", orderId],
@@ -77,6 +77,13 @@ export default function YoutubeViewsPage() {
     refetchInterval: orderId ? 5000 : false
   });
 
+    const getPackagePrice = (views: number) => {
+    if (views <= 1000) return 50;
+    if (views <= 10000) return 450;
+    return Math.ceil(views * 0.04); // $0.04 per view for custom amounts
+  };
+
+    const currentPrice = getPackagePrice(desiredViews);
   const handlePackageSelect = async (packageIndex: number) => {
     if (!videoUrl) {
       toast({
@@ -194,13 +201,13 @@ export default function YoutubeViewsPage() {
   const getStepMessage = (step: number) => {
     switch (step) {
       case 1:
-        return "Validando URL del video...";
+        return "Validating video URL...";
       case 2:
-        return "Analizando métricas actuales...";
+        return "Analyzing current metrics...";
       case 3:
-        return "Listo para comenzar. Se requiere pago para continuar.";
+        return "Ready to start. Payment required to continue.";
       default:
-        return "Iniciando proceso...";
+        return "Initializing process...";
     }
   };
 
@@ -449,44 +456,73 @@ export default function YoutubeViewsPage() {
             </Card>
           </motion.div>
         </div>
-
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <Card className="p-6 backdrop-blur-sm border-orange-500/10">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="video-url" className="text-sm font-medium">
-                  Video URL
-                </label>
-                <Input
-                  id="video-url"
-                  placeholder="https://youtube.com/watch?v=..."
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  className="bg-background/50 border-orange-500/10 focus:border-orange-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="desired-views" className="text-sm font-medium">
-                  Cantidad de Views Deseadas
-                </label>
-                <Input
-                  id="desired-views"
-                  type="number"
-                  min="1000"
-                  step="1000"
-                  value={desiredViews}
-                  onChange={(e) => setDesiredViews(parseInt(e.target.value))}
-                  className="bg-background/50 border-orange-500/10 focus:border-orange-500"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Mínimo: 1,000 views
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                  Start Growing Your Views
+                </h3>
+                <p className="text-muted-foreground">
+                  Enter your video details and desired view count to begin
                 </p>
               </div>
+
+              <div className="grid gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="video-url" className="text-sm font-medium">
+                    Video URL
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="video-url"
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      className="bg-background/50 border-orange-500/10 focus:border-orange-500 pl-10"
+                    />
+                    <SiYoutube className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 h-4 w-4" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="desired-views" className="text-sm font-medium">
+                    Desired Views
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="desired-views"
+                      type="number"
+                      min="1000"
+                      step="1000"
+                      value={desiredViews}
+                      onChange={(e) => setDesiredViews(parseInt(e.target.value))}
+                      className="bg-background/50 border-orange-500/10 focus:border-orange-500"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                      Views
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <PackageCheck className="h-4 w-4" />
+                    Minimum: 1,000 views
+                  </p>
+                </div>
+
+                <div className="p-4 bg-orange-500/5 rounded-lg border border-orange-500/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">Estimated Price</span>
+                    <span className="text-2xl font-bold">${currentPrice}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Based on {desiredViews.toLocaleString()} views at ${(currentPrice / desiredViews).toFixed(3)} per view
+                  </p>
+                </div>
 
                 {isProcessing ? (
                   <div className="space-y-4">
@@ -498,19 +534,59 @@ export default function YoutubeViewsPage() {
                         transition={{ duration: 0.5 }}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {getStepMessage(processingStep)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        {processingStep < 3 ? (
+                          <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 text-orange-500" />
+                        )}
+                      </div>
+                      <p className="text-sm font-medium">
+                        {getStepMessage(processingStep)}
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <Button 
                     onClick={startViewsProcess}
-                    className="w-full bg-orange-500 hover:bg-orange-600"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-lg h-12"
                   >
-                    <Play className="w-4 h-4 mr-2" />
-                    Iniciar Proceso
+                    <Play className="w-5 h-5 mr-2" />
+                    Start Process
                   </Button>
                 )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Secure</p>
+                    <p className="text-xs text-muted-foreground">SSL Protected</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Fast Delivery</p>
+                    <p className="text-xs text-muted-foreground">24-72 hours</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Real Views</p>
+                    <p className="text-xs text-muted-foreground">High Retention</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
         </motion.div>
