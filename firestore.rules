@@ -1,33 +1,27 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas para las métricas
-    match /metrics/{userId} {
-      allow read: if request.auth != null && 
-        userId == request.auth.uid;
+    // Función auxiliar para verificar la propiedad del documento
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
 
-      // Permitir creación y actualización de métricas para el usuario autenticado
-      allow write: if request.auth != null && 
-        userId == request.auth.uid;
+    // Reglas para las métricas del usuario
+    match /users/{userId}/metrics/{metricId} {
+      allow read, write: if isOwner(userId);
     }
 
     // Reglas para los datos de Spotify
     match /spotify_data/{userId} {
-      allow read, write: if request.auth != null && 
-        userId == request.auth.uid;
+      allow read, write: if isOwner(userId);
     }
 
     // Reglas para las órdenes de vistas de YouTube
     match /youtube_views_orders/{orderId} {
-      // Permitir lectura si el usuario está autenticado y es el propietario
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
-
-      // Permitir creación si el usuario está autenticado
       allow create: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
-
-      // Permitir actualización y eliminación solo al propietario
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
@@ -41,10 +35,7 @@ service cloud.firestore {
 
     // Reglas para las suscripciones
     match /subscriptions/{userId} {
-      allow read: if request.auth != null && 
-        userId == request.auth.uid;
-      allow write: if request.auth != null && 
-        userId == request.auth.uid;
+      allow read, write: if isOwner(userId);
     }
 
     // Reglas para los planes

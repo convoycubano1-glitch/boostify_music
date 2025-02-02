@@ -28,6 +28,53 @@ export default function Dashboard() {
     totalEngagement: 0
   });
 
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchMetrics = async () => {
+      try {
+        // Usar la nueva estructura de subcollecciones
+        const userMetricsRef = doc(db, `users/${user.uid}/metrics/current`);
+        const metricsDoc = await getDoc(userMetricsRef);
+
+        if (!metricsDoc.exists()) {
+          // Crear documento inicial de métricas para el usuario
+          const initialMetrics = {
+            spotifyFollowers: 0,
+            instagramFollowers: 0,
+            youtubeViews: 0,
+            contractsCreated: 0,
+            prCampaigns: 0,
+            totalEngagement: 0,
+            updatedAt: new Date()
+          };
+
+          await setDoc(userMetricsRef, initialMetrics);
+          setMetrics(initialMetrics);
+        } else {
+          const data = metricsDoc.data();
+          setMetrics({
+            spotifyFollowers: data.spotifyFollowers || 0,
+            instagramFollowers: data.instagramFollowers || 0,
+            youtubeViews: data.youtubeViews || 0,
+            contractsCreated: data.contractsCreated || 0,
+            prCampaigns: data.prCampaigns || 0,
+            totalEngagement: data.totalEngagement || 0
+          });
+        }
+      } catch (error) {
+        console.error('Error al obtener métricas:', error);
+        toast({
+          title: "Error al cargar métricas",
+          description: "No se pudieron cargar tus métricas. Por favor, intenta recargar la página.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    fetchMetrics();
+  }, [user, toast]);
+
   const services = [
     {
       name: "Spotify Growth",
@@ -75,45 +122,6 @@ export default function Dashboard() {
       color: "text-orange-500"
     }
   ];
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchMetrics = async () => {
-      try {
-        const metricsDocRef = doc(db, 'metrics', user.uid);
-        const metricsDoc = await getDoc(metricsDocRef);
-
-        if (!metricsDoc.exists()) {
-          // Crear documento inicial de métricas para el usuario
-          const initialMetrics = {
-            userId: user.uid,
-            spotifyFollowers: 0,
-            instagramFollowers: 0,
-            youtubeViews: 0,
-            contractsCreated: 0,
-            prCampaigns: 0,
-            totalEngagement: 0,
-            createdAt: new Date()
-          };
-
-          await setDoc(metricsDocRef, initialMetrics);
-          setMetrics(initialMetrics);
-        } else {
-          setMetrics(metricsDoc.data());
-        }
-      } catch (error) {
-        console.error('Error al obtener métricas:', error);
-        toast({
-          title: "Error al cargar métricas",
-          description: "No se pudieron cargar tus métricas. Por favor, intenta recargar la página.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    fetchMetrics();
-  }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
