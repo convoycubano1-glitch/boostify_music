@@ -11,14 +11,12 @@ import SpotifyPage from "@/pages/spotify";
 import ContractsPage from "@/pages/contracts";
 import PRPage from "@/pages/pr";
 import SettingsPage from "@/pages/settings";
-import AuthPage from "@/pages/auth-page";
 import YoutubeViewsPage from "@/pages/youtube-views";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
-      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/spotify" component={SpotifyPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
