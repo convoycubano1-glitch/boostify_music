@@ -17,13 +17,14 @@ import {
   Loader2,
   X,
   Grid,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -48,7 +49,7 @@ interface Video {
 interface Song {
   id: string;
   name: string;
-  fileUrl: string;
+  audio: string;
   createdAt: Date;
 }
 
@@ -191,26 +192,38 @@ export default function ArtistDashboardPage() {
     }
   };
 
-  const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const audioUrl = URL.createObjectURL(file);
-      if (currentAudio) {
-        currentAudio.pause();
-        URL.revokeObjectURL(currentAudio.src);
+      try {
+        // Convertir el archivo a base64
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          if (e.target?.result) {
+            const audio = new Audio();
+            audio.src = e.target.result as string;
+            setCurrentAudio(audio);
+            setIsPlaying(false);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error reading file:", error);
+        toast({
+          title: "Error",
+          description: "Failed to read audio file. Please try again.",
+          variant: "destructive",
+        });
       }
-      const audio = new Audio(audioUrl);
-      setCurrentAudio(audio);
-      setIsPlaying(false);
     }
   };
 
-  const togglePlay = (audioUrl?: string) => {
-    if (audioUrl && (!currentAudio || currentAudio.src !== audioUrl)) {
+  const togglePlay = (audioData?: string) => {
+    if (audioData && (!currentAudio || currentAudio.src !== audioData)) {
       if (currentAudio) {
         currentAudio.pause();
       }
-      const audio = new Audio(audioUrl);
+      const audio = new Audio(audioData);
       setCurrentAudio(audio);
       audio.play();
       setIsPlaying(true);
@@ -224,18 +237,18 @@ export default function ArtistDashboardPage() {
     }
   };
 
-    const handleSongUpload = async () => {
+  const handleSongUpload = async () => {
     if (!auth.currentUser?.uid || !currentAudio) return;
 
     try {
       setIsSubmittingSong(true);
 
       // Extraer el nombre del archivo
-      const fileName = currentAudio.src.split("/").pop() || "Untitled Song";
+      const fileName = currentAudio.src.split("/").pop()?.split(";")[0] || "Untitled Song";
 
       const songData = {
         name: fileName,
-        fileUrl: currentAudio.src,
+        audio: currentAudio.src, // Guardamos el audio en base64
         userId: auth.currentUser.uid,
         createdAt: serverTimestamp()
       };
@@ -251,7 +264,6 @@ export default function ArtistDashboardPage() {
       setIsSongDialogOpen(false);
       if (currentAudio) {
         currentAudio.pause();
-        URL.revokeObjectURL(currentAudio.src);
         setCurrentAudio(null);
         setIsPlaying(false);
       }
@@ -269,6 +281,45 @@ export default function ArtistDashboardPage() {
     }
   };
 
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!auth.currentUser?.uid) return;
+
+    try {
+      await deleteDoc(doc(db, "videos", videoId));
+      toast({
+        title: "Success",
+        description: "Video deleted successfully",
+      });
+      refetchVideos();
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete video. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSong = async (songId: string) => {
+    if (!auth.currentUser?.uid) return;
+
+    try {
+      await deleteDoc(doc(db, "songs", songId));
+      toast({
+        title: "Success",
+        description: "Song deleted successfully",
+      });
+      refetchSongs();
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete song. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -340,13 +391,23 @@ export default function ArtistDashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(video.url, '_blank')}
-                          >
-                            View
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(video.url, '_blank')}
+                            >
+                              View
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteVideo(video.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -369,8 +430,7 @@ export default function ArtistDashboardPage() {
                         {videos.map((video) => (
                           <div 
                             key={video.id} 
-                            className="group relative aspect-video rounded-lg overflow-hidden cursor-pointer"
-                            onClick={() => window.open(video.url, '_blank')}
+                            className="group relative aspect-video rounded-lg overflow-hidden"
                           >
                             {video.thumbnailUrl ? (
                               <img 
@@ -383,8 +443,24 @@ export default function ArtistDashboardPage() {
                                 <PlayCircle className="h-8 w-8 text-muted-foreground" />
                               </div>
                             )}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <PlayCircle className="h-12 w-12 text-white" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute top-2 right-2 flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => window.open(video.url, '_blank')}
+                                >
+                                  <PlayCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleDeleteVideo(video.id)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/80 text-white text-sm">
                               <p className="truncate">{video.title}</p>
@@ -497,13 +573,23 @@ export default function ArtistDashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => togglePlay(song.fileUrl)}
-                          >
-                            {currentAudio?.src === song.fileUrl && isPlaying ? "Pause" : "Play"}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => togglePlay(song.audio)}
+                            >
+                              {currentAudio?.src === song.audio && isPlaying ? "Pause" : "Play"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSong(song.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
