@@ -184,13 +184,13 @@ export default function YoutubeViewsPage() {
               transition={{ duration: 0.5 }}
             >
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                Potencia tu Presencia en{" "}
+                Boost Your Presence on{" "}
                 <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
                   YouTube
                 </span>
               </h1>
               <p className="text-lg md:text-xl text-gray-200 mb-8">
-                Impulsa tus videos con vistas orgánicas y de alta retención. Alcanza a tu audiencia ideal y aumenta tu visibilidad.
+                Enhance your videos with organic, high-retention views. Reach your ideal audience and increase your visibility.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
@@ -199,14 +199,14 @@ export default function YoutubeViewsPage() {
                   onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   <Play className="w-5 h-5 mr-2" />
-                  Comenzar Ahora
+                  Start Now
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
                   className="bg-black/50 hover:bg-black/60 border-white/20 text-white"
                 >
-                  Ver Demostración
+                  Watch Demo
                 </Button>
               </div>
               <div className="mt-8 flex items-center gap-8">
@@ -216,7 +216,7 @@ export default function YoutubeViewsPage() {
                   </div>
                   <div>
                     <p className="text-white font-semibold">+2M</p>
-                    <p className="text-gray-400 text-sm">Vistas Generadas</p>
+                    <p className="text-gray-400 text-sm">Generated Views</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export default function YoutubeViewsPage() {
                   </div>
                   <div>
                     <p className="text-white font-semibold">10k+</p>
-                    <p className="text-gray-400 text-sm">Clientes Satisfechos</p>
+                    <p className="text-gray-400 text-sm">Satisfied Clients</p>
                   </div>
                 </div>
               </div>
