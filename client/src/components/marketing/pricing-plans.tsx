@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { loadStripe } from "@stripe/stripe-js";
 import { getAuthToken } from "@/lib/firebase";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -57,66 +57,36 @@ const plans = [
 export function PricingPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [showDialog, setShowDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const success = params.get('success');
-    const canceled = params.get('canceled');
+  const handleSubscribe = async (plan: typeof plans[0]) => {
+    console.log('Subscribing to plan:', plan.name); // Debug log
 
-    if (success === 'true') {
-      setPaymentStatus('success');
-      toast({
-        title: "Payment Successful",
-        description: "Your subscription has been activated successfully.",
-        variant: "default",
-      });
-    } else if (canceled === 'true') {
-      setPaymentStatus('canceled');
-      toast({
-        title: "Payment Canceled",
-        description: "Your payment was canceled. You can try again when you're ready.",
-        variant: "destructive",
-      });
-    }
-  }, []);
-
-  const handlePlanSelect = (plan: typeof plans[0]) => {
     if (!user) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to subscribe to a plan",
+        title: "Inicio de sesión requerido",
+        description: "Por favor, inicia sesión para suscribirte a un plan",
         variant: "destructive"
       });
       return;
     }
-    setSelectedPlan(plan);
-    setShowDialog(true);
-  };
-
-  const handlePayment = async () => {
-    if (!selectedPlan) return;
 
     try {
       setIsProcessing(true);
+      console.log('Getting auth token...'); // Debug log
 
       const token = await getAuthToken();
       if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to continue",
-          variant: "destructive"
-        });
-        return;
+        throw new Error("Error de autenticación");
       }
 
       const stripe = await stripePromise;
       if (!stripe) {
-        throw new Error("Could not initialize Stripe");
+        throw new Error("Error al inicializar Stripe");
       }
+
+      console.log('Creating checkout session...'); // Debug log
 
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
@@ -125,61 +95,54 @@ export function PricingPlans() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          priceId: selectedPlan.priceId,
-          planName: selectedPlan.name,
-          price: selectedPlan.price
+          priceId: plan.priceId,
+          planName: plan.name,
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error creating subscription session');
+        const error = await response.json();
+        throw new Error(error.error || 'Error al crear la sesión de pago');
       }
 
       const { sessionId } = await response.json();
-      if (!sessionId) {
-        throw new Error('Stripe session ID was not received');
-      }
+      console.log('Got session ID:', sessionId); // Debug log
 
-      const { error } = await stripe.redirectToCheckout({
-        sessionId
-      });
-
+      const { error } = await stripe.redirectToCheckout({ sessionId });
       if (error) {
-        throw new Error(error.message);
+        throw error;
       }
     } catch (error: any) {
-      console.error('Payment process error:', error);
+      console.error('Error en el proceso de pago:', error);
       toast({
-        title: "Payment Error",
-        description: error.message || "There was an error processing your subscription. Please try again.",
+        title: "Error",
+        description: error.message || "Hubo un error al procesar el pago",
         variant: "destructive"
       });
     } finally {
       setIsProcessing(false);
-      setShowDialog(false);
     }
   };
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-          Choose Your Plan
+        <h2 className="text-3xl font-bold">
+          Elige tu Plan
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Flexible plans for every stage of your career
+          Planes flexibles para cada etapa de tu carrera
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3 max-w-7xl mx-auto">
+      <div className="grid gap-8 md:grid-cols-3 max-w-7xl mx-auto">
         {plans.map((plan) => (
-          <Card key={plan.name} className={`p-8 relative ${plan.popular ? 'border-orange-500' : ''}`}>
+          <Card key={plan.name} className={`p-6 ${plan.popular ? 'border-orange-500' : ''}`}>
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1">
+                <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                   <Crown className="w-4 h-4" />
-                  Most Popular
+                  Más Popular
                 </span>
               </div>
             )}
@@ -188,7 +151,7 @@ export function PricingPlans() {
               <h3 className="text-2xl font-bold">{plan.name}</h3>
               <div className="mt-4 flex items-baseline">
                 <span className="text-4xl font-bold">${plan.price}</span>
-                <span className="text-muted-foreground ml-2">/mo</span>
+                <span className="text-muted-foreground ml-2">/mes</span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {plan.description}
@@ -198,114 +161,33 @@ export function PricingPlans() {
             <ul className="space-y-3 mb-6">
               {plan.features.map((feature) => (
                 <li key={feature} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                  <Check className="h-4 w-4 text-orange-500" />
                   <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
 
-            <Button 
+            <Button
               className={`w-full ${
                 plan.popular 
                   ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                   : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
               }`}
-              onClick={() => handlePlanSelect(plan)}
+              onClick={() => handleSubscribe(plan)}
               disabled={isProcessing}
             >
               {isProcessing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  Procesando...
                 </>
               ) : (
-                'Get Started'
+                'Empezar Ahora'
               )}
             </Button>
           </Card>
         ))}
       </div>
-
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Subscription</DialogTitle>
-            <DialogDescription>
-              Review your subscription details before proceeding
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPlan && (
-            <div className="space-y-4">
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Plan details</h4>
-                  <div className="space-y-4 rounded-lg border p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Plan:</span>
-                      <span className="text-sm font-medium">{selectedPlan.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Price:</span>
-                      <span className="text-lg font-bold">${selectedPlan.price}/mo</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end gap-4">
-                <Button variant="outline" onClick={() => setShowDialog(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handlePayment}
-                  className="bg-orange-500 hover:bg-orange-600"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Confirm Purchase'
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {paymentStatus && (
-        <Card className={`mt-8 p-6 ${
-          paymentStatus === 'success' 
-            ? 'border-green-500/20 bg-green-500/5' 
-            : 'border-orange-500/20 bg-orange-500/5'
-        }`}>
-          <div className="flex items-start gap-4">
-            {paymentStatus === 'success' ? (
-              <>
-                <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-green-500">Payment Successful</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Your subscription has been activated successfully.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <Crown className="h-5 w-5 text-orange-500 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-orange-500">Payment Canceled</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Your payment was not completed. You can try again when you're ready.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </Card>
-      )}
     </div>
   );
 }
