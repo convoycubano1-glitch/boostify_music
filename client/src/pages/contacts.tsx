@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Upload, UserPlus, Users, FileSpreadsheet, Loader2, Mail, Building2, Phone, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -64,10 +64,10 @@ export default function ContactsPage() {
 
       try {
         const contactsRef = collection(db, "contacts");
+        // Simplificada la consulta temporalmente removiendo orderBy
         const q = query(
           contactsRef,
-          where("userId", "==", auth.currentUser.uid),
-          orderBy("createdAt", "desc")
+          where("userId", "==", auth.currentUser.uid)
         );
 
         const querySnapshot = await getDocs(q);
