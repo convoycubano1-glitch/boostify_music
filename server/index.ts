@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -35,6 +36,12 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Validar variables de entorno críticas
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('Error: STRIPE_SECRET_KEY no está definida en las variables de entorno');
+  process.exit(1);
+}
 
 (async () => {
   const server = registerRoutes(app);
