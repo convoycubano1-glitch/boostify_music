@@ -162,6 +162,16 @@ export default function ArtistDashboardPage() {
         return;
       }
 
+      // Verificar el tipo de archivo
+      if (!file.type.startsWith('audio/')) {
+        toast({
+          title: "Error",
+          description: "Please upload a valid audio file (MP3 or WAV)",
+          variant: "destructive",
+        });
+        return;
+      }
+
       try {
         setSelectedFile(file);
         const audio = new Audio(URL.createObjectURL(file));

@@ -35,15 +35,16 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Initialize Firestore with persistent cache silently
+// Initialize Firestore with persistent cache
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
 
-// Initialize Storage
-export const storage = getStorage(app);
+// Initialize Storage with custom settings
+const storage = getStorage(app);
+export { storage };
 
 let analytics = null;
 if (import.meta.env.PROD) {
