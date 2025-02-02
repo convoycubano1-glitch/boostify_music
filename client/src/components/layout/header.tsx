@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,7 @@ export function Header() {
     { name: "YouTube Views", href: "/youtube-views", icon: Youtube },
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
+    { name: "Contacts", href: "/contacts", icon: Users },
   ];
 
   if (!user) return null;
