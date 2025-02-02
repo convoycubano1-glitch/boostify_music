@@ -12,6 +12,7 @@ import ContractsPage from "@/pages/contracts";
 import PRPage from "@/pages/pr";
 import SettingsPage from "@/pages/settings";
 import YoutubeViewsPage from "@/pages/youtube-views";
+import InstagramBoostPage from "@/pages/instagram-boost";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/contracts" component={ContractsPage} />
       <ProtectedRoute path="/pr" component={PRPage} />
       <ProtectedRoute path="/youtube-views" component={YoutubeViewsPage} />
+      <ProtectedRoute path="/instagram-boost" component={InstagramBoostPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
