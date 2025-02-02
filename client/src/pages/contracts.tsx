@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
 import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
 import { generateContract } from "@/lib/openai";
+import { saveContract, getUserContracts, type Contract } from "@/lib/firebase";
 import {
   Dialog,
   DialogContent,
@@ -40,50 +41,28 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-
-interface Contract {
-  id: number;
-  title: string;
-  type: string;
-  content: string;
-  status: string;
-  created_at: string;
-}
+import { auth } from "@/lib/firebase";
 
 export default function ContractsPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showNewContractDialog, setShowNewContractDialog] = useState(false);
   const [generatedContract, setGeneratedContract] = useState<string | null>(null);
   const [contractTitle, setContractTitle] = useState<string>("");
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-
-  // Fetch contracts
-  const { data: contracts = [], isLoading } = useQuery<Contract[]>({
-    queryKey: ["/api/contracts"],
-    enabled: !!user,
+  // Fetch contracts using Firestore
+  const { data: contracts = [], isLoading } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: getUserContracts,
+    enabled: !!auth.currentUser,
   });
 
-  // Save contract mutation
+  // Save contract mutation using Firestore
   const saveContractMutation = useMutation({
-    mutationFn: async (contract: { title: string; type: string; content: string, status: string }) => {
-      const response = await fetch("/api/contracts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(contract),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to save contract");
-      }
-      return response.json();
-    },
+    mutationFn: saveContract,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
     },
   });
 
@@ -114,7 +93,7 @@ export default function ContractsPage() {
     try {
       await saveContractMutation.mutateAsync({
         title: contractTitle,
-        type: "legal", // Using a default type
+        type: "legal",
         content: generatedContract,
         status: "draft"
       });
@@ -256,7 +235,7 @@ export default function ContractsPage() {
                 <h3 className="text-lg font-medium">Pendientes</h3>
               </div>
               <p className="mt-2 text-3xl font-bold">
-                {contracts.filter((c) => c.status === "pending").length}
+                {contracts.filter((c) => c.status === "draft").length}
               </p>
             </Card>
           </div>
@@ -289,7 +268,7 @@ export default function ContractsPage() {
                           {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(contract.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

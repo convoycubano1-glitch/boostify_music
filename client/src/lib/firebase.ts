@@ -1,7 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, type User } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import type { ContractFormValues } from "@/components/contracts/contract-form";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
@@ -32,6 +33,89 @@ export async function getAuthToken(): Promise<string | null> {
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;
+  }
+}
+
+export interface Contract {
+  id: string;
+  title: string;
+  type: string;
+  content: string;
+  status: 'draft' | 'active' | 'completed';
+  createdAt: Date;
+  userId: string;
+}
+
+// Save contract to Firestore
+export async function saveContract(contractData: {
+  title: string;
+  type: string;
+  content: string;
+  status: string;
+}): Promise<Contract> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User not authenticated');
+
+  try {
+    const docRef = await addDoc(collection(db, 'contracts'), {
+      ...contractData,
+      userId: currentUser.uid,
+      createdAt: serverTimestamp()
+    });
+
+    const newContract = await getDoc(docRef);
+    return {
+      id: newContract.id,
+      ...newContract.data()
+    } as Contract;
+  } catch (error) {
+    console.error('Error saving contract:', error);
+    throw error;
+  }
+}
+
+// Get user's contracts
+export async function getUserContracts(): Promise<Contract[]> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User not authenticated');
+
+  try {
+    const q = query(
+      collection(db, 'contracts'),
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Contract[];
+  } catch (error) {
+    console.error('Error fetching contracts:', error);
+    throw error;
+  }
+}
+
+// Get a single contract
+export async function getContract(contractId: string): Promise<Contract | null> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User not authenticated');
+
+  try {
+    const docRef = doc(db, 'contracts', contractId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists() && docSnap.data().userId === currentUser.uid) {
+      return {
+        id: docSnap.id,
+        ...docSnap.data()
+      } as Contract;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching contract:', error);
+    throw error;
   }
 }
 
