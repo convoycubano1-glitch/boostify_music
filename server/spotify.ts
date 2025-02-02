@@ -14,6 +14,12 @@ declare global {
   }
 }
 
+const PLAN_LIMITS = {
+  basic: { playlists: 10, emails: 50 },
+  pro: { playlists: 50, emails: 250 },
+  enterprise: { playlists: Infinity, emails: Infinity }
+};
+
 export function setupSpotifyRoutes(app: Express) {
   // Iniciar flujo de OAuth de Spotify
   app.get("/api/spotify/auth", (req, res) => {
@@ -121,6 +127,118 @@ export function setupSpotifyRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching Spotify profile:", error);
       res.status(500).send("Failed to fetch Spotify profile");
+    }
+  });
+
+  // New route for finding playlists
+  app.post("/api/spotify/find-playlists", async (req, res) => {
+    if (!req.user?.uid) return res.sendStatus(401);
+
+    try {
+      const { query } = req.body;
+      if (!query) {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+
+      // Get user's subscription data
+      const userSubscriptionRef = db.collection('subscriptions').doc(req.user.uid);
+      const userSubscriptionDoc = await userSubscriptionRef.get();
+      const userPlan = userSubscriptionDoc.data()?.planId || 'basic';
+      const limits = PLAN_LIMITS[userPlan];
+
+      // Get current usage
+      const usageRef = db.collection('spotify_data').doc(req.user.uid);
+      const usageDoc = await usageRef.get();
+      const currentUsage = usageDoc.data()?.playlistSearches || 0;
+
+      if (currentUsage >= limits.playlists) {
+        return res.status(403).json({
+          error: "Plan limit reached",
+          limit: limits.playlists,
+          current: currentUsage
+        });
+      }
+
+      // Get Spotify access token
+      const spotifyDataRef = db.collection('spotify_data').doc(req.user.uid);
+      const spotifyDoc = await spotifyDataRef.get();
+
+      if (!spotifyDoc.exists || !spotifyDoc.data()?.accessToken) {
+        return res.status(400).send("Spotify account not connected");
+      }
+
+      const accessToken = spotifyDoc.data()?.accessToken;
+
+      // Search for playlists
+      const response = await fetch(
+        `${SPOTIFY_API_URL}/search?type=playlist&q=${encodeURIComponent(query)}`,
+        {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to search playlists");
+      }
+
+      const data = await response.json();
+
+      // Update usage count
+      await usageRef.update({
+        playlistSearches: currentUsage + 1
+      });
+
+      res.json(data.playlists.items);
+    } catch (error) {
+      console.error("Error searching playlists:", error);
+      res.status(500).send("Failed to search playlists");
+    }
+  });
+
+  // New route for scraping curator emails
+  app.post("/api/spotify/scrape-emails", async (req, res) => {
+    if (!req.user?.uid) return res.sendStatus(401);
+
+    try {
+      // Get user's subscription data
+      const userSubscriptionRef = db.collection('subscriptions').doc(req.user.uid);
+      const userSubscriptionDoc = await userSubscriptionRef.get();
+      const userPlan = userSubscriptionDoc.data()?.planId || 'basic';
+      const limits = PLAN_LIMITS[userPlan];
+
+      // Get current usage
+      const usageRef = db.collection('spotify_data').doc(req.user.uid);
+      const usageDoc = await usageRef.get();
+      const currentUsage = usageDoc.data()?.emailScrapes || 0;
+
+      if (currentUsage >= limits.emails) {
+        return res.status(403).json({
+          error: "Plan limit reached",
+          limit: limits.emails,
+          current: currentUsage
+        });
+      }
+
+      // Mock email scraping functionality
+      // In a real implementation, you would:
+      // 1. Get playlist details
+      // 2. Extract curator information
+      // 3. Find associated contact information
+      const mockEmails = [
+        "curator1@example.com",
+        "playlist.owner@example.com",
+        "music.promoter@example.com"
+      ];
+
+      // Update usage count
+      await usageRef.update({
+        emailScrapes: currentUsage + 1
+      });
+
+      res.json(mockEmails);
+    } catch (error) {
+      console.error("Error scraping emails:", error);
+      res.status(500).send("Failed to scrape emails");
     }
   });
 }
