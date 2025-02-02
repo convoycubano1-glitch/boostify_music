@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { searchContacts, contactCategories, type Contact } from "@/lib/apify-service";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,9 @@ export default function PRPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>(contactCategories[0]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [progress, setProgress] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const contactsPerPage = 10;
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -36,9 +40,17 @@ export default function PRPage() {
     }
 
     setIsLoading(true);
+    setProgress(0);
     try {
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 10, 90));
+      }, 500);
+
       const results = await searchContacts(selectedCategory, searchQuery);
+      clearInterval(progressInterval);
+      setProgress(100);
       setContacts(results);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error en la búsqueda:', error);
       toast({
@@ -50,6 +62,11 @@ export default function PRPage() {
       setIsLoading(false);
     }
   };
+
+  const indexOfLastContact = currentPage * contactsPerPage;
+  const indexOfFirstContact = indexOfLastContact - contactsPerPage;
+  const currentContacts = contacts.slice(indexOfFirstContact, indexOfLastContact);
+  const totalPages = Math.ceil(contacts.length / contactsPerPage);
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
@@ -107,13 +124,21 @@ export default function PRPage() {
                 )}
               </Button>
             </div>
+            {isLoading && (
+              <div className="space-y-2">
+                <Progress value={progress} className="w-full" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {progress}% Completado
+                </p>
+              </div>
+            )}
           </div>
         </Card>
 
         <Card>
           <ScrollArea className="h-[500px]">
             <div className="p-4 space-y-4">
-              {contacts.map((contact, index) => (
+              {currentContacts.map((contact, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
@@ -149,6 +174,27 @@ export default function PRPage() {
               )}
             </div>
           </ScrollArea>
+          {contacts.length > 0 && (
+            <div className="p-4 border-t flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     </div>

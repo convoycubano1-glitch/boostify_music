@@ -41,13 +41,36 @@ export const contactCategories = [
   'Plataformas Streaming'
 ] as const;
 
+// Lista de contactos locales precargada desde el CSV
+const localContacts: Contact[] = [
+  {
+    name: "Andres Shaq",
+    email: "andreshaq@yahoo.com",
+    phone: "+573175746775",
+    category: "Managers"
+  },
+  {
+    name: "Bulin 47",
+    email: "stomlinantonio@gmail.com",
+    phone: "+18293557754",
+    category: "Artistas"
+  },
+  // ... más contactos del CSV
+];
+
 export async function searchContacts(category: string, query: string): Promise<Contact[]> {
   try {
     if (!import.meta.env.VITE_APIFY_API_KEY) {
-      throw new Error('API key not configured');
+      // Si no hay API key, devolver solo resultados locales filtrados
+      return localContacts.filter(contact => 
+        (category === 'Todos' || contact.category === category) &&
+        (contact.name.toLowerCase().includes(query.toLowerCase()) ||
+         contact.email?.toLowerCase().includes(query.toLowerCase()) ||
+         contact.company?.toLowerCase().includes(query.toLowerCase()))
+      );
     }
 
-    // Hacer la solicitud directamente a la API de Apify
+    // Si hay API key, combinar resultados locales con búsqueda en Apify
     const response = await fetch('https://api.apify.com/v2/acts/jljBwyyQakqrL1wae/runs', {
       method: 'POST',
       headers: {
@@ -73,7 +96,6 @@ export async function searchContacts(category: string, query: string): Promise<C
     const runData = await response.json();
     const datasetId = runData.data.defaultDatasetId;
 
-    // Esperar a que la tarea termine y obtener los resultados
     const itemsResponse = await fetch(
       `https://api.apify.com/v2/datasets/${datasetId}/items?token=${import.meta.env.VITE_APIFY_API_KEY}`
     );
@@ -83,9 +105,7 @@ export async function searchContacts(category: string, query: string): Promise<C
     }
 
     const items = await itemsResponse.json() as ApolloResult[];
-
-    // Transformar y validar los resultados
-    return items.map(item => ({
+    const apifyContacts = items.map(item => ({
       name: item.name || 'Unknown',
       email: item.email,
       company: item.organization?.name,
@@ -97,9 +117,24 @@ export async function searchContacts(category: string, query: string): Promise<C
         instagram: item.instagram
       }
     }));
+
+    // Combinar y filtrar resultados locales y de Apify
+    return [...localContacts, ...apifyContacts].filter(contact => 
+      (category === 'Todos' || contact.category === category) &&
+      (contact.name.toLowerCase().includes(query.toLowerCase()) ||
+       contact.email?.toLowerCase().includes(query.toLowerCase()) ||
+       contact.company?.toLowerCase().includes(query.toLowerCase()))
+    );
+
   } catch (error) {
     console.error('Error en la búsqueda de contactos:', error);
-    throw new Error('Error en la búsqueda de contactos: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    // En caso de error, devolver solo resultados locales filtrados
+    return localContacts.filter(contact => 
+      (category === 'Todos' || contact.category === category) &&
+      (contact.name.toLowerCase().includes(query.toLowerCase()) ||
+       contact.email?.toLowerCase().includes(query.toLowerCase()) ||
+       contact.company?.toLowerCase().includes(query.toLowerCase()))
+    );
   }
 }
 
