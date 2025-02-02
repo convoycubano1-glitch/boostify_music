@@ -22,8 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc, collection } from "firebase/firestore";
+import { doc, setDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
+import { getAuthToken } from "@/lib/auth";
 
 const campaignSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
@@ -59,18 +60,31 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
 
   const getAISuggestion = async (campaignData: Partial<CampaignFormValues>) => {
     try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No autenticado');
+      }
+
       const response = await fetch("/api/ai/campaign-suggestion", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(campaignData),
       });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener sugerencias');
+      }
+
       const data = await response.json();
       setAiSuggestion(data.suggestion);
     } catch (error) {
       console.error("Error getting AI suggestion:", error);
       toast({
         title: "Error",
-        description: "Failed to get AI suggestions",
+        description: "No se pudieron obtener las sugerencias de AI",
         variant: "destructive",
       });
     }
@@ -81,34 +95,36 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       setIsLoading(true);
       const user = auth.currentUser;
       if (!user) {
-        throw new Error("User not authenticated");
+        throw new Error("Usuario no autenticado");
       }
 
+      // Reference to the campaigns collection
       const campaignRef = doc(collection(db, "campaigns"));
+
+      // Add the document with additional metadata
       await setDoc(campaignRef, {
         ...data,
         userId: user.uid,
-        status: "active",
-        createdAt: new Date(),
-        reach: 0,
-        engagement: 0,
+        status: 'active',
+        createdAt: serverTimestamp(),
+        aiSuggestion: aiSuggestion || null
       });
 
       toast({
-        title: "Success",
-        description: "Campaign created successfully",
+        title: "Éxito",
+        description: "Campaña creada exitosamente",
       });
 
       if (onSuccess) {
         onSuccess();
       }
-      
+
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating campaign:", error);
       toast({
         title: "Error",
-        description: "Failed to create campaign",
+        description: "Error al crear la campaña",
         variant: "destructive",
       });
     } finally {

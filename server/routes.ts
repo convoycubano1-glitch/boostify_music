@@ -70,28 +70,33 @@ export function registerRoutes(app: Express): Server {
         messages: [
           {
             role: "system",
-            content: "You are a marketing expert specialized in music promotion campaigns. Provide suggestions to optimize campaign performance."
+            content: "You are a marketing expert specialized in music promotion campaigns. Provide suggestions in Spanish to optimize campaign performance. Format your response as JSON with a 'suggestions' field containing an array of string suggestions."
           },
           {
             role: "user",
-            content: `Please analyze and provide suggestions for this campaign:
-              Name: ${name}
-              Description: ${description}
-              Platform: ${platform}
-              Budget: $${budget}
+            content: `Por favor analiza y proporciona sugerencias para esta campaña:
+              Nombre: ${name}
+              Descripción: ${description}
+              Plataforma: ${platform}
+              Presupuesto: $${budget}
 
-              Provide specific, actionable suggestions to improve the campaign's effectiveness.`
+              Proporciona sugerencias específicas y prácticas para mejorar la efectividad de la campaña.`
           }
         ],
         response_format: { type: "json_object" }
       });
 
+      // Parse the response and ensure it has the expected structure
       const suggestions = JSON.parse(completion.choices[0].message.content);
-      res.json({ suggestion: suggestions.suggestions });
+      if (!suggestions.suggestions) {
+        throw new Error('Formato de respuesta AI inválido');
+      }
+
+      res.json({ suggestion: suggestions.suggestions.join('\n\n') });
     } catch (error: any) {
       console.error('Error getting AI suggestions:', error);
       res.status(500).json({ 
-        error: "Error generating campaign suggestions",
+        error: "Error al generar sugerencias para la campaña",
         details: error.message 
       });
     }
