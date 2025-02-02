@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función auxiliar para verificar la propiedad del documento
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Reglas para las métricas del usuario
+    match /users/{userId}/metrics/{metricId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Reglas para los datos de Spotify
+    match /spotify_data/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Reglas para los videos
+    match /videos/{videoId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para las canciones
+    match /songs/{songId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para las estrategias
+    match /strategies/{strategyId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null;
+    }
+
+    // Reglas para las órdenes de vistas de YouTube
+    match /youtube_views_orders/{orderId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para los contactos
+    match /contacts/{contactId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para el engagement
+    match /engagement/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para las suscripciones
+    match /subscriptions/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Reglas para los planes
+    match /plans/{planId} {
+      allow read: if true;  // Permitir acceso público a la información del plan
+    }
+
+    // Reglas para los contratos
+    match /contracts/{contractId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+  }
+}
