@@ -1,50 +1,109 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Crown, Loader2 } from "lucide-react";
+import { Check, Crown, Loader2, Music2, Star, Rocket, Youtube, FileText, Megaphone } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { loadStripe } from "@stripe/stripe-js";
 import { useState } from "react";
+import { SiSpotify, SiInstagram } from "react-icons/si";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const plans = [
   {
-    name: "Basic",
-    price: 19,
+    name: "Starter",
+    price: 49,
     features: [
-      "Basic Analytics",
-      "Spotify Integration",
-      "1 Artist Profile",
-      "Email Support"
+      {
+        text: "Spotify Basic Analytics",
+        icon: SiSpotify
+      },
+      {
+        text: "Instagram Profile Optimization",
+        icon: SiInstagram
+      },
+      {
+        text: "1,000 YouTube Views",
+        icon: Youtube
+      },
+      {
+        text: "Basic Contract Templates",
+        icon: FileText
+      },
+      {
+        text: "Email Support",
+        icon: Megaphone
+      }
     ],
     description: "Perfect for emerging artists starting their journey",
     popular: false,
     priceId: "price_1Oq2YuBwX8aK6b3XhGjK9J2Y"
   },
   {
-    name: "Pro",
-    price: 49,
+    name: "Professional",
+    price: 149,
     features: [
-      "Advanced Analytics",
-      "Priority Spotify Integration",
-      "5 Artist Profiles",
-      "PR Management Tools",
-      "24/7 Support"
+      {
+        text: "Advanced Spotify Growth Tools",
+        icon: SiSpotify
+      },
+      {
+        text: "Instagram Boost Campaign",
+        icon: SiInstagram
+      },
+      {
+        text: "10,000 YouTube Views",
+        icon: Youtube
+      },
+      {
+        text: "Custom Contract Creation",
+        icon: FileText
+      },
+      {
+        text: "Basic PR Campaign",
+        icon: Megaphone
+      },
+      {
+        text: "Priority Support",
+        icon: Star
+      }
     ],
-    description: "Best for growing artists and small labels",
+    description: "Ideal for growing artists and small labels",
     popular: true,
     priceId: "price_1Oq2ZsBwX8aK6b3XQrY8K9L3"
   },
   {
     name: "Enterprise",
-    price: 99,
+    price: 499,
     features: [
-      "Custom Analytics",
-      "Multiple Artist Management",
-      "Dedicated Account Manager",
-      "API Access",
-      "Custom Integrations"
+      {
+        text: "Full Music Marketing Suite",
+        icon: Music2
+      },
+      {
+        text: "Premium Spotify Promotion",
+        icon: SiSpotify
+      },
+      {
+        text: "Complete Instagram Management",
+        icon: SiInstagram
+      },
+      {
+        text: "100,000 YouTube Views",
+        icon: Youtube
+      },
+      {
+        text: "Advanced Contract Management",
+        icon: FileText
+      },
+      {
+        text: "Full PR Campaign",
+        icon: Megaphone
+      },
+      {
+        text: "Dedicated Account Manager",
+        icon: Star
+      }
     ],
     description: "For professional artists and labels",
     popular: false,
@@ -115,21 +174,25 @@ export function PricingPlans() {
 
   return (
     <div className="py-12 px-4">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold">
-          Elige tu Plan
+      <div className="text-center mb-12 space-y-4">
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+          Potencia tu Música
         </h2>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Planes flexibles para cada etapa de tu carrera
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Elige el plan perfecto para impulsar tu carrera musical con nuestras herramientas de marketing integral
         </p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-3 max-w-7xl mx-auto">
         {plans.map((plan) => (
-          <Card key={plan.name} className={`p-6 ${plan.popular ? 'border-orange-500' : ''}`}>
+          <Card 
+            key={plan.name} 
+            className={`p-6 relative backdrop-blur-sm transition-all duration-300 hover:scale-105
+              ${plan.popular ? 'border-orange-500 shadow-lg shadow-orange-500/20' : 'border-orange-500/10 hover:border-orange-500/30'}`}
+          >
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                   <Crown className="w-4 h-4" />
                   Más Popular
                 </span>
@@ -139,7 +202,9 @@ export function PricingPlans() {
             <div className="mb-6">
               <h3 className="text-2xl font-bold">{plan.name}</h3>
               <div className="mt-4 flex items-baseline">
-                <span className="text-4xl font-bold">${plan.price}</span>
+                <span className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                  ${plan.price}
+                </span>
                 <span className="text-muted-foreground ml-2">/mes</span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -147,17 +212,19 @@ export function PricingPlans() {
               </p>
             </div>
 
-            <ul className="space-y-3 mb-6">
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm">{feature}</span>
+            <ul className="space-y-4 mb-8">
+              {plan.features.map((feature, index) => (
+                <li key={index} className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <feature.icon className="h-4 w-4 text-orange-500" />
+                  </div>
+                  <span className="text-sm">{feature.text}</span>
                 </li>
               ))}
             </ul>
 
             <Button
-              className={`w-full ${
+              className={`w-full h-12 ${
                 plan.popular 
                   ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                   : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
@@ -167,11 +234,14 @@ export function PricingPlans() {
             >
               {processingPlanId === plan.priceId ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Procesando...
                 </>
               ) : (
-                'Suscribirse'
+                <>
+                  <Rocket className="mr-2 h-5 w-5" />
+                  Comenzar Ahora
+                </>
               )}
             </Button>
           </Card>
