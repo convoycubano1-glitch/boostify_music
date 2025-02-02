@@ -3,9 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Check, Crown, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { loadStripe } from "@stripe/stripe-js";
-import { getAuthToken } from "@/lib/firebase";
 import { useState } from "react";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -57,12 +55,9 @@ const plans = [
 export function PricingPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
   const handleSubscribe = async (plan: typeof plans[0]) => {
-    console.log('Subscribing to plan:', plan.name); // Debug log
-
     if (!user) {
       toast({
         title: "Inicio de sesión requerido",
@@ -73,26 +68,19 @@ export function PricingPlans() {
     }
 
     try {
-      setIsProcessing(true);
-      console.log('Getting auth token...'); // Debug log
-
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error("Error de autenticación");
-      }
+      console.log(`Iniciando suscripción para plan ${plan.name}`);
+      setProcessingPlanId(plan.priceId);
 
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Error al inicializar Stripe");
       }
 
-      console.log('Creating checkout session...'); // Debug log
-
+      console.log('Creando sesión de checkout...');
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           priceId: plan.priceId,
@@ -101,15 +89,16 @@ export function PricingPlans() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al crear la sesión de pago');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear la sesión de pago');
       }
 
       const { sessionId } = await response.json();
-      console.log('Got session ID:', sessionId); // Debug log
+      console.log('ID de sesión recibido:', sessionId);
 
       const { error } = await stripe.redirectToCheckout({ sessionId });
       if (error) {
+        console.error('Error en redirectToCheckout:', error);
         throw error;
       }
     } catch (error: any) {
@@ -120,7 +109,7 @@ export function PricingPlans() {
         variant: "destructive"
       });
     } finally {
-      setIsProcessing(false);
+      setProcessingPlanId(null);
     }
   };
 
@@ -174,15 +163,15 @@ export function PricingPlans() {
                   : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
               }`}
               onClick={() => handleSubscribe(plan)}
-              disabled={isProcessing}
+              disabled={processingPlanId === plan.priceId}
             >
-              {isProcessing ? (
+              {processingPlanId === plan.priceId ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Procesando...
                 </>
               ) : (
-                'Empezar Ahora'
+                'Suscribirse'
               )}
             </Button>
           </Card>

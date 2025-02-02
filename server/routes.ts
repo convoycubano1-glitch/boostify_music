@@ -89,6 +89,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
+      console.log('Received subscription request:', req.body);
       const { priceId, planName } = req.body;
 
       if (!priceId || !planName) {
