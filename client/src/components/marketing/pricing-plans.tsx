@@ -22,7 +22,7 @@ const plans = [
     ],
     description: "Perfect for emerging artists starting their journey",
     popular: false,
-    priceId: "price_basic"
+    priceId: "price_1Oq2YuBwX8aK6b3XhGjK9J2Y"
   },
   {
     name: "Pro",
@@ -36,7 +36,7 @@ const plans = [
     ],
     description: "Best for growing artists and small labels",
     popular: true,
-    priceId: "price_pro"
+    priceId: "price_1Oq2ZsBwX8aK6b3XQrY8K9L3"
   },
   {
     name: "Enterprise",
@@ -50,7 +50,7 @@ const plans = [
     ],
     description: "For professional artists and labels",
     popular: false,
-    priceId: "price_enterprise"
+    priceId: "price_1Oq2a7BwX8aK6b3XmNpL5K8M"
   }
 ];
 
@@ -84,14 +84,13 @@ export function PricingPlans() {
         throw new Error("Could not initialize Stripe");
       }
 
-      console.log('Creating subscription session for plan:', plan.name); // Debug log
+      console.log('Creating subscription session for plan:', plan.name);
 
       // Create Stripe checkout session
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           priceId: plan.priceId,
@@ -109,10 +108,12 @@ export function PricingPlans() {
         throw new Error('Stripe session ID was not received');
       }
 
-      console.log('Redirecting to Stripe checkout with session:', sessionId); // Debug log
+      console.log('Redirecting to Stripe checkout with session:', sessionId);
 
       // Redirect to Stripe checkout
-      const { error } = await stripe.redirectToCheckout({ sessionId });
+      const { error } = await stripe.redirectToCheckout({
+        sessionId
+      });
 
       if (error) {
         throw new Error(error.message);

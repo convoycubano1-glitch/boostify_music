@@ -97,6 +97,8 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
+      console.log('Creating subscription session for:', { priceId, planName });
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -113,6 +115,8 @@ export function registerRoutes(app: Express): Server {
           planName,
         },
       });
+
+      console.log('Created session:', session.id);
 
       return res.json({
         sessionId: session.id
