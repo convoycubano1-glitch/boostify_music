@@ -18,13 +18,14 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import type { ContractFormValues } from "@/components/contracts/contract-form";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
   authDomain: "artist-boost.firebaseapp.com",
   projectId: "artist-boost",
-  storageBucket: "artist-boost.firebasestorage.app",
+  storageBucket: "artist-boost.appspot.com",
   messagingSenderId: "502955771825",
   appId: "1:502955771825:web:d6746677d851f9b1449f90",
   measurementId: "G-ERCSSWTXCJ"
@@ -40,6 +41,9 @@ export const db = initializeFirestore(app, {
     tabManager: persistentMultipleTabManager()
   })
 });
+
+// Initialize Storage
+export const storage = getStorage(app);
 
 let analytics = null;
 if (import.meta.env.PROD) {

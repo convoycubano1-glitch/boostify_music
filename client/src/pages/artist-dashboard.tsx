@@ -23,8 +23,9 @@ import {
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { db, auth } from "@/lib/firebase";
+import { db, auth, storage } from "@/lib/firebase";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -49,7 +50,8 @@ interface Video {
 interface Song {
   id: string;
   name: string;
-  audio: string;
+  audioUrl: string;
+  storageRef: string;
   createdAt: Date;
 }
 
@@ -73,8 +75,41 @@ export default function ArtistDashboardPage() {
   const [isSubmittingSong, setIsSubmittingSong] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Query for videos
+  // Query for songs
+  const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
+    queryKey: ["songs", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+
+      try {
+        const songsRef = collection(db, "songs");
+        const q = query(
+          songsRef,
+          where("userId", "==", auth.currentUser.uid)
+        );
+
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        })) as Song[];
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+        toast({
+          title: "Error",
+          description: "Could not load songs. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
+    // Query for videos
   const { data: videos = [], isLoading: isLoadingVideos, refetch: refetchVideos } = useQuery({
     queryKey: ["videos", auth.currentUser?.uid],
     queryFn: async () => {
@@ -112,39 +147,79 @@ export default function ArtistDashboardPage() {
     enabled: !!auth.currentUser?.uid,
   });
 
-  // Query for songs
-  const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
-    queryKey: ["songs", auth.currentUser?.uid],
-    queryFn: async () => {
-      if (!auth.currentUser?.uid) return [];
-
+  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
       try {
-        const songsRef = collection(db, "songs");
-        const q = query(
-          songsRef,
-          where("userId", "==", auth.currentUser.uid)
-        );
-
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        })) as Song[];
+        setSelectedFile(file);
+        const audio = new Audio(URL.createObjectURL(file));
+        setCurrentAudio(audio);
+        setIsPlaying(false);
       } catch (error) {
-        console.error("Error fetching songs:", error);
+        console.error("Error reading file:", error);
         toast({
           title: "Error",
-          description: "Could not load songs. Please try again.",
+          description: "Failed to read audio file. Please try again.",
           variant: "destructive",
         });
-        return [];
       }
-    },
-    enabled: !!auth.currentUser?.uid,
-  });
+    }
+  };
 
-  const handleVideoSubmit = async () => {
+  const handleSongUpload = async () => {
+    if (!auth.currentUser?.uid || !selectedFile) return;
+
+    try {
+      setIsSubmittingSong(true);
+
+      // Crear una referencia única para el archivo en Storage
+      const storageRef = ref(storage, `songs/${auth.currentUser.uid}/${Date.now()}_${selectedFile.name}`);
+
+      // Subir el archivo a Firebase Storage
+      await uploadBytes(storageRef, selectedFile);
+
+      // Obtener la URL de descarga
+      const downloadURL = await getDownloadURL(storageRef);
+
+      const songData = {
+        name: selectedFile.name,
+        audioUrl: downloadURL,
+        storageRef: storageRef.fullPath,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp()
+      };
+
+      const songsRef = collection(db, "songs");
+      await addDoc(songsRef, songData);
+
+      toast({
+        title: "Success",
+        description: "Song added successfully",
+      });
+
+      setIsSongDialogOpen(false);
+      if (currentAudio) {
+        currentAudio.pause();
+        URL.revokeObjectURL(currentAudio.src);
+        setCurrentAudio(null);
+      }
+      setSelectedFile(null);
+      setIsPlaying(false);
+      refetchSongs();
+
+    } catch (error) {
+      console.error("Error adding song:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add song. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingSong(false);
+    }
+  };
+
+    const handleVideoSubmit = async () => {
     if (!auth.currentUser?.uid || !videoUrl) return;
 
     try {
@@ -192,79 +267,12 @@ export default function ArtistDashboardPage() {
     }
   };
 
-  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            const audio = new Audio();
-            audio.src = e.target.result as string;
-            audio.dataset.fileName = file.name;
-            setCurrentAudio(audio);
-            setIsPlaying(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error("Error reading file:", error);
-        toast({
-          title: "Error",
-          description: "Failed to read audio file. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleSongUpload = async () => {
-    if (!auth.currentUser?.uid || !currentAudio) return;
-
-    try {
-      setIsSubmittingSong(true);
-
-      const songData = {
-        name: currentAudio.dataset.fileName || "Untitled Song",
-        audio: currentAudio.src,
-        userId: auth.currentUser.uid,
-        createdAt: serverTimestamp()
-      };
-
-      const songsRef = collection(db, "songs");
-      await addDoc(songsRef, songData);
-
-      toast({
-        title: "Success",
-        description: "Song added successfully",
-      });
-
-      setIsSongDialogOpen(false);
-      if (currentAudio) {
-        currentAudio.pause();
-        setCurrentAudio(null);
-        setIsPlaying(false);
-      }
-      refetchSongs();
-
-    } catch (error) {
-      console.error("Error adding song:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add song. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmittingSong(false);
-    }
-  };
-
-  const togglePlay = (audioData?: string) => {
-    if (audioData && (!currentAudio || currentAudio.src !== audioData)) {
+  const togglePlay = (audioUrl?: string) => {
+    if (audioUrl && (!currentAudio || currentAudio.src !== audioUrl)) {
       if (currentAudio) {
         currentAudio.pause();
       }
-      const audio = new Audio(audioData);
+      const audio = new Audio(audioUrl);
       setCurrentAudio(audio);
       audio.play();
       setIsPlaying(true);
@@ -278,7 +286,34 @@ export default function ArtistDashboardPage() {
     }
   };
 
-  const handleDeleteVideo = async (videoId: string) => {
+  const handleDeleteSong = async (songId: string, storageRef: string) => {
+    if (!auth.currentUser?.uid) return;
+
+    try {
+      // Primero eliminamos el archivo de Storage
+      const fileRef = ref(storage, storageRef);
+      await deleteObject(fileRef);
+
+      // Luego eliminamos el documento de Firestore
+      await deleteDoc(doc(db, "songs", songId));
+
+      toast({
+        title: "Success",
+        description: "Song deleted successfully",
+      });
+
+      refetchSongs();
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete song. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+    const handleDeleteVideo = async (videoId: string) => {
     if (!auth.currentUser?.uid) return;
 
     try {
@@ -293,26 +328,6 @@ export default function ArtistDashboardPage() {
       toast({
         title: "Error",
         description: "Failed to delete video. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteSong = async (songId: string) => {
-    if (!auth.currentUser?.uid) return;
-
-    try {
-      await deleteDoc(doc(db, "songs", songId));
-      toast({
-        title: "Success",
-        description: "Song deleted successfully",
-      });
-      refetchSongs();
-    } catch (error) {
-      console.error("Error deleting song:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete song. Please try again.",
         variant: "destructive",
       });
     }
@@ -558,6 +573,7 @@ export default function ArtistDashboardPage() {
                       <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                     </div>
                   ) : songs.length > 0 ? (
+                    
                     <div className="space-y-3">
                       {songs.map((song) => (
                         <div key={song.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
@@ -574,14 +590,14 @@ export default function ArtistDashboardPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => togglePlay(song.audio)}
+                              onClick={() => togglePlay(song.audioUrl)}
                             >
-                              {currentAudio?.src === song.audio && isPlaying ? "Pause" : "Play"}
+                              {currentAudio?.src === song.audioUrl && isPlaying ? "Pause" : "Play"}
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteSong(song.id)}
+                              onClick={() => handleDeleteSong(song.id, song.storageRef)}
                               className="text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
