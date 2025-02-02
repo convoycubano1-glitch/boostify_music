@@ -16,6 +16,26 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Reglas para los videos
+    match /videos/{videoId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para las canciones
+    match /songs/{songId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
     // Reglas para las órdenes de vistas de YouTube
     match /youtube_views_orders/{orderId} {
       allow read: if request.auth != null && 

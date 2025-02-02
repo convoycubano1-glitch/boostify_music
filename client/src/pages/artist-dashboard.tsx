@@ -191,6 +191,52 @@ export default function ArtistDashboardPage() {
     }
   };
 
+    const handleSongUpload = async () => {
+    if (!auth.currentUser?.uid || !currentAudio) return;
+
+    try {
+      setIsSubmittingSong(true);
+
+      // Extraer el nombre del archivo
+      const fileName = currentAudio.src.split("/").pop() || "Untitled Song";
+
+      const songData = {
+        name: fileName,
+        fileUrl: currentAudio.src,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp()
+      };
+
+      const songsRef = collection(db, "songs");
+      await addDoc(songsRef, songData);
+
+      toast({
+        title: "Success",
+        description: "Song added successfully",
+      });
+
+      setIsSongDialogOpen(false);
+      if (currentAudio) {
+        currentAudio.pause();
+        URL.revokeObjectURL(currentAudio.src);
+        setCurrentAudio(null);
+        setIsPlaying(false);
+      }
+      refetchSongs();
+
+    } catch (error) {
+      console.error("Error adding song:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add song. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingSong(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -430,6 +476,7 @@ export default function ArtistDashboardPage() {
                         <Button 
                           className="w-full"
                           disabled={isSubmittingSong || !currentAudio}
+                          onClick={handleSongUpload}
                         >
                           {isSubmittingSong ? (
                             <>
