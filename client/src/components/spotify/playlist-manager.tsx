@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { SiSpotify } from "react-icons/si";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getSpotifyData } from "@/lib/spotify-store";
@@ -122,6 +122,9 @@ export function PlaylistManager() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Conectar con Spotify</DialogTitle>
+            <DialogDescription>
+              Conecta tu cuenta de Spotify para acceder a estadísticas detalladas y gestionar tu música
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p>Al conectar tu cuenta de Spotify, podrás:</p>

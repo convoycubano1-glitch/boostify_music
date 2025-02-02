@@ -86,18 +86,14 @@ export default function YoutubeViewsPage() {
     }
 
     setSelectedPackage(packageIndex);
-    const stripe = await stripePromise;
-
-    if (!stripe) {
-      toast({
-        title: "Error",
-        description: "No se pudo conectar con Stripe",
-        variant: "destructive"
-      });
-      return;
-    }
 
     try {
+      const stripe = await stripePromise;
+
+      if (!stripe) {
+        throw new Error("No se pudo inicializar Stripe");
+      }
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -111,22 +107,29 @@ export default function YoutubeViewsPage() {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear la sesión de pago');
+      }
+
       const session = await response.json();
+
+      if (!session.id) {
+        throw new Error('No se recibió el ID de sesión de Stripe');
+      }
+
       const result = await stripe.redirectToCheckout({
         sessionId: session.id,
       });
 
       if (result.error) {
-        toast({
-          title: "Error",
-          description: result.error.message,
-          variant: "destructive"
-        });
+        throw new Error(result.error.message);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error en el proceso de pago:', error);
       toast({
-        title: "Error",
-        description: "Hubo un error al procesar el pago",
+        title: "Error en el pago",
+        description: error.message || "Hubo un error al procesar el pago. Por favor, intenta de nuevo.",
         variant: "destructive"
       });
     }
