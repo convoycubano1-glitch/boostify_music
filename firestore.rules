@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Reglas para los datos de Spotify
     match /spotify_data/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null;
     }
 
     // Reglas para las órdenes de vistas de YouTube
@@ -15,9 +15,8 @@ service cloud.firestore {
           resource.data.userId == request.auth.uid
         );
 
-      // Permitir creación si el usuario está autenticado y es el propietario
-      allow create: if request.auth != null && 
-        request.resource.data.userId == request.auth.uid;
+      // Permitir creación si el usuario está autenticado
+      allow create: if request.auth != null;
 
       // Permitir actualización y eliminación solo al propietario
       allow update, delete: if request.auth != null && 
