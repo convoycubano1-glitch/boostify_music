@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SiSpotify } from "react-icons/si";
-import { ArrowRight, Music2, Users2, TrendingUp, FileText, Star } from "lucide-react";
+import { SiSpotify, SiYoutube } from "react-icons/si";
+import { ArrowRight, Music2, Users2, TrendingUp, FileText, Star, Home } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import coverImage from "../images/cover.jpg";
@@ -101,42 +101,65 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95">
       {/* Hero Section */}
       <section 
-        className="relative min-h-screen flex items-center overflow-hidden"
+        className="relative min-h-[100svh] flex items-center overflow-hidden"
         style={{
           backgroundImage: `url(${coverImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        <div className="absolute inset-0 bg-black/50" /> {/* Dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/50 to-background" />
-        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-orange-500/30 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[200%] h-[500px] bg-orange-500/20 rounded-full blur-[100px] rotate-12 opacity-50" />
 
-        <div className="container relative mx-auto px-4 py-24 sm:px-6 lg:px-8">
+        <div className="container relative mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <motion.div 
-            className="text-center space-y-8"
+            className="text-center space-y-8 max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-4xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-orange-500">
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <SiSpotify className="w-8 h-8 text-[#1DB954]" />
+              <SiYoutube className="w-10 h-10 text-red-500" />
+            </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 leading-tight">
               Elevate Your Music Career
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               The ultimate platform for artists to manage their marketing, connect with Spotify, and grow their audience.
             </p>
-            <div className="flex gap-4 justify-center">
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <Link href="/dashboard">
-                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 gap-2">
+                <Button size="lg" className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white gap-2">
                   Get Started <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="gap-2 border-orange-500/20 hover:bg-orange-500/10 text-white">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 border-orange-500/20 hover:bg-orange-500/10 text-white">
                 Learn More
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
+
+        {/* Floating Navigation */}
+        <motion.div 
+          className="fixed top-4 right-4 z-50"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Link href="/dashboard">
+            <Button variant="outline" size="icon" className="bg-background/20 backdrop-blur-lg border-orange-500/20 hover:bg-orange-500/10">
+              <Home className="h-5 w-5" />
+            </Button>
+          </Link>
+        </motion.div>
       </section>
 
       {/* Features Section */}
@@ -152,22 +175,22 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
               Everything You Need
             </h2>
-            <p className="text-muted-foreground text-lg">
-              Comprehensive tools to boost your music career
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Comprehensive tools to boost your music career and reach new audiences
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {features.map((feature, i) => (
               <motion.div
                 key={i}
                 variants={itemVariants}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 className="relative group"
               >
                 <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4">
+                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
                     <div className="text-orange-500">{feature.icon}</div>
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
