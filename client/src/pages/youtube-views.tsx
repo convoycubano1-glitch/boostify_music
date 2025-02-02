@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
-import youtubeVideo from '../images/videos/Standard_Mode_Generated_Video (1).mp4';
+import youtubeVideo from '../images/videos/bostify.mp4';
 import {
   LineChart,
   Line,
