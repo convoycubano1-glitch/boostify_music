@@ -1,6 +1,17 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
+import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
+import { generateContract } from "@/lib/openai";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -17,7 +28,7 @@ import {
   MoreVertical,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -27,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 const contracts = [
   {
@@ -79,6 +91,31 @@ function getStatusIcon(status: string) {
 }
 
 export default function ContractsPage() {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showNewContractDialog, setShowNewContractDialog] = useState(false);
+  const [generatedContract, setGeneratedContract] = useState<string | null>(null);
+
+  const handleGenerateContract = async (values: ContractFormValues) => {
+    setIsGenerating(true);
+    try {
+      const contract = await generateContract(values);
+      setGeneratedContract(contract);
+      toast({
+        title: "Contract Generated",
+        description: "Your contract has been generated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate contract. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -90,10 +127,57 @@ export default function ContractsPage() {
               Gestiona tus contratos y documentos legales
             </p>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Contrato
-          </Button>
+          <Dialog open={showNewContractDialog} onOpenChange={setShowNewContractDialog}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nuevo Contrato
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Crear Nuevo Contrato</DialogTitle>
+                <DialogDescription>
+                  Complete el formulario para generar un contrato profesional
+                </DialogDescription>
+              </DialogHeader>
+              {!generatedContract ? (
+                <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
+              ) : (
+                <div className="space-y-4">
+                  <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                    <pre className="whitespace-pre-wrap font-mono text-sm">
+                      {generatedContract}
+                    </pre>
+                  </ScrollArea>
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGeneratedContract(null);
+                        setShowNewContractDialog(false);
+                      }}
+                    >
+                      Close
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        // Here you would typically save the contract
+                        toast({
+                          title: "Contract Saved",
+                          description: "Your contract has been saved successfully.",
+                        });
+                        setGeneratedContract(null);
+                        setShowNewContractDialog(false);
+                      }}
+                    >
+                      Save Contract
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="space-y-4">
