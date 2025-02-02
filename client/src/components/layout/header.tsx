@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { SiMusicbrainz } from "react-icons/si";
 
 export function Header() {
   const { user } = useAuth();
@@ -29,7 +30,20 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="flex-1">
+          <div className="flex items-center space-x-6">
+            <Link href="/">
+              <a className="flex items-center space-x-2">
+                <SiMusicbrainz className="h-6 w-6 text-orange-500" />
+                <span className="hidden md:inline-block font-bold text-lg">MusicPro</span>
+              </a>
+            </Link>
+
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Home className="h-4 w-4" />
+              </Button>
+            </Link>
+
             <nav className="hidden md:flex items-center space-x-6">
               {navigation.map((item) => (
                 <Link key={item.name} href={item.href}>
