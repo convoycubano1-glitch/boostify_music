@@ -155,7 +155,7 @@ export default function YoutubeViewsPage() {
         day: `Day ${i + 1}`,
         views: Math.floor(Math.random() * 5000) + 1000
       }));
-    
+
   const progress = 75;
   const currentViews = 7500;
 
@@ -168,9 +168,9 @@ export default function YoutubeViewsPage() {
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-4">
-          <SiYoutube className="w-12 h-12 text-red-500" />
+          <SiYoutube className="w-12 h-12 text-orange-500" />
           <div>
-            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
               YouTube Views Generator
             </h2>
             <p className="text-muted-foreground mt-2">
@@ -194,17 +194,17 @@ export default function YoutubeViewsPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-primary/10">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
+          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-5 w-5 text-primary" />
+                <Clock className="h-5 w-5 text-orange-500" />
                 <h3 className="text-lg font-semibold">Real-Time Progress</h3>
               </div>
               <div className="flex items-center justify-between">
                 <div className="w-32 h-32 relative">
-                  <div className="absolute inset-0 bg-primary/5 rounded-full animate-pulse" />
+                  <div className="absolute inset-0 bg-orange-500/5 rounded-full animate-pulse" />
                   <CircularProgressbar
                     value={progress}
                     text={`${progress}%`}
@@ -222,11 +222,11 @@ export default function YoutubeViewsPage() {
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="text-4xl font-bold tabular-nums bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
+                      className="text-4xl font-bold tabular-nums bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent"
                     >
                       {currentViews.toLocaleString()}
                     </motion.div>
-                    <p className="text-sm text-green-500 flex items-center">
+                    <p className="text-sm text-orange-500 flex items-center">
                       <TrendingUp className="w-4 h-4 mr-1" />
                       +2.5% since yesterday
                     </p>
@@ -242,12 +242,12 @@ export default function YoutubeViewsPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-primary/10">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
+          <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-5 w-5 text-primary" />
+                <TrendingUp className="h-5 w-5 text-orange-500" />
                 <h3 className="text-lg font-semibold">Trends</h3>
               </div>
               <div className="h-[180px]">
@@ -295,7 +295,7 @@ export default function YoutubeViewsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
-        <Card className="p-6 backdrop-blur-sm border-primary/10">
+        <Card className="p-6 backdrop-blur-sm border-orange-500/10">
           <div className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="video-url" className="text-sm font-medium">
@@ -306,7 +306,7 @@ export default function YoutubeViewsPage() {
                 placeholder="https://youtube.com/watch?v=..."
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
-                className="bg-background/50 border-primary/10 focus:border-primary"
+                className="bg-background/50 border-orange-500/10 focus:border-orange-500"
               />
             </div>
           </div>
@@ -321,11 +321,11 @@ export default function YoutubeViewsPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
           >
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-50" />
+            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent opacity-50" />
               <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
               <div className="relative">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                   {pkg.views.toLocaleString()} Views
                 </h3>
                 <p className="text-3xl font-bold mt-2">${pkg.price}</p>
@@ -334,14 +334,14 @@ export default function YoutubeViewsPage() {
                 <ul className="mt-4 space-y-2">
                   {pkg.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm">
-                      <PackageCheck className="h-4 w-4 text-primary" />
+                      <PackageCheck className="h-4 w-4 text-orange-500" />
                       {feature}
                     </li>
                   ))}
                 </ul>
 
                 <Button 
-                  className="w-full mt-6 bg-primary/90 hover:bg-primary transition-colors"
+                  className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
                   onClick={() => {
                     if (!videoUrl) {
                       toast({
@@ -406,11 +406,11 @@ export default function YoutubeViewsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
       >
-        <Card className="p-6 border-yellow-500/20 bg-yellow-500/5 backdrop-blur-sm">
+        <Card className="p-6 border-orange-500/20 bg-orange-500/5 backdrop-blur-sm">
           <div className="flex items-start gap-4">
-            <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-yellow-500">Important Information</h4>
+              <h4 className="font-semibold text-orange-500">Important Information</h4>
               <ul className="mt-2 space-y-1 text-sm">
                 <li>• Views are delivered gradually to maintain natural growth</li>
                 <li>• Process takes 24-72 hours depending on package size</li>
@@ -428,26 +428,26 @@ export default function YoutubeViewsPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="p-6 backdrop-blur-sm border-primary/10">
+          <Card className="p-6 backdrop-blur-sm border-orange-500/10">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Process Status</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Generated Views</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                     {apifyData.stats.viewsGenerated.toLocaleString()}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Remaining Views</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                     {apifyData.stats.remainingViews.toLocaleString()}
                   </p>
                 </div>
               </div>
               <div className="pt-4">
                 <div className="flex items-center gap-2 text-sm">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <TrendingUp className="h-4 w-4 text-orange-500" />
                   <span>Status: {apifyData.status}</span>
                 </div>
               </div>
