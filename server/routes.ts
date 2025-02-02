@@ -82,7 +82,49 @@ export function registerRoutes(app: Express): Server {
     res.json({ received: true });
   });
 
-  // Create checkout session route
+  // Create subscription checkout session
+  app.post("/api/create-subscription", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { priceId, planName } = req.body;
+
+      if (!priceId || !planName) {
+        return res.status(400).json({ 
+          error: "Missing required fields" 
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/dashboard?canceled=true`,
+        metadata: {
+          userId: req.user!.id,
+          planName,
+        },
+      });
+
+      return res.json({
+        sessionId: session.id
+      });
+    } catch (error: any) {
+      console.error('Error creating subscription session:', error);
+      return res.status(500).json({ 
+        error: error.message || "Error creating subscription session" 
+      });
+    }
+  });
+
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {

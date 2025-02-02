@@ -5,6 +5,10 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { loadStripe } from "@stripe/stripe-js";
+import { getAuthToken } from "@/lib/firebase";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const plans = [
   {
@@ -17,7 +21,8 @@ const plans = [
       "Email Support"
     ],
     description: "Perfect for emerging artists starting their journey",
-    popular: false
+    popular: false,
+    priceId: "price_basic"
   },
   {
     name: "Pro",
@@ -30,7 +35,8 @@ const plans = [
       "24/7 Support"
     ],
     description: "Best for growing artists and small labels",
-    popular: true
+    popular: true,
+    priceId: "price_pro"
   },
   {
     name: "Enterprise",
@@ -43,7 +49,8 @@ const plans = [
       "Custom Integrations"
     ],
     description: "For professional artists and labels",
-    popular: false
+    popular: false,
+    priceId: "price_enterprise"
   }
 ];
 
@@ -51,7 +58,7 @@ export function PricingPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleGetStarted = (plan: typeof plans[0]) => {
+  const handleGetStarted = async (plan: typeof plans[0]) => {
     if (!user) {
       toast({
         title: "Sign in required",
@@ -61,11 +68,59 @@ export function PricingPlans() {
       return;
     }
 
-    // TODO: Implement subscription logic
-    toast({
-      title: `${plan.name} Plan Selected`,
-      description: "Subscription feature coming soon!",
-    });
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to continue",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error("Could not initialize Stripe");
+      }
+
+      // Create Stripe checkout session
+      const response = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          planName: plan.name
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error creating subscription session');
+      }
+
+      const { sessionId } = await response.json();
+      if (!sessionId) {
+        throw new Error('Stripe session ID was not received');
+      }
+
+      // Redirect to Stripe checkout
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } catch (error: any) {
+      console.error('Subscription process error:', error);
+      toast({
+        title: "Subscription Error",
+        description: error.message || "There was an error processing your subscription. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
