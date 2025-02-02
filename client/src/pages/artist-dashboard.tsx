@@ -25,7 +25,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth, storage } from "@/lib/firebase";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -76,6 +76,7 @@ export default function ArtistDashboardPage() {
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Query for songs
   const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
@@ -150,6 +151,17 @@ export default function ArtistDashboardPage() {
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Verificar el tamaño del archivo (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB en bytes
+      if (file.size > maxSize) {
+        toast({
+          title: "Error",
+          description: "File size must be less than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
       try {
         setSelectedFile(file);
         const audio = new Audio(URL.createObjectURL(file));
@@ -171,50 +183,80 @@ export default function ArtistDashboardPage() {
 
     try {
       setIsSubmittingSong(true);
+      setUploadProgress(0);
 
       // Crear una referencia única para el archivo en Storage
       const storageRef = ref(storage, `songs/${auth.currentUser.uid}/${Date.now()}_${selectedFile.name}`);
 
-      // Subir el archivo a Firebase Storage
-      await uploadBytes(storageRef, selectedFile);
+      // Crear una tarea de subida para monitorear el progreso
+      const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
-      // Obtener la URL de descarga
-      const downloadURL = await getDownloadURL(storageRef);
+      // Monitorear el progreso de la subida
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          toast({
+            title: "Error",
+            description: "Failed to upload song. Please try again.",
+            variant: "destructive",
+          });
+          setIsSubmittingSong(false);
+        },
+        async () => {
+          try {
+            // Obtener la URL de descarga
+            const downloadURL = await getDownloadURL(storageRef);
 
-      const songData = {
-        name: selectedFile.name,
-        audioUrl: downloadURL,
-        storageRef: storageRef.fullPath,
-        userId: auth.currentUser.uid,
-        createdAt: serverTimestamp()
-      };
+            const songData = {
+              name: selectedFile.name,
+              audioUrl: downloadURL,
+              storageRef: storageRef.fullPath,
+              userId: auth.currentUser.uid,
+              createdAt: serverTimestamp()
+            };
 
-      const songsRef = collection(db, "songs");
-      await addDoc(songsRef, songData);
+            const songsRef = collection(db, "songs");
+            await addDoc(songsRef, songData);
 
-      toast({
-        title: "Success",
-        description: "Song added successfully",
-      });
+            toast({
+              title: "Success",
+              description: "Song added successfully",
+            });
 
-      setIsSongDialogOpen(false);
-      if (currentAudio) {
-        currentAudio.pause();
-        URL.revokeObjectURL(currentAudio.src);
-        setCurrentAudio(null);
-      }
-      setSelectedFile(null);
-      setIsPlaying(false);
-      refetchSongs();
+            setIsSongDialogOpen(false);
+            if (currentAudio) {
+              currentAudio.pause();
+              URL.revokeObjectURL(currentAudio.src);
+              setCurrentAudio(null);
+            }
+            setSelectedFile(null);
+            setIsPlaying(false);
+            setUploadProgress(0);
+            refetchSongs();
+          } catch (error) {
+            console.error("Error saving song data:", error);
+            toast({
+              title: "Error",
+              description: "Failed to save song data. Please try again.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsSubmittingSong(false);
+          }
+        }
+      );
 
     } catch (error) {
-      console.error("Error adding song:", error);
+      console.error("Error initiating upload:", error);
       toast({
         title: "Error",
-        description: "Failed to add song. Please try again.",
+        description: "Failed to start upload. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmittingSong(false);
     }
   };
@@ -622,7 +664,7 @@ export default function ArtistDashboardPage() {
                       <DialogHeader>
                         <DialogTitle>Add New Song</DialogTitle>
                         <DialogDescription>
-                          Upload your MP3 or WAV file
+                          Upload your MP3 or WAV file (max 10MB)
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
@@ -635,6 +677,7 @@ export default function ArtistDashboardPage() {
                               accept=".mp3,.wav"
                               onChange={handleAudioUpload}
                               className="flex-1"
+                              disabled={isSubmittingSong}
                             />
                           </div>
                         </div>
@@ -647,6 +690,7 @@ export default function ArtistDashboardPage() {
                                   size="sm"
                                   onClick={() => togglePlay()}
                                   className="h-8 w-8 p-0"
+                                  disabled={isSubmittingSong}
                                 >
                                   {isPlaying ? (
                                     <span className="sr-only">Pause</span>
@@ -660,11 +704,24 @@ export default function ArtistDashboardPage() {
                                     Preview
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    {currentAudio.src.split("/").pop()}
+                                     {selectedFile?.name}
                                   </p>
                                 </div>
                               </div>
                             </div>
+                          </div>
+                        )}
+                        {isSubmittingSong && (
+                          <div className="space-y-2">
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-orange-500 transition-all duration-300"
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Uploading... {Math.round(uploadProgress)}%
+                            </p>
                           </div>
                         )}
                         <Button 
