@@ -26,6 +26,16 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
 
+    // Reglas para los contactos
+    match /contacts/{contactId} {
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
     // Reglas para el engagement
     match /engagement/{docId} {
       allow read: if request.auth != null;

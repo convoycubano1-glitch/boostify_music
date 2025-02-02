@@ -25,7 +25,7 @@ export default function ContactsPage() {
   const [isImporting, setIsImporting] = useState(false);
 
   // Only fetch contacts when auth is ready
-  const { data: contacts = [] } = useQuery({
+  const { data: contacts = [], refetch } = useQuery({
     queryKey: ["contacts", auth.currentUser?.uid],
     queryFn: async () => {
       if (!auth.currentUser?.uid) return [];
@@ -34,7 +34,8 @@ export default function ContactsPage() {
         const contactsRef = collection(db, "contacts");
         const q = query(
           contactsRef,
-          where("userId", "==", auth.currentUser.uid)
+          where("userId", "==", auth.currentUser.uid),
+          orderBy("createdAt", "desc")
         );
 
         const querySnapshot = await getDocs(q);
@@ -44,6 +45,11 @@ export default function ContactsPage() {
           createdAt: doc.data().createdAt?.toDate() || new Date(),
         })) as Contact[];
       } catch (error) {
+        toast({
+          title: "Error",
+          description: "Could not load contacts. Please try again.",
+          variant: "destructive",
+        });
         return [];
       }
     },
@@ -81,20 +87,27 @@ export default function ContactsPage() {
         });
 
       const contactsRef = collection(db, "contacts");
-      for (const contact of contacts) {
-        if (contact.name && contact.email) {  // Only import if required fields exist
-          await addDoc(contactsRef, contact);
-        }
-      }
+      const importedCount = await Promise.all(
+        contacts.map(async (contact) => {
+          if (contact.name && contact.email) {
+            await addDoc(contactsRef, contact);
+            return true;
+          }
+          return false;
+        })
+      ).then(results => results.filter(Boolean).length);
 
       toast({
         title: "Success",
-        description: `Imported ${contacts.length} contacts successfully`,
+        description: `Imported ${importedCount} contacts successfully`,
       });
+
+      // Refresh the contacts list
+      refetch();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to import contacts",
+        description: "Failed to import contacts. Please check your CSV file format.",
         variant: "destructive",
       });
     } finally {
