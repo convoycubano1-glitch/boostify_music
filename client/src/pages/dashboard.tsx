@@ -15,6 +15,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Header } from "@/components/layout/header";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from 'framer-motion';
+import { ChevronRight, Users2 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -129,7 +131,7 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
             <div className="text-center md:text-left">
               <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-               Dashboard
+                Dashboard
               </h1>
               <p className="text-muted-foreground mt-2">
                 Manage and enhance your musical presence from one place
@@ -170,6 +172,94 @@ export default function Dashboard() {
               </Link>
             ))}
           </div>
+
+          {/* Manager and Producer Tools Section */}
+          <section className="relative overflow-hidden my-8">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              src="/assets/Standard_Mode_Generated_Video (9).mp4"
+            />
+            <div className="absolute inset-0 bg-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-12">
+                {/* Manager Tools */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Link href="/manager-tools">
+                    <Card className="p-6 cursor-pointer hover:bg-background/10 transition-colors border-orange-500/20 backdrop-blur-sm bg-background/5">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-12 w-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                          <Users2 className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white">Manager Tools</h3>
+                          <p className="text-white/80">Advanced tools for music management</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-white/90">
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                          <span>Artist Portfolio Management</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-white/90">
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                          <span>Contract Templates</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-white/90">
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                          <span>Performance Analytics</span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                </motion.div>
+
+                {/* Producer Tools */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Link href="/producer-tools">
+                    <Card className="p-6 cursor-pointer hover:bg-background/10 transition-colors border-orange-500/20 backdrop-blur-sm bg-background/5">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-12 w-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                          <Music2 className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white">Producer Tools</h3>
+                          <p className="text-white/80">AI-powered music production suite</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-white/90">
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                          <span>AI Music Generation</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-white/90">
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                          <span>Virtual Studio</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-white/90">
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                          <span>Collaboration Tools</span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                </motion.div>
+              </div>
+            </div>
+          </section>
 
           <Card className="p-6 mb-8">
             <div className="mb-6">

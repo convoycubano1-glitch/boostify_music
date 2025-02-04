@@ -472,7 +472,7 @@ export default function ArtistDashboard() {
           muted 
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="/assets/hero-video.mp4" type="video/mp4" />
+          <source src="/assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
