@@ -19,109 +19,109 @@ import { useState, useEffect } from "react";
    VARIANTES PARA ANIMACIONES
 ============================= */
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+ hidden: { opacity: 0 },
+ visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
+ hidden: { opacity: 0, y: 20 },
+ visible: { opacity: 1, y: 0 }
 };
 
 /* =============================
    DATOS ESTÁTICOS
 ============================= */
 const features = [
-  {
-    icon: <Youtube className="h-6 w-6" />,
-    title: "YouTube Views Boost",
-    description: "Increase your video visibility and engagement through our advanced promotion strategies"
-  },
-  {
-    icon: <Music2 className="h-6 w-6" />,
-    title: "Spotify Integration",
-    description: "Connect your Spotify account to manage playlists and track performance metrics"
-  },
-  {
-    icon: <Users2 className="h-6 w-6" />,
-    title: "PR Management",
-    description: "Manage your public relations and grow your audience effectively"
-  },
-  {
-    icon: <TrendingUp className="h-6 w-6" />,
-    title: "Analytics Dashboard",
-    description: "Track your growth with comprehensive analytics and insights"
-  },
-  {
-    icon: <Globe className="h-6 w-6" />,
-    title: "Global Reach",
-    description: "Expand your audience worldwide with our international promotion tools"
-  },
-  {
-    icon: <MessageCircle className="h-6 w-6" />,
-    title: "Artist Community",
-    description: "Connect with other artists and industry professionals in our vibrant community"
-  }
+ {
+   icon: <Youtube className="h-6 w-6" />,
+   title: "YouTube Views Boost",
+   description: "Increase your video visibility and engagement through our advanced promotion strategies"
+ },
+ {
+   icon: <Music2 className="h-6 w-6" />,
+   title: "Spotify Integration",
+   description: "Connect your Spotify account to manage playlists and track performance metrics"
+ },
+ {
+   icon: <Users2 className="h-6 w-6" />,
+   title: "PR Management",
+   description: "Manage your public relations and grow your audience effectively"
+ },
+ {
+   icon: <TrendingUp className="h-6 w-6" />,
+   title: "Analytics Dashboard",
+   description: "Track your growth with comprehensive analytics and insights"
+ },
+ {
+   icon: <Globe className="h-6 w-6" />,
+   title: "Global Reach",
+   description: "Expand your audience worldwide with our international promotion tools"
+ },
+ {
+   icon: <MessageCircle className="h-6 w-6" />,
+   title: "Artist Community",
+   description: "Connect with other artists and industry professionals in our vibrant community"
+ }
 ];
 
 const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "Independent Artist",
-    content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
-    rating: 5,
-    avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
-  },
-  {
-    name: "Michael Rodriguez",
-    role: "Music Producer",
-    content: "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
-    rating: 5,
-    avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
-  },
-  {
-    name: "Emma Thompson",
-    role: "Band Manager",
-    content: "Managing multiple artists has never been easier. The contract management system is a game-changer.",
-    rating: 5,
-    avatar: "https://i.pravatar.cc/150?u=emma.thompson"
-  }
+ {
+   name: "Sarah Johnson",
+   role: "Independent Artist",
+   content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
+   rating: 5,
+   avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
+ },
+ {
+   name: "Michael Rodriguez",
+   role: "Music Producer",
+   content: "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
+   rating: 5,
+   avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
+ },
+ {
+   name: "Emma Thompson",
+   role: "Band Manager",
+   content: "Managing multiple artists has never been easier. The contract management system is a game-changer.",
+   rating: 5,
+   avatar: "https://i.pravatar.cc/150?u=emma.thompson"
+ }
 ];
 
 const plans = [
-  {
-    name: "Basic",
-    price: "19",
-    features: [
-      "Basic Analytics",
-      "Spotify Integration",
-      "1 Artist Profile",
-      "Email Support"
-    ]
-  },
-  {
-    name: "Pro",
-    price: "49",
-    popular: true,
-    features: [
-      "Advanced Analytics",
-      "Priority Spotify Integration",
-      "5 Artist Profiles",
-      "PR Management Tools",
-      "24/7 Support"
-    ]
-  },
-  {
-    name: "Enterprise",
-    price: "99",
-    features: [
-      "Custom Analytics",
-      "Multiple Artist Management",
-      "Dedicated Account Manager",
-      "API Access",
-      "Custom Integrations"
-    ]
-  }
+ {
+   name: "Basic",
+   price: "19",
+   features: [
+     "Basic Analytics",
+     "Spotify Integration",
+     "1 Artist Profile",
+     "Email Support"
+   ]
+ },
+ {
+   name: "Pro",
+   price: "49",
+   popular: true,
+   features: [
+     "Advanced Analytics",
+     "Priority Spotify Integration",
+     "5 Artist Profiles",
+     "PR Management Tools",
+     "24/7 Support"
+   ]
+ },
+ {
+   name: "Enterprise",
+   price: "99",
+   features: [
+     "Custom Analytics",
+     "Multiple Artist Management",
+     "Dedicated Account Manager",
+     "API Access",
+     "Custom Integrations"
+   ]
+ }
 ];
 
 /* =============================
@@ -358,7 +358,18 @@ export default function HomePage() {
 
       {/* Production Tools Section - New section added */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
-        <div className="container mx-auto px-4">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/assets/Standard_Mode_Generated_Video (4).mp4"
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -370,60 +381,62 @@ export default function HomePage() {
                 <Music2 className="h-8 w-8" />
                 <span className="text-lg font-medium">Production Tools</span>
               </div>
-              <h2 className="text-4xl font-bold">AI-Powered Music Production</h2>
-              <p className="text-lg text-muted-foreground">
+              <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                AI-Powered Music Production
+              </h2>
+              <p className="text-lg text-white/90">
                 Transform your creative process with our advanced AI tools. Generate custom musician profiles, 
                 create unique musical content, and collaborate with AI-generated artists tailored to your style.
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-orange-500/10 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">Virtual Musicians</h3>
-                  <p className="text-sm text-muted-foreground">AI-generated artist profiles and images</p>
+                  <p className="text-sm text-white/80">AI-generated artist profiles and images</p>
                 </div>
-                <div className="p-4 bg-orange-500/10 rounded-lg">
+                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">Smart Collaboration</h3>
-                  <p className="text-sm text-muted-foreground">Find the perfect match for your music</p>
+                  <p className="text-sm text-white/80">Find the perfect match for your music</p>
                 </div>
-                <div className="p-4 bg-orange-500/10 rounded-lg">
+                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">Custom Generation</h3>
-                  <p className="text-sm text-muted-foreground">Create unique content for your brand</p>
+                  <p className="text-sm text-white/80">Create unique content for your brand</p>
                 </div>
-                <div className="p-4 bg-orange-500/10 rounded-lg">
+                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">AI Analytics</h3>
-                  <p className="text-sm text-muted-foreground">Data-driven music production</p>
+                  <p className="text-sm text-white/80">Data-driven music production</p>
                 </div>
               </div>
             </div>
             <div className="flex-1 relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg blur opacity-75" />
-              <div className="relative bg-background rounded-lg p-8">
-                <h3 className="text-xl font-semibold mb-6">Featured AI Tools</h3>
+              <div className="relative bg-background/20 backdrop-blur-sm rounded-lg p-8 border border-orange-500/20">
+                <h3 className="text-xl font-semibold mb-6 text-white">Featured AI Tools</h3>
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <div className="flex items-center gap-4 group hover:bg-background/10 p-4 rounded-lg transition-all duration-300">
+                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20">
                       <FileText className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
-                      <h4 className="font-semibold">Musician Profile Generator</h4>
-                      <p className="text-sm text-muted-foreground">Create detailed artist bios and images</p>
+                      <h4 className="font-semibold text-white">Musician Profile Generator</h4>
+                      <p className="text-sm text-white/70">Create detailed artist bios and images</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <div className="flex items-center gap-4 group hover:bg-background/10 p-4 rounded-lg transition-all duration-300">
+                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20">
                       <Music2 className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
-                      <h4 className="font-semibold">Genre Analysis</h4>
-                      <p className="text-sm text-muted-foreground">AI-powered music style insights</p>
+                      <h4 className="font-semibold text-white">Genre Analysis</h4>
+                      <p className="text-sm text-white/70">AI-powered music style insights</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <div className="flex items-center gap-4 group hover:bg-background/10 p-4 rounded-lg transition-all duration-300">
+                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20">
                       <Users2 className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
-                      <h4 className="font-semibold">Collaboration Matcher</h4>
-                      <p className="text-sm text-muted-foreground">Find your perfect musical match</p>
+                      <h4 className="font-semibold text-white">Collaboration Matcher</h4>
+                      <p className="text-sm text-white/70">Find your perfect musical match</p>
                     </div>
                   </div>
                 </div>
@@ -639,7 +652,8 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-orange-500/10 rounded-lg blur-xl group-hover:bg-orange-500/20 transition-all duration-300" />
                   <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative">
                     <div className="flex gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, j) => (                        <Star key={j} className="h-4 w-4 fill-orange-500 text-orange-500" />
+                      {[...Array(testimonial.rating)].map((_, j) => (
+                        <Star key={j} className="h-4 w-4 fill-orange-500 text-orange-500" />
                       ))}
                     </div>
                     <p className="mb-4 text-muted-foreground">{testimonial.content}</p>
