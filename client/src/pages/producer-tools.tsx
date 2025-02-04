@@ -37,7 +37,7 @@ import { generateMusic, checkGenerationStatus } from "@/lib/api/zuno-ai";
 import { generateImageWithFal } from "@/lib/api/fal-ai";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface MusicianService {
   id: string;
@@ -50,9 +50,10 @@ interface MusicianService {
   rating: number;
   totalReviews: number;
   genres?: string[]; //Added genres
+  photo?: string; //Added photo
 }
 
-const musicians = [
+const musicians: MusicianService[] = [
   // Guitarristas
   {
     id: "1",
@@ -240,6 +241,28 @@ const musicians = [
   }
 ];
 
+interface ImageData {
+  url: string;
+  requestId: string;
+  prompt: string;
+  category: string;
+  createdAt: Date;
+}
+
+
+async function saveMusicianImage(data: ImageData) {
+  try {
+    await addDoc(collection(db, "musicianImages"), {
+      ...data,
+      createdAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Error saving image to Firestore:", error);
+    //Handle the error appropriately, perhaps display a toast message.
+  }
+}
+
+
 export default function ProducerToolsPage() {
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
@@ -251,10 +274,12 @@ export default function ProducerToolsPage() {
   const [coverPrompt, setCoverPrompt] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
+  const [musiciansState, setMusiciansState] = useState(musicians); //Initialize with the initial musicians data
 
   const filteredMusicians = selectedCategory === "all"
-    ? musicians
-    : musicians.filter(m => m.category === selectedCategory);
+    ? musiciansState
+    : musiciansState.filter(m => m.category === selectedCategory);
 
   const handleHireMusician = (musician: typeof musicians[0]) => {
     toast({
@@ -360,13 +385,22 @@ export default function ProducerToolsPage() {
       });
 
       if (result.data && result.data.images && result.data.images[0]) {
+        const imageUrl = result.data.images[0].url;
+        setGeneratedCoverUrl(imageUrl);
+
+        // Save to Firestore
+        await saveMusicianImage({
+          url: imageUrl,
+          requestId: result.requestId,
+          prompt: coverPrompt,
+          category: 'cover-art',
+          createdAt: new Date()
+        });
+
         toast({
           title: "Success",
-          description: "Cover art generated successfully!"
+          description: "Cover art generated and saved successfully!"
         });
-        // Handle the generated image URL
-        const imageUrl = result.data.images[0].url;
-        // You can add state here to display the generated image
       } else {
         throw new Error("Invalid response format from Fal.ai");
       }
@@ -386,14 +420,21 @@ export default function ProducerToolsPage() {
   useEffect(() => {
     async function loadMusicianImages() {
       try {
-        // Placeholder - Replace with actual image generation logic
         const images = await generateMusicianImages();
-        musicians.forEach((musician, index) => {
-          musician.photo = images[index];
-        });
+        setMusiciansState(prevMusicians =>
+          prevMusicians.map((musician, index) => ({
+            ...musician,
+            photo: images[index] || musician.photo
+          }))
+        );
         setImagesLoaded(true);
       } catch (error) {
         console.error("Error loading musician images:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load some musician images. Using placeholders.",
+          variant: "destructive"
+        });
         setImagesLoaded(true); // Set to true even on error to show placeholders
       }
     }
@@ -621,6 +662,19 @@ export default function ProducerToolsPage() {
                           onChange={(e) => setCoverPrompt(e.target.value)}
                         />
                       </div>
+
+                      {generatedCoverUrl && (
+                        <div className="mt-4">
+                          <h3 className="text-lg font-medium mb-2">Generated Cover Art:</h3>
+                          <div className="aspect-video relative rounded-lg overflow-hidden border">
+                            <img
+                              src={generatedCoverUrl}
+                              alt="Generated cover art"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       <Button
                         onClick={handleGenerateCover}

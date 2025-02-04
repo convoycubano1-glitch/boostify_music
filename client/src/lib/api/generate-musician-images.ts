@@ -75,6 +75,8 @@ export async function generateMusicianImages() {
 
   for (const { prompt, category } of musicianImagePrompts) {
     try {
+      console.log(`Generating image for ${category} with prompt: ${prompt.substring(0, 50)}...`);
+
       const result = await generateImageWithFal({
         prompt,
         negativePrompt,
@@ -83,6 +85,7 @@ export async function generateMusicianImages() {
 
       if (result.data && result.data.images && result.data.images[0]) {
         const imageUrl = result.data.images[0].url;
+        console.log(`Successfully generated image for ${category}: ${imageUrl}`);
         images.push(imageUrl);
 
         // Save to Firestore
@@ -93,9 +96,10 @@ export async function generateMusicianImages() {
           category,
           createdAt: new Date()
         });
+        console.log(`Saved ${category} image to Firestore`);
 
       } else {
-        console.error("Invalid response format from Fal.ai:", result);
+        console.error(`Invalid response format from Fal.ai for ${category}:`, result);
         images.push("/assets/musician-placeholder.jpg");
       }
 
@@ -103,7 +107,7 @@ export async function generateMusicianImages() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
     } catch (error) {
-      console.error("Error generating image:", error);
+      console.error(`Error generating image for ${category}:`, error);
       images.push("/assets/musician-placeholder.jpg");
     }
   }
