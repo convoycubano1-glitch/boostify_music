@@ -4,9 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Mail, Timer } from "lucide-react";
+import { Mail, Timer, Calendar } from "lucide-react";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+
+// Add Google Calendar scripts
+const CALENDAR_CSS = "https://calendar.google.com/calendar/scheduling-button-script.css";
+const CALENDAR_JS = "https://calendar.google.com/calendar/scheduling-button-script.js";
 
 export function WaitlistModal() {
   const [open, setOpen] = useState(true);
@@ -16,6 +20,28 @@ export function WaitlistModal() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load Google Calendar scripts
+    const link = document.createElement('link');
+    link.href = CALENDAR_CSS;
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = CALENDAR_JS;
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      // Initialize the scheduling button
+      (window as any).calendar?.schedulingButton?.load({
+        url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vnFhrY0UC_nogkdphNhUUxe1jlChiTbqh-5xe7gXm93UOr47iGjsOQbIKbm1DfDRw9-LRlXwM?gv=true',
+        color: '#EF6C00',
+        label: "BOOSTIFY MUSIC PRE-LAUNCH",
+        target: document.getElementById('calendar-button-container'),
+      });
+    };
+
+    // Timer countdown
     if (!open) return;
 
     const timer = setInterval(() => {
@@ -29,7 +55,14 @@ export function WaitlistModal() {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      // Cleanup scripts
+      document.head.removeChild(link);
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
+    };
   }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +176,19 @@ export function WaitlistModal() {
                 </div>
               </div>
             </form>
+
+            {/* Calendar Button Container */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg blur-lg" />
+              <div className="relative">
+                <div id="calendar-button-container" className="flex justify-center">
+                  {/* Google Calendar button will be inserted here */}
+                </div>
+                <p className="text-sm text-center text-muted-foreground mt-2">
+                  Schedule a pre-launch consultation
+                </p>
+              </div>
+            </div>
           </motion.div>
         </div>
       </DialogContent>
