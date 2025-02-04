@@ -1,6 +1,9 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,6 +26,12 @@ export function BookingDialog({ musician, trigger }: BookingDialogProps) {
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Book a Session</DialogTitle>
+          <DialogDescription>
+            Complete the form below to book a session with {musician.title}
+          </DialogDescription>
+        </DialogHeader>
         <MusicianBookingForm
           musician={musician}
           onClose={() => {

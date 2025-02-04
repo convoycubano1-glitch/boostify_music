@@ -12,6 +12,8 @@ export async function createPaymentSession(booking: {
   currency: string;
 }) {
   try {
+    console.log('Creating payment session with data:', booking);
+
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: {
@@ -20,11 +22,19 @@ export async function createPaymentSession(booking: {
       body: JSON.stringify(booking),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error('Failed to create payment session');
+      console.error('Server error:', data);
+      throw new Error(data.error || 'Failed to create payment session');
     }
 
-    const { sessionId } = await response.json();
+    if (!data.sessionId) {
+      console.error('Missing sessionId in response:', data);
+      throw new Error('Invalid server response - missing session ID');
+    }
+
+    console.log('Successfully created checkout session:', data.sessionId);
 
     const stripe = await stripePromise;
     if (!stripe) {
@@ -32,10 +42,11 @@ export async function createPaymentSession(booking: {
     }
 
     const { error } = await stripe.redirectToCheckout({
-      sessionId
+      sessionId: data.sessionId
     });
 
     if (error) {
+      console.error('Stripe redirect error:', error);
       throw error;
     }
   } catch (error) {
