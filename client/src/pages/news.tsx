@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Activity, Clock, Eye, MessageSquare, ThumbsUp } from "lucide-react";
+import { Activity, Clock, Eye, MessageSquare, ThumbsUp, RefreshCw } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -12,52 +12,27 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-
-interface NewsItem {
-  id: number;
-  title: string;
-  excerpt: string;
-  date: string;
-  image: string;
-  views: number;
-  likes: number;
-  comments: number;
-}
-
-const newsData: NewsItem[] = [
-  {
-    id: 1,
-    title: "The Evolution of Music Marketing in 2025",
-    excerpt: "How AI and blockchain are revolutionizing the way artists connect with their audience",
-    date: "2025-02-02",
-    image: "https://source.unsplash.com/random/800x600/?music",
-    views: 1200,
-    likes: 340,
-    comments: 45
-  },
-  {
-    id: 2,
-    title: "Breaking: Major Label Announces New Artist-First Initiative",
-    excerpt: "Revolutionary profit-sharing model aims to transform the industry standard",
-    date: "2025-02-01",
-    image: "https://source.unsplash.com/random/800x600/?concert",
-    views: 980,
-    likes: 290,
-    comments: 32
-  },
-  {
-    id: 3,
-    title: "Emerging Markets: Latin America's Digital Music Boom",
-    excerpt: "Streaming numbers show unprecedented growth in LatAm markets",
-    date: "2025-01-31",
-    image: "https://source.unsplash.com/random/800x600/?festival",
-    views: 850,
-    likes: 220,
-    comments: 28
-  }
-];
+import { useQuery } from "@tanstack/react-query";
+import { fetchMusicIndustryNews, type NewsArticle } from "@/lib/news-service";
+import { format } from "date-fns";
+import { useState } from "react";
 
 export default function NewsPage() {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const { data: news = [], refetch } = useQuery({
+    queryKey: ['music-industry-news'],
+    queryFn: fetchMusicIndustryNews,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+  });
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -72,9 +47,13 @@ export default function NewsPage() {
                 Stay updated with the latest music industry trends and updates
               </p>
             </div>
-            <Button className="bg-orange-500 hover:bg-orange-600">
-              <Activity className="mr-2 h-4 w-4" />
-              Live Feed
+            <Button 
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
           </div>
 
@@ -141,37 +120,37 @@ export default function NewsPage() {
 
           {/* News Feed */}
           <div className="grid gap-6">
-            {newsData.map((news) => (
-              <Card key={news.id} className="p-6">
+            {news.map((article: NewsArticle, index: number) => (
+              <Card key={index} className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="w-full md:w-1/3">
                     <div className="relative aspect-video rounded-lg overflow-hidden">
                       <img
-                        src={news.image}
-                        alt={news.title}
+                        src={article.urlToImage || 'https://source.unsplash.com/random/800x600/?music'}
+                        alt={article.title}
                         className="object-cover w-full h-full"
                       />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">{news.title}</h3>
-                    <p className="text-muted-foreground mb-4">{news.excerpt}</p>
+                    <h3 className="text-xl font-semibold mb-2">
+                      <a 
+                        href={article.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:text-orange-500 transition-colors"
+                      >
+                        {article.title}
+                      </a>
+                    </h3>
+                    <p className="text-muted-foreground mb-4">{article.description}</p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        {news.date}
+                        {format(new Date(article.publishedAt), 'MMM dd, yyyy')}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        {news.views}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <ThumbsUp className="h-4 w-4" />
-                        {news.likes}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-4 w-4" />
-                        {news.comments}
+                      <div>
+                        Source: {article.source.name}
                       </div>
                     </div>
                   </div>
