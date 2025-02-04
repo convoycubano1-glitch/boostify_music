@@ -51,9 +51,183 @@ interface MusicianService {
   totalReviews: number;
 }
 
+const musicians = [
+  // Guitarristas
+  {
+    id: "1",
+    name: "Alex Rivera",
+    photo: "https://randomuser.me/api/portraits/men/1.jpg",
+    instrument: "Guitar",
+    description: "Especialista en rock y blues con 15 años de experiencia",
+    pricePerSession: 120,
+    rating: 4.9,
+    totalReviews: 156,
+    category: "Guitar"
+  },
+  {
+    id: "2",
+    name: "Sarah Johnson",
+    photo: "https://randomuser.me/api/portraits/women/2.jpg",
+    instrument: "Guitar",
+    description: "Virtuosa de la guitarra acústica y flamenco",
+    pricePerSession: 150,
+    rating: 4.8,
+    totalReviews: 98,
+    category: "Guitar"
+  },
+  {
+    id: "3",
+    name: "Miguel Torres",
+    photo: "https://randomuser.me/api/portraits/men/3.jpg",
+    instrument: "Guitar",
+    description: "Especialista en jazz y fusión latina",
+    pricePerSession: 135,
+    rating: 4.7,
+    totalReviews: 123,
+    category: "Guitar"
+  },
+  // Bateristas
+  {
+    id: "4",
+    name: "John Smith",
+    photo: "https://randomuser.me/api/portraits/men/4.jpg",
+    instrument: "Drums",
+    description: "Batería profesional con experiencia en metal y rock",
+    pricePerSession: 140,
+    rating: 4.9,
+    totalReviews: 87,
+    category: "Drums"
+  },
+  {
+    id: "5",
+    name: "Lisa Chen",
+    photo: "https://randomuser.me/api/portraits/women/5.jpg",
+    instrument: "Drums",
+    description: "Especialista en ritmos latinos y fusión",
+    pricePerSession: 130,
+    rating: 4.8,
+    totalReviews: 92,
+    category: "Drums"
+  },
+  {
+    id: "6",
+    name: "David Wilson",
+    photo: "https://randomuser.me/api/portraits/men/6.jpg",
+    instrument: "Drums",
+    description: "Experto en jazz y música electrónica",
+    pricePerSession: 145,
+    rating: 4.7,
+    totalReviews: 78,
+    category: "Drums"
+  },
+  // Pianistas
+  {
+    id: "7",
+    name: "Emma Watson",
+    photo: "https://randomuser.me/api/portraits/women/7.jpg",
+    instrument: "Piano",
+    description: "Pianista clásica con formación en el Conservatorio",
+    pricePerSession: 160,
+    rating: 5.0,
+    totalReviews: 112,
+    category: "Piano"
+  },
+  {
+    id: "8",
+    name: "Carlos Ruiz",
+    photo: "https://randomuser.me/api/portraits/men/8.jpg",
+    instrument: "Piano",
+    description: "Especialista en jazz y música contemporánea",
+    pricePerSession: 150,
+    rating: 4.9,
+    totalReviews: 95,
+    category: "Piano"
+  },
+  {
+    id: "9",
+    name: "Sophie Martin",
+    photo: "https://randomuser.me/api/portraits/women/9.jpg",
+    instrument: "Piano",
+    description: "Experta en composición y arreglos",
+    pricePerSession: 155,
+    rating: 4.8,
+    totalReviews: 88,
+    category: "Piano"
+  },
+  // Vocalistas
+  {
+    id: "10",
+    name: "Maria García",
+    photo: "https://randomuser.me/api/portraits/women/10.jpg",
+    instrument: "Vocals",
+    description: "Vocalista versátil con experiencia en diversos géneros",
+    pricePerSession: 140,
+    rating: 4.9,
+    totalReviews: 167,
+    category: "Vocals"
+  },
+  {
+    id: "11",
+    name: "James Brown",
+    photo: "https://randomuser.me/api/portraits/men/11.jpg",
+    instrument: "Vocals",
+    description: "Especialista en soul y R&B",
+    pricePerSession: 150,
+    rating: 4.8,
+    totalReviews: 143,
+    category: "Vocals"
+  },
+  {
+    id: "12",
+    name: "Luna Kim",
+    photo: "https://randomuser.me/api/portraits/women/12.jpg",
+    instrument: "Vocals",
+    description: "Vocalista de jazz y música experimental",
+    pricePerSession: 145,
+    rating: 4.7,
+    totalReviews: 89,
+    category: "Vocals"
+  },
+  // Productores
+  {
+    id: "13",
+    name: "Mark Davis",
+    photo: "https://randomuser.me/api/portraits/men/13.jpg",
+    instrument: "Production",
+    description: "Productor especializado en música urbana",
+    pricePerSession: 200,
+    rating: 4.9,
+    totalReviews: 178,
+    category: "Production"
+  },
+  {
+    id: "14",
+    name: "Ana Silva",
+    photo: "https://randomuser.me/api/portraits/women/14.jpg",
+    instrument: "Production",
+    description: "Productora de EDM y música electrónica",
+    pricePerSession: 180,
+    rating: 4.8,
+    totalReviews: 156,
+    category: "Production"
+  },
+  {
+    id: "15",
+    name: "Tom Wilson",
+    photo: "https://randomuser.me/api/portraits/men/15.jpg",
+    instrument: "Production",
+    description: "Especialista en producción de rock y metal",
+    pricePerSession: 190,
+    rating: 4.7,
+    totalReviews: 134,
+    category: "Production"
+  }
+];
+
 export default function ProducerToolsPage() {
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
   const [isMastering, setIsMastering] = useState(false);
   const [isGeneratingCover, setIsGeneratingCover] = useState(false);
@@ -61,22 +235,16 @@ export default function ProducerToolsPage() {
   const [coverPrompt, setCoverPrompt] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const { data: services = [] } = useQuery({
-    queryKey: ["musician-services"],
-    queryFn: async () => {
-      const servicesRef = collection(db, "musician-services");
-      const q = query(
-        servicesRef,
-        orderBy("rating", "desc")
-      );
+  const filteredMusicians = selectedCategory === "all" 
+    ? musicians 
+    : musicians.filter(m => m.category === selectedCategory);
 
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MusicianService[];
-    },
-  });
+  const handleHireMusician = (musician: typeof musicians[0]) => {
+    toast({
+      title: "Solicitud enviada",
+      description: `Se ha enviado una solicitud de contratación a ${musician.name}`,
+    });
+  };
 
   const handleMasterTrack = async () => {
     if (!selectedFile) {
@@ -228,81 +396,64 @@ export default function ProducerToolsPage() {
                 Connect with musicians and producers worldwide
               </p>
             </div>
-            <Dialog open={showNewServiceDialog} onOpenChange={setShowNewServiceDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  <Plus className="mr-2 h-4 w-4" />
-                  List Your Service
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>List Your Music Service</DialogTitle>
-                  <DialogDescription>
-                    Offer your musical talents and set your own rates
-                  </DialogDescription>
-                </DialogHeader>
-                {/* Service Form Component will go here */}
-              </DialogContent>
-            </Dialog>
           </div>
 
           {/* Service Categories */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-            <Card className="p-4 text-center hover:bg-orange-500/5 cursor-pointer transition-colors">
-              <Guitar className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <p className="font-medium">Guitar</p>
-            </Card>
-            <Card className="p-4 text-center hover:bg-orange-500/5 cursor-pointer transition-colors">
-              <Drum className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <p className="font-medium">Drums</p>
-            </Card>
-            <Card className="p-4 text-center hover:bg-orange-500/5 cursor-pointer transition-colors">
-              <Piano className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <p className="font-medium">Piano</p>
-            </Card>
-            <Card className="p-4 text-center hover:bg-orange-500/5 cursor-pointer transition-colors">
-              <Mic2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <p className="font-medium">Vocals</p>
-            </Card>
-            <Card className="p-4 text-center hover:bg-orange-500/5 cursor-pointer transition-colors">
-              <Music4 className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <p className="font-medium">Production</p>
-            </Card>
-            <Card className="p-4 text-center hover:bg-orange-500/5 cursor-pointer transition-colors">
-              <Music2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <p className="font-medium">Other</p>
-            </Card>
+            {["Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
+              <Card 
+                key={category}
+                className={`p-4 text-center cursor-pointer transition-colors ${
+                  selectedCategory === category ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
+                }`}
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category === "Guitar" && <Guitar className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
+                {category === "Drums" && <Drum className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
+                {category === "Piano" && <Piano className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
+                {category === "Vocals" && <Mic2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
+                {category === "Production" && <Music4 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
+                {category === "Other" && <Music2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
+                <p className="font-medium">{category}</p>
+              </Card>
+            ))}
           </div>
 
-          {/* Services Grid */}
+          {/* Musicians Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {services.map((service) => (
-              <Card key={service.id} className="overflow-hidden">
+            {filteredMusicians.map((musician) => (
+              <Card key={musician.id} className="overflow-hidden">
                 <div className="aspect-video bg-orange-500/10 relative">
-                  {/* Service preview/image placeholder */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Music2 className="h-12 w-12 text-orange-500/50" />
-                  </div>
+                  <img 
+                    src={musician.photo} 
+                    alt={musician.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
-                  <p className="text-muted-foreground mb-4">{service.description}</p>
-                  <div className="flex justify-between items-center">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xl font-semibold">{musician.name}</h3>
+                    <span className="text-sm font-medium text-orange-500">{musician.instrument}</span>
+                  </div>
+                  <p className="text-muted-foreground mb-4">{musician.description}</p>
+                  <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      <span className="font-medium">{service.rating.toFixed(1)}</span>
+                      <span className="font-medium">{musician.rating.toFixed(1)}</span>
                       <span className="text-muted-foreground">
-                        ({service.totalReviews} reviews)
+                        ({musician.totalReviews} reviews)
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">${service.price}</span>
+                      <span className="font-medium">${musician.pricePerSession}/sesión</span>
                     </div>
                   </div>
-                  <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600">
-                    Book Service
+                  <Button 
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                    onClick={() => handleHireMusician(musician)}
+                  >
+                    Contratar
                   </Button>
                 </div>
               </Card>
