@@ -31,6 +31,11 @@ const itemVariants = {
 /* =============================
    COMPONENTE PRINCIPAL: HOME PAGE
 ============================= */
+
+// Add Google Calendar scripts
+const CALENDAR_CSS = "https://calendar.google.com/calendar/scheduling-button-script.css";
+const CALENDAR_JS = "https://calendar.google.com/calendar/scheduling-button-script.js";
+
 export default function HomePage() {
   const { signInWithGoogle } = useFirebaseAuth();
   const { user } = useAuth();
@@ -58,9 +63,34 @@ export default function HomePage() {
       });
     }, 30);
 
+    // Load Google Calendar scripts
+    const link = document.createElement('link');
+    link.href = CALENDAR_CSS;
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = CALENDAR_JS;
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      // Initialize the scheduling button
+      (window as any).calendar?.schedulingButton?.load({
+        url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vnFhrY0UC_nogkdphNhUUxe1jlChiTbqh-5xe7gXm93UOr47iGjsOQbIKbm1DfDRw9-LRlXwM?gv=true',
+        color: '#EF6C00',
+        label: "BOOSTIFY MUSIC PRE-LAUNCH",
+        target: document.getElementById('home-calendar-button-container'),
+      });
+    };
+
     return () => {
       clearInterval(viewInterval);
       clearInterval(progressInterval);
+      document.head.removeChild(link);
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -213,7 +243,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="flex justify-center items-center mt-8"
+              className="flex flex-col items-center gap-4 mt-8"
             >
               <Button
                 size="lg"
@@ -225,6 +255,24 @@ export default function HomePage() {
                 <SiGoogle className="w-5 h-5 mr-2" />
                 Login with Google
               </Button>
+
+              {/* Calendar Button Container */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="relative w-full max-w-md"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg blur-lg" />
+                <div className="relative">
+                  <div id="home-calendar-button-container" className="flex justify-center">
+                    {/* Google Calendar button will be inserted here */}
+                  </div>
+                  <p className="text-sm text-center text-white/70 mt-2">
+                    Schedule a pre-launch consultation
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
@@ -546,7 +594,7 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-      
+
       {/* SPOTIFY SECTION */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-background to-background" />
