@@ -16,6 +16,7 @@ export async function createPaymentSession(booking: {
 
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
+      credentials: 'include', 
       headers: {
         'Content-Type': 'application/json',
       },
