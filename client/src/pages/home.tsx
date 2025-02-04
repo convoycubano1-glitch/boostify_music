@@ -29,13 +29,104 @@ const itemVariants = {
 };
 
 /* =============================
+   DATOS ESTÁTICOS
+============================= */
+const features = [
+  {
+    icon: <Youtube className="h-6 w-6" />,
+    title: "YouTube Views Boost",
+    description: "Increase your video visibility and engagement through our advanced promotion strategies"
+  },
+  {
+    icon: <Music2 className="h-6 w-6" />,
+    title: "Spotify Integration",
+    description: "Connect your Spotify account to manage playlists and track performance metrics"
+  },
+  {
+    icon: <Users2 className="h-6 w-6" />,
+    title: "PR Management",
+    description: "Manage your public relations and grow your audience effectively"
+  },
+  {
+    icon: <TrendingUp className="h-6 w-6" />,
+    title: "Analytics Dashboard",
+    description: "Track your growth with comprehensive analytics and insights"
+  },
+  {
+    icon: <Globe className="h-6 w-6" />,
+    title: "Global Reach",
+    description: "Expand your audience worldwide with our international promotion tools"
+  },
+  {
+    icon: <MessageCircle className="h-6 w-6" />,
+    title: "Artist Community",
+    description: "Connect with other artists and industry professionals in our vibrant community"
+  }
+];
+
+const testimonials = [
+  {
+    name: "Sarah Johnson",
+    role: "Independent Artist",
+    content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
+  },
+  {
+    name: "Michael Rodriguez",
+    role: "Music Producer",
+    content: "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
+  },
+  {
+    name: "Emma Thompson",
+    role: "Band Manager",
+    content: "Managing multiple artists has never been easier. The contract management system is a game-changer.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=emma.thompson"
+  }
+];
+
+const plans = [
+  {
+    name: "Basic",
+    price: "19",
+    features: [
+      "Basic Analytics",
+      "Spotify Integration",
+      "1 Artist Profile",
+      "Email Support"
+    ]
+  },
+  {
+    name: "Pro",
+    price: "49",
+    popular: true,
+    features: [
+      "Advanced Analytics",
+      "Priority Spotify Integration",
+      "5 Artist Profiles",
+      "PR Management Tools",
+      "24/7 Support"
+    ]
+  },
+  {
+    name: "Enterprise",
+    price: "99",
+    features: [
+      "Custom Analytics",
+      "Multiple Artist Management",
+      "Dedicated Account Manager",
+      "API Access",
+      "Custom Integrations"
+    ]
+  }
+];
+
+/* =============================
    COMPONENTE PRINCIPAL: HOME PAGE
 ============================= */
-
-// Add Google Calendar scripts
-const CALENDAR_CSS = "https://calendar.google.com/calendar/scheduling-button-script.css";
-const CALENDAR_JS = "https://calendar.google.com/calendar/scheduling-button-script.js";
-
 export default function HomePage() {
   const { signInWithGoogle } = useFirebaseAuth();
   const { user } = useAuth();
@@ -63,34 +154,9 @@ export default function HomePage() {
       });
     }, 30);
 
-    // Load Google Calendar scripts
-    const link = document.createElement('link');
-    link.href = CALENDAR_CSS;
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-
-    const script = document.createElement('script');
-    script.src = CALENDAR_JS;
-    script.async = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      // Initialize the scheduling button
-      (window as any).calendar?.schedulingButton?.load({
-        url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vnFhrY0UC_nogkdphNhUUxe1jlChiTbqh-5xe7gXm93UOr47iGjsOQbIKbm1DfDRw9-LRlXwM?gv=true',
-        color: '#EF6C00',
-        label: "BOOSTIFY MUSIC PRE-LAUNCH",
-        target: document.getElementById('home-calendar-button-container'),
-      });
-    };
-
     return () => {
       clearInterval(viewInterval);
       clearInterval(progressInterval);
-      document.head.removeChild(link);
-      if (script.parentNode) {
-        document.body.removeChild(script);
-      }
     };
   }, []);
 
@@ -111,101 +177,11 @@ export default function HomePage() {
     }
   };
 
-  const features = [
-    {
-      icon: <Youtube className="h-6 w-6" />,
-      title: "YouTube Views Boost",
-      description: "Increase your video visibility and engagement through our advanced promotion strategies"
-    },
-    {
-      icon: <Music2 className="h-6 w-6" />,
-      title: "Spotify Integration",
-      description: "Connect your Spotify account to manage playlists and track performance metrics"
-    },
-    {
-      icon: <Users2 className="h-6 w-6" />,
-      title: "PR Management",
-      description: "Manage your public relations and grow your audience effectively"
-    },
-    {
-      icon: <TrendingUp className="h-6 w-6" />,
-      title: "Analytics Dashboard",
-      description: "Track your growth with comprehensive analytics and insights"
-    },
-    {
-      icon: <Globe className="h-6 w-6" />,
-      title: "Global Reach",
-      description: "Expand your audience worldwide with our international promotion tools"
-    },
-    {
-      icon: <MessageCircle className="h-6 w-6" />,
-      title: "Artist Community",
-      description: "Connect with other artists and industry professionals in our vibrant community"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      role: "Independent Artist",
-      content:
-        "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
-    },
-    {
-      name: "Michael Rodriguez",
-      role: "Music Producer",
-      content:
-        "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
-    },
-    {
-      name: "Emma Thompson",
-      role: "Band Manager",
-      content:
-        "Managing multiple artists has never been easier. The contract management system is a game-changer.",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/150?u=emma.thompson"
-    }
-  ];
-
-  const plans = [
-    {
-      name: "Basic",
-      price: "19",
-      features: [
-        "Basic Analytics",
-        "Spotify Integration",
-        "1 Artist Profile",
-        "Email Support"
-      ]
-    },
-    {
-      name: "Pro",
-      price: "49",
-      popular: true,
-      features: [
-        "Advanced Analytics",
-        "Priority Spotify Integration",
-        "5 Artist Profiles",
-        "PR Management Tools",
-        "24/7 Support"
-      ]
-    },
-    {
-      name: "Enterprise",
-      price: "99",
-      features: [
-        "Custom Analytics",
-        "Multiple Artist Management",
-        "Dedicated Account Manager",
-        "API Access",
-        "Custom Integrations"
-      ]
-    }
-  ];
+  // Calculate days until launch
+  const launchDate = new Date('2025-03-01T00:00:00');
+  const now = new Date();
+  const diffTime = launchDate.getTime() - now.getTime();
+  const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 text-white">
@@ -263,20 +239,26 @@ export default function HomePage() {
                 transition={{ delay: 0.4 }}
                 className="relative w-full max-w-md"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-lg" />
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500/20 rounded-lg blur-lg" />
                 <div className="relative bg-background/50 backdrop-blur-sm rounded-lg p-6 border border-orange-500/20">
                   <div className="flex flex-col items-center gap-4">
+                    <div className="bg-orange-500/10 rounded-lg px-4 py-2 mb-2">
+                      <p className="text-xl font-bold text-orange-500">
+                        {daysUntilLaunch} days until launch!
+                      </p>
+                      <p className="text-sm text-white/70">March 1st, 2025</p>
+                    </div>
                     <div className="flex items-center gap-2 text-orange-500">
                       <Calendar className="h-5 w-5" />
                       <span className="font-medium">Schedule a Meeting</span>
                     </div>
-                    <a 
-                      href="https://meet.google.com/hzi-jfwj-fkh"
+                    <a
+                      href="https://calendar.google.com/calendar/u/0/share?slt=1AXpMJuZYDhB-BkgrwqPtJV3OxMcYlX3VCKPmB7BiEg7zOJ_W7I2ziBrk3kw2ieMOaQFtyX2OS85UlA"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full"
                     >
-                      <Button 
+                      <Button
                         className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-all duration-300 transform hover:scale-105"
                       >
                         Join Pre-launch Meeting
@@ -291,7 +273,6 @@ export default function HomePage() {
             </motion.div>
           </motion.div>
         </div>
-
         {user && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -717,12 +698,13 @@ export default function HomePage() {
                 <Card
                   className={`p-6 relative ${
                     plan.popular
-                      ? "border-orange-500 bg-orange-500/5"                      : "bg-background/50 backdrop-blur-sm border-orange-500/10"
+                      ? "border-orange-500 bg-orange-500/5"
+                      : "bg-background/50 backdrop-blur-sm border-orange-500/10"
                   }`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-orange-500 text-white text-sm rounded-full px-3 py-1">
+                      <span className="bg-orange-500 text-white text-sm rounded-full px-3 py1">
                         Most Popular
                       </span>
                     </div>

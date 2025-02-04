@@ -13,9 +13,21 @@ export function WaitlistModal() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(20);
+  const [daysUntilLaunch, setDaysUntilLaunch] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Calculate days until March 1st, 2025
+    const calculateDaysUntilLaunch = () => {
+      const launchDate = new Date('2025-03-01T00:00:00');
+      const now = new Date();
+      const diffTime = launchDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setDaysUntilLaunch(diffDays);
+    };
+
+    calculateDaysUntilLaunch();
+
     if (!open) return;
 
     const timer = setInterval(() => {
@@ -29,9 +41,7 @@ export function WaitlistModal() {
       });
     }, 1000);
 
-    return () => {
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,9 +116,17 @@ export function WaitlistModal() {
               <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 Join Our Waitlist
               </h2>
-              <p className="text-sm text-muted-foreground">
-                Get early access when we launch on March 1st, 2025
-              </p>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Get early access when we launch
+                </p>
+                <div className="bg-orange-500/10 rounded-lg px-4 py-2">
+                  <p className="text-xl font-bold text-orange-500">
+                    {daysUntilLaunch} days until launch!
+                  </p>
+                  <p className="text-sm text-muted-foreground">March 1st, 2025</p>
+                </div>
+              </div>
             </div>
 
             <div className="relative">
@@ -156,7 +174,7 @@ export function WaitlistModal() {
                     <span className="font-medium">Schedule a Meeting</span>
                   </div>
                   <a 
-                    href="https://meet.google.com/hzi-jfwj-fkh"
+                    href="https://calendar.google.com/calendar/u/0/share?slt=1AXpMJuZYDhB-BkgrwqPtJV3OxMcYlX3VCKPmB7BiEg7zOJ_W7I2ziBrk3kw2ieMOaQFtyX2OS85UlA"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full"
