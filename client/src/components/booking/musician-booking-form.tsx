@@ -38,6 +38,46 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     projectDeadline: "",
   });
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!auth.currentUser) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to book a session",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      console.log('Starting booking process with data:', {
+        musicianId: musician.id,
+        price: musician.price
+      });
+
+      const response = await createPaymentSession({
+        musicianId: musician.id,
+        price: musician.price,
+        currency: 'usd',
+      });
+
+      // Si llegamos aquí, la redirección a Stripe debería haber ocurrido
+      console.log('Booking process completed, should have redirected to Stripe');
+    } catch (error) {
+      console.error('Error in booking process:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to start checkout process. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const generateDemo = async () => {
     if (!formData.style || !formData.tempo || !formData.key) {
       toast({
@@ -104,40 +144,6 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
       title: "Demo Deleted",
       description: "The audio demo has been removed",
     });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      if (!auth.currentUser) {
-        toast({
-          title: "Authentication Required",
-          description: "Please sign in to book a session",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await createPaymentSession({
-        musicianId: musician.id,
-        price: musician.price,
-        currency: 'usd',
-      });
-
-      // Note: The form will be redirected to Stripe Checkout
-      // No need to handle response here as user will be redirected
-
-    } catch (error) {
-      console.error('Error in booking process:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to start checkout process. Please try again.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-    }
   };
 
   const handleChange = (field: string, value: string) => {

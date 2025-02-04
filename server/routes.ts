@@ -15,8 +15,7 @@ import OpenAI from "openai";
 import { insertBookingSchema } from "@db/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('Error: STRIPE_SECRET_KEY no está configurada');
-  throw new Error('STRIPE_SECRET_KEY must be defined');
+  throw new Error('Missing Stripe secret key');
 }
 
 // Initialize OpenAI
@@ -181,6 +180,7 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // Create checkout session
   app.post("/api/create-checkout-session", async (req, res) => {
     console.log('Received checkout session request:', {
       body: req.body,
