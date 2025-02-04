@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { generateAudioWithFal } from "@/lib/api/fal-ai";
-import { PlayCircle, PauseCircle, Loader2 } from "lucide-react";
+import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
 
 interface BookingFormProps {
@@ -48,7 +48,13 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
 
     setIsGeneratingDemo(true);
     try {
-      const prompt = `Create a ${formData.style} music piece at ${formData.tempo} BPM in the key of ${formData.key}. ${formData.additionalNotes}`;
+      // Enhanced prompt generation based on musician's category and style
+      const prompt = `Create a ${formData.style} music piece at ${formData.tempo} BPM in the key of ${formData.key}. 
+        Style should match a professional ${musician.category.toLowerCase()} musician ${
+        musician.title ? `like ${musician.title}` : ""
+      }. 
+        Include typical ${musician.category.toLowerCase()} elements and techniques.
+        ${formData.additionalNotes ? `Additional notes: ${formData.additionalNotes}` : ""}`;
 
       const response = await generateAudioWithFal({
         prompt,
@@ -85,6 +91,18 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  const deleteDemo = () => {
+    setAudioUrl(null);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    toast({
+      title: "Demo Deleted",
+      description: "The audio demo has been removed",
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,11 +230,17 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
               onClick={generateDemo}
               disabled={isGeneratingDemo || !formData.style || !formData.tempo || !formData.key}
               variant="secondary"
+              className="gap-2"
             >
               {isGeneratingDemo ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Generating Demo...
+                </>
+              ) : audioUrl ? (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate Demo
                 </>
               ) : (
                 "Generate Demo"
@@ -245,7 +269,16 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
-              <span className="text-sm">Preview your demo</span>
+              <span className="flex-grow text-sm">Preview your demo</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={deleteDemo}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>
