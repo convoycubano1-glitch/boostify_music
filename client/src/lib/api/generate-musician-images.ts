@@ -4,68 +4,68 @@ import { saveMusicianImage } from "./musician-images-store";
 const musicianImagePrompts = [
   // Guitarristas
   {
-    prompt: "professional portrait photo of a male rock guitarist with long dark hair in a modern recording studio. Shot with professional lighting, high-end DSLR camera. Photorealistic, 4k quality, detailed facial features. Modern recording studio background with vintage guitars on the wall.",
+    prompt: "professional portrait of a male rock guitarist with long dark hair in a modern recording studio, dramatic lighting, holding an electric guitar, high-end DSLR camera shot, photorealistic, 4k quality, detailed facial features",
     category: "Guitar"
   },
   {
-    prompt: "portrait of a female guitarist with short blonde hair in a music studio. Professional headshot with soft lighting. Holding a vintage Fender guitar. Photorealistic, high quality, 4k. Warm studio ambiance.",
+    prompt: "portrait of a female guitarist with short blonde hair in a music studio, soft lighting, holding a vintage acoustic guitar, professional headshot, photorealistic, high quality, 4k",
     category: "Guitar"
   },
   {
-    prompt: "portrait of a male jazz guitarist in a sophisticated black suit. Warm stage lighting, professional photography. Concert hall background with a classic Gibson guitar. Photorealistic, high quality, 4k.",
+    prompt: "portrait of a male jazz guitarist in a sophisticated black suit performing on stage, warm stage lighting, professional photography with a classic Gibson guitar, photorealistic, high quality, 4k",
     category: "Guitar"
   },
   // Bateristas
   {
-    prompt: "professional portrait of a male drummer with visible tattoos in a recording studio. Dynamic studio lighting, dramatic pose behind a professional drum kit. Photorealistic, high quality, 4k.",
+    prompt: "professional portrait of a male drummer with visible tattoos in a recording studio, dynamic studio lighting, seated at a professional drum kit, photorealistic, high quality, 4k",
     category: "Drums"
   },
   {
-    prompt: "portrait of an asian female drummer in a modern studio setting. Professional photography with dynamic lighting. Seated at a high-end Pearl drum kit. Photorealistic, high quality, 4k.",
+    prompt: "portrait of an asian female drummer in a modern studio setting with a Pearl drum kit, professional photography with dynamic lighting, photorealistic, high quality, 4k",
     category: "Drums"
   },
   {
-    prompt: "portrait of a jazz drummer in casual attire. Natural lighting, professional headshot. Vintage Gretsch drums in the background. Photorealistic, high quality, 4k.",
+    prompt: "portrait of a jazz drummer in casual attire at a vintage Gretsch drum kit, natural lighting, professional headshot, photorealistic, high quality, 4k",
     category: "Drums"
   },
   // Pianistas
   {
-    prompt: "portrait of a female classical pianist in an elegant dress, concert hall setting, professional lighting, grand piano, photorealistic, high quality, 4k",
+    prompt: "portrait of a female classical pianist in an elegant black dress at a grand piano in a concert hall, professional lighting, photorealistic, high quality, 4k",
     category: "Piano"
   },
   {
-    prompt: "professional headshot of a male jazz pianist in formal attire, studio photography, moody lighting, photorealistic, high quality, 4k",
+    prompt: "professional headshot of a male jazz pianist in formal attire at a Steinway piano, moody studio lighting, photorealistic, high quality, 4k",
     category: "Piano"
   },
   {
-    prompt: "portrait of a female contemporary pianist in modern attire, artistic lighting, professional photo, modern piano, photorealistic, high quality, 4k",
+    prompt: "portrait of a female contemporary pianist in modern attire at a modern digital piano, artistic lighting, professional photo, photorealistic, high quality, 4k",
     category: "Piano"
   },
-    // Vocalistas
+  // Vocalistas
   {
-    prompt: "portrait of a female pop singer with long dark hair, studio lighting, professional headshot, microphone stand, photorealistic, high quality, 4k",
+    prompt: "portrait of a female pop singer with long dark hair in a recording booth, professional studio lighting, emotional expression, holding a microphone, photorealistic, high quality, 4k",
     category: "Vocals"
   },
   {
-    prompt: "professional portrait of a male soul singer, dramatic lighting, emotional expression, recording booth background, photorealistic, high quality, 4k",
+    prompt: "professional portrait of a male soul singer performing on stage, dramatic spotlight, passionate expression, vintage microphone, photorealistic, high quality, 4k",
     category: "Vocals"
   },
   {
-    prompt: "portrait of an asian female jazz singer in elegant attire, stage lighting, professional photo, vintage microphone, photorealistic, high quality, 4k",
+    prompt: "portrait of an asian female jazz singer in elegant evening dress on stage, warm stage lighting, professional photo with vintage microphone, photorealistic, high quality, 4k",
     category: "Vocals"
   },
   // Productores
   {
-    prompt: "portrait of a male music producer in a recording studio, professional lighting, mixing console background, photorealistic, high quality, 4k",
-    category: "Producer"
+    prompt: "portrait of a male music producer in a modern recording studio with mixing console, professional lighting, multiple screens and equipment in background, photorealistic, high quality, 4k",
+    category: "Production"
   },
   {
-    prompt: "professional headshot of a female EDM producer with modern style, studio photography, electronic music equipment, photorealistic, high quality, 4k",
-    category: "Producer"
+    prompt: "professional headshot of a female EDM producer with modern style in a studio, surrounded by electronic music equipment and synthesizers, photorealistic, high quality, 4k",
+    category: "Production"
   },
   {
-    prompt: "portrait of a male rock producer in a mixing room, dramatic lighting, professional photo, studio equipment background, photorealistic, high quality, 4k",
-    category: "Producer"
+    prompt: "portrait of a male rock producer in a mixing room, dramatic lighting, professional photo with analog equipment and vintage gear in background, photorealistic, high quality, 4k",
+    category: "Production"
   }
 ];
 
@@ -115,7 +115,7 @@ export async function generateMusicianImages() {
   return images;
 }
 
-// Add test function to verify single image generation
+// Test function to verify single image generation
 export async function testMusicianImageGeneration() {
   try {
     const testPrompt = musicianImagePrompts[0];
@@ -125,7 +125,7 @@ export async function testMusicianImageGeneration() {
       imageSize: "landscape_16_9"
     });
 
-    console.log("Test musician image generation result:", result);
+    console.log("Test successful, result:", result);
     return result;
   } catch (error) {
     console.error("Test musician image generation failed:", error);
