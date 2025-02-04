@@ -16,6 +16,11 @@ interface GenerateImageParams {
   imageSize?: string;
 }
 
+interface GenerateAudioParams {
+  prompt: string;
+  duration_seconds?: number;
+}
+
 export async function generateImageWithFal(params: GenerateImageParams) {
   console.log("Starting image generation with params:", {
     ...params,
@@ -47,6 +52,40 @@ export async function generateImageWithFal(params: GenerateImageParams) {
     return result;
   } catch (error) {
     console.error("Error generating image with Fal.ai:", error);
+    throw error;
+  }
+}
+
+export async function generateAudioWithFal(params: GenerateAudioParams) {
+  console.log("Starting audio generation with params:", {
+    ...params,
+    prompt: params.prompt.substring(0, 50) + "..." // Log truncated prompt for privacy
+  });
+
+  try {
+    const result = await fal.subscribe("fal-ai/stable-audio", {
+      input: {
+        prompt: params.prompt,
+        duration_seconds: params.duration_seconds || 30, // Default to 30 seconds if not specified
+      },
+      pollInterval: 5000, // Poll every 5 seconds
+      logs: true,
+      onQueueUpdate: (update) => {
+        console.log("Audio generation status:", update.status);
+        if (update.status === "IN_PROGRESS") {
+          update.logs.map((log) => log.message).forEach(console.log);
+        }
+      },
+    });
+
+    console.log("Audio generation completed, result:", {
+      requestId: result.requestId,
+      hasAudio: !!result.data?.audio_url
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Error generating audio with Fal.ai:", error);
     throw error;
   }
 }

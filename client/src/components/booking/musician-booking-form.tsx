@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { generateAudioWithFal } from "@/lib/api/fal-ai";
+import { PlayCircle, PauseCircle, Loader2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
 
 interface BookingFormProps {
@@ -21,6 +23,11 @@ interface BookingFormProps {
 export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDemo, setIsGeneratingDemo] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const [formData, setFormData] = useState({
     tempo: "",
     key: "",
@@ -28,6 +35,57 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     additionalNotes: "",
     projectDeadline: "",
   });
+
+  const generateDemo = async () => {
+    if (!formData.style || !formData.tempo || !formData.key) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in the style, tempo, and key before generating a demo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingDemo(true);
+    try {
+      const prompt = `Create a ${formData.style} music piece at ${formData.tempo} BPM in the key of ${formData.key}. ${formData.additionalNotes}`;
+
+      const response = await generateAudioWithFal({
+        prompt,
+        duration_seconds: 30
+      });
+
+      if (response.data?.audio_file?.url) {
+        setAudioUrl(response.data.audio_file.url);
+        toast({
+          title: "Demo Generated",
+          description: "Your music demo has been generated successfully",
+        });
+      } else {
+        throw new Error("No audio URL in response");
+      }
+    } catch (error) {
+      console.error("Error generating demo:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate audio demo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingDemo(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +99,7 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
         },
         body: JSON.stringify({
           musicianId: musician.id,
+          audioUrl,
           ...formData,
         }),
       });
@@ -143,6 +202,52 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
             placeholder="Describe any specific requirements or preferences..."
             onChange={(e) => handleChange("additionalNotes", e.target.value)}
           />
+        </div>
+
+        {/* Demo Generation Section */}
+        <div className="space-y-4 pt-4">
+          <div className="flex justify-between items-center">
+            <Button
+              type="button"
+              onClick={generateDemo}
+              disabled={isGeneratingDemo || !formData.style || !formData.tempo || !formData.key}
+              variant="secondary"
+            >
+              {isGeneratingDemo ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Demo...
+                </>
+              ) : (
+                "Generate Demo"
+              )}
+            </Button>
+          </div>
+
+          {audioUrl && (
+            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={togglePlay}
+              >
+                {isPlaying ? (
+                  <PauseCircle className="h-6 w-6" />
+                ) : (
+                  <PlayCircle className="h-6 w-6" />
+                )}
+              </Button>
+              <audio
+                ref={audioRef}
+                src={audioUrl}
+                onEnded={() => setIsPlaying(false)}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
+              <span className="text-sm">Preview your demo</span>
+            </div>
+          )}
         </div>
       </div>
 

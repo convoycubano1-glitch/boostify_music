@@ -41,7 +41,22 @@ export const contracts = pgTable("contracts", {
   metadata: json("metadata")
 });
 
-// New bookings table for musician services
+// New table for storing audio demos
+export const audioDemos = pgTable("audio_demos", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  musicianId: text("musician_id").notNull(),
+  prompt: text("prompt").notNull(),
+  audioUrl: text("audio_url").notNull(),
+  requestId: text("request_id").unique().notNull(),
+  duration: integer("duration"),
+  status: text("status", { enum: ["pending", "completed", "failed"] }).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  bookingId: integer("booking_id").references(() => bookings.id)
+});
+
+// Update bookings table to include reference to audio demo
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -53,7 +68,8 @@ export const bookings = pgTable("bookings", {
   additionalNotes: text("additional_notes"),
   status: text("status", { enum: ["pending", "accepted", "completed", "cancelled"] }).default("pending").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  audioDemoId: integer("audio_demo_id").references(() => audioDemos.id)
 });
 
 // Relations
@@ -61,13 +77,29 @@ export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
   contracts: many(contracts),
-  bookings: many(bookings)
+  bookings: many(bookings),
+  audioDemos: many(audioDemos)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one }) => ({
   user: one(users, {
     fields: [bookings.userId],
     references: [users.id],
+  }),
+  audioDemo: one(audioDemos, {
+    fields: [bookings.audioDemoId],
+    references: [audioDemos.id],
+  }),
+}));
+
+export const audioDemosRelations = relations(audioDemos, ({ one }) => ({
+  user: one(users, {
+    fields: [audioDemos.userId],
+    references: [users.id],
+  }),
+  booking: one(bookings, {
+    fields: [audioDemos.bookingId],
+    references: [bookings.id],
   }),
 }));
 
@@ -76,8 +108,12 @@ export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertBookingSchema = createInsertSchema(bookings);
 export const selectBookingSchema = createSelectSchema(bookings);
+export const insertAudioDemoSchema = createInsertSchema(audioDemos);
+export const selectAudioDemoSchema = createSelectSchema(audioDemos);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
 export type SelectBooking = typeof bookings.$inferSelect;
+export type InsertAudioDemo = typeof audioDemos.$inferInsert;
+export type SelectAudioDemo = typeof audioDemos.$inferSelect;
