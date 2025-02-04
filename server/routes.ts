@@ -4,16 +4,16 @@ import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
-import { marketingMetrics } from "@db/schema";
+import { marketingMetrics, contracts, bookings, payments } from "@db/schema"; // Updated import
 import { eq, and, desc } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
-import { contracts } from "@db/schema";
 import express from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import OpenAI from "openai";
-import { insertBookingSchema, bookings } from "@db/schema";
+import { insertBookingSchema } from "@db/schema";
+
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error('Error: STRIPE_SECRET_KEY no está configurada');
@@ -402,6 +402,85 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Add Stripe payment intent creation endpoint
+  app.post("/api/create-payment-intent", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const { musicianId, price, currency } = req.body;
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(price * 100), // Stripe expects amounts in cents
+        currency: currency.toLowerCase(),
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          musicianId,
+          userId: req.user.id,
+        },
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      res.status(500).json({ error: 'Failed to create payment intent' });
+    }
+  });
+
+  // Add Stripe webhook handler
+  app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    try {
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+
+      if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+
+        // Update booking and payment status
+        const [booking] = await db
+          .select()
+          .from(bookings)
+          .where(eq(bookings.id, parseInt(paymentIntent.metadata.bookingId)))
+          .limit(1);
+
+        if (booking) {
+          await db.transaction(async (tx) => {
+            await tx
+              .update(bookings)
+              .set({ paymentStatus: 'paid' })
+              .where(eq(bookings.id, booking.id));
+
+            await tx
+              .insert(payments)
+              .values({
+                bookingId: booking.id,
+                stripePaymentIntentId: paymentIntent.id,
+                amount: paymentIntent.amount / 100,
+                currency: paymentIntent.currency,
+                status: 'succeeded',
+              });
+          });
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Error handling webhook:', error);
+      res.status(400).send(`Webhook Error: ${error.message}`);
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

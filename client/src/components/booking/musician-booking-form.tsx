@@ -14,8 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { generateAudioWithFal } from "@/lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
-import { createPaymentSession, handlePayment } from "@/lib/api/stripe-service";
-import { Elements } from "@stripe/stripe-js";
+import { createPaymentSession } from "@/lib/api/stripe-service";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
 
 interface BookingFormProps {
   musician: MusicianService;
@@ -29,7 +31,6 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     tempo: "",
@@ -112,16 +113,32 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     setIsSubmitting(true);
 
     try {
-      const paymentClientSecret = await createPaymentSession({
+      // First create a payment intent
+      const clientSecret = await createPaymentSession({
         musicianId: musician.id,
         price: musician.price,
         currency: 'usd',
       });
 
-      setClientSecret(paymentClientSecret);
+      // Confirm the payment with Stripe
+      const stripe = await stripePromise;
+      if (!stripe) throw new Error('Stripe not initialized');
 
-      await handlePayment(paymentClientSecret);
+      const { error } = await stripe.confirmPayment({
+        elements: stripe.elements({
+          clientSecret,
+          appearance: { theme: 'stripe' }
+        }),
+        confirmParams: {
+          return_url: `${window.location.origin}/booking-confirmation`,
+        },
+      });
 
+      if (error) {
+        throw error;
+      }
+
+      // If payment is successful, create the booking
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: {

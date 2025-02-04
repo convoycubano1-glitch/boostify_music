@@ -4,7 +4,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   throw new Error('Missing Stripe public key');
 }
 
-export const stripe = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export async function createPaymentSession(booking: {
   musicianId: string;
@@ -33,12 +33,13 @@ export async function createPaymentSession(booking: {
 }
 
 export async function handlePayment(clientSecret: string) {
+  const stripe = await stripePromise;
   if (!stripe) {
     throw new Error('Stripe not initialized');
   }
 
-  const { paymentIntent, error } = await stripe.confirmPayment({
-    elements: await stripe.elements({
+  const { error } = await stripe.confirmPayment({
+    elements: stripe.elements({
       clientSecret,
       appearance: {
         theme: 'stripe',
@@ -52,6 +53,4 @@ export async function handlePayment(clientSecret: string) {
   if (error) {
     throw error;
   }
-
-  return paymentIntent;
 }
