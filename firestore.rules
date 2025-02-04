@@ -12,6 +12,12 @@ service cloud.firestore {
       allow write: if request.auth != null;  // Escritura solo para usuarios autenticados
     }
 
+    // Try alternate path
+    match /musician_images/{imageId} {
+      allow read: if true;  // Lectura pública
+      allow write: if request.auth != null;  // Escritura solo para usuarios autenticados
+    }
+
     // Reglas para las estrategias - Actualizadas para permitir lectura y escritura si el usuario está autenticado
     match /strategies/{strategyId} {
       allow read: if request.auth != null;

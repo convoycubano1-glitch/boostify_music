@@ -19,8 +19,6 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { BookingDialog } from "@/components/booking/booking-dialog";
 
-// ... [previous interfaces and data remain the same] ...
-
 async function getStoredMusicianImages(): Promise<string[]> {
   try {
     console.log("Starting to fetch musician images from Firestore...");
