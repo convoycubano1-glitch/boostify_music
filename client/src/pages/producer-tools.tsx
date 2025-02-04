@@ -37,7 +37,8 @@ import { generateMusic, checkGenerationStatus } from "@/lib/api/zuno-ai";
 import { generateImageWithFal } from "@/lib/api/fal-ai";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, updateDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
+import { generateMusicianImages } from "@/lib/api/generate-musician-images";
 import { BookingDialog } from "@/components/booking/booking-dialog";
 
 interface MusicianService {
@@ -50,9 +51,197 @@ interface MusicianService {
   instrument: string;
   rating: number;
   totalReviews: number;
-  genres?: string[];
-  photo?: string;
+  genres?: string[]; //Added genres
+  photo?: string; //Added photo
 }
+
+const musicians: MusicianService[] = [
+  // Guitarristas
+  {
+    id: "1",
+    title: "Alex Rivera",
+    photo: "/assets/musicians/guitarist-1.jpg", // Will be replaced with Fal.ai generated image
+    instrument: "Guitar",
+    description: "Especialista en rock y blues con 15 años de experiencia. Colaboraciones con bandas internacionales y más de 500 sesiones de estudio.",
+    price: 120,
+    rating: 4.9,
+    totalReviews: 156,
+    genres: ["Rock", "Blues", "Metal"],
+    category: "Guitar"
+  },
+  {
+    id: "2",
+    title: "Sarah Johnson",
+    photo: "/assets/musicians/guitarist-2.jpg",
+    instrument: "Guitar",
+    description: "Virtuosa de la guitarra acústica y flamenco. Graduada del Berklee College of Music con especialización en técnicas de fingerpicking.",
+    price: 150,
+    rating: 4.8,
+    totalReviews: 98,
+    genres: ["Flamenco", "Classical", "Folk"],
+    category: "Guitar"
+  },
+  {
+    id: "3",
+    title: "Miguel Torres",
+    photo: "/assets/musicians/guitarist-3.jpg",
+    instrument: "Guitar",
+    description: "Especialista en jazz y fusión latina.  Amplia experiencia en giras internacionales y sesiones de grabación.",
+    price: 135,
+    rating: 4.7,
+    totalReviews: 123,
+    genres: ["Jazz", "Latin Fusion", "Funk"],
+    category: "Guitar"
+  },
+  // Bateristas
+  {
+    id: "4",
+    title: "John Smith",
+    photo: "/assets/musicians/drummer-1.jpg",
+    instrument: "Drums",
+    description: "Batería profesional con experiencia en metal y rock.  Estudios en el Musicians Institute y colaboraciones con artistas reconocidos.",
+    price: 140,
+    rating: 4.9,
+    totalReviews: 87,
+    genres: ["Metal", "Rock", "Hard Rock"],
+    category: "Drums"
+  },
+  {
+    id: "5",
+    title: "Lisa Chen",
+    photo: "/assets/musicians/drummer-2.jpg",
+    instrument: "Drums",
+    description: "Especialista en ritmos latinos y fusión.  Estudios de percusión en Cuba y amplia experiencia en bandas de diferentes estilos.",
+    price: 130,
+    rating: 4.8,
+    totalReviews: 92,
+    genres: ["Latin", "Fusion", "Pop"],
+    category: "Drums"
+  },
+  {
+    id: "6",
+    title: "David Wilson",
+    photo: "/assets/musicians/drummer-3.jpg",
+    instrument: "Drums",
+    description: "Experto en jazz y música electrónica.  Productor y compositor con experiencia en proyectos de vanguardia.",
+    price: 145,
+    rating: 4.7,
+    totalReviews: 78,
+    genres: ["Jazz", "Electronic", "Experimental"],
+    category: "Drums"
+  },
+  // Pianistas
+  {
+    id: "7",
+    title: "Emma Watson",
+    photo: "/assets/musicians/pianist-1.jpg",
+    instrument: "Piano",
+    description: "Pianista clásica con formación en el Conservatorio.  Especializada en música barroca y romántica.",
+    price: 160,
+    rating: 5.0,
+    totalReviews: 112,
+    genres: ["Classical", "Baroque", "Romantic"],
+    category: "Piano"
+  },
+  {
+    id: "8",
+    title: "Carlos Ruiz",
+    photo: "/assets/musicians/pianist-2.jpg",
+    instrument: "Piano",
+    description: "Especialista en jazz y música contemporánea.  Amplia experiencia en composición y arreglos musicales.",
+    price: 150,
+    rating: 4.9,
+    totalReviews: 95,
+    genres: ["Jazz", "Contemporary", "Pop"],
+    category: "Piano"
+  },
+  {
+    id: "9",
+    title: "Sophie Martin",
+    photo: "/assets/musicians/pianist-3.jpg",
+    instrument: "Piano",
+    description: "Experta en composición y arreglos.  Estudios en composición musical y amplia experiencia en proyectos orquestales.",
+    price: 155,
+    rating: 4.8,
+    totalReviews: 88,
+    genres: ["Classical", "Contemporary", "Film Score"],
+    category: "Piano"
+  },
+  // Vocalistas
+  {
+    id: "10",
+    title: "Maria García",
+    photo: "/assets/musicians/vocalist-1.jpg",
+    instrument: "Vocals",
+    description: "Vocalista versátil con experiencia en diversos géneros.  Estudios de canto clásico y jazz.",
+    price: 140,
+    rating: 4.9,
+    totalReviews: 167,
+    genres: ["Pop", "Jazz", "R&B"],
+    category: "Vocals"
+  },
+  {
+    id: "11",
+    title: "James Brown",
+    photo: "/assets/musicians/vocalist-2.jpg",
+    instrument: "Vocals",
+    description: "Especialista en soul y R&B.  Amplia experiencia en coros y presentaciones en vivo.",
+    price: 150,
+    rating: 4.8,
+    totalReviews: 143,
+    genres: ["Soul", "R&B", "Funk"],
+    category: "Vocals"
+  },
+  {
+    id: "12",
+    title: "Luna Kim",
+    photo: "/assets/musicians/vocalist-3.jpg",
+    instrument: "Vocals",
+    description: "Vocalista de jazz y música experimental.  Estudios de canto y composición en la universidad.",
+    price: 145,
+    rating: 4.7,
+    totalReviews: 89,
+    genres: ["Jazz", "Experimental", "Electronic"],
+    category: "Vocals"
+  },
+  // Productores
+  {
+    id: "13",
+    title: "Mark Davis",
+    photo: "/assets/musicians/producer-1.jpg",
+    instrument: "Production",
+    description: "Productor especializado en música urbana.  Experiencia en mezcla, masterización y producción musical.",
+    price: 200,
+    rating: 4.9,
+    totalReviews: 178,
+    genres: ["Hip Hop", "Reggaeton", "Trap"],
+    category: "Production"
+  },
+  {
+    id: "14",
+    title: "Ana Silva",
+    photo: "/assets/musicians/producer-2.jpg",
+    instrument: "Production",
+    description: "Productora de EDM y música electrónica.  Especializada en la creación de sonidos electrónicos.",
+    price: 180,
+    rating: 4.8,
+    totalReviews: 156,
+    genres: ["EDM", "Electronic", "Dance"],
+    category: "Production"
+  },
+  {
+    id: "15",
+    title: "Tom Wilson",
+    photo: "/assets/musicians/producer-3.jpg",
+    instrument: "Production",
+    description: "Especialista en producción de rock y metal.  Experiencia en grabación, mezcla y masterización.",
+    price: 190,
+    rating: 4.7,
+    totalReviews: 134,
+    genres: ["Rock", "Metal", "Hard Rock"],
+    category: "Production"
+  }
+];
 
 interface ImageData {
   url: string;
@@ -70,11 +259,13 @@ async function saveMusicianImage(data: ImageData) {
     });
   } catch (error) {
     console.error("Error saving image to Firestore:", error);
+    //Handle the error appropriately, perhaps display a toast message.
   }
 }
 
 export default function ProducerToolsPage() {
   const { toast } = useToast();
+  const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
   const [isMastering, setIsMastering] = useState(false);
@@ -82,27 +273,19 @@ export default function ProducerToolsPage() {
   const [musicPrompt, setMusicPrompt] = useState("");
   const [coverPrompt, setCoverPrompt] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
-
-  // Fetch musicians from Firestore - using existing data
-  const { data: musicians = [], isLoading: isLoadingMusicians } = useQuery({
-    queryKey: ['musicians'],
-    queryFn: async () => {
-      console.log("Fetching musicians from Firestore...");
-      const musiciansRef = collection(db, 'musicians');
-      const q = query(musiciansRef);  // Removed orderBy to see all documents
-      const snapshot = await getDocs(q);
-      console.log("Found musicians:", snapshot.size);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MusicianService[];
-    }
-  });
+  const [musiciansState, setMusiciansState] = useState(musicians);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   const filteredMusicians = selectedCategory === "all"
-    ? musicians
-    : musicians.filter(m => m.category === selectedCategory);
+    ? musiciansState
+    : musiciansState.filter(m => m.category === selectedCategory);
+
+  const handleHireMusician = (musician: typeof musicians[0]) => {
+    // This function is no longer needed as we're using the BookingDialog
+    return;
+  };
 
   const handleMasterTrack = async () => {
     if (!selectedFile) {
@@ -122,6 +305,9 @@ export default function ProducerToolsPage() {
         title: "Success",
         description: "Track mastered successfully!"
       });
+
+      // Handle the mastered audio file here
+      // Could save to Firebase or provide download link
 
     } catch (error) {
       console.error("Error mastering track:", error);
@@ -230,10 +416,42 @@ export default function ProducerToolsPage() {
     }
   };
 
-  // useEffect hook simplified - no image loading
   useEffect(() => {
-    console.log("Current musicians:", musicians);
-  }, [musicians]);
+    async function loadMusicianImages() {
+      try {
+        console.log("Starting to load musician images...");
+        setIsLoadingImages(true);
+
+        const images = await generateMusicianImages();
+        console.log("Generated images:", images);
+
+        if (images && images.length > 0) {
+          setMusiciansState(prevMusicians =>
+            prevMusicians.map((musician, index) => ({
+              ...musician,
+              photo: images[index] || musician.photo
+            }))
+          );
+          toast({
+            title: "Success",
+            description: "Musician images generated successfully!"
+          });
+        }
+      } catch (error) {
+        console.error("Error loading musician images:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load musician images. Using placeholders.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingImages(false);
+        setImagesLoaded(true);
+      }
+    }
+
+    loadMusicianImages();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -294,7 +512,7 @@ export default function ProducerToolsPage() {
 
           {/* Musicians Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {isLoadingMusicians ? (
+            {isLoadingImages ? (
               // Loading skeleton
               Array.from({ length: 6 }).map((_, i) => (
                 <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse">
@@ -331,7 +549,7 @@ export default function ProducerToolsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">${musician.price}/session</span>
+                        <span className="font-medium">${musician.price}/sesión</span>
                       </div>
                     </div>
                     <Button
