@@ -15,6 +15,7 @@ import { generateAudioWithFal } from "@/lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
 import { createPaymentSession } from "@/lib/api/stripe-service";
+import { auth } from "@/lib/firebase";
 
 interface BookingFormProps {
   musician: MusicianService;
@@ -110,6 +111,15 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     setIsSubmitting(true);
 
     try {
+      if (!auth.currentUser) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to book a session",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await createPaymentSession({
         musicianId: musician.id,
         price: musician.price,

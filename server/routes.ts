@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
-import { marketingMetrics, contracts, bookings, payments } from "@db/schema"; // Updated import
+import { marketingMetrics, contracts, bookings, payments } from "@db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
@@ -13,7 +13,6 @@ import passport from 'passport';
 import session from 'express-session';
 import OpenAI from "openai";
 import { insertBookingSchema } from "@db/schema";
-
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error('Error: STRIPE_SECRET_KEY no está configurada');
@@ -27,28 +26,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
-// Validate contract data
-const contractSchema = z.object({
-  title: z.string(),
-  type: z.string(),
-  content: z.string(),
-  status: z.string().default('draft')
-});
-
-// Validate subscription data
-const subscriptionSchema = z.object({
-  priceId: z.string(),
-  planName: z.string()
-});
-
 // Export the configured server
 export function registerRoutes(app: Express): Server {
-  // Initialize session and passport middleware
+  // Initialize session middleware
   app.use(session({
     secret: process.env.REPL_ID!,
     resave: false,
     saveUninitialized: false,
   }));
+
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -196,11 +182,17 @@ export function registerRoutes(app: Express): Server {
 
 
   app.post("/api/create-checkout-session", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
+    console.log('Received checkout session request:', {
+      body: req.body,
+      user: req.user,
+      isAuthenticated: req.isAuthenticated()
+    });
 
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
       const { musicianId, price, currency } = req.body;
 
       if (!musicianId || !price || !currency) {
