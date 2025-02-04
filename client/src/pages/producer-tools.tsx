@@ -93,50 +93,10 @@ const musicians: MusicianService[] = [
     totalReviews: 123,
     genres: ["Jazz", "Latin Fusion", "Funk"]
   },
-  // Vocalistas
+  // Drummers (Bateristas)
   {
     id: "4",
     userId: "user-4",
-    title: "Maria García",
-    photo: "/assets/musicians/vocalist-1.jpg",
-    instrument: "Vocals",
-    category: "Vocals",
-    description: "Vocalista versátil con experiencia en diversos géneros. Estudios de canto clásico y jazz.",
-    price: 140,
-    rating: 4.9,
-    totalReviews: 167,
-    genres: ["Pop", "Jazz", "R&B"]
-  },
-  {
-    id: "5",
-    userId: "user-5",
-    title: "James Brown",
-    photo: "/assets/musicians/vocalist-2.jpg",
-    instrument: "Vocals",
-    category: "Vocals",
-    description: "Especialista en soul y R&B. Amplia experiencia en coros y presentaciones en vivo.",
-    price: 150,
-    rating: 4.8,
-    totalReviews: 143,
-    genres: ["Soul", "R&B", "Funk"]
-  },
-  {
-    id: "6",
-    userId: "user-6",
-    title: "Luna Kim",
-    photo: "/assets/musicians/vocalist-3.jpg",
-    instrument: "Vocals",
-    category: "Vocals",
-    description: "Vocalista de jazz y música experimental. Estudios de canto y composición.",
-    price: 145,
-    rating: 4.7,
-    totalReviews: 89,
-    genres: ["Jazz", "Experimental", "Electronic"]
-  },
-  // Bateristas
-  {
-    id: "7",
-    userId: "user-7",
     title: "John Smith",
     photo: "/assets/musicians/drummer-1.jpg",
     instrument: "Drums",
@@ -148,8 +108,8 @@ const musicians: MusicianService[] = [
     genres: ["Metal", "Rock", "Hard Rock"]
   },
   {
-    id: "8",
-    userId: "user-8",
+    id: "5",
+    userId: "user-5",
     title: "Lisa Chen",
     photo: "/assets/musicians/drummer-2.jpg",
     instrument: "Drums",
@@ -161,8 +121,8 @@ const musicians: MusicianService[] = [
     genres: ["Latin", "Fusion", "Pop"]
   },
   {
-    id: "9",
-    userId: "user-9",
+    id: "6",
+    userId: "user-6",
     title: "David Wilson",
     photo: "/assets/musicians/drummer-3.jpg",
     instrument: "Drums",
@@ -175,8 +135,8 @@ const musicians: MusicianService[] = [
   },
   // Pianistas
   {
-    id: "10",
-    userId: "user-10",
+    id: "7",
+    userId: "user-7",
     title: "Emma Watson",
     photo: "/assets/musicians/pianist-1.jpg",
     instrument: "Piano",
@@ -188,8 +148,8 @@ const musicians: MusicianService[] = [
     genres: ["Classical", "Baroque", "Romantic"]
   },
   {
-    id: "11",
-    userId: "user-11",
+    id: "8",
+    userId: "user-8",
     title: "Carlos Ruiz",
     photo: "/assets/musicians/pianist-2.jpg",
     instrument: "Piano",
@@ -201,8 +161,8 @@ const musicians: MusicianService[] = [
     genres: ["Jazz", "Contemporary", "Pop"]
   },
   {
-    id: "12",
-    userId: "user-12",
+    id: "9",
+    userId: "user-9",
     title: "Sophie Martin",
     photo: "/assets/musicians/pianist-3.jpg",
     instrument: "Piano",
@@ -212,6 +172,46 @@ const musicians: MusicianService[] = [
     rating: 4.8,
     totalReviews: 88,
     genres: ["Classical", "Contemporary", "Film Score"]
+  },
+  // Vocalistas
+  {
+    id: "10",
+    userId: "user-10",
+    title: "Maria García",
+    photo: "/assets/musicians/vocalist-1.jpg",
+    instrument: "Vocals",
+    category: "Vocals",
+    description: "Vocalista versátil con experiencia en diversos géneros. Estudios de canto clásico y jazz.",
+    price: 140,
+    rating: 4.9,
+    totalReviews: 167,
+    genres: ["Pop", "Jazz", "R&B"]
+  },
+  {
+    id: "11",
+    userId: "user-11",
+    title: "James Brown",
+    photo: "/assets/musicians/vocalist-2.jpg",
+    instrument: "Vocals",
+    category: "Vocals",
+    description: "Especialista en soul y R&B. Amplia experiencia en coros y presentaciones en vivo.",
+    price: 150,
+    rating: 4.8,
+    totalReviews: 143,
+    genres: ["Soul", "R&B", "Funk"]
+  },
+  {
+    id: "12",
+    userId: "user-12",
+    title: "Luna Kim",
+    photo: "/assets/musicians/vocalist-3.jpg",
+    instrument: "Vocals",
+    category: "Vocals",
+    description: "Vocalista de jazz y música experimental. Estudios de canto y composición.",
+    price: 145,
+    rating: 4.7,
+    totalReviews: 89,
+    genres: ["Jazz", "Experimental", "Electronic"]
   },
   // Productores
   {
