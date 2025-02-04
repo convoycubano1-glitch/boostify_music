@@ -88,9 +88,11 @@ export default function ProducerToolsPage() {
   const { data: musicians = [], isLoading: isLoadingMusicians } = useQuery({
     queryKey: ['musicians'],
     queryFn: async () => {
+      console.log("Fetching musicians from Firestore...");
       const musiciansRef = collection(db, 'musicians');
-      const q = query(musiciansRef, orderBy('createdAt', 'desc'));
+      const q = query(musiciansRef);  // Removed orderBy to see all documents
       const snapshot = await getDocs(q);
+      console.log("Found musicians:", snapshot.size);
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -230,6 +232,7 @@ export default function ProducerToolsPage() {
 
   // useEffect hook simplified - no image loading
   useEffect(() => {
+    console.log("Current musicians:", musicians);
   }, [musicians]);
 
   return (

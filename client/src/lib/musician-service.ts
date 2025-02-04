@@ -33,7 +33,7 @@ export async function getMusicians(): Promise<Musician[]> {
   try {
     const musiciansRef = collection(db, 'musicians');
     const snapshot = await getDocs(musiciansRef);
-    
+
     // If no musicians exist, initialize with default data
     if (snapshot.empty) {
       console.log("Initializing musicians collection...");
