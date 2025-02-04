@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { masterTrack } from "@/lib/api/kits-ai";
 import { generateMusic, checkGenerationStatus } from "@/lib/api/zuno-ai";
-import { generateCoverArt } from "@/lib/api/fal-ai";
+import { generateImageWithFal } from "@/lib/api/fal-ai";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
@@ -353,19 +353,23 @@ export default function ProducerToolsPage() {
 
     try {
       setIsGeneratingCover(true);
-      const result = await generateCoverArt({
+      const result = await generateImageWithFal({
         prompt: coverPrompt,
-        negativePrompt: "low quality, blurry, distorted",
-        style: "realistic"
+        negativePrompt: "low quality, blurry, distorted, deformed, unrealistic, cartoon, anime, illustration",
+        imageSize: "landscape_16_9"
       });
 
-      toast({
-        title: "Success",
-        description: "Cover art generated successfully!"
-      });
-
-      // Handle the generated image here
-      // Could save to Firebase or provide download link
+      if (result.data && result.data.images && result.data.images[0]) {
+        toast({
+          title: "Success",
+          description: "Cover art generated successfully!"
+        });
+        // Handle the generated image URL
+        const imageUrl = result.data.images[0].url;
+        // You can add state here to display the generated image
+      } else {
+        throw new Error("Invalid response format from Fal.ai");
+      }
 
     } catch (error) {
       console.error("Error generating cover:", error);

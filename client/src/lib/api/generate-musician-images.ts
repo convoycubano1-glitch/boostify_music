@@ -1,10 +1,5 @@
-import { fal } from "@fal-ai/client";
+import { generateImageWithFal } from "./fal-ai";
 import { saveMusicianImage } from "./musician-images-store";
-
-// Configure fal client
-fal.config({
-  credentials: import.meta.env.VITE_FAL_API_KEY
-});
 
 const musicianImagePrompts = [
   // Guitarristas
@@ -59,7 +54,7 @@ const musicianImagePrompts = [
     prompt: "portrait of an asian female jazz singer in elegant attire, stage lighting, professional photo, vintage microphone, photorealistic, high quality, 4k",
     category: "Vocals"
   },
-    // Productores
+  // Productores
   {
     prompt: "portrait of a male music producer in a recording studio, professional lighting, mixing console background, photorealistic, high quality, 4k",
     category: "Producer"
@@ -80,18 +75,10 @@ export async function generateMusicianImages() {
 
   for (const { prompt, category } of musicianImagePrompts) {
     try {
-      const result = await fal.subscribe("fal-ai/flux-pro", {
-        input: {
-          prompt,
-          negative_prompt: negativePrompt,
-          image_size: "landscape_16_9"
-        },
-        logs: true,
-        onQueueUpdate: (update) => {
-          if (update.status === "IN_PROGRESS") {
-            update.logs.map((log) => log.message).forEach(console.log);
-          }
-        },
+      const result = await generateImageWithFal({
+        prompt,
+        negativePrompt,
+        imageSize: "landscape_16_9"
       });
 
       if (result.data && result.data.images && result.data.images[0]) {
@@ -122,4 +109,22 @@ export async function generateMusicianImages() {
   }
 
   return images;
+}
+
+// Add test function to verify single image generation
+export async function testMusicianImageGeneration() {
+  try {
+    const testPrompt = musicianImagePrompts[0];
+    const result = await generateImageWithFal({
+      prompt: testPrompt.prompt,
+      negativePrompt: "deformed, unrealistic, cartoon, anime, illustration, low quality, blurry",
+      imageSize: "landscape_16_9"
+    });
+
+    console.log("Test musician image generation result:", result);
+    return result;
+  } catch (error) {
+    console.error("Test musician image generation failed:", error);
+    throw error;
+  }
 }
