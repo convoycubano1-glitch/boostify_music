@@ -195,9 +195,8 @@ export default function HomePage() {
           playsInline
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover"
-          src={backgroundVideo}
+          src="/assets/Standard_Mode_Generated_Video (9).mp4"
         />
-        {/* Overlays para oscurecer y degradar el fondo */}
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200%] h-[500px] bg-orange-500/20 rounded-full blur-[100px] rotate-12 opacity-50" />
