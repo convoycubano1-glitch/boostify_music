@@ -58,6 +58,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   // En producción, servir archivos estáticos antes de configurar Vite
   if (app.get("env") === "production") {
     // Servir archivos estáticos desde el directorio dist/public
+    const __dirname = new URL('.', import.meta.url).pathname;
     app.use(express.static(path.join(__dirname, 'public')));
 
     // Ruta catch-all para SPA
