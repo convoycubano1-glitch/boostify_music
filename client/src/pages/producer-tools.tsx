@@ -38,6 +38,7 @@ import { generateImageWithFal } from "@/lib/api/fal-ai";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
+import { generateMusicianImages } from "@/lib/api/generate-musician-images";
 
 interface MusicianService {
   id: string;
@@ -57,11 +58,11 @@ const musicians: MusicianService[] = [
   // Guitarristas
   {
     id: "1",
-    name: "Alex Rivera",
+    title: "Alex Rivera",
     photo: "/assets/musicians/guitarist-1.jpg", // Will be replaced with Fal.ai generated image
     instrument: "Guitar",
     description: "Especialista en rock y blues con 15 años de experiencia. Colaboraciones con bandas internacionales y más de 500 sesiones de estudio.",
-    pricePerSession: 120,
+    price: 120,
     rating: 4.9,
     totalReviews: 156,
     genres: ["Rock", "Blues", "Metal"],
@@ -69,11 +70,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "2",
-    name: "Sarah Johnson",
+    title: "Sarah Johnson",
     photo: "/assets/musicians/guitarist-2.jpg",
     instrument: "Guitar",
     description: "Virtuosa de la guitarra acústica y flamenco. Graduada del Berklee College of Music con especialización en técnicas de fingerpicking.",
-    pricePerSession: 150,
+    price: 150,
     rating: 4.8,
     totalReviews: 98,
     genres: ["Flamenco", "Classical", "Folk"],
@@ -81,11 +82,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "3",
-    name: "Miguel Torres",
+    title: "Miguel Torres",
     photo: "/assets/musicians/guitarist-3.jpg",
     instrument: "Guitar",
     description: "Especialista en jazz y fusión latina.  Amplia experiencia en giras internacionales y sesiones de grabación.",
-    pricePerSession: 135,
+    price: 135,
     rating: 4.7,
     totalReviews: 123,
     genres: ["Jazz", "Latin Fusion", "Funk"],
@@ -94,11 +95,11 @@ const musicians: MusicianService[] = [
   // Bateristas
   {
     id: "4",
-    name: "John Smith",
+    title: "John Smith",
     photo: "/assets/musicians/drummer-1.jpg",
     instrument: "Drums",
     description: "Batería profesional con experiencia en metal y rock.  Estudios en el Musicians Institute y colaboraciones con artistas reconocidos.",
-    pricePerSession: 140,
+    price: 140,
     rating: 4.9,
     totalReviews: 87,
     genres: ["Metal", "Rock", "Hard Rock"],
@@ -106,11 +107,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "5",
-    name: "Lisa Chen",
+    title: "Lisa Chen",
     photo: "/assets/musicians/drummer-2.jpg",
     instrument: "Drums",
     description: "Especialista en ritmos latinos y fusión.  Estudios de percusión en Cuba y amplia experiencia en bandas de diferentes estilos.",
-    pricePerSession: 130,
+    price: 130,
     rating: 4.8,
     totalReviews: 92,
     genres: ["Latin", "Fusion", "Pop"],
@@ -118,11 +119,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "6",
-    name: "David Wilson",
+    title: "David Wilson",
     photo: "/assets/musicians/drummer-3.jpg",
     instrument: "Drums",
     description: "Experto en jazz y música electrónica.  Productor y compositor con experiencia en proyectos de vanguardia.",
-    pricePerSession: 145,
+    price: 145,
     rating: 4.7,
     totalReviews: 78,
     genres: ["Jazz", "Electronic", "Experimental"],
@@ -131,11 +132,11 @@ const musicians: MusicianService[] = [
   // Pianistas
   {
     id: "7",
-    name: "Emma Watson",
+    title: "Emma Watson",
     photo: "/assets/musicians/pianist-1.jpg",
     instrument: "Piano",
     description: "Pianista clásica con formación en el Conservatorio.  Especializada en música barroca y romántica.",
-    pricePerSession: 160,
+    price: 160,
     rating: 5.0,
     totalReviews: 112,
     genres: ["Classical", "Baroque", "Romantic"],
@@ -143,11 +144,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "8",
-    name: "Carlos Ruiz",
+    title: "Carlos Ruiz",
     photo: "/assets/musicians/pianist-2.jpg",
     instrument: "Piano",
     description: "Especialista en jazz y música contemporánea.  Amplia experiencia en composición y arreglos musicales.",
-    pricePerSession: 150,
+    price: 150,
     rating: 4.9,
     totalReviews: 95,
     genres: ["Jazz", "Contemporary", "Pop"],
@@ -155,11 +156,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "9",
-    name: "Sophie Martin",
+    title: "Sophie Martin",
     photo: "/assets/musicians/pianist-3.jpg",
     instrument: "Piano",
     description: "Experta en composición y arreglos.  Estudios en composición musical y amplia experiencia en proyectos orquestales.",
-    pricePerSession: 155,
+    price: 155,
     rating: 4.8,
     totalReviews: 88,
     genres: ["Classical", "Contemporary", "Film Score"],
@@ -168,11 +169,11 @@ const musicians: MusicianService[] = [
   // Vocalistas
   {
     id: "10",
-    name: "Maria García",
+    title: "Maria García",
     photo: "/assets/musicians/vocalist-1.jpg",
     instrument: "Vocals",
     description: "Vocalista versátil con experiencia en diversos géneros.  Estudios de canto clásico y jazz.",
-    pricePerSession: 140,
+    price: 140,
     rating: 4.9,
     totalReviews: 167,
     genres: ["Pop", "Jazz", "R&B"],
@@ -180,11 +181,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "11",
-    name: "James Brown",
+    title: "James Brown",
     photo: "/assets/musicians/vocalist-2.jpg",
     instrument: "Vocals",
     description: "Especialista en soul y R&B.  Amplia experiencia en coros y presentaciones en vivo.",
-    pricePerSession: 150,
+    price: 150,
     rating: 4.8,
     totalReviews: 143,
     genres: ["Soul", "R&B", "Funk"],
@@ -192,11 +193,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "12",
-    name: "Luna Kim",
+    title: "Luna Kim",
     photo: "/assets/musicians/vocalist-3.jpg",
     instrument: "Vocals",
     description: "Vocalista de jazz y música experimental.  Estudios de canto y composición en la universidad.",
-    pricePerSession: 145,
+    price: 145,
     rating: 4.7,
     totalReviews: 89,
     genres: ["Jazz", "Experimental", "Electronic"],
@@ -205,11 +206,11 @@ const musicians: MusicianService[] = [
   // Productores
   {
     id: "13",
-    name: "Mark Davis",
+    title: "Mark Davis",
     photo: "/assets/musicians/producer-1.jpg",
     instrument: "Production",
     description: "Productor especializado en música urbana.  Experiencia en mezcla, masterización y producción musical.",
-    pricePerSession: 200,
+    price: 200,
     rating: 4.9,
     totalReviews: 178,
     genres: ["Hip Hop", "Reggaeton", "Trap"],
@@ -217,11 +218,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "14",
-    name: "Ana Silva",
+    title: "Ana Silva",
     photo: "/assets/musicians/producer-2.jpg",
     instrument: "Production",
     description: "Productora de EDM y música electrónica.  Especializada en la creación de sonidos electrónicos.",
-    pricePerSession: 180,
+    price: 180,
     rating: 4.8,
     totalReviews: 156,
     genres: ["EDM", "Electronic", "Dance"],
@@ -229,11 +230,11 @@ const musicians: MusicianService[] = [
   },
   {
     id: "15",
-    name: "Tom Wilson",
+    title: "Tom Wilson",
     photo: "/assets/musicians/producer-3.jpg",
     instrument: "Production",
     description: "Especialista en producción de rock y metal.  Experiencia en grabación, mezcla y masterización.",
-    pricePerSession: 190,
+    price: 190,
     rating: 4.7,
     totalReviews: 134,
     genres: ["Rock", "Metal", "Hard Rock"],
@@ -262,7 +263,6 @@ async function saveMusicianImage(data: ImageData) {
   }
 }
 
-
 export default function ProducerToolsPage() {
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
@@ -275,7 +275,8 @@ export default function ProducerToolsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
-  const [musiciansState, setMusiciansState] = useState(musicians); //Initialize with the initial musicians data
+  const [musiciansState, setMusiciansState] = useState(musicians);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   const filteredMusicians = selectedCategory === "all"
     ? musiciansState
@@ -284,7 +285,7 @@ export default function ProducerToolsPage() {
   const handleHireMusician = (musician: typeof musicians[0]) => {
     toast({
       title: "Solicitud enviada",
-      description: `Se ha enviado una solicitud de contratación a ${musician.name}`,
+      description: `Se ha enviado una solicitud de contratación a ${musician.title}`,
     });
   };
 
@@ -420,22 +421,34 @@ export default function ProducerToolsPage() {
   useEffect(() => {
     async function loadMusicianImages() {
       try {
+        console.log("Starting to load musician images...");
+        setIsLoadingImages(true);
+
         const images = await generateMusicianImages();
-        setMusiciansState(prevMusicians =>
-          prevMusicians.map((musician, index) => ({
-            ...musician,
-            photo: images[index] || musician.photo
-          }))
-        );
-        setImagesLoaded(true);
+        console.log("Generated images:", images);
+
+        if (images && images.length > 0) {
+          setMusiciansState(prevMusicians =>
+            prevMusicians.map((musician, index) => ({
+              ...musician,
+              photo: images[index] || musician.photo
+            }))
+          );
+          toast({
+            title: "Success",
+            description: "Musician images generated successfully!"
+          });
+        }
       } catch (error) {
         console.error("Error loading musician images:", error);
         toast({
           title: "Error",
-          description: "Failed to load some musician images. Using placeholders.",
+          description: "Failed to load musician images. Using placeholders.",
           variant: "destructive"
         });
-        setImagesLoaded(true); // Set to true even on error to show placeholders
+      } finally {
+        setIsLoadingImages(false);
+        setImagesLoaded(true);
       }
     }
 
@@ -501,43 +514,56 @@ export default function ProducerToolsPage() {
 
           {/* Musicians Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {filteredMusicians.map((musician) => (
-              <Card key={musician.id} className="overflow-hidden">
-                <div className="aspect-video bg-orange-500/10 relative">
-                  <img
-                    src={musician.photo}
-                    alt={musician.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-semibold">{musician.name}</h3>
-                    <span className="text-sm font-medium text-orange-500">{musician.instrument}</span>
+            {isLoadingImages ? (
+              // Loading skeleton
+              Array.from({ length: 6 }).map((_, i) => (
+                <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse">
+                  <div className="aspect-video bg-muted" />
+                  <div className="p-6 space-y-4">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
                   </div>
-                  <p className="text-muted-foreground mb-4">{musician.description}</p>
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      <span className="font-medium">{musician.rating.toFixed(1)}</span>
-                      <span className="text-muted-foreground">
-                        ({musician.totalReviews} reviews)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">${musician.pricePerSession}/sesión</span>
-                    </div>
+                </Card>
+              ))
+            ) : (
+              filteredMusicians.map((musician) => (
+                <Card key={musician.id} className="overflow-hidden">
+                  <div className="aspect-video bg-orange-500/10 relative">
+                    <img
+                      src={musician.photo || "/assets/musician-placeholder.jpg"}
+                      alt={musician.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <Button
-                    className="w-full bg-orange-500 hover:bg-orange-600"
-                    onClick={() => handleHireMusician(musician)}
-                  >
-                    Contratar
-                  </Button>
-                </div>
-              </Card>
-            ))}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-semibold">{musician.title}</h3>
+                      <span className="text-sm font-medium text-orange-500">{musician.instrument}</span>
+                    </div>
+                    <p className="text-muted-foreground mb-4">{musician.description}</p>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
+                        <span className="font-medium">{musician.rating.toFixed(1)}</span>
+                        <span className="text-muted-foreground">
+                          ({musician.totalReviews} reviews)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-orange-500" />
+                        <span className="font-medium">${musician.price}/sesión</span>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      onClick={() => handleHireMusician(musician)}
+                    >
+                      Contratar
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
 
           {/* AI Tools Section */}
@@ -703,28 +729,4 @@ export default function ProducerToolsPage() {
       </ScrollArea>
     </div>
   );
-}
-
-
-// Placeholder function -  Replace with actual implementation to generate images from Fal.ai
-async function generateMusicianImages(): Promise<string[]> {
-  //Simulate API call.  Replace with actual API call to Fal.ai
-  const imageUrls = [
-    "/assets/musicians/guitarist-1.jpg",
-    "/assets/musicians/guitarist-2.jpg",
-    "/assets/musicians/guitarist-3.jpg",
-    "/assets/musicians/drummer-1.jpg",
-    "/assets/musicians/drummer-2.jpg",
-    "/assets/musicians/drummer-3.jpg",
-    "/assets/musicians/pianist-1.jpg",
-    "/assets/musicians/pianist-2.jpg",
-    "/assets/musicians/pianist-3.jpg",
-    "/assets/musicians/vocalist-1.jpg",
-    "/assets/musicians/vocalist-2.jpg",
-    "/assets/musicians/vocalist-3.jpg",
-    "/assets/musicians/producer-1.jpg",
-    "/assets/musicians/producer-2.jpg",
-    "/assets/musicians/producer-3.jpg"
-  ]
-  return imageUrls;
 }
