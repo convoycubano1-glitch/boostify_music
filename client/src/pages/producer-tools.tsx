@@ -24,9 +24,15 @@ import { BookingDialog } from "@/components/booking/booking-dialog";
 async function getStoredMusicianImages(): Promise<string[]> {
   try {
     console.log("Starting to fetch musician images from Firestore...");
-    const imagesRef = collection(db, "musicianImages");
-    const q = query(imagesRef, orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
+    // Try both collection names
+    let imagesRef = collection(db, "musicianImages");
+    let querySnapshot = await getDocs(query(imagesRef, orderBy("createdAt", "desc")));
+
+    if (querySnapshot.empty) {
+      console.log("Trying alternate collection name...");
+      imagesRef = collection(db, "musician_images");
+      querySnapshot = await getDocs(query(imagesRef, orderBy("createdAt", "desc")));
+    }
 
     if (querySnapshot.empty) {
       console.log("No images found in Firestore");
@@ -36,8 +42,8 @@ async function getStoredMusicianImages(): Promise<string[]> {
     const images = querySnapshot.docs.map(doc => {
       const data = doc.data();
       console.log("Retrieved image data:", data);
-      return data.url;
-    });
+      return data.url || data.imageUrl || data.image || null;
+    }).filter(url => url !== null);
 
     console.log("Successfully retrieved images:", images.length);
     return images;
