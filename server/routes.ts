@@ -141,43 +141,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Required for Stripe webhook
-  app.post("/api/webhook", express.raw({ type: 'application/json' }), async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-
-    let event;
-
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig || '',
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
-    } catch (err: any) {
-      console.error('Webhook Error:', err.message);
-      res.status(400).json({ error: `Webhook Error: ${err.message}` });
-      return;
-    }
-
-    // Handle the checkout.session.completed event
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-
-      try {
-        const { userId, planName } = session.metadata || {};
-
-        if (userId && planName) {
-          console.log('Subscription successful for user:', userId, 'plan:', planName);
-          // Additional subscription processing logic here
-        }
-      } catch (error) {
-        console.error('Error processing successful payment:', error);
-      }
-    }
-
-    res.json({ received: true });
-  });
-
   // Create subscription checkout session
   app.post("/api/create-subscription", async (req, res) => {
     try {
@@ -231,29 +194,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const { videoUrl, views, price, orderId } = req.body;
-
-      if (!videoUrl || !views || !price || !orderId) {
-        return res.status(400).json({
-          error: "Missing required fields"
-        });
-      }
+      const { musicianId, price, currency } = req.body;
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
           {
             price_data: {
-              currency: 'usd',
+              currency: currency.toLowerCase(),
               product_data: {
-                name: `${views.toLocaleString()} YouTube Views`,
-                description: `Views for video: ${videoUrl}`,
+                name: 'Music Session Booking',
+                description: `Session booking with musician ID: ${musicianId}`,
               },
               unit_amount: Math.round(price * 100), // Convert to cents
             },
@@ -261,12 +219,10 @@ export function registerRoutes(app: Express): Server {
           },
         ],
         mode: 'payment',
-        success_url: `${req.protocol}://${req.get('host')}/youtube-views?session_id={CHECKOUT_SESSION_ID}&success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/youtube-views?canceled=true`,
+        success_url: `${req.protocol}://${req.get('host')}/booking-confirmation?session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/booking-confirmation?canceled=true`,
         metadata: {
-          orderId,
-          videoUrl,
-          views: views.toString(),
+          musicianId,
           userId: req.user!.id,
         },
       });
@@ -280,6 +236,50 @@ export function registerRoutes(app: Express): Server {
         error: error.message || "Error creating checkout session"
       });
     }
+  });
+
+  // Update the webhook handler to handle checkout.session.completed events
+  app.post("/api/webhook", express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig || '',
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err: any) {
+      console.error('Webhook Error:', err.message);
+      res.status(400).json({ error: `Webhook Error: ${err.message}` });
+      return;
+    }
+
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+
+      try {
+        const { userId, musicianId } = session.metadata || {};
+
+        if (userId && musicianId) {
+          // Create the booking record
+          await db.insert(bookings).values({
+            userId: parseInt(userId),
+            musicianId,
+            status: 'pending',
+            paymentStatus: 'paid',
+            price: session.amount_total! / 100,
+            currency: session.currency,
+          });
+        }
+      } catch (error) {
+        console.error('Error processing successful payment:', error);
+      }
+    }
+
+    res.json({ received: true });
   });
 
   // Get user's metrics

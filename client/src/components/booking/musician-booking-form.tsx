@@ -15,9 +15,6 @@ import { generateAudioWithFal } from "@/lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
 import { createPaymentSession } from "@/lib/api/stripe-service";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
 
 interface BookingFormProps {
   musician: MusicianService;
@@ -113,64 +110,22 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     setIsSubmitting(true);
 
     try {
-      // First create a payment intent
-      const clientSecret = await createPaymentSession({
+      await createPaymentSession({
         musicianId: musician.id,
         price: musician.price,
         currency: 'usd',
       });
 
-      // Confirm the payment with Stripe
-      const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe not initialized');
+      // Note: The form will be redirected to Stripe Checkout
+      // No need to handle response here as user will be redirected
 
-      const { error } = await stripe.confirmPayment({
-        elements: stripe.elements({
-          clientSecret,
-          appearance: { theme: 'stripe' }
-        }),
-        confirmParams: {
-          return_url: `${window.location.origin}/booking-confirmation`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // If payment is successful, create the booking
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          musicianId: musician.id,
-          audioUrl,
-          price: musician.price,
-          currency: 'usd',
-          ...formData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit booking');
-      }
-
-      toast({
-        title: "Booking Submitted",
-        description: `Your booking request for ${musician.title} has been submitted successfully.`,
-      });
-
-      onClose();
     } catch (error) {
       console.error('Error in booking process:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit booking. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to start checkout process. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
