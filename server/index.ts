@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from 'path';
 
 const app = express();
 app.use(express.json());
@@ -54,19 +55,24 @@ if (!process.env.STRIPE_SECRET_KEY) {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
+  // En producción, servir archivos estáticos antes de configurar Vite
+  if (app.get("env") === "production") {
+    // Servir archivos estáticos desde el directorio dist/public
+    app.use(express.static(path.join(__dirname, 'public')));
+
+    // Ruta catch-all para SPA
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    });
   } else {
-    serveStatic(app);
+    // En desarrollo, usar Vite
+    await setupVite(app, server);
   }
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
   const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
+    log(`serving on port ${PORT} in ${app.get("env")} mode`);
   });
 })();
