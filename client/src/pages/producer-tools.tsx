@@ -52,6 +52,209 @@ async function getStoredMusicianImages(): Promise<string[]> {
   }
 }
 
+const musicians: MusicianService[] = [
+  // Guitarristas
+  {
+    id: "1",
+    title: "Alex Rivera",
+    photo: "/assets/musicians/guitarist-1.jpg",
+    instrument: "Guitar",
+    description: "Especialista en rock y blues con 15 años de experiencia. Colaboraciones con bandas internacionales y más de 500 sesiones de estudio.",
+    price: 120,
+    rating: 4.9,
+    totalReviews: 156,
+    genres: ["Rock", "Blues", "Metal"],
+    category: "Guitar",
+    userId: "user-1"
+  },
+  {
+    id: "2",
+    title: "Sarah Johnson",
+    photo: "/assets/musicians/guitarist-2.jpg",
+    instrument: "Guitar",
+    description: "Virtuosa de la guitarra acústica y flamenco. Graduada del Berklee College of Music con especialización en técnicas de fingerpicking.",
+    price: 150,
+    rating: 4.8,
+    totalReviews: 98,
+    genres: ["Flamenco", "Classical", "Folk"],
+    category: "Guitar",
+    userId: "user-2"
+  },
+  {
+    id: "3",
+    title: "Miguel Torres",
+    photo: "/assets/musicians/guitarist-3.jpg",
+    instrument: "Guitar",
+    description: "Especialista en jazz y fusión latina.  Amplia experiencia en giras internacionales y sesiones de grabación.",
+    price: 135,
+    rating: 4.7,
+    totalReviews: 123,
+    genres: ["Jazz", "Latin Fusion", "Funk"],
+    category: "Guitar",
+    userId: "user-3"
+  },
+  // Bateristas
+  {
+    id: "4",
+    title: "John Smith",
+    photo: "/assets/musicians/drummer-1.jpg",
+    instrument: "Drums",
+    description: "Batería profesional con experiencia en metal y rock. Estudios en el Musicians Institute y colaboraciones con artistas reconocidos.",
+    price: 140,
+    rating: 4.9,
+    totalReviews: 87,
+    genres: ["Metal", "Rock", "Hard Rock"],
+    category: "Drums",
+    userId: "user-4"
+  },
+  {
+    id: "5",
+    title: "Lisa Chen",
+    photo: "/assets/musicians/drummer-2.jpg",
+    instrument: "Drums",
+    description: "Especialista en ritmos latinos y fusión.  Estudios de percusión en Cuba y amplia experiencia en bandas de diferentes estilos.",
+    price: 130,
+    rating: 4.8,
+    totalReviews: 92,
+    genres: ["Latin", "Fusion", "Pop"],
+    category: "Drums",
+    userId: "user-5"
+  },
+  {
+    id: "6",
+    title: "David Wilson",
+    photo: "/assets/musicians/drummer-3.jpg",
+    instrument: "Drums",
+    description: "Experto en jazz y música electrónica.  Productor y compositor con experiencia en proyectos de vanguardia.",
+    price: 145,
+    rating: 4.7,
+    totalReviews: 78,
+    genres: ["Jazz", "Electronic", "Experimental"],
+    category: "Drums",
+    userId: "user-6"
+  },
+  // Pianistas
+  {
+    id: "7",
+    title: "Emma Watson",
+    photo: "/assets/musicians/pianist-1.jpg",
+    instrument: "Piano",
+    description: "Pianista clásica con formación en el Conservatorio.  Especializada en música barroca y romántica.",
+    price: 160,
+    rating: 5.0,
+    totalReviews: 112,
+    genres: ["Classical", "Baroque", "Romantic"],
+    category: "Piano",
+    userId: "user-7"
+  },
+  {
+    id: "8",
+    title: "Carlos Ruiz",
+    photo: "/assets/musicians/pianist-2.jpg",
+    instrument: "Piano",
+    description: "Especialista en jazz y música contemporánea.  Amplia experiencia en composición y arreglos musicales.",
+    price: 150,
+    rating: 4.9,
+    totalReviews: 95,
+    genres: ["Jazz", "Contemporary", "Pop"],
+    category: "Piano",
+    userId: "user-8"
+  },
+  {
+    id: "9",
+    title: "Sophie Martin",
+    photo: "/assets/musicians/pianist-3.jpg",
+    instrument: "Piano",
+    description: "Experta en composición y arreglos.  Estudios en composición musical y amplia experiencia en proyectos orquestales.",
+    price: 155,
+    rating: 4.8,
+    totalReviews: 88,
+    genres: ["Classical", "Contemporary", "Film Score"],
+    category: "Piano",
+    userId: "user-9"
+  },
+  // Vocalistas
+  {
+    id: "10",
+    title: "Maria García",
+    photo: "/assets/musicians/vocalist-1.jpg",
+    instrument: "Vocals",
+    description: "Vocalista versátil con experiencia en diversos géneros. Estudios de canto clásico y jazz.",
+    price: 140,
+    rating: 4.9,
+    totalReviews: 167,
+    genres: ["Pop", "Jazz", "R&B"],
+    category: "Vocals",
+    userId: "user-10"
+  },
+  {
+    id: "11",
+    title: "James Brown",
+    photo: "/assets/musicians/vocalist-2.jpg",
+    instrument: "Vocals",
+    description: "Especialista en soul y R&B.  Amplia experiencia en coros y presentaciones en vivo.",
+    price: 150,
+    rating: 4.8,
+    totalReviews: 143,
+    genres: ["Soul", "R&B", "Funk"],
+    category: "Vocals",
+    userId: "user-11"
+  },
+  {
+    id: "12",
+    title: "Luna Kim",
+    photo: "/assets/musicians/vocalist-3.jpg",
+    instrument: "Vocals",
+    description: "Vocalista de jazz y música experimental.  Estudios de canto y composición en la universidad.",
+    price: 145,
+    rating: 4.7,
+    totalReviews: 89,
+    genres: ["Jazz", "Experimental", "Electronic"],
+    category: "Vocals",
+    userId: "user-12"
+  },
+  // Productores
+  {
+    id: "13",
+    title: "Mark Davis",
+    photo: "/assets/musicians/producer-1.jpg",
+    instrument: "Production",
+    description: "Productor especializado en música urbana. Experiencia en mezcla, masterización y producción musical.",
+    price: 200,
+    rating: 4.9,
+    totalReviews: 178,
+    genres: ["Hip Hop", "Reggaeton", "Trap"],
+    category: "Production",
+    userId: "user-13"
+  },
+  {
+    id: "14",
+    title: "Ana Silva",
+    photo: "/assets/musicians/producer-2.jpg",
+    instrument: "Production",
+    description: "Productora de EDM y música electrónica.  Especializada en la creación de sonidos electrónicos.",
+    price: 180,
+    rating: 4.8,
+    totalReviews: 156,
+    genres: ["EDM", "Electronic", "Dance"],
+    category: "Production",
+    userId: "user-14"
+  },
+  {
+    id: "15",
+    title: "Tom Wilson",
+    photo: "/assets/musicians/producer-3.jpg",
+    instrument: "Production",
+    description: "Especialista en producción de rock y metal.  Experiencia en grabación, mezcla y masterización.",
+    price: 190,
+    rating: 4.7,
+    totalReviews: 134,
+    genres: ["Rock", "Metal", "Hard Rock"],
+    category: "Production",
+    userId: "user-15"
+  }
+];
+
 export default function ProducerToolsPage() {
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
@@ -68,9 +271,10 @@ export default function ProducerToolsPage() {
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
 
-  const filteredMusicians = selectedCategory === "all"
-    ? musiciansState
-    : musiciansState.filter(m => m.category === selectedCategory);
+  const filteredMusicians = musiciansState.filter(musician =>
+    selectedCategory.toLowerCase() === "all" ||
+    musician.category.toLowerCase() === selectedCategory.toLowerCase()
+  );
 
   const handleHireMusician = (musician: typeof musicians[0]) => {
     // This function is no longer needed as we're using the BookingDialog
@@ -219,7 +423,7 @@ export default function ProducerToolsPage() {
           setMusiciansState(prevMusicians =>
             prevMusicians.map((musician, index) => ({
               ...musician,
-              userId: `user-${index + 1}`, // Add missing userId field
+              userId: `user-${index + 1}`, 
               photo: storedImages[index % storedImages.length] || musician.photo
             }))
           );
@@ -232,7 +436,7 @@ export default function ProducerToolsPage() {
           setMusiciansState(prevMusicians =>
             prevMusicians.map((musician, index) => ({
               ...musician,
-              userId: `user-${index + 1}` // Add missing userId field
+              userId: `user-${index + 1}` 
             }))
           );
         }
@@ -315,11 +519,11 @@ export default function ProducerToolsPage() {
 
           {/* Service Categories */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-            {["Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
+            {["all", "Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
               <Card
                 key={category}
                 className={`p-4 text-center cursor-pointer transition-colors ${
-                  selectedCategory === category ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
+                  selectedCategory.toLowerCase() === category.toLowerCase() ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
                 }`}
                 onClick={() => setSelectedCategory(category)}
               >
@@ -329,7 +533,7 @@ export default function ProducerToolsPage() {
                 {category === "Vocals" && <Mic2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
                 {category === "Production" && <Music4 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
                 {category === "Other" && <Music2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                <p className="font-medium">{category}</p>
+                <p className="font-medium">{category !== "all" ? category : "All Categories"}</p>
               </Card>
             ))}
           </div>
@@ -575,217 +779,6 @@ interface MusicianService {
   instrument: string;
   rating: number;
   totalReviews: number;
-  genres?: string[]; //Added genres
-  photo?: string; //Added photo
-}
-
-const musicians: MusicianService[] = [
-  // Guitarristas
-  {
-    id: "1",
-    title: "Alex Rivera",
-    photo: "/assets/musicians/guitarist-1.jpg", // Will be replaced with Fal.ai generated image
-    instrument: "Guitar",
-    description: "Especialista en rock y blues con 15 años de experiencia. Colaboraciones con bandas internacionales y más de 500 sesiones de estudio.",
-    price: 120,
-    rating: 4.9,
-    totalReviews: 156,
-    genres: ["Rock", "Blues", "Metal"],
-    category: "Guitar",
-    userId: "user-1"
-  },
-  {
-    id: "2",
-    title: "Sarah Johnson",
-    photo: "/assets/musicians/guitarist-2.jpg",
-    instrument: "Guitar",
-    description: "Virtuosa de la guitarra acústica y flamenco. Graduada del Berklee College of Music con especialización en técnicas de fingerpicking.",
-    price: 150,
-    rating: 4.8,
-    totalReviews: 98,
-    genres: ["Flamenco", "Classical", "Folk"],
-    category: "Guitar",
-    userId: "user-2"
-  },
-  {
-    id: "3",
-    title: "Miguel Torres",
-    photo: "/assets/musicians/guitarist-3.jpg",
-    instrument: "Guitar",
-    description: "Especialista en jazz y fusión latina.  Amplia experiencia en giras internacionales y sesiones de grabación.",
-    price: 135,
-    rating: 4.7,
-    totalReviews: 123,
-    genres: ["Jazz", "Latin Fusion", "Funk"],
-    category: "Guitar",
-    userId: "user-3"
-  },
-  // Bateristas
-  {
-    id: "4",
-    title: "John Smith",
-    photo: "/assets/musicians/drummer-1.jpg",
-    instrument: "Drums",
-    description: "Batería profesional con experiencia en metal y rock.  Estudios en el Musicians Institute y colaboraciones con artistas reconocidos.",
-    price: 140,
-    rating: 4.9,
-    totalReviews: 87,
-    genres: ["Metal", "Rock", "Hard Rock"],
-    category: "Drums",
-    userId: "user-4"
-  },
-  {
-    id: "5",
-    title: "Lisa Chen",
-    photo: "/assets/musicians/drummer-2.jpg",
-    instrument: "Drums",
-    description: "Especialista en ritmos latinos y fusión.  Estudios de percusión en Cuba y amplia experiencia en bandas de diferentes estilos.",
-    price: 130,
-    rating: 4.8,
-    totalReviews: 92,
-    genres: ["Latin", "Fusion", "Pop"],
-    category: "Drums",
-    userId: "user-5"
-  },
-  {
-    id: "6",
-    title: "David Wilson",
-    photo: "/assets/musicians/drummer-3.jpg",
-    instrument: "Drums",
-    description: "Experto en jazz y música electrónica.  Productor y compositor con experiencia en proyectos de vanguardia.",
-    price: 145,
-    rating: 4.7,
-    totalReviews: 78,
-    genres: ["Jazz", "Electronic", "Experimental"],
-    category: "Drums",
-    userId: "user-6"
-  },
-  // Pianistas
-  {
-    id: "7",
-    title: "Emma Watson",
-    photo: "/assets/musicians/pianist-1.jpg",
-    instrument: "Piano",
-    description: "Pianista clásica con formación en el Conservatorio.  Especializada en música barroca y romántica.",
-    price: 160,
-    rating: 5.0,
-    totalReviews: 112,
-    genres: ["Classical", "Baroque", "Romantic"],
-    category: "Piano",
-    userId: "user-7"
-  },
-  {
-    id: "8",
-    title: "Carlos Ruiz",
-    photo: "/assets/musicians/pianist-2.jpg",
-    instrument: "Piano",
-    description: "Especialista en jazz y música contemporánea.  Amplia experiencia en composición y arreglos musicales.",
-    price: 150,
-    rating: 4.9,
-    totalReviews: 95,
-    genres: ["Jazz", "Contemporary", "Pop"],
-    category: "Piano",
-    userId: "user-8"
-  },
-  {
-    id: "9",
-    title: "Sophie Martin",
-    photo: "/assets/musicians/pianist-3.jpg",
-    instrument: "Piano",
-    description: "Experta en composición y arreglos.  Estudios en composición musical y amplia experiencia en proyectos orquestales.",
-    price: 155,
-    rating: 4.8,
-    totalReviews: 88,
-    genres: ["Classical", "Contemporary", "Film Score"],
-    category: "Piano",
-    userId: "user-9"
-  },
-  // Vocalistas
-  {
-    id: "10",
-    title: "Maria García",
-    photo: "/assets/musicians/vocalist-1.jpg",
-    instrument: "Vocals",
-    description: "Vocalista versátil con experiencia en diversos géneros.  Estudios de canto clásico y jazz.",
-    price: 140,
-    rating: 4.9,
-    totalReviews: 167,
-    genres: ["Pop", "Jazz", "R&B"],
-    category: "Vocals",
-    userId: "user-10"
-  },
-  {
-    id: "11",
-    title: "James Brown",
-    photo: "/assets/musicians/vocalist-2.jpg",
-    instrument: "Vocals",
-    description: "Especialista en soul y R&B.  Amplia experiencia en coros y presentaciones en vivo.",
-    price: 150,
-    rating: 4.8,
-    totalReviews: 143,
-    genres: ["Soul", "R&B", "Funk"],
-    category: "Vocals",
-    userId: "user-11"
-  },
-  {
-    id: "12",
-    title: "Luna Kim",
-    photo: "/assets/musicians/vocalist-3.jpg",
-    instrument: "Vocals",
-    description: "Vocalista de jazz y música experimental.  Estudios de canto y composición en la universidad.",
-    price: 145,
-    rating: 4.7,
-    totalReviews: 89,
-    genres: ["Jazz", "Experimental", "Electronic"],
-    category: "Vocals",
-    userId: "user-12"
-  },
-  // Productores
-  {
-    id: "13",
-    title: "Mark Davis",
-    photo: "/assets/musicians/producer-1.jpg",
-    instrument: "Production",
-    description: "Productor especializado en música urbana.  Experiencia en mezcla, masterización y producción musical.",
-    price: 200,
-    rating: 4.9,
-    totalReviews: 178,
-    genres: ["Hip Hop", "Reggaeton", "Trap"],
-    category: "Production",
-    userId: "user-13"
-  },
-  {
-    id: "14",
-    title: "Ana Silva",
-    photo: "/assets/musicians/producer-2.jpg",
-    instrument: "Production",
-    description: "Productora de EDM y música electrónica.  Especializada en la creación de sonidos electrónicos.",
-    price: 180,
-    rating: 4.8,
-    totalReviews: 156,
-    genres: ["EDM", "Electronic", "Dance"],
-    category: "Production",
-    userId: "user-14"
-  },
-  {
-    id: "15",
-    title: "Tom Wilson",
-    photo: "/assets/musicians/producer-3.jpg",
-    instrument: "Production",
-    description: "Especialista en producción de rock y metal.  Experiencia en grabación, mezcla y masterización.",
-    price: 190,
-    rating: 4.7,
-    totalReviews: 134,
-    genres: ["Rock", "Metal", "Hard Rock"],
-    category: "Production",
-    userId: "user-15"
-  }
-];
-
-interface ImageData {
-  url: string;
-  requestId: string;
-  prompt: string;
-  category: string;
-  createdAt: Date;
+  genres?: string[]; 
+  photo?: string; 
 }
