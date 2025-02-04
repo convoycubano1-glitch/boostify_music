@@ -423,7 +423,7 @@ export default function ProducerToolsPage() {
           setMusiciansState(prevMusicians =>
             prevMusicians.map((musician, index) => ({
               ...musician,
-              userId: `user-${index + 1}`, 
+              userId: `user-${index + 1}`,
               photo: storedImages[index % storedImages.length] || musician.photo
             }))
           );
@@ -436,7 +436,7 @@ export default function ProducerToolsPage() {
           setMusiciansState(prevMusicians =>
             prevMusicians.map((musician, index) => ({
               ...musician,
-              userId: `user-${index + 1}` 
+              userId: `user-${index + 1}`
             }))
           );
         }
@@ -477,11 +477,13 @@ export default function ProducerToolsPage() {
           autoPlay
           loop
           muted
+          playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src="/assets/Standard_Mode_Generated_Video (3).mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 via-background/20 to-background" />
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Your Creative Music Hub
@@ -779,8 +781,8 @@ interface MusicianService {
   instrument: string;
   rating: number;
   totalReviews: number;
-  genres?: string[]; 
-  photo?: string; 
+  genres?: string[];
+  photo?: string;
 }
 
 interface ImageData {
