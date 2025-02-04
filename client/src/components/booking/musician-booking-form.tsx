@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { generateAudioWithFal } from "@/lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
+import { createPaymentSession, handlePayment } from "@/lib/api/stripe-service";
+import { Elements } from "@stripe/stripe-js";
 
 interface BookingFormProps {
   musician: MusicianService;
@@ -27,6 +29,7 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     tempo: "",
@@ -48,7 +51,6 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
 
     setIsGeneratingDemo(true);
     try {
-      // Enhanced prompt generation based on musician's category and style
       const prompt = `Create a ${formData.style} music piece at ${formData.tempo} BPM in the key of ${formData.key}. 
         Style should match a professional ${musician.category.toLowerCase()} musician ${
         musician.title ? `like ${musician.title}` : ""
@@ -110,6 +112,16 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     setIsSubmitting(true);
 
     try {
+      const paymentClientSecret = await createPaymentSession({
+        musicianId: musician.id,
+        price: musician.price,
+        currency: 'usd',
+      });
+
+      setClientSecret(paymentClientSecret);
+
+      await handlePayment(paymentClientSecret);
+
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -118,6 +130,8 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
         body: JSON.stringify({
           musicianId: musician.id,
           audioUrl,
+          price: musician.price,
+          currency: 'usd',
           ...formData,
         }),
       });
@@ -133,9 +147,10 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
 
       onClose();
     } catch (error) {
+      console.error('Error in booking process:', error);
       toast({
         title: "Error",
-        description: "Failed to submit booking. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit booking. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -288,8 +303,8 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Booking"}
+        <Button type="submit" disabled={isSubmitting} className="bg-primary">
+          {isSubmitting ? "Processing Payment..." : `Book Session ($${musician.price})`}
         </Button>
       </div>
     </form>
