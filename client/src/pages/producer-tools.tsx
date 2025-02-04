@@ -472,17 +472,23 @@ export default function ProducerToolsPage() {
       <Header />
 
       {/* Hero Section with Video Background */}
-      <div className="relative w-full h-[300px] overflow-hidden">
+      <div className="relative w-full h-[300px] overflow-hidden bg-background">
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-background" />
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover opacity-75"
+          poster="/assets/video-fallback.jpg"
+          onError={(e) => {
+            const target = e.target as HTMLVideoElement;
+            target.style.display = 'none';
+          }}
         >
           <source src="/assets/Standard_Mode_Generated_Video (3).mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 via-background/20 to-background" />
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
