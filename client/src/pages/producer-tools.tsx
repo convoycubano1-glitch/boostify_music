@@ -39,6 +39,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { generateMusicianImages } from "@/lib/api/generate-musician-images";
+import { BookingDialog } from "@/components/booking/booking-dialog";
 
 interface MusicianService {
   id: string;
@@ -250,7 +251,6 @@ interface ImageData {
   createdAt: Date;
 }
 
-
 async function saveMusicianImage(data: ImageData) {
   try {
     await addDoc(collection(db, "musicianImages"), {
@@ -283,10 +283,8 @@ export default function ProducerToolsPage() {
     : musiciansState.filter(m => m.category === selectedCategory);
 
   const handleHireMusician = (musician: typeof musicians[0]) => {
-    toast({
-      title: "Solicitud enviada",
-      description: `Se ha enviado una solicitud de contratación a ${musician.title}`,
-    });
+    // This function is no longer needed as we're using the BookingDialog
+    return;
   };
 
   const handleMasterTrack = async () => {
@@ -556,9 +554,9 @@ export default function ProducerToolsPage() {
                     </div>
                     <Button
                       className="w-full bg-orange-500 hover:bg-orange-600"
-                      onClick={() => handleHireMusician(musician)}
+                      asChild
                     >
-                      Contratar
+                      <BookingDialog musician={musician} />
                     </Button>
                   </div>
                 </Card>

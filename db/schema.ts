@@ -41,15 +41,43 @@ export const contracts = pgTable("contracts", {
   metadata: json("metadata")
 });
 
+// New bookings table for musician services
+export const bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  musicianId: text("musician_id").notNull(), 
+  tempo: text("tempo"),
+  musicalKey: text("musical_key"),
+  style: text("style"),
+  projectDeadline: timestamp("project_deadline"),
+  additionalNotes: text("additional_notes"),
+  status: text("status", { enum: ["pending", "accepted", "completed", "cancelled"] }).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
-  contracts: many(contracts)
+  contracts: many(contracts),
+  bookings: many(bookings)
+}));
+
+export const bookingsRelations = relations(bookings, ({ one }) => ({
+  user: one(users, {
+    fields: [bookings.userId],
+    references: [users.id],
+  }),
 }));
 
 // Schemas
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
+export const insertBookingSchema = createInsertSchema(bookings);
+export const selectBookingSchema = createSelectSchema(bookings);
+
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
+export type InsertBooking = typeof bookings.$inferInsert;
+export type SelectBooking = typeof bookings.$inferSelect;

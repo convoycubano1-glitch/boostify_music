@@ -13,6 +13,7 @@ import express from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import OpenAI from "openai";
+import { insertBookingSchema, bookings } from "@db/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error('Error: STRIPE_SECRET_KEY no está configurada');
@@ -95,9 +96,9 @@ export function registerRoutes(app: Express): Server {
       res.json({ suggestion: suggestions.suggestions.join('\n\n') });
     } catch (error: any) {
       console.error('Error getting AI suggestions:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Error al generar sugerencias para la campaña",
-        details: error.message 
+        details: error.message
       });
     }
   });
@@ -133,15 +134,15 @@ export function registerRoutes(app: Express): Server {
       return res.json({ strategy: result.strategy });
     } catch (error: any) {
       console.error('Error generating strategy:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: "Error al generar estrategia",
-        details: error.message 
+        details: error.message
       });
     }
   });
 
   // Required for Stripe webhook
-  app.post("/api/webhook", express.raw({type: 'application/json'}), async (req, res) => {
+  app.post("/api/webhook", express.raw({ type: 'application/json' }), async (req, res) => {
     const sig = req.headers['stripe-signature'];
 
     let event;
@@ -186,8 +187,8 @@ export function registerRoutes(app: Express): Server {
 
       const result = subscriptionSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ 
-          error: "Invalid subscription data" 
+        return res.status(400).json({
+          error: "Invalid subscription data"
         });
       }
 
@@ -220,12 +221,12 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error('Error creating subscription session:', error);
       if (error.type === 'StripeInvalidRequestError') {
-        return res.status(400).json({ 
-          error: "Invalid Stripe configuration. Please try again later." 
+        return res.status(400).json({
+          error: "Invalid Stripe configuration. Please try again later."
         });
       }
-      return res.status(500).json({ 
-        error: "Error creating subscription session" 
+      return res.status(500).json({
+        error: "Error creating subscription session"
       });
     }
   });
@@ -239,8 +240,8 @@ export function registerRoutes(app: Express): Server {
       const { videoUrl, views, price, orderId } = req.body;
 
       if (!videoUrl || !views || !price || !orderId) {
-        return res.status(400).json({ 
-          error: "Missing required fields" 
+        return res.status(400).json({
+          error: "Missing required fields"
         });
       }
 
@@ -275,8 +276,8 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
-      return res.status(500).json({ 
-        error: error.message || "Error creating checkout session" 
+      return res.status(500).json({
+        error: error.message || "Error creating checkout session"
       });
     }
   });
@@ -360,6 +361,47 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: 'Failed to fetch contract' });
     }
   });
+
+  // Create a new booking
+  app.post("/api/bookings", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const bookingData = insertBookingSchema.parse(req.body);
+
+      const [result] = await db
+        .insert(bookings)
+        .values({
+          ...bookingData,
+          userId: req.user!.id,
+        })
+        .returning();
+
+      res.status(201).json(result);
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      res.status(400).json({ error: 'Invalid booking data' });
+    }
+  });
+
+  // Get user's bookings
+  app.get("/api/bookings", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const userBookings = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.userId, req.user!.id))
+        .orderBy(desc(bookings.createdAt));
+
+      res.json(userBookings);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      res.status(500).json({ error: 'Failed to fetch bookings' });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
