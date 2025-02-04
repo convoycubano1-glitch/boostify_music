@@ -2,7 +2,7 @@ import { WaitlistModal } from "@/components/marketing/waitlist-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
-import { Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe, MessageCircle, BarChart2 } from "lucide-react";
+import { Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe, MessageCircle, BarChart2, Calendar } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
@@ -243,7 +243,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="flex flex-col items-center gap-4 mt-8"
+              className="flex flex-col items-center gap-6 mt-8"
             >
               <Button
                 size="lg"
@@ -263,14 +263,29 @@ export default function HomePage() {
                 transition={{ delay: 0.4 }}
                 className="relative w-full max-w-md"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg blur-lg" />
-                <div className="relative">
-                  <div id="home-calendar-button-container" className="flex justify-center">
-                    {/* Google Calendar button will be inserted here */}
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-lg" />
+                <div className="relative bg-background/50 backdrop-blur-sm rounded-lg p-6 border border-orange-500/20">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2 text-orange-500">
+                      <Calendar className="h-5 w-5" />
+                      <span className="font-medium">Schedule a Meeting</span>
+                    </div>
+                    <a 
+                      href="https://meet.google.com/hzi-jfwj-fkh"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full"
+                    >
+                      <Button 
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-all duration-300 transform hover:scale-105"
+                      >
+                        Join Pre-launch Meeting
+                      </Button>
+                    </a>
+                    <p className="text-sm text-center text-white/70">
+                      Get personalized insights about our platform
+                    </p>
                   </div>
-                  <p className="text-sm text-center text-white/70 mt-2">
-                    Schedule a pre-launch consultation
-                  </p>
                 </div>
               </motion.div>
             </motion.div>

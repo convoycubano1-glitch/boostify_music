@@ -8,10 +8,6 @@ import { Mail, Timer, Calendar } from "lucide-react";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// Add Google Calendar scripts
-const CALENDAR_CSS = "https://calendar.google.com/calendar/scheduling-button-script.css";
-const CALENDAR_JS = "https://calendar.google.com/calendar/scheduling-button-script.js";
-
 export function WaitlistModal() {
   const [open, setOpen] = useState(true);
   const [email, setEmail] = useState("");
@@ -20,28 +16,6 @@ export function WaitlistModal() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load Google Calendar scripts
-    const link = document.createElement('link');
-    link.href = CALENDAR_CSS;
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-
-    const script = document.createElement('script');
-    script.src = CALENDAR_JS;
-    script.async = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      // Initialize the scheduling button
-      (window as any).calendar?.schedulingButton?.load({
-        url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vnFhrY0UC_nogkdphNhUUxe1jlChiTbqh-5xe7gXm93UOr47iGjsOQbIKbm1DfDRw9-LRlXwM?gv=true',
-        color: '#EF6C00',
-        label: "BOOSTIFY MUSIC PRE-LAUNCH",
-        target: document.getElementById('calendar-button-container'),
-      });
-    };
-
-    // Timer countdown
     if (!open) return;
 
     const timer = setInterval(() => {
@@ -57,11 +31,6 @@ export function WaitlistModal() {
 
     return () => {
       clearInterval(timer);
-      // Cleanup scripts
-      document.head.removeChild(link);
-      if (script.parentNode) {
-        document.body.removeChild(script);
-      }
     };
   }, [open]);
 
@@ -180,13 +149,28 @@ export function WaitlistModal() {
             {/* Calendar Button Container */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg blur-lg" />
-              <div className="relative">
-                <div id="calendar-button-container" className="flex justify-center">
-                  {/* Google Calendar button will be inserted here */}
+              <div className="relative bg-background/50 backdrop-blur-sm rounded-lg p-6 border border-orange-500/20">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex items-center gap-2 text-orange-500">
+                    <Calendar className="h-5 w-5" />
+                    <span className="font-medium">Schedule a Meeting</span>
+                  </div>
+                  <a 
+                    href="https://meet.google.com/hzi-jfwj-fkh"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full"
+                  >
+                    <Button 
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-all duration-300 transform hover:scale-105"
+                    >
+                      Join Pre-launch Meeting
+                    </Button>
+                  </a>
+                  <p className="text-sm text-center text-muted-foreground">
+                    Get personalized insights about our platform
+                  </p>
                 </div>
-                <p className="text-sm text-center text-muted-foreground mt-2">
-                  Schedule a pre-launch consultation
-                </p>
               </div>
             </div>
           </motion.div>
