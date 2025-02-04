@@ -6,8 +6,8 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Reglas para las imágenes de músicos
-    match /musician_images/{imageId} {
+    // Added rules for musician images - allow public read access
+    match /musicianImages/{imageId} {
       allow read: if true;  // Lectura pública
       allow write: if request.auth != null;  // Escritura solo para usuarios autenticados
     }

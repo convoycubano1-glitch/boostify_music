@@ -23,12 +23,23 @@ import { BookingDialog } from "@/components/booking/booking-dialog";
 
 async function getStoredMusicianImages(): Promise<string[]> {
   try {
+    console.log("Starting to fetch musician images from Firestore...");
     const imagesRef = collection(db, "musicianImages");
     const q = query(imagesRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
 
-    const images = querySnapshot.docs.map(doc => doc.data().url);
-    console.log("Retrieved stored images:", images);
+    if (querySnapshot.empty) {
+      console.log("No images found in Firestore");
+      return [];
+    }
+
+    const images = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log("Retrieved image data:", data);
+      return data.url;
+    });
+
+    console.log("Successfully retrieved images:", images.length);
     return images;
   } catch (error) {
     console.error("Error fetching stored images:", error);
@@ -202,6 +213,7 @@ export default function ProducerToolsPage() {
           setMusiciansState(prevMusicians =>
             prevMusicians.map((musician, index) => ({
               ...musician,
+              userId: `user-${index + 1}`, // Add missing userId field
               photo: storedImages[index % storedImages.length] || musician.photo
             }))
           );
@@ -209,14 +221,29 @@ export default function ProducerToolsPage() {
             title: "Success",
             description: "Musician images loaded successfully!"
           });
+        } else {
+          console.log("Using default images as no stored images were found");
+          setMusiciansState(prevMusicians =>
+            prevMusicians.map((musician, index) => ({
+              ...musician,
+              userId: `user-${index + 1}` // Add missing userId field
+            }))
+          );
         }
       } catch (error) {
         console.error("Error loading musician images:", error);
         toast({
           title: "Error",
-          description: "Failed to load musician images. Using placeholders.",
+          description: "Failed to load musician images. Using default images.",
           variant: "destructive"
         });
+        // Ensure musicians still have userIds even if image loading fails
+        setMusiciansState(prevMusicians =>
+          prevMusicians.map((musician, index) => ({
+            ...musician,
+            userId: `user-${index + 1}`
+          }))
+        );
       } finally {
         setIsLoadingImages(false);
         setImagesLoaded(true);
@@ -540,7 +567,8 @@ const musicians: MusicianService[] = [
     rating: 4.9,
     totalReviews: 156,
     genres: ["Rock", "Blues", "Metal"],
-    category: "Guitar"
+    category: "Guitar",
+    userId: "user-1"
   },
   {
     id: "2",
@@ -552,7 +580,8 @@ const musicians: MusicianService[] = [
     rating: 4.8,
     totalReviews: 98,
     genres: ["Flamenco", "Classical", "Folk"],
-    category: "Guitar"
+    category: "Guitar",
+    userId: "user-2"
   },
   {
     id: "3",
@@ -564,7 +593,8 @@ const musicians: MusicianService[] = [
     rating: 4.7,
     totalReviews: 123,
     genres: ["Jazz", "Latin Fusion", "Funk"],
-    category: "Guitar"
+    category: "Guitar",
+    userId: "user-3"
   },
   // Bateristas
   {
@@ -577,7 +607,8 @@ const musicians: MusicianService[] = [
     rating: 4.9,
     totalReviews: 87,
     genres: ["Metal", "Rock", "Hard Rock"],
-    category: "Drums"
+    category: "Drums",
+    userId: "user-4"
   },
   {
     id: "5",
@@ -589,7 +620,8 @@ const musicians: MusicianService[] = [
     rating: 4.8,
     totalReviews: 92,
     genres: ["Latin", "Fusion", "Pop"],
-    category: "Drums"
+    category: "Drums",
+    userId: "user-5"
   },
   {
     id: "6",
@@ -601,7 +633,8 @@ const musicians: MusicianService[] = [
     rating: 4.7,
     totalReviews: 78,
     genres: ["Jazz", "Electronic", "Experimental"],
-    category: "Drums"
+    category: "Drums",
+    userId: "user-6"
   },
   // Pianistas
   {
@@ -614,7 +647,8 @@ const musicians: MusicianService[] = [
     rating: 5.0,
     totalReviews: 112,
     genres: ["Classical", "Baroque", "Romantic"],
-    category: "Piano"
+    category: "Piano",
+    userId: "user-7"
   },
   {
     id: "8",
@@ -626,7 +660,8 @@ const musicians: MusicianService[] = [
     rating: 4.9,
     totalReviews: 95,
     genres: ["Jazz", "Contemporary", "Pop"],
-    category: "Piano"
+    category: "Piano",
+    userId: "user-8"
   },
   {
     id: "9",
@@ -638,7 +673,8 @@ const musicians: MusicianService[] = [
     rating: 4.8,
     totalReviews: 88,
     genres: ["Classical", "Contemporary", "Film Score"],
-    category: "Piano"
+    category: "Piano",
+    userId: "user-9"
   },
   // Vocalistas
   {
@@ -651,7 +687,8 @@ const musicians: MusicianService[] = [
     rating: 4.9,
     totalReviews: 167,
     genres: ["Pop", "Jazz", "R&B"],
-    category: "Vocals"
+    category: "Vocals",
+    userId: "user-10"
   },
   {
     id: "11",
@@ -663,7 +700,8 @@ const musicians: MusicianService[] = [
     rating: 4.8,
     totalReviews: 143,
     genres: ["Soul", "R&B", "Funk"],
-    category: "Vocals"
+    category: "Vocals",
+    userId: "user-11"
   },
   {
     id: "12",
@@ -675,7 +713,8 @@ const musicians: MusicianService[] = [
     rating: 4.7,
     totalReviews: 89,
     genres: ["Jazz", "Experimental", "Electronic"],
-    category: "Vocals"
+    category: "Vocals",
+    userId: "user-12"
   },
   // Productores
   {
@@ -688,7 +727,8 @@ const musicians: MusicianService[] = [
     rating: 4.9,
     totalReviews: 178,
     genres: ["Hip Hop", "Reggaeton", "Trap"],
-    category: "Production"
+    category: "Production",
+    userId: "user-13"
   },
   {
     id: "14",
@@ -700,7 +740,8 @@ const musicians: MusicianService[] = [
     rating: 4.8,
     totalReviews: 156,
     genres: ["EDM", "Electronic", "Dance"],
-    category: "Production"
+    category: "Production",
+    userId: "user-14"
   },
   {
     id: "15",
@@ -712,7 +753,8 @@ const musicians: MusicianService[] = [
     rating: 4.7,
     totalReviews: 134,
     genres: ["Rock", "Metal", "Hard Rock"],
-    category: "Production"
+    category: "Production",
+    userId: "user-15"
   }
 ];
 
