@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { SiMusicbrainz } from "react-icons/si";
 
 export function Header() {
   const { user } = useAuth();
@@ -36,7 +35,11 @@ export function Header() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="flex items-center space-x-6">
             <Link href="/" className="flex items-center space-x-2 hover:opacity-90 transition-opacity">
-              <SiMusicbrainz className="h-6 w-6 text-orange-500" />
+              <img 
+                src="/assets/freepik__boostify-music___orange.png" 
+                alt="Boostify Music" 
+                className="h-6 w-6"
+              />
               <div className="hidden md:block">
                 <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                   Boostify
