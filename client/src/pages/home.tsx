@@ -356,6 +356,83 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Production Tools Section - New section added */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col md:flex-row items-center gap-12"
+          >
+            <div className="flex-1 space-y-6">
+              <div className="flex items-center gap-2 text-orange-500">
+                <Music2 className="h-8 w-8" />
+                <span className="text-lg font-medium">Production Tools</span>
+              </div>
+              <h2 className="text-4xl font-bold">AI-Powered Music Production</h2>
+              <p className="text-lg text-muted-foreground">
+                Transform your creative process with our advanced AI tools. Generate custom musician profiles, 
+                create unique musical content, and collaborate with AI-generated artists tailored to your style.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-xl font-bold text-orange-500">Virtual Musicians</h3>
+                  <p className="text-sm text-muted-foreground">AI-generated artist profiles and images</p>
+                </div>
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-xl font-bold text-orange-500">Smart Collaboration</h3>
+                  <p className="text-sm text-muted-foreground">Find the perfect match for your music</p>
+                </div>
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-xl font-bold text-orange-500">Custom Generation</h3>
+                  <p className="text-sm text-muted-foreground">Create unique content for your brand</p>
+                </div>
+                <div className="p-4 bg-orange-500/10 rounded-lg">
+                  <h3 className="text-xl font-bold text-orange-500">AI Analytics</h3>
+                  <p className="text-sm text-muted-foreground">Data-driven music production</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg blur opacity-75" />
+              <div className="relative bg-background rounded-lg p-8">
+                <h3 className="text-xl font-semibold mb-6">Featured AI Tools</h3>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Musician Profile Generator</h4>
+                      <p className="text-sm text-muted-foreground">Create detailed artist bios and images</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Music2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Genre Analysis</h4>
+                      <p className="text-sm text-muted-foreground">AI-powered music style insights</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Users2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Collaboration Matcher</h4>
+                      <p className="text-sm text-muted-foreground">Find your perfect musical match</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Features Section - Enhanced with modern design */}
       <section className="py-24 container mx-auto px-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
@@ -562,8 +639,7 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-orange-500/10 rounded-lg blur-xl group-hover:bg-orange-500/20 transition-all duration-300" />
                   <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative">
                     <div className="flex gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, j) => (
-                        <Star key={j} className="h-4 w-4 fill-orange-500 text-orange-500" />
+                      {[...Array(testimonial.rating)].map((_, j) => (                        <Star key={j} className="h-4 w-4 fill-orange-500 text-orange-500" />
                       ))}
                     </div>
                     <p className="mb-4 text-muted-foreground">{testimonial.content}</p>
