@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
 import { motion } from "framer-motion";
-import { 
-  Music2, 
-  DollarSign, 
+import {
+  Music2,
+  DollarSign,
   Star,
   Music4,
   Mic2,
@@ -49,6 +49,7 @@ interface MusicianService {
   instrument: string;
   rating: number;
   totalReviews: number;
+  genres?: string[]; //Added genres
 }
 
 const musicians = [
@@ -56,170 +57,185 @@ const musicians = [
   {
     id: "1",
     name: "Alex Rivera",
-    photo: "https://randomuser.me/api/portraits/men/1.jpg",
+    photo: "/assets/musicians/guitarist-1.jpg", // Will be replaced with Fal.ai generated image
     instrument: "Guitar",
-    description: "Especialista en rock y blues con 15 años de experiencia",
+    description: "Especialista en rock y blues con 15 años de experiencia. Colaboraciones con bandas internacionales y más de 500 sesiones de estudio.",
     pricePerSession: 120,
     rating: 4.9,
     totalReviews: 156,
+    genres: ["Rock", "Blues", "Metal"],
     category: "Guitar"
   },
   {
     id: "2",
     name: "Sarah Johnson",
-    photo: "https://randomuser.me/api/portraits/women/2.jpg",
+    photo: "/assets/musicians/guitarist-2.jpg",
     instrument: "Guitar",
-    description: "Virtuosa de la guitarra acústica y flamenco",
+    description: "Virtuosa de la guitarra acústica y flamenco. Graduada del Berklee College of Music con especialización en técnicas de fingerpicking.",
     pricePerSession: 150,
     rating: 4.8,
     totalReviews: 98,
+    genres: ["Flamenco", "Classical", "Folk"],
     category: "Guitar"
   },
   {
     id: "3",
     name: "Miguel Torres",
-    photo: "https://randomuser.me/api/portraits/men/3.jpg",
+    photo: "/assets/musicians/guitarist-3.jpg",
     instrument: "Guitar",
-    description: "Especialista en jazz y fusión latina",
+    description: "Especialista en jazz y fusión latina.  Amplia experiencia en giras internacionales y sesiones de grabación.",
     pricePerSession: 135,
     rating: 4.7,
     totalReviews: 123,
+    genres: ["Jazz", "Latin Fusion", "Funk"],
     category: "Guitar"
   },
   // Bateristas
   {
     id: "4",
     name: "John Smith",
-    photo: "https://randomuser.me/api/portraits/men/4.jpg",
+    photo: "/assets/musicians/drummer-1.jpg",
     instrument: "Drums",
-    description: "Batería profesional con experiencia en metal y rock",
+    description: "Batería profesional con experiencia en metal y rock.  Estudios en el Musicians Institute y colaboraciones con artistas reconocidos.",
     pricePerSession: 140,
     rating: 4.9,
     totalReviews: 87,
+    genres: ["Metal", "Rock", "Hard Rock"],
     category: "Drums"
   },
   {
     id: "5",
     name: "Lisa Chen",
-    photo: "https://randomuser.me/api/portraits/women/5.jpg",
+    photo: "/assets/musicians/drummer-2.jpg",
     instrument: "Drums",
-    description: "Especialista en ritmos latinos y fusión",
+    description: "Especialista en ritmos latinos y fusión.  Estudios de percusión en Cuba y amplia experiencia en bandas de diferentes estilos.",
     pricePerSession: 130,
     rating: 4.8,
     totalReviews: 92,
+    genres: ["Latin", "Fusion", "Pop"],
     category: "Drums"
   },
   {
     id: "6",
     name: "David Wilson",
-    photo: "https://randomuser.me/api/portraits/men/6.jpg",
+    photo: "/assets/musicians/drummer-3.jpg",
     instrument: "Drums",
-    description: "Experto en jazz y música electrónica",
+    description: "Experto en jazz y música electrónica.  Productor y compositor con experiencia en proyectos de vanguardia.",
     pricePerSession: 145,
     rating: 4.7,
     totalReviews: 78,
+    genres: ["Jazz", "Electronic", "Experimental"],
     category: "Drums"
   },
   // Pianistas
   {
     id: "7",
     name: "Emma Watson",
-    photo: "https://randomuser.me/api/portraits/women/7.jpg",
+    photo: "/assets/musicians/pianist-1.jpg",
     instrument: "Piano",
-    description: "Pianista clásica con formación en el Conservatorio",
+    description: "Pianista clásica con formación en el Conservatorio.  Especializada en música barroca y romántica.",
     pricePerSession: 160,
     rating: 5.0,
     totalReviews: 112,
+    genres: ["Classical", "Baroque", "Romantic"],
     category: "Piano"
   },
   {
     id: "8",
     name: "Carlos Ruiz",
-    photo: "https://randomuser.me/api/portraits/men/8.jpg",
+    photo: "/assets/musicians/pianist-2.jpg",
     instrument: "Piano",
-    description: "Especialista en jazz y música contemporánea",
+    description: "Especialista en jazz y música contemporánea.  Amplia experiencia en composición y arreglos musicales.",
     pricePerSession: 150,
     rating: 4.9,
     totalReviews: 95,
+    genres: ["Jazz", "Contemporary", "Pop"],
     category: "Piano"
   },
   {
     id: "9",
     name: "Sophie Martin",
-    photo: "https://randomuser.me/api/portraits/women/9.jpg",
+    photo: "/assets/musicians/pianist-3.jpg",
     instrument: "Piano",
-    description: "Experta en composición y arreglos",
+    description: "Experta en composición y arreglos.  Estudios en composición musical y amplia experiencia en proyectos orquestales.",
     pricePerSession: 155,
     rating: 4.8,
     totalReviews: 88,
+    genres: ["Classical", "Contemporary", "Film Score"],
     category: "Piano"
   },
   // Vocalistas
   {
     id: "10",
     name: "Maria García",
-    photo: "https://randomuser.me/api/portraits/women/10.jpg",
+    photo: "/assets/musicians/vocalist-1.jpg",
     instrument: "Vocals",
-    description: "Vocalista versátil con experiencia en diversos géneros",
+    description: "Vocalista versátil con experiencia en diversos géneros.  Estudios de canto clásico y jazz.",
     pricePerSession: 140,
     rating: 4.9,
     totalReviews: 167,
+    genres: ["Pop", "Jazz", "R&B"],
     category: "Vocals"
   },
   {
     id: "11",
     name: "James Brown",
-    photo: "https://randomuser.me/api/portraits/men/11.jpg",
+    photo: "/assets/musicians/vocalist-2.jpg",
     instrument: "Vocals",
-    description: "Especialista en soul y R&B",
+    description: "Especialista en soul y R&B.  Amplia experiencia en coros y presentaciones en vivo.",
     pricePerSession: 150,
     rating: 4.8,
     totalReviews: 143,
+    genres: ["Soul", "R&B", "Funk"],
     category: "Vocals"
   },
   {
     id: "12",
     name: "Luna Kim",
-    photo: "https://randomuser.me/api/portraits/women/12.jpg",
+    photo: "/assets/musicians/vocalist-3.jpg",
     instrument: "Vocals",
-    description: "Vocalista de jazz y música experimental",
+    description: "Vocalista de jazz y música experimental.  Estudios de canto y composición en la universidad.",
     pricePerSession: 145,
     rating: 4.7,
     totalReviews: 89,
+    genres: ["Jazz", "Experimental", "Electronic"],
     category: "Vocals"
   },
   // Productores
   {
     id: "13",
     name: "Mark Davis",
-    photo: "https://randomuser.me/api/portraits/men/13.jpg",
+    photo: "/assets/musicians/producer-1.jpg",
     instrument: "Production",
-    description: "Productor especializado en música urbana",
+    description: "Productor especializado en música urbana.  Experiencia en mezcla, masterización y producción musical.",
     pricePerSession: 200,
     rating: 4.9,
     totalReviews: 178,
+    genres: ["Hip Hop", "Reggaeton", "Trap"],
     category: "Production"
   },
   {
     id: "14",
     name: "Ana Silva",
-    photo: "https://randomuser.me/api/portraits/women/14.jpg",
+    photo: "/assets/musicians/producer-2.jpg",
     instrument: "Production",
-    description: "Productora de EDM y música electrónica",
+    description: "Productora de EDM y música electrónica.  Especializada en la creación de sonidos electrónicos.",
     pricePerSession: 180,
     rating: 4.8,
     totalReviews: 156,
+    genres: ["EDM", "Electronic", "Dance"],
     category: "Production"
   },
   {
     id: "15",
     name: "Tom Wilson",
-    photo: "https://randomuser.me/api/portraits/men/15.jpg",
+    photo: "/assets/musicians/producer-3.jpg",
     instrument: "Production",
-    description: "Especialista en producción de rock y metal",
+    description: "Especialista en producción de rock y metal.  Experiencia en grabación, mezcla y masterización.",
     pricePerSession: 190,
     rating: 4.7,
     totalReviews: 134,
+    genres: ["Rock", "Metal", "Hard Rock"],
     category: "Production"
   }
 ];
@@ -234,9 +250,10 @@ export default function ProducerToolsPage() {
   const [musicPrompt, setMusicPrompt] = useState("");
   const [coverPrompt, setCoverPrompt] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
-  const filteredMusicians = selectedCategory === "all" 
-    ? musicians 
+  const filteredMusicians = selectedCategory === "all"
+    ? musicians
     : musicians.filter(m => m.category === selectedCategory);
 
   const handleHireMusician = (musician: typeof musicians[0]) => {
@@ -362,16 +379,34 @@ export default function ProducerToolsPage() {
     }
   };
 
+  useEffect(() => {
+    async function loadMusicianImages() {
+      try {
+        // Placeholder - Replace with actual image generation logic
+        const images = await generateMusicianImages();
+        musicians.forEach((musician, index) => {
+          musician.photo = images[index];
+        });
+        setImagesLoaded(true);
+      } catch (error) {
+        console.error("Error loading musician images:", error);
+        setImagesLoaded(true); // Set to true even on error to show placeholders
+      }
+    }
+
+    loadMusicianImages();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
       {/* Hero Section with Video Background */}
       <div className="relative w-full h-[300px] overflow-hidden">
-        <video 
-          autoPlay 
-          loop 
-          muted 
+        <video
+          autoPlay
+          loop
+          muted
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src="/assets/hero-video.mp4" type="video/mp4" />
@@ -401,7 +436,7 @@ export default function ProducerToolsPage() {
           {/* Service Categories */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
             {["Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
-              <Card 
+              <Card
                 key={category}
                 className={`p-4 text-center cursor-pointer transition-colors ${
                   selectedCategory === category ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
@@ -424,8 +459,8 @@ export default function ProducerToolsPage() {
             {filteredMusicians.map((musician) => (
               <Card key={musician.id} className="overflow-hidden">
                 <div className="aspect-video bg-orange-500/10 relative">
-                  <img 
-                    src={musician.photo} 
+                  <img
+                    src={musician.photo}
                     alt={musician.name}
                     className="w-full h-full object-cover"
                   />
@@ -449,7 +484,7 @@ export default function ProducerToolsPage() {
                       <span className="font-medium">${musician.pricePerSession}/sesión</span>
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-orange-500 hover:bg-orange-600"
                     onClick={() => handleHireMusician(musician)}
                   >
@@ -499,7 +534,7 @@ export default function ProducerToolsPage() {
                         />
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={handleMasterTrack}
                         disabled={isMastering || !selectedFile}
                         className="w-full"
@@ -541,7 +576,7 @@ export default function ProducerToolsPage() {
                         />
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={handleGenerateMusic}
                         disabled={isGeneratingMusic || !musicPrompt}
                         className="w-full"
@@ -583,7 +618,7 @@ export default function ProducerToolsPage() {
                         />
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={handleGenerateCover}
                         disabled={isGeneratingCover || !coverPrompt}
                         className="w-full"
@@ -610,4 +645,28 @@ export default function ProducerToolsPage() {
       </ScrollArea>
     </div>
   );
+}
+
+
+// Placeholder function -  Replace with actual implementation to generate images from Fal.ai
+async function generateMusicianImages(): Promise<string[]> {
+  //Simulate API call.  Replace with actual API call to Fal.ai
+  const imageUrls = [
+    "/assets/musicians/guitarist-1.jpg",
+    "/assets/musicians/guitarist-2.jpg",
+    "/assets/musicians/guitarist-3.jpg",
+    "/assets/musicians/drummer-1.jpg",
+    "/assets/musicians/drummer-2.jpg",
+    "/assets/musicians/drummer-3.jpg",
+    "/assets/musicians/pianist-1.jpg",
+    "/assets/musicians/pianist-2.jpg",
+    "/assets/musicians/pianist-3.jpg",
+    "/assets/musicians/vocalist-1.jpg",
+    "/assets/musicians/vocalist-2.jpg",
+    "/assets/musicians/vocalist-3.jpg",
+    "/assets/musicians/producer-1.jpg",
+    "/assets/musicians/producer-2.jpg",
+    "/assets/musicians/producer-3.jpg"
+  ]
+  return imageUrls;
 }
