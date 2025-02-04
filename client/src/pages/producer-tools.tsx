@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { BookingDialog } from "@/components/booking/booking-dialog";
+import { AddMusicianForm } from "@/components/booking/add-musician-form";
 
 async function getStoredMusicianImages(): Promise<string[]> {
   try {
@@ -65,6 +66,7 @@ export default function ProducerToolsPage() {
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
   const [musiciansState, setMusiciansState] = useState(musicians);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
 
   const filteredMusicians = selectedCategory === "all"
     ? musiciansState
@@ -257,6 +259,10 @@ export default function ProducerToolsPage() {
     loadMusicianImages();
   }, []);
 
+  const handleMusicianAdded = () => {
+    loadMusicianImages();
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -291,6 +297,20 @@ export default function ProducerToolsPage() {
                 Connect with musicians and producers worldwide
               </p>
             </div>
+            <Dialog open={showAddMusicianDialog} onOpenChange={setShowAddMusicianDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-orange-500 hover:bg-orange-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Musician
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <AddMusicianForm
+                  onClose={() => setShowAddMusicianDialog(false)}
+                  onSuccess={handleMusicianAdded}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Service Categories */}
