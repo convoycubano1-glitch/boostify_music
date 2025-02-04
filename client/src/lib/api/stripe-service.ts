@@ -1,4 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js';
+import { auth } from '@/lib/firebase';
 
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   throw new Error('Missing Stripe public key');
@@ -12,14 +13,24 @@ export async function createPaymentSession(booking: {
   currency: string;
 }) {
   try {
+    // Verificar que el usuario esté autenticado
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Must be logged in to create a payment session');
+    }
+
+    // Obtener el token de Firebase
+    const idToken = await currentUser.getIdToken();
+
     console.log('Creating payment session with data:', booking);
 
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
-      credentials: 'include', // Important for sending cookies
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
       },
+      credentials: 'include', // Important for sending cookies
       body: JSON.stringify(booking),
     });
 
