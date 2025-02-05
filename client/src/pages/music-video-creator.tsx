@@ -26,33 +26,35 @@ export default function MusicVideoCreator() {
         >
           <source src="/background-video.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-background" />
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center md:items-start">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-300 mb-4 md:mb-6 text-center md:text-left drop-shadow-lg px-4 md:px-0"
-            style={{
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)'
-            }}
-          >
-            Bring Your Music to Life
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl text-white mb-6 md:mb-8 text-center md:text-left max-w-2xl font-medium drop-shadow-lg px-4 md:px-0"
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-            }}
-          >
-            Transform your music into stunning visuals with AI-powered technology or collaborate with professional directors
-          </motion.p>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/80 to-background" />
+        <div className="relative z-10 container mx-auto h-full flex flex-col justify-center">
+          <div className="bg-black/60 backdrop-blur-sm rounded-lg p-6 mx-4 md:mx-0 md:max-w-2xl">
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-200 mb-4 md:mb-6 text-center md:text-left"
+              style={{
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 4px 8px rgba(0,0,0,0.8)'
+              }}
+            >
+              Bring Your Music to Life
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl text-white/90 mb-6 md:mb-8 text-center md:text-left"
+              style={{
+                textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+              }}
+            >
+              Transform your music into stunning visuals with AI-powered technology or collaborate with professional directors
+            </motion.p>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-8 px-4 md:px-0">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
