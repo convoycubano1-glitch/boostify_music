@@ -46,11 +46,12 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { db, storage } from "@/lib/firebase";
 import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Progress } from "@/components/ui/progress";
+import {auth} from "@/lib/firebase"; // Added import for auth
 
 const visualStyles = [
   "Cinematic",
@@ -88,11 +89,11 @@ const budgetRanges = [
 ] as const;
 
 const PROJECT_STATUSES = {
-  RECEIVED: { status: 'received', progress: 20, message: 'Project request received' },
-  REVIEW: { status: 'review', progress: 40, message: 'Director reviewing project' },
-  IN_PROGRESS: { status: 'in_progress', progress: 60, message: 'Production in progress' },
-  FINAL_REVIEW: { status: 'final_review', progress: 80, message: 'Final review phase' },
-  COMPLETED: { status: 'completed', progress: 100, message: 'Project completed' },
+  RECEIVED: { status: 'received', progress: 20, message: 'Proyecto recibido' },
+  REVIEW: { status: 'review', progress: 40, message: 'Director revisando proyecto' },
+  IN_PROGRESS: { status: 'in_progress', progress: 60, message: 'Producción en progreso' },
+  FINAL_REVIEW: { status: 'final_review', progress: 80, message: 'Revisión final' },
+  COMPLETED: { status: 'completed', progress: 100, message: 'Proyecto completado' },
 } as const;
 
 const hireFormSchema = z.object({
@@ -186,36 +187,33 @@ export function DirectorsList() {
       let songUrl = values.songUrl;
       if (values.songFile) {
         const storageRef = ref(storage, `songs/${Date.now()}_${values.songFile.name}`);
-        const uploadResult = await uploadBytes(storageRef, values.songFile);
-        songUrl = await getDownloadURL(uploadResult.ref);
-      }
+        const uploadTask = uploadBytesResumable(storageRef, values.songFile);
 
-      const projectData = {
-        ...values,
-        songUrl,
-        directorId: selectedDirector.id,
-        directorName: selectedDirector.name,
-        status: PROJECT_STATUSES.RECEIVED.status,
-        statusProgress: PROJECT_STATUSES.RECEIVED.progress,
-        createdAt: serverTimestamp(),
-        timeline: [
-          {
-            status: PROJECT_STATUSES.RECEIVED.status,
-            date: new Date().toISOString(),
-            message: PROJECT_STATUSES.RECEIVED.message
+        // Show upload progress
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+          },
+          (error) => {
+            console.error("Error uploading file:", error);
+            toast({
+              title: "Error",
+              description: "No se pudo subir el archivo. Por favor, intenta de nuevo.",
+              variant: "destructive",
+            });
+          },
+          async () => {
+            songUrl = await getDownloadURL(uploadTask.snapshot.ref);
+
+            // Save project data after successful upload
+            await saveProjectData(values, songUrl);
           }
-        ]
-      };
-
-      await addDoc(collection(db, "projects"), projectData);
-
-      toast({
-        title: "¡Éxito!",
-        description: "Tu solicitud de proyecto ha sido enviada exitosamente.",
-      });
-
-      setShowHireForm(false);
-      form.reset();
+        );
+      } else {
+        // If no file to upload, save project data directly
+        await saveProjectData(values, songUrl);
+      }
     } catch (error) {
       console.error("Error al enviar el proyecto:", error);
       toast({
@@ -224,6 +222,36 @@ export function DirectorsList() {
         variant: "destructive",
       });
     }
+  };
+
+  const saveProjectData = async (values: z.infer<typeof hireFormSchema>, songUrl: string) => {
+    const projectData = {
+      ...values,
+      songUrl,
+      directorId: selectedDirector.id,
+      directorName: selectedDirector.name,
+      status: PROJECT_STATUSES.RECEIVED.status,
+      statusProgress: PROJECT_STATUSES.RECEIVED.progress,
+      createdAt: serverTimestamp(),
+      timeline: [
+        {
+          status: PROJECT_STATUSES.RECEIVED.status,
+          date: new Date().toISOString(),
+          message: PROJECT_STATUSES.RECEIVED.message
+        }
+      ],
+      userId: auth.currentUser?.uid,
+    };
+
+    const docRef = await addDoc(collection(db, "projects"), projectData);
+
+    toast({
+      title: "¡Éxito!",
+      description: "Tu solicitud de proyecto ha sido enviada exitosamente.",
+    });
+
+    setShowHireForm(false);
+    form.reset();
   };
 
   const handleHireClick = (director: Director) => {
@@ -439,7 +467,7 @@ export function DirectorsList() {
                           ${field.value.includes(req)
                             ? 'bg-orange-500/10 border-orange-500 text-orange-500'
                             : 'hover:bg-muted'
-                          }
+                            }
                         `}
                       >
                         <input
@@ -477,15 +505,15 @@ export function DirectorsList() {
     <div className="mb-6">
       <div className="flex justify-between mb-2">
         <span className="text-sm font-medium">Estado del Proyecto</span>
-        <span className="text-sm text-muted-foreground">20%</span>
+        <span className="text-sm text-muted-foreground">{uploadProgress}%</span> {/* Updated progress display */}
       </div>
-      <Progress value={20} className="h-2" />
+      <Progress value={uploadProgress} className="h-2" />
       <div className="grid grid-cols-5 mt-2 gap-1">
         {Object.values(PROJECT_STATUSES).map((status, index) => (
           <div key={status.status} className="text-center">
             <div
               className={`h-2 w-2 mx-auto mb-1 rounded-full ${
-                20 >= status.progress ? 'bg-orange-500' : 'bg-muted'
+                uploadProgress >= status.progress ? 'bg-orange-500' : 'bg-muted'
               }`}
             />
             <span className="text-xs text-muted-foreground block">
@@ -597,7 +625,7 @@ export function DirectorsList() {
                       ${currentStep >= index + 1
                         ? "bg-orange-500 border-orange-500 text-white"
                         : "border-orange-200 text-orange-200"
-                      }
+                        }
                     `}
                   >
                     {index + 1}
