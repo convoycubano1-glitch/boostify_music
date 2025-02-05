@@ -31,7 +31,12 @@ export default function MusicVideoCreator() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-300 mb-4 md:mb-6 text-center md:text-left drop-shadow-lg"
+            className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-300 mb-4 md:mb-6 text-center md:text-left drop-shadow-lg px-4 md:px-0"
+            style={{
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+            }}
           >
             Bring Your Music to Life
           </motion.h1>
@@ -40,6 +45,9 @@ export default function MusicVideoCreator() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl text-white mb-6 md:mb-8 text-center md:text-left max-w-2xl font-medium drop-shadow-lg px-4 md:px-0"
+            style={{
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+            }}
           >
             Transform your music into stunning visuals with AI-powered technology or collaborate with professional directors
           </motion.p>
