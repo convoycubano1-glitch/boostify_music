@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import * as fal from "@fal-ai/serverless-client";
-import { useQuery } from "@tanstack/react-query";
 
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
@@ -47,57 +46,48 @@ const generateDirectorImage = async (prompt: string): Promise<string> => {
   }
 };
 
-const generateDirectorProfile = async (): Promise<Director> => {
-  try {
-    //This needs to be replaced with an actual OpenAI or similar LLM call.  
-    //This example uses a placeholder to illustrate the structure.  Replace with your actual API call.
-    const response = await fetch('YOUR_OPENAI_API_ENDPOINT', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer YOUR_OPENAI_API_KEY` //Replace with your actual API key
-      },
-      body: JSON.stringify({
-        //OpenAI API specific parameters.  Consult OpenAI API documentation.
-        "model": "text-davinci-003", //or suitable model
-        "prompt": `Generate a creative music video director profile in JSON format with these fields:
-        {
-          "name": "full name",
-          "specialty": "main genre/style",
-          "experience": "years and notable achievements",
-          "style": "directing style description",
-          "rating": "number between 4 and 5"
-        }`,
-        "max_tokens": 150, // Adjust as needed
-      })
-    });
-    const data = await response.json();
-    let profile;
-    try {
-      profile = JSON.parse(data.choices[0].text || "{}");
-    } catch (e) {
-      console.error("Error parsing profile:", e);
-      profile = {
-        name: "John Smith",
-        specialty: "Music Video Director",
-        experience: "10+ years of experience in music video production",
-        style: "Creative and innovative visual storytelling",
-        rating: 4.5
-      };
-    }
-
-    const imageUrl = await generateDirectorImage(`${profile.name}, ${profile.specialty}`);
-
-    return {
-      id: Math.random().toString(36).substr(2, 9),
-      ...profile,
-      imageUrl,
-    };
-  } catch (error) {
-    console.error("Error generating director:", error);
-    throw error;
+const sampleDirectors: Director[] = [
+  {
+    id: "1",
+    name: "Sofia Ramirez",
+    specialty: "Urban & Hip-Hop Visuals",
+    experience: "10+ years directing music videos for top urban artists",
+    style: "Dynamic street cinematography with bold color grading",
+    rating: 4.8
+  },
+  {
+    id: "2",
+    name: "Marcus Chen",
+    specialty: "Alternative & Indie Rock",
+    experience: "Award-winning director with 15+ years in music video production",
+    style: "Surrealist narratives with experimental techniques",
+    rating: 4.9
+  },
+  {
+    id: "3",
+    name: "Isabella Moretti",
+    specialty: "Pop & Contemporary",
+    experience: "Former MTV director with global brand collaborations",
+    style: "High-fashion aesthetic with cutting-edge visual effects",
+    rating: 4.7
+  },
+  {
+    id: "4",
+    name: "David O'Connor",
+    specialty: "Rock & Metal",
+    experience: "20+ years specializing in high-energy performance videos",
+    style: "Raw, intense cinematography with practical effects",
+    rating: 4.6
+  },
+  {
+    id: "5",
+    name: "Nina Patel",
+    specialty: "Electronic & Dance",
+    experience: "Pioneer in AI-enhanced music video production",
+    style: "Futuristic visuals with immersive digital elements",
+    rating: 4.8
   }
-};
+];
 
 export function DirectorsList() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -107,7 +97,14 @@ export function DirectorsList() {
     setIsGenerating(true);
     try {
       const newDirectors = await Promise.all(
-        Array(10).fill(null).map(generateDirectorProfile)
+        sampleDirectors.map(async (director) => {
+          const imageUrl = await generateDirectorImage(`${director.name}, ${director.specialty}`);
+          return {
+            ...director,
+            id: Math.random().toString(36).substr(2, 9),
+            imageUrl
+          };
+        })
       );
       setDirectors((prev) => [...newDirectors, ...prev]);
     } catch (error) {
