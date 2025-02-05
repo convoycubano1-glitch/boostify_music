@@ -27,7 +27,7 @@ export default function MusicVideoCreator() {
           <source src="/background-video.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-background" />
-        <div className="relative z-10 container mx-auto h-full flex flex-col justify-center">
+        <div className="relative z-10 container mx-auto h-full flex flex-col justify-end md:justify-center pb-24 md:pb-0">
           <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mx-4 md:mx-0 md:max-w-2xl">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
@@ -52,7 +52,7 @@ export default function MusicVideoCreator() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-8 px-4 md:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-8 md:mt-8 px-4 md:px-0">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ export default function MusicVideoCreator() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="flex flex-col items-center mb-6 md:mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-3 md:mb-4">
               Choose Your Creation Path
