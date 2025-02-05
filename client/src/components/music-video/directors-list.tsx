@@ -87,6 +87,14 @@ const budgetRanges = [
   { label: "$25,000", value: "25000" },
 ] as const;
 
+const PROJECT_STATUSES = {
+  RECEIVED: { status: 'received', progress: 20, message: 'Project request received' },
+  REVIEW: { status: 'review', progress: 40, message: 'Director reviewing project' },
+  IN_PROGRESS: { status: 'in_progress', progress: 60, message: 'Production in progress' },
+  FINAL_REVIEW: { status: 'final_review', progress: 80, message: 'Final review phase' },
+  COMPLETED: { status: 'completed', progress: 100, message: 'Project completed' },
+} as const;
+
 const hireFormSchema = z.object({
   budget: z.string().min(1, "Budget is required"),
   timeline: z.string().min(1, "Timeline is required")
@@ -177,7 +185,9 @@ export function DirectorsList() {
     try {
       let songUrl = values.songUrl;
       if (values.songFile) {
-        songUrl = await handleFileUpload(values.songFile);
+        const storageRef = ref(storage, `songs/${Date.now()}_${values.songFile.name}`);
+        const uploadResult = await uploadBytes(storageRef, values.songFile);
+        songUrl = await getDownloadURL(uploadResult.ref);
       }
 
       const projectData = {
@@ -185,14 +195,14 @@ export function DirectorsList() {
         songUrl,
         directorId: selectedDirector.id,
         directorName: selectedDirector.name,
-        status: "received",
-        statusProgress: 20,
+        status: PROJECT_STATUSES.RECEIVED.status,
+        statusProgress: PROJECT_STATUSES.RECEIVED.progress,
         createdAt: serverTimestamp(),
         timeline: [
           {
-            status: "received",
+            status: PROJECT_STATUSES.RECEIVED.status,
             date: new Date().toISOString(),
-            message: "Project request received"
+            message: PROJECT_STATUSES.RECEIVED.message
           }
         ]
       };
@@ -200,17 +210,17 @@ export function DirectorsList() {
       await addDoc(collection(db, "projects"), projectData);
 
       toast({
-        title: "Success",
-        description: "Your project request has been submitted successfully.",
+        title: "¡Éxito!",
+        description: "Tu solicitud de proyecto ha sido enviada exitosamente.",
       });
 
       setShowHireForm(false);
       form.reset();
     } catch (error) {
-      console.error("Error submitting project:", error);
+      console.error("Error al enviar el proyecto:", error);
       toast({
         title: "Error",
-        description: "Failed to submit project. Please try again.",
+        description: "No se pudo enviar el proyecto. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     }
@@ -357,8 +367,8 @@ export function DirectorsList() {
                           key={style}
                           className={`
                             flex items-center gap-2 p-3 rounded-lg border cursor-pointer
-                            ${field.value.includes(style) 
-                              ? 'bg-orange-500/10 border-orange-500 text-orange-500' 
+                            ${field.value.includes(style)
+                              ? 'bg-orange-500/10 border-orange-500 text-orange-500'
                               : 'hover:bg-muted'
                             }
                           `}
@@ -426,8 +436,8 @@ export function DirectorsList() {
                         key={req}
                         className={`
                           flex items-center gap-2 p-3 rounded-lg border cursor-pointer
-                          ${field.value.includes(req) 
-                            ? 'bg-orange-500/10 border-orange-500 text-orange-500' 
+                          ${field.value.includes(req)
+                            ? 'bg-orange-500/10 border-orange-500 text-orange-500'
                             : 'hover:bg-muted'
                           }
                         `}
@@ -466,16 +476,23 @@ export function DirectorsList() {
   const renderProjectProgress = () => (
     <div className="mb-6">
       <div className="flex justify-between mb-2">
-        <span className="text-sm font-medium">Project Status</span>
+        <span className="text-sm font-medium">Estado del Proyecto</span>
         <span className="text-sm text-muted-foreground">20%</span>
       </div>
       <Progress value={20} className="h-2" />
-      <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-        <span>Request Sent</span>
-        <span>Under Review</span>
-        <span>In Progress</span>
-        <span>Final Review</span>
-        <span>Completed</span>
+      <div className="grid grid-cols-5 mt-2 gap-1">
+        {Object.values(PROJECT_STATUSES).map((status, index) => (
+          <div key={status.status} className="text-center">
+            <div
+              className={`h-2 w-2 mx-auto mb-1 rounded-full ${
+                20 >= status.progress ? 'bg-orange-500' : 'bg-muted'
+              }`}
+            />
+            <span className="text-xs text-muted-foreground block">
+              {status.message}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
