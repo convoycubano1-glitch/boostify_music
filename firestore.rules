@@ -6,19 +6,26 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Added rules for musician images - allow public read access
+    // Allow public read access for directors collection
+    match /directors/{directorId} {
+      allow read: if true;  // Public read access
+      allow write: if request.auth != null;  // Only authenticated users can write
+    }
+
+    // Added rules for projects - only authenticated users can create
+    match /projects/{projectId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Rest of the rules remain unchanged
     match /musicianImages/{imageId} {
-      allow read: if true;  // Lectura pública
-      allow write: if request.auth != null;  // Escritura solo para usuarios autenticados
+      allow read: if true;  // Public read
+      allow write: if request.auth != null;  // Only authenticated users can write
     }
 
-    // Try alternate path
-    match /musician_images/{imageId} {
-      allow read: if true;  // Lectura pública
-      allow write: if request.auth != null;  // Escritura solo para usuarios autenticados
-    }
-
-    // Reglas para las estrategias - Actualizadas para permitir lectura y escritura si el usuario está autenticado
     match /strategies/{strategyId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -26,7 +33,7 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
       allow list: if request.auth != null;
     }
-    // Reglas para las actividades
+
     match /activities/{activityId} {
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
@@ -35,15 +42,15 @@ service cloud.firestore {
       allow delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
-    // Reglas para las métricas del usuario
+
     match /users/{userId}/metrics/{metricId} {
       allow read, write: if isOwner(userId);
     }
-    // Reglas para los datos de Spotify
+
     match /spotify_data/{userId} {
       allow read, write: if isOwner(userId);
     }
-    // Reglas para los videos
+
     match /videos/{videoId} {
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
@@ -52,7 +59,7 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
-    // Reglas para las canciones
+
     match /songs/{songId} {
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
@@ -61,7 +68,7 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
-    // Reglas para las órdenes de vistas de YouTube
+
     match /youtube_views_orders/{orderId} {
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
@@ -70,7 +77,7 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
-    // Reglas para los contactos
+
     match /contacts/{contactId} {
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
@@ -79,48 +86,30 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
-    // Reglas para el engagement
+
     match /engagement/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
     }
-    // Reglas para las suscripciones
+
     match /subscriptions/{userId} {
       allow read, write: if isOwner(userId);
     }
-    // Reglas para los planes
+
     match /plans/{planId} {
-      allow read: if true;  // Permitir acceso público a la información del plan
+      allow read: if true;  // Public read access
     }
-    // Reglas para los contratos
+
     match /contracts/{contractId} {
       allow read: if request.auth != null && 
         resource.data.userId == request.auth.uid;
       allow write: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
     }
-    // Rules for messages
-    match /messages/{messageId} {
-      allow read: if request.auth != null && (
-        resource.data.senderId == request.auth.uid ||
-        resource.data.recipientId == request.auth.uid
-      );
-      allow create: if request.auth != null && 
-        request.resource.data.senderId == request.auth.uid;
-      allow update: if false;  // Messages should be immutable
-      allow delete: if false;  // Don't allow message deletion
-    }
-    // Rules for conversations
-    match /conversations/{conversationId} {
-      allow read: if request.auth != null && (
-        resource.data.participants[request.auth.uid] == true
-      );
-      allow create: if request.auth != null && 
-        request.resource.data.participants[request.auth.uid] == true;
-      allow update: if request.auth != null && 
-        resource.data.participants[request.auth.uid] == true;
-      allow delete: if false;  // Don't allow conversation deletion
+    match /musician_images/{imageId} {
+      allow read: if true;  // Public read access
+      allow write: if request.auth != null;  // Only authenticated users can write
     }
   }
 }

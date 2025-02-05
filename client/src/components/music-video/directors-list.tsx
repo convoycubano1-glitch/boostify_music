@@ -326,11 +326,11 @@ export function DirectorsList() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Video className="h-5 w-5" />
-              Hire Director
+              Hire {selectedDirector?.name}
             </DialogTitle>
             <DialogDescription>
-              Fill out the form below to submit your project request to{" "}
-              {selectedDirector?.name}.
+              Fill out the form below to submit your music video project request.
+              The process has {totalSteps} steps to ensure we capture all necessary details.
             </DialogDescription>
           </DialogHeader>
 
@@ -360,10 +360,12 @@ export function DirectorsList() {
                 )}
                 {currentStep < totalSteps ? (
                   <Button type="button" onClick={nextStep}>
-                    Next
+                    Next Step ({currentStep + 1}/{totalSteps})
                   </Button>
                 ) : (
-                  <Button type="submit">Submit Request</Button>
+                  <Button type="submit">
+                    Submit Request
+                  </Button>
                 )}
               </DialogFooter>
             </form>
