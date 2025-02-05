@@ -31,7 +31,7 @@ export default function MusicVideoCreator() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold text-white mb-4 md:mb-6 text-center md:text-left drop-shadow-lg"
+            className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-300 mb-4 md:mb-6 text-center md:text-left drop-shadow-lg"
           >
             Bring Your Music to Life
           </motion.h1>
