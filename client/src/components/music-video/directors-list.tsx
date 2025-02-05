@@ -49,9 +49,18 @@ const generateDirectorImage = async (prompt: string): Promise<string> => {
 
 const generateDirectorProfile = async (): Promise<Director> => {
   try {
-    const result = await fal.subscribe("fal-ai/gpt-4", {
-      input: {
-        prompt: `Generate a creative music video director profile in JSON format with these fields:
+    //This needs to be replaced with an actual OpenAI or similar LLM call.  
+    //This example uses a placeholder to illustrate the structure.  Replace with your actual API call.
+    const response = await fetch('YOUR_OPENAI_API_ENDPOINT', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer YOUR_OPENAI_API_KEY` //Replace with your actual API key
+      },
+      body: JSON.stringify({
+        //OpenAI API specific parameters.  Consult OpenAI API documentation.
+        "model": "text-davinci-003", //or suitable model
+        "prompt": `Generate a creative music video director profile in JSON format with these fields:
         {
           "name": "full name",
           "specialty": "main genre/style",
@@ -59,12 +68,13 @@ const generateDirectorProfile = async (): Promise<Director> => {
           "style": "directing style description",
           "rating": "number between 4 and 5"
         }`,
-      },
+        "max_tokens": 150, // Adjust as needed
+      })
     });
-
+    const data = await response.json();
     let profile;
     try {
-      profile = JSON.parse(result?.text || "{}");
+      profile = JSON.parse(data.choices[0].text || "{}");
     } catch (e) {
       console.error("Error parsing profile:", e);
       profile = {
