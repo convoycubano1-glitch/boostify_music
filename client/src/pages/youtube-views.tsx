@@ -78,14 +78,14 @@ export default function YoutubeViewsPage() {
     refetchInterval: orderId ? 5000 : false
   });
 
-    const getPackagePrice = (views: number) => {
+  const getPackagePrice = (views: number) => {
     if (views <= 1000) return 50;
     if (views <= 10000) return 450;
     return Math.ceil(views * 0.04); // $0.04 per view for custom amounts
   };
-  
-    const currentPrice = getPackagePrice(desiredViews);
-    
+
+  const currentPrice = getPackagePrice(desiredViews);
+
   const handlePackageSelect = async (packageIndex: number) => {
     if (!videoUrl) {
       toast({
@@ -95,7 +95,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-  
+
     setDesiredViews(viewsPackages[packageIndex].views);
     setShowDialog(true);
   };
@@ -109,7 +109,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-  
+
     if (!user) {
       toast({
         title: "Error",
@@ -118,7 +118,7 @@ export default function YoutubeViewsPage() {
       });
       return;
     }
-  
+
     try {
       const token = await getAuthToken();
       if (!token) {
@@ -129,25 +129,25 @@ export default function YoutubeViewsPage() {
         });
         return;
       }
-  
+
       setIsProcessing(true);
-  
+
       // Create order in Firebase first
       const orderData = await createYouTubeViewsOrder(user, {
         videoUrl,
         purchasedViews: desiredViews,
         apifyRunId: '',
       });
-  
+
       if (!orderData || !orderData.id) {
         throw new Error('Failed to create order');
       }
-  
+
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Could not initialize Stripe");
       }
-  
+
       // Create Stripe checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -162,22 +162,22 @@ export default function YoutubeViewsPage() {
           orderId: orderData.id
         }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error creating payment session');
       }
-  
+
       const { sessionId } = await response.json();
       if (!sessionId) {
         throw new Error('Stripe session ID was not received');
       }
-  
+
       // Redirect to Stripe checkout
       const { error } = await stripe.redirectToCheckout({
         sessionId
       });
-  
+
       if (error) {
         throw new Error(error.message);
       }
@@ -193,15 +193,15 @@ export default function YoutubeViewsPage() {
       setShowDialog(false);
     }
   };
-    const chartData = Array.from({ length: 7 }, (_, i) => ({
-        day: `Day ${i + 1}`,
-        views: Math.floor(Math.random() * 5000) + 1000
-      }));
-  
+  const chartData = Array.from({ length: 7 }, (_, i) => ({
+      day: `Day ${i + 1}`,
+      views: Math.floor(Math.random() * 5000) + 1000
+    }));
+
   const progress = 75;
   const currentViews = 7500;
 
-    const startViewsProcess = () => {
+  const startViewsProcess = () => {
     if (!videoUrl) {
       toast({
         title: "Error",
@@ -237,46 +237,44 @@ export default function YoutubeViewsPage() {
     }
   };
 
-    // Add URL parameter handling
-    useEffect(() => {
-      const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get('session_id');
-      const success = params.get('success');
-      const canceled = params.get('canceled');
-  
-      if (sessionId && success === 'true') {
-        setPaymentStatus('success');
-        toast({
-          title: "Payment Successful",
-          description: "Your order has been processed successfully. You can track your views progress here.",
-          variant: "default",
-        });
-      } else if (canceled === 'true') {
-        setPaymentStatus('canceled');
-        toast({
-          title: "Payment Canceled",
-          description: "Your payment was canceled. You can try again when you're ready.",
-          variant: "destructive",
-        });
-      }
-    }, []);
+  // Add URL parameter handling
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const success = params.get('success');
+    const canceled = params.get('canceled');
+
+    if (sessionId && success === 'true') {
+      setPaymentStatus('success');
+      toast({
+        title: "Payment Successful",
+        description: "Your order has been processed successfully. You can track your views progress here.",
+        variant: "default",
+      });
+    } else if (canceled === 'true') {
+      setPaymentStatus('canceled');
+      toast({
+        title: "Payment Canceled",
+        description: "Your payment was canceled. You can try again when you're ready.",
+        variant: "destructive",
+      });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
         {/* Hero Section with Video Background */}
-        <div className="relative w-full h-[70vh] overflow-hidden rounded-xl mb-12">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            src={mainVideo}
+        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden rounded-xl mb-12">
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: "url('/assets/VzOu774PPeGzuzXmcP83y_5cd275d118e340239a4d0b6400689592.jpg')"
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
-          <div className="relative h-full flex items-center justify-start px-8 md:px-12">
+          <div className="relative h-full flex items-center justify-start px-8 md:px-12 pt-24 md:pt-0">
             <div className="max-w-2xl">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -640,6 +638,7 @@ export default function YoutubeViewsPage() {
           </Card>
         </motion.div>
         
+
         <div className="grid gap-6 md:grid-cols-3" id="packages">
           {viewsPackages.map((pkg, index) => (
             <motion.div
@@ -722,7 +721,7 @@ export default function YoutubeViewsPage() {
           </DialogContent>
         </Dialog>
 
-         {paymentStatus === 'success' && (
+        {paymentStatus === 'success' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -757,7 +756,7 @@ export default function YoutubeViewsPage() {
                     Your payment was not completed. You can try again when you're ready.
                   </p>
                 </div>
-</div>
+              </div>
             </Card>
           </motion.div>
         )}
