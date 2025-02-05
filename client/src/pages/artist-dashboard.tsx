@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,12 +19,13 @@ import {
   Grid,
   Info,
   ChevronRight,
-  Trash2
+  Trash2,
+  CheckCircle2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth, storage } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc, orderBy } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -60,10 +61,21 @@ interface Song {
 }
 
 interface Strategy {
+  id: string;
   focus: string[];
-  userId: string;
+  phases: Phase[];
+  targetAudience: string;
+  priority: string;
+  timeline: string;
+  status: string;
   createdAt: Date;
-  updatedAt: Date;
+}
+
+interface Phase {
+  id: string;
+  name: string;
+  description: string;
+  completed: boolean;
 }
 
 function getYouTubeVideoId(url: string) {
@@ -89,6 +101,9 @@ export default function ArtistDashboard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
+  const [isStrategyGalleryOpen, setIsStrategyGalleryOpen] = useState(false);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
 
 
   // Query for songs
@@ -161,7 +176,7 @@ export default function ArtistDashboard() {
     enabled: !!auth.currentUser?.uid,
   });
 
-  // Actualizo la consulta de estrategias para que coincida con el índice
+  // Fetch strategies
   const { data: currentStrategy = [], isLoading: isLoadingStrategy, refetch: refetchStrategy } = useQuery({
     queryKey: ["strategies", auth.currentUser?.uid],
     queryFn: async () => {
@@ -169,7 +184,6 @@ export default function ArtistDashboard() {
 
       try {
         const strategiesRef = collection(db, "strategies");
-        // Simplificamos la consulta para evitar problemas con índices
         const q = query(
           strategiesRef,
           where("userId", "==", auth.currentUser.uid)
@@ -181,19 +195,15 @@ export default function ArtistDashboard() {
           return [];
         }
 
-        // Ordenamos los resultados en memoria en lugar de en la base de datos
         const strategies = querySnapshot.docs.map(doc => ({
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate() || new Date()
         }));
 
-        // Ordenamos por fecha de creación de forma descendente
         strategies.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-        // Tomamos solo el más reciente
         const latestStrategy = strategies[0];
         console.log("Latest strategy:", latestStrategy);
-        return latestStrategy.focus || [];
+        return latestStrategy?.focus || [];
       } catch (error) {
         console.error("Error fetching strategy:", error);
         toast({
@@ -207,12 +217,45 @@ export default function ArtistDashboard() {
     enabled: !!auth.currentUser?.uid,
   });
 
+  const fetchStrategies = async () => {
+    if (!auth.currentUser?.uid) return;
+
+    try {
+      const strategiesRef = collection(db, "strategies");
+      const q = query(
+        strategiesRef,
+        where("userId", "==", auth.currentUser.uid),
+        orderBy("createdAt", "desc")
+      );
+
+      const querySnapshot = await getDocs(q);
+      const fetchedStrategies = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date()
+      })) as Strategy[];
+      setStrategies(fetchedStrategies);
+    } catch (error) {
+      console.error("Error fetching strategies:", error);
+      toast({
+        title: "Error",
+        description: "Could not load strategies. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (auth.currentUser?.uid) {
+      fetchStrategies();
+    }
+  }, [auth.currentUser?.uid]);
+
 
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Verificar el tamaño del archivo (máximo 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB en bytes
+      const maxSize = 10 * 1024 * 1024; 
       if (file.size > maxSize) {
         toast({
           title: "Error",
@@ -222,7 +265,6 @@ export default function ArtistDashboard() {
         return;
       }
 
-      // Verificar el tipo de archivo
       if (!file.type.startsWith('audio/')) {
         toast({
           title: "Error",
@@ -255,13 +297,10 @@ export default function ArtistDashboard() {
       setIsSubmittingSong(true);
       setUploadProgress(0);
 
-      // Crear una referencia única para el archivo en Storage
       const storageRef = ref(storage, `songs/${auth.currentUser.uid}/${Date.now()}_${selectedFile.name}`);
 
-      // Crear una tarea de subida para monitorear el progreso
       const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
-      // Monitorear el progreso de la subida
       uploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -279,11 +318,8 @@ export default function ArtistDashboard() {
         },
         async () => {
           try {
-            console.log("Upload completed, getting download URL...");
-            // Obtener la URL de descarga
             const downloadURL = await getDownloadURL(storageRef);
 
-            console.log("Got download URL, saving to Firestore...");
             const songData = {
               name: selectedFile.name,
               audioUrl: downloadURL,
@@ -295,7 +331,6 @@ export default function ArtistDashboard() {
             const songsRef = collection(db, "songs");
             await addDoc(songsRef, songData);
 
-            // Add activity log after song is uploaded
             const activityData = {
                 type: 'song',
                 action: 'Uploaded new song',
@@ -371,7 +406,6 @@ export default function ArtistDashboard() {
 
       const videosRef = collection(db, "videos");
       await addDoc(videosRef, videoData);
-      // Add activity log after video is uploaded
       const activityData = {
           type: 'video',
           action: 'Added new video',
@@ -426,11 +460,9 @@ export default function ArtistDashboard() {
     if (!auth.currentUser?.uid) return;
 
     try {
-      // Primero eliminamos el archivo de Storage
       const fileRef = ref(storage, storageRef);
       await deleteObject(fileRef);
 
-      // Luego eliminamos el documento de Firestore
       await deleteDoc(doc(db, "songs", songId));
 
       toast({
@@ -473,7 +505,6 @@ export default function ArtistDashboard() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      {/* Hero Section with Video Background */}
       <div className="relative w-full h-[300px] overflow-hidden">
         <video
           autoPlay
@@ -497,7 +528,6 @@ export default function ArtistDashboard() {
 
       <ScrollArea className="flex-1">
         <div className="container mx-auto px-4 py-8">
-          {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="p-6 border-l-4 border-orange-500">
               <div className="flex items-center justify-between">
@@ -534,7 +564,6 @@ export default function ArtistDashboard() {
             </Card>
           </div>
 
-          {/* Tips Section */}
           <div className="bg-orange-500/5 rounded-lg p-6 mb-8">
             <div className="flex items-start gap-4">
               <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
@@ -560,11 +589,8 @@ export default function ArtistDashboard() {
             </div>
           </div>
 
-          {/* Main Content Grid - Updated Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Videos Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -643,7 +669,6 @@ export default function ArtistDashboard() {
                       </div>
                     )}
 
-                    {/* Video Gallery Dialog */}
                     <Dialog open={isVideoGalleryOpen} onOpenChange={setIsVideoGalleryOpen}>
                       <DialogContent className="max-w-4xl">
                         <DialogHeader>
@@ -765,7 +790,6 @@ export default function ArtistDashboard() {
                 </Card>
               </motion.div>
 
-              {/* Songs Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -930,9 +954,7 @@ export default function ArtistDashboard() {
               </motion.div>
             </div>
 
-            {/* Right Column */}
             <div className="space-y-6">
-              {/* Activity Feed Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -941,54 +963,144 @@ export default function ArtistDashboard() {
                 <ActivityFeed />
               </motion.div>
 
-              {/* Strategy Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <BarChart2 className="h-6 w-6 text-orange-500" />
+                <Card className="p-6 h-full">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                        <BarChart2 className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold">My Strategy</h2>
+                        <p className="text-sm text-muted-foreground">Plan your growth and success</p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-semibold">My Strategy</h2>
-                      <p className="text-sm text-muted-foreground">Plan your growth</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsStrategyGalleryOpen(true)}
+                        className="hidden sm:flex"
+                      >
+                        View All Strategies
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setIsStrategyDialogOpen(true)}
+                      >
+                        Create Strategy
+                      </Button>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    {isLoadingStrategy ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                      </div>
-                    ) : currentStrategy.length > 0 ? (
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <h3 className="font-medium mb-2">Current Focus</h3>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          {currentStrategy.map((point: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <span className="mt-1">•</span>
-                              <span>{point}</span>
-                            </li>
+
+                  <Dialog open={isStrategyGalleryOpen} onOpenChange={setIsStrategyGalleryOpen}>
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+                      <DialogHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <DialogTitle>Strategy Gallery</DialogTitle>
+                            <DialogDescription>
+                              View and manage all your growth strategies
+                            </DialogDescription>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsStrategyGalleryOpen(false)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </DialogHeader>
+
+                      <ScrollArea className="flex-grow pr-4">
+                        <div className="space-y-4 py-4">
+                          {strategies.map((strategy) => (
+                            <motion.div
+                              key={strategy.id}
+                              className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors cursor-pointer"
+                              whileHover={{ scale: 1.01 }}
+                              onClick={() => {
+                                setSelectedStrategy(strategy);
+                                setIsStrategyDialogOpen(true);
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">
+                                    {strategy.targetAudience} - {strategy.timeline}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Created on {strategy.createdAt.toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="px-2 py-1 rounded-full text-xs bg-orange-500/10 text-orange-500">
+                                    {strategy.priority} Priority
+                                  </div>
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {strategy.focus[0]}
+                                </p>
+                              </div>
+                            </motion.div>
                           ))}
-                        </ul>
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+
+                  <div className="space-y-4">
+                    {currentStrategy.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="p-4 rounded-lg bg-orange-500/5">
+                          <h3 className="font-medium mb-2">Current Focus</h3>
+                          <ul className="space-y-2">
+                            {currentStrategy.slice(0, 3).map((item, index) => (
+                              <li key={index} className="flex items-start gap-2 text-sm">
+                                <CheckCircle2 className="h-4 w-4 text-orange-500 mt-0.5" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {currentStrategy.length > 3 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => setIsStrategyDialogOpen(true)}
+                            >
+                              View More
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No strategy set. Create one to get started.
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No active strategy</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => setIsStrategyDialogOpen(true)}
+                        >
+                          Create Your First Strategy
+                        </Button>
                       </div>
                     )}
-                    <Button
-                      className="w-full"
-                      onClick={() => setIsStrategyDialogOpen(true)}
-                    >
-                      Update Strategy
-                    </Button>
                   </div>
                 </Card>
               </motion.div>
-              {/* Rights Management Section */}
+
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -997,7 +1109,6 @@ export default function ArtistDashboard() {
                 <RightsManagementCard />
               </motion.div>
 
-              {/* Distribution Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1013,7 +1124,8 @@ export default function ArtistDashboard() {
       <StrategyDialog
         open={isStrategyDialogOpen}
         onOpenChange={setIsStrategyDialogOpen}
-        onStrategyUpdate={refetchStrategy}
+        selectedStrategy={selectedStrategy}
+        onStrategyUpdate={fetchStrategies}
       />
     </div>
   );
