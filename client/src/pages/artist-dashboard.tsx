@@ -521,31 +521,31 @@ export default function ArtistDashboard() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <div className="relative w-full h-[300px] overflow-hidden">
+      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-[80px] md:mt-0">
         <video
           autoPlay
           loop
           muted
+          playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src="/assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Welcome to Your Creative Hub
-          </h1>
-          <p className="text-lg text-white/90 max-w-2xl">
-            Manage your content, strategy, and growth from one place.
-            Leverage our AI tools to optimize your artistic presence.
-          </p>
-        </div>
-      </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
-      <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-8">
+        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-center pb-32 md:pb-12 pt-16 md:pt-0">
+          <div className="text-center md:text-left mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
+              Welcome to Your Creative Hub
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage and enhance your musical presence from one place
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6 border-l-4 border-orange-500">
+            <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Published Videos</p>
@@ -556,7 +556,7 @@ export default function ArtistDashboard() {
                 </div>
               </div>
             </Card>
-            <Card className="p-6 border-l-4 border-orange-500">
+            <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Uploaded Songs</p>
@@ -567,7 +567,7 @@ export default function ArtistDashboard() {
                 </div>
               </div>
             </Card>
-            <Card className="p-6 border-l-4 border-orange-500">
+            <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Strategies</p>
@@ -579,7 +579,11 @@ export default function ArtistDashboard() {
               </div>
             </Card>
           </div>
+        </div>
+      </div>
 
+      <ScrollArea className="flex-1">
+        <div className="container mx-auto px-4 py-8">
           <div className="bg-orange-500/5 rounded-lg p-6 mb-8">
             <div className="flex items-start gap-4">
               <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
