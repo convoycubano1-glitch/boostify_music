@@ -1,6 +1,11 @@
 import { db } from "./firebase-admin";
 import * as fal from "@fal-ai/serverless-client";
 
+// Configure fal.ai with environment variable
+fal.config({
+  credentials: process.env.FAL_API_KEY,
+});
+
 const sampleDirectors = [
   {
     name: "Sofia Ramirez",
@@ -74,25 +79,25 @@ const sampleDirectors = [
   }
 ];
 
-interface FalImageResponse {
-  images?: Array<{
-    url: string;
-  }>;
-}
-
 const generateDirectorImage = async (prompt: string): Promise<string> => {
   try {
-    const result = await fal.subscribe("fal-ai/fast-sdxl", {
+    const result = await fal.subscribe("fal-ai/flux-pro", {
       input: {
-        prompt: `Professional portrait photo of a film director ${prompt}, 4k, highly detailed, professional photography, dramatic lighting`,
-        negative_prompt: "cartoon, anime, illustration, painting, drawing, blurry, distorted",
-        num_inference_steps: 50,
+        prompt: `professional headshot portrait photo of a director, ${prompt}, 4k, photorealistic, natural lighting, modern photography studio background, clear facial features`,
+        model_id: "flux-pro",
+        width: 768,
+        height: 768,
+        scheduler: "dpmpp",
+        num_inference_steps: 40,
+        guidance_scale: 7.5,
       },
-    }) as FalImageResponse;
+    });
 
     if (result?.images?.[0]?.url) {
       return result.images[0].url;
     }
+
+    console.log("No image URL in response:", result);
     return '';
   } catch (error) {
     console.error("Error generating image:", error);
@@ -102,17 +107,21 @@ const generateDirectorImage = async (prompt: string): Promise<string> => {
 
 const seedDirectors = async () => {
   try {
-    // Check if directors already exist
+    // Delete all existing directors
     const snapshot = await db.collection("directors").get();
-    if (!snapshot.empty) {
-      console.log("Directors already seeded");
-      return;
-    }
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+    console.log("Deleted existing directors");
 
     // Generate and store directors
     for (const director of sampleDirectors) {
       console.log(`Generating image for director: ${director.name}`);
-      const imageUrl = await generateDirectorImage(`${director.name}, ${director.specialty}`);
+      const imageUrl = await generateDirectorImage(
+        `${director.name}, professional film director, ${director.specialty}`
+      );
 
       console.log(`Adding director ${director.name} to Firestore`);
       await db.collection("directors").add({
