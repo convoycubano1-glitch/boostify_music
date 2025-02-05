@@ -312,15 +312,19 @@ export function DirectorsList() {
               className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
             >
               <div className="flex items-start gap-4">
-                <div className="h-32 w-32 rounded-lg overflow-hidden">
+                <div className="h-32 w-32 rounded-lg overflow-hidden bg-orange-500/10">
                   {director.imageUrl ? (
                     <img
                       src={director.imageUrl}
-                      alt={director.name}
+                      alt={`${director.name} - ${director.specialty}`}
                       className="h-full w-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
+                      }}
                     />
                   ) : (
-                    <div className="h-full w-full bg-orange-500/10 flex items-center justify-center">
+                    <div className="h-full w-full flex items-center justify-center">
                       <Award className="h-8 w-8 text-orange-500" />
                     </div>
                   )}
