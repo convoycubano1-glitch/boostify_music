@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  VideoCamera,
+  Play,
+  Award,
+  Star,
+  Calendar,
+  Loader2,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import * as fal from "@fal-ai/serverless-client";
+import { useQuery } from "@tanstack/react-query";
+
+fal.config({
+  credentials: import.meta.env.VITE_FAL_API_KEY,
+});
+
+interface Director {
+  id: string;
+  name: string;
+  specialty: string;
+  experience: string;
+  style: string;
+  rating: number;
+  imageUrl?: string;
+}
+
+const generateDirectorProfile = async (): Promise<Director> => {
+  const result = await fal.subscribe("fal-ai/llama-2-70b-chat", {
+    input: {
+      prompt: `Generate a creative music video director profile in JSON format with these fields:
+      {
+        "name": "full name",
+        "specialty": "main genre/style",
+        "experience": "years and notable achievements",
+        "style": "directing style description",
+        "rating": "number between 4 and 5"
+      }`,
+    },
+    logging: "error",
+  });
+
+  const profile = JSON.parse(result.output);
+  return {
+    id: Math.random().toString(36).substr(2, 9),
+    ...profile,
+  };
+};
+
+export function DirectorsList() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [directors, setDirectors] = useState<Director[]>([]);
+
+  const generateNewDirectors = async () => {
+    setIsGenerating(true);
+    try {
+      const newDirectors = await Promise.all(
+        Array(3).fill(null).map(generateDirectorProfile)
+      );
+      setDirectors((prev) => [...newDirectors, ...prev]);
+    } catch (error) {
+      console.error("Error generating directors:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+            <VideoCamera className="h-6 w-6 text-orange-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">Featured Directors</h2>
+            <p className="text-sm text-muted-foreground">
+              Connect with talented music video directors
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={generateNewDirectors}
+          disabled={isGenerating}
+          className="gap-2"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Play className="h-4 w-4" />
+              Generate Directors
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="space-y-4">
+        {directors.map((director) => (
+          <motion.div
+            key={director.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
+          >
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                <Award className="h-8 w-8 text-orange-500" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">{director.name}</h3>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
+                    <span className="text-sm font-medium">{director.rating}</span>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-orange-500">
+                  {director.specialty}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {director.experience}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Style: {director.style}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+
+        {directors.length === 0 && !isGenerating && (
+          <div className="text-center py-8 text-muted-foreground">
+            <VideoCamera className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>No directors generated yet. Click the button above to start.</p>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
