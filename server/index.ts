@@ -43,10 +43,6 @@ if (!process.env.STRIPE_SECRET_KEY) {
   console.error('Error: STRIPE_SECRET_KEY no está definida en las variables de entorno');
   process.exit(1);
 }
-if (!process.env.OPENAI_API_KEY) {
-  console.error('Error: OPENAI_API_KEY no está definida en las variables de entorno');
-  process.exit(1);
-}
 
 (async () => {
   const server = registerRoutes(app);
@@ -76,7 +72,7 @@ if (!process.env.OPENAI_API_KEY) {
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
-  const PORT = process.env.PORT || 5000;
+  const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
     log(`serving on port ${PORT} in ${app.get("env")} mode`);
   });

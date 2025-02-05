@@ -21,13 +21,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Video,
   Award,
   Star,
@@ -40,73 +33,24 @@ import {
   ChevronLeft,
   ChevronRight,
   Send,
-  Upload as UploadIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Progress } from "@/components/ui/progress";
-import {auth} from "@/lib/firebase"; // Added import for auth
-
-const visualStyles = [
-  "Cinematic",
-  "Urban/Street",
-  "Minimalist",
-  "Experimental",
-  "Performance-focused",
-  "Narrative-driven",
-  "Abstract/Artistic",
-  "Documentary-style",
-  "High Fashion",
-  "Retro/Vintage",
-] as const;
-
-const technicalRequirements = [
-  "4K Resolution",
-  "Drone Shots",
-  "Slow Motion",
-  "Steadicam",
-  "Green Screen",
-  "Special Effects (VFX)",
-  "Color Grading",
-  "Multiple Locations",
-  "Night Shooting",
-  "Studio Recording",
-  "Live Performance",
-  "Custom Animation",
-] as const;
-
-const budgetRanges = [
-  { label: "$1,000", value: "1000" },
-  { label: "$5,000", value: "5000" },
-  { label: "$10,000", value: "10000" },
-  { label: "$25,000", value: "25000" },
-] as const;
-
-const PROJECT_STATUSES = {
-  RECEIVED: { status: 'received', progress: 20, message: 'Proyecto recibido' },
-  REVIEW: { status: 'review', progress: 40, message: 'Director revisando proyecto' },
-  IN_PROGRESS: { status: 'in_progress', progress: 60, message: 'Producción en progreso' },
-  FINAL_REVIEW: { status: 'final_review', progress: 80, message: 'Revisión final' },
-  COMPLETED: { status: 'completed', progress: 100, message: 'Proyecto completado' },
-} as const;
 
 const hireFormSchema = z.object({
-  budget: z.string().min(1, "Budget is required"),
+  budget: z.string().min(1, "Budget is required").regex(/^\d+$/, "Please enter a valid number"),
   timeline: z.string().min(1, "Timeline is required")
     .refine(value => ["1 week", "2 weeks", "1 month", "2 months", "3+ months"].includes(value), {
       message: "Please select a valid timeline",
     }),
-  visualStyle: z.array(z.string()).min(1, "Please select at least one visual style"),
-  songFile: z.any().optional(),
-  songUrl: z.string().url("Please enter a valid song URL").optional(),
   description: z.string().min(50, "Please provide at least 50 characters describing your vision"),
-  technicalRequirements: z.array(z.string()).min(1, "Please select at least one technical requirement"),
+  songUrl: z.string().url("Please enter a valid song URL"),
+  requirements: z.string().min(30, "Please provide at least 30 characters of specific requirements"),
 });
 
 interface Director {
@@ -126,7 +70,6 @@ export function DirectorsList() {
   const [selectedDirector, setSelectedDirector] = useState<Director | null>(null);
   const [showHireForm, setShowHireForm] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const totalSteps = 3;
 
   const form = useForm<z.infer<typeof hireFormSchema>>({
@@ -134,10 +77,9 @@ export function DirectorsList() {
     defaultValues: {
       budget: "",
       timeline: "",
-      visualStyle: [],
       description: "",
-      technicalRequirements: [],
       songUrl: "",
+      requirements: "",
     },
   });
 
@@ -165,93 +107,35 @@ export function DirectorsList() {
     fetchDirectors();
   }, [toast]);
 
-  const handleFileUpload = async (file: File): Promise<string> => {
-    if (!file) return "";
-
-    const storageRef = ref(storage, `songs/${Date.now()}_${file.name}`);
-
-    try {
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      return url;
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      throw error;
-    }
-  };
-
   const onSubmit = async (values: z.infer<typeof hireFormSchema>) => {
     if (!selectedDirector) return;
 
     try {
-      let songUrl = values.songUrl;
-      if (values.songFile) {
-        const storageRef = ref(storage, `songs/${Date.now()}_${values.songFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, values.songFile);
+      const projectData = {
+        ...values,
+        directorId: selectedDirector.id,
+        directorName: selectedDirector.name,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      };
 
-        // Show upload progress
-        uploadTask.on('state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-          },
-          (error) => {
-            console.error("Error uploading file:", error);
-            toast({
-              title: "Error",
-              description: "No se pudo subir el archivo. Por favor, intenta de nuevo.",
-              variant: "destructive",
-            });
-          },
-          async () => {
-            songUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      await addDoc(collection(db, "projects"), projectData);
 
-            // Save project data after successful upload
-            await saveProjectData(values, songUrl);
-          }
-        );
-      } else {
-        // If no file to upload, save project data directly
-        await saveProjectData(values, songUrl);
-      }
+      toast({
+        title: "Success",
+        description: "Your project request has been submitted successfully.",
+      });
+
+      setShowHireForm(false);
+      form.reset();
     } catch (error) {
-      console.error("Error al enviar el proyecto:", error);
+      console.error("Error submitting project:", error);
       toast({
         title: "Error",
-        description: "No se pudo enviar el proyecto. Por favor, intenta de nuevo.",
+        description: "Failed to submit project. Please try again.",
         variant: "destructive",
       });
     }
-  };
-
-  const saveProjectData = async (values: z.infer<typeof hireFormSchema>, songUrl: string) => {
-    const projectData = {
-      ...values,
-      songUrl,
-      directorId: selectedDirector.id,
-      directorName: selectedDirector.name,
-      status: PROJECT_STATUSES.RECEIVED.status,
-      statusProgress: PROJECT_STATUSES.RECEIVED.progress,
-      createdAt: serverTimestamp(),
-      timeline: [
-        {
-          status: PROJECT_STATUSES.RECEIVED.status,
-          date: new Date().toISOString(),
-          message: PROJECT_STATUSES.RECEIVED.message
-        }
-      ],
-      userId: auth.currentUser?.uid,
-    };
-
-    const docRef = await addDoc(collection(db, "projects"), projectData);
-
-    toast({
-      title: "¡Éxito!",
-      description: "Tu solicitud de proyecto ha sido enviada exitosamente.",
-    });
-
-    setShowHireForm(false);
-    form.reset();
   };
 
   const handleHireClick = (director: Director) => {
@@ -283,22 +167,15 @@ export function DirectorsList() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project Budget (USD)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your budget" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {budgetRanges.map((budget) => (
-                        <SelectItem key={budget.value} value={budget.value}>
-                          {budget.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Enter your budget"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormDescription>
-                    Select your budget range for the music video production
+                    Enter your total budget for the music video production
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -310,20 +187,19 @@ export function DirectorsList() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project Timeline</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timeline" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {["1 week", "2 weeks", "1 month", "2 months", "3+ months"].map((timeline) => (
-                        <SelectItem key={timeline} value={timeline}>
-                          {timeline}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <select
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                      {...field}
+                    >
+                      <option value="">Select timeline</option>
+                      <option value="1 week">1 week</option>
+                      <option value="2 weeks">2 weeks</option>
+                      <option value="1 month">1 month</option>
+                      <option value="2 months">2 months</option>
+                      <option value="3+ months">3+ months</option>
+                    </select>
+                  </FormControl>
                   <FormDescription>
                     Expected duration of the music video production
                   </FormDescription>
@@ -336,101 +212,22 @@ export function DirectorsList() {
       case 2:
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <FormField
-                control={form.control}
-                name="songUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Song URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. SoundCloud, Spotify, or Dropbox link" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Provide a link where the director can listen to your song
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="songFile"
-                render={({ field: { onChange, value, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Or Upload Song File</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="file"
-                          accept="audio/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              onChange(file);
-                            }
-                          }}
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Upload your song file (MP3, WAV, etc.)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="visualStyle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Visual Style</FormLabel>
-                    <div className="grid grid-cols-2 gap-2">
-                      {visualStyles.map((style) => (
-                        <label
-                          key={style}
-                          className={`
-                            flex items-center gap-2 p-3 rounded-lg border cursor-pointer
-                            ${field.value.includes(style)
-                              ? 'bg-orange-500/10 border-orange-500 text-orange-500'
-                              : 'hover:bg-muted'
-                            }
-                          `}
-                        >
-                          <input
-                            type="checkbox"
-                            className="hidden"
-                            checked={field.value.includes(style)}
-                            onChange={(e) => {
-                              const value = field.value || [];
-                              if (e.target.checked) {
-                                field.onChange([...value, style]);
-                              } else {
-                                field.onChange(value.filter((v) => v !== style));
-                              }
-                            }}
-                          />
-                          {style}
-                        </label>
-                      ))}
-                    </div>
-                    <FormDescription>
-                      Select the visual styles that match your vision
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="songUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Song URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. SoundCloud, Spotify, or Dropbox link" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Provide a link where the director can listen to your song
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="description"
@@ -451,44 +248,26 @@ export function DirectorsList() {
                 </FormItem>
               )}
             />
-
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
             <FormField
               control={form.control}
-              name="technicalRequirements"
+              name="requirements"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Technical Requirements</FormLabel>
-                  <div className="grid grid-cols-2 gap-2">
-                    {technicalRequirements.map((req) => (
-                      <label
-                        key={req}
-                        className={`
-                          flex items-center gap-2 p-3 rounded-lg border cursor-pointer
-                          ${field.value.includes(req)
-                            ? 'bg-orange-500/10 border-orange-500 text-orange-500'
-                            : 'hover:bg-muted'
-                            }
-                        `}
-                      >
-                        <input
-                          type="checkbox"
-                          className="hidden"
-                          checked={field.value.includes(req)}
-                          onChange={(e) => {
-                            const value = field.value || [];
-                            if (e.target.checked) {
-                              field.onChange([...value, req]);
-                            } else {
-                              field.onChange(value.filter((v) => v !== req));
-                            }
-                          }}
-                        />
-                        {req}
-                      </label>
-                    ))}
-                  </div>
+                  <FormControl>
+                    <textarea
+                      className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
+                      placeholder="List any specific technical requirements or preferences"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormDescription>
-                    Select the technical requirements for your video
+                    Include details about resolution, aspect ratio, special effects, or equipment requirements
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -500,30 +279,6 @@ export function DirectorsList() {
         return null;
     }
   };
-
-  const renderProjectProgress = () => (
-    <div className="mb-6">
-      <div className="flex justify-between mb-2">
-        <span className="text-sm font-medium">Estado del Proyecto</span>
-        <span className="text-sm text-muted-foreground">{uploadProgress}%</span> {/* Updated progress display */}
-      </div>
-      <Progress value={uploadProgress} className="h-2" />
-      <div className="grid grid-cols-5 mt-2 gap-1">
-        {Object.values(PROJECT_STATUSES).map((status, index) => (
-          <div key={status.status} className="text-center">
-            <div
-              className={`h-2 w-2 mx-auto mb-1 rounded-full ${
-                uploadProgress >= status.progress ? 'bg-orange-500' : 'bg-muted'
-              }`}
-            />
-            <span className="text-xs text-muted-foreground block">
-              {status.message}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -563,6 +318,10 @@ export function DirectorsList() {
                       src={director.imageUrl}
                       alt={`${director.name} - ${director.specialty}`}
                       className="h-full w-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
+                      }}
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center">
@@ -613,8 +372,6 @@ export function DirectorsList() {
             </DialogDescription>
           </DialogHeader>
 
-          {renderProjectProgress()}
-
           <div className="flex justify-center mb-6">
             <div className="flex items-center space-x-4">
               {Array.from({ length: totalSteps }).map((_, index) => (
@@ -625,7 +382,7 @@ export function DirectorsList() {
                       ${currentStep >= index + 1
                         ? "bg-orange-500 border-orange-500 text-white"
                         : "border-orange-200 text-orange-200"
-                        }
+                      }
                     `}
                   >
                     {index + 1}
