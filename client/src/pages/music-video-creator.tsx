@@ -26,7 +26,7 @@ export default function MusicVideoCreator() {
         >
           <source src="/background-video.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-background" />
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center md:items-start">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -57,7 +57,7 @@ export default function MusicVideoCreator() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-black/40 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20"
+              className="bg-black/70 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20"
             >
               <Star className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mb-3 md:mb-4" />
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">Professional Directors</h3>
@@ -70,7 +70,7 @@ export default function MusicVideoCreator() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-black/40 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20"
+              className="bg-black/70 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20"
             >
               <Wand2 className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mb-3 md:mb-4" />
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">AI-Powered Creation</h3>
@@ -83,7 +83,7 @@ export default function MusicVideoCreator() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-black/40 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20"
+              className="bg-black/70 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20"
             >
               <CloudCog className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mb-3 md:mb-4" />
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">Seamless Workflow</h3>
