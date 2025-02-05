@@ -169,12 +169,10 @@ export default function ArtistDashboard() {
 
       try {
         const strategiesRef = collection(db, "strategies");
-        // Modifico la consulta para usar el índice correctamente
+        // Simplificamos la consulta para evitar problemas con índices
         const q = query(
           strategiesRef,
-          where("userId", "==", auth.currentUser.uid),
-          orderBy("createdAt", "desc"),
-          limit(1)
+          where("userId", "==", auth.currentUser.uid)
         );
 
         const querySnapshot = await getDocs(q);
@@ -183,10 +181,19 @@ export default function ArtistDashboard() {
           return [];
         }
 
-        const strategyDoc = querySnapshot.docs[0];
-        const data = strategyDoc.data();
-        console.log("Strategy data:", data);
-        return data.focus || [];
+        // Ordenamos los resultados en memoria en lugar de en la base de datos
+        const strategies = querySnapshot.docs.map(doc => ({
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date()
+        }));
+
+        // Ordenamos por fecha de creación de forma descendente
+        strategies.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        // Tomamos solo el más reciente
+        const latestStrategy = strategies[0];
+        console.log("Latest strategy:", latestStrategy);
+        return latestStrategy.focus || [];
       } catch (error) {
         console.error("Error fetching strategy:", error);
         toast({

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Loader2, Calendar, Music2, Video, BarChart2 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 
 interface Activity {
@@ -23,17 +23,21 @@ export function ActivityFeed() {
         const activitiesRef = collection(db, "activities");
         const q = query(
           activitiesRef,
-          where("userId", "==", auth.currentUser.uid),
-          orderBy("createdAt", "desc"),
-          limit(5)
+          where("userId", "==", auth.currentUser.uid)
         );
 
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
+        const allActivities = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate() || new Date(),
         })) as Activity[];
+
+        // Ordenar por fecha de creación descendente
+        allActivities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        // Retornar solo las últimas 5 actividades
+        return allActivities.slice(0, 5);
       } catch (error) {
         console.error("Error fetching activities:", error);
         return [];
