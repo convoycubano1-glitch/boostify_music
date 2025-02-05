@@ -27,6 +27,18 @@ interface Director {
   imageUrl?: string;
 }
 
+const generateDirectorImage = async (prompt: string): Promise<string> => {
+  const result = await fal.subscribe("fal-ai/fast-sdxl", {
+    input: {
+      prompt: `Professional portrait photo of a film director ${prompt}, 4k, highly detailed, professional photography, dramatic lighting`,
+      negative_prompt: "cartoon, anime, illustration, painting, drawing, blurry, distorted",
+      num_inference_steps: 50,
+    },
+  });
+
+  return result?.images?.[0]?.url || '';
+};
+
 const generateDirectorProfile = async (): Promise<Director> => {
   const result = await fal.subscribe("fal-ai/llama-2-70b-chat", {
     input: {
@@ -42,9 +54,12 @@ const generateDirectorProfile = async (): Promise<Director> => {
   });
 
   const profile = JSON.parse(result.text || "{}");
+  const imageUrl = await generateDirectorImage(`${profile.name}, ${profile.specialty}`);
+
   return {
     id: Math.random().toString(36).substr(2, 9),
     ...profile,
+    imageUrl,
   };
 };
 
@@ -56,7 +71,7 @@ export function DirectorsList() {
     setIsGenerating(true);
     try {
       const newDirectors = await Promise.all(
-        Array(3).fill(null).map(generateDirectorProfile)
+        Array(10).fill(null).map(generateDirectorProfile)
       );
       setDirectors((prev) => [...newDirectors, ...prev]);
     } catch (error) {
@@ -88,7 +103,7 @@ export function DirectorsList() {
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Generating...
+              Generating Directors...
             </>
           ) : (
             <>
@@ -99,7 +114,7 @@ export function DirectorsList() {
         </Button>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {directors.map((director) => (
           <motion.div
             key={director.id}
@@ -108,8 +123,18 @@ export function DirectorsList() {
             className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
           >
             <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                <Award className="h-8 w-8 text-orange-500" />
+              <div className="h-32 w-32 rounded-lg overflow-hidden">
+                {director.imageUrl ? (
+                  <img
+                    src={director.imageUrl}
+                    alt={director.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-orange-500/10 flex items-center justify-center">
+                    <Award className="h-8 w-8 text-orange-500" />
+                  </div>
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
@@ -134,7 +159,7 @@ export function DirectorsList() {
         ))}
 
         {directors.length === 0 && !isGenerating && (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground col-span-2">
             <Video className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p>No directors generated yet. Click the button above to start.</p>
           </div>
