@@ -224,10 +224,10 @@ export default function ArtistDashboard() {
 
     try {
       const strategiesRef = collection(db, "strategies");
+      // Simplificar la consulta para evitar el error de índice
       const q = query(
         strategiesRef,
-        where("userId", "==", auth.currentUser.uid),
-        orderBy("createdAt", "desc")
+        where("userId", "==", auth.currentUser.uid)
       );
 
       const querySnapshot = await getDocs(q);
@@ -245,6 +245,9 @@ export default function ArtistDashboard() {
           userId: data.userId
         } as Strategy;
       });
+
+      // Ordenar en memoria
+      fetchedStrategies.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       console.log("Fetched strategies:", fetchedStrategies);
       setStrategies(fetchedStrategies);
