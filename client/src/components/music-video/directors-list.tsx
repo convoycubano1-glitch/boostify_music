@@ -28,39 +28,65 @@ interface Director {
 }
 
 const generateDirectorImage = async (prompt: string): Promise<string> => {
-  const result = await fal.subscribe("fal-ai/fast-sdxl", {
-    input: {
-      prompt: `Professional portrait photo of a film director ${prompt}, 4k, highly detailed, professional photography, dramatic lighting`,
-      negative_prompt: "cartoon, anime, illustration, painting, drawing, blurry, distorted",
-      num_inference_steps: 50,
-    },
-  });
+  try {
+    const result = await fal.subscribe("fal-ai/fast-sdxl", {
+      input: {
+        prompt: `Professional portrait photo of a film director ${prompt}, 4k, highly detailed, professional photography, dramatic lighting`,
+        negative_prompt: "cartoon, anime, illustration, painting, drawing, blurry, distorted",
+        num_inference_steps: 50,
+      },
+    });
 
-  return result?.images?.[0]?.url || '';
+    if (result?.images?.[0]?.url) {
+      return result.images[0].url;
+    }
+    return '';
+  } catch (error) {
+    console.error("Error generating image:", error);
+    return '';
+  }
 };
 
 const generateDirectorProfile = async (): Promise<Director> => {
-  const result = await fal.subscribe("fal-ai/llama-2-70b-chat", {
-    input: {
-      prompt: `Generate a creative music video director profile in JSON format with these fields:
-      {
-        "name": "full name",
-        "specialty": "main genre/style",
-        "experience": "years and notable achievements",
-        "style": "directing style description",
-        "rating": "number between 4 and 5"
-      }`,
-    },
-  });
+  try {
+    const result = await fal.subscribe("fal-ai/gpt-4", {
+      input: {
+        prompt: `Generate a creative music video director profile in JSON format with these fields:
+        {
+          "name": "full name",
+          "specialty": "main genre/style",
+          "experience": "years and notable achievements",
+          "style": "directing style description",
+          "rating": "number between 4 and 5"
+        }`,
+      },
+    });
 
-  const profile = JSON.parse(result.text || "{}");
-  const imageUrl = await generateDirectorImage(`${profile.name}, ${profile.specialty}`);
+    let profile;
+    try {
+      profile = JSON.parse(result?.text || "{}");
+    } catch (e) {
+      console.error("Error parsing profile:", e);
+      profile = {
+        name: "John Smith",
+        specialty: "Music Video Director",
+        experience: "10+ years of experience in music video production",
+        style: "Creative and innovative visual storytelling",
+        rating: 4.5
+      };
+    }
 
-  return {
-    id: Math.random().toString(36).substr(2, 9),
-    ...profile,
-    imageUrl,
-  };
+    const imageUrl = await generateDirectorImage(`${profile.name}, ${profile.specialty}`);
+
+    return {
+      id: Math.random().toString(36).substr(2, 9),
+      ...profile,
+      imageUrl,
+    };
+  } catch (error) {
+    console.error("Error generating director:", error);
+    throw error;
+  }
 };
 
 export function DirectorsList() {
