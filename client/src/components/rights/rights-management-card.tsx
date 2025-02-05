@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music2, ExternalLink, Shield, DollarSign } from "lucide-react";
+import { Music2, ExternalLink, Shield, DollarSign, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 
 const societies = [
@@ -9,21 +9,63 @@ const societies = [
     description: "American Society of Composers, Authors and Publishers",
     url: "https://www.ascap.com/join",
     icon: Music2,
-    benefits: "Protege los derechos de interpretación pública",
+    benefits: "Protects public performance rights",
   },
   {
     name: "BMI",
     description: "Broadcast Music Inc.",
     url: "https://www.bmi.com/join",
     icon: Shield,
-    benefits: "Licencias y regalías para compositores",
+    benefits: "Licenses and royalties for composers",
   },
   {
     name: "SESAC",
     description: "Society of European Stage Authors and Composers",
     url: "https://www.sesac.com/join",
     icon: DollarSign,
-    benefits: "Sociedad de derechos por invitación",
+    benefits: "Invitation-only rights society",
+  },
+  {
+    name: "SoundExchange",
+    description: "Digital Performance Rights Organization",
+    url: "https://www.soundexchange.com",
+    icon: Music2,
+    benefits: "Digital performance royalties collection",
+  },
+  {
+    name: "The MLC",
+    description: "Mechanical Licensing Collective",
+    url: "https://themlc.com",
+    icon: Shield,
+    benefits: "Mechanical royalties administration",
+  },
+  {
+    name: "PRS",
+    description: "Performing Right Society (UK)",
+    url: "https://www.prsformusic.com",
+    icon: Globe,
+    benefits: "UK performance and mechanical rights",
+  },
+  {
+    name: "SACEM",
+    description: "Society of Authors, Composers and Publishers of Music (France)",
+    url: "https://www.sacem.fr",
+    icon: Globe,
+    benefits: "French copyright management",
+  },
+  {
+    name: "GEMA",
+    description: "Society for Musical Performing and Mechanical Reproduction Rights (Germany)",
+    url: "https://www.gema.de",
+    icon: Globe,
+    benefits: "German rights management",
+  },
+  {
+    name: "SIAE",
+    description: "Italian Society of Authors and Publishers",
+    url: "https://www.siae.it",
+    icon: Globe,
+    benefits: "Italian rights management",
   }
 ];
 
@@ -35,9 +77,9 @@ export function RightsManagementCard() {
           <Shield className="h-6 w-6 text-orange-500" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold">Gestión de Derechos</h2>
+          <h2 className="text-xl font-semibold">Rights Management</h2>
           <p className="text-sm text-muted-foreground">
-            Registra y protege tus derechos musicales
+            Register and protect your music rights
           </p>
         </div>
       </div>
@@ -68,7 +110,7 @@ export function RightsManagementCard() {
                 onClick={() => window.open(society.url, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-1" />
-                Registrarse
+                Register
               </Button>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -79,12 +121,12 @@ export function RightsManagementCard() {
       </div>
 
       <div className="mt-4 p-4 bg-orange-500/5 rounded-lg">
-        <h4 className="font-semibold mb-2">¿Por qué registrarte?</h4>
+        <h4 className="font-semibold mb-2">Why Register?</h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>• Protege tus derechos de autor</li>
-          <li>• Cobra regalías por reproducciones</li>
-          <li>• Accede a recursos y herramientas profesionales</li>
-          <li>• Conecta con la comunidad musical</li>
+          <li>• Protect your copyrights</li>
+          <li>• Collect royalties from performances</li>
+          <li>• Access professional resources and tools</li>
+          <li>• Connect with the music community</li>
         </ul>
       </div>
     </Card>

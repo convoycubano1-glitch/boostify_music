@@ -1,29 +1,64 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music2, ExternalLink, Globe, DollarSign } from "lucide-react";
+import { Music2, ExternalLink, Globe, DollarSign, Smartphone, Cloud } from "lucide-react";
 import { motion } from "framer-motion";
 
 const distributors = [
   {
     name: "DistroKid",
-    description: "Distribución ilimitada por una tarifa anual fija",
+    description: "Unlimited distribution for a flat annual fee",
     url: "https://distrokid.com/vip/seven/641439",
     icon: Music2,
-    benefits: "100% de las ganancias, distribución ilimitada",
+    benefits: "100% royalties, unlimited releases",
   },
   {
     name: "CD Baby",
-    description: "Pago único por lanzamiento",
+    description: "One-time payment per release",
     url: "https://cdbaby.com",
     icon: Globe,
-    benefits: "Distribución permanente, servicios de publicación",
+    benefits: "Permanent distribution, publishing services",
   },
   {
     name: "TuneCore",
-    description: "Distribución profesional con análisis detallados",
+    description: "Professional distribution with detailed analytics",
     url: "https://www.tunecore.com/r/17346764",
     icon: DollarSign,
-    benefits: "100% de las regalías, herramientas de marketing",
+    benefits: "100% royalties, marketing tools",
+  },
+  {
+    name: "AWAL",
+    description: "Selective music distribution and artist services",
+    url: "https://www.awal.com",
+    icon: Music2,
+    benefits: "Marketing and funding opportunities",
+  },
+  {
+    name: "United Masters",
+    description: "Artist-focused distribution platform",
+    url: "https://unitedmasters.com",
+    icon: Cloud,
+    benefits: "Brand partnership opportunities",
+  },
+  {
+    name: "Ditto Music",
+    description: "Global music distribution service",
+    url: "https://dittomusic.com",
+    icon: Globe,
+    benefits: "Worldwide distribution, label services",
+  },
+  {
+    name: "Amuse",
+    description: "Free music distribution with pro options",
+    url: "https://www.amuse.io",
+    icon: Smartphone,
+    benefits: "Free tier available, data-driven insights",
+  },
+  {
+    name: "ONErpm",
+    description: "Digital distribution and marketing platform",
+    url: "https://onerpm.com",
+    icon: Globe,
+    benefits: "Marketing support, YouTube monetization",
   }
 ];
 
@@ -35,9 +70,9 @@ export function DistributionCard() {
           <Globe className="h-6 w-6 text-orange-500" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold">Distribución Digital</h2>
+          <h2 className="text-xl font-semibold">Digital Distribution</h2>
           <p className="text-sm text-muted-foreground">
-            Distribuye tu música en plataformas de streaming
+            Distribute your music on streaming platforms
           </p>
         </div>
       </div>
@@ -68,7 +103,7 @@ export function DistributionCard() {
                 onClick={() => window.open(distributor.url, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-1" />
-                Registrarse
+                Register
               </Button>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -79,12 +114,12 @@ export function DistributionCard() {
       </div>
 
       <div className="mt-4 p-4 bg-orange-500/5 rounded-lg">
-        <h4 className="font-semibold mb-2">¿Por qué usar un distribuidor digital?</h4>
+        <h4 className="font-semibold mb-2">Why Use a Digital Distributor?</h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>• Distribuye tu música en todas las plataformas principales</li>
-          <li>• Recibe pagos directamente de las plataformas de streaming</li>
-          <li>• Mantén el control total de tus derechos</li>
-          <li>• Accede a estadísticas y análisis detallados</li>
+          <li>• Distribute your music on all major platforms</li>
+          <li>• Receive payments directly from streaming platforms</li>
+          <li>• Maintain full control of your rights</li>
+          <li>• Access detailed statistics and analytics</li>
         </ul>
       </div>
     </Card>
