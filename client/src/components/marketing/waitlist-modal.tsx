@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Mail, Timer, Calendar } from "lucide-react";
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export function WaitlistModal() {
@@ -50,6 +50,7 @@ export function WaitlistModal() {
 
     try {
       setIsSubmitting(true);
+      console.log("Attempting to add email to waitlist:", email); // Debug log
 
       // Check if email already exists
       const waitlistRef = collection(db, "waitlist");
@@ -65,12 +66,19 @@ export function WaitlistModal() {
         return;
       }
 
-      // Add new email to waitlist
-      await addDoc(waitlistRef, {
+      // Add new email to waitlist with additional metadata
+      const docRef = await addDoc(waitlistRef, {
         email,
-        createdAt: new Date(),
-        source: window.location.hostname
+        createdAt: serverTimestamp(),
+        source: window.location.hostname,
+        userAgent: navigator.userAgent,
+        referrer: document.referrer || 'direct',
+        status: 'active',
+        notificationsSent: 0,
+        daysUntilLaunch
       });
+
+      console.log("Successfully added to waitlist with ID:", docRef.id); // Debug log
 
       toast({
         title: "Welcome to the Waitlist!",
