@@ -16,7 +16,7 @@ export default function MusicVideoCreator() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <div className="relative w-full h-[300px] md:h-[500px] overflow-hidden mt-[64px] md:mt-0">
+      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-[64px] md:mt-0">
         <video
           autoPlay
           loop
