@@ -472,14 +472,13 @@ export default function ProducerToolsPage() {
       <Header />
 
       {/* Hero Section with Video Background */}
-      <div className="relative w-full h-[300px] overflow-hidden bg-background">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-background" />
+      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-[80px] md:mt-0">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-75"
+          className="absolute inset-0 w-full h-full object-cover"
           poster="/assets/video-fallback.jpg"
           onError={(e) => {
             const target = e.target as HTMLVideoElement;
@@ -488,15 +487,18 @@ export default function ProducerToolsPage() {
         >
           <source src="/assets/Standard_Mode_Generated_Video (3).mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 via-background/20 to-background" />
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Your Creative Music Hub
-          </h1>
-          <p className="text-lg text-white/90 max-w-2xl">
-            Connect with musicians worldwide or use our AI tools to enhance your production workflow
-          </p>
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+
+        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-end pb-12 md:pb-12 pt-48 md:pt-96">
+          <div className="text-center md:text-left mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Your Creative Music Hub
+            </h1>
+            <p className="text-lg text-white/90 max-w-2xl">
+              Connect with musicians worldwide or use our AI tools to enhance your production workflow
+            </p>
+          </div>
         </div>
       </div>
 
@@ -530,7 +532,7 @@ export default function ProducerToolsPage() {
             {["all", "Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
               <Card
                 key={category}
-                className={`p-4 text-center cursor-pointer transition-colors ${
+                className={`p-4 text-center cursor-pointer transition-colors backdrop-blur-sm ${
                   selectedCategory.toLowerCase() === category.toLowerCase() ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
                 }`}
                 onClick={() => setSelectedCategory(category)}
@@ -551,7 +553,7 @@ export default function ProducerToolsPage() {
             {isLoadingImages ? (
               // Loading skeleton
               Array.from({ length: 6 }).map((_, i) => (
-                <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse">
+                <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse backdrop-blur-sm">
                   <div className="aspect-video bg-muted" />
                   <div className="p-6 space-y-4">
                     <div className="h-4 bg-muted rounded w-3/4" />
@@ -561,7 +563,7 @@ export default function ProducerToolsPage() {
               ))
             ) : (
               filteredMusicians.map((musician) => (
-                <Card key={musician.id} className="overflow-hidden">
+                <Card key={musician.id} className="overflow-hidden backdrop-blur-sm bg-background/80">
                   <div className="aspect-video bg-orange-500/10 relative">
                     <img
                       src={musician.photo || "/assets/musician-placeholder.jpg"}
@@ -621,7 +623,7 @@ export default function ProducerToolsPage() {
 
               {/* Mastering Tab */}
               <TabsContent value="mastering">
-                <Card className="p-6">
+                <Card className="p-6 backdrop-blur-sm">
                   <div className="max-w-xl mx-auto space-y-4">
                     <h2 className="text-2xl font-semibold">AI Mastering</h2>
                     <p className="text-muted-foreground">
@@ -663,7 +665,7 @@ export default function ProducerToolsPage() {
 
               {/* Generation Tab */}
               <TabsContent value="generation">
-                <Card className="p-6">
+                <Card className="p-6 backdrop-blur-sm">
                   <div className="max-w-xl mx-auto space-y-4">
                     <h2 className="text-2xl font-semibold">AI Music Generation</h2>
                     <p className="text-muted-foreground">
@@ -705,7 +707,7 @@ export default function ProducerToolsPage() {
 
               {/* Cover Art Tab */}
               <TabsContent value="cover">
-                <Card className="p-6">
+                <Card className="p-6 backdrop-blur-sm">
                   <div className="max-w-xl mx-auto space-y-4">
                     <h2 className="text-2xl font-semibold">AI Cover Art Generation</h2>
                     <p className="text-muted-foreground">
