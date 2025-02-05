@@ -25,6 +25,7 @@ import ContactsPage from "@/pages/contacts";
 import MessagesPage from "@/pages/messages";
 import ManagerToolsPage from "@/pages/manager-tools";
 import ProducerToolsPage from "@/pages/producer-tools";
+import MusicVideoCreator from "@/pages/music-video-creator";
 
 const Router = () => {
   return (
@@ -49,6 +50,7 @@ const Router = () => {
       <ProtectedRoute path="/messages" component={MessagesPage} />
       <ProtectedRoute path="/manager-tools" component={ManagerToolsPage} />
       <ProtectedRoute path="/producer-tools" component={ProducerToolsPage} />
+      <ProtectedRoute path="/music-video-creator" component={MusicVideoCreator} />
       <Route component={NotFound} />
     </Switch>
   );
