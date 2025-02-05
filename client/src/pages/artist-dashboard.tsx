@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
 import { motion } from "framer-motion";
-import { 
+import {
   Video,
   Music2,
   BarChart2,
@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StrategyDialog } from "@/components/strategy/strategy-dialog";
 import { ActivityFeed } from "@/components/activity/activity-feed";
+import { RightsManagementCard } from "@/components/rights/rights-management-card";
 
 interface Video {
   id: string;
@@ -86,7 +87,7 @@ export default function ArtistDashboard() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-    const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
+  const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
 
 
   // Query for songs
@@ -121,7 +122,7 @@ export default function ArtistDashboard() {
     enabled: !!auth.currentUser?.uid,
   });
 
-    // Query for videos
+  // Query for videos
   const { data: videos = [], isLoading: isLoadingVideos, refetch: refetchVideos } = useQuery({
     queryKey: ["videos", auth.currentUser?.uid],
     queryFn: async () => {
@@ -336,7 +337,7 @@ export default function ArtistDashboard() {
     }
   };
 
-    const handleVideoSubmit = async () => {
+  const handleVideoSubmit = async () => {
     if (!auth.currentUser?.uid || !videoUrl) return;
 
     try {
@@ -362,15 +363,15 @@ export default function ArtistDashboard() {
 
       const videosRef = collection(db, "videos");
       await addDoc(videosRef, videoData);
-        // Add activity log after video is uploaded
-        const activityData = {
-            type: 'video',
-            action: 'Added new video',
-            title: videoUrl,
-            userId: auth.currentUser.uid,
-            createdAt: serverTimestamp()
-        };
-        await addDoc(collection(db, "activities"), activityData);
+      // Add activity log after video is uploaded
+      const activityData = {
+          type: 'video',
+          action: 'Added new video',
+          title: videoUrl,
+          userId: auth.currentUser.uid,
+          createdAt: serverTimestamp()
+      };
+      await addDoc(collection(db, "activities"), activityData);
 
 
       toast({
@@ -440,7 +441,7 @@ export default function ArtistDashboard() {
     }
   };
 
-    const handleDeleteVideo = async (videoId: string) => {
+  const handleDeleteVideo = async (videoId: string) => {
     if (!auth.currentUser?.uid) return;
 
     try {
@@ -466,10 +467,10 @@ export default function ArtistDashboard() {
 
       {/* Hero Section with Video Background */}
       <div className="relative w-full h-[300px] overflow-hidden">
-        <video 
-          autoPlay 
-          loop 
-          muted 
+        <video
+          autoPlay
+          loop
+          muted
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src="/assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
@@ -573,8 +574,8 @@ export default function ArtistDashboard() {
                       </div>
                     </div>
                     {videos.length > 0 && (
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => setIsVideoGalleryOpen(true)}
                       >
@@ -593,8 +594,8 @@ export default function ArtistDashboard() {
                           <div key={video.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                             <div className="flex items-center gap-3">
                               {video.thumbnailUrl ? (
-                                <img 
-                                  src={video.thumbnailUrl} 
+                                <img
+                                  src={video.thumbnailUrl}
                                   alt={video.title}
                                   className="w-16 h-12 object-cover rounded"
                                 />
@@ -645,13 +646,13 @@ export default function ArtistDashboard() {
                         </DialogHeader>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
                           {videos.map((video) => (
-                            <div 
-                              key={video.id} 
+                            <div
+                              key={video.id}
                               className="group relative aspect-video rounded-lg overflow-hidden"
                             >
                               {video.thumbnailUrl ? (
-                                <img 
-                                  src={video.thumbnailUrl} 
+                                <img
+                                  src={video.thumbnailUrl}
                                   alt={video.title}
                                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                 />
@@ -737,7 +738,7 @@ export default function ArtistDashboard() {
                               <X className="mr-2 h-4 w-4" />
                               Cancel
                             </Button>
-                            <Button 
+                            <Button
                               onClick={handleVideoSubmit}
                               disabled={isSubmittingVideo || !videoUrl}
                             >
@@ -791,8 +792,8 @@ export default function ArtistDashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => togglePlay(song.audioUrl)}
                               >
@@ -879,7 +880,7 @@ export default function ArtistDashboard() {
                             </div>
                           )}
                           <div className="flex justify-end gap-4">
-                             <Button
+                            <Button
                               variant="outline"
                               onClick={() => {
                                 setIsSongDialogOpen(false);
@@ -889,7 +890,7 @@ export default function ArtistDashboard() {
                                   setCurrentAudio(null);
                                 }
                                 setSelectedFile(null);
-setIsPlaying(false);
+                                setIsPlaying(false);
                                 setUploadProgress(0);
                               }}
                             >
@@ -970,8 +971,8 @@ setIsPlaying(false);
                         No strategy set. Create one to get started.
                       </div>
                     )}
-                    <Button 
-                      className="w-full" 
+                    <Button
+                      className="w-full"
                       onClick={() => setIsStrategyDialogOpen(true)}
                     >
                       Update Strategy
@@ -979,12 +980,20 @@ setIsPlaying(false);
                   </div>
                 </Card>
               </motion.div>
+              {/* Rights Management Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <RightsManagementCard />
+              </motion.div>
             </div>
           </div>
         </div>
       </ScrollArea>
-    
-      <StrategyDialog 
+
+      <StrategyDialog
         open={isStrategyDialogOpen}
         onOpenChange={setIsStrategyDialogOpen}
         onStrategyUpdate={refetchStrategy}
