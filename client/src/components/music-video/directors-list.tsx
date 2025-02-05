@@ -30,6 +30,9 @@ import {
   Music2,
   FileText,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Send,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -40,11 +43,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 const hireFormSchema = z.object({
-  budget: z.string().min(1, "Budget is required"),
-  timeline: z.string().min(1, "Timeline is required"),
-  description: z.string().min(10, "Please provide more details about your project"),
+  budget: z.string().min(1, "Budget is required").regex(/^\d+$/, "Please enter a valid number"),
+  timeline: z.string().min(1, "Timeline is required")
+    .refine(value => ["1 week", "2 weeks", "1 month", "2 months", "3+ months"].includes(value), {
+      message: "Please select a valid timeline",
+    }),
+  description: z.string().min(50, "Please provide at least 50 characters describing your vision"),
   songUrl: z.string().url("Please enter a valid song URL"),
-  requirements: z.string().min(10, "Please provide specific requirements"),
+  requirements: z.string().min(30, "Please provide at least 30 characters of specific requirements"),
 });
 
 interface Director {
@@ -160,10 +166,17 @@ export function DirectorsList() {
               name="budget"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Budget</FormLabel>
+                  <FormLabel>Project Budget (USD)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your budget in USD" {...field} />
+                    <Input
+                      type="number"
+                      placeholder="Enter your budget"
+                      {...field}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Enter your total budget for the music video production
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -175,8 +188,21 @@ export function DirectorsList() {
                 <FormItem>
                   <FormLabel>Project Timeline</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 2 weeks, 1 month" {...field} />
+                    <select
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                      {...field}
+                    >
+                      <option value="">Select timeline</option>
+                      <option value="1 week">1 week</option>
+                      <option value="2 weeks">2 weeks</option>
+                      <option value="1 month">1 month</option>
+                      <option value="2 months">2 months</option>
+                      <option value="3+ months">3+ months</option>
+                    </select>
                   </FormControl>
+                  <FormDescription>
+                    Expected duration of the music video production
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -193,10 +219,10 @@ export function DirectorsList() {
                 <FormItem>
                   <FormLabel>Song URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="Link to your song" {...field} />
+                    <Input placeholder="e.g. SoundCloud, Spotify, or Dropbox link" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Provide a link to your song (SoundCloud, Dropbox, etc.)
+                    Provide a link where the director can listen to your song
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -207,13 +233,17 @@ export function DirectorsList() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Description</FormLabel>
+                  <FormLabel>Project Vision</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Describe your vision for the music video"
+                    <textarea
+                      className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
+                      placeholder="Describe your vision for the music video in detail"
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Include themes, mood, style, and any specific visual elements you want
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -228,13 +258,17 @@ export function DirectorsList() {
               name="requirements"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Specific Requirements</FormLabel>
+                  <FormLabel>Technical Requirements</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Any specific requirements or preferences"
+                    <textarea
+                      className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
+                      placeholder="List any specific technical requirements or preferences"
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Include details about resolution, aspect ratio, special effects, or equipment requirements
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -322,29 +356,42 @@ export function DirectorsList() {
       </Card>
 
       <Dialog open={showHireForm} onOpenChange={setShowHireForm}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-2xl">
               <Video className="h-5 w-5" />
               Hire {selectedDirector?.name}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-base">
               Fill out the form below to submit your music video project request.
-              The process has {totalSteps} steps to ensure we capture all necessary details.
+              Complete all {totalSteps} steps to ensure we capture all necessary details.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center space-x-2">
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center space-x-4">
               {Array.from({ length: totalSteps }).map((_, index) => (
-                <div
-                  key={index}
-                  className={`h-2 w-2 rounded-full ${
-                    currentStep >= index + 1
-                      ? "bg-orange-500"
-                      : "bg-orange-500/20"
-                  }`}
-                />
+                <div key={index} className="flex items-center">
+                  <div
+                    className={`
+                      h-8 w-8 rounded-full flex items-center justify-center border-2 
+                      ${currentStep >= index + 1
+                        ? "bg-orange-500 border-orange-500 text-white"
+                        : "border-orange-200 text-orange-200"
+                      }
+                    `}
+                  >
+                    {index + 1}
+                  </div>
+                  {index < totalSteps - 1 && (
+                    <div
+                      className={`
+                        w-12 h-0.5 ml-4
+                        ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
+                      `}
+                    />
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -352,18 +399,21 @@ export function DirectorsList() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {renderFormStep()}
-              <DialogFooter className="flex justify-between">
+              <DialogFooter className="flex justify-between gap-2">
                 {currentStep > 1 && (
                   <Button type="button" variant="outline" onClick={prevStep}>
-                    Previous
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous Step
                   </Button>
                 )}
                 {currentStep < totalSteps ? (
                   <Button type="button" onClick={nextStep}>
                     Next Step ({currentStep + 1}/{totalSteps})
+                    <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
                   <Button type="submit">
+                    <Send className="mr-2 h-4 w-4" />
                     Submit Request
                   </Button>
                 )}

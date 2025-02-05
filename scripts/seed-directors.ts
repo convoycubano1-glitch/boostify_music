@@ -1,10 +1,5 @@
-import { db } from "../client/src/lib/firebase";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db } from "./firebase-admin";
 import * as fal from "@fal-ai/serverless-client";
-
-fal.config({
-  credentials: process.env.VITE_FAL_API_KEY,
-});
 
 const sampleDirectors = [
   {
@@ -41,8 +36,49 @@ const sampleDirectors = [
     experience: "Pioneer in AI-enhanced music video production",
     style: "Futuristic visuals with immersive digital elements",
     rating: 4.8
+  },
+  {
+    name: "James Wilson",
+    specialty: "R&B & Soul",
+    experience: "15+ years crafting emotional visual narratives",
+    style: "Intimate storytelling with sophisticated cinematography",
+    rating: 4.7
+  },
+  {
+    name: "Elena Rodriguez",
+    specialty: "Latin Music & Reggaeton",
+    experience: "Award-winning director with major label collaborations",
+    style: "Vibrant aesthetics with dynamic camera movements",
+    rating: 4.9
+  },
+  {
+    name: "Alex Thompson",
+    specialty: "Indie Pop & Alternative",
+    experience: "12+ years specializing in artistic music videos",
+    style: "Experimental visuals with vintage aesthetics",
+    rating: 4.6
+  },
+  {
+    name: "Yuki Tanaka",
+    specialty: "K-pop & J-pop",
+    experience: "International director with major Asian labels",
+    style: "High-energy choreography with innovative transitions",
+    rating: 4.8
+  },
+  {
+    name: "Michael Brooks",
+    specialty: "Country & Folk",
+    experience: "25+ years capturing authentic storytelling",
+    style: "Natural cinematography with emotional depth",
+    rating: 4.7
   }
 ];
+
+interface FalImageResponse {
+  images?: Array<{
+    url: string;
+  }>;
+}
 
 const generateDirectorImage = async (prompt: string): Promise<string> => {
   try {
@@ -52,7 +88,7 @@ const generateDirectorImage = async (prompt: string): Promise<string> => {
         negative_prompt: "cartoon, anime, illustration, painting, drawing, blurry, distorted",
         num_inference_steps: 50,
       },
-    });
+    }) as FalImageResponse;
 
     if (result?.images?.[0]?.url) {
       return result.images[0].url;
@@ -67,7 +103,7 @@ const generateDirectorImage = async (prompt: string): Promise<string> => {
 const seedDirectors = async () => {
   try {
     // Check if directors already exist
-    const snapshot = await getDocs(collection(db, "directors"));
+    const snapshot = await db.collection("directors").get();
     if (!snapshot.empty) {
       console.log("Directors already seeded");
       return;
@@ -75,19 +111,26 @@ const seedDirectors = async () => {
 
     // Generate and store directors
     for (const director of sampleDirectors) {
+      console.log(`Generating image for director: ${director.name}`);
       const imageUrl = await generateDirectorImage(`${director.name}, ${director.specialty}`);
-      await addDoc(collection(db, "directors"), {
+
+      console.log(`Adding director ${director.name} to Firestore`);
+      await db.collection("directors").add({
         ...director,
         imageUrl,
         createdAt: new Date(),
+        status: 'active'
       });
-      console.log(`Created director: ${director.name}`);
+
+      // Add a delay between requests to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     console.log("Successfully seeded all directors");
   } catch (error) {
     console.error("Error seeding directors:", error);
+    throw error;
   }
 };
 
-seedDirectors();
+seedDirectors().catch(console.error);
