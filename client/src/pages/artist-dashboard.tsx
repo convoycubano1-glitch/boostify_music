@@ -58,6 +58,7 @@ interface Song {
   audioUrl: string;
   storageRef: string;
   createdAt: Date;
+  userId: string;
 }
 
 interface Strategy {
@@ -69,6 +70,7 @@ interface Strategy {
   timeline: string;
   status: string;
   createdAt: Date;
+  userId: string;
 }
 
 interface Phase {
@@ -229,11 +231,22 @@ export default function ArtistDashboard() {
       );
 
       const querySnapshot = await getDocs(q);
-      const fetchedStrategies = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date()
-      })) as Strategy[];
+      const fetchedStrategies = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          focus: data.focus || [],
+          phases: data.phases || [],
+          targetAudience: data.targetAudience || "",
+          priority: data.priority || "",
+          timeline: data.timeline || "",
+          status: data.status || "active",
+          createdAt: data.createdAt?.toDate() || new Date(),
+          userId: data.userId
+        } as Strategy;
+      });
+
+      console.log("Fetched strategies:", fetchedStrategies);
       setStrategies(fetchedStrategies);
     } catch (error) {
       console.error("Error fetching strategies:", error);
@@ -898,7 +911,7 @@ export default function ArtistDashboard() {
                                     <p className="text-sm font-medium">
                                       {selectedFile?.name}
                                     </p>
-                                    {uploadProgress > 0 && uploadProgress < 100 && (
+                                    {uploadProgress > 0 && uploadProgress <100 && (
                                       <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
                                         <div
                                           className="h-full bg-orange-500 transition-all duration-300"
