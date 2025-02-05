@@ -534,8 +534,8 @@ export default function ArtistDashboard() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-center pb-32 md:pb-12 pt-16 md:pt-0">
-          <div className="text-center md:text-left mb-8">
+        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-end pb-12 md:pb-12 pt-48 md:pt-96">
+          <div className="text-center md:text-left mb-12">
             <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
               Welcome to Your Creative Hub
             </h1>
@@ -544,7 +544,7 @@ export default function ArtistDashboard() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -918,7 +918,7 @@ export default function ArtistDashboard() {
                                     <p className="text-sm font-medium">
                                       {selectedFile?.name}
                                     </p>
-                                    {uploadProgress > 0 && uploadProgress <100 && (
+                                    {uploadProgress > 0 && uploadProgress < 100 && (
                                       <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
                                         <div
                                           className="h-full bg-orange-500 transition-all duration-300"
@@ -927,6 +927,48 @@ export default function ArtistDashboard() {
                                       </div>
                                     )}
                                   </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 10);
+                                        }
+                                      }}
+                                    >
+                                      -10s
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.currentTime = Math.min(
+                                            currentAudio.duration,
+                                            currentAudio.currentTime + 10
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      +10s
+                                    </Button>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (currentAudio) {
+                                        currentAudio.pause();
+                                        currentAudio.currentTime = 0;
+                                        setIsPlaying(false);
+                                      }
+                                    }}
+                                  >
+                                    Reset
+                                  </Button>
                                 </div>
                               </div>
                             </div>
