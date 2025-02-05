@@ -3,10 +3,18 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
+import cors from 'cors';
 
 const app = express();
+
+// Habilitar CORS para todos los orígenes en desarrollo
+app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Servir archivos estáticos desde la carpeta public
+app.use(express.static(path.join(process.cwd(), 'client/public')));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -66,7 +74,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
   } else {
-    // En desarrollo, usar Vite
+    // En desarrollo, usar Vite con configuración específica
     await setupVite(app, server);
   }
 
