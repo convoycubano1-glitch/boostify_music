@@ -8,24 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CORS headers
-app.use((req, res, next) => {
-  // Allow requests from any Replit domain
-  const origin = req.headers.origin;
-  if (origin && (origin.endsWith('.replit.dev') || origin.includes('replit.com'))) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -70,27 +52,28 @@ if (!process.env.STRIPE_SECRET_KEY) {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    console.error(err);
+    throw err;
   });
 
+  // En producción, servir archivos estáticos antes de configurar Vite
   if (app.get("env") === "production") {
+    // Servir archivos estáticos desde el directorio dist/public
     const __dirname = new URL('.', import.meta.url).pathname;
     app.use(express.static(path.join(__dirname, 'public')));
+
+    // Ruta catch-all para SPA
     app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
   } else {
-    // En desarrollo, configurar Vite después de todas las rutas API
-    try {
-      await setupVite(app, server);
-    } catch (error) {
-      console.error('Error setting up Vite:', error);
-      process.exit(1); // Terminar el proceso si hay un error crítico en la configuración
-    }
+    // En desarrollo, usar Vite
+    await setupVite(app, server);
   }
 
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client
   const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
-    log(`Server running on port ${PORT} in ${app.get("env")} mode`);
+    log(`serving on port ${PORT} in ${app.get("env")} mode`);
   });
 })();
