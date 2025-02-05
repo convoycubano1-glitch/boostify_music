@@ -7,7 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Calendar, Target, BarChart2, CheckCircle2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, Calendar, Target, BarChart2, CheckCircle2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db, auth } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -135,7 +136,8 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
           userId: auth.currentUser.uid,
           targetAudience,
           timeline,
-          priority
+          priority,
+          language: 'en' // Forzar respuesta en inglés
         })
       });
 
@@ -224,174 +226,191 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Growth Strategy Builder</DialogTitle>
-          <DialogDescription>
-            Create a comprehensive growth strategy for your music career
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>Growth Strategy Builder</DialogTitle>
+              <DialogDescription>
+                Create a comprehensive growth strategy for your music career
+              </DialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Target Audience Selection */}
-          <div className="space-y-2">
-            <Label>Target Audience</Label>
-            <Select value={targetAudience} onValueChange={setTargetAudience}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select target audience" />
-              </SelectTrigger>
-              <SelectContent>
-                {targetAudiences.map((audience) => (
-                  <SelectItem key={audience} value={audience}>
-                    {audience}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Priority Selection */}
-          <div className="space-y-2">
-            <Label>Priority Level</Label>
-            <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                {priorities.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Timeline Selection */}
-          <div className="space-y-2">
-            <Label>Timeline</Label>
-            <Select value={timeline} onValueChange={setTimeline}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select timeline" />
-              </SelectTrigger>
-              <SelectContent>
-                {timelines.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Generate Strategy Button */}
-          {!generatedFocus.length && (
-            <Button
-              className="w-full"
-              onClick={generateStrategy}
-              disabled={isLoading || !targetAudience || !priority || !timeline}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Strategy'
-              )}
-            </Button>
-          )}
-
-          {/* Generated Strategy Display */}
-          {generatedFocus.length > 0 && (
-            <div className="space-y-4">
-              <div className="rounded-lg border p-4 bg-orange-500/5">
-                <h3 className="font-medium mb-2 flex items-center gap-2">
-                  <Target className="h-4 w-4 text-orange-500" />
-                  Strategic Focus Points
-                </h3>
-                <ul className="space-y-2">
-                  {generatedFocus.map((focus, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-orange-500 mt-0.5" />
-                      <span>{focus}</span>
-                    </li>
-                  ))}
-                </ul>
+        <ScrollArea className="flex-grow pr-4">
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Target Audience Selection */}
+              <div className="space-y-2">
+                <Label>Target Audience</Label>
+                <Select value={targetAudience} onValueChange={setTargetAudience}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select target audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {targetAudiences.map((audience) => (
+                      <SelectItem key={audience} value={audience}>
+                        {audience}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Phases Section */}
-              <div className="space-y-4">
-                <h3 className="font-medium flex items-center gap-2">
-                  <BarChart2 className="h-4 w-4 text-orange-500" />
-                  Implementation Phases
-                </h3>
-                <div className="space-y-3">
-                  {phases.map((phase) => (
-                    <div
-                      key={phase.id}
-                      className="flex items-start gap-3 p-3 rounded-lg border bg-background/50"
-                    >
-                      <Checkbox
-                        checked={phase.completed}
-                        onCheckedChange={() => togglePhaseCompletion(phase.id)}
-                      />
-                      <div className="space-y-1">
-                        <p className="font-medium">{phase.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {phase.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+              {/* Priority Selection */}
+              <div className="space-y-2">
+                <Label>Priority Level</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorities.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Timeline Selection */}
+              <div className="space-y-2">
+                <Label>Timeline</Label>
+                <Select value={timeline} onValueChange={setTimeline}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timeline" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timelines.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Generate Strategy Button */}
+            {!generatedFocus.length && (
+              <Button
+                className="w-full"
+                onClick={generateStrategy}
+                disabled={isLoading || !targetAudience || !priority || !timeline}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Strategy'
+                )}
+              </Button>
+            )}
+
+            {/* Generated Strategy Display */}
+            {generatedFocus.length > 0 && (
+              <div className="space-y-6">
+                <div className="rounded-lg border p-4 bg-orange-500/5">
+                  <h3 className="font-medium mb-3 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-orange-500" />
+                    Strategic Focus Points
+                  </h3>
+                  <ul className="space-y-3">
+                    {generatedFocus.map((focus, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span>{focus}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {/* Add Custom Phase */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add custom phase"
-                    value={customPhase}
-                    onChange={(e) => setCustomPhase(e.target.value)}
-                  />
+                {/* Phases Section */}
+                <div className="space-y-4">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-orange-500" />
+                    Implementation Phases
+                  </h3>
+                  <div className="space-y-3">
+                    {phases.map((phase) => (
+                      <div
+                        key={phase.id}
+                        className="flex items-start gap-3 p-3 rounded-lg border bg-background/50"
+                      >
+                        <Checkbox
+                          checked={phase.completed}
+                          onCheckedChange={() => togglePhaseCompletion(phase.id)}
+                          className="mt-1"
+                        />
+                        <div className="space-y-1 flex-grow">
+                          <p className="font-medium">{phase.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {phase.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Custom Phase */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add custom phase"
+                      value={customPhase}
+                      onChange={(e) => setCustomPhase(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={addCustomPhase}
+                      disabled={!customPhase.trim()}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button
                     variant="outline"
-                    onClick={addCustomPhase}
-                    disabled={!customPhase.trim()}
+                    onClick={() => {
+                      setGeneratedFocus([]);
+                      setPhases(predefinedPhases);
+                    }}
+                    disabled={isLoading}
                   >
-                    Add
+                    Reset
+                  </Button>
+                  <Button
+                    onClick={saveStrategy}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Strategy'
+                    )}
                   </Button>
                 </div>
               </div>
-
-              {/* Save Strategy Button */}
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setGeneratedFocus([]);
-                    setPhases(predefinedPhases);
-                  }}
-                  disabled={isLoading}
-                >
-                  Reset
-                </Button>
-                <Button
-                  onClick={saveStrategy}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Strategy'
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
