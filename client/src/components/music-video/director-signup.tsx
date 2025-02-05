@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  VideoCamera,
+  Video,
   Upload,
   Loader2,
   CheckCircle2,
@@ -137,7 +137,7 @@ export function DirectorSignup() {
     <Card className="p-6">
       <div className="flex items-center gap-4 mb-6">
         <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-          <VideoCamera className="h-6 w-6 text-orange-500" />
+          <Video className="h-6 w-6 text-orange-500" />
         </div>
         <div>
           <h2 className="text-xl font-semibold">Director Application</h2>

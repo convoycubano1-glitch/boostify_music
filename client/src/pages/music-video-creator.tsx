@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { VideoCamera, Users, Upload, PlayCircle, Loader2 } from "lucide-react";
+import { Video, Users, Upload, PlayCircle, Loader2 } from "lucide-react";
 import { DirectorsList } from "@/components/music-video/directors-list";
 import { DirectorSignup } from "@/components/music-video/director-signup";
 import { MusicVideoAI } from "@/components/music-video/music-video-ai";
@@ -52,7 +52,7 @@ export default function MusicVideoCreator() {
               onClick={() => setActiveTab('ai')}
               className="gap-2"
             >
-              <VideoCamera className="h-4 w-4" />
+              <Video className="h-4 w-4" />
               AI Video Creation
             </Button>
           </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  VideoCamera,
+  Video,
   Upload,
   Loader2,
   Music2,
@@ -70,11 +70,13 @@ export function MusicVideoAI() {
               audio: base64Audio,
               model_size: "base",
             },
-            logging: "error",
           });
 
-          setTranscription(result.output.text);
-          generateVideoScript(result.output.text);
+          if (typeof result === 'object' && result !== null && 'text' in result) {
+            const text = (result as { text: string }).text;
+            setTranscription(text);
+            generateVideoScript(text);
+          }
         }
       };
       reader.readAsDataURL(selectedFile);
@@ -102,10 +104,11 @@ ${lyrics}
 
 Create a professional music video script that captures the essence and emotion of the song.`,
         },
-        logging: "error",
       });
 
-      setGeneratedScript(result.output);
+      if (typeof result === 'object' && result !== null && 'text' in result) {
+        setGeneratedScript((result as { text: string }).text);
+      }
     } catch (error) {
       console.error("Error generating script:", error);
       toast({
@@ -122,7 +125,7 @@ Create a professional music video script that captures the essence and emotion o
     <Card className="p-6">
       <div className="flex items-center gap-4 mb-6">
         <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-          <VideoCamera className="h-6 w-6 text-orange-500" />
+          <Video className="h-6 w-6 text-orange-500" />
         </div>
         <div>
           <h2 className="text-xl font-semibold">AI Music Video Creator</h2>

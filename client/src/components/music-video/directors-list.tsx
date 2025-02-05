@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  VideoCamera,
+  Video,
   Play,
   Award,
   Star,
@@ -39,10 +39,9 @@ const generateDirectorProfile = async (): Promise<Director> => {
         "rating": "number between 4 and 5"
       }`,
     },
-    logging: "error",
   });
 
-  const profile = JSON.parse(result.output);
+  const profile = JSON.parse(result.text || "{}");
   return {
     id: Math.random().toString(36).substr(2, 9),
     ...profile,
@@ -72,7 +71,7 @@ export function DirectorsList() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-            <VideoCamera className="h-6 w-6 text-orange-500" />
+            <Video className="h-6 w-6 text-orange-500" />
           </div>
           <div>
             <h2 className="text-xl font-semibold">Featured Directors</h2>
@@ -136,7 +135,7 @@ export function DirectorsList() {
 
         {directors.length === 0 && !isGenerating && (
           <div className="text-center py-8 text-muted-foreground">
-            <VideoCamera className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <Video className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p>No directors generated yet. Click the button above to start.</p>
           </div>
         )}
