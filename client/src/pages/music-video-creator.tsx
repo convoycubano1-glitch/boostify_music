@@ -31,7 +31,7 @@ export default function MusicVideoCreator() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-300 mb-4 md:mb-6 text-center md:text-left"
+            className="text-4xl md:text-6xl font-bold text-white mb-4 md:mb-6 text-center md:text-left drop-shadow-lg"
           >
             Bring Your Music to Life
           </motion.h1>
@@ -39,7 +39,7 @@ export default function MusicVideoCreator() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl text-white/90 max-w-2xl mb-6 md:mb-8 text-center md:text-left drop-shadow-lg"
+            className="text-lg md:text-xl text-white mb-6 md:mb-8 text-center md:text-left max-w-2xl font-medium drop-shadow-lg"
           >
             Transform your music into stunning visuals with AI-powered technology or collaborate with professional directors
           </motion.p>
