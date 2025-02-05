@@ -43,6 +43,10 @@ if (!process.env.STRIPE_SECRET_KEY) {
   console.error('Error: STRIPE_SECRET_KEY no está definida en las variables de entorno');
   process.exit(1);
 }
+if (!process.env.OPENAI_API_KEY) {
+  console.error('Error: OPENAI_API_KEY no está definida en las variables de entorno');
+  process.exit(1);
+}
 
 (async () => {
   const server = registerRoutes(app);
