@@ -80,7 +80,13 @@ if (!process.env.STRIPE_SECRET_KEY) {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
   } else {
-    await setupVite(app, server);
+    // En desarrollo, configurar Vite después de todas las rutas API
+    try {
+      await setupVite(app, server);
+    } catch (error) {
+      console.error('Error setting up Vite:', error);
+      process.exit(1); // Terminar el proceso si hay un error crítico en la configuración
+    }
   }
 
   const PORT = 5000;
