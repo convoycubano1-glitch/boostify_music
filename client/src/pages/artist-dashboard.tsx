@@ -40,6 +40,7 @@ import { Label } from "@/components/ui/label";
 import { StrategyDialog } from "@/components/strategy/strategy-dialog";
 import { ActivityFeed } from "@/components/activity/activity-feed";
 import { RightsManagementCard } from "@/components/rights/rights-management-card";
+import { DistributionCard } from "@/components/distribution/distribution-card";
 
 interface Video {
   id: string;
@@ -987,6 +988,15 @@ export default function ArtistDashboard() {
                 transition={{ delay: 0.3 }}
               >
                 <RightsManagementCard />
+              </motion.div>
+
+              {/* Distribution Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <DistributionCard />
               </motion.div>
             </div>
           </div>
