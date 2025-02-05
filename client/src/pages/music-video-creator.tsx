@@ -26,9 +26,9 @@ export default function MusicVideoCreator() {
         >
           <source src="/background-video.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/80 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-background" />
         <div className="relative z-10 container mx-auto h-full flex flex-col justify-center">
-          <div className="bg-black/60 backdrop-blur-sm rounded-lg p-6 mx-4 md:mx-0 md:max-w-2xl">
+          <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 mx-4 md:mx-0 md:max-w-2xl">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
