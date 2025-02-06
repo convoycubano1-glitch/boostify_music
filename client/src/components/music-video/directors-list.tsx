@@ -413,9 +413,9 @@ export function DirectorsList() {
     if (!selectedDirector) return;
 
     try {
-      // Start submission process animation
-      await simulateSubmissionProcess();
+      setIsSubmitting(true);
 
+      // Create the request data object with all required fields
       const requestData = {
         directorId: selectedDirector.id,
         directorName: selectedDirector.name,
@@ -430,51 +430,29 @@ export function DirectorsList() {
         submittedAt: new Date().toISOString(),
         requestType: "music_video",
         projectStatus: "awaiting_review",
-        priceEstimate,
-        conceptImages,
         resolution: values.resolution,
         aspectRatio: values.aspectRatio,
         specialEffects: values.specialEffects,
         additionalNotes: values.additionalNotes,
       };
 
-      console.log("Saving request to Firestore:", requestData);
+      // Save to Firestore
+      const requestRef = collection(db, "music-video-request");
+      await addDoc(requestRef, requestData);
 
-      try {
-        const requestRef = collection(db, "music-video-request");
-        const docRef = await addDoc(requestRef, requestData);
-        console.log("Request saved with ID:", docRef.id);
+      // Show success message
+      toast({
+        title: "Success!",
+        description: "Your music video request has been submitted successfully.",
+      });
 
-        // Refresh requests list
-        const q = query(requestRef, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const requestsData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as MusicVideoRequest[];
-        setRequests(requestsData);
+      // Reset form and close dialog
+      form.reset();
+      setShowHireForm(false);
+      setCurrentStep(1);
 
-        toast({
-          title: "Success!",
-          description: "Your music video request has been submitted successfully.",
-        });
-
-        // Reset form and close dialog after successful submission
-        form.reset();
-        setShowHireForm(false);
-        setSubmissionStep(0);
-        setIsSubmissionComplete(false);
-        setCurrentStep(1);
-      } catch (dbError) {
-        console.error("Database error:", dbError);
-        toast({
-          title: "Error",
-          description: "Failed to save request. Please try again.",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
-      console.error("Error in submission process:", error);
+      console.error("Error submitting request:", error);
       toast({
         title: "Error",
         description: "Failed to submit request. Please try again.",
@@ -1005,7 +983,7 @@ export function DirectorsList() {
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y6">
               <div className="flex justify-center mb-6">
                 <div className="flex items-center space-x-2 md:space-x-4">
                   {Array.from({ length: totalSteps }).map((_, index) => (
