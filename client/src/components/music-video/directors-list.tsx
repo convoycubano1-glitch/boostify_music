@@ -50,6 +50,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Progress } from "@/components/ui/progress";
+import * as fal from "@fal-ai/serverless-client";
+
+fal.config({
+  credentials: import.meta.env.VITE_FAL_API_KEY,
+});
 
 // Constants for form options
 const VISUAL_THEMES = [
@@ -153,6 +158,24 @@ interface Director {
   imageUrl?: string;
 }
 
+interface PriceEstimate {
+  basicPackage: {
+    price: number;
+    description: string;
+    features: string[];
+  };
+  standardPackage: {
+    price: number;
+    description: string;
+    features: string[];
+  };
+  premiumPackage: {
+    price: number;
+    description: string;
+    features: string[];
+  };
+}
+
 interface SubmissionProgressProps {
   currentStep: number;
   isComplete: boolean;
@@ -203,7 +226,11 @@ export function DirectorsList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
   const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
-  const totalSteps = 3;
+  const totalSteps = 5; // Increased total steps to account for new steps
+  const [priceEstimate, setPriceEstimate] = useState<PriceEstimate | null>(null);
+  const [conceptImages, setConceptImages] = useState<string[]>([]);
+  const [isGeneratingEstimate, setIsGeneratingEstimate] = useState(false);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
 
   const form = useForm<z.infer<typeof hireFormSchema>>({
     resolver: zodResolver(hireFormSchema),
@@ -220,9 +247,9 @@ export function DirectorsList() {
     const fetchDirectors = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "directors"));
-        const directorsData = querySnapshot.docs.map(doc => ({
+        const directorsData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Director[];
         setDirectors(directorsData);
       } catch (error) {
@@ -252,13 +279,95 @@ export function DirectorsList() {
 
     for (const { step, delay, message } of steps) {
       console.log(`Step ${step}: ${message}`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       setSubmissionStep(step);
     }
 
     setIsSubmissionComplete(true);
     console.log("Submission animation complete");
-    return new Promise(resolve => setTimeout(resolve, 1000));
+    return new Promise((resolve) => setTimeout(resolve, 1000));
+  };
+
+  const generatePriceEstimate = async (formData: z.infer<typeof hireFormSchema>) => {
+    setIsGeneratingEstimate(true);
+    try {
+      const prompt = `As a music video production expert, generate a detailed price estimate with 3 package options (Basic, Standard, Premium) based on these requirements:
+      - Visual Theme: ${formData.visualTheme}
+      - Mood: ${formData.mood}
+      - Style: ${formData.visualStyle}
+      - Resolution: ${formData.resolution}
+      - Aspect Ratio: ${formData.aspectRatio}
+      - Special Effects: ${formData.specialEffects.join(", ")}
+      - Timeline: ${formData.timeline}
+
+      Each package should include:
+      1. Price (between $1,500 and $9,500)
+      2. Description
+      3. List of features/services
+
+      Format the response as a JSON object with this structure:
+      {
+        "basicPackage": { "price": number, "description": string, "features": string[] },
+        "standardPackage": { "price": number, "description": string, "features": string[] },
+        "premiumPackage": { "price": number, "description": string, "features": string[] }
+      }`;
+
+      const response = await fal.subscribe("fal-ai/llama-2-70b-chat", {
+        input: {
+          prompt,
+        },
+      });
+
+      if (typeof response === 'object' && response !== null && 'text' in response) {
+        const estimate = JSON.parse((response as { text: string }).text);
+        setPriceEstimate(estimate);
+      }
+    } catch (error) {
+      console.error("Error generating price estimate:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate price estimate. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingEstimate(false);
+    }
+  };
+
+  const generateConceptImages = async (formData: z.infer<typeof hireFormSchema>) => {
+    setIsGeneratingImages(true);
+    try {
+      const prompt = `Create a cinematic still for a music video with these characteristics:
+      Theme: ${formData.visualTheme}
+      Mood: ${formData.mood}
+      Style: ${formData.visualStyle}
+      Make it highly detailed and professional looking.`;
+
+      const images = [];
+      for (let i = 0; i < 4; i++) {
+        const result = await fal.subscribe("fal-ai/fast-sdxl", {
+          input: {
+            prompt,
+            image_size: "square_hd",
+          },
+        });
+
+        if (typeof result === 'object' && result !== null && 'images' in result && 
+            Array.isArray(result.images) && result.images[0]?.url) {
+          images.push(result.images[0].url);
+        }
+      }
+      setConceptImages(images);
+    } catch (error) {
+      console.error("Error generating concept images:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate concept images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingImages(false);
+    }
   };
 
   const onSubmit = async (values: z.infer<typeof hireFormSchema>) => {
@@ -279,16 +388,16 @@ export function DirectorsList() {
         createdAt: serverTimestamp(),
         submittedAt: new Date().toISOString(),
         requestType: "music_video",
-        projectStatus: "awaiting_review"
+        projectStatus: "awaiting_review",
+        priceEstimate,
+        conceptImages,
       };
 
       console.log("Saving project to Firestore:", projectData);
 
       // Add to Firestore
       const projectRef = collection(db, "projects");
-      const docRef = await addDoc(projectRef, projectData);
-
-      console.log("Project saved successfully with ID:", docRef.id);
+      await addDoc(projectRef, projectData);
 
       toast({
         title: "Success!",
@@ -320,7 +429,15 @@ export function DirectorsList() {
     setCurrentStep(1);
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
+    const currentValues = form.getValues();
+    if (currentStep === 1) {
+      // After first step, generate price estimate
+      await generatePriceEstimate(currentValues);
+    } else if (currentStep === 2) {
+      // After second step, generate concept images
+      await generateConceptImages(currentValues);
+    }
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
@@ -571,6 +688,88 @@ export function DirectorsList() {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="additionalNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Additional Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <textarea
+                      className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
+                      placeholder="Any additional requirements or preferences..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {isGeneratingEstimate && (
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                <p>Generating price estimate...</p>
+              </div>
+            )}
+            {priceEstimate && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Price Estimates</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {Object.entries(priceEstimate).map(([key, pkg]) => (
+                    <div key={key} className="p-4 border rounded-lg">
+                      <h4 className="font-semibold mb-2">
+                        {key.replace("Package", "")} Package
+                      </h4>
+                      <p className="text-2xl font-bold text-orange-500 mb-2">
+                        ${pkg.price.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {pkg.description}
+                      </p>
+                      <ul className="text-sm space-y-2">
+                        {pkg.features.map((feature: string, index: number) => (
+                          <li key={index} className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-orange-500" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 4:
+        return (
+          <div>
+            {isGeneratingImages && (
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                <p>Generating concept images...</p>
+              </div>
+            )}
+            {conceptImages.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Visual Concepts</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {conceptImages.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`Concept ${index + 1}`}
+                      className="w-full rounded-lg"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 5:
+        return (
+          <div>
             <FormField
               control={form.control}
               name="additionalNotes"
