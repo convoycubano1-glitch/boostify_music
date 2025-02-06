@@ -3,28 +3,45 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Timeline from "react-calendar-timeline";
+import { Slider } from "@/components/ui/slider";
 import {
-  Video,
-  Upload,
-  Loader2,
-  Music2,
-  FileText,
-  Clock,
-  Camera,
-  Image as ImageIcon,
-  Download,
-  Play,
-  Pause,
-  ZoomIn,
-  ZoomOut,
-  SkipBack,
-  FastForward,
-  Rewind
+  Video, Upload, Loader2, Music2, FileText, Clock, Camera,
+  Image as ImageIcon, Download, Play, Pause, ZoomIn, ZoomOut,
+  SkipBack, FastForward, Rewind, Palette
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import * as fal from "@fal-ai/serverless-client";
+import OpenAI from "openai";
+
+// OpenAI configuration
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
+
+// Fal.ai configuration
+fal.config({
+  credentials: import.meta.env.VITE_FAL_API_KEY,
+});
+
+const videoStyles = {
+  moods: [
+    "Energético", "Melancólico", "Romántico", "Dramático",
+    "Misterioso", "Alegre", "Épico", "Minimalista"
+  ],
+  colorPalettes: [
+    "Vibrante", "Monocromático", "Pastel", "Oscuro y Contrastado",
+    "Cálido", "Frío", "Retro", "Neón"
+  ],
+  characterStyles: [
+    "Realista", "Estilizado", "Artístico", "Abstracto",
+    "Cinematográfico", "Documental", "Surrealista", "Vintage"
+  ]
+};
 
 interface TimelineItem {
   id: number;
@@ -39,34 +56,6 @@ interface TimelineItem {
 }
 
 const groups = [{ id: 1, title: "Secuencia de Video" }];
-
-// Datos simulados para desarrollo
-const mockVideoSequence = [
-  {
-    time: "0",
-    description: "Plano general del artista en el escenario",
-    shotType: "Wide Shot",
-    imagePrompt: "Artist on stage with dramatic lighting"
-  },
-  {
-    time: "5",
-    description: "Primer plano del rostro del artista cantando",
-    shotType: "Close Up",
-    imagePrompt: "Close up of singer's face with emotional expression"
-  },
-  {
-    time: "10",
-    description: "Toma panorámica de la audiencia",
-    shotType: "Tracking Shot",
-    imagePrompt: "Crowd at concert with waving hands and phone lights"
-  },
-  {
-    time: "15",
-    description: "Plano medio del artista con banda",
-    shotType: "Medium Shot",
-    imagePrompt: "Band performing on stage with dynamic composition"
-  }
-];
 
 export function MusicVideoAI() {
   const { toast } = useToast();
@@ -85,6 +74,12 @@ export function MusicVideoAI() {
   const [visibleTimeEnd, setVisibleTimeEnd] = useState<number>(60000);
   const [hoveredShot, setHoveredShot] = useState<TimelineItem | null>(null);
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
+  const [videoStyle, setVideoStyle] = useState({
+    mood: "",
+    colorPalette: "",
+    characterStyle: "",
+    visualIntensity: 50
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -149,11 +144,49 @@ Buscando mi destino`;
   const generateVideoScript = async (lyrics: string) => {
     setIsGeneratingScript(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const prompt = `Como director de videos musicales profesional, crea un guion detallado para un video musical con las siguientes especificaciones:
 
-      const mockScript = mockVideoSequence;
-      generateTimelineItems(mockScript);
-      setGeneratedScript(JSON.stringify(mockScript, null, 2));
+Estilo:
+- Mood: ${videoStyle.mood}
+- Paleta de Color: ${videoStyle.colorPalette}
+- Estilo de Personajes: ${videoStyle.characterStyle}
+- Intensidad Visual: ${videoStyle.visualIntensity}%
+
+Letra:
+${lyrics}
+
+Genera exactamente 5 escenas clave. Para cada escena, incluye:
+- Tiempo (en segundos desde el inicio)
+- Descripción detallada
+- Tipo de toma (Wide Shot, Medium Shot, Close Up, etc.)
+- Prompt para generar imagen (descripción visual detallada para AI)
+
+Responde en formato JSON con la siguiente estructura:
+{
+  "shots": [
+    {
+      "time": "0",
+      "description": "descripción",
+      "shotType": "tipo de toma",
+      "imagePrompt": "prompt para AI"
+    }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: "Eres un director de videos musicales experto." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const scriptResult = JSON.parse(response.choices[0].message.content);
+      if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
+        generateTimelineItems(scriptResult.shots);
+        setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+      }
     } catch (error) {
       console.error("Error generando el guion:", error);
       toast({
@@ -166,7 +199,7 @@ Buscando mi destino`;
     }
   };
 
-  const generateTimelineItems = (shots: typeof mockVideoSequence) => {
+  const generateTimelineItems = (shots: { time: string; description: string; shotType: string; imagePrompt: string; }[]) => {
     const baseTime = Date.now();
     const items = shots.map((shot, index) => ({
       id: index + 1,
@@ -257,8 +290,36 @@ Buscando mi destino`;
   const generateShotImages = async () => {
     setIsGeneratingShots(true);
     try {
-      // Simulamos la generación de imágenes
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const updatedItems = [...timelineItems];
+
+      // Limitamos a 5 imágenes durante el desarrollo
+      const itemsToGenerate = updatedItems.slice(0, 5);
+
+      for (let i = 0; i < itemsToGenerate.length; i++) {
+        const item = itemsToGenerate[i];
+        if (!item.generatedImage && item.imagePrompt) {
+          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style`;
+
+          const result = await fal.subscribe("fal-ai/flux-pro", {
+            input: {
+              prompt,
+              negative_prompt: "low quality, blurry, distorted, deformed, unrealistic",
+              image_size: "landscape_16_9"
+            },
+          });
+
+          if (result?.images?.[0]?.url) {
+            updatedItems[i] = {
+              ...item,
+              generatedImage: result.images[0].url
+            };
+            setTimelineItems([...updatedItems]);
+          }
+
+          // Esperar entre generaciones para evitar rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      }
 
       toast({
         title: "Éxito",
@@ -279,7 +340,6 @@ Buscando mi destino`;
   const handleExportVideo = async () => {
     setIsExporting(true);
     try {
-      // Simulamos la exportación del video
       await new Promise(resolve => setTimeout(resolve, 4000));
 
       toast({
@@ -313,7 +373,6 @@ Buscando mi destino`;
       </div>
 
       <div className="space-y-6">
-        {/* Subida de archivo */}
         <div>
           <Label>Sube tu Canción (MP3)</Label>
           <div className="flex items-center gap-2 mt-2">
@@ -342,7 +401,6 @@ Buscando mi destino`;
           </div>
         </div>
 
-        {/* Transcripción */}
         {transcription && (
           <div className="space-y-2">
             <h3 className="font-semibold flex items-center gap-2">
@@ -355,7 +413,79 @@ Buscando mi destino`;
           </div>
         )}
 
-        {/* Timeline Controls */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>Mood del Video</Label>
+            <Select
+              value={videoStyle.mood}
+              onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el mood" />
+              </SelectTrigger>
+              <SelectContent>
+                {videoStyles.moods.map((mood) => (
+                  <SelectItem key={mood} value={mood}>
+                    {mood}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Paleta de Colores</Label>
+            <Select
+              value={videoStyle.colorPalette}
+              onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona la paleta" />
+              </SelectTrigger>
+              <SelectContent>
+                {videoStyles.colorPalettes.map((palette) => (
+                  <SelectItem key={palette} value={palette}>
+                    {palette}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Estilo de Personajes</Label>
+            <Select
+              value={videoStyle.characterStyle}
+              onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                {videoStyles.characterStyles.map((style) => (
+                  <SelectItem key={style} value={style}>
+                    {style}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Intensidad Visual</Label>
+            <div className="pt-2">
+              <Slider
+                value={[videoStyle.visualIntensity]}
+                onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                min={0}
+                max={100}
+                step={1}
+              />
+            </div>
+          </div>
+        </div>
+
+
         {timelineItems.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -455,7 +585,6 @@ Buscando mi destino`;
               </div>
             </div>
 
-            {/* Timeline */}
             <div className="border rounded-lg p-4 relative">
               <Timeline
                 groups={groups}
@@ -470,7 +599,7 @@ Buscando mi destino`;
                 stackItems
                 itemHeightRatio={0.8}
                 itemRenderer={({ item }) => (
-                  <div 
+                  <div
                     className="relative h-full cursor-pointer group"
                     onMouseEnter={() => setHoveredShot(item)}
                     onMouseLeave={() => setHoveredShot(null)}
@@ -481,8 +610,8 @@ Buscando mi destino`;
                     )}>
                       <span className="z-10 font-medium text-foreground/80">{item.title}</span>
                       {item.generatedImage && (
-                        <img 
-                          src={item.generatedImage} 
+                        <img
+                          src={item.generatedImage}
                           alt={item.description}
                           className="absolute inset-0 w-full h-full object-cover rounded opacity-50 group-hover:opacity-100 transition-opacity"
                         />
@@ -492,7 +621,6 @@ Buscando mi destino`;
                 )}
               />
 
-              {/* Current time indicator */}
               <div
                 className="absolute top-0 bottom-0 w-px bg-orange-500 z-50 pointer-events-none"
                 style={{
@@ -502,7 +630,6 @@ Buscando mi destino`;
               />
             </div>
 
-            {/* Shot Preview */}
             {hoveredShot && (
               <div className="fixed bottom-4 right-4 max-w-sm bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4 z-50">
                 <div className="aspect-video relative rounded-lg overflow-hidden mb-3">
@@ -521,7 +648,6 @@ Buscando mi destino`;
           </div>
         )}
 
-        {/* Loading States */}
         {(isGeneratingScript || isTranscribing) && !timelineItems.length && (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
