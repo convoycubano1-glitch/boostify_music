@@ -520,8 +520,8 @@ export default function ArtistDashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-16">
-        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden">
+      <main className="flex-1">
+        <div className="relative w-full h-[80vh] md:h-[90vh] overflow-hidden">
           <video
             autoPlay
             loop
@@ -531,10 +531,9 @@ export default function ArtistDashboard() {
           >
             <source src="/assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-background" />
 
-          <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-end pb-12 md:pb-12 pt-48 md:pt-96">
+          <div className="relative z-10 container mx-auto h-full flex flex-col justify-end items-start px-4 mt-24">
             <div className="text-center md:text-left mb-12">
               <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
                 Welcome to Your Creative Hub
