@@ -39,11 +39,10 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
           category: data.category
         };
         images.push(imageData);
-        console.log("Added image for category:", data.category);
+        console.log("Added image:", imageData);
       }
     });
 
-    console.log("Processed images:", images);
     return images;
   } catch (error) {
     console.error("Error fetching musician images:", error);
