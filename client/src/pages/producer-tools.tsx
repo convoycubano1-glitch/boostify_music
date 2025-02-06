@@ -34,7 +34,8 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
       const data = doc.data();
       console.log("Document data:", data);
 
-      if (data.imageUrl && data.category) {
+      // Verificar que los campos necesarios existen
+      if (data && data.imageUrl && data.category) {
         images.push({
           url: data.imageUrl,
           category: data.category
@@ -42,6 +43,7 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
       }
     });
 
+    console.log("Retrieved stored images:", images);
     return images;
   } catch (error) {
     console.error("Error fetching musician images:", error);
@@ -268,6 +270,70 @@ export default function ProducerToolsPage() {
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
 
+  const loadMusicianImages = async () => {
+    try {
+      console.log("Starting to load musician images...");
+      setIsLoadingImages(true);
+
+      const storedImages = await getStoredMusicianImages();
+      console.log("Retrieved stored images:", storedImages);
+
+      if (storedImages && storedImages.length > 0) {
+        const updatedMusicians = musicians.map(musician => {
+          const categoryImages = storedImages.filter(img =>
+            img.category === musician.category
+          );
+
+          console.log(`Found ${categoryImages.length} images for category ${musician.category}`);
+
+          if (categoryImages.length > 0) {
+            console.log(`Using stored image for ${musician.title}:`, categoryImages[0].url);
+            return {
+              ...musician,
+              userId: `user-${musician.id}`,
+              photo: categoryImages[0].url
+            };
+          }
+
+          console.log(`No matching image found for ${musician.title}, using placeholder`);
+          return {
+            ...musician,
+            userId: `user-${musician.id}`,
+            photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
+          };
+        });
+
+        console.log("Final updated musicians:", updatedMusicians);
+        setMusiciansState(updatedMusicians);
+      } else {
+        console.log("No images found in Firestore, using default images");
+        setMusiciansState(musicians.map(musician => ({
+          ...musician,
+          userId: `user-${musician.id}`,
+          photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
+        })));
+      }
+    } catch (error) {
+      console.error("Error loading musician images:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load musician images",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingImages(false);
+      setImagesLoaded(true);
+    }
+  };
+
+  const handleMusicianAdded = () => {
+    loadMusicianImages();
+  };
+
+  useEffect(() => {
+    loadMusicianImages();
+  }, []);
+
   const filteredMusicians = musiciansState.filter(musician =>
     selectedCategory.toLowerCase() === "all" ||
     musician.category.toLowerCase() === selectedCategory.toLowerCase()
@@ -407,69 +473,6 @@ export default function ProducerToolsPage() {
     }
   };
 
-  useEffect(() => {
-    async function loadMusicianImages() {
-      try {
-        console.log("Starting to load musician images...");
-        setIsLoadingImages(true);
-
-        const storedImages = await getStoredMusicianImages();
-        console.log("Retrieved stored images:", storedImages);
-
-        if (storedImages.length > 0) {
-          const updatedMusicians = musicians.map(musician => {
-            const categoryImages = storedImages.filter(img =>
-              img.category === musician.category
-            );
-
-            console.log(`Found ${categoryImages.length} images for category ${musician.category}`);
-
-            if (categoryImages.length > 0) {
-              console.log(`Using stored image for ${musician.title}:`, categoryImages[0].url);
-              return {
-                ...musician,
-                userId: `user-${musician.id}`,
-                photo: categoryImages[0].url
-              };
-            } else {
-              console.log(`No matching image found for ${musician.title}, using placeholder`);
-              return {
-                ...musician,
-                userId: `user-${musician.id}`,
-                photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
-              };
-            }
-          });
-
-          console.log("Final updated musicians:", updatedMusicians);
-          setMusiciansState(updatedMusicians);
-        } else {
-          console.log("No images found in Firestore, using default images");
-          setMusiciansState(musicians.map(musician => ({
-            ...musician,
-            userId: `user-${musician.id}`,
-            photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
-          })));
-        }
-      } catch (error) {
-        console.error("Error loading musician images:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load musician images",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoadingImages(false);
-        setImagesLoaded(true);
-      }
-    }
-
-    loadMusicianImages();
-  }, []);
-
-  const handleMusicianAdded = () => {
-    loadMusicianImages();
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
