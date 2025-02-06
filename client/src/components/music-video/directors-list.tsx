@@ -966,18 +966,17 @@ export function DirectorsList() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <Video className="h-5 w-5" />
-              Hire {selectedDirector?.name}
+              {selectedDirector ?`Hire ${selectedDirector.name}` : 'Hire Director'}
             </DialogTitle>
-            <DialogDescription className="text-base">
-              Fill out the form below to submit your music video project request.
-              Complete all {totalSteps} steps to ensure we capture all necessary details.
+            <DialogDescription>
+              Fill out the form below to submit your music video project request. We'll review your submission and get back to you within 24 hours.
             </DialogDescription>
           </DialogHeader>
 
           {isSubmitting ? (
             <div className="py-6 space-y-6">
               <div className="w-full space-y-4">
-                <Progress value={isSubmissionComplete ? 100 : (submissionStep / (5-1)) * 100} className="h-2" />
+                <Progress value={isSubmissionComplete ? 100 : (submissionStep / (totalSteps -1)) * 100} className="h-2" />
                 <div className="grid grid-cols-5 gap-2 text-xs text-center">
                   {["Proposal Received", "Connecting with Director", "Adjusting Proposal", "Finalizing Details", "Complete"].map((step, index) => (
                     <div
@@ -1000,7 +999,7 @@ export function DirectorsList() {
                 <div className="text-center space-y-2">
                   <h3 className="font-semibold text-lg">Request Submitted Successfully!</h3>
                   <p className="text-muted-foreground">
-                    You will receive a demo and script within 24 hours.
+                    We'll review your request and get back to you within 24 hours.
                   </p>
                 </div>
               )}
