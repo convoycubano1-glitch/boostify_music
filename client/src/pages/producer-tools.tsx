@@ -34,10 +34,10 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
       const data = doc.data();
       console.log("Document data:", data);
 
-      // Verificar que los campos necesarios existen
-      if (data && data.imageUrl && data.category) {
+      // Verificar que los campos necesarios existen y usar 'url' en lugar de 'imageUrl'
+      if (data && data.url && data.category) {
         images.push({
-          url: data.imageUrl,
+          url: data.url,
           category: data.category
         });
       }
