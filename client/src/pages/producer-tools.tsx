@@ -489,7 +489,7 @@ export default function ProducerToolsPage() {
       <Header />
 
       {/* Hero Section with Video Background */}
-      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-[80px] md:mt-0">
+      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden">
         <video
           autoPlay
           loop
