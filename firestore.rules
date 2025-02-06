@@ -17,6 +17,18 @@ service cloud.firestore {
         request.resource.data.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$');
     }
 
+    // Rules for music video requests
+    match /music-video-request/{requestId} {
+      allow read: if request.auth != null;  // Only authenticated users can read
+      allow create: if request.auth != null && 
+        request.resource.data.keys().hasAll(['directorName', 'visualTheme', 'mood', 'visualStyle', 'budget', 'timeline']) &&
+        request.resource.data.status == 'pending';
+      allow update: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         request.resource.data.directorId == request.auth.uid);
+      allow delete: if false;  // No deletion allowed
+    }
+
     // El resto de las reglas se mantienen igual
     match /directors/{directorId} {
       allow read: if true;  // Public read access
