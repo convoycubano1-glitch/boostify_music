@@ -232,7 +232,7 @@ export function DirectorsList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
   const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
-  const totalSteps = 5; 
+  const totalSteps = 5;
   const [priceEstimate, setPriceEstimate] = useState<PriceEstimate | null>(null);
   const [conceptImages, setConceptImages] = useState<string[]>([]);
   const [isGeneratingEstimate, setIsGeneratingEstimate] = useState(false);
@@ -297,34 +297,43 @@ export function DirectorsList() {
   const generatePriceEstimate = async (formData: z.infer<typeof hireFormSchema>) => {
     setIsGeneratingEstimate(true);
     try {
-      const prompt = `As a music video production expert, generate a detailed price estimate with 3 package options (Basic, Standard, Premium) based on these requirements:
-      - Visual Theme: ${formData.visualTheme}
-      - Mood: ${formData.mood}
-      - Style: ${formData.visualStyle}
-      - Resolution: ${formData.resolution}
-      - Aspect Ratio: ${formData.aspectRatio}
-      - Special Effects: ${formData.specialEffects.join(", ")}
-      - Timeline: ${formData.timeline}
-
-      Each package should include:
-      1. Price (between $1,500 and $9,500)
-      2. Description
-      3. List of features/services`;
-
       const response = await openai.chat.completions.create({
         model: "gpt-4",
-        messages: [{
-          role: "system",
-          content: "You are a professional music video production expert that provides detailed price estimates. Always respond in JSON format with this exact structure: { basicPackage: { price: number, description: string, features: string[] }, standardPackage: { price: number, description: string, features: string[] }, premiumPackage: { price: number, description: string, features: string[] } }"
-        }, {
-          role: "user",
-          content: prompt
-        }],
-        response_format: { type: "json_object" }
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional music video production expert that provides detailed price estimates. You must respond with a valid JSON object that has the following structure, no other text allowed: { basicPackage: { price: number, description: string, features: string[] }, standardPackage: { price: number, description: string, features: string[] }, premiumPackage: { price: number, description: string, features: string[] } }"
+          },
+          {
+            role: "user",
+            content: `Generate a detailed price estimate with 3 package options based on these requirements:
+            - Visual Theme: ${formData.visualTheme}
+            - Mood: ${formData.mood}
+            - Style: ${formData.visualStyle}
+            - Resolution: ${formData.resolution}
+            - Aspect Ratio: ${formData.aspectRatio}
+            - Special Effects: ${formData.specialEffects.join(", ")}
+            - Timeline: ${formData.timeline}
+
+            For each package (Basic, Standard, Premium):
+            1. Set price between $1,500 and $9,500
+            2. Include a short description
+            3. List 4-6 key features or services included`
+          }
+        ]
       });
 
-      const estimate = JSON.parse(response.choices[0].message.content);
-      setPriceEstimate(estimate);
+      try {
+        const estimate = JSON.parse(response.choices[0].message.content);
+        setPriceEstimate(estimate);
+      } catch (parseError) {
+        console.error("Error parsing price estimate:", parseError);
+        toast({
+          title: "Error",
+          description: "Failed to parse price estimate. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error generating price estimate:", error);
       toast({
@@ -355,7 +364,7 @@ export function DirectorsList() {
           },
         });
 
-        if (typeof result === 'object' && result !== null && 'images' in result && 
+        if (typeof result === 'object' && result !== null && 'images' in result &&
             Array.isArray(result.images) && result.images[0]?.url) {
           images.push(result.images[0].url);
         }
@@ -682,23 +691,6 @@ export function DirectorsList() {
                       </label>
                     ))}
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="additionalNotes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Additional Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <textarea
-                      className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
-                      placeholder="Any additional requirements or preferences..."
-                      {...field}
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
