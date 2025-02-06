@@ -274,6 +274,7 @@ export function DirectorsList() {
   }, [toast]);
 
   const simulateSubmissionProcess = async () => {
+    setIsSubmitting(true);
     console.log("Starting submission animation process...");
     const steps = [
       { step: 0, delay: 1000, message: "Processing your request..." },
@@ -386,9 +387,7 @@ export function DirectorsList() {
     if (!selectedDirector) return;
 
     try {
-      setIsSubmitting(true);
-      console.log("Starting submission process...");
-
+      // Start submission process first
       await simulateSubmissionProcess();
 
       const projectData = {
@@ -406,29 +405,42 @@ export function DirectorsList() {
 
       console.log("Saving project to Firestore:", projectData);
 
-      const projectRef = collection(db, "projects");
-      await addDoc(projectRef, projectData);
+      // Add to Firestore with proper error handling
+      try {
+        const projectRef = collection(db, "projects");
+        const docRef = await addDoc(projectRef, projectData);
+        console.log("Project saved with ID:", docRef.id);
 
-      toast({
-        title: "Success!",
-        description: "Your project request has been submitted successfully. You will receive a demo and script within 24 hours.",
-      });
+        toast({
+          title: "Success!",
+          description: "Your project request has been submitted successfully. You will receive a demo and script within 24 hours.",
+        });
 
-      form.reset();
+        // Reset form and close dialog after successful submission
+        form.reset();
+        setTimeout(() => {
+          setIsSubmitting(false);
+          setShowHireForm(false);
+          setSubmissionStep(0);
+          setIsSubmissionComplete(false);
+        }, 2000);
+      } catch (dbError) {
+        console.error("Database error:", dbError);
+        toast({
+          title: "Error",
+          description: "Failed to save project. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+      }
     } catch (error) {
-      console.error("Error submitting project:", error);
+      console.error("Error in submission process:", error);
       toast({
         title: "Error",
         description: "Failed to submit project. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setShowHireForm(false);
-        setSubmissionStep(0);
-        setIsSubmissionComplete(false);
-      }, 2000);
+      setIsSubmitting(false);
     }
   };
 
@@ -892,79 +904,58 @@ export function DirectorsList() {
               )}
             </div>
           ) : (
-            <>
-              <div className="flex justify-center mb-6">
-                <div className="flex items-center space-x-2 md:space-x-4">
-                  {Array.from({ length: totalSteps }).map((_, index) => (
-                    <div key={index} className="flex items-center">
-                      <div
-                        className={`
-                          h-8 w-8 rounded-full flex items-center justify-center border-2 
-                          ${
-                            currentStep >= index + 1
-                              ? "bg-orange-500 border-orange-500 text-white"
-                              : "border-orange-200 text-orange-200"
-                          }
-                        `}
-                      >
-                        {index + 1}
-                      </div>
-                      {index < totalSteps - 1 && (
-                        <div
-                          className={`
-                            w-8 md:w-12 h-0.5 ml-2
-                            ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
-                          `}
-                        />
-                      )}
-                    </div>
-                  ))}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-6 pb-6">
+                  {renderFormStep()}
                 </div>
-              </div>
 
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="space-y-6 pb-6">
-                    {renderFormStep()}
+                <DialogFooter className="sticky bottom-0 pt-4 bg-background border-t">
+                  <div className="flex justify-between w-full gap-2">
+                    {currentStep > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={prevStep}
+                        className="transition-all duration-200 hover:bg-orange-50 active:scale-95"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Previous
+                      </Button>
+                    )}
+                    <div className="flex-1" />
+                    {currentStep < totalSteps ? (
+                      <Button
+                        type="button"
+                        onClick={nextStep}
+                        className="transition-all duration-200 active:scale-95"
+                      >
+                        Next ({currentStep + 1}/{totalSteps})
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        className="transition-all duration-200 active:scale-95"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Submit Request
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
-
-                  <DialogFooter className="sticky bottom-0 pt-4 bg-background border-t">
-                    <div className="flex justify-between w-full gap-2">
-                      {currentStep > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={prevStep}
-                          className="transition-all duration-200 hover:bg-orange-50"
-                        >
-                          <ChevronLeft className="mr-2 h-4 w-4" />
-                          Previous
-                        </Button>
-                      )}
-                      <div className="flex-1" />
-                      {currentStep < totalSteps ? (
-                        <Button
-                          type="button"
-                          onClick={nextStep}
-                          className="transition-all duration-200"
-                        >
-                          Next ({currentStep + 1}/{totalSteps})
-                          <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          type="submit"
-                          className="transition-all duration-200"
-                        >
-                          <Send className="mr-2 h-4 w-4" />
-                          Submit Request
-                        </Button>
-                      )}
-                    </div>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </>
+                </DialogFooter>
+              </form>
+            </Form>
           )}
         </DialogContent>
       </Dialog>
