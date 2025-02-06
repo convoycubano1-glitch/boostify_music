@@ -994,7 +994,14 @@ export function DirectorsList() {
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                console.log("Form submitted");
+                form.handleSubmit(onSubmit)(e);
+              }} 
+              className="space-y-6"
+            >
               <div className="flex justify-center mb-6">
                 <div className="flex items-center space-x-2 md:space-x-4">
                   {Array.from({ length: totalSteps }).map((_, index) => (
@@ -1054,11 +1061,6 @@ export function DirectorsList() {
                       type="submit"
                       className="ml-auto"
                       disabled={isSubmitting}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        console.log("Submit button clicked");
-                        form.handleSubmit(onSubmit)(e);
-                      }}
                     >
                       {isSubmitting ? (
                         <>
