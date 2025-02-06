@@ -51,9 +51,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Progress } from "@/components/ui/progress";
 import * as fal from "@fal-ai/serverless-client";
+import OpenAI from "openai";
 
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
+});
+
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
 });
 
 // Constants for form options
@@ -226,7 +232,7 @@ export function DirectorsList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
   const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
-  const totalSteps = 5; // Increased total steps to account for new steps
+  const totalSteps = 5; 
   const [priceEstimate, setPriceEstimate] = useState<PriceEstimate | null>(null);
   const [conceptImages, setConceptImages] = useState<string[]>([]);
   const [isGeneratingEstimate, setIsGeneratingEstimate] = useState(false);
@@ -303,25 +309,22 @@ export function DirectorsList() {
       Each package should include:
       1. Price (between $1,500 and $9,500)
       2. Description
-      3. List of features/services
+      3. List of features/services`;
 
-      Format the response as a JSON object with this structure:
-      {
-        "basicPackage": { "price": number, "description": string, "features": string[] },
-        "standardPackage": { "price": number, "description": string, "features": string[] },
-        "premiumPackage": { "price": number, "description": string, "features": string[] }
-      }`;
-
-      const response = await fal.subscribe("fal-ai/llama-2-70b-chat", {
-        input: {
-          prompt,
-        },
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [{
+          role: "system",
+          content: "You are a professional music video production expert that provides detailed price estimates. Always respond in JSON format with this exact structure: { basicPackage: { price: number, description: string, features: string[] }, standardPackage: { price: number, description: string, features: string[] }, premiumPackage: { price: number, description: string, features: string[] } }"
+        }, {
+          role: "user",
+          content: prompt
+        }],
+        response_format: { type: "json_object" }
       });
 
-      if (typeof response === 'object' && response !== null && 'text' in response) {
-        const estimate = JSON.parse((response as { text: string }).text);
-        setPriceEstimate(estimate);
-      }
+      const estimate = JSON.parse(response.choices[0].message.content);
+      setPriceEstimate(estimate);
     } catch (error) {
       console.error("Error generating price estimate:", error);
       toast({
@@ -377,7 +380,6 @@ export function DirectorsList() {
       setIsSubmitting(true);
       console.log("Starting submission process...");
 
-      // Start submission animation
       await simulateSubmissionProcess();
 
       const projectData = {
@@ -395,7 +397,6 @@ export function DirectorsList() {
 
       console.log("Saving project to Firestore:", projectData);
 
-      // Add to Firestore
       const projectRef = collection(db, "projects");
       await addDoc(projectRef, projectData);
 
@@ -413,7 +414,6 @@ export function DirectorsList() {
         variant: "destructive",
       });
     } finally {
-      // Add delay before closing to ensure user sees the completion state
       setTimeout(() => {
         setIsSubmitting(false);
         setShowHireForm(false);
@@ -432,10 +432,8 @@ export function DirectorsList() {
   const nextStep = async () => {
     const currentValues = form.getValues();
     if (currentStep === 1) {
-      // After first step, generate price estimate
       await generatePriceEstimate(currentValues);
     } else if (currentStep === 2) {
-      // After second step, generate concept images
       await generateConceptImages(currentValues);
     }
     if (currentStep < totalSteps) {
