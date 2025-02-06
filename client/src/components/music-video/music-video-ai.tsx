@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Timeline from "react-calendar-timeline";
-import moment from "moment";
 import {
   Video,
   Upload,
@@ -18,19 +17,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import * as fal from "@fal-ai/serverless-client";
-import OpenAI from "openai";
-
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
-
-// Initialize Fal.ai
-fal.config({
-  credentials: import.meta.env.VITE_FAL_API_KEY,
-});
 
 interface TimelineItem {
   id: number;
@@ -166,12 +152,14 @@ Buscando mi destino`;
   };
 
   const generateTimelineItems = (shots: typeof mockVideoSequence) => {
+    // Get current timestamp in milliseconds for the timeline
+    const now = Date.now();
     const items = shots.map((shot, index) => ({
       id: index + 1,
       group: 1,
       title: shot.shotType,
-      start_time: parseInt(shot.time) * 1000,
-      end_time: (parseInt(shot.time) + 5) * 1000,
+      start_time: now + (parseInt(shot.time) * 1000),
+      end_time: now + ((parseInt(shot.time) + 5) * 1000),
       description: shot.description,
       shotType: shot.shotType,
       imagePrompt: shot.imagePrompt,
@@ -332,8 +320,8 @@ Buscando mi destino`;
               <Timeline
                 groups={groups}
                 items={timelineItems}
-                defaultTimeStart={moment().add(-1, 'hour')}
-                defaultTimeEnd={moment().add(1, 'hour')}
+                defaultTimeStart={timelineItems[0]?.start_time || Date.now()}
+                defaultTimeEnd={timelineItems[timelineItems.length - 1]?.end_time || Date.now() + 60000}
                 canMove={false}
                 canResize={false}
                 itemRenderer={({ item }) => (
