@@ -187,40 +187,6 @@ interface SubmissionProgressProps {
   isComplete: boolean;
 }
 
-const SubmissionProgress = ({ currentStep, isComplete }: SubmissionProgressProps) => {
-  const steps = [
-    "Proposal Received",
-    "Connecting with Director",
-    "Adjusting Proposal",
-    "Finalizing Details",
-    "Complete",
-  ];
-
-  const progress = isComplete ? 100 : (currentStep / (steps.length - 1)) * 100;
-
-  return (
-    <div className="w-full space-y-4">
-      <Progress value={progress} className="h-2" />
-      <div className="grid grid-cols-5 gap-2 text-xs text-center">
-        {steps.map((step, index) => (
-          <div
-            key={index}
-            className={`${
-              index <= currentStep
-                ? "text-primary font-medium"
-                : "text-muted-foreground"
-            }`}
-          >
-            {index <= currentStep && (
-              <Check className="h-4 w-4 mx-auto mb-1 text-primary" />
-            )}
-            {step}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 export function DirectorsList() {
   const { toast } = useToast();
@@ -452,13 +418,31 @@ export function DirectorsList() {
 
   const nextStep = async () => {
     const currentValues = form.getValues();
-    if (currentStep === 1) {
-      await generatePriceEstimate(currentValues);
-    } else if (currentStep === 2) {
-      await generateConceptImages(currentValues);
-    }
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    setIsGeneratingEstimate(false);
+    setIsGeneratingImages(false);
+
+    try {
+      if (currentStep === 1) {
+        setIsGeneratingEstimate(true);
+        await generatePriceEstimate(currentValues);
+      } else if (currentStep === 2) {
+        setIsGeneratingImages(true);
+        await generateConceptImages(currentValues);
+      }
+
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      }
+    } catch (error) {
+      console.error("Error in next step:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process this step. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingEstimate(false);
+      setIsGeneratingImages(false);
     }
   };
 
@@ -890,10 +874,26 @@ export function DirectorsList() {
 
           {isSubmitting ? (
             <div className="py-6 space-y-6">
-              <SubmissionProgress
-                currentStep={submissionStep}
-                isComplete={isSubmissionComplete}
-              />
+              <div className="w-full space-y-4">
+                <Progress value={isSubmissionComplete ? 100 : (submissionStep / (5-1)) * 100} className="h-2" />
+                <div className="grid grid-cols-5 gap-2 text-xs text-center">
+                  {["Proposal Received", "Connecting with Director", "Adjusting Proposal", "Finalizing Details", "Complete"].map((step, index) => (
+                    <div
+                      key={index}
+                      className={`${
+                        index <= submissionStep
+                          ? "text-primary font-medium"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {index <= submissionStep && (
+                        <Check className="h-4 w-4 mx-auto mb-1 text-primary" />
+                      )}
+                      {step}
+                    </div>
+                  ))}
+                </div>
+              </div>
               {isSubmissionComplete && (
                 <div className="text-center space-y-2">
                   <h3 className="font-semibold text-lg">Request Submitted Successfully!</h3>
@@ -906,6 +906,37 @@ export function DirectorsList() {
           ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="flex justify-center mb-6">
+                  <div className="flex items-center space-x-2 md:space-x-4">
+                    {Array.from({ length: totalSteps }).map((_, index) => (
+                      <div key={index} className="flex items-center">
+                        <div
+                          className={`
+                            h-8 w-8 rounded-full flex items-center justify-center border-2 
+                            transition-colors duration-200
+                            ${
+                              currentStep >= index + 1
+                                ? "bg-orange-500 border-orange-500 text-white"
+                                : "border-orange-200 text-orange-200"
+                            }
+                          `}
+                        >
+                          {index + 1}
+                        </div>
+                        {index < totalSteps - 1 && (
+                          <div
+                            className={`
+                              w-8 md:w-12 h-0.5 ml-2
+                              transition-colors duration-200
+                              ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
+                            `}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-6 pb-6">
                   {renderFormStep()}
                 </div>
@@ -928,16 +959,26 @@ export function DirectorsList() {
                       <Button
                         type="button"
                         onClick={nextStep}
+                        disabled={isGeneratingEstimate || isGeneratingImages}
                         className="transition-all duration-200 active:scale-95"
                       >
-                        Next ({currentStep + 1}/{totalSteps})
-                        <ChevronRight className="ml-2 h-4 w-4" />
+                        {isGeneratingEstimate || isGeneratingImages ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            Next ({currentStep + 1}/{totalSteps})
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
                       </Button>
                     ) : (
                       <Button
                         type="submit"
-                        className="transition-all duration-200 active:scale-95"
                         disabled={isSubmitting}
+                        className="transition-all duration-200 active:scale-95"
                       >
                         {isSubmitting ? (
                           <>
