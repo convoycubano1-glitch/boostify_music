@@ -41,26 +41,18 @@ import {
   ChevronRight,
   Send,
   Check,
+  Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, serverTimestamp, orderBy, query } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Progress } from "@/components/ui/progress";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
-
-fal.config({
-  credentials: import.meta.env.VITE_FAL_API_KEY,
-});
-
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
 
 // Constants for form options
 const VISUAL_THEMES = [
@@ -187,6 +179,26 @@ interface SubmissionProgressProps {
   isComplete: boolean;
 }
 
+interface MusicVideoRequest {
+  id: string;
+  directorName: string;
+  visualTheme: string;
+  mood: string;
+  visualStyle: string;
+  budget: string;
+  timeline: string;
+  status: string;
+  createdAt: any;
+}
+
+fal.config({
+  credentials: import.meta.env.VITE_FAL_API_KEY,
+});
+
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
 
 export function DirectorsList() {
   const { toast } = useToast();
@@ -203,6 +215,8 @@ export function DirectorsList() {
   const [conceptImages, setConceptImages] = useState<string[]>([]);
   const [isGeneratingEstimate, setIsGeneratingEstimate] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [requests, setRequests] = useState<MusicVideoRequest[]>([]);
+  const [showRequests, setShowRequests] = useState(false);
 
   const form = useForm<z.infer<typeof hireFormSchema>>({
     resolver: zodResolver(hireFormSchema),
@@ -236,7 +250,28 @@ export function DirectorsList() {
       }
     };
 
+    const fetchRequests = async () => {
+      try {
+        const requestsRef = collection(db, "music-video-request");
+        const q = query(requestsRef, orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const requestsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as MusicVideoRequest[];
+        setRequests(requestsData);
+      } catch (error) {
+        console.error("Error fetching requests:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load requests. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
     fetchDirectors();
+    fetchRequests();
   }, [toast]);
 
   const simulateSubmissionProcess = async () => {
@@ -369,17 +404,25 @@ export function DirectorsList() {
         conceptImages,
       };
 
-      console.log("Saving project to Firestore:", projectData);
+      console.log("Saving request to Firestore:", projectData);
 
-      // Add to Firestore with proper error handling
       try {
-        const projectRef = collection(db, "projects");
-        const docRef = await addDoc(projectRef, projectData);
-        console.log("Project saved with ID:", docRef.id);
+        const requestRef = collection(db, "music-video-request");
+        const docRef = await addDoc(requestRef, projectData);
+        console.log("Request saved with ID:", docRef.id);
+
+        // Refresh requests list
+        const q = query(requestRef, orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const requestsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as MusicVideoRequest[];
+        setRequests(requestsData);
 
         toast({
           title: "Success!",
-          description: "Your project request has been submitted successfully. You will receive a demo and script within 24 hours.",
+          description: "Your music video request has been submitted successfully. You will receive a demo and script within 24 hours.",
         });
 
         // Reset form and close dialog after successful submission
@@ -394,7 +437,7 @@ export function DirectorsList() {
         console.error("Database error:", dbError);
         toast({
           title: "Error",
-          description: "Failed to save project. Please try again.",
+          description: "Failed to save request. Please try again.",
           variant: "destructive",
         });
         setIsSubmitting(false);
@@ -403,7 +446,7 @@ export function DirectorsList() {
       console.error("Error in submission process:", error);
       toast({
         title: "Error",
-        description: "Failed to submit project. Please try again.",
+        description: "Failed to submit request. Please try again.",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -790,74 +833,133 @@ export function DirectorsList() {
 
   return (
     <>
-      <Card className="p-4 md:p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-            <Video className="h-6 w-6 text-orange-500" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">Featured Directors</h2>
-            <p className="text-sm text-muted-foreground">
-              Connect with talented music video directors
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-          {directors.map((director) => (
-            <motion.div
-              key={director.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
+      <div className="space-y-4">
+        <Card className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                <Video className="h-6 w-6 text-orange-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">Featured Directors</h2>
+                <p className="text-sm text-muted-foreground">
+                  Connect with talented music video directors
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="outline"
+              onClick={() => setShowRequests(!showRequests)}
+              className="transition-all duration-200"
             >
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                <div className="h-32 w-32 rounded-lg overflow-hidden bg-orange-500/10 flex-shrink-0">
-                  {director.imageUrl ? (
-                    <img
-                      src={director.imageUrl}
-                      alt={`${director.name} - ${director.specialty}`}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
-                      }}
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <Award className="h-8 w-8 text-orange-500" />
+              {showRequests ? "Show Directors" : "View Requests"}
+            </Button>
+          </div>
+
+          {showRequests ? (
+            <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+              {requests.map((request) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
+                >
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">{request.directorName}</h3>
+                      <span className={`px-3 py-1 rounded-full text-sm ${
+                        request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold truncate">{director.name}</h3>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      <span className="text-sm font-medium">{director.rating}</span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <Label className="text-muted-foreground">Theme</Label>
+                        <p>{request.visualTheme}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Mood</Label>
+                        <p>{request.mood}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Style</Label>
+                        <p>{request.visualStyle}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Budget</Label>
+                        <p>${request.budget}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                      <Clock className="h-4 w-4" />
+                      <span>Timeline: {request.timeline}</span>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-orange-500">
-                    {director.specialty}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {director.experience}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Style: {director.style}
-                  </p>
-                  <Button
-                    className="mt-4 w-full transition-all duration-200"
-                    onClick={() => handleHireClick(director)}
-                  >
-                    Hire Director
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </Card>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+              {directors.map((director) => (
+                <motion.div
+                  key={director.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <div className="h-32 w-32 rounded-lg overflow-hidden bg-orange-500/10 flex-shrink-0">
+                      {director.imageUrl ? (
+                        <img
+                          src={director.imageUrl}
+                          alt={`${director.name} - ${director.specialty}`}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
+                          }}
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <Award className="h-8 w-8 text-orange-500" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold truncate">{director.name}</h3>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
+                          <span className="text-sm font-medium">{director.rating}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm font-medium text-orange-500">
+                        {director.specialty}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {director.experience}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Style: {director.style}
+                      </p>
+                      <Button
+                        className="mt-4 w-full transition-all duration-200"
+                        onClick={() => handleHireClick(director)}
+                      >
+                        Hire Director
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
 
       <Dialog open={showHireForm} onOpenChange={setShowHireForm}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
