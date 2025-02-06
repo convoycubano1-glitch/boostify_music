@@ -15,8 +15,8 @@ export default function MusicVideoCreator() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-16">
-        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-8">
+      <main className="flex-1 pt-24">
+        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-12">
           <video
             autoPlay
             loop
@@ -27,8 +27,8 @@ export default function MusicVideoCreator() {
             <source src="/background-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-background" />
-          <div className="relative z-10 container mx-auto h-full flex flex-col justify-center items-center pb-32 md:pb-0 px-4 pt-16">
-            <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 w-full md:max-w-2xl mt-8">
+          <div className="relative z-10 container mx-auto h-full flex flex-col justify-center items-center pb-32 md:pb-0 px-4 pt-24">
+            <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 w-full md:max-w-2xl mt-12">
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -52,7 +52,7 @@ export default function MusicVideoCreator() {
               </motion.p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-12 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-16 w-full">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -95,8 +95,8 @@ export default function MusicVideoCreator() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="flex flex-col items-center mb-8 md:mb-16">
+        <div className="container mx-auto px-4 py-20 md:py-32">
+          <div className="flex flex-col items-center mb-12 md:mb-20">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-4 md:mb-6">
               Choose Your Creation Path
             </h2>
