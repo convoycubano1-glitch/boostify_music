@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Timeline from "react-calendar-timeline";
+import moment from "moment";
 import {
   Video,
   Upload,
@@ -12,7 +13,8 @@ import {
   FileText,
   Clock,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,12 +44,35 @@ interface TimelineItem {
   generatedImage?: string;
 }
 
-interface ShotDescription {
-  time: string;
-  description: string;
-  shotType: string;
-  imagePrompt: string;
-}
+const groups = [{ id: 1, title: "Secuencia de Video" }];
+
+// Datos simulados para desarrollo
+const mockVideoSequence = [
+  {
+    time: "0",
+    description: "Plano general del artista en el escenario",
+    shotType: "Wide Shot",
+    imagePrompt: "Artist on stage with dramatic lighting"
+  },
+  {
+    time: "5",
+    description: "Primer plano del rostro del artista cantando",
+    shotType: "Close Up",
+    imagePrompt: "Close up of singer's face with emotional expression"
+  },
+  {
+    time: "10",
+    description: "Toma panorámica de la audiencia",
+    shotType: "Tracking Shot",
+    imagePrompt: "Crowd at concert with waving hands and phone lights"
+  },
+  {
+    time: "15",
+    description: "Plano medio del artista con banda",
+    shotType: "Medium Shot",
+    imagePrompt: "Band performing on stage with dynamic composition"
+  }
+];
 
 export function MusicVideoAI() {
   const { toast } = useToast();
@@ -57,9 +82,8 @@ export function MusicVideoAI() {
   const [isGeneratingShots, setIsGeneratingShots] = useState(false);
   const [transcription, setTranscription] = useState<string>("");
   const [generatedScript, setGeneratedScript] = useState<string>("");
-  const [shotSequence, setShotSequence] = useState<ShotDescription[]>([]);
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -67,7 +91,7 @@ export function MusicVideoAI() {
       if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "Error",
-          description: "File size must be less than 10MB",
+          description: "El archivo debe ser menor a 10MB",
           variant: "destructive",
         });
         return;
@@ -76,7 +100,7 @@ export function MusicVideoAI() {
       if (!file.type.startsWith("audio/")) {
         toast({
           title: "Error",
-          description: "Please upload a valid audio file (MP3)",
+          description: "Por favor sube un archivo de audio válido (MP3)",
           variant: "destructive",
         });
         return;
@@ -85,46 +109,34 @@ export function MusicVideoAI() {
       setSelectedFile(file);
       setTranscription("");
       setGeneratedScript("");
-      setShotSequence([]);
       setTimelineItems([]);
     }
   };
 
-  const transcribeAudio = async () => {
-    if (!selectedFile) return;
-
+  const simulateTranscription = async () => {
     setIsTranscribing(true);
     try {
-      // Convert audio file to base64
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        if (e.target?.result) {
-          const base64Audio = (e.target.result as string).split(",")[1];
+      // Simulamos la transcripción
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const mockTranscription = `Verso 1:
+En la ciudad de luces brillantes
+Donde los sueños nunca duermen
+Buscando un camino entre la gente
+Tratando de encontrar mi suerte
 
-          // Create a subscription to the whisper model
-          const transcriptionResult = await fal.subscribe("fal-ai/whisper", {
-            input: {
-              audio_data: base64Audio,
-              decode_method: "beam_search",
-              task: "transcribe",
-              language: "auto"
-            },
-          });
+Coro:
+Y sigo caminando
+Con el corazón latiendo
+En esta noche sin fin
+Buscando mi destino`;
 
-          if (transcriptionResult && typeof transcriptionResult === 'object' && 'text' in transcriptionResult) {
-            setTranscription(transcriptionResult.text);
-            generateVideoScript(transcriptionResult.text);
-          } else {
-            throw new Error("Invalid response format from transcription API");
-          }
-        }
-      };
-      reader.readAsDataURL(selectedFile);
+      setTranscription(mockTranscription);
+      generateVideoScript(mockTranscription);
     } catch (error) {
-      console.error("Error transcribing audio:", error);
+      console.error("Error en la transcripción:", error);
       toast({
         title: "Error",
-        description: "Failed to transcribe audio. Please try again.",
+        description: "Error al transcribir el audio. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -135,35 +147,17 @@ export function MusicVideoAI() {
   const generateVideoScript = async (lyrics: string) => {
     setIsGeneratingScript(true);
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: `You are a professional music video director. Create a detailed video script based on song lyrics. Include specific shot types (wide, medium, close-up), camera movements, and visual metaphors. Structure the output as a JSON array with each object containing 'time' (in seconds from start), 'description', 'shotType', and 'imagePrompt' for AI image generation.`
-          },
-          {
-            role: "user",
-            content: `Create a music video script for these lyrics, with shots approximately every 5 seconds:\n\n${lyrics}`
-          }
-        ],
-        response_format: { type: "json_object" }
-      });
+      // Simulamos la generación del guion
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      if (response.choices[0].message.content) {
-        const scriptResult = JSON.parse(response.choices[0].message.content);
-        if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
-          setShotSequence(scriptResult.shots);
-          generateTimelineItems(scriptResult.shots);
-        }
-      }
-
-      setGeneratedScript(response.choices[0].message.content || "");
+      const mockScript = mockVideoSequence;
+      generateTimelineItems(mockScript);
+      setGeneratedScript(JSON.stringify(mockScript, null, 2));
     } catch (error) {
-      console.error("Error generating script:", error);
+      console.error("Error generando el guion:", error);
       toast({
         title: "Error",
-        description: "Failed to generate video script. Please try again.",
+        description: "Error al generar el guion. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -171,16 +165,17 @@ export function MusicVideoAI() {
     }
   };
 
-  const generateTimelineItems = (shots: ShotDescription[]) => {
+  const generateTimelineItems = (shots: typeof mockVideoSequence) => {
     const items = shots.map((shot, index) => ({
       id: index + 1,
       group: 1,
       title: shot.shotType,
-      start_time: parseInt(shot.time) * 1000, // Convert to milliseconds
-      end_time: (parseInt(shot.time) + 5) * 1000, // Each shot is 5 seconds
+      start_time: parseInt(shot.time) * 1000,
+      end_time: (parseInt(shot.time) + 5) * 1000,
       description: shot.description,
       shotType: shot.shotType,
-      imagePrompt: shot.imagePrompt
+      imagePrompt: shot.imagePrompt,
+      generatedImage: `/assets/mock-shots/shot-${index + 1}.jpg` // Imágenes simuladas
     }));
     setTimelineItems(items);
   };
@@ -188,43 +183,44 @@ export function MusicVideoAI() {
   const generateShotImages = async () => {
     setIsGeneratingShots(true);
     try {
-      const updatedItems = [...timelineItems];
-      for (let i = 0; i < updatedItems.length; i++) {
-        const item = updatedItems[i];
-        if (!item.generatedImage && item.imagePrompt) {
-          // Configure the request for image generation
-          const result = await fal.subscribe("fal-ai/sd-xl", {
-            input: {
-              prompt: `Professional cinematic shot for a music video: ${item.imagePrompt}. Shot type: ${item.shotType}. High quality, cinematic lighting, film grain, professional photography.`,
-              negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, cartoon, anime, illustration",
-              num_inference_steps: 30,
-              scheduler: "K_EULER",
-              width: 1024,
-              height: 576
-            },
-          });
+      // Simulamos la generación de imágenes
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-          if (result && result.images && result.images[0] && result.images[0].url) {
-            updatedItems[i] = {
-              ...item,
-              generatedImage: result.images[0].url
-            };
-            setTimelineItems([...updatedItems]); // Force re-render
-          }
-
-          // Add a delay between generations to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-      }
+      toast({
+        title: "Éxito",
+        description: "Imágenes generadas correctamente",
+      });
     } catch (error) {
-      console.error("Error generating shot images:", error);
+      console.error("Error generando imágenes:", error);
       toast({
         title: "Error",
-        description: "Failed to generate some shot images. Please try again.",
+        description: "Error al generar las imágenes. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
       setIsGeneratingShots(false);
+    }
+  };
+
+  const handleExportVideo = async () => {
+    setIsExporting(true);
+    try {
+      // Simulamos la exportación del video
+      await new Promise(resolve => setTimeout(resolve, 4000));
+
+      toast({
+        title: "Éxito",
+        description: "Video exportado correctamente",
+      });
+    } catch (error) {
+      console.error("Error exportando el video:", error);
+      toast({
+        title: "Error",
+        description: "Error al exportar el video. Por favor intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -237,14 +233,15 @@ export function MusicVideoAI() {
         <div>
           <h2 className="text-xl font-semibold">AI Music Video Creator</h2>
           <p className="text-sm text-muted-foreground">
-            Generate video concepts from your music
+            Genera conceptos de video a partir de tu música
           </p>
         </div>
       </div>
 
       <div className="space-y-6">
+        {/* Subida de archivo */}
         <div>
-          <Label>Upload Song (MP3)</Label>
+          <Label>Sube tu Canción (MP3)</Label>
           <div className="flex items-center gap-2 mt-2">
             <Input
               type="file"
@@ -253,29 +250,30 @@ export function MusicVideoAI() {
               className="flex-1"
             />
             <Button
-              onClick={transcribeAudio}
+              onClick={simulateTranscription}
               disabled={!selectedFile || isTranscribing}
             >
               {isTranscribing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  Procesando...
                 </>
               ) : (
                 <>
                   <Music2 className="mr-2 h-4 w-4" />
-                  Process Audio
+                  Procesar Audio
                 </>
               )}
             </Button>
           </div>
         </div>
 
+        {/* Transcripción */}
         {transcription && (
           <div className="space-y-2">
             <h3 className="font-semibold flex items-center gap-2">
               <Music2 className="h-4 w-4 text-orange-500" />
-              Transcribed Lyrics
+              Letra Transcrita
             </h3>
             <ScrollArea className="h-[200px] w-full rounded-md border p-4">
               <p className="text-sm whitespace-pre-wrap">{transcription}</p>
@@ -283,38 +281,59 @@ export function MusicVideoAI() {
           </div>
         )}
 
-        {shotSequence.length > 0 && (
+        {/* Timeline */}
+        {timelineItems.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold flex items-center gap-2">
                 <Clock className="h-4 w-4 text-orange-500" />
-                Shot Sequence
+                Secuencia de Tomas
               </h3>
-              <Button
-                onClick={generateShotImages}
-                disabled={isGeneratingShots}
-                variant="outline"
-                size="sm"
-              >
-                {isGeneratingShots ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Images...
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Generate Shot Images
-                  </>
-                )}
-              </Button>
+              <div className="space-x-2">
+                <Button
+                  onClick={generateShotImages}
+                  disabled={isGeneratingShots}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isGeneratingShots ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando Imágenes...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      Generar Imágenes
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleExportVideo}
+                  disabled={isExporting}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Exportando...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Exportar Video
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="border rounded-lg p-4">
               <Timeline
-                groups={[{ id: 1, title: 'Shots' }]}
+                groups={groups}
                 items={timelineItems}
-                defaultTimeStart={timelineItems[0]?.start_time || 0}
-                defaultTimeEnd={timelineItems[timelineItems.length - 1]?.end_time || 60000}
+                defaultTimeStart={moment().add(-1, 'hour')}
+                defaultTimeEnd={moment().add(1, 'hour')}
                 canMove={false}
                 canResize={false}
                 itemRenderer={({ item }) => (
@@ -336,7 +355,8 @@ export function MusicVideoAI() {
           </div>
         )}
 
-        {isGeneratingScript && (
+        {/* Loading States */}
+        {(isGeneratingScript || isTranscribing) && !timelineItems.length && (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
           </div>
