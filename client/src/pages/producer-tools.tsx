@@ -25,21 +25,20 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
     console.log("Starting to fetch musician images from musician_images collection...");
     const imagesRef = collection(db, "musician_images");
     const querySnapshot = await getDocs(imagesRef);
-    let images: { url: string; category: string; }[] = [];
 
     console.log("Total documents found:", querySnapshot.size);
+
+    const images: { url: string; category: string; }[] = [];
 
     querySnapshot.forEach(doc => {
       const data = doc.data();
       console.log("Document data:", data);
 
       if (data.imageUrl && data.category) {
-        const imageData = {
+        images.push({
           url: data.imageUrl,
           category: data.category
-        };
-        images.push(imageData);
-        console.log("Added image:", imageData);
+        });
       }
     });
 
@@ -419,7 +418,7 @@ export default function ProducerToolsPage() {
 
         if (storedImages.length > 0) {
           const updatedMusicians = musicians.map(musician => {
-            const categoryImages = storedImages.filter(img => 
+            const categoryImages = storedImages.filter(img =>
               img.category === musician.category
             );
 
