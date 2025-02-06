@@ -111,24 +111,45 @@ export function MusicVideoAI() {
     }
   };
 
-  const simulateTranscription = async () => {
+  const transcribeAudio = async () => {
+    if (!selectedFile) return;
+
     setIsTranscribing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const mockTranscription = `Verso 1:
-En la ciudad de luces brillantes
-Donde los sueños nunca duermen
-Buscando un camino entre la gente
-Tratando de encontrar mi suerte
+      // Convert audio file to FormData
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('model', 'whisper-1');
 
-Coro:
-Y sigo caminando
-Con el corazón latiendo
-En esta noche sin fin
-Buscando mi destino`;
+      // Make request to OpenAI Whisper API
+      const transcription = await openai.audio.transcriptions.create({
+        file: selectedFile,
+        model: "whisper-1",
+      });
 
-      setTranscription(mockTranscription);
-      generateVideoScript(mockTranscription);
+      if (transcription.text) {
+        setTranscription(transcription.text);
+
+        // Analyze the transcription with GPT to format it as lyrics
+        const formattedResponse = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: "Format the given text as song lyrics, identifying verses, chorus, and bridges. Keep the original words but add structure."
+            },
+            {
+              role: "user",
+              content: transcription.text
+            }
+          ]
+        });
+
+        const formattedLyrics = formattedResponse.choices[0].message.content;
+        setTranscription(formattedLyrics);
+        generateVideoScript(formattedLyrics);
+      }
+
     } catch (error) {
       console.error("Error en la transcripción:", error);
       toast({
@@ -182,10 +203,12 @@ Responde en formato JSON con la siguiente estructura:
         response_format: { type: "json_object" }
       });
 
-      const scriptResult = JSON.parse(response.choices[0].message.content);
-      if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
-        generateTimelineItems(scriptResult.shots);
-        setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+      if (response.choices[0].message.content) {
+        const scriptResult = JSON.parse(response.choices[0].message.content);
+        if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
+          generateTimelineItems(scriptResult.shots);
+          setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+        }
       }
     } catch (error) {
       console.error("Error generando el guion:", error);
@@ -383,7 +406,7 @@ Responde en formato JSON con la siguiente estructura:
               className="flex-1"
             />
             <Button
-              onClick={simulateTranscription}
+              onClick={transcribeAudio}
               disabled={!selectedFile || isTranscribing}
             >
               {isTranscribing ? (
