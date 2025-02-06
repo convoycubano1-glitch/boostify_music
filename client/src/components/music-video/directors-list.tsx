@@ -12,6 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -33,6 +40,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Send,
+  Check,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -41,16 +49,98 @@ import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Progress } from "@/components/ui/progress";
+
+// Constants for form options
+const VISUAL_THEMES = [
+  "Cinematic",
+  "Minimalist",
+  "Abstract",
+  "Urban",
+  "Nature",
+  "Futuristic",
+  "Retro",
+  "Surreal",
+  "Documentary",
+  "Performance",
+] as const;
+
+const MOODS = [
+  "Energetic",
+  "Melancholic",
+  "Dreamy",
+  "Dark",
+  "Uplifting",
+  "Mysterious",
+  "Romantic",
+  "Aggressive",
+  "Peaceful",
+  "Dramatic",
+] as const;
+
+const VISUAL_STYLES = [
+  "Narrative",
+  "Performance-based",
+  "Experimental",
+  "Animation",
+  "Mixed-media",
+  "One-shot",
+  "Slow-motion",
+  "Time-lapse",
+  "Split-screen",
+  "VFX-heavy",
+] as const;
+
+const RESOLUTIONS = [
+  "4K (3840x2160)",
+  "2K (2048x1080)",
+  "1080p (1920x1080)",
+  "720p (1280x720)",
+] as const;
+
+const ASPECT_RATIOS = [
+  "16:9 (Standard Widescreen)",
+  "2.39:1 (Anamorphic)",
+  "1:1 (Square)",
+  "9:16 (Vertical)",
+  "21:9 (Ultrawide)",
+] as const;
+
+const SPECIAL_EFFECTS = [
+  "CGI Integration",
+  "Color Grading",
+  "Green Screen",
+  "Practical Effects",
+  "Motion Graphics",
+  "3D Elements",
+  "Particle Systems",
+  "Light Effects",
+  "Slow Motion",
+  "Time Manipulation",
+] as const;
 
 const hireFormSchema = z.object({
   budget: z.string().min(1, "Budget is required").regex(/^\d+$/, "Please enter a valid number"),
-  timeline: z.string().min(1, "Timeline is required")
-    .refine(value => ["1 week", "2 weeks", "1 month", "2 months", "3+ months"].includes(value), {
-      message: "Please select a valid timeline",
-    }),
-  description: z.string().min(50, "Please provide at least 50 characters describing your vision"),
-  songUrl: z.string().url("Please enter a valid song URL"),
-  requirements: z.string().min(30, "Please provide at least 30 characters of specific requirements"),
+  timeline: z.string().min(1, "Timeline is required"),
+  songFile: z.any(),
+  songUrl: z.string().url("Please enter a valid song URL").optional(),
+  visualTheme: z.enum(VISUAL_THEMES, {
+    required_error: "Please select a visual theme",
+  }),
+  mood: z.enum(MOODS, {
+    required_error: "Please select a mood",
+  }),
+  visualStyle: z.enum(VISUAL_STYLES, {
+    required_error: "Please select a visual style",
+  }),
+  resolution: z.enum(RESOLUTIONS, {
+    required_error: "Please select a resolution",
+  }),
+  aspectRatio: z.enum(ASPECT_RATIOS, {
+    required_error: "Please select an aspect ratio",
+  }),
+  specialEffects: z.array(z.enum(SPECIAL_EFFECTS)).min(1, "Select at least one special effect"),
+  additionalNotes: z.string().optional(),
 });
 
 interface Director {
@@ -63,6 +153,46 @@ interface Director {
   imageUrl?: string;
 }
 
+interface SubmissionProgressProps {
+  currentStep: number;
+  isComplete: boolean;
+}
+
+const SubmissionProgress = ({ currentStep, isComplete }: SubmissionProgressProps) => {
+  const steps = [
+    "Proposal Received",
+    "Connecting with Director",
+    "Adjusting Proposal",
+    "Finalizing Details",
+    "Complete",
+  ];
+
+  const progress = isComplete ? 100 : (currentStep / (steps.length - 1)) * 100;
+
+  return (
+    <div className="w-full space-y-4">
+      <Progress value={progress} className="h-2" />
+      <div className="grid grid-cols-5 gap-2 text-xs text-center">
+        {steps.map((step, index) => (
+          <div
+            key={index}
+            className={`${
+              index <= currentStep
+                ? "text-primary font-medium"
+                : "text-muted-foreground"
+            }`}
+          >
+            {index <= currentStep && (
+              <Check className="h-4 w-4 mx-auto mb-1 text-primary" />
+            )}
+            {step}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export function DirectorsList() {
   const { toast } = useToast();
   const [directors, setDirectors] = useState<Director[]>([]);
@@ -70,6 +200,9 @@ export function DirectorsList() {
   const [selectedDirector, setSelectedDirector] = useState<Director | null>(null);
   const [showHireForm, setShowHireForm] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStep, setSubmissionStep] = useState(0);
+  const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
   const totalSteps = 3;
 
   const form = useForm<z.infer<typeof hireFormSchema>>({
@@ -77,9 +210,9 @@ export function DirectorsList() {
     defaultValues: {
       budget: "",
       timeline: "",
-      description: "",
       songUrl: "",
-      requirements: "",
+      specialEffects: [],
+      additionalNotes: "",
     },
   });
 
@@ -107,10 +240,33 @@ export function DirectorsList() {
     fetchDirectors();
   }, [toast]);
 
+  const simulateSubmissionProcess = async () => {
+    const steps = [
+      { step: 0, delay: 1000 }, // Proposal Received
+      { step: 1, delay: 2000 }, // Connecting with Director
+      { step: 2, delay: 2000 }, // Adjusting Proposal
+      { step: 3, delay: 1500 }, // Finalizing Details
+      { step: 4, delay: 1000 }, // Complete
+    ];
+
+    for (const { step, delay } of steps) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      setSubmissionStep(step);
+    }
+
+    setIsSubmissionComplete(true);
+    return new Promise(resolve => setTimeout(resolve, 1000));
+  };
+
   const onSubmit = async (values: z.infer<typeof hireFormSchema>) => {
     if (!selectedDirector) return;
 
     try {
+      setIsSubmitting(true);
+
+      // Start submission animation
+      await simulateSubmissionProcess();
+
       const projectData = {
         ...values,
         directorId: selectedDirector.id,
@@ -123,10 +279,9 @@ export function DirectorsList() {
 
       toast({
         title: "Success",
-        description: "Your project request has been submitted successfully.",
+        description: "Your project request has been submitted successfully. You will receive a demo and script within 24 hours.",
       });
 
-      setShowHireForm(false);
       form.reset();
     } catch (error) {
       console.error("Error submitting project:", error);
@@ -135,6 +290,13 @@ export function DirectorsList() {
         description: "Failed to submit project. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setShowHireForm(false);
+        setSubmissionStep(0);
+        setIsSubmissionComplete(false);
+      }, 2000);
     }
   };
 
@@ -187,19 +349,20 @@ export function DirectorsList() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project Timeline</FormLabel>
-                  <FormControl>
-                    <select
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                      {...field}
-                    >
-                      <option value="">Select timeline</option>
-                      <option value="1 week">1 week</option>
-                      <option value="2 weeks">2 weeks</option>
-                      <option value="1 month">1 month</option>
-                      <option value="2 months">2 months</option>
-                      <option value="3+ months">3+ months</option>
-                    </select>
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timeline" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1 week">1 week</SelectItem>
+                      <SelectItem value="2 weeks">2 weeks</SelectItem>
+                      <SelectItem value="1 month">1 month</SelectItem>
+                      <SelectItem value="2 months">2 months</SelectItem>
+                      <SelectItem value="3+ months">3+ months</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormDescription>
                     Expected duration of the music video production
                   </FormDescription>
@@ -207,6 +370,35 @@ export function DirectorsList() {
                 </FormItem>
               )}
             />
+            <div className="space-y-4">
+              <Label>Upload Song</Label>
+              <Input
+                type="file"
+                accept="audio/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    form.setValue("songFile", file);
+                  }
+                }}
+              />
+              <p className="text-sm text-muted-foreground">
+                Or provide a link to your song below
+              </p>
+              <FormField
+                control={form.control}
+                name="songUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Song URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. SoundCloud, Spotify, or Dropbox link" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         );
       case 2:
@@ -214,36 +406,72 @@ export function DirectorsList() {
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="songUrl"
+              name="visualTheme"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Song URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. SoundCloud, Spotify, or Dropbox link" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Provide a link where the director can listen to your song
-                  </FormDescription>
+                  <FormLabel>Visual Theme</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select visual theme" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {VISUAL_THEMES.map((theme) => (
+                        <SelectItem key={theme} value={theme}>
+                          {theme}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <FormField
               control={form.control}
-              name="description"
+              name="mood"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Vision</FormLabel>
-                  <FormControl>
-                    <textarea
-                      className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
-                      placeholder="Describe your vision for the music video in detail"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Include themes, mood, style, and any specific visual elements you want
-                  </FormDescription>
+                  <FormLabel>Mood</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select mood" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {MOODS.map((mood) => (
+                        <SelectItem key={mood} value={mood}>
+                          {mood}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="visualStyle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Visual Style</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select visual style" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {VISUAL_STYLES.map((style) => (
+                        <SelectItem key={style} value={style}>
+                          {style}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -255,20 +483,93 @@ export function DirectorsList() {
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="requirements"
+              name="resolution"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Technical Requirements</FormLabel>
+                  <FormLabel>Resolution</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select resolution" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {RESOLUTIONS.map((resolution) => (
+                        <SelectItem key={resolution} value={resolution}>
+                          {resolution}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="aspectRatio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Aspect Ratio</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select aspect ratio" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {ASPECT_RATIOS.map((ratio) => (
+                        <SelectItem key={ratio} value={ratio}>
+                          {ratio}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="specialEffects"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Special Effects (Select multiple)</FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SPECIAL_EFFECTS.map((effect) => (
+                      <label key={effect} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={field.value?.includes(effect)}
+                          onChange={(e) => {
+                            const newValue = e.target.checked
+                              ? [...(field.value || []), effect]
+                              : field.value?.filter((v) => v !== effect);
+                            field.onChange(newValue);
+                          }}
+                          className="form-checkbox h-4 w-4"
+                        />
+                        <span className="text-sm">{effect}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="additionalNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Additional Notes (Optional)</FormLabel>
                   <FormControl>
                     <textarea
                       className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
-                      placeholder="List any specific technical requirements or preferences"
+                      placeholder="Any additional requirements or preferences..."
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Include details about resolution, aspect ratio, special effects, or equipment requirements
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -372,58 +673,77 @@ export function DirectorsList() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-4">
-              {Array.from({ length: totalSteps }).map((_, index) => (
-                <div key={index} className="flex items-center">
-                  <div
-                    className={`
-                      h-8 w-8 rounded-full flex items-center justify-center border-2 
-                      ${currentStep >= index + 1
-                        ? "bg-orange-500 border-orange-500 text-white"
-                        : "border-orange-200 text-orange-200"
-                      }
-                    `}
-                  >
-                    {index + 1}
-                  </div>
-                  {index < totalSteps - 1 && (
-                    <div
-                      className={`
-                        w-12 h-0.5 ml-4
-                        ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
-                      `}
-                    />
-                  )}
+          {isSubmitting ? (
+            <div className="py-6 space-y-6">
+              <SubmissionProgress
+                currentStep={submissionStep}
+                isComplete={isSubmissionComplete}
+              />
+              {isSubmissionComplete && (
+                <div className="text-center space-y-2">
+                  <h3 className="font-semibold text-lg">Request Submitted Successfully!</h3>
+                  <p className="text-muted-foreground">
+                    You will receive a demo and script within 24 hours.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="flex justify-center mb-6">
+                <div className="flex items-center space-x-4">
+                  {Array.from({ length: totalSteps }).map((_, index) => (
+                    <div key={index} className="flex items-center">
+                      <div
+                        className={`
+                          h-8 w-8 rounded-full flex items-center justify-center border-2 
+                          ${currentStep >= index + 1
+                            ? "bg-orange-500 border-orange-500 text-white"
+                            : "border-orange-200 text-orange-200"
+                          }
+                        `}
+                      >
+                        {index + 1}
+                      </div>
+                      {index < totalSteps - 1 && (
+                        <div
+                          className={`
+                            w-12 h-0.5 ml-4
+                            ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
+                          `}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {renderFormStep()}
-              <DialogFooter className="flex justify-between gap-2">
-                {currentStep > 1 && (
-                  <Button type="button" variant="outline" onClick={prevStep}>
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Previous Step
-                  </Button>
-                )}
-                {currentStep < totalSteps ? (
-                  <Button type="button" onClick={nextStep}>
-                    Next Step ({currentStep + 1}/{totalSteps})
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="submit">
-                    <Send className="mr-2 h-4 w-4" />
-                    Submit Request
-                  </Button>
-                )}
-              </DialogFooter>
-            </form>
-          </Form>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {renderFormStep()}
+                  <DialogFooter className="flex justify-between gap-2">
+                    {currentStep > 1 && (
+                      <Button type="button" variant="outline" onClick={prevStep}>
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Previous Step
+                      </Button>
+                    )}
+                    {currentStep < totalSteps ? (
+                      <Button type="button" onClick={nextStep}>
+                        Next Step ({currentStep + 1}/{totalSteps})
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button type="submit">
+                        <Send className="mr-2 h-4 w-4" />
+                        Submit Request
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </form>
+              </Form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>
