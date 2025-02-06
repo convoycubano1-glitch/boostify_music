@@ -15,8 +15,8 @@ export default function MusicVideoCreator() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-24">
-        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-12">
+      <main className="flex-1 pt-32">
+        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden mt-16">
           <video
             autoPlay
             loop
@@ -26,9 +26,9 @@ export default function MusicVideoCreator() {
           >
             <source src="/background-video.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-background" />
-          <div className="relative z-10 container mx-auto h-full flex flex-col justify-center items-center pb-32 md:pb-0 px-4 pt-24">
-            <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 w-full md:max-w-2xl mt-12">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-background" />
+          <div className="relative z-10 container mx-auto h-full flex flex-col justify-center items-center pb-32 md:pb-0 px-4">
+            <div className="bg-black/40 backdrop-blur-sm rounded-lg p-6 w-full md:max-w-2xl">
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
