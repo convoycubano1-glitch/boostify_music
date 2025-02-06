@@ -52,7 +52,7 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
 }
 
 const musicians: MusicianService[] = [
-  // Guitarristas
+  // Guitarists
   {
     id: "1",
     userId: "user-1",
@@ -60,7 +60,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/guitarist-1.jpg",
     instrument: "Guitar",
     category: "Guitar",
-    description: "Especialista en rock y blues con 15 años de experiencia. Colaboraciones con bandas internacionales.",
+    description: "Rock and blues specialist with 15 years of experience. Collaborations with international bands.",
     price: 120,
     rating: 4.9,
     totalReviews: 156,
@@ -73,7 +73,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/guitarist-2.jpg",
     instrument: "Guitar",
     category: "Guitar",
-    description: "Virtuosa de la guitarra acústica y flamenco. Graduada del Berklee College of Music.",
+    description: "Acoustic guitar and flamenco virtuoso. Graduate from Berklee College of Music.",
     price: 150,
     rating: 4.8,
     totalReviews: 98,
@@ -86,13 +86,13 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/guitarist-3.jpg",
     instrument: "Guitar",
     category: "Guitar",
-    description: "Especialista en jazz y fusión latina. Experiencia en giras internacionales.",
+    description: "Jazz and Latin fusion specialist. Experience with international tours.",
     price: 135,
     rating: 4.7,
     totalReviews: 123,
     genres: ["Jazz", "Latin Fusion", "Funk"]
   },
-  // Drummers (Bateristas)
+  // Drummers
   {
     id: "4",
     userId: "user-4",
@@ -100,7 +100,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/drummer-1.jpg",
     instrument: "Drums",
     category: "Drums",
-    description: "Batería profesional con experiencia en metal y rock. Estudios en el Musicians Institute.",
+    description: "Professional drummer with expertise in metal and rock. Studies at Musicians Institute.",
     price: 140,
     rating: 4.9,
     totalReviews: 87,
@@ -113,7 +113,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/drummer-2.jpg",
     instrument: "Drums",
     category: "Drums",
-    description: "Especialista en ritmos latinos y fusión. Estudios de percusión en Cuba.",
+    description: "Latin rhythms and fusion specialist. Percussion studies in Cuba.",
     price: 130,
     rating: 4.8,
     totalReviews: 92,
@@ -126,13 +126,13 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/drummer-3.jpg",
     instrument: "Drums",
     category: "Drums",
-    description: "Experto en jazz y música electrónica. Productor y compositor.",
+    description: "Expert in jazz and electronic music. Producer and composer.",
     price: 145,
     rating: 4.7,
     totalReviews: 78,
     genres: ["Jazz", "Electronic", "Experimental"]
   },
-  // Pianistas
+  // Pianists
   {
     id: "7",
     userId: "user-7",
@@ -140,7 +140,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/pianist-1.jpg",
     instrument: "Piano",
     category: "Piano",
-    description: "Pianista clásica con formación en el Conservatorio. Especializada en música barroca.",
+    description: "Classical pianist with Conservatory training. Specialized in baroque music.",
     price: 160,
     rating: 5.0,
     totalReviews: 112,
@@ -153,7 +153,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/pianist-2.jpg",
     instrument: "Piano",
     category: "Piano",
-    description: "Especialista en jazz y música contemporánea. Experiencia en composición.",
+    description: "Jazz and contemporary music specialist. Experience in composition.",
     price: 150,
     rating: 4.9,
     totalReviews: 95,
@@ -166,13 +166,13 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/pianist-3.jpg",
     instrument: "Piano",
     category: "Piano",
-    description: "Experta en composición y arreglos. Experiencia en proyectos orquestales.",
+    description: "Expert in composition and arrangements. Experience in orchestral projects.",
     price: 155,
     rating: 4.8,
     totalReviews: 88,
     genres: ["Classical", "Contemporary", "Film Score"]
   },
-  // Vocalistas
+  // Vocalists
   {
     id: "10",
     userId: "user-10",
@@ -180,7 +180,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/vocalist-1.jpg",
     instrument: "Vocals",
     category: "Vocals",
-    description: "Vocalista versátil con experiencia en diversos géneros. Estudios de canto clásico y jazz.",
+    description: "Versatile vocalist with experience in various genres. Classical and jazz vocal studies.",
     price: 140,
     rating: 4.9,
     totalReviews: 167,
@@ -193,7 +193,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/vocalist-2.jpg",
     instrument: "Vocals",
     category: "Vocals",
-    description: "Especialista en soul y R&B. Amplia experiencia en coros y presentaciones en vivo.",
+    description: "Soul and R&B specialist. Extensive experience in choirs and live performances.",
     price: 150,
     rating: 4.8,
     totalReviews: 143,
@@ -206,13 +206,13 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/vocalist-3.jpg",
     instrument: "Vocals",
     category: "Vocals",
-    description: "Vocalista de jazz y música experimental. Estudios de canto y composición.",
+    description: "Jazz and experimental music vocalist. Studies in vocal performance and composition.",
     price: 145,
     rating: 4.7,
     totalReviews: 89,
     genres: ["Jazz", "Experimental", "Electronic"]
   },
-  // Productores
+  // Producers
   {
     id: "13",
     userId: "user-13",
@@ -220,7 +220,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/producer-1.jpg",
     instrument: "Production",
     category: "Production",
-    description: "Productor especializado en música urbana. Experiencia en mezcla y masterización.",
+    description: "Urban music production specialist. Experience in mixing and mastering.",
     price: 200,
     rating: 4.9,
     totalReviews: 178,
@@ -233,7 +233,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/producer-2.jpg",
     instrument: "Production",
     category: "Production",
-    description: "Productora de EDM y música electrónica. Especialista en sonidos electrónicos.",
+    description: "EDM and electronic music producer. Specialist in electronic sounds.",
     price: 180,
     rating: 4.8,
     totalReviews: 156,
@@ -246,7 +246,7 @@ const musicians: MusicianService[] = [
     photo: "/assets/musicians/producer-3.jpg",
     instrument: "Production",
     category: "Production",
-    description: "Especialista en producción de rock y metal. Experiencia en grabación.",
+    description: "Rock and metal production specialist. Experience in recording.",
     price: 190,
     rating: 4.7,
     totalReviews: 134,
