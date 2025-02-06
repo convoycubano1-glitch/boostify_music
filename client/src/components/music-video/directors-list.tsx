@@ -410,60 +410,66 @@ export function DirectorsList() {
   };
 
   const onSubmit = async (values: z.infer<typeof hireFormSchema>) => {
-    if (!selectedDirector) {
+    if (!auth.currentUser) {
       toast({
         title: "Error",
-        description: "No director selected",
+        description: "You must be logged in to submit a request",
         variant: "destructive",
       });
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      console.log("Starting submission with values:", values);
+    if (!selectedDirector) {
+      toast({
+        title: "Error",
+        description: "Please select a director first",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      // Create request data
+    setIsSubmitting(true);
+
+    try {
+      const requestRef = collection(db, "music-video-request");
+
       const requestData = {
         directorId: selectedDirector.id,
         directorName: selectedDirector.name,
-        userId: auth.currentUser?.uid,
+        userId: auth.currentUser.uid,
         visualTheme: values.visualTheme,
         mood: values.mood,
         visualStyle: values.visualStyle,
         budget: values.budget,
         timeline: values.timeline,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        submittedAt: new Date().toISOString(),
-        requestType: "music_video",
-        projectStatus: "awaiting_review",
         resolution: values.resolution,
         aspectRatio: values.aspectRatio,
         specialEffects: values.specialEffects,
         additionalNotes: values.additionalNotes || "",
+        status: "pending",
+        createdAt: serverTimestamp(),
+        submittedAt: new Date().toISOString(),
+        requestType: "music_video",
+        projectStatus: "awaiting_review"
       };
 
-      console.log("Attempting to save request data:", requestData);
+      console.log("Saving to Firestore:", requestData);
 
-      // Save to Firestore
-      const requestRef = collection(db, "music-video-request");
-      const docRef = await addDoc(requestRef, requestData);
+      await addDoc(requestRef, requestData);
 
-      console.log("Successfully saved document with ID:", docRef.id);
+      console.log("Successfully saved to Firestore");
 
       toast({
         title: "Success!",
-        description: "Your music video request has been submitted.",
+        description: "Your request has been submitted successfully",
       });
 
-      // Reset form and close dialog
       form.reset();
       setShowHireForm(false);
       setCurrentStep(1);
 
     } catch (error) {
-      console.error("Error submitting request:", error);
+      console.error("Error saving to Firestore:", error);
       toast({
         title: "Error",
         description: "Failed to submit request. Please try again.",
@@ -983,25 +989,13 @@ export function DirectorsList() {
       </div>
 
       <Dialog open={showHireForm} onOpenChange={setShowHireForm}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
-            <DialogTitle>
-              Hire {selectedDirector?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Fill out the form below to submit your music video project request.
-            </DialogDescription>
+            <DialogTitle>Submit Music Video Request</DialogTitle>
           </DialogHeader>
 
           <Form {...form}>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                console.log("Form submitted");
-                form.handleSubmit(onSubmit)(e);
-              }} 
-              className="space-y-6"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="flex justify-center mb-6">
                 <div className="flex items-center space-x-2 md:space-x-4">
                   {Array.from({ length: totalSteps }).map((_, index) => (
@@ -1037,46 +1031,23 @@ export function DirectorsList() {
                 {renderFormStep()}
               </div>
 
-              <DialogFooter>
-                <div className="flex justify-between w-full">
-                  {currentStep > 1 && (
-                    <Button type="button" variant="outline" onClick={prevStep}>
-                      <ChevronLeft className="w-4 h-4 mr-2" />
-                      Previous
-                    </Button>
-                  )}
-
-                  {currentStep < totalSteps ? (
-                    <Button
-                      type="button"
-                      className="ml-auto"
-                      onClick={nextStep}
-                      disabled={isGeneratingEstimate || isGeneratingImages}
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      className="ml-auto"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4 mr-2" />
-                          Submit Request
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </DialogFooter>
+              <Button 
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit Request
+                  </>
+                )}
+              </Button>
             </form>
           </Form>
         </DialogContent>
