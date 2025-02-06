@@ -280,9 +280,12 @@ export default function ProducerToolsPage() {
 
       if (storedImages && storedImages.length > 0) {
         const updatedMusicians = musicians.map(musician => {
-          const categoryImages = storedImages.filter(img =>
-            img.category === musician.category
-          );
+          // No convertir a minúsculas para la comparación
+          console.log(`Buscando imágenes para categoría: ${musician.category}`);
+          const categoryImages = storedImages.filter(img => {
+            console.log(`Comparando ${img.category} con ${musician.category}`);
+            return img.category === musician.category;
+          });
 
           console.log(`Found ${categoryImages.length} images for category ${musician.category}`);
 
