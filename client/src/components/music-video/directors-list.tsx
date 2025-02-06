@@ -241,20 +241,23 @@ export function DirectorsList() {
   }, [toast]);
 
   const simulateSubmissionProcess = async () => {
+    console.log("Starting submission animation process...");
     const steps = [
-      { step: 0, delay: 1000 }, // Proposal Received
-      { step: 1, delay: 2000 }, // Connecting with Director
-      { step: 2, delay: 2000 }, // Adjusting Proposal
-      { step: 3, delay: 1500 }, // Finalizing Details
-      { step: 4, delay: 1000 }, // Complete
+      { step: 0, delay: 1000, message: "Processing your request..." },
+      { step: 1, delay: 2000, message: "Connecting with director..." },
+      { step: 2, delay: 2000, message: "Preparing project details..." },
+      { step: 3, delay: 1500, message: "Finalizing submission..." },
+      { step: 4, delay: 1000, message: "Complete!" },
     ];
 
-    for (const { step, delay } of steps) {
+    for (const { step, delay, message } of steps) {
+      console.log(`Step ${step}: ${message}`);
       await new Promise(resolve => setTimeout(resolve, delay));
       setSubmissionStep(step);
     }
 
     setIsSubmissionComplete(true);
+    console.log("Submission animation complete");
     return new Promise(resolve => setTimeout(resolve, 1000));
   };
 
@@ -263,6 +266,7 @@ export function DirectorsList() {
 
     try {
       setIsSubmitting(true);
+      console.log("Starting submission process...");
 
       // Start submission animation
       await simulateSubmissionProcess();
@@ -273,12 +277,21 @@ export function DirectorsList() {
         directorName: selectedDirector.name,
         status: "pending",
         createdAt: serverTimestamp(),
+        submittedAt: new Date().toISOString(),
+        requestType: "music_video",
+        projectStatus: "awaiting_review"
       };
 
-      await addDoc(collection(db, "projects"), projectData);
+      console.log("Saving project to Firestore:", projectData);
+
+      // Add to Firestore
+      const projectRef = collection(db, "projects");
+      const docRef = await addDoc(projectRef, projectData);
+
+      console.log("Project saved successfully with ID:", docRef.id);
 
       toast({
-        title: "Success",
+        title: "Success!",
         description: "Your project request has been submitted successfully. You will receive a demo and script within 24 hours.",
       });
 
@@ -291,6 +304,7 @@ export function DirectorsList() {
         variant: "destructive",
       });
     } finally {
+      // Add delay before closing to ensure user sees the completion state
       setTimeout(() => {
         setIsSubmitting(false);
         setShowHireForm(false);
