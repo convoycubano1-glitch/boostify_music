@@ -101,19 +101,21 @@ export function MusicVideoAI() {
         if (e.target?.result) {
           const base64Audio = (e.target.result as string).split(",")[1];
 
-          const result = await fal.subscribe("fal-ai/whisper", {
+          // Create a subscription to the whisper model
+          const transcriptionResult = await fal.subscribe("fal-ai/whisper", {
             input: {
-              audio: base64Audio,
-              model_size: "base",
+              audio_data: base64Audio,
+              decode_method: "beam_search",
+              task: "transcribe",
+              language: "auto"
             },
           });
 
-          if (result && typeof result === 'object' && 'text' in result) {
-            const text = result.text;
-            setTranscription(text);
-            generateVideoScript(text);
+          if (transcriptionResult && typeof transcriptionResult === 'object' && 'text' in transcriptionResult) {
+            setTranscription(transcriptionResult.text);
+            generateVideoScript(transcriptionResult.text);
           } else {
-            throw new Error("Invalid response format from Whisper API");
+            throw new Error("Invalid response format from transcription API");
           }
         }
       };
@@ -190,24 +192,28 @@ export function MusicVideoAI() {
       for (let i = 0; i < updatedItems.length; i++) {
         const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
-          const result = await fal.subscribe("fal-ai/stable-diffusion-xl-v1", {
+          // Configure the request for image generation
+          const result = await fal.subscribe("fal-ai/sd-xl", {
             input: {
-              prompt: `Create a professional cinematic shot for a music video: ${item.imagePrompt}. Style: ${item.shotType}. Professional, high quality, cinematic lighting, film grain.`,
+              prompt: `Professional cinematic shot for a music video: ${item.imagePrompt}. Shot type: ${item.shotType}. High quality, cinematic lighting, film grain, professional photography.`,
               negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, cartoon, anime, illustration",
-              image_size: "landscape_16_9"
+              num_inference_steps: 30,
+              scheduler: "K_EULER",
+              width: 1024,
+              height: 576
             },
           });
 
-          if (result.images?.[0]?.url) {
+          if (result && result.images && result.images[0] && result.images[0].url) {
             updatedItems[i] = {
               ...item,
               generatedImage: result.images[0].url
             };
-            setTimelineItems([...updatedItems]); // Force re-render with spread operator
+            setTimelineItems([...updatedItems]); // Force re-render
           }
 
-          // Add a small delay between generations to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Add a delay between generations to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
     } catch (error) {
