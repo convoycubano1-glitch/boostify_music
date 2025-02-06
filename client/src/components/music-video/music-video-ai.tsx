@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import Timeline from "react-calendar-timeline";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -146,8 +147,8 @@ export function MusicVideoAI() {
         });
 
         const formattedLyrics = formattedResponse.choices[0].message.content;
-        setTranscription(formattedLyrics);
-        generateVideoScript(formattedLyrics);
+        setTranscription(formattedLyrics || transcription.text);
+        generateVideoScript(formattedLyrics || transcription.text);
       }
 
     } catch (error) {
@@ -165,31 +166,38 @@ export function MusicVideoAI() {
   const generateVideoScript = async (lyrics: string) => {
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director de videos musicales profesional, crea un guion detallado para un video musical con las siguientes especificaciones:
+      const prompt = `Como director creativo de videos musicales, crea un guion detallado para un video musical basado en la siguiente letra y especificaciones de estilo. 
 
-Estilo:
+Estilo Visual:
 - Mood: ${videoStyle.mood}
 - Paleta de Color: ${videoStyle.colorPalette}
-- Estilo de Personajes: ${videoStyle.characterStyle}
+- Estilo de Personajes/Escenas: ${videoStyle.characterStyle}
 - Intensidad Visual: ${videoStyle.visualIntensity}%
 
-Letra:
+Letra de la canción:
 ${lyrics}
 
-Genera exactamente 5 escenas clave. Para cada escena, incluye:
-- Tiempo (en segundos desde el inicio)
-- Descripción detallada
-- Tipo de toma (Wide Shot, Medium Shot, Close Up, etc.)
-- Prompt para generar imagen (descripción visual detallada para AI)
+Genera 5 escenas clave que capturen los momentos más impactantes de la canción. Para cada escena, incluye:
+1. Tiempo exacto en segundos
+2. Descripción detallada de la acción y elementos visuales
+3. Tipo de toma (ej: Close-up, Wide Shot, Tracking Shot, etc.)
+4. Un prompt detallado para IA de generación de imágenes que capture la esencia de la escena
 
-Responde en formato JSON con la siguiente estructura:
+Para cada prompt de imagen, incorpora:
+- El estilo visual especificado (mood, paleta de color, estilo)
+- Elementos específicos a incluir
+- Dirección de arte y composición
+- Iluminación y atmosfera
+- Referencias a la letra en ese momento
+
+Estructura cada escena en formato JSON como:
 {
   "shots": [
     {
-      "time": "0",
-      "description": "descripción",
-      "shotType": "tipo de toma",
-      "imagePrompt": "prompt para AI"
+      "time": "segundos desde el inicio",
+      "description": "descripción detallada de la escena",
+      "shotType": "tipo de toma cinematográfica",
+      "imagePrompt": "prompt detallado para IA"
     }
   ]
 }`;
@@ -197,17 +205,38 @@ Responde en formato JSON con la siguiente estructura:
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un director de videos musicales experto." },
+          {
+            role: "system",
+            content: "Eres un director de videos musicales experto. Tus guiones deben ser creativos y cohesivos, asegurando que cada escena fluya naturalmente a la siguiente mientras mantiene el estilo visual especificado."
+          },
           { role: "user", content: prompt }
-        ],
-        response_format: { type: "json_object" }
+        ]
       });
 
       if (response.choices[0].message.content) {
-        const scriptResult = JSON.parse(response.choices[0].message.content);
-        if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
-          generateTimelineItems(scriptResult.shots);
-          setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+        try {
+          const scriptResult = JSON.parse(response.choices[0].message.content);
+          if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
+            generateTimelineItems(scriptResult.shots);
+            setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+          }
+        } catch (parseError) {
+          // Si falla el parsing, intentamos extraer el JSON de la respuesta
+          const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const scriptResult = JSON.parse(jsonMatch[0]);
+            if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
+              generateTimelineItems(scriptResult.shots);
+              setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+            }
+          } else {
+            console.error("Error parsing JSON:", parseError);
+            toast({
+              title: "Error",
+              description: "Error al procesar la respuesta de la IA. Intenta de nuevo.",
+              variant: "destructive"
+            })
+          }
         }
       }
     } catch (error) {
@@ -233,7 +262,7 @@ Responde en formato JSON con la siguiente estructura:
       description: shot.description,
       shotType: shot.shotType,
       imagePrompt: shot.imagePrompt,
-      generatedImage: `/assets/mock-shots/shot-${index + 1}.jpg`
+      generatedImage: undefined
     }));
     setTimelineItems(items);
     setVisibleTimeStart(baseTime);
@@ -507,7 +536,6 @@ Responde en formato JSON con la siguiente estructura:
             </div>
           </div>
         </div>
-
 
         {timelineItems.length > 0 && (
           <div className="space-y-4">
