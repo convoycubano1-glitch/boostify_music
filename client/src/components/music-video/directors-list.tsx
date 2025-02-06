@@ -794,7 +794,7 @@ export function DirectorsList() {
 
   return (
     <>
-      <Card className="p-6">
+      <Card className="p-4 md:p-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
             <Video className="h-6 w-6 text-orange-500" />
@@ -807,7 +807,7 @@ export function DirectorsList() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
           {directors.map((director) => (
             <motion.div
               key={director.id}
@@ -815,8 +815,8 @@ export function DirectorsList() {
               animate={{ opacity: 1, y: 0 }}
               className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
             >
-              <div className="flex items-start gap-4">
-                <div className="h-32 w-32 rounded-lg overflow-hidden bg-orange-500/10">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <div className="h-32 w-32 rounded-lg overflow-hidden bg-orange-500/10 flex-shrink-0">
                   {director.imageUrl ? (
                     <img
                       src={director.imageUrl}
@@ -833,9 +833,9 @@ export function DirectorsList() {
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">{director.name}</h3>
+                    <h3 className="text-lg font-semibold truncate">{director.name}</h3>
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
                       <span className="text-sm font-medium">{director.rating}</span>
@@ -851,7 +851,7 @@ export function DirectorsList() {
                     Style: {director.style}
                   </p>
                   <Button
-                    className="mt-4 w-full"
+                    className="mt-4 w-full transition-all duration-200"
                     onClick={() => handleHireClick(director)}
                   >
                     Hire Director
@@ -864,7 +864,7 @@ export function DirectorsList() {
       </Card>
 
       <Dialog open={showHireForm} onOpenChange={setShowHireForm}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <Video className="h-5 w-5" />
@@ -894,15 +894,16 @@ export function DirectorsList() {
           ) : (
             <>
               <div className="flex justify-center mb-6">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 md:space-x-4">
                   {Array.from({ length: totalSteps }).map((_, index) => (
                     <div key={index} className="flex items-center">
                       <div
                         className={`
                           h-8 w-8 rounded-full flex items-center justify-center border-2 
-                          ${currentStep >= index + 1
-                            ? "bg-orange-500 border-orange-500 text-white"
-                            : "border-orange-200 text-orange-200"
+                          ${
+                            currentStep >= index + 1
+                              ? "bg-orange-500 border-orange-500 text-white"
+                              : "border-orange-200 text-orange-200"
                           }
                         `}
                       >
@@ -911,7 +912,7 @@ export function DirectorsList() {
                       {index < totalSteps - 1 && (
                         <div
                           className={`
-                            w-12 h-0.5 ml-4
+                            w-8 md:w-12 h-0.5 ml-2
                             ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
                           `}
                         />
@@ -923,25 +924,43 @@ export function DirectorsList() {
 
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {renderFormStep()}
-                  <DialogFooter className="flex justify-between gap-2">
-                    {currentStep > 1 && (
-                      <Button type="button" variant="outline" onClick={prevStep}>
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Previous Step
-                      </Button>
-                    )}
-                    {currentStep < totalSteps ? (
-                      <Button type="button" onClick={nextStep}>
-                        Next Step ({currentStep + 1}/{totalSteps})
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button type="submit">
-                        <Send className="mr-2 h-4 w-4" />
-                        Submit Request
-                      </Button>
-                    )}
+                  <div className="space-y-6 pb-6">
+                    {renderFormStep()}
+                  </div>
+
+                  <DialogFooter className="sticky bottom-0 pt-4 bg-background border-t">
+                    <div className="flex justify-between w-full gap-2">
+                      {currentStep > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={prevStep}
+                          className="transition-all duration-200 hover:bg-orange-50"
+                        >
+                          <ChevronLeft className="mr-2 h-4 w-4" />
+                          Previous
+                        </Button>
+                      )}
+                      <div className="flex-1" />
+                      {currentStep < totalSteps ? (
+                        <Button
+                          type="button"
+                          onClick={nextStep}
+                          className="transition-all duration-200"
+                        >
+                          Next ({currentStep + 1}/{totalSteps})
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="submit"
+                          className="transition-all duration-200"
+                        >
+                          <Send className="mr-2 h-4 w-4" />
+                          Submit Request
+                        </Button>
+                      )}
+                    </div>
                   </DialogFooter>
                 </form>
               </Form>
