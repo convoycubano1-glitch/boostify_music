@@ -53,6 +53,8 @@ import { z } from "zod";
 import { Progress } from "@/components/ui/progress";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
+import { auth } from "@/lib/firebase"; //Import auth
+
 
 // Constants for form options
 const VISUAL_THEMES = [
@@ -181,7 +183,9 @@ interface SubmissionProgressProps {
 
 interface MusicVideoRequest {
   id: string;
+  directorId: string;
   directorName: string;
+  userId: string;
   visualTheme: string;
   mood: string;
   visualStyle: string;
@@ -189,6 +193,27 @@ interface MusicVideoRequest {
   timeline: string;
   status: string;
   createdAt: any;
+  submittedAt: string;
+  requestType: string;
+  projectStatus: string;
+  priceEstimate?: {
+    basicPackage: {
+      price: number;
+      description: string;
+      features: string[];
+    };
+    standardPackage: {
+      price: number;
+      description: string;
+      features: string[];
+    };
+    premiumPackage: {
+      price: number;
+      description: string;
+      features: string[];
+    };
+  };
+  conceptImages?: string[];
 }
 
 fal.config({
@@ -388,13 +413,18 @@ export function DirectorsList() {
     if (!selectedDirector) return;
 
     try {
-      // Start submission process first
+      // Start submission process animation
       await simulateSubmissionProcess();
 
-      const projectData = {
-        ...values,
+      const requestData = {
         directorId: selectedDirector.id,
         directorName: selectedDirector.name,
+        userId: auth.currentUser?.uid,
+        visualTheme: values.visualTheme,
+        mood: values.mood,
+        visualStyle: values.visualStyle,
+        budget: values.budget,
+        timeline: values.timeline,
         status: "pending",
         createdAt: serverTimestamp(),
         submittedAt: new Date().toISOString(),
@@ -402,13 +432,17 @@ export function DirectorsList() {
         projectStatus: "awaiting_review",
         priceEstimate,
         conceptImages,
+        resolution: values.resolution,
+        aspectRatio: values.aspectRatio,
+        specialEffects: values.specialEffects,
+        additionalNotes: values.additionalNotes,
       };
 
-      console.log("Saving request to Firestore:", projectData);
+      console.log("Saving request to Firestore:", requestData);
 
       try {
         const requestRef = collection(db, "music-video-request");
-        const docRef = await addDoc(requestRef, projectData);
+        const docRef = await addDoc(requestRef, requestData);
         console.log("Request saved with ID:", docRef.id);
 
         // Refresh requests list
@@ -422,17 +456,15 @@ export function DirectorsList() {
 
         toast({
           title: "Success!",
-          description: "Your music video request has been submitted successfully. You will receive a demo and script within 24 hours.",
+          description: "Your music video request has been submitted successfully.",
         });
 
         // Reset form and close dialog after successful submission
         form.reset();
-        setTimeout(() => {
-          setIsSubmitting(false);
-          setShowHireForm(false);
-          setSubmissionStep(0);
-          setIsSubmissionComplete(false);
-        }, 2000);
+        setShowHireForm(false);
+        setSubmissionStep(0);
+        setIsSubmissionComplete(false);
+        setCurrentStep(1);
       } catch (dbError) {
         console.error("Database error:", dbError);
         toast({
@@ -440,7 +472,6 @@ export function DirectorsList() {
           description: "Failed to save request. Please try again.",
           variant: "destructive",
         });
-        setIsSubmitting(false);
       }
     } catch (error) {
       console.error("Error in submission process:", error);
@@ -449,6 +480,7 @@ export function DirectorsList() {
         description: "Failed to submit request. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -847,7 +879,7 @@ export function DirectorsList() {
                 </p>
               </div>
             </div>
-            <Button 
+            <Button
               variant="outline"
               onClick={() => setShowRequests(!showRequests)}
               className="transition-all duration-200"
@@ -964,141 +996,93 @@ export function DirectorsList() {
       <Dialog open={showHireForm} onOpenChange={setShowHireForm}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-2xl">
-              <Video className="h-5 w-5" />
-              {selectedDirector ?`Hire ${selectedDirector.name}` : 'Hire Director'}
+            <DialogTitle>
+              Hire {selectedDirector?.name}
             </DialogTitle>
             <DialogDescription>
-              Fill out the form below to submit your music video project request. We'll review your submission and get back to you within 24 hours.
+              Fill out the form below to submit your music video project request.
             </DialogDescription>
           </DialogHeader>
 
-          {isSubmitting ? (
-            <div className="py-6 space-y-6">
-              <div className="w-full space-y-4">
-                <Progress value={isSubmissionComplete ? 100 : (submissionStep / (totalSteps -1)) * 100} className="h-2" />
-                <div className="grid grid-cols-5 gap-2 text-xs text-center">
-                  {["Proposal Received", "Connecting with Director", "Adjusting Proposal", "Finalizing Details", "Complete"].map((step, index) => (
-                    <div
-                      key={index}
-                      className={`${
-                        index <= submissionStep
-                          ? "text-primary font-medium"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {index <= submissionStep && (
-                        <Check className="h-4 w-4 mx-auto mb-1 text-primary" />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="flex justify-center mb-6">
+                <div className="flex items-center space-x-2 md:space-x-4">
+                  {Array.from({ length: totalSteps }).map((_, index) => (
+                    <div key={index} className="flex items-center">
+                      <div
+                        className={`
+                          h-8 w-8 rounded-full flex items-center justify-center border-2 
+                          transition-colors duration-200
+                          ${
+                            currentStep >= index + 1
+                              ? "bg-orange-500 border-orange-500 text-white"
+                              : "border-orange-200 text-orange-200"
+                          }
+                        `}
+                      >
+                        {index + 1}
+                      </div>
+                      {index < totalSteps - 1 && (
+                        <div
+                          className={`
+                            w-8 md:w-12 h-0.5 ml-2
+                            transition-colors duration-200
+                            ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
+                          `}
+                        />
                       )}
-                      {step}
                     </div>
                   ))}
                 </div>
               </div>
-              {isSubmissionComplete && (
-                <div className="text-center space-y-2">
-                  <h3 className="font-semibold text-lg">Request Submitted Successfully!</h3>
-                  <p className="text-muted-foreground">
-                    We'll review your request and get back to you within 24 hours.
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="flex justify-center mb-6">
-                  <div className="flex items-center space-x-2 md:space-x-4">
-                    {Array.from({ length: totalSteps }).map((_, index) => (
-                      <div key={index} className="flex items-center">
-                        <div
-                          className={`
-                            h-8 w-8 rounded-full flex items-center justify-center border-2 
-                            transition-colors duration-200
-                            ${
-                              currentStep >= index + 1
-                                ? "bg-orange-500 border-orange-500 text-white"
-                                : "border-orange-200 text-orange-200"
-                            }
-                          `}
-                        >
-                          {index + 1}
-                        </div>
-                        {index < totalSteps - 1 && (
-                          <div
-                            className={`
-                              w-8 md:w-12 h-0.5 ml-2
-                              transition-colors duration-200
-                              ${currentStep > index + 1 ? "bg-orange-500" : "bg-orange-200"}
-                            `}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="space-y-6 pb-6">
-                  {renderFormStep()}
-                </div>
+              <div className="space-y-6 pb-6">
+                {renderFormStep()}
+              </div>
 
-                <DialogFooter className="sticky bottom-0 pt-4 bg-background border-t">
-                  <div className="flex justify-between w-full gap-2">
-                    {currentStep > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={prevStep}
-                        className="transition-all duration-200 hover:bg-orange-50 active:scale-95"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Previous
-                      </Button>
-                    )}
-                    <div className="flex-1" />
-                    {currentStep < totalSteps ? (
-                      <Button
-                        type="button"
-                        onClick={nextStep}
-                        disabled={isGeneratingEstimate || isGeneratingImages}
-                        className="transition-all duration-200 active:scale-95"
-                      >
-                        {isGeneratingEstimate || isGeneratingImages ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            Next ({currentStep + 1}/{totalSteps})
-                            <ChevronRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="transition-all duration-200 active:scale-95"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="mr-2 h-4 w-4" />
-                            Submit Request
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
+              <DialogFooter>
+                <div className="flex justify-between w-full">
+                  {currentStep > 1 && (
+                    <Button type="button" variant="outline" onClick={prevStep}>
+                      <ChevronLeft className="w-4 h-4 mr-2" />
+                      Previous
+                    </Button>
+                  )}
+
+                  {currentStep < totalSteps ? (
+                    <Button
+                      type="button"
+                      className="ml-auto"
+                      onClick={nextStep}
+                      disabled={isGeneratingEstimate || isGeneratingImages}
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      className="ml-auto"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Submit Request
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </>
