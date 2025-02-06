@@ -117,12 +117,10 @@ export function MusicVideoAI() {
 
     setIsTranscribing(true);
     try {
-      // Convert audio file to FormData
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('model', 'whisper-1');
 
-      // Make request to OpenAI Whisper API
       const transcription = await openai.audio.transcriptions.create({
         file: selectedFile,
         model: "whisper-1",
@@ -131,7 +129,6 @@ export function MusicVideoAI() {
       if (transcription.text) {
         setTranscription(transcription.text);
 
-        // Analyze the transcription with GPT to format it as lyrics
         const formattedResponse = await openai.chat.completions.create({
           model: "gpt-4",
           messages: [
@@ -167,7 +164,7 @@ export function MusicVideoAI() {
     setIsGeneratingScript(true);
     try {
       const prompt = `Como director creativo de videos musicales, crea un guion detallado para un video musical basado en la siguiente letra y especificaciones de estilo. 
-
+      
 Estilo Visual:
 - Mood: ${videoStyle.mood}
 - Paleta de Color: ${videoStyle.colorPalette}
@@ -221,7 +218,6 @@ Estructura cada escena en formato JSON como:
             setGeneratedScript(JSON.stringify(scriptResult, null, 2));
           }
         } catch (parseError) {
-          // Si falla el parsing, intentamos extraer el JSON de la respuesta
           const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const scriptResult = JSON.parse(jsonMatch[0]);
@@ -344,7 +340,6 @@ Estructura cada escena en formato JSON como:
     try {
       const updatedItems = [...timelineItems];
 
-      // Limitamos a 5 imágenes durante el desarrollo
       const itemsToGenerate = updatedItems.slice(0, 5);
 
       for (let i = 0; i < itemsToGenerate.length; i++) {
@@ -368,7 +363,6 @@ Estructura cada escena en formato JSON como:
             setTimelineItems([...updatedItems]);
           }
 
-          // Esperar entre generaciones para evitar rate limiting
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
@@ -424,143 +418,153 @@ Estructura cada escena en formato JSON como:
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div>
-          <Label>Sube tu Canción (MP3)</Label>
-          <div className="flex items-center gap-2 mt-2">
-            <Input
-              type="file"
-              accept="audio/mpeg"
-              onChange={handleFileChange}
-              className="flex-1"
-            />
-            <Button
-              onClick={transcribeAudio}
-              disabled={!selectedFile || isTranscribing}
-            >
-              {isTranscribing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <Music2 className="mr-2 h-4 w-4" />
-                  Procesar Audio
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {transcription && (
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Music2 className="h-4 w-4 text-orange-500" />
-              Letra Transcrita
-            </h3>
-            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-              <p className="text-sm whitespace-pre-wrap">{transcription}</p>
-            </ScrollArea>
-          </div>
-        )}
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <Label>Mood del Video</Label>
-            <Select
-              value={videoStyle.mood}
-              onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona el mood" />
-              </SelectTrigger>
-              <SelectContent>
-                {videoStyles.moods.map((mood) => (
-                  <SelectItem key={mood} value={mood}>
-                    {mood}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Paleta de Colores</Label>
-            <Select
-              value={videoStyle.colorPalette}
-              onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona la paleta" />
-              </SelectTrigger>
-              <SelectContent>
-                {videoStyles.colorPalettes.map((palette) => (
-                  <SelectItem key={palette} value={palette}>
-                    {palette}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Estilo de Personajes</Label>
-            <Select
-              value={videoStyle.characterStyle}
-              onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona el estilo" />
-              </SelectTrigger>
-              <SelectContent>
-                {videoStyles.characterStyles.map((style) => (
-                  <SelectItem key={style} value={style}>
-                    {style}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Intensidad Visual</Label>
-            <div className="pt-2">
-              <Slider
-                value={[videoStyle.visualIntensity]}
-                onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                min={0}
-                max={100}
-                step={1}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Input and Settings */}
+        <div className="space-y-6">
+          {/* File Upload Section */}
+          <div className="border rounded-lg p-4">
+            <Label className="text-lg font-semibold mb-4">1. Sube tu Canción</Label>
+            <div className="flex items-center gap-2 mt-2">
+              <Input
+                type="file"
+                accept="audio/mpeg"
+                onChange={handleFileChange}
+                className="flex-1"
               />
+              <Button
+                onClick={transcribeAudio}
+                disabled={!selectedFile || isTranscribing}
+              >
+                {isTranscribing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <Music2 className="mr-2 h-4 w-4" />
+                    Procesar Audio
+                  </>
+                )}
+              </Button>
             </div>
           </div>
+
+          {/* Video Style Settings */}
+          <div className="border rounded-lg p-4">
+            <Label className="text-lg font-semibold mb-4">2. Estilo del Video</Label>
+            <div className="grid gap-4">
+              <div>
+                <Label>Mood</Label>
+                <Select
+                  value={videoStyle.mood}
+                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona el mood" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {videoStyles.moods.map((mood) => (
+                      <SelectItem key={mood} value={mood}>
+                        {mood}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Paleta de Colores</Label>
+                <Select
+                  value={videoStyle.colorPalette}
+                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona la paleta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {videoStyles.colorPalettes.map((palette) => (
+                      <SelectItem key={palette} value={palette}>
+                        {palette}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Estilo de Personajes</Label>
+                <Select
+                  value={videoStyle.characterStyle}
+                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona el estilo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {videoStyles.characterStyles.map((style) => (
+                      <SelectItem key={style} value={style}>
+                        {style}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Intensidad Visual</Label>
+                <div className="pt-2">
+                  <Slider
+                    value={[videoStyle.visualIntensity]}
+                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Transcription Display */}
+          {transcription && (
+            <div className="border rounded-lg p-4">
+              <Label className="text-lg font-semibold mb-4">3. Letra Transcrita</Label>
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4 mt-2">
+                <p className="text-sm whitespace-pre-wrap">{transcription}</p>
+              </ScrollArea>
+            </div>
+          )}
         </div>
 
-        {timelineItems.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Clock className="h-4 w-4 text-orange-500" />
-                Secuencia de Tomas
-              </h3>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleZoomOut}
-                  className="px-2"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleZoomIn}
-                  className="px-2"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
+        {/* Right Column - Timeline and Preview */}
+        <div className="space-y-6">
+          {timelineItems.length > 0 && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold">4. Secuencia de Video</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomOut}
+                    className="px-2"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomIn}
+                    className="px-2"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Playback Controls */}
+              <div className="flex items-center justify-center gap-2 mb-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -597,11 +601,60 @@ Estructura cada escena en formato JSON como:
                 >
                   <FastForward className="h-4 w-4" />
                 </Button>
+              </div>
+
+              {/* Timeline */}
+              <div className="relative">
+                <Timeline
+                  groups={groups}
+                  items={timelineItems}
+                  defaultTimeStart={visibleTimeStart}
+                  defaultTimeEnd={visibleTimeEnd}
+                  visibleTimeStart={visibleTimeStart}
+                  visibleTimeEnd={visibleTimeEnd}
+                  onTimeChange={handleTimeChange}
+                  canMove={false}
+                  canResize={false}
+                  stackItems
+                  itemHeightRatio={0.8}
+                  itemRenderer={({ item }) => (
+                    <div
+                      className="relative h-full cursor-pointer group"
+                      onMouseEnter={() => setHoveredShot(item)}
+                      onMouseLeave={() => setHoveredShot(null)}
+                    >
+                      <div className={cn(
+                        "absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1 transition-all",
+                        currentTime >= item.start_time && currentTime < item.end_time ? "ring-2 ring-orange-500" : ""
+                      )}>
+                        <span className="z-10 font-medium text-foreground/80">{item.title}</span>
+                        {item.generatedImage && (
+                          <img
+                            src={item.generatedImage}
+                            alt={item.description}
+                            className="absolute inset-0 w-full h-full object-cover rounded opacity-50 group-hover:opacity-100 transition-opacity"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                />
+
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-orange-500 z-50 pointer-events-none"
+                  style={{
+                    left: `${((currentTime - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart)) * 100}%`,
+                    display: timelineItems.length > 0 ? 'block' : 'none'
+                  }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 mt-4">
                 <Button
                   onClick={generateShotImages}
                   disabled={isGeneratingShots}
                   variant="outline"
-                  size="sm"
                 >
                   {isGeneratingShots ? (
                     <>
@@ -618,8 +671,7 @@ Estructura cada escena en formato JSON como:
                 <Button
                   onClick={handleExportVideo}
                   disabled={isExporting}
-                  variant="outline"
-                  size="sm"
+                  variant="default"
                 >
                   {isExporting ? (
                     <>
@@ -635,76 +687,32 @@ Estructura cada escena en formato JSON como:
                 </Button>
               </div>
             </div>
+          )}
 
-            <div className="border rounded-lg p-4 relative">
-              <Timeline
-                groups={groups}
-                items={timelineItems}
-                defaultTimeStart={visibleTimeStart}
-                defaultTimeEnd={visibleTimeEnd}
-                visibleTimeStart={visibleTimeStart}
-                visibleTimeEnd={visibleTimeEnd}
-                onTimeChange={handleTimeChange}
-                canMove={false}
-                canResize={false}
-                stackItems
-                itemHeightRatio={0.8}
-                itemRenderer={({ item }) => (
-                  <div
-                    className="relative h-full cursor-pointer group"
-                    onMouseEnter={() => setHoveredShot(item)}
-                    onMouseLeave={() => setHoveredShot(null)}
-                  >
-                    <div className={cn(
-                      "absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1 transition-all",
-                      currentTime >= item.start_time && currentTime < item.end_time ? "ring-2 ring-orange-500" : ""
-                    )}>
-                      <span className="z-10 font-medium text-foreground/80">{item.title}</span>
-                      {item.generatedImage && (
-                        <img
-                          src={item.generatedImage}
-                          alt={item.description}
-                          className="absolute inset-0 w-full h-full object-cover rounded opacity-50 group-hover:opacity-100 transition-opacity"
-                        />
-                      )}
-                    </div>
-                  </div>
+          {/* Shot Preview */}
+          {hoveredShot && (
+            <div className="fixed bottom-4 right-4 max-w-sm bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4 z-50">
+              <div className="aspect-video relative rounded-lg overflow-hidden mb-3">
+                {hoveredShot.generatedImage && (
+                  <img
+                    src={hoveredShot.generatedImage}
+                    alt={hoveredShot.description}
+                    className="w-full h-full object-cover"
+                  />
                 )}
-              />
-
-              <div
-                className="absolute top-0 bottom-0 w-px bg-orange-500 z-50 pointer-events-none"
-                style={{
-                  left: `${((currentTime - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart)) * 100}%`,
-                  display: timelineItems.length > 0 ? 'block' : 'none'
-                }}
-              />
-            </div>
-
-            {hoveredShot && (
-              <div className="fixed bottom-4 right-4 max-w-sm bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4 z-50">
-                <div className="aspect-video relative rounded-lg overflow-hidden mb-3">
-                  {hoveredShot.generatedImage && (
-                    <img
-                      src={hoveredShot.generatedImage}
-                      alt={hoveredShot.description}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-                <h4 className="font-medium mb-1">{hoveredShot.shotType}</h4>
-                <p className="text-sm text-muted-foreground">{hoveredShot.description}</p>
               </div>
-            )}
-          </div>
-        )}
-
-        {(isGeneratingScript || isTranscribing) && !timelineItems.length && (
-          <div className="flex items-center justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-          </div>
-        )}
+              <h4 className="font-medium mb-1">{hoveredShot.shotType}</h4>
+              <p className="text-sm text-muted-foreground">{hoveredShot.description}</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {(isGeneratingScript || isTranscribing) && !timelineItems.length && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        </div>
+      )}
     </Card>
   );
 }
