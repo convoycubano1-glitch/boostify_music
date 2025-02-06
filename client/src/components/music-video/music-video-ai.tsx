@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,18 @@ import {
   Clock,
   Camera,
   Image as ImageIcon,
-  Download
+  Download,
+  Play,
+  Pause,
+  ZoomIn,
+  ZoomOut,
+  SkipBack,
+  FastForward,
+  Rewind
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 interface TimelineItem {
   id: number;
@@ -70,6 +78,13 @@ export function MusicVideoAI() {
   const [generatedScript, setGeneratedScript] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [visibleTimeStart, setVisibleTimeStart] = useState<number>(0);
+  const [visibleTimeEnd, setVisibleTimeEnd] = useState<number>(60000);
+  const [hoveredShot, setHoveredShot] = useState<TimelineItem | null>(null);
+  const playbackRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -96,13 +111,14 @@ export function MusicVideoAI() {
       setTranscription("");
       setGeneratedScript("");
       setTimelineItems([]);
+      setCurrentTime(0);
+      setIsPlaying(false);
     }
   };
 
   const simulateTranscription = async () => {
     setIsTranscribing(true);
     try {
-      // Simulamos la transcripción
       await new Promise(resolve => setTimeout(resolve, 2000));
       const mockTranscription = `Verso 1:
 En la ciudad de luces brillantes
@@ -133,7 +149,6 @@ Buscando mi destino`;
   const generateVideoScript = async (lyrics: string) => {
     setIsGeneratingScript(true);
     try {
-      // Simulamos la generación del guion
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const mockScript = mockVideoSequence;
@@ -152,20 +167,91 @@ Buscando mi destino`;
   };
 
   const generateTimelineItems = (shots: typeof mockVideoSequence) => {
-    // Get current timestamp in milliseconds for the timeline
-    const now = Date.now();
+    const baseTime = Date.now();
     const items = shots.map((shot, index) => ({
       id: index + 1,
       group: 1,
       title: shot.shotType,
-      start_time: now + (parseInt(shot.time) * 1000),
-      end_time: now + ((parseInt(shot.time) + 5) * 1000),
+      start_time: baseTime + (parseInt(shot.time) * 1000),
+      end_time: baseTime + ((parseInt(shot.time) + 5) * 1000),
       description: shot.description,
       shotType: shot.shotType,
       imagePrompt: shot.imagePrompt,
-      generatedImage: `/assets/mock-shots/shot-${index + 1}.jpg` // Imágenes simuladas
+      generatedImage: `/assets/mock-shots/shot-${index + 1}.jpg`
     }));
     setTimelineItems(items);
+    setVisibleTimeStart(baseTime);
+    setVisibleTimeEnd(baseTime + 60000);
+  };
+
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  useEffect(() => {
+    if (isPlaying && timelineItems.length > 0) {
+      const startTime = timelineItems[0].start_time;
+      const endTime = timelineItems[timelineItems.length - 1].end_time;
+
+      playbackRef.current = setInterval(() => {
+        setCurrentTime(prev => {
+          const nextTime = prev + 100;
+          if (nextTime >= endTime) {
+            setIsPlaying(false);
+            return startTime;
+          }
+          return nextTime;
+        });
+      }, 100);
+    } else if (playbackRef.current) {
+      clearInterval(playbackRef.current);
+    }
+
+    return () => {
+      if (playbackRef.current) {
+        clearInterval(playbackRef.current);
+      }
+    };
+  }, [isPlaying, timelineItems]);
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.5, 10));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev / 1.5, 0.1));
+  };
+
+  const handleTimeChange = (visibleTimeStart: number, visibleTimeEnd: number) => {
+    setVisibleTimeStart(visibleTimeStart);
+    setVisibleTimeEnd(visibleTimeEnd);
+  };
+
+  const handleReset = () => {
+    if (timelineItems.length > 0) {
+      setCurrentTime(timelineItems[0].start_time);
+      setIsPlaying(false);
+    }
+  };
+
+  const handleSkipForward = () => {
+    if (timelineItems.length > 0) {
+      const currentIndex = timelineItems.findIndex(item => item.start_time > currentTime);
+      if (currentIndex !== -1) {
+        setCurrentTime(timelineItems[currentIndex].start_time);
+      }
+    }
+  };
+
+  const handleSkipBackward = () => {
+    if (timelineItems.length > 0) {
+      const currentIndex = timelineItems.findIndex(item => item.end_time > currentTime) - 1;
+      if (currentIndex >= 0) {
+        setCurrentTime(timelineItems[currentIndex].start_time);
+      } else {
+        setCurrentTime(timelineItems[0].start_time);
+      }
+    }
   };
 
   const generateShotImages = async () => {
@@ -269,7 +355,7 @@ Buscando mi destino`;
           </div>
         )}
 
-        {/* Timeline */}
+        {/* Timeline Controls */}
         {timelineItems.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -278,6 +364,58 @@ Buscando mi destino`;
                 Secuencia de Tomas
               </h3>
               <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleZoomOut}
+                  className="px-2"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleZoomIn}
+                  className="px-2"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  className="px-2"
+                >
+                  <SkipBack className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSkipBackward}
+                  className="px-2"
+                >
+                  <Rewind className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={togglePlayback}
+                  className="px-2"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSkipForward}
+                  className="px-2"
+                >
+                  <FastForward className="h-4 w-4" />
+                </Button>
                 <Button
                   onClick={generateShotImages}
                   disabled={isGeneratingShots}
@@ -316,30 +454,70 @@ Buscando mi destino`;
                 </Button>
               </div>
             </div>
-            <div className="border rounded-lg p-4">
+
+            {/* Timeline */}
+            <div className="border rounded-lg p-4 relative">
               <Timeline
                 groups={groups}
                 items={timelineItems}
-                defaultTimeStart={timelineItems[0]?.start_time || Date.now()}
-                defaultTimeEnd={timelineItems[timelineItems.length - 1]?.end_time || Date.now() + 60000}
+                defaultTimeStart={visibleTimeStart}
+                defaultTimeEnd={visibleTimeEnd}
+                visibleTimeStart={visibleTimeStart}
+                visibleTimeEnd={visibleTimeEnd}
+                onTimeChange={handleTimeChange}
                 canMove={false}
                 canResize={false}
+                stackItems
+                itemHeightRatio={0.8}
                 itemRenderer={({ item }) => (
-                  <div className="relative h-full">
-                    <div className="absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1">
-                      {item.title}
+                  <div 
+                    className="relative h-full cursor-pointer group"
+                    onMouseEnter={() => setHoveredShot(item)}
+                    onMouseLeave={() => setHoveredShot(null)}
+                  >
+                    <div className={cn(
+                      "absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1 transition-all",
+                      currentTime >= item.start_time && currentTime < item.end_time ? "ring-2 ring-orange-500" : ""
+                    )}>
+                      <span className="z-10 font-medium text-foreground/80">{item.title}</span>
                       {item.generatedImage && (
                         <img 
                           src={item.generatedImage} 
                           alt={item.description}
-                          className="absolute inset-0 w-full h-full object-cover rounded opacity-50 hover:opacity-100 transition-opacity"
+                          className="absolute inset-0 w-full h-full object-cover rounded opacity-50 group-hover:opacity-100 transition-opacity"
                         />
                       )}
                     </div>
                   </div>
                 )}
               />
+
+              {/* Current time indicator */}
+              <div
+                className="absolute top-0 bottom-0 w-px bg-orange-500 z-50 pointer-events-none"
+                style={{
+                  left: `${((currentTime - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart)) * 100}%`,
+                  display: timelineItems.length > 0 ? 'block' : 'none'
+                }}
+              />
             </div>
+
+            {/* Shot Preview */}
+            {hoveredShot && (
+              <div className="fixed bottom-4 right-4 max-w-sm bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4 z-50">
+                <div className="aspect-video relative rounded-lg overflow-hidden mb-3">
+                  {hoveredShot.generatedImage && (
+                    <img
+                      src={hoveredShot.generatedImage}
+                      alt={hoveredShot.description}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                <h4 className="font-medium mb-1">{hoveredShot.shotType}</h4>
+                <p className="text-sm text-muted-foreground">{hoveredShot.description}</p>
+              </div>
+            )}
           </div>
         )}
 
