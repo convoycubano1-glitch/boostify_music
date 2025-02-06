@@ -410,12 +410,20 @@ export function DirectorsList() {
   };
 
   const onSubmit = async (values: z.infer<typeof hireFormSchema>) => {
-    if (!selectedDirector) return;
+    if (!selectedDirector) {
+      toast({
+        title: "Error",
+        description: "No director selected",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsSubmitting(true);
+      console.log("Starting submission with values:", values);
 
-      // Create the request data object with all required fields
+      // Create request data
       const requestData = {
         directorId: selectedDirector.id,
         directorName: selectedDirector.name,
@@ -433,17 +441,20 @@ export function DirectorsList() {
         resolution: values.resolution,
         aspectRatio: values.aspectRatio,
         specialEffects: values.specialEffects,
-        additionalNotes: values.additionalNotes,
+        additionalNotes: values.additionalNotes || "",
       };
+
+      console.log("Attempting to save request data:", requestData);
 
       // Save to Firestore
       const requestRef = collection(db, "music-video-request");
-      await addDoc(requestRef, requestData);
+      const docRef = await addDoc(requestRef, requestData);
 
-      // Show success message
+      console.log("Successfully saved document with ID:", docRef.id);
+
       toast({
         title: "Success!",
-        description: "Your music video request has been submitted successfully.",
+        description: "Your music video request has been submitted.",
       });
 
       // Reset form and close dialog
@@ -983,7 +994,7 @@ export function DirectorsList() {
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="flex justify-center mb-6">
                 <div className="flex items-center space-x-2 md:space-x-4">
                   {Array.from({ length: totalSteps }).map((_, index) => (
@@ -1043,6 +1054,11 @@ export function DirectorsList() {
                       type="submit"
                       className="ml-auto"
                       disabled={isSubmitting}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        console.log("Submit button clicked");
+                        form.handleSubmit(onSubmit)(e);
+                      }}
                     >
                       {isSubmitting ? (
                         <>
