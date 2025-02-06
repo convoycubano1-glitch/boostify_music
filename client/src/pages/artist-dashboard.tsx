@@ -20,13 +20,29 @@ import {
   Info,
   ChevronRight,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth, storage } from "@/lib/firebase";
-import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc, orderBy } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "firebase/storage";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  deleteDoc,
+  doc,
+  orderBy,
+} from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+  uploadBytesResumable,
+} from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -43,7 +59,7 @@ import { ActivityFeed } from "@/components/activity/activity-feed";
 import { RightsManagementCard } from "@/components/rights/rights-management-card";
 import { DistributionCard } from "@/components/distribution/distribution-card";
 
-interface Video {
+interface VideoData {
   id: string;
   url: string;
   title: string;
@@ -81,9 +97,10 @@ interface Phase {
 }
 
 function getYouTubeVideoId(url: string) {
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  const regExp =
+    /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
   const match = url.match(regExp);
-  return (match && match[7].length === 11) ? match[7] : null;
+  return match && match[7].length === 11 ? match[7] : null;
 }
 
 function getYouTubeThumbnailUrl(videoId: string) {
@@ -92,6 +109,8 @@ function getYouTubeThumbnailUrl(videoId: string) {
 
 export default function ArtistDashboard() {
   const { toast } = useToast();
+
+  // State de diálogos y formularios
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
   const [isVideoGalleryOpen, setIsVideoGalleryOpen] = useState(false);
@@ -107,22 +126,20 @@ export default function ArtistDashboard() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
 
-
-  // Query for songs
-  const { data: songs = [], isLoading: isLoadingSongs, refetch: refetchSongs } = useQuery({
+  // Query de canciones
+  const {
+    data: songs = [],
+    isLoading: isLoadingSongs,
+    refetch: refetchSongs,
+  } = useQuery({
     queryKey: ["songs", auth.currentUser?.uid],
     queryFn: async () => {
       if (!auth.currentUser?.uid) return [];
-
       try {
         const songsRef = collection(db, "songs");
-        const q = query(
-          songsRef,
-          where("userId", "==", auth.currentUser.uid)
-        );
-
+        const q = query(songsRef, where("userId", "==", auth.currentUser.uid));
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
+        return querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate() || new Date(),
@@ -140,21 +157,20 @@ export default function ArtistDashboard() {
     enabled: !!auth.currentUser?.uid,
   });
 
-  // Query for videos
-  const { data: videos = [], isLoading: isLoadingVideos, refetch: refetchVideos } = useQuery({
+  // Query de videos
+  const {
+    data: videos = [],
+    isLoading: isLoadingVideos,
+    refetch: refetchVideos,
+  } = useQuery({
     queryKey: ["videos", auth.currentUser?.uid],
     queryFn: async () => {
       if (!auth.currentUser?.uid) return [];
-
       try {
         const videosRef = collection(db, "videos");
-        const q = query(
-          videosRef,
-          where("userId", "==", auth.currentUser.uid)
-        );
-
+        const q = query(videosRef, where("userId", "==", auth.currentUser.uid));
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => {
+        return querySnapshot.docs.map((doc) => {
           const data = doc.data();
           const videoId = getYouTubeVideoId(data.url);
           return {
@@ -164,7 +180,7 @@ export default function ArtistDashboard() {
             thumbnailUrl: videoId ? getYouTubeThumbnailUrl(videoId) : undefined,
             createdAt: data.createdAt?.toDate() || new Date(),
           };
-        }) as Video[];
+        }) as VideoData[];
       } catch (error) {
         console.error("Error fetching videos:", error);
         toast({
@@ -178,33 +194,28 @@ export default function ArtistDashboard() {
     enabled: !!auth.currentUser?.uid,
   });
 
-  // Fetch strategies
-  const { data: currentStrategy = [], isLoading: isLoadingStrategy, refetch: refetchStrategy } = useQuery({
+  // Query de estrategia actual
+  const {
+    data: currentStrategy = [],
+    isLoading: isLoadingStrategy,
+    refetch: refetchStrategy,
+  } = useQuery({
     queryKey: ["strategies", auth.currentUser?.uid],
     queryFn: async () => {
       if (!auth.currentUser?.uid) return [];
-
       try {
         const strategiesRef = collection(db, "strategies");
-        const q = query(
-          strategiesRef,
-          where("userId", "==", auth.currentUser.uid)
-        );
-
+        const q = query(strategiesRef, where("userId", "==", auth.currentUser.uid));
         const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          console.log("No strategies found");
-          return [];
-        }
-
-        const strategies = querySnapshot.docs.map(doc => ({
+        if (querySnapshot.empty) return [];
+        const strategies = querySnapshot.docs.map((doc) => ({
           ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date()
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
         }));
-
-        strategies.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        strategies.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
         const latestStrategy = strategies[0];
-        console.log("Latest strategy:", latestStrategy);
         return latestStrategy?.focus || [];
       } catch (error) {
         console.error("Error fetching strategy:", error);
@@ -219,19 +230,14 @@ export default function ArtistDashboard() {
     enabled: !!auth.currentUser?.uid,
   });
 
+  // Función para traer todas las estrategias (para la galería)
   const fetchStrategies = async () => {
     if (!auth.currentUser?.uid) return;
-
     try {
       const strategiesRef = collection(db, "strategies");
-      // Simplificar la consulta para evitar el error de índice
-      const q = query(
-        strategiesRef,
-        where("userId", "==", auth.currentUser.uid)
-      );
-
+      const q = query(strategiesRef, where("userId", "==", auth.currentUser.uid));
       const querySnapshot = await getDocs(q);
-      const fetchedStrategies = querySnapshot.docs.map(doc => {
+      const fetchedStrategies = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -242,14 +248,12 @@ export default function ArtistDashboard() {
           timeline: data.timeline || "",
           status: data.status || "active",
           createdAt: data.createdAt?.toDate() || new Date(),
-          userId: data.userId
+          userId: data.userId,
         } as Strategy;
       });
-
-      // Ordenar en memoria
-      fetchedStrategies.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-      console.log("Fetched strategies:", fetchedStrategies);
+      fetchedStrategies.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
       setStrategies(fetchedStrategies);
     } catch (error) {
       console.error("Error fetching strategies:", error);
@@ -267,11 +271,13 @@ export default function ArtistDashboard() {
     }
   }, [auth.currentUser?.uid]);
 
-
-  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Manejo de audio y subida de canción
+  const handleAudioUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
-      const maxSize = 10 * 1024 * 1024; 
+      const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
         toast({
           title: "Error",
@@ -280,8 +286,7 @@ export default function ArtistDashboard() {
         });
         return;
       }
-
-      if (!file.type.startsWith('audio/')) {
+      if (!file.type.startsWith("audio/")) {
         toast({
           title: "Error",
           description: "Please upload a valid audio file (MP3 or WAV)",
@@ -289,7 +294,6 @@ export default function ArtistDashboard() {
         });
         return;
       }
-
       try {
         setSelectedFile(file);
         const audio = new Audio(URL.createObjectURL(file));
@@ -308,19 +312,17 @@ export default function ArtistDashboard() {
 
   const handleSongUpload = async () => {
     if (!auth.currentUser?.uid || !selectedFile) return;
-
     try {
       setIsSubmittingSong(true);
       setUploadProgress(0);
-
-      const storageRef = ref(storage, `songs/${auth.currentUser.uid}/${Date.now()}_${selectedFile.name}`);
-
-      const uploadTask = uploadBytesResumable(storageRef, selectedFile);
-
-      uploadTask.on('state_changed',
+      const storageRefPath = `songs/${auth.currentUser.uid}/${Date.now()}_${selectedFile.name}`;
+      const storageRefObj = ref(storage, storageRefPath);
+      const uploadTask = uploadBytesResumable(storageRefObj, selectedFile);
+      uploadTask.on(
+        "state_changed",
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log("Upload progress:", progress);
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
         },
         (error) => {
@@ -334,34 +336,26 @@ export default function ArtistDashboard() {
         },
         async () => {
           try {
-            const downloadURL = await getDownloadURL(storageRef);
-
+            const downloadURL = await getDownloadURL(storageRefObj);
             const songData = {
               name: selectedFile.name,
               audioUrl: downloadURL,
-              storageRef: storageRef.fullPath,
+              storageRef: storageRefObj.fullPath,
               userId: auth.currentUser.uid,
-              createdAt: serverTimestamp()
+              createdAt: serverTimestamp(),
             };
-
-            const songsRef = collection(db, "songs");
-            await addDoc(songsRef, songData);
-
-            const activityData = {
-                type: 'song',
-                action: 'Uploaded new song',
-                title: selectedFile.name,
-                userId: auth.currentUser.uid,
-                createdAt: serverTimestamp()
-            };
-            await addDoc(collection(db, "activities"), activityData);
-
-            console.log("Song saved successfully");
+            await addDoc(collection(db, "songs"), songData);
+            await addDoc(collection(db, "activities"), {
+              type: "song",
+              action: "Uploaded new song",
+              title: selectedFile.name,
+              userId: auth.currentUser.uid,
+              createdAt: serverTimestamp(),
+            });
             toast({
               title: "Success",
               description: "Song added successfully",
             });
-
             setIsSongDialogOpen(false);
             if (currentAudio) {
               currentAudio.pause();
@@ -384,7 +378,6 @@ export default function ArtistDashboard() {
           }
         }
       );
-
     } catch (error) {
       console.error("Error initiating upload:", error);
       toast({
@@ -398,49 +391,40 @@ export default function ArtistDashboard() {
 
   const handleVideoSubmit = async () => {
     if (!auth.currentUser?.uid || !videoUrl) return;
-
     try {
       setIsSubmittingVideo(true);
       const videoId = getYouTubeVideoId(videoUrl);
-
       if (!videoId) {
         toast({
           title: "Error",
-          description: "Invalid YouTube URL. Please check the URL and try again.",
+          description:
+            "Invalid YouTube URL. Please check the URL and try again.",
           variant: "destructive",
         });
         return;
       }
-
       const videoData = {
         url: videoUrl,
         userId: auth.currentUser.uid,
         createdAt: serverTimestamp(),
         title: "YouTube Video",
-        thumbnailUrl: getYouTubeThumbnailUrl(videoId)
+        thumbnailUrl: getYouTubeThumbnailUrl(videoId),
       };
-
-      const videosRef = collection(db, "videos");
-      await addDoc(videosRef, videoData);
-      const activityData = {
-          type: 'video',
-          action: 'Added new video',
-          title: videoUrl,
-          userId: auth.currentUser.uid,
-          createdAt: serverTimestamp()
-      };
-      await addDoc(collection(db, "activities"), activityData);
-
-
+      await addDoc(collection(db, "videos"), videoData);
+      await addDoc(collection(db, "activities"), {
+        type: "video",
+        action: "Added new video",
+        title: videoUrl,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp(),
+      });
       toast({
         title: "Success",
         description: "Video added successfully",
       });
-
       setIsVideoDialogOpen(false);
       setVideoUrl("");
       refetchVideos();
-
     } catch (error) {
       console.error("Error adding video:", error);
       toast({
@@ -455,9 +439,7 @@ export default function ArtistDashboard() {
 
   const togglePlay = (audioUrl?: string) => {
     if (audioUrl && (!currentAudio || currentAudio.src !== audioUrl)) {
-      if (currentAudio) {
-        currentAudio.pause();
-      }
+      if (currentAudio) currentAudio.pause();
       const audio = new Audio(audioUrl);
       setCurrentAudio(audio);
       audio.play();
@@ -472,20 +454,15 @@ export default function ArtistDashboard() {
     }
   };
 
-  const handleDeleteSong = async (songId: string, storageRef: string) => {
+  const handleDeleteSong = async (songId: string, storageRefPath: string) => {
     if (!auth.currentUser?.uid) return;
-
     try {
-      const fileRef = ref(storage, storageRef);
-      await deleteObject(fileRef);
-
+      await deleteObject(ref(storage, storageRefPath));
       await deleteDoc(doc(db, "songs", songId));
-
       toast({
         title: "Success",
         description: "Song deleted successfully",
       });
-
       refetchSongs();
     } catch (error) {
       console.error("Error deleting song:", error);
@@ -499,7 +476,6 @@ export default function ArtistDashboard() {
 
   const handleDeleteVideo = async (videoId: string) => {
     if (!auth.currentUser?.uid) return;
-
     try {
       await deleteDoc(doc(db, "videos", videoId));
       toast({
@@ -518,9 +494,10 @@ export default function ArtistDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background text-gray-100">
       <Header />
       <main className="flex-1">
+        {/* Sección Hero con video de fondo y overlay */}
         <div className="relative w-full h-[80vh] md:h-[90vh] overflow-hidden">
           <video
             autoPlay
@@ -529,25 +506,39 @@ export default function ArtistDashboard() {
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           >
-            <source src="/assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
+            <source
+              src="/assets/Standard_Mode_Generated_Video (7).mp4"
+              type="video/mp4"
+            />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-background" />
-
-          <div className="relative z-10 container mx-auto h-full flex flex-col justify-end items-start px-4 mt-24">
+          <div className="relative z-10 container mx-auto h-full flex flex-col justify-end items-center md:items-start px-4 md:px-8 py-8">
             <div className="text-center md:text-left mb-12">
-              <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70 drop-shadow-lg"
+              >
                 Welcome to Your Creative Hub
-              </h1>
-              <p className="text-muted-foreground mt-2">
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-2 text-base sm:text-lg md:text-xl text-muted-foreground"
+              >
                 Manage and enhance your musical presence from one place
-              </p>
+              </motion.p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
+            {/* Estadísticas en tarjetas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Published Videos</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Published Videos
+                    </p>
                     <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -555,10 +546,12 @@ export default function ArtistDashboard() {
                   </div>
                 </div>
               </Card>
-              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
+              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Uploaded Songs</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Uploaded Songs
+                    </p>
                     <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -566,10 +559,12 @@ export default function ArtistDashboard() {
                   </div>
                 </div>
               </Card>
-              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm">
+              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active Strategies</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Active Strategies
+                    </p>
                     <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -581,15 +576,19 @@ export default function ArtistDashboard() {
           </div>
         </div>
 
+        {/* Contenido principal con ScrollArea */}
         <ScrollArea className="flex-1">
-          <div className="container mx-auto px-4 py-8">
-            <div className="bg-orange-500/5 rounded-lg p-6 mb-8">
+          <div className="container mx-auto px-4 py-8 space-y-8">
+            {/* Sección de Tips */}
+            <div className="bg-orange-500/5 rounded-lg p-6">
               <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
                   <Info className="h-5 w-5 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Tips to Optimize Your Dashboard</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Tips to Optimize Your Dashboard
+                  </h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <ChevronRight className="h-4 w-4 text-orange-500" />
@@ -610,12 +609,13 @@ export default function ArtistDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
+                {/* Sección de Videos */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Card className="p-6 h-full">
+                  <Card className="p-6 h-full shadow-md rounded-lg">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
@@ -623,7 +623,9 @@ export default function ArtistDashboard() {
                         </div>
                         <div>
                           <h2 className="text-xl font-semibold">My Videos</h2>
-                          <p className="text-sm text-muted-foreground">Manage your video content</p>
+                          <p className="text-sm text-muted-foreground">
+                            Manage your video content
+                          </p>
                         </div>
                       </div>
                       {videos.length > 0 && (
@@ -644,7 +646,10 @@ export default function ArtistDashboard() {
                       ) : videos.length > 0 ? (
                         <div className="space-y-3">
                           {videos.slice(0, 3).map((video) => (
-                            <div key={video.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                            <div
+                              key={video.id}
+                              className="flex justify-between items-center p-3 bg-muted/50 rounded-lg transition-all hover:shadow-lg"
+                            >
                               <div className="flex items-center gap-3">
                                 {video.thumbnailUrl ? (
                                   <img
@@ -666,7 +671,9 @@ export default function ArtistDashboard() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => window.open(video.url, '_blank')}
+                                  onClick={() =>
+                                    window.open(video.url, "_blank")
+                                  }
                                 >
                                   View
                                 </Button>
@@ -688,7 +695,11 @@ export default function ArtistDashboard() {
                         </div>
                       )}
 
-                      <Dialog open={isVideoGalleryOpen} onOpenChange={setIsVideoGalleryOpen}>
+                      {/* Video Gallery Dialog */}
+                      <Dialog
+                        open={isVideoGalleryOpen}
+                        onOpenChange={setIsVideoGalleryOpen}
+                      >
                         <DialogContent className="max-w-4xl">
                           <DialogHeader>
                             <DialogTitle>Video Gallery</DialogTitle>
@@ -718,7 +729,9 @@ export default function ArtistDashboard() {
                                     <Button
                                       size="sm"
                                       variant="secondary"
-                                      onClick={() => window.open(video.url, '_blank')}
+                                      onClick={() =>
+                                        window.open(video.url, "_blank")
+                                      }
                                     >
                                       <PlayCircle className="h-4 w-4" />
                                     </Button>
@@ -744,6 +757,7 @@ export default function ArtistDashboard() {
                         </DialogContent>
                       </Dialog>
 
+                      {/* Add New Video Dialog */}
                       <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="w-full gap-2">
@@ -779,6 +793,7 @@ export default function ArtistDashboard() {
                                   src={`https://www.youtube.com/embed/${videoUrl.split("v=")[1]}`}
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                   allowFullScreen
+                                  title="YouTube Preview"
                                 ></iframe>
                               </div>
                             )}
@@ -795,11 +810,16 @@ export default function ArtistDashboard() {
                                 disabled={isSubmittingVideo || !videoUrl}
                               >
                                 {isSubmittingVideo ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Adding...
+                                  </>
                                 ) : (
-                                  <Plus className="mr-2 h-4 w-4" />
+                                  <>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Video
+                                  </>
                                 )}
-                                {isSubmittingVideo ? "Adding..." : "Add Video"}
                               </Button>
                             </div>
                           </div>
@@ -809,19 +829,22 @@ export default function ArtistDashboard() {
                   </Card>
                 </motion.div>
 
+                {/* Sección de Música */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <Card className="p-6 h-full">
+                  <Card className="p-6 h-full shadow-md rounded-lg">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
                         <Music2 className="h-6 w-6 text-orange-500" />
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold">My Music</h2>
-                        <p className="text-sm text-muted-foreground">Manage your music portfolio</p>
+                        <p className="text-sm text-muted-foreground">
+                          Manage your music portfolio
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -832,7 +855,10 @@ export default function ArtistDashboard() {
                       ) : songs.length > 0 ? (
                         <div className="space-y-3">
                           {songs.map((song) => (
-                            <div key={song.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                            <div
+                              key={song.id}
+                              className="flex justify-between items-center p-3 bg-muted/50 rounded-lg transition-all hover:shadow-lg"
+                            >
                               <div className="flex items-center gap-3">
                                 <Mic2 className="h-5 w-5 text-orange-500" />
                                 <div>
@@ -848,12 +874,16 @@ export default function ArtistDashboard() {
                                   size="sm"
                                   onClick={() => togglePlay(song.audioUrl)}
                                 >
-                                  {currentAudio?.src === song.audioUrl && isPlaying ? "Pause" : "Play"}
+                                  {currentAudio?.src === song.audioUrl && isPlaying
+                                    ? "Pause"
+                                    : "Play"}
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDeleteSong(song.id, song.storageRef)}
+                                  onClick={() =>
+                                    handleDeleteSong(song.id, song.storageRef)
+                                  }
                                   className="text-destructive hover:text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -867,7 +897,11 @@ export default function ArtistDashboard() {
                           No songs added yet
                         </div>
                       )}
-                      <Dialog open={isSongDialogOpen} onOpenChange={setIsSongDialogOpen}>
+                      {/* Add New Song Dialog */}
+                      <Dialog
+                        open={isSongDialogOpen}
+                        onOpenChange={setIsSongDialogOpen}
+                      >
                         <DialogTrigger asChild>
                           <Button className="w-full gap-2">
                             <Plus className="h-4 w-4" />
@@ -883,7 +917,9 @@ export default function ArtistDashboard() {
                           </DialogHeader>
                           <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                              <Label htmlFor="song-file">Audio File (MP3/WAV)</Label>
+                              <Label htmlFor="song-file">
+                                Audio File (MP3/WAV)
+                              </Label>
                               <div className="flex gap-2">
                                 <Input
                                   id="song-file"
@@ -917,44 +953,48 @@ export default function ArtistDashboard() {
                                       <p className="text-sm font-medium">
                                         {selectedFile?.name}
                                       </p>
-                                      {uploadProgress > 0 && uploadProgress < 100 && (
-                                        <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
-                                          <div
-                                            className="h-full bg-orange-500 transition-all duration-300"
-                                            style={{ width: `${uploadProgress}%` }}
-                                          />
-                                        </div>
-                                      )}
+                                      {uploadProgress > 0 &&
+                                        uploadProgress < 100 && (
+                                          <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                                            <div
+                                              className="h-full bg-orange-500 transition-all duration-300"
+                                              style={{
+                                                width: `${uploadProgress}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        )}
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          if (currentAudio) {
-                                            currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 10);
-                                          }
-                                        }}
-                                      >
-                                        -10s
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                          if (currentAudio) {
-                                            currentAudio.currentTime = Math.min(
-                                              currentAudio.duration,
-                                              currentAudio.currentTime + 10
-                                            );
-                                          }
-                                        }}
-                                      >
-                                        +10s
-                                      </Button>
-                                    </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.currentTime = Math.max(
+                                            0,
+                                            currentAudio.currentTime - 10
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      -10s
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.currentTime = Math.min(
+                                            currentAudio.duration,
+                                            currentAudio.currentTime + 10
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      +10s
+                                    </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -1024,12 +1064,13 @@ export default function ArtistDashboard() {
                   <ActivityFeed />
                 </motion.div>
 
+                {/* Sección de Estrategia */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <Card className="p-6 h-full">
+                  <Card className="p-6 h-full shadow-md rounded-lg">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
@@ -1037,7 +1078,9 @@ export default function ArtistDashboard() {
                         </div>
                         <div>
                           <h2 className="text-xl font-semibold">My Strategy</h2>
-                          <p className="text-sm text-muted-foreground">Plan your growth and success</p>
+                          <p className="text-sm text-muted-foreground">
+                            Plan your growth and success
+                          </p>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -1059,7 +1102,10 @@ export default function ArtistDashboard() {
                       </div>
                     </div>
 
-                    <Dialog open={isStrategyGalleryOpen} onOpenChange={setIsStrategyGalleryOpen}>
+                    <Dialog
+                      open={isStrategyGalleryOpen}
+                      onOpenChange={setIsStrategyGalleryOpen}
+                    >
                       <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
                         <DialogHeader>
                           <div className="flex items-center justify-between">
@@ -1079,7 +1125,6 @@ export default function ArtistDashboard() {
                             </Button>
                           </div>
                         </DialogHeader>
-
                         <ScrollArea className="flex-grow pr-4">
                           <div className="space-y-4 py-4">
                             {strategies.map((strategy) => (
@@ -1098,7 +1143,8 @@ export default function ArtistDashboard() {
                                       {strategy.targetAudience} - {strategy.timeline}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                      Created on {strategy.createdAt.toLocaleDateString()}
+                                      Created on{" "}
+                                      {strategy.createdAt.toLocaleDateString()}
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -1127,7 +1173,10 @@ export default function ArtistDashboard() {
                             <h3 className="font-medium mb-2">Current Focus</h3>
                             <ul className="space-y-2">
                               {currentStrategy.slice(0, 3).map((item, index) => (
-                                <li key={index} className="flex items-start gap-2 text-sm">
+                                <li
+                                  key={index}
+                                  className="flex items-start gap-2 text-sm"
+                                >
                                   <CheckCircle2 className="h-4 w-4 text-orange-500 mt-0.5" />
                                   <span>{item}</span>
                                 </li>
@@ -1162,6 +1211,7 @@ export default function ArtistDashboard() {
                   </Card>
                 </motion.div>
 
+                {/* Otros módulos de gestión */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
