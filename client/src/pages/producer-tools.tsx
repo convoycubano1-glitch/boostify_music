@@ -279,26 +279,33 @@ export default function ProducerToolsPage() {
       console.log("Retrieved stored images:", storedImages);
 
       if (storedImages && storedImages.length > 0) {
-        const updatedMusicians = musicians.map(musician => {
-          // No convertir a minúsculas para la comparación
-          console.log(`Buscando imágenes para categoría: ${musician.category}`);
-          const categoryImages = storedImages.filter(img => {
-            console.log(`Comparando ${img.category} con ${musician.category}`);
-            return img.category === musician.category;
-          });
+        // Crear un mapa de imágenes por categoría
+        const imagesByCategory = storedImages.reduce((acc, img) => {
+          if (!acc[img.category]) {
+            acc[img.category] = [];
+          }
+          acc[img.category].push(img.url);
+          return acc;
+        }, {} as Record<string, string[]>);
 
-          console.log(`Found ${categoryImages.length} images for category ${musician.category}`);
+        console.log("Images grouped by category:", imagesByCategory);
+
+        const updatedMusicians = musicians.map(musician => {
+          const categoryImages = imagesByCategory[musician.category] || [];
+
+          // Usar un índice basado en el ID del músico para variar las imágenes dentro de cada categoría
+          const imageIndex = parseInt(musician.id) % (categoryImages.length || 1);
 
           if (categoryImages.length > 0) {
-            console.log(`Using stored image for ${musician.title}:`, categoryImages[0].url);
+            console.log(`Assigning image for ${musician.title} (${musician.category}):`, categoryImages[imageIndex]);
             return {
               ...musician,
               userId: `user-${musician.id}`,
-              photo: categoryImages[0].url
+              photo: categoryImages[imageIndex]
             };
           }
 
-          console.log(`No matching image found for ${musician.title}, using placeholder`);
+          console.log(`No image found for ${musician.title} (${musician.category}), using placeholder`);
           return {
             ...musician,
             userId: `user-${musician.id}`,
