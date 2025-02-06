@@ -108,10 +108,12 @@ export function MusicVideoAI() {
             },
           });
 
-          if (typeof result === 'object' && result !== null && 'text' in result) {
-            const text = (result as { text: string }).text;
+          if (result && typeof result === 'object' && 'text' in result) {
+            const text = result.text;
             setTranscription(text);
             generateVideoScript(text);
+          } else {
+            throw new Error("Invalid response format from Whisper API");
           }
         }
       };
@@ -203,10 +205,10 @@ export function MusicVideoAI() {
             };
             setTimelineItems([...updatedItems]); // Force re-render with spread operator
           }
-        }
 
-        // Add a small delay between generations to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+          // Add a small delay between generations to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
     } catch (error) {
       console.error("Error generating shot images:", error);
@@ -219,7 +221,6 @@ export function MusicVideoAI() {
       setIsGeneratingShots(false);
     }
   };
-
 
   return (
     <Card className="p-6">
