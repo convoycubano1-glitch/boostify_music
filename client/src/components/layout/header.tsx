@@ -9,10 +9,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
 
 export function Header() {
   const { user } = useAuth();
   const { logout } = useFirebaseAuth();
+  const scrollDirection = useScrollDirection();
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
@@ -31,7 +33,9 @@ export function Header() {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className={`sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ${
+      scrollDirection === "down" ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+    }`}>
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="flex items-center space-x-6">
