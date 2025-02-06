@@ -20,7 +20,7 @@ import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } f
 import { BookingDialog } from "@/components/booking/booking-dialog";
 import { AddMusicianForm } from "@/components/booking/add-musician-form";
 
-async function getStoredMusicianImages(): Promise<string[]> {
+async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
     console.log("Starting to fetch musician images from Firestore...");
     // Try both collection names
@@ -41,8 +41,8 @@ async function getStoredMusicianImages(): Promise<string[]> {
     const images = querySnapshot.docs.map(doc => {
       const data = doc.data();
       console.log("Retrieved image data:", data);
-      return data.url || data.imageUrl || data.image || null;
-    }).filter(url => url !== null);
+      return { url: data.url || data.imageUrl || data.image || null, category: data.category || 'unknown' };
+    }).filter(img => img.url !== null);
 
     console.log("Successfully retrieved images:", images.length);
     return images;
@@ -421,12 +421,25 @@ export default function ProducerToolsPage() {
 
         if (storedImages.length > 0) {
           setMusiciansState(prevMusicians =>
-            prevMusicians.map((musician, index) => ({
-              ...musician,
-              userId: `user-${index + 1}`,
-              photo: storedImages[index % storedImages.length] || musician.photo
-            }))
+            prevMusicians.map(musician => {
+              // Find an image that matches the musician's category
+              const categoryImages = storedImages.filter(img =>
+                img.category.toLowerCase() === musician.category.toLowerCase()
+              );
+
+              // Use the first matching image or fallback to default
+              const matchingImage = categoryImages.length > 0
+                ? categoryImages[0].url
+                : `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`;
+
+              return {
+                ...musician,
+                userId: `user-${musician.id}`,
+                photo: matchingImage
+              };
+            })
           );
+
           toast({
             title: "Success",
             description: "Musician images loaded successfully!"
@@ -434,9 +447,10 @@ export default function ProducerToolsPage() {
         } else {
           console.log("Using default images as no stored images were found");
           setMusiciansState(prevMusicians =>
-            prevMusicians.map((musician, index) => ({
+            prevMusicians.map(musician => ({
               ...musician,
-              userId: `user-${index + 1}`
+              userId: `user-${musician.id}`,
+              photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
             }))
           );
         }
@@ -447,11 +461,12 @@ export default function ProducerToolsPage() {
           description: "Failed to load musician images. Using default images.",
           variant: "destructive"
         });
-        // Ensure musicians still have userIds even if image loading fails
+
         setMusiciansState(prevMusicians =>
-          prevMusicians.map((musician, index) => ({
+          prevMusicians.map(musician => ({
             ...musician,
-            userId: `user-${index + 1}`
+            userId: `user-${musician.id}`,
+            photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
           }))
         );
       } finally {

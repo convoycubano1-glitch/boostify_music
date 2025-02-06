@@ -1,5 +1,6 @@
 import { generateImageWithFal } from "./fal-ai";
 import { saveMusicianImage } from "./musician-images-store";
+import {db, collection, getDocs, query, orderBy} from "./firebase";
 
 const musicianImagePrompts = [
   // Guitarristas
@@ -86,9 +87,8 @@ export async function generateMusicianImages() {
       if (result.data && result.data.images && result.data.images[0]) {
         const imageUrl = result.data.images[0].url;
         console.log(`Successfully generated image for ${category}: ${imageUrl}`);
-        images.push(imageUrl);
 
-        // Save to Firestore
+        // Save to Firestore with category information
         await saveMusicianImage({
           url: imageUrl,
           requestId: result.requestId,
@@ -98,19 +98,68 @@ export async function generateMusicianImages() {
         });
         console.log(`Saved ${category} image to Firestore`);
 
+        images.push({
+          url: imageUrl,
+          category
+        });
+
         // Wait between requests to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 2000));
       } else {
         console.error(`Invalid response format from Fal.ai for ${category}:`, result);
-        images.push("/assets/musician-placeholder.jpg");
+        images.push({
+          url: "/assets/musician-placeholder.jpg",
+          category
+        });
       }
     } catch (error) {
       console.error(`Error generating image for ${category}:`, error);
-      images.push("/assets/musician-placeholder.jpg");
+      images.push({
+        url: "/assets/musician-placeholder.jpg",
+        category
+      });
     }
   }
 
   return images;
+}
+
+export interface MusicianImage {
+  url: string;
+  category: string;
+  requestId?: string;
+  prompt?: string;
+  createdAt?: Date;
+}
+
+export async function getStoredMusicianImages(): Promise<MusicianImage[]> {
+  try {
+    console.log("Starting to fetch musician images from Firestore...");
+    const imagesRef = collection(db, "musicianImages");
+    const querySnapshot = await getDocs(query(imagesRef, orderBy("createdAt", "desc")));
+
+    if (querySnapshot.empty) {
+      console.log("No images found in Firestore");
+      return [];
+    }
+
+    const images = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        url: data.url,
+        category: data.category,
+        requestId: data.requestId,
+        prompt: data.prompt,
+        createdAt: data.createdAt?.toDate()
+      };
+    }).filter(img => img.url && img.category);
+
+    console.log("Successfully retrieved images:", images.length);
+    return images;
+  } catch (error) {
+    console.error("Error fetching stored images:", error);
+    return [];
+  }
 }
 
 export async function testMusicianImageGeneration() {
