@@ -23,31 +23,35 @@ import { AddMusicianForm } from "@/components/booking/add-musician-form";
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
     console.log("Starting to fetch musician images from Firestore...");
-    // Try both collection names
-    let imagesRef = collection(db, "musicianImages");
-    let querySnapshot = await getDocs(query(imagesRef, orderBy("createdAt", "desc")));
+    const imagesRef = collection(db, "musician_images");
+    const querySnapshot = await getDocs(imagesRef);
+    let images: { url: string; category: string; }[] = [];
 
     if (querySnapshot.empty) {
-      console.log("Trying alternate collection name...");
-      imagesRef = collection(db, "musician_images");
-      querySnapshot = await getDocs(query(imagesRef, orderBy("createdAt", "desc")));
-    }
-
-    if (querySnapshot.empty) {
-      console.log("No images found in Firestore");
+      console.log("No images found in musician_images collection");
       return [];
     }
 
-    const images = querySnapshot.docs.map(doc => {
+    // Procesar los documentos encontrados
+    querySnapshot.forEach(doc => {
       const data = doc.data();
-      console.log("Retrieved image data:", data);
-      return { url: data.url || data.imageUrl || data.image || null, category: data.category || 'unknown' };
-    }).filter(img => img.url !== null);
+      if (data.imageUrl && data.category) {
+        images.push({
+          url: data.imageUrl,
+          category: data.category.toLowerCase() // Normalizar la categoría a minúsculas
+        });
+        console.log("Added musician image:", {
+          url: data.imageUrl,
+          category: data.category
+        });
+      }
+    });
 
-    console.log("Successfully retrieved images:", images.length);
+    console.log("Total musician images found:", images.length);
+    console.log("All musician images:", images);
     return images;
   } catch (error) {
-    console.error("Error fetching stored images:", error);
+    console.error("Error fetching musician images:", error);
     return [];
   }
 }
@@ -417,35 +421,39 @@ export default function ProducerToolsPage() {
         setIsLoadingImages(true);
 
         const storedImages = await getStoredMusicianImages();
-        console.log("Loaded stored images:", storedImages);
+        console.log("Retrieved stored images:", storedImages);
 
         if (storedImages.length > 0) {
-          setMusiciansState(prevMusicians =>
-            prevMusicians.map(musician => {
-              // Find an image that matches the musician's category
-              const categoryImages = storedImages.filter(img =>
-                img.category.toLowerCase() === musician.category.toLowerCase()
-              );
+          const updatedMusicians = musiciansState.map(musician => {
+            const musicianCategory = musician.category.toLowerCase();
+            const categoryImages = storedImages.filter(img => 
+              img.category.toLowerCase() === musicianCategory
+            );
 
-              // Use the first matching image or fallback to default
-              const matchingImage = categoryImages.length > 0
-                ? categoryImages[0].url
-                : `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`;
+            console.log(`Found ${categoryImages.length} images for category ${musician.category}`);
 
-              return {
-                ...musician,
-                userId: `user-${musician.id}`,
-                photo: matchingImage
-              };
-            })
-          );
+            const matchingImage = categoryImages.length > 0
+              ? categoryImages[0].url
+              : `/assets/musicians/${musicianCategory}-placeholder.jpg`;
+
+            console.log(`Selected image for ${musician.title}:`, matchingImage);
+
+            return {
+              ...musician,
+              userId: `user-${musician.id}`,
+              photo: matchingImage
+            };
+          });
+
+          console.log("Updated musicians with images:", updatedMusicians);
+          setMusiciansState(updatedMusicians);
 
           toast({
             title: "Success",
             description: "Musician images loaded successfully!"
           });
         } else {
-          console.log("Using default images as no stored images were found");
+          console.log("No stored images found, using default images");
           setMusiciansState(prevMusicians =>
             prevMusicians.map(musician => ({
               ...musician,
