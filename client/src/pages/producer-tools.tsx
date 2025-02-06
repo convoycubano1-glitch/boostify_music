@@ -22,33 +22,28 @@ import { AddMusicianForm } from "@/components/booking/add-musician-form";
 
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
-    console.log("Starting to fetch musician images from Firestore...");
+    console.log("Starting to fetch musician images from musician_images collection...");
     const imagesRef = collection(db, "musician_images");
     const querySnapshot = await getDocs(imagesRef);
     let images: { url: string; category: string; }[] = [];
 
-    if (querySnapshot.empty) {
-      console.log("No images found in musician_images collection");
-      return [];
-    }
+    console.log("Total documents found:", querySnapshot.size);
 
-    // Procesar los documentos encontrados
     querySnapshot.forEach(doc => {
       const data = doc.data();
+      console.log("Document data:", data);
+
       if (data.imageUrl && data.category) {
-        images.push({
-          url: data.imageUrl,
-          category: data.category.toLowerCase() // Normalizar la categoría a minúsculas
-        });
-        console.log("Added musician image:", {
+        const imageData = {
           url: data.imageUrl,
           category: data.category
-        });
+        };
+        images.push(imageData);
+        console.log("Added image for category:", data.category);
       }
     });
 
-    console.log("Total musician images found:", images.length);
-    console.log("All musician images:", images);
+    console.log("Processed images:", images);
     return images;
   } catch (error) {
     console.error("Error fetching musician images:", error);
@@ -424,59 +419,47 @@ export default function ProducerToolsPage() {
         console.log("Retrieved stored images:", storedImages);
 
         if (storedImages.length > 0) {
-          const updatedMusicians = musiciansState.map(musician => {
-            const musicianCategory = musician.category.toLowerCase();
+          const updatedMusicians = musicians.map(musician => {
             const categoryImages = storedImages.filter(img => 
-              img.category.toLowerCase() === musicianCategory
+              img.category === musician.category
             );
 
             console.log(`Found ${categoryImages.length} images for category ${musician.category}`);
 
-            const matchingImage = categoryImages.length > 0
-              ? categoryImages[0].url
-              : `/assets/musicians/${musicianCategory}-placeholder.jpg`;
-
-            console.log(`Selected image for ${musician.title}:`, matchingImage);
-
-            return {
-              ...musician,
-              userId: `user-${musician.id}`,
-              photo: matchingImage
-            };
+            if (categoryImages.length > 0) {
+              console.log(`Using stored image for ${musician.title}:`, categoryImages[0].url);
+              return {
+                ...musician,
+                userId: `user-${musician.id}`,
+                photo: categoryImages[0].url
+              };
+            } else {
+              console.log(`No matching image found for ${musician.title}, using placeholder`);
+              return {
+                ...musician,
+                userId: `user-${musician.id}`,
+                photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
+              };
+            }
           });
 
-          console.log("Updated musicians with images:", updatedMusicians);
+          console.log("Final updated musicians:", updatedMusicians);
           setMusiciansState(updatedMusicians);
-
-          toast({
-            title: "Success",
-            description: "Musician images loaded successfully!"
-          });
         } else {
-          console.log("No stored images found, using default images");
-          setMusiciansState(prevMusicians =>
-            prevMusicians.map(musician => ({
-              ...musician,
-              userId: `user-${musician.id}`,
-              photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
-            }))
-          );
+          console.log("No images found in Firestore, using default images");
+          setMusiciansState(musicians.map(musician => ({
+            ...musician,
+            userId: `user-${musician.id}`,
+            photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
+          })));
         }
       } catch (error) {
         console.error("Error loading musician images:", error);
         toast({
           title: "Error",
-          description: "Failed to load musician images. Using default images.",
+          description: "Failed to load musician images",
           variant: "destructive"
         });
-
-        setMusiciansState(prevMusicians =>
-          prevMusicians.map(musician => ({
-            ...musician,
-            userId: `user-${musician.id}`,
-            photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
-          }))
-        );
       } finally {
         setIsLoadingImages(false);
         setImagesLoaded(true);
