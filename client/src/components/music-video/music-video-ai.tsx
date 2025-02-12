@@ -55,6 +55,7 @@ interface TimelineItem {
   imagePrompt?: string;
   generatedImage?: string;
   duration: number;
+  transition?: string;
 }
 
 const groups = [{ id: 1, title: "Secuencia de Video" }];
@@ -165,7 +166,7 @@ export function MusicVideoAI() {
   const generateVideoScript = async (lyrics: string) => {
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales, crea un guion detallado para un video musical basado en la siguiente letra y especificaciones de estilo. 
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción completa. 
 
 Estilo Visual:
 - Mood: ${videoStyle.mood}
@@ -176,27 +177,37 @@ Estilo Visual:
 Letra de la canción:
 ${lyrics}
 
-Genera 5 escenas clave que capturen los momentos más impactantes de la canción. Para cada escena, incluye:
-1. Tiempo exacto en segundos
-2. Descripción detallada de la acción y elementos visuales
-3. Tipo de toma (ej: Close-up, Wide Shot, Tracking Shot, etc.)
-4. Un prompt detallado para IA de generación de imágenes que capture la esencia de la escena
+Crea una secuencia dinámica de tomas que cubra toda la canción, con las siguientes especificaciones:
+1. Cada toma debe durar entre 1 y 5 segundos
+2. Varía los tipos de tomas (close-up, medium shot, wide shot, tracking shot, drone shot, etc.)
+3. Incluye transiciones y movimientos de cámara
+4. Sincroniza las tomas con momentos clave de la letra
+5. Asegura coherencia visual mientras mantienes dinamismo
 
-Para cada prompt de imagen, incorpora:
-- El estilo visual especificado (mood, paleta de color, estilo)
-- Elementos específicos a incluir
-- Dirección de arte y composición
-- Iluminación y atmosfera
-- Referencias a la letra en ese momento
+Para cada toma, incluye:
+1. Tiempo exacto en segundos desde el inicio
+2. Duración específica de la toma (1-5 segundos)
+3. Tipo de toma y movimiento de cámara
+4. Descripción detallada de la acción y elementos visuales
+5. Un prompt detallado para IA de generación de imágenes
 
-Estructura cada escena en formato JSON como:
+Para cada prompt de imagen, especifica:
+- Estilo visual (mood, paleta de color)
+- Composición y ángulo de cámara
+- Iluminación y atmósfera
+- Elementos principales y secundarios
+- Referencias específicas a la letra en ese momento
+
+Estructura el resultado en formato JSON:
 {
   "shots": [
     {
       "time": "segundos desde el inicio",
-      "description": "descripción detallada de la escena",
-      "shotType": "tipo de toma cinematográfica",
-      "imagePrompt": "prompt detallado para IA"
+      "duration": "duración en segundos",
+      "shotType": "tipo de toma y movimiento",
+      "description": "descripción detallada",
+      "imagePrompt": "prompt detallado para IA",
+      "transition": "tipo de transición a la siguiente toma"
     }
   ]
 }`;
@@ -206,7 +217,7 @@ Estructura cada escena en formato JSON como:
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto. Tus guiones deben ser creativos y cohesivos, asegurando que cada escena fluya naturalmente a la siguiente mientras mantiene el estilo visual especificado."
+            content: "Eres un director de videos musicales experto especializado en crear secuencias visuales dinámicas y profesionales. Tus guiones deben mantener un ritmo visual coherente con transiciones fluidas entre tomas."
           },
           { role: "user", content: prompt }
         ]
@@ -241,8 +252,8 @@ Estructura cada escena en formato JSON como:
       console.error("Error generando el guion:", error);
       toast({
         title: "Error",
-        description: "Error al generar el guion. Por favor intenta de nuevo.",
-        variant: "destructive",
+        description: "Error al generar el guion del video.",
+        variant: "destructive"
       });
     } finally {
       setIsGeneratingScript(false);
@@ -301,11 +312,10 @@ Estructura cada escena en formato JSON como:
 
   const generateTimelineItems = useCallback((shots: any[]) => {
     const baseTime = Date.now();
-    const durations = generateDynamicDurations(shots.length);
-
     let currentTime = baseTime;
+
     const items = shots.map((shot, index) => {
-      const duration = durations[index];
+      const duration = shot.duration ? parseFloat(shot.duration) * 1000 : Math.floor(Math.random() * (5000 - 1000) + 1000);
       const item = {
         id: index + 1,
         group: 1,
@@ -316,7 +326,8 @@ Estructura cada escena en formato JSON como:
         shotType: shot.shotType,
         imagePrompt: shot.imagePrompt,
         generatedImage: undefined,
-        duration: duration
+        duration: duration,
+        transition: shot.transition || "cut"
       };
       currentTime += duration;
       return item;
@@ -328,11 +339,6 @@ Estructura cada escena en formato JSON como:
     setZoomLevel(1);
   }, []);
 
-  const generateDynamicDurations = (shotsCount: number) => {
-    return Array.from({ length: shotsCount }, () =>
-      Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
-    );
-  };
 
   const handleTimeChange = ([start, end]: [number, number]) => {
     setVisibleTimeStart(start);
@@ -386,13 +392,13 @@ Estructura cada escena en formato JSON como:
       for (let i = 0; i < updatedItems.length; i++) {
         const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
-          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} palette, ${videoStyle.characterStyle}`;
+          const prompt = `${item.imagePrompt}. Estilo: ${videoStyle.mood}, paleta de colores ${videoStyle.colorPalette}, estilo visual ${videoStyle.characterStyle}. Toma: ${item.shotType}`;
 
           try {
             const result = await fal.subscribe("fal-ai/flux-pro", {
               input: {
                 prompt,
-                negative_prompt: "low quality, blurry, distorted",
+                negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, text, watermark",
                 image_size: "landscape_16_9"
               },
             });
@@ -400,18 +406,29 @@ Estructura cada escena en formato JSON como:
             if (result?.images?.[0]?.url) {
               updatedItems[i] = { ...item, generatedImage: result.images[0].url };
               setTimelineItems([...updatedItems]);
+
+              toast({
+                title: "Progreso",
+                description: `Generada imagen ${i + 1} de ${updatedItems.length}`,
+              });
             }
           } catch (error) {
-            console.error(`Error en clip ${i + 1}:`, error);
+            console.error(`Error en toma ${i + 1}:`, error);
+            toast({
+              title: "Error",
+              description: `Error generando imagen ${i + 1}`,
+              variant: "destructive",
+            });
           }
 
+          // Esperar entre generaciones para evitar rate limiting
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
 
       toast({
-        title: "Imágenes generadas",
-        description: "Previsualización disponible en la línea de tiempo",
+        title: "Completado",
+        description: "Todas las imágenes han sido generadas",
       });
     } catch (error) {
       console.error("Error generando imágenes:", error);
