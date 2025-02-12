@@ -340,9 +340,9 @@ Estructura el resultado en formato JSON:
   }, []);
 
 
-  const handleTimeChange = ([start, end]: [number, number]) => {
-    setVisibleTimeStart(start);
-    setVisibleTimeEnd(end);
+  const handleTimeChange = (visibleTimeStart: number, visibleTimeEnd: number) => {
+    setVisibleTimeStart(visibleTimeStart);
+    setVisibleTimeEnd(visibleTimeEnd);
   };
 
   const togglePlayback = () => {
