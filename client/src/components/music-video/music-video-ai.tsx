@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import Timeline from "react-calendar-timeline";
 import { Slider } from "@/components/ui/slider";
+import Editor from "@monaco-editor/react";
 import {
-  Video, Upload, Loader2, Music2, FileText, Clock, Camera,
-  Image as ImageIcon, Download, Play, Pause, ZoomIn, ZoomOut,
-  SkipBack, FastForward, Rewind, Palette
+  Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
+  ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,9 +54,12 @@ interface TimelineItem {
   shotType: string;
   imagePrompt?: string;
   generatedImage?: string;
+  duration: number;
 }
 
 const groups = [{ id: 1, title: "Secuencia de Video" }];
+
+const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
 
 export function MusicVideoAI() {
   const { toast } = useToast();
@@ -65,7 +68,6 @@ export function MusicVideoAI() {
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [isGeneratingShots, setIsGeneratingShots] = useState(false);
   const [transcription, setTranscription] = useState<string>("");
-  const [generatedScript, setGeneratedScript] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -74,6 +76,9 @@ export function MusicVideoAI() {
   const [visibleTimeStart, setVisibleTimeStart] = useState<number>(0);
   const [visibleTimeEnd, setVisibleTimeEnd] = useState<number>(60000);
   const [hoveredShot, setHoveredShot] = useState<TimelineItem | null>(null);
+  const [selectedShot, setSelectedShot] = useState<TimelineItem | null>(null);
+  const [isEditingScript, setIsEditingScript] = useState(false);
+  const [scriptContent, setScriptContent] = useState<string>("");
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
   const [videoStyle, setVideoStyle] = useState({
     mood: "",
@@ -82,7 +87,7 @@ export function MusicVideoAI() {
     visualIntensity: 50
   });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
@@ -105,12 +110,11 @@ export function MusicVideoAI() {
 
       setSelectedFile(file);
       setTranscription("");
-      setGeneratedScript("");
       setTimelineItems([]);
       setCurrentTime(0);
       setIsPlaying(false);
     }
-  };
+  }, [toast]);
 
   const transcribeAudio = async () => {
     if (!selectedFile) return;
@@ -127,8 +131,6 @@ export function MusicVideoAI() {
       });
 
       if (transcription.text) {
-        setTranscription(transcription.text);
-
         const formattedResponse = await openai.chat.completions.create({
           model: "gpt-4",
           messages: [
@@ -164,7 +166,7 @@ export function MusicVideoAI() {
     setIsGeneratingScript(true);
     try {
       const prompt = `Como director creativo de videos musicales, crea un guion detallado para un video musical basado en la siguiente letra y especificaciones de estilo. 
-      
+
 Estilo Visual:
 - Mood: ${videoStyle.mood}
 - Paleta de Color: ${videoStyle.colorPalette}
@@ -215,7 +217,7 @@ Estructura cada escena en formato JSON como:
           const scriptResult = JSON.parse(response.choices[0].message.content);
           if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
             generateTimelineItems(scriptResult.shots);
-            setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+            setScriptContent(JSON.stringify(scriptResult, null, 2));
           }
         } catch (parseError) {
           const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
@@ -223,7 +225,7 @@ Estructura cada escena en formato JSON como:
             const scriptResult = JSON.parse(jsonMatch[0]);
             if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
               generateTimelineItems(scriptResult.shots);
-              setGeneratedScript(JSON.stringify(scriptResult, null, 2));
+              setScriptContent(JSON.stringify(scriptResult, null, 2));
             }
           } else {
             console.error("Error parsing JSON:", parseError);
@@ -231,7 +233,7 @@ Estructura cada escena en formato JSON como:
               title: "Error",
               description: "Error al procesar la respuesta de la IA. Intenta de nuevo.",
               variant: "destructive"
-            })
+            });
           }
         }
       }
@@ -247,53 +249,99 @@ Estructura cada escena en formato JSON como:
     }
   };
 
-  const generateTimelineItems = (shots: { time: string; description: string; shotType: string; imagePrompt: string; }[]) => {
+  const handleScriptChange = (value: string | undefined) => {
+    if (!value) return;
+    setScriptContent(value);
+    try {
+      const scriptData = JSON.parse(value);
+      if (scriptData.shots && Array.isArray(scriptData.shots)) {
+        generateTimelineItems(scriptData.shots);
+      }
+    } catch (error) {
+      console.error("Error parsing script:", error);
+    }
+  };
+
+  const regenerateImage = async (item: TimelineItem) => {
+    if (!item.imagePrompt) return;
+
+    try {
+      const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style`;
+
+      const result = await fal.subscribe("fal-ai/flux-pro", {
+        input: {
+          prompt,
+          negative_prompt: "low quality, blurry, distorted, deformed, unrealistic",
+          image_size: "landscape_16_9"
+        },
+      });
+
+      if (result?.images?.[0]?.url) {
+        const updatedItems = timelineItems.map(timelineItem =>
+          timelineItem.id === item.id
+            ? { ...timelineItem, generatedImage: result.images[0].url }
+            : timelineItem
+        );
+        setTimelineItems(updatedItems);
+      }
+
+      toast({
+        title: "Imagen regenerada",
+        description: "La imagen se ha regenerado exitosamente",
+      });
+    } catch (error) {
+      console.error("Error regenerando imagen:", error);
+      toast({
+        title: "Error",
+        description: "Error al regenerar la imagen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateTimelineItems = useCallback((shots: any[]) => {
     const baseTime = Date.now();
-    const items = shots.map((shot, index) => ({
-      id: index + 1,
-      group: 1,
-      title: shot.shotType,
-      start_time: baseTime + (parseInt(shot.time) * 1000),
-      end_time: baseTime + ((parseInt(shot.time) + 5) * 1000),
-      description: shot.description,
-      shotType: shot.shotType,
-      imagePrompt: shot.imagePrompt,
-      generatedImage: undefined
-    }));
+    const durations = generateDynamicDurations(shots.length);
+
+    let currentTime = baseTime;
+    const items = shots.map((shot, index) => {
+      const duration = durations[index];
+      const item = {
+        id: index + 1,
+        group: 1,
+        title: shot.shotType,
+        start_time: currentTime,
+        end_time: currentTime + duration,
+        description: shot.description,
+        shotType: shot.shotType,
+        imagePrompt: shot.imagePrompt,
+        generatedImage: undefined,
+        duration: duration
+      };
+      currentTime += duration;
+      return item;
+    });
+
     setTimelineItems(items);
     setVisibleTimeStart(baseTime);
-    setVisibleTimeEnd(baseTime + 60000);
+    setVisibleTimeEnd(currentTime);
+    setZoomLevel(1);
+  }, []);
+
+  const generateDynamicDurations = (shotsCount: number) => {
+    return Array.from({ length: shotsCount }, () =>
+      Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
+    );
+  };
+
+  const handleTimeChange = ([start, end]: [number, number]) => {
+    setVisibleTimeStart(start);
+    setVisibleTimeEnd(end);
   };
 
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
   };
-
-  useEffect(() => {
-    if (isPlaying && timelineItems.length > 0) {
-      const startTime = timelineItems[0].start_time;
-      const endTime = timelineItems[timelineItems.length - 1].end_time;
-
-      playbackRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const nextTime = prev + 100;
-          if (nextTime >= endTime) {
-            setIsPlaying(false);
-            return startTime;
-          }
-          return nextTime;
-        });
-      }, 100);
-    } else if (playbackRef.current) {
-      clearInterval(playbackRef.current);
-    }
-
-    return () => {
-      if (playbackRef.current) {
-        clearInterval(playbackRef.current);
-      }
-    };
-  }, [isPlaying, timelineItems]);
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev * 1.5, 10));
@@ -301,11 +349,6 @@ Estructura cada escena en formato JSON como:
 
   const handleZoomOut = () => {
     setZoomLevel(prev => Math.max(prev / 1.5, 0.1));
-  };
-
-  const handleTimeChange = (visibleTimeStart: number, visibleTimeEnd: number) => {
-    setVisibleTimeStart(visibleTimeStart);
-    setVisibleTimeEnd(visibleTimeEnd);
   };
 
   const handleReset = () => {
@@ -340,27 +383,26 @@ Estructura cada escena en formato JSON como:
     try {
       const updatedItems = [...timelineItems];
 
-      const itemsToGenerate = updatedItems.slice(0, 5);
-
-      for (let i = 0; i < itemsToGenerate.length; i++) {
-        const item = itemsToGenerate[i];
+      for (let i = 0; i < updatedItems.length; i++) {
+        const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
-          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style`;
+          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} palette, ${videoStyle.characterStyle}`;
 
-          const result = await fal.subscribe("fal-ai/flux-pro", {
-            input: {
-              prompt,
-              negative_prompt: "low quality, blurry, distorted, deformed, unrealistic",
-              image_size: "landscape_16_9"
-            },
-          });
+          try {
+            const result = await fal.subscribe("fal-ai/flux-pro", {
+              input: {
+                prompt,
+                negative_prompt: "low quality, blurry, distorted",
+                image_size: "landscape_16_9"
+              },
+            });
 
-          if (result?.images?.[0]?.url) {
-            updatedItems[i] = {
-              ...item,
-              generatedImage: result.images[0].url
-            };
-            setTimelineItems([...updatedItems]);
+            if (result?.images?.[0]?.url) {
+              updatedItems[i] = { ...item, generatedImage: result.images[0].url };
+              setTimelineItems([...updatedItems]);
+            }
+          } catch (error) {
+            console.error(`Error en clip ${i + 1}:`, error);
           }
 
           await new Promise(resolve => setTimeout(resolve, 1500));
@@ -368,14 +410,14 @@ Estructura cada escena en formato JSON como:
       }
 
       toast({
-        title: "Éxito",
-        description: "Imágenes generadas correctamente",
+        title: "Imágenes generadas",
+        description: "Previsualización disponible en la línea de tiempo",
       });
     } catch (error) {
       console.error("Error generando imágenes:", error);
       toast({
         title: "Error",
-        description: "Error al generar las imágenes. Por favor intenta de nuevo.",
+        description: "Error al generar las imágenes",
         variant: "destructive",
       });
     } finally {
@@ -387,22 +429,43 @@ Estructura cada escena en formato JSON como:
     setIsExporting(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 4000));
-
       toast({
-        title: "Éxito",
-        description: "Video exportado correctamente",
+        title: "Exportación completa",
+        description: "Video disponible para descarga",
       });
     } catch (error) {
-      console.error("Error exportando el video:", error);
+      console.error("Error exportando:", error);
       toast({
         title: "Error",
-        description: "Error al exportar el video. Por favor intenta de nuevo.",
+        description: "Error al exportar el video",
         variant: "destructive",
       });
     } finally {
       setIsExporting(false);
     }
   };
+
+  const itemRenderer = useCallback(({ item }: { item: TimelineItem }) => (
+    <div
+      className="relative h-full cursor-pointer group"
+      onMouseEnter={() => setHoveredShot(item)}
+      onMouseLeave={() => setHoveredShot(null)}
+      onClick={() => setSelectedShot(item)}
+    >
+      <div className={cn(
+        "absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1 transition-all",
+        currentTime >= item.start_time && currentTime < item.end_time ? "ring-2 ring-orange-500" : "",
+        selectedShot?.id === item.id ? "ring-2 ring-blue-500" : ""
+      )}>
+        <span className="z-10 font-medium text-foreground/80">{item.title}</span>
+        <img
+          src={item.generatedImage || fallbackImage}
+          alt={item.description}
+          className="absolute inset-0 w-full h-full object-cover rounded opacity-70 group-hover:opacity-100 transition-opacity"
+        />
+      </div>
+    </div>
+  ), [currentTime, selectedShot]);
 
   return (
     <Card className="p-6">
@@ -411,19 +474,19 @@ Estructura cada escena en formato JSON como:
           <Video className="h-6 w-6 text-orange-500" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold">AI Music Video Creator</h2>
+          <h2 className="text-xl font-semibold">Creador de Videos Musicales AI</h2>
           <p className="text-sm text-muted-foreground">
-            Genera conceptos de video a partir de tu música
+            Transforma tu música en experiencias visuales
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Input and Settings */}
+        {/* Columna Izquierda */}
         <div className="space-y-6">
           {/* File Upload Section */}
           <div className="border rounded-lg p-4">
-            <Label className="text-lg font-semibold mb-4">1. Sube tu Canción</Label>
+            <Label className="text-lg font-semibold mb-4">1. Subir Canción</Label>
             <div className="flex items-center gap-2 mt-2">
               <Input
                 type="file"
@@ -461,75 +524,104 @@ Estructura cada escena en formato JSON como:
                   onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el mood" />
+                    <SelectValue placeholder="Selecciona mood" />
                   </SelectTrigger>
                   <SelectContent>
                     {videoStyles.moods.map((mood) => (
-                      <SelectItem key={mood} value={mood}>
-                        {mood}
-                      </SelectItem>
+                      <SelectItem key={mood} value={mood}>{mood}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Paleta de Colores</Label>
+                <Label>Paleta de Color</Label>
                 <Select
                   value={videoStyle.colorPalette}
                   onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona la paleta" />
+                    <SelectValue placeholder="Selecciona paleta" />
                   </SelectTrigger>
                   <SelectContent>
                     {videoStyles.colorPalettes.map((palette) => (
-                      <SelectItem key={palette} value={palette}>
-                        {palette}
-                      </SelectItem>
+                      <SelectItem key={palette} value={palette}>{palette}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Estilo de Personajes</Label>
+                <Label>Estilo Visual</Label>
                 <Select
                   value={videoStyle.characterStyle}
                   onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el estilo" />
+                    <SelectValue placeholder="Selecciona estilo" />
                   </SelectTrigger>
                   <SelectContent>
                     {videoStyles.characterStyles.map((style) => (
-                      <SelectItem key={style} value={style}>
-                        {style}
-                      </SelectItem>
+                      <SelectItem key={style} value={style}>{style}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Intensidad Visual</Label>
-                <div className="pt-2">
-                  <Slider
-                    value={[videoStyle.visualIntensity]}
-                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                    min={0}
-                    max={100}
-                    step={1}
-                  />
-                </div>
+                <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                <Slider
+                  value={[videoStyle.visualIntensity]}
+                  onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="mt-2"
+                />
               </div>
             </div>
           </div>
 
+          {/* Script Editor */}
+          {scriptContent && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold">3. Guion del Video</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingScript(!isEditingScript)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  {isEditingScript ? "Guardar" : "Editar Guion"}
+                </Button>
+              </div>
+              {isEditingScript ? (
+                <div className="h-[400px] border rounded-lg overflow-hidden">
+                  <Editor
+                    height="100%"
+                    defaultLanguage="json"
+                    value={scriptContent}
+                    onChange={handleScriptChange}
+                    theme="vs-dark"
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+              ) : (
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                  <pre className="text-sm">{scriptContent}</pre>
+                </ScrollArea>
+              )}
+            </div>
+          )}
+
           {/* Transcription Display */}
           {transcription && (
             <div className="border rounded-lg p-4">
-              <Label className="text-lg font-semibold mb-4">3. Letra Transcrita</Label>
+              <Label className="text-lg font-semibold mb-4">4. Letra Transcrita</Label>
               <ScrollArea className="h-[200px] w-full rounded-md border p-4 mt-2">
                 <p className="text-sm whitespace-pre-wrap">{transcription}</p>
               </ScrollArea>
@@ -537,68 +629,42 @@ Estructura cada escena en formato JSON como:
           )}
         </div>
 
-        {/* Right Column - Timeline and Preview */}
+        {/* Columna Derecha - Timeline y Preview */}
         <div className="space-y-6">
           {timelineItems.length > 0 && (
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
-                <Label className="text-lg font-semibold">4. Secuencia de Video</Label>
+                <Label className="text-lg font-semibold">5. Secuencia de Video</Label>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleZoomOut}
-                    className="px-2"
-                  >
+                  <Button variant="outline" size="sm" onClick={handleZoomOut}>
                     <ZoomOut className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleZoomIn}
-                    className="px-2"
-                  >
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleZoomIn}>
                     <ZoomIn className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* Playback Controls */}
+              {/* Timeline Controls */}
               <div className="flex items-center justify-center gap-2 mb-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  className="px-2"
-                >
+                <Button variant="ghost" size="sm" onClick={handleReset}>
                   <SkipBack className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSkipBackward}
-                  className="px-2"
-                >
+                <Button variant="ghost" size="sm" onClick={handleSkipBackward}>
                   <Rewind className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   onClick={togglePlayback}
-                  className="px-2"
+                  className="w-20"
                 >
-                  {isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSkipForward}
-                  className="px-2"
-                >
+                <Button variant="ghost" size="sm" onClick={handleSkipForward}>
                   <FastForward className="h-4 w-4" />
                 </Button>
               </div>
@@ -617,27 +683,7 @@ Estructura cada escena en formato JSON como:
                   canResize={false}
                   stackItems
                   itemHeightRatio={0.8}
-                  itemRenderer={({ item }) => (
-                    <div
-                      className="relative h-full cursor-pointer group"
-                      onMouseEnter={() => setHoveredShot(item)}
-                      onMouseLeave={() => setHoveredShot(null)}
-                    >
-                      <div className={cn(
-                        "absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1 transition-all",
-                        currentTime >= item.start_time && currentTime < item.end_time ? "ring-2 ring-orange-500" : ""
-                      )}>
-                        <span className="z-10 font-medium text-foreground/80">{item.title}</span>
-                        {item.generatedImage && (
-                          <img
-                            src={item.generatedImage}
-                            alt={item.description}
-                            className="absolute inset-0 w-full h-full object-cover rounded opacity-50 group-hover:opacity-100 transition-opacity"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  itemRenderer={itemRenderer}
                 />
 
                 <div
@@ -659,7 +705,7 @@ Estructura cada escena en formato JSON como:
                   {isGeneratingShots ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generando Imágenes...
+                      Generando...
                     </>
                   ) : (
                     <>
@@ -689,28 +735,54 @@ Estructura cada escena en formato JSON como:
             </div>
           )}
 
-          {/* Shot Preview */}
-          {hoveredShot && (
-            <div className="fixed bottom-4 right-4 max-w-sm bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4 z-50">
-              <div className="aspect-video relative rounded-lg overflow-hidden mb-3">
-                {hoveredShot.generatedImage && (
+          {/* Shot Preview and Editor */}
+          {selectedShot && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Detalles de la Toma</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => regenerateImage(selectedShot)}
+                >
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Regenerar Imagen
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <div className="aspect-video relative rounded-lg overflow-hidden">
                   <img
-                    src={hoveredShot.generatedImage}
-                    alt={hoveredShot.description}
+                    src={selectedShot.generatedImage || fallbackImage}
+                    alt={selectedShot.description}
                     className="w-full h-full object-cover"
                   />
-                )}
+                </div>
+                <div>
+                  <Label>Tipo de Toma</Label>
+                  <p className="text-sm text-muted-foreground">{selectedShot.shotType}</p>
+                </div>
+                <div>
+                  <Label>Descripción</Label>
+                  <p className="text-sm text-muted-foreground">{selectedShot.description}</p>
+                </div>
+                <div>
+                  <Label>Prompt de Imagen</Label>
+                  <p className="text-sm text-muted-foreground">{selectedShot.imagePrompt}</p>
+                </div>
               </div>
-              <h4 className="font-medium mb-1">{hoveredShot.shotType}</h4>
-              <p className="text-sm text-muted-foreground">{hoveredShot.description}</p>
             </div>
           )}
         </div>
       </div>
 
       {(isGeneratingScript || isTranscribing) && !timelineItems.length && (
-        <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-orange-500 mb-4" />
+            <p className="text-lg font-medium">
+              {isTranscribing ? "Analizando audio..." : "Generando guion visual..."}
+            </p>
+          </div>
         </div>
       )}
     </Card>
