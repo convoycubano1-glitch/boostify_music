@@ -8,7 +8,7 @@ import {
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
   Music, Image as ImageIcon, Edit, RefreshCw
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export interface TimelineClip {
@@ -20,8 +20,8 @@ export interface TimelineClip {
   title: string;
   description?: string;
   waveform?: number[];
-  imagePrompt?: string; // Añadido para mostrar el prompt
-  shotType?: string; // Añadido para mostrar el tipo de plano
+  imagePrompt?: string;
+  shotType?: string;
 }
 
 interface TimelineEditorProps {
@@ -34,7 +34,7 @@ interface TimelineEditorProps {
   onPlay: () => void;
   onPause: () => void;
   isPlaying: boolean;
-  onRegenerateImage?: (clipId: number) => void; // Añadido para regenerar imágenes
+  onRegenerateImage?: (clipId: number) => void;
 }
 
 export function TimelineEditor({
@@ -60,6 +60,7 @@ export function TimelineEditor({
   const [dragStartX, setDragStartX] = useState<number>(0);
   const [clipStartTime, setClipStartTime] = useState<number>(0);
   const [resizingSide, setResizingSide] = useState<'start' | 'end' | null>(null);
+  const playheadAnimation = useAnimation();
 
   // Calcular el ancho total del timeline basado en la duración y el zoom
   const timelineWidth = duration * zoom;
@@ -70,6 +71,21 @@ export function TimelineEditor({
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.5, 10));
   const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.5, 0.1));
+
+  // Animación de la aguja de reproducción
+  useEffect(() => {
+    if (isPlaying) {
+      playheadAnimation.start({
+        x: timeToPixels(currentTime),
+        transition: {
+          duration: 0.1,
+          ease: "linear"
+        }
+      });
+    } else {
+      playheadAnimation.set({ x: timeToPixels(currentTime) });
+    }
+  }, [currentTime, isPlaying, timeToPixels, playheadAnimation]);
 
   // Generar datos de forma de onda cuando el audioBuffer cambia
   useEffect(() => {
@@ -97,6 +113,7 @@ export function TimelineEditor({
     setWaveformData(waveform);
   }, [audioBuffer]);
 
+  // Funciones de manipulación del timeline
   const handleTimelineClick = (e: React.MouseEvent) => {
     if (!timelineRef.current || isDragging) return;
     const rect = timelineRef.current.getBoundingClientRect();
@@ -214,16 +231,44 @@ export function TimelineEditor({
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-          <Button variant="ghost" size="icon" onClick={handleZoomOut}>
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleZoomIn}>
-            <ZoomIn className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-4">
+          {/* Timecode Display */}
+          <div className="bg-black/10 px-3 py-1.5 rounded-md font-mono text-sm">
+            {formatTimecode(currentTime)}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+            <Button variant="ghost" size="icon" onClick={handleZoomOut}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleZoomIn}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview Window */}
+      <div className="relative w-full aspect-video bg-black/10 rounded-lg overflow-hidden">
+        {selectedClip && clips.find(c => c.id === selectedClip)?.thumbnail ? (
+          <img
+            src={clips.find(c => c.id === selectedClip)?.thumbnail}
+            alt="Preview"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ImageIcon className="h-12 w-12 text-muted-foreground/25" />
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/10">
+          <div
+            className="absolute h-full bg-primary transition-all duration-100"
+            style={{ width: `${(currentTime / duration) * 100}%` }}
+          />
         </div>
       </div>
 
@@ -249,7 +294,7 @@ export function TimelineEditor({
                 className="border-l h-full flex items-center justify-center text-xs text-muted-foreground"
                 style={{ width: `${timeToPixels(1)}px` }}
               >
-                {formatTime(i)}
+                {formatTimecode(i)}
               </div>
             ))}
           </div>
@@ -308,7 +353,7 @@ export function TimelineEditor({
                     }}
                   >
                     <div className="absolute -top-6 -translate-x-1/2 px-2 py-1 rounded bg-orange-500 text-white text-xs">
-                      {formatTime(hoveredTime)}
+                      {formatTimecode(hoveredTime)}
                     </div>
                   </div>
                 )}
@@ -386,7 +431,7 @@ export function TimelineEditor({
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        {formatTime(clip.duration)}
+                        {formatTimecode(clip.duration)}
                       </span>
                       <Button
                         variant="ghost"
@@ -403,12 +448,14 @@ export function TimelineEditor({
           </div>
 
           {/* Playhead */}
-          <div
-            className="absolute top-0 bottom-0 w-px bg-primary"
-            style={{ left: `${timeToPixels(currentTime)}px` }}
+          <motion.div
+            animate={playheadAnimation}
+            className="absolute top-0 bottom-0 w-px bg-primary z-50"
+            initial={{ x: 0 }}
           >
             <div className="absolute -top-1 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
-          </div>
+            <div className="absolute bottom-0 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
+          </motion.div>
         </div>
       </ScrollArea>
     </Card>
@@ -420,4 +467,12 @@ function formatTime(seconds: number): string {
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 1000);
   return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+}
+
+function formatTimecode(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  const frames = Math.floor((seconds % 1) * 30); // Asumiendo 30fps
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
 }
