@@ -20,6 +20,8 @@ import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { VideoGenerator } from "./video-generator"; // Added import
+
 
 // OpenAI configuration
 const openai = new OpenAI({
@@ -167,6 +169,7 @@ export function MusicVideoAI() {
   const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
   const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000)); // Added seed state
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false); // State for video generation
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -871,7 +874,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     - Estilo visual: ${videoStyle.characterStyle}
         - Intensidad visual: ${videoStyle.visualIntensity}%
     - Paleta de colores: ${videoStyle.colorPalette}
-    - Duración del segmento: ${segment.duration / 1000} segundos
+- Duración del segmento: ${segment.duration / 1000} segundos
 
     El prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
@@ -943,6 +946,39 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       });
     } finally {
       setIsGeneratingScript(false);
+    }
+  };
+
+  //Simulación de la generación de video
+  const generateVideo = async () => {
+    if (!timelineItems.length || !audioBuffer) {
+      toast({
+        title: "Error",
+        description: "No hay suficientes elementos para generar el video",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    try {
+      // Aquí se implementará la lógica de Kling para generar el video
+      // Por ahora es un placeholder
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      toast({
+        title: "Video generado",
+        description: "El video se ha generado exitosamente",
+      });
+    } catch (error) {
+      console.error("Error generando video:", error);
+      toast({
+        title: "Error",
+        description: "Error al generar el video",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingVideo(false);
     }
   };
 
@@ -1433,6 +1469,15 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   </ul>
                 </div>
               </div>
+            </div>
+            {/* Paso 8: Generación de Video */}
+            <div className="mt-6">
+              <VideoGenerator
+                clips={timelineItems}
+                duration={audioBuffer?.duration || 0}
+                isGenerating={isGeneratingVideo}
+                onGenerate={generateVideo}
+              />
             </div>
           </div>
         </div>
