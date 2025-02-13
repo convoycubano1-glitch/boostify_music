@@ -10,17 +10,16 @@ import { Slider } from "@/components/ui/slider";
 import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
-  ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Palette
+  ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // OpenAI configuration
 const openai = new OpenAI({
@@ -167,7 +166,6 @@ export function MusicVideoAI() {
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
   const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
-  const [showStyleDialog, setShowStyleDialog] = useState(false);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -242,6 +240,7 @@ export function MusicVideoAI() {
 
         const formattedLyrics = formattedResponse.choices[0].message.content;
         setTranscription(formattedLyrics || transcription.text);
+        setCurrentStep(2); // Avanzar al siguiente paso
 
         toast({
           title: "Éxito",
@@ -263,37 +262,25 @@ export function MusicVideoAI() {
 
   // Función para sincronizar beats y crear cortes
   const syncAudioWithTimeline = async () => {
-    if (!audioBuffer) {
-      toast({
-        title: "Error",
-        description: "No hay archivo de audio cargado",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!audioBuffer) return;
 
     setIsGeneratingShots(true);
     try {
-      console.log("Iniciando detección de beats...");
       const segments = await detectBeatsAndCreateSegments();
-      console.log("Segmentos detectados:", segments?.length || 0);
+      if (segments && segments.length > 0) {
+        setTimelineItems(segments);
+        setCurrentStep(3); // Avanzar al siguiente paso
 
-      if (!segments || segments.length === 0) {
-        throw new Error("No se detectaron segmentos en el audio");
+        toast({
+          title: "Éxito",
+          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
+        });
       }
-
-      setTimelineItems(segments);
-
-      toast({
-        title: "Éxito",
-        description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
-      });
-
     } catch (error) {
       console.error("Error sincronizando audio:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
+        description: "Error al sincronizar el audio con el timeline",
         variant: "destructive",
       });
     } finally {
@@ -307,7 +294,7 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical basado en los siguiente parámetros:
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción y coincida con los ${timelineItems.length} cortes detectados.
 
 Letra de la canción:
 ${transcription}
@@ -321,15 +308,15 @@ Genera un prompt específico para cada segmento, considerando:
 - El tipo de plano asignado
 - La duración del segmento
 
-Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicaciones:
+Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 {
   "segments": [
     {
-      "id": number,
-      "description": "string",
-      "imagePrompt": "string",
-      "shotType": "string",
-      "transition": "string"
+      "id": (número que coincide con el id del segmento existente),
+      "description": "descripción de la escena",
+      "imagePrompt": "prompt detallado para generar la imagen",
+      "shotType": "tipo de plano",
+      "transition": "tipo de transición"
     }
   ]
 }`;
@@ -339,22 +326,29 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
         messages: [
           {
             role: "system",
-            content: `Eres un director de videos musicales experto. SOLO debes responder con un objeto JSON válido, sin texto adicional. No incluyas comentarios ni explicaciones.`
+            content: "Eres un director de videos musicales experto. IMPORTANTE: Responde SOLAMENTE con el objeto JSON solicitado, sin ningún texto adicional o explicaciones."
           },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        response_format: { type: "json_object" }
+        max_tokens: 2000
       });
 
-      const content = response.choices[0].message.content;
-
-      if (!content) {
+      if (!response.choices[0].message.content) {
         throw new Error("No se recibió respuesta del modelo");
       }
 
       try {
-        const scriptResult = JSON.parse(content);
+        // Intentar encontrar y parsear el JSON incluso si hay texto adicional
+        const content = response.choices[0].message.content;
+        console.log("Respuesta completa del modelo:", content); // Log para debugging
+
+        // Limpiar la respuesta de cualquier texto adicional
+        const jsonContent = content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
+        console.log("JSON extraído:", jsonContent); // Log para debugging
+
+        const scriptResult = JSON.parse(jsonContent);
+        console.log("JSON parseado:", scriptResult); // Log para debugging
 
         if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
           throw new Error("El formato del guion no es válido");
@@ -376,6 +370,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
         });
 
         setTimelineItems(updatedItems);
+        setCurrentStep(4);
 
         toast({
           title: "Éxito",
@@ -383,8 +378,12 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
         });
 
       } catch (parseError) {
-        console.error("Error parsing response:", parseError, content);
-        throw new Error("Error al procesar la respuesta del modelo. El formato no es válido.");
+        console.error("Error parsing response:", parseError);
+        toast({
+          title: "Error",
+          description: "Error al procesar la respuesta. Por favor intenta de nuevo.",
+          variant: "destructive",
+        });
       }
 
     } catch (error) {
@@ -871,7 +870,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales."},
+          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
@@ -885,64 +884,42 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
     }
   };
 
-  // Función para sincronizar el audio conel timeline y generar prompts
-  const syncAudioWithTimelineAndGeneratePrompts = async () => {    if (!audioBuffer) {
-      toast({
-        title: "Error",
-        description: "No hay archivo de audio cargado",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGeneratingShots(true);
+  // Función para sincronizar el audio con el timeline y generar prompts
+  const syncAudioWithTimelineAndGeneratePrompts = async () => {
+    if (!audioBuffer) return;
     try {
-      console.log("Iniciando detección de beats...");
       const segments = await detectBeatsAndCreateSegments();
-      console.log("Segmentos detectados:", segments?.length || 0);
+      if (segments && segments.length > 0) {
+        // Generar prompts para cada segmento
+        for (let segment of segments) {
+          const prompt = await generatePromptForSegment(
+            segment,
+            videoStyle.mood || "neutral",
+            videoStyle.characterStyle || "realista"
+          );
+          segment.imagePrompt = prompt;
+        }
 
-      if (!segments || segments.length === 0) {
-        throw new Error("No se detectaron segmentos en el audio");
+        setTimelineItems(segments);
+
+        toast({
+          title: "Éxito",
+          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
+        });
+
+        // Generar imágenes para los nuevos segmentos
+        await generateShotImages();
       }
-
-      // Generar prompts para cada segmento
-      const segmentsWithPrompts = [...segments];
-      console.log("Generando prompts para los segmentos...");
-
-      for (let i = 0; i < segmentsWithPrompts.length; i++) {
-        const prompt = await generatePromptForSegment(
-          segmentsWithPrompts[i],
-          videoStyle.mood || "neutral",
-          videoStyle.characterStyle || "realista"
-        );
-        segmentsWithPrompts[i].imagePrompt = prompt;
-        console.log(`Prompt generado para segmento ${i + 1}`);
-      }
-
-      setTimelineItems(segmentsWithPrompts);
-
-      toast({
-        title: "Éxito",
-        description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
-      });
-
     } catch (error) {
       console.error("Error sincronizando audio:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
+        description: "Error al sincronizar el audio con el timeline",
         variant: "destructive",
       });
-    } finally {
-      setIsGeneratingShots(false);
     }
   };
 
-
-  // Botón para avanzar al siguiente paso
-  const handleNextStep = () => {
-    setCurrentStep(prev => Math.min(prev + 1, 5));
-  };
 
   return (
     <Card className="p-6">
@@ -972,29 +949,21 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
                 className="flex-1"
                 disabled={isTranscribing}
               />
-            </div>
-            {isTranscribing && (
-              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Transcribiendo audio...
-              </div>
-            )}
-            {transcription && (
-              <div className="mt-4 space-y-4">
-                <div>
-                  <Label>Letra Transcrita:</Label>
-                  <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                    <pre className="whitespace-pre-wrap text-sm">
-                      {transcription}
-                    </pre>
-                  </ScrollArea>
+              {isTranscribing && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Transcribiendo...
                 </div>
-                <Button 
-                  onClick={handleNextStep}
-                  className="w-full"
-                >
-                  Continuar al Paso 2
-                </Button>
+              )}
+            </div>
+            {transcription && (
+              <div className="mt-4">
+                <Label>Letra Transcrita:</Label>
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {transcription}
+                  </pre>
+                </ScrollArea>
               </div>
             )}
           </div>
@@ -1010,23 +979,37 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
               {isGeneratingShots ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sincronizando...
+                  Detectando beats...
                 </>
               ) : (
                 <>
-                  <Music2 className="mr-2 h-4 w-4" />
-                  Sincronizar con Beats
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Detectar Cortes Musicales y Generar Prompts
                 </>
               )}
             </Button>
-            {timelineItems.length > 0 && currentStep === 2 && (
-              <Button 
-                onClick={handleNextStep}
-                className="mt-4 w-full"
-              >
-                Continuar al Paso 3
-              </Button>
-            )}
+          </div>
+          <div className="border rounded-lg p-4 mt-4">
+            <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
+            <RadioGroup
+              value={selectedEditingStyle}
+              onValueChange={setSelectedEditingStyle}
+              className="grid grid-cols-2 gap-4"
+            >
+              {editingStyles.map((style) => (
+                <div key={style.id} className="flex items-start space-x-3">
+                  <RadioGroupItem value={style.id} id={style.id} />
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={style.id} className="font-medium">
+                      {style.name}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {style.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
 
           {/* Paso 3: Generar Guion */}
@@ -1034,7 +1017,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
             <Label className="text-lg font-semibold mb-4">3. Generar Guion</Label>
             <Button
               onClick={generateVideoScript}
-              disabled={!transcription || timelineItems.length === 0 || currentStep < 3}
+              disabled={!transcription || timelineItems.length === 0 || isGeneratingScript || currentStep < 3}
               className="w-full"
             >
               {isGeneratingScript ? (
@@ -1049,37 +1032,75 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
                 </>
               )}
             </Button>
-            {/* Solo mostrar el botón si el guion se generó exitosamente */}
-            {timelineItems.some(item => item.imagePrompt) && currentStep === 3 && (
-              <Button 
-                onClick={handleNextStep}
-                className="mt-4 w-full"
-              >
-                Continuar al Paso 4
-              </Button>
-            )}
           </div>
 
           {/* Paso 4: Estilo del Video */}
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">4. Estilo del Video</Label>
-            <Button 
-              onClick={() => setShowStyleDialog(true)}
-              disabled={currentStep < 4}
-              className="w-full"
-            >
-              <Palette className="mr-2 h-4 w-4" />
-              Configurar Estilo del Video
-            </Button>
-            {/* Solo mostrar el botón si se ha configurado el estilo */}
-            {videoStyle.mood && videoStyle.colorPalette && videoStyle.characterStyle && currentStep === 4 && (
-              <Button 
-                onClick={handleNextStep}
-                className="mt-4 w-full"
-              >
-                Continuar al Paso 5
-              </Button>
-            )}
+            <div className="grid gap-4">
+              <div>
+                <Label>Mood</Label>
+                <Select
+                  value={videoStyle.mood}
+                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona mood" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {videoStyles.moods.map((mood) => (
+                      <SelectItem key={mood} value={mood}>{mood}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Paleta de Color</Label>
+                <Select
+                  value={videoStyle.colorPalette}
+                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona paleta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {videoStyles.colorPalettes.map((palette) => (
+                      <SelectItem key={palette} value={palette}>{palette}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Estilo Visual</Label>
+                <Select
+                  value={videoStyle.characterStyle}
+                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona estilo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {videoStyles.characterStyles.map((style) => (
+                      <SelectItem key={style} value={style}>{style}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                <Slider
+                  value={[videoStyle.visualIntensity]}
+                  onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="mt-2"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Paso 5: Generar Imágenes */}
@@ -1087,23 +1108,22 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
             <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
             <Button
               onClick={generateShotImages}
-              disabled={currentStep < 5 || !videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle}
+              disabled={!timelineItems.length || isGeneratingShots || currentStep < 4}
               className="w-full"
             >
               {isGeneratingShots ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando...
+                  Generando imágenes...
                 </>
               ) : (
                 <>
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  Generar Imágenes para el Video
+                  Generar Imágenes para cada Escena
                 </>
               )}
             </Button>
           </div>
-
         </div>
 
         {/* Columna Derecha - Timeline */}
