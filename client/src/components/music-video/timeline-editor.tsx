@@ -15,16 +15,18 @@ export interface TimelineClip {
   id: number;
   start: number;
   duration: number;
-  type: 'video' | 'image' | 'transition';
+  type: 'video' | 'image' | 'transition' | 'audio';
   thumbnail?: string;
   title: string;
   description?: string;
+  waveform?: number[]; // Para visualización de audio
 }
 
 interface TimelineEditorProps {
   clips: TimelineClip[];
   currentTime: number;
   duration: number;
+  audioBuffer?: AudioBuffer;
   onTimeUpdate: (time: number) => void;
   onClipUpdate: (clipId: number, updates: Partial<TimelineClip>) => void;
   onPlay: () => void;
@@ -36,6 +38,7 @@ export function TimelineEditor({
   clips,
   currentTime,
   duration,
+  audioBuffer,
   onTimeUpdate,
   onClipUpdate,
   onPlay,
@@ -47,6 +50,7 @@ export function TimelineEditor({
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
+  const [waveformData, setWaveformData] = useState<number[]>([]);
 
   // Calcular el ancho total del timeline basado en la duración y el zoom
   const timelineWidth = duration * zoom;
@@ -57,6 +61,27 @@ export function TimelineEditor({
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.5, 10));
   const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.5, 0.1));
+
+  // Generar datos de forma de onda cuando el audioBuffer cambia
+  useEffect(() => {
+    if (audioBuffer) {
+      const channelData = audioBuffer.getChannelData(0);
+      const samples = 1000; // Número de muestras para visualización
+      const blockSize = Math.floor(channelData.length / samples);
+      const waveform = [];
+
+      for (let i = 0; i < samples; i++) {
+        const start = i * blockSize;
+        let sum = 0;
+        for (let j = 0; j < blockSize; j++) {
+          sum += Math.abs(channelData[start + j]);
+        }
+        waveform.push(sum / blockSize);
+      }
+
+      setWaveformData(waveform);
+    }
+  }, [audioBuffer]);
 
   const handleTimelineClick = (e: React.MouseEvent) => {
     if (!timelineRef.current) return;
@@ -122,7 +147,7 @@ export function TimelineEditor({
       </div>
 
       {/* Timeline */}
-      <ScrollArea
+      <ScrollArea 
         className="h-[300px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
@@ -144,6 +169,27 @@ export function TimelineEditor({
               </div>
             ))}
           </div>
+
+          {/* Audio waveform */}
+          {waveformData.length > 0 && (
+            <div className="absolute left-0 right-0 h-20 mt-8 bg-black/5">
+              <svg
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+                className="opacity-50"
+              >
+                <path
+                  d={`M 0 ${40} ${waveformData.map((value, i) => 
+                    `L ${(i / waveformData.length) * timelineWidth} ${40 + value * 40}`
+                  ).join(' ')}`}
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  fill="none"
+                />
+              </svg>
+            </div>
+          )}
 
           {/* Clips */}
           <div className="mt-6">
@@ -179,10 +225,10 @@ export function TimelineEditor({
                   )}
                   <div className="absolute inset-0 p-2 flex flex-col justify-between">
                     <div className="flex items-center gap-2">
-                      {clip.type === 'image' ? (
-                        <ImageIcon className="h-4 w-4" />
-                      ) : (
+                      {clip.type === 'audio' ? (
                         <Music className="h-4 w-4" />
+                      ) : (
+                        <ImageIcon className="h-4 w-4" />
                       )}
                       <span className="text-xs font-medium truncate">
                         {clip.title}

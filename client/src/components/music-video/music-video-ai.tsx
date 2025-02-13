@@ -96,6 +96,9 @@ export function MusicVideoAI() {
   });
   const storage = getStorage(); // Initialize Firebase Storage
   const [isSaving, setIsSaving] = useState(false);
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const audioSource = useRef<AudioBufferSourceNode | null>(null);
 
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,6 +127,19 @@ export function MusicVideoAI() {
       setTimelineItems([]);
       setCurrentTime(0);
       setIsPlaying(false);
+
+      // Procesar el archivo de audio
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        if (e.target?.result instanceof ArrayBuffer) {
+          if (!audioContext.current) {
+            audioContext.current = new AudioContext();
+          }
+          const buffer = await audioContext.current.decodeAudioData(e.target.result);
+          setAudioBuffer(buffer);
+        }
+      };
+      reader.readAsArrayBuffer(file);
     }
   }, [toast]);
 
@@ -352,9 +368,21 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     setVisibleTimeEnd(visibleTimeEnd);
   };
 
-  const togglePlayback = () => {
-    setIsPlaying(!isPlaying);
-  };
+  const togglePlayback = useCallback(() => {
+    if (!audioBuffer || !audioContext.current) return;
+
+    if (isPlaying) {
+      audioSource.current?.stop();
+      setIsPlaying(false);
+    } else {
+      const source = audioContext.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.current.destination);
+      source.start(0, currentTime / 1000);
+      audioSource.current = source;
+      setIsPlaying(true);
+    }
+  }, [isPlaying, audioBuffer, currentTime]);
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev * 1.5, 10));
@@ -583,6 +611,77 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     setTimelineItems(updatedItems);
   };
 
+  // Función para detectar beats y crear segmentos
+  const detectBeatsAndCreateSegments = async () => {
+    if (!audioBuffer) return;
+
+    const channelData = audioBuffer.getChannelData(0);
+    const sampleRate = audioBuffer.sampleRate;
+    const segments: TimelineItem[] = [];
+
+    // Configuración para detección de beats
+    const windowSize = Math.floor(sampleRate * 0.05); // 50ms ventana
+    const threshold = 0.1;
+    let lastBeatTime = 0;
+    const minSegmentDuration = 2; // segundos
+    const maxSegmentDuration = 5; // segundos
+
+    for (let i = 0; i < channelData.length; i += windowSize) {
+      let sum = 0;
+      for (let j = 0; j < windowSize; j++) {
+        if (i + j < channelData.length) {
+          sum += Math.abs(channelData[i + j]);
+        }
+      }
+      const average = sum / windowSize;
+
+      const currentTime = i / sampleRate;
+      if (average > threshold && currentTime - lastBeatTime >= minSegmentDuration) {
+        if (currentTime - lastBeatTime <= maxSegmentDuration) {
+          segments.push({
+            id: segments.length + 1,
+            group: 1,
+            title: `Segmento ${segments.length + 1}`,
+            start_time: lastBeatTime * 1000,
+            end_time: currentTime * 1000,
+            description: "Segmento automático basado en beats",
+            shotType: "auto",
+            duration: (currentTime - lastBeatTime) * 1000
+          });
+        }
+        lastBeatTime = currentTime;
+      }
+    }
+
+    return segments;
+  };
+
+  // Función para sincronizar el audio con el timeline
+  const syncAudioWithTimeline = async () => {
+    if (!audioBuffer) return;
+
+    try {
+      const segments = await detectBeatsAndCreateSegments();
+      if (segments && segments.length > 0) {
+        setTimelineItems(segments);
+        generateTimelineItems(segments);
+
+        toast({
+          title: "Éxito",
+          description: `Se detectaron ${segments.length} segmentos en el audio`,
+        });
+      }
+    } catch (error) {
+      console.error("Error sincronizando audio:", error);
+      toast({
+        title: "Error",
+        description: "Error al sincronizar el audio con el timeline",
+        variant: "destructive",
+      });
+    }
+  };
+
+
   return (
     <Card className="p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -611,7 +710,7 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 className="flex-1"
               />
               <Button
-                onClick={transcribeAudio}
+                onClick={syncAudioWithTimeline}
                 disabled={!selectedFile || isTranscribing}
               >
                 {isTranscribing ? (
@@ -622,7 +721,7 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 ) : (
                   <>
                     <Music2 className="mr-2 h-4 w-4" />
-                    Procesar Audio
+                    Sincronizar Audio
                   </>
                 )}
               </Button>
@@ -757,10 +856,11 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 clips={clips}
                 currentTime={(currentTime - timelineItems[0]?.start_time || 0) / 1000}
                 duration={totalDuration}
+                audioBuffer={audioBuffer}
                 onTimeUpdate={handleTimeUpdate}
                 onClipUpdate={handleClipUpdate}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
+                onPlay={togglePlayback}
+                onPause={togglePlayback}
                 isPlaying={isPlaying}
               />
 
