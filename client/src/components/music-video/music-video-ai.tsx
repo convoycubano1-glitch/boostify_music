@@ -629,6 +629,38 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     let energyHistory: number[] = [];
     const historySize = 43; // Aproximadamente 1 segundo de historia
 
+    // Tipos de planos disponibles con sus descripciones
+    const shotTypes = [
+      {
+        type: "wide shot",
+        description: "Plano general que muestra el entorno completo y establece el contexto",
+        prompt: "wide angle shot showing the complete environment and atmosphere"
+      },
+      {
+        type: "medium shot",
+        description: "Plano medio que captura la expresión y el lenguaje corporal",
+        prompt: "medium shot focusing on upper body and expression"
+      },
+      {
+        type: "close-up",
+        description: "Primer plano que enfatiza la emoción y los detalles",
+        prompt: "close-up shot emphasizing emotion and facial details"
+      },
+      {
+        type: "extreme close-up",
+        description: "Plano detalle que muestra detalles específicos",
+        prompt: "extreme close-up showing intricate details"
+      },
+      {
+        type: "tracking shot",
+        description: "Plano de seguimiento que añade dinamismo",
+        prompt: "smooth tracking shot following the subject"
+      }
+    ];
+
+    // Tipos de transiciones
+    const transitions = ["cut", "fade", "dissolve", "crossfade"];
+
     // Normalizar y detectar beats
     for (let i = 0; i < channelData.length; i += windowSize) {
       let sum = 0;
@@ -650,6 +682,10 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
             currentTime - lastBeatTime >= minSegmentDuration &&
             currentTime - lastBeatTime <= maxSegmentDuration) {
 
+          // Seleccionar tipo de plano y transición aleatoriamente
+          const shotType = shotTypes[Math.floor(Math.random() * shotTypes.length)];
+          const transition = transitions[Math.floor(Math.random() * transitions.length)];
+
           // Crear segmento
           segments.push({
             id: segments.length + 1,
@@ -657,12 +693,11 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
             title: `Escena ${segments.length + 1}`,
             start_time: lastBeatTime * 1000,
             end_time: currentTime * 1000,
-            description: "Escena sincronizada con el beat",
-            shotType: ["wide shot", "medium shot", "close-up", "extreme close-up"][
-              Math.floor(Math.random() * 4)
-            ],
+            description: shotType.description,
+            shotType: shotType.type,
             duration: (currentTime - lastBeatTime) * 1000,
-            transition: ["cut", "fade", "dissolve"][Math.floor(Math.random() * 3)]
+            transition: transition,
+            imagePrompt: shotType.prompt
           });
 
           lastBeatTime = currentTime;
@@ -674,16 +709,18 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     if (segments.length > 0) {
       const lastSegment = segments[segments.length - 1];
       if (lastSegment.end_time / 1000 < totalDuration) {
+        const finalShotType = shotTypes[Math.floor(Math.random() * shotTypes.length)];
         segments.push({
           id: segments.length + 1,
           group: 1,
           title: `Escena Final`,
           start_time: lastSegment.end_time,
           end_time: totalDuration * 1000,
-          description: "Escena final",
-          shotType: "wide shot",
+          description: finalShotType.description,
+          shotType: finalShotType.type,
           duration: (totalDuration * 1000) - lastSegment.end_time,
-          transition: "fade"
+          transition: "fade",
+          imagePrompt: finalShotType.prompt
         });
       }
     }
@@ -691,13 +728,52 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     return segments;
   };
 
-  // Función para sincronizar el audio con el timeline
+  // Función para generar el guion basado en los segmentos
+  const generatePromptForSegment = async (segment: TimelineItem, mood: string, style: string) => {
+    try {
+      const prompt = `Genera un prompt detallado para una imagen de video musical con las siguientes características:
+    - Tipo de plano: ${segment.shotType}
+    - Mood: ${mood}
+    - Estilo visual: ${style}
+    - Duración del segmento: ${segment.duration / 1000} segundos
+
+    El prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
+    Responde SOLO con el prompt, sin explicaciones adicionales.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 200
+      });
+
+      return response.choices[0].message.content;
+    } catch (error) {
+      console.error("Error generando prompt:", error);
+      return segment.imagePrompt || "Error generando prompt";
+    }
+  };
+
+  // Función para sincronizar el audio con el timeline y generar prompts
   const syncAudioWithTimeline = async () => {
     if (!audioBuffer) return;
 
     try {
       const segments = await detectBeatsAndCreateSegments();
       if (segments && segments.length > 0) {
+        // Generar prompts para cada segmento
+        for (let segment of segments) {
+          const prompt = await generatePromptForSegment(
+            segment,
+            videoStyle.mood || "neutral",
+            videoStyle.characterStyle || "realista"
+          );
+          segment.imagePrompt = prompt;
+        }
+
         setTimelineItems(segments);
 
         toast({
@@ -717,7 +793,6 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
       });
     }
   };
-
 
   return (
     <Card className="p-6">

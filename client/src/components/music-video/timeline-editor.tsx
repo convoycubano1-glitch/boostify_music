@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
-  Music, Image as ImageIcon
+  Music, Image as ImageIcon, Edit, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,9 @@ export interface TimelineClip {
   thumbnail?: string;
   title: string;
   description?: string;
-  waveform?: number[]; // Para visualización de audio
+  waveform?: number[];
+  imagePrompt?: string; // Añadido para mostrar el prompt
+  shotType?: string; // Añadido para mostrar el tipo de plano
 }
 
 interface TimelineEditorProps {
@@ -32,6 +34,7 @@ interface TimelineEditorProps {
   onPlay: () => void;
   onPause: () => void;
   isPlaying: boolean;
+  onRegenerateImage?: (clipId: number) => void; // Añadido para regenerar imágenes
 }
 
 export function TimelineEditor({
@@ -43,7 +46,8 @@ export function TimelineEditor({
   onClipUpdate,
   onPlay,
   onPause,
-  isPlaying
+  isPlaying,
+  onRegenerateImage
 }: TimelineEditorProps) {
   const [zoom, setZoom] = useState(1);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -55,6 +59,7 @@ export function TimelineEditor({
   const [isWaveformHovered, setIsWaveformHovered] = useState(false);
   const [dragStartX, setDragStartX] = useState<number>(0);
   const [clipStartTime, setClipStartTime] = useState<number>(0);
+  const [resizingSide, setResizingSide] = useState<'start' | 'end' | null>(null);
 
   // Calcular el ancho total del timeline basado en la duración y el zoom
   const timelineWidth = duration * zoom;
@@ -71,7 +76,7 @@ export function TimelineEditor({
     if (!audioBuffer) return;
 
     const channelData = audioBuffer.getChannelData(0);
-    const samples = 2000; // Increased number of samples for better resolution
+    const samples = 2000;
     const blockSize = Math.floor(channelData.length / samples);
     const waveform = [];
 
@@ -80,7 +85,6 @@ export function TimelineEditor({
       let max = 0;
       let min = 0;
 
-      // Find max and min values in this block for better visualization
       for (let j = 0; j < blockSize; j++) {
         const value = channelData[start + j];
         max = Math.max(max, value);
@@ -108,9 +112,9 @@ export function TimelineEditor({
     setHoveredTime(pixelsToTime(x));
   };
 
-  // Drag handlers
+  // Manejo del arrastre de clips
   const handleClipDragStart = (clipId: number, e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+    e.dataTransfer.setData('text/plain', '');
     const clip = clips.find(c => c.id === clipId);
     if (clip) {
       setIsDragging(true);
@@ -135,11 +139,47 @@ export function TimelineEditor({
     setSelectedClip(null);
   };
 
-  const formatTime = (time: number): string => {
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    const ms = Math.floor((time % 1) * 1000);
-    return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+  // Manejo del redimensionamiento de clips
+  const handleResizeStart = (clipId: number, side: 'start' | 'end', e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedClip(clipId);
+    setResizingSide(side);
+    setDragStartX(e.clientX);
+    const clip = clips.find(c => c.id === clipId);
+    if (clip) {
+      setClipStartTime(clip.start);
+    }
+  };
+
+  const handleResizeMove = (e: React.MouseEvent) => {
+    if (!selectedClip || !resizingSide) return;
+
+    const clip = clips.find(c => c.id === selectedClip);
+    if (!clip) return;
+
+    const deltaX = e.clientX - dragStartX;
+    const deltaTime = pixelsToTime(deltaX);
+
+    if (resizingSide === 'start') {
+      const newStart = Math.max(0, clipStartTime + deltaTime);
+      const newDuration = clip.start + clip.duration - newStart;
+      if (newDuration >= 0.5) {
+        onClipUpdate(selectedClip, {
+          start: newStart,
+          duration: newDuration
+        });
+      }
+    } else {
+      const newDuration = Math.max(0.5, clip.duration + deltaTime);
+      onClipUpdate(selectedClip, {
+        duration: newDuration
+      });
+    }
+  };
+
+  const handleResizeEnd = () => {
+    setResizingSide(null);
+    setSelectedClip(null);
   };
 
   return (
@@ -189,14 +229,17 @@ export function TimelineEditor({
 
       {/* Timeline */}
       <ScrollArea
-        className="h-[300px] border rounded-lg"
+        className="h-[400px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
         <div
           ref={timelineRef}
           className="relative"
-          style={{ width: `${timelineWidth}px`, minHeight: "300px" }}
+          style={{ width: `${timelineWidth}px`, minHeight: "400px" }}
           onClick={handleTimelineClick}
+          onMouseMove={resizingSide ? handleResizeMove : undefined}
+          onMouseUp={resizingSide ? handleResizeEnd : undefined}
+          onMouseLeave={resizingSide ? handleResizeEnd : undefined}
         >
           {/* Time markers */}
           <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
@@ -223,10 +266,7 @@ export function TimelineEditor({
               onMouseMove={handleWaveformMouseMove}
             >
               <div className="relative w-full h-full">
-                {/* Background gradient */}
                 <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 to-orange-500/10" />
-
-                {/* Waveform visualization */}
                 <svg
                   width="100%"
                   height="100%"
@@ -240,7 +280,6 @@ export function TimelineEditor({
                     </linearGradient>
                   </defs>
 
-                  {/* Upper waveform */}
                   <path
                     d={`M 0 ${48} ${waveformData.map((value, i) =>
                       `L ${(i / waveformData.length) * timelineWidth} ${48 - value.max * 48}`
@@ -250,7 +289,6 @@ export function TimelineEditor({
                     fill="none"
                   />
 
-                  {/* Lower waveform */}
                   <path
                     d={`M 0 ${48} ${waveformData.map((value, i) =>
                       `L ${(i / waveformData.length) * timelineWidth} ${48 + value.min * 48}`
@@ -261,7 +299,6 @@ export function TimelineEditor({
                   />
                 </svg>
 
-                {/* Hover time indicator */}
                 {isWaveformHovered && hoveredTime !== null && (
                   <div
                     className="absolute top-0 bottom-0 w-px bg-orange-500/50"
@@ -290,20 +327,31 @@ export function TimelineEditor({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   className={cn(
-                    "absolute h-20 rounded-md overflow-hidden border cursor-pointer group",
+                    "absolute h-32 rounded-md overflow-hidden border cursor-pointer group",
                     selectedClip === clip.id ? "ring-2 ring-primary" : "",
                     isDragging ? "cursor-grabbing" : "cursor-grab"
                   )}
                   style={{
                     left: `${timeToPixels(clip.start)}px`,
                     width: `${timeToPixels(clip.duration)}px`,
-                    top: clip.type === 'transition' ? '88px' : '8px'
+                    top: '8px'
                   }}
                   draggable
                   onDragStart={(e) => handleClipDragStart(clip.id, e)}
                   onDragEnd={handleClipDragEnd}
                 >
+                  {/* Manejadores de redimensionamiento */}
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
+                    onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
+                  />
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
+                    onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
+                  />
+
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10" />
+
                   {clip.thumbnail && (
                     <img
                       src={clip.thumbnail}
@@ -311,20 +359,43 @@ export function TimelineEditor({
                       className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-75 transition-opacity"
                     />
                   )}
+
                   <div className="absolute inset-0 p-2 flex flex-col justify-between">
-                    <div className="flex items-center gap-2">
-                      {clip.type === 'audio' ? (
-                        <Music className="h-4 w-4" />
-                      ) : (
-                        <ImageIcon className="h-4 w-4" />
-                      )}
-                      <span className="text-xs font-medium truncate">
-                        {clip.title}
-                      </span>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          <span className="text-xs font-medium">
+                            {clip.shotType || 'Sin tipo de plano'}
+                          </span>
+                        </div>
+                        {onRegenerateImage && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => onRegenerateImage(clip.id)}
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-white/90 line-clamp-2">
+                        {clip.imagePrompt || clip.description || 'Sin descripción'}
+                      </p>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(clip.duration)}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(clip.duration)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
