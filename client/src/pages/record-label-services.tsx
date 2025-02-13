@@ -27,15 +27,19 @@ export default function RecordLabelServices() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <div className="relative w-full min-h-[60vh] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900 to-orange-600 opacity-90" />
-        <img
-          src="/assets/vintage-records.jpg"
-          alt="Vintage Records"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
           className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
-        />
+        >
+          <source src="/background-video.mp4" type="video/mp4" />
+        </video>
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
