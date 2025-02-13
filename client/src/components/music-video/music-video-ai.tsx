@@ -618,14 +618,18 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     const channelData = audioBuffer.getChannelData(0);
     const sampleRate = audioBuffer.sampleRate;
     const segments: TimelineItem[] = [];
+    const totalDuration = audioBuffer.duration;
 
-    // Configuración para detección de beats
+    // Configuración mejorada para detección de beats
     const windowSize = Math.floor(sampleRate * 0.05); // 50ms ventana
-    const threshold = 0.1;
-    let lastBeatTime = 0;
+    const threshold = 0.15; // Aumentado para detectar beats más significativos
     const minSegmentDuration = 2; // segundos
     const maxSegmentDuration = 5; // segundos
+    let lastBeatTime = 0;
+    let energyHistory: number[] = [];
+    const historySize = 43; // Aproximadamente 1 segundo de historia
 
+    // Normalizar y detectar beats
     for (let i = 0; i < channelData.length; i += windowSize) {
       let sum = 0;
       for (let j = 0; j < windowSize; j++) {
@@ -633,23 +637,54 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
           sum += Math.abs(channelData[i + j]);
         }
       }
-      const average = sum / windowSize;
+      const energy = sum / windowSize;
+      energyHistory.push(energy);
 
-      const currentTime = i / sampleRate;
-      if (average > threshold && currentTime - lastBeatTime >= minSegmentDuration) {
-        if (currentTime - lastBeatTime <= maxSegmentDuration) {
+      if (energyHistory.length > historySize) {
+        energyHistory.shift();
+
+        const averageEnergy = energyHistory.reduce((a, b) => a + b) / energyHistory.length;
+        const currentTime = i / sampleRate;
+
+        if (energy > averageEnergy * threshold &&
+            currentTime - lastBeatTime >= minSegmentDuration &&
+            currentTime - lastBeatTime <= maxSegmentDuration) {
+
+          // Crear segmento
           segments.push({
             id: segments.length + 1,
             group: 1,
-            title: `Segmento ${segments.length + 1}`,
+            title: `Escena ${segments.length + 1}`,
             start_time: lastBeatTime * 1000,
             end_time: currentTime * 1000,
-            description: "Segmento automático basado en beats",
-            shotType: "auto",
-            duration: (currentTime - lastBeatTime) * 1000
+            description: "Escena sincronizada con el beat",
+            shotType: ["wide shot", "medium shot", "close-up", "extreme close-up"][
+              Math.floor(Math.random() * 4)
+            ],
+            duration: (currentTime - lastBeatTime) * 1000,
+            transition: ["cut", "fade", "dissolve"][Math.floor(Math.random() * 3)]
           });
+
+          lastBeatTime = currentTime;
         }
-        lastBeatTime = currentTime;
+      }
+    }
+
+    // Asegurarse de que cubrimos toda la duración de la canción
+    if (segments.length > 0) {
+      const lastSegment = segments[segments.length - 1];
+      if (lastSegment.end_time / 1000 < totalDuration) {
+        segments.push({
+          id: segments.length + 1,
+          group: 1,
+          title: `Escena Final`,
+          start_time: lastSegment.end_time,
+          end_time: totalDuration * 1000,
+          description: "Escena final",
+          shotType: "wide shot",
+          duration: (totalDuration * 1000) - lastSegment.end_time,
+          transition: "fade"
+        });
       }
     }
 
@@ -664,12 +699,14 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
       const segments = await detectBeatsAndCreateSegments();
       if (segments && segments.length > 0) {
         setTimelineItems(segments);
-        generateTimelineItems(segments);
 
         toast({
           title: "Éxito",
-          description: `Se detectaron ${segments.length} segmentos en el audio`,
+          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
         });
+
+        // Generar imágenes para los nuevos segmentos
+        await generateShotImages();
       }
     } catch (error) {
       console.error("Error sincronizando audio:", error);
@@ -710,7 +747,7 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 className="flex-1"
               />
               <Button
-                onClick={syncAudioWithTimeline}
+                onClick={transcribeAudio}
                 disabled={!selectedFile || isTranscribing}
               >
                 {isTranscribing ? (
@@ -721,9 +758,17 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 ) : (
                   <>
                     <Music2 className="mr-2 h-4 w-4" />
-                    Sincronizar Audio
+                    Generar Guion
                   </>
                 )}
+              </Button>
+              <Button
+                onClick={syncAudioWithTimeline}
+                disabled={!audioBuffer || isGeneratingShots}
+                variant="outline"
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Sincronizar Beats
               </Button>
             </div>
           </div>
