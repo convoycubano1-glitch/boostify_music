@@ -262,25 +262,38 @@ export function MusicVideoAI() {
 
   // Función para sincronizar beats y crear cortes
   const syncAudioWithTimeline = async () => {
-    if (!audioBuffer) return;
+    if (!audioBuffer) {
+      toast({
+        title: "Error",
+        description: "No hay archivo de audio cargado",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsGeneratingShots(true);
     try {
+      console.log("Iniciando detección de beats...");
       const segments = await detectBeatsAndCreateSegments();
-      if (segments && segments.length > 0) {
-        setTimelineItems(segments);
-        setCurrentStep(3); // Avanzar al siguiente paso
+      console.log("Segmentos detectados:", segments?.length || 0);
 
-        toast({
-          title: "Éxito",
-          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
-        });
+      if (!segments || segments.length === 0) {
+        throw new Error("No se detectaron segmentos en el audio");
       }
+
+      setTimelineItems(segments);
+      setCurrentStep(3);
+
+      toast({
+        title: "Éxito",
+        description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
+      });
+
     } catch (error) {
       console.error("Error sincronizando audio:", error);
       toast({
         title: "Error",
-        description: "Error al sincronizar el audio con el timeline",
+        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
         variant: "destructive",
       });
     } finally {
@@ -991,19 +1004,19 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">2. Sincronizar Beats</Label>
             <Button
-              onClick={syncAudioWithTimelineAndGeneratePrompts}
+              onClick={syncAudioWithTimeline}
               disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
               className="w-full"
             >
               {isGeneratingShots ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Detectando beats...
+                  Procesando...
                 </>
               ) : (
                 <>
                   <RefreshCcw className="mr-2 h-4 w-4" />
-                  Detectar Cortes Musicales y Generar Prompts
+                  Detectar Cortes Musicales
                 </>
               )}
             </Button>
@@ -1036,7 +1049,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             <Label className="text-lg font-semibold mb-4">3. Generar Guion</Label>
             <Button
               onClick={generateVideoScript}
-              disabled={!transcription || timelineItems.length === 0 || isGeneratingScript || currentStep < 3}
+              disabled={!timelineItems.length || isGeneratingScript || currentStep < 3}
               className="w-full"
             >
               {isGeneratingScript ? (
@@ -1047,7 +1060,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               ) : (
                 <>
                   <Edit className="mr-2 h-4 w-4" />
-                  Generar Guion del Video
+                  Generar Guion
                 </>
               )}
             </Button>
