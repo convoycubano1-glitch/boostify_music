@@ -242,7 +242,6 @@ export function MusicVideoAI() {
 
         const formattedLyrics = formattedResponse.choices[0].message.content;
         setTranscription(formattedLyrics || transcription.text);
-        setCurrentStep(2); // Avanzar al siguiente paso
 
         toast({
           title: "Éxito",
@@ -284,7 +283,6 @@ export function MusicVideoAI() {
       }
 
       setTimelineItems(segments);
-      setCurrentStep(3);
 
       toast({
         title: "Éxito",
@@ -378,7 +376,6 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
         });
 
         setTimelineItems(updatedItems);
-        setCurrentStep(4);
 
         toast({
           title: "Éxito",
@@ -888,7 +885,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
     }
   };
 
-  // Función para sincronizar el audio con el timeline y generar prompts
+  // Función para sincronizar el audio conel timeline y generar prompts
   const syncAudioWithTimelineAndGeneratePrompts = async () => {
     if (!audioBuffer) {
       toast({
@@ -924,7 +921,6 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
       }
 
       setTimelineItems(segmentsWithPrompts);
-      setCurrentStep(3);
 
       toast({
         title: "Éxito",
@@ -943,6 +939,11 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
     }
   };
 
+
+  // Botón para avanzar al siguiente paso
+  const handleNextStep = () => {
+    setCurrentStep(prev => Math.min(prev + 1, 5));
+  };
 
   return (
     <Card className="p-6">
@@ -972,22 +973,14 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
                 className="flex-1"
                 disabled={isTranscribing}
               />
-              {isTranscribing && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Transcribiendo...
-                </div>
-              )}
             </div>
             {transcription && (
-              <div className="mt-4">
-                <Label>Letra Transcrita:</Label>
-                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                  <pre className="whitespace-pre-wrap text-sm">
-                    {transcription}
-                  </pre>
-                </ScrollArea>
-              </div>
+              <Button 
+                onClick={handleNextStep}
+                className="mt-4 w-full"
+              >
+                Continuar al Paso 2
+              </Button>
             )}
           </div>
 
@@ -1002,37 +995,23 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
               {isGeneratingShots ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Procesando...
+                  Sincronizando...
                 </>
               ) : (
                 <>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Detectar Cortes Musicales
+                  <Music2 className="mr-2 h-4 w-4" />
+                  Sincronizar con Beats
                 </>
               )}
             </Button>
-          </div>
-          <div className="border rounded-lg p-4 mt-4">
-            <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
-            <RadioGroup
-              value={selectedEditingStyle}
-              onValueChange={setSelectedEditingStyle}
-              className="grid grid-cols-2 gap-4"
-            >
-              {editingStyles.map((style) => (
-                <div key={style.id} className="flex items-start space-x-3">
-                  <RadioGroupItem value={style.id} id={style.id} />
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={style.id} className="font-medium">
-                      {style.name}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      {style.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </RadioGroup>
+            {timelineItems.length > 0 && currentStep === 2 && (
+              <Button 
+                onClick={handleNextStep}
+                className="mt-4 w-full"
+              >
+                Continuar al Paso 3
+              </Button>
+            )}
           </div>
 
           {/* Paso 3: Generar Guion */}
@@ -1040,7 +1019,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
             <Label className="text-lg font-semibold mb-4">3. Generar Guion</Label>
             <Button
               onClick={generateVideoScript}
-              disabled={!timelineItems.length || isGeneratingScript || currentStep < 3}
+              disabled={!transcription || timelineItems.length === 0 || currentStep < 3}
               className="w-full"
             >
               {isGeneratingScript ? (
@@ -1051,10 +1030,19 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
               ) : (
                 <>
                   <Edit className="mr-2 h-4 w-4" />
-                  Generar Guion
+                  Generar Guion del Video
                 </>
               )}
             </Button>
+            {/* Solo mostrar el botón si el guion se generó exitosamente */}
+            {timelineItems.some(item => item.imagePrompt) && currentStep === 3 && (
+              <Button 
+                onClick={handleNextStep}
+                className="mt-4 w-full"
+              >
+                Continuar al Paso 4
+              </Button>
+            )}
           </div>
 
           {/* Paso 4: Estilo del Video */}
@@ -1068,98 +1056,23 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
               <Palette className="mr-2 h-4 w-4" />
               Configurar Estilo del Video
             </Button>
+            {/* Solo mostrar el botón si se ha configurado el estilo */}
+            {videoStyle.mood && videoStyle.colorPalette && videoStyle.characterStyle && currentStep === 4 && (
+              <Button 
+                onClick={handleNextStep}
+                className="mt-4 w-full"
+              >
+                Continuar al Paso 5
+              </Button>
+            )}
           </div>
-
-          {/* Dialog para configurar el estilo */}
-          <Dialog open={showStyleDialog} onOpenChange={setShowStyleDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Configuración del Estilo</DialogTitle>
-                <DialogDescription>
-                  Personaliza el estilo visual de tu video musical
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4">
-                <div>
-                  <Label>Mood</Label>
-                  <Select
-                    value={videoStyle.mood}
-                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona mood" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoStyles.moods.map((mood) => (
-                        <SelectItem key={mood} value={mood}>{mood}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Paleta de Color</Label>
-                  <Select
-                    value={videoStyle.colorPalette}
-                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona paleta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoStyles.colorPalettes.map((palette) => (
-                        <SelectItem key={palette} value={palette}>{palette}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Estilo Visual</Label>
-                  <Select
-                    value={videoStyle.characterStyle}
-                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona estilo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoStyles.characterStyles.map((style) => (
-                        <SelectItem key={style} value={style}>{style}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
-                  <Slider
-                    value={[videoStyle.visualIntensity]}
-                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                    min={0}
-                    max={100}
-                    step={1}
-                    className="mt-2"
-                  />
-                </div>
-
-                <Button 
-                  onClick={() => setShowStyleDialog(false)}
-                  className="w-full"
-                >
-                  Guardar Configuración
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           {/* Paso 5: Generar Imágenes */}
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
             <Button
               onClick={generateShotImages}
-              disabled={!videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle || currentStep < 4}
+              disabled={currentStep < 5 || !videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle}
               className="w-full"
             >
               {isGeneratingShots ? (
