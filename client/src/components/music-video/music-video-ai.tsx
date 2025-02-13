@@ -886,8 +886,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
   };
 
   // Función para sincronizar el audio conel timeline y generar prompts
-  const syncAudioWithTimelineAndGeneratePrompts = async () => {
-    if (!audioBuffer) {
+  const syncAudioWithTimelineAndGeneratePrompts = async () => {    if (!audioBuffer) {
       toast({
         title: "Error",
         description: "No hay archivo de audio cargado",
@@ -974,13 +973,29 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
                 disabled={isTranscribing}
               />
             </div>
+            {isTranscribing && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Transcribiendo audio...
+              </div>
+            )}
             {transcription && (
-              <Button 
-                onClick={handleNextStep}
-                className="mt-4 w-full"
-              >
-                Continuar al Paso 2
-              </Button>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <Label>Letra Transcrita:</Label>
+                  <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                    <pre className="whitespace-pre-wrap text-sm">
+                      {transcription}
+                    </pre>
+                  </ScrollArea>
+                </div>
+                <Button 
+                  onClick={handleNextStep}
+                  className="w-full"
+                >
+                  Continuar al Paso 2
+                </Button>
+              </div>
             )}
           </div>
 
