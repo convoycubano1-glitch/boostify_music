@@ -50,6 +50,32 @@ const videoStyles = {
   characterStyles: [
     "Realista", "Estilizado", "Artístico", "Abstracto",
     "Cinematográfico", "Documental", "Surrealista", "Vintage"
+  ],
+  cameraFormats: [
+    {
+      name: "35mm Estándar",
+      description: "El formato clásico del cine, ofrece una imagen natural y cinematográfica"
+    },
+    {
+      name: "IMAX",
+      description: "Alto detalle y amplitud visual, ideal para escenas épicas"
+    },
+    {
+      name: "Super 8mm",
+      description: "Look vintage y granulado, perfecto para escenas nostálgicas"
+    },
+    {
+      name: "Anamórfico",
+      description: "Formato panorámico con característicos lens flares"
+    },
+    {
+      name: "PANAVISION",
+      description: "Cinematográfico de alta gama con bokeh distintivo"
+    },
+    {
+      name: "Digital RAW",
+      description: "Look moderno y nítido con alto rango dinámico"
+    }
   ]
 };
 
@@ -163,7 +189,11 @@ export function MusicVideoAI() {
     mood: "",
     colorPalette: "",
     characterStyle: "",
-    visualIntensity: 50
+    visualIntensity: 50,
+    cameraFormat: "",
+    narrativeIntensity: 50,
+    referenceImage: null as string | null,
+    styleDescription: ""
   });
   const storage = getStorage(); // Initialize Firebase Storage
   const [isSaving, setIsSaving] = useState(false);
@@ -872,22 +902,32 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   // Función para generar el guion basado en los segmentos
   const generatePromptForSegment = async (segment: TimelineItem) => {
     try {
-      const prompt = `Generaun prompt detallado para unaimagen de video musical que mantenga consistencia visual con estas características:
+      let basePrompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
     - Tipo de plano: ${segment.shotType}
+    - Formato de cámara: ${videoStyle.cameraFormat}
     - Mood: ${videoStyle.mood}
     - Estilo visual: ${videoStyle.characterStyle}
-        - Intensidad visual: ${videoStyle.visualIntensity}%
+    - Intensidad visual: ${videoStyle.visualIntensity}%
+    - Intensidad narrativa: ${videoStyle.narrativeIntensity}%
     - Paleta de colores: ${videoStyle.colorPalette}
-    - Duración del segmento: ${segment.duration / 1000} segundos
+    - Duración del segmento: ${segment.duration / 1000} segundos`;
 
-    El prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
+      // Añadir descripción del estilo de referencia si existe
+      if (videoStyle.styleDescription) {
+        basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
+      }
+
+      basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." },
-          { role: "user", content: prompt }
+          { 
+            role: "system", 
+            content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." 
+          },
+          { role: "user", content: basePrompt }
         ],
         temperature: 0.7,
         max_tokens: 200
@@ -986,6 +1026,48 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
+  // Añadir función para analizar imagen de referencia
+  const analyzeReferenceImage = async (image: string) => {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4-vision-preview",
+        messages: [
+          {
+            role: "system",
+            content: "Analiza esta imagen y describe su estilo visual, paleta de colores, y elementos cinematográficos destacados. Proporciona una descripción que pueda ser utilizada para generar prompts similares."
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: image
+              }
+            ]
+          }
+        ]
+      });
+
+      const styleDescription = response.choices[0].message.content;
+      setVideoStyle(prev => ({
+        ...prev,
+        styleDescription
+      }));
+
+      toast({
+        title: "Análisis completado",
+        description: "Se ha analizado la imagen de referencia exitosamente",
+      });
+    } catch (error) {
+      console.error("Error analizando imagen:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo analizar la imagen de referencia",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Actualizar la interfaz para reflejar los pasos separados
   return (
     <div className="container py-6 space-y-8">
@@ -1046,72 +1128,155 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             {/* Paso 3: Estilo Visual */}
             <div className="border rounded-lg p-4">
               <Label className="text-lg font-semibold mb-4">3. Estilo Visual</Label>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4">
+                {/* Formato de Cámara */}
                 <div className="space-y-2">
-                  <Label>Mood</Label>
+                  <Label>Formato de Cámara</Label>
                   <Select
-                    value={videoStyle.mood}
-                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+                    value={videoStyle.cameraFormat}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, cameraFormat: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar mood" />
+                      <SelectValue placeholder="Seleccionar formato de cámara" />
                     </SelectTrigger>
                     <SelectContent>
-                      {videoStyles.moods.map((mood) => (
-                        <SelectItem key={mood} value={mood}>
-                          {mood}
+                      {videoStyles.cameraFormats.map((format) => (
+                        <SelectItem key={format.name} value={format.name}>
+                          <div className="grid gap-1">
+                            <span>{format.name}</span>
+                            <span className="text-xs text-muted-foreground">{format.description}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Paleta de Colores</Label>
-                  <Select
-                    value={videoStyle.colorPalette}
-                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar paleta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoStyles.colorPalettes.map((palette) => (
-                        <SelectItem key={palette} value={palette}>
-                          {palette}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Mood y Paleta de Colores (existentes) */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mood</Label>
+                    <Select
+                      value={videoStyle.mood}
+                      onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar mood" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {videoStyles.moods.map((mood) => (
+                          <SelectItem key={mood} value={mood}>
+                            {mood}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Paleta de Colores</Label>
+                    <Select
+                      value={videoStyle.colorPalette}
+                      onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar paleta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {videoStyles.colorPalettes.map((palette) => (
+                          <SelectItem key={palette} value={palette}>
+                            {palette}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Estilo de Personajes</Label>
-                  <Select
-                    value={videoStyle.characterStyle}
-                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar estilo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoStyles.characterStyles.map((style) => (
-                        <SelectItem key={style} value={style}>
-                          {style}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Estilo de Personajes e Intensidad Visual */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Estilo de Personajes</Label>
+                    <Select
+                      value={videoStyle.characterStyle}
+                      onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar estilo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {videoStyles.characterStyles.map((style) => (
+                          <SelectItem key={style} value={style}>
+                            {style}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                    <Slider
+                      value={[videoStyle.visualIntensity]}
+                      onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
                 </div>
 
+                {/* Intensidad Narrativa */}
                 <div className="space-y-2">
-                  <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                  <Label>Intensidad Narrativa ({videoStyle.narrativeIntensity}%)</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Ajusta qué tan fielmente el video sigue la narrativa de la letra
+                  </p>
                   <Slider
-                    value={[videoStyle.visualIntensity]}
-                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                    value={[videoStyle.narrativeIntensity]}
+                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, narrativeIntensity: value }))}
                     max={100}
                     step={1}
                   />
+                </div>
+
+                {/* Referencia de Estilo */}
+                <div className="space-y-2">
+                  <Label>Imagen de Referencia</Label>
+                  <div className="grid gap-4">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = async (e) => {
+                            const base64 = e.target?.result as string;
+                            setVideoStyle(prev => ({
+                              ...prev,
+                              referenceImage: base64
+                            }));
+                            await analyzeReferenceImage(base64);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    {videoStyle.referenceImage && (
+                      <div className="relative aspect-video w-full rounded-lg overflow-hidden">
+                        <img
+                          src={videoStyle.referenceImage}
+                          alt="Referencia de estilo"
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    )}
+                    {videoStyle.styleDescription && (
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm">{videoStyle.styleDescription}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
