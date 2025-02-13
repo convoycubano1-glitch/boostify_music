@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
+import { AnalyticsDashboard } from './analytics-dashboard';
 
 // OpenAI configuration
 const openai = new OpenAI({
@@ -1034,6 +1035,15 @@ IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
           />
         </div>
       </div>
+      {timelineItems.length > 0 && (
+        <div className="mt-6">
+          <AnalyticsDashboard
+            clips={clips}
+            audioBuffer={audioBuffer}
+            duration={totalDuration}
+          />
+        </div>
+      )}
     </Card>
   );
 }
