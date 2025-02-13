@@ -870,7 +870,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." },
+          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales."},
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
@@ -886,37 +886,56 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
   // Función para sincronizar el audio con el timeline y generar prompts
   const syncAudioWithTimelineAndGeneratePrompts = async () => {
-    if (!audioBuffer) return;
+    if (!audioBuffer) {
+      toast({
+        title: "Error",
+        description: "No hay archivo de audio cargado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingShots(true);
     try {
+      console.log("Iniciando detección de beats...");
       const segments = await detectBeatsAndCreateSegments();
-      if (segments && segments.length > 0) {
-        // Generar prompts para cada segmento
-        for (let segment of segments) {
-          const prompt = await generatePromptForSegment(
-            segment,
-            videoStyle.mood || "neutral",
-            videoStyle.characterStyle || "realista"
-          );
-          segment.imagePrompt = prompt;
-        }
+      console.log("Segmentos detectados:", segments?.length || 0);
 
-        setTimelineItems(segments);
-
-        toast({
-          title: "Éxito",
-          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
-        });
-
-        // Generar imágenes para los nuevos segmentos
-        await generateShotImages();
+      if (!segments || segments.length === 0) {
+        throw new Error("No se detectaron segmentos en el audio");
       }
+
+      // Generar prompts para cada segmento
+      const segmentsWithPrompts = [...segments];
+      console.log("Generando prompts para los segmentos...");
+
+      for (let i = 0; i < segmentsWithPrompts.length; i++) {
+        const prompt = await generatePromptForSegment(
+          segmentsWithPrompts[i],
+          videoStyle.mood || "neutral",
+          videoStyle.characterStyle || "realista"
+        );
+        segmentsWithPrompts[i].imagePrompt = prompt;
+        console.log(`Prompt generado para segmento ${i + 1}`);
+      }
+
+      setTimelineItems(segmentsWithPrompts);
+      setCurrentStep(3);
+
+      toast({
+        title: "Éxito",
+        description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
+      });
+
     } catch (error) {
       console.error("Error sincronizando audio:", error);
       toast({
         title: "Error",
-        description: "Error al sincronizar el audio con el timeline",
+        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
         variant: "destructive",
       });
+    } finally {
+      setIsGeneratingShots(false);
     }
   };
 
