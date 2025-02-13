@@ -706,9 +706,10 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
     duration: item.duration / 1000,
     type: 'image',
-    thumbnail: item.generatedImage,
+    thumbnail: item.generatedImage || item.firebaseUrl,
     title: item.shotType,
-    description: item.description
+    description: item.description,
+    imagePrompt: item.imagePrompt
   }));
 
   // Calcular duración total
@@ -735,7 +736,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     setTimelineItems(updatedItems);
   };
 
-  // Función para detectar beats y crear segmentos
   const detectBeatsAndCreateSegments = async () => {
     if (!audioBuffer) return;
 
@@ -874,7 +874,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     - Estilo visual: ${videoStyle.characterStyle}
         - Intensidad visual: ${videoStyle.visualIntensity}%
     - Paleta de colores: ${videoStyle.colorPalette}
-- Duración del segmento: ${segment.duration / 1000} segundos
+    - Duración del segmento: ${segment.duration / 1000} segundos
 
     El prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
@@ -1489,15 +1489,20 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               <div className="space-y-4">
                 <TimelineEditor
                   clips={clips}
-                  currentTime={currentTime}
+                  currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
                   duration={totalDuration}
                   audioBuffer={audioBuffer}
                   onTimeUpdate={handleTimeUpdate}
                   onClipUpdate={handleClipUpdate}
-                  onPlay={togglePlayback}
-                  onPause={togglePlayback}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
                   isPlaying={isPlaying}
-                  onRegenerateImage={regenerateImage}
+                  onRegenerateImage={(clipId) => {
+                    const item = timelineItems.find(item => item.id === clipId);
+                    if (item) {
+                      regenerateImage(item);
+                    }
+                  }}
                 />
 
                 <AnalyticsDashboard
