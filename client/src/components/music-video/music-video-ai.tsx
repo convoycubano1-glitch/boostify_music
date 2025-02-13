@@ -1123,7 +1123,11 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           />
 
           {/* Analysis Dashboard */}
-          <AnalyticsDashboard />
+          <AnalyticsDashboard
+            clips={clips}
+            audioBuffer={audioBuffer}
+            duration={totalDuration}
+          />
         </div>
       </div>
     </div>

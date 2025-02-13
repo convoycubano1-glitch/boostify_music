@@ -23,15 +23,15 @@ import {
 } from "lucide-react";
 
 interface AnalyticsDashboardProps {
-  clips: TimelineClip[];
-  audioBuffer: AudioBuffer | null;
-  duration: number;
+  clips?: TimelineClip[];
+  audioBuffer?: AudioBuffer | null;
+  duration?: number;
 }
 
 export function AnalyticsDashboard({ 
-  clips,
+  clips = [],
   audioBuffer,
-  duration 
+  duration = 0
 }: AnalyticsDashboardProps) {
   // Calcular estadísticas de los tipos de planos
   const shotTypeStats = clips.reduce((acc, clip) => {
@@ -56,9 +56,9 @@ export function AnalyticsDashboard({
 
   // Calcular métricas generales
   const totalShots = clips.length;
-  const averageShotDuration = duration / totalShots;
-  const longestShot = Math.max(...clips.map(c => c.duration));
-  const shortestShot = Math.min(...clips.map(c => c.duration));
+  const averageShotDuration = totalShots > 0 ? duration / totalShots : 0;
+  const longestShot = clips.length > 0 ? Math.max(...clips.map(c => c.duration)) : 0;
+  const shortestShot = clips.length > 0 ? Math.min(...clips.map(c => c.duration)) : 0;
 
   return (
     <Card className="p-6">
@@ -113,54 +113,58 @@ export function AnalyticsDashboard({
         </div>
 
         {/* Distribución de Tipos de Plano */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Tipos de Plano</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={shotTypeData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, percent }) => 
-                    `${name} (${(percent * 100).toFixed(0)}%)`
-                  }
-                >
-                  {shotTypeData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[index % COLORS.length]} 
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+        {clips.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Tipos de Plano</h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={shotTypeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percent }) => 
+                      `${name} (${(percent * 100).toFixed(0)}%)`
+                    }
+                  >
+                    {shotTypeData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[index % COLORS.length]} 
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Distribución de Duraciones */}
-        <div className="col-span-2 space-y-4">
-          <h3 className="text-lg font-semibold">Distribución de Duraciones</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={durationDistribution}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="id" label={{ value: 'ID del Plano', position: 'bottom' }} />
-                <YAxis label={{ value: 'Duración (s)', angle: -90, position: 'left' }} />
-                <Tooltip 
-                  formatter={(value: number) => [`${value.toFixed(2)}s`, 'Duración']}
-                />
-                <Bar dataKey="duration" fill="#FF6B6B" />
-              </BarChart>
-            </ResponsiveContainer>
+        {clips.length > 0 && (
+          <div className="col-span-2 space-y-4">
+            <h3 className="text-lg font-semibold">Distribución de Duraciones</h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={durationDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="id" label={{ value: 'ID del Plano', position: 'bottom' }} />
+                  <YAxis label={{ value: 'Duración (s)', angle: -90, position: 'left' }} />
+                  <Tooltip 
+                    formatter={(value: number) => [`${value.toFixed(2)}s`, 'Duración']}
+                  />
+                  <Bar dataKey="duration" fill="#FF6B6B" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Análisis de Audio */}
         {audioBuffer && (
