@@ -202,7 +202,7 @@ export function TimelineEditor({
   return (
     <Card className="p-4 flex flex-col gap-4">
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -231,28 +231,30 @@ export function TimelineEditor({
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           {/* Timecode Display */}
           <div className="bg-black/10 px-3 py-1.5 rounded-md font-mono text-sm">
             {formatTimecode(currentTime)}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground hidden sm:inline">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
-            <Button variant="ghost" size="icon" onClick={handleZoomOut}>
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleZoomIn}>
-              <ZoomIn className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center">
+              <Button variant="ghost" size="icon" onClick={handleZoomOut}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleZoomIn}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Preview Window */}
-      <div className="relative w-full aspect-video bg-black/10 rounded-lg overflow-hidden">
+      <div className="relative w-full aspect-video bg-black/10 rounded-lg overflow-hidden mb-4">
         {selectedClip && clips.find(c => c.id === selectedClip)?.thumbnail ? (
           <img
             src={clips.find(c => c.id === selectedClip)?.thumbnail}
@@ -274,13 +276,13 @@ export function TimelineEditor({
 
       {/* Timeline */}
       <ScrollArea
-        className="h-[400px] border rounded-lg"
+        className="h-[300px] sm:h-[400px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
         <div
           ref={timelineRef}
           className="relative"
-          style={{ width: `${timelineWidth}px`, minHeight: "400px" }}
+          style={{ width: `${timelineWidth}px`, minHeight: "300px" }}
           onClick={handleTimelineClick}
           onMouseMove={resizingSide ? handleResizeMove : undefined}
           onMouseUp={resizingSide ? handleResizeEnd : undefined}
