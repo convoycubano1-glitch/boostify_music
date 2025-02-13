@@ -166,7 +166,7 @@ export function MusicVideoAI() {
   const generateVideoScript = async (lyrics: string) => {
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción completa. 
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción completa.
 
 Estilo Visual:
 - Mood: ${videoStyle.mood || 'Neutral'}
@@ -177,7 +177,8 @@ Estilo Visual:
 Letra de la canción:
 ${lyrics}
 
-IMPORTANTE: Responde SOLAMENTE con un objeto JSON válido que siga exactamente esta estructura:
+IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON que siga exactamente esta estructura, sin texto adicional:
+
 {
   "shots": [
     {
@@ -191,25 +192,26 @@ IMPORTANTE: Responde SOLAMENTE con un objeto JSON válido que siga exactamente e
   ]
 }
 
-Cada toma debe:
-1. Durar entre 1 y 5 segundos
-2. Tener un tipo de toma específico
-3. Incluir una descripción clara de la acción
-4. Tener un prompt detallado para generar la imagen
-5. Especificar una transición a la siguiente toma
+Reglas para las tomas:
+1. Cada toma debe durar entre 1 y 5 segundos
+2. Las tomas deben variar en tipo y ángulo
+3. Las transiciones deben ser variadas y apropiadas
+4. Los prompts deben ser detallados y específicos
+5. Las escenas deben estar sincronizadas con la letra
 
-El tiempo total debe cubrir toda la canción. Asegúrate de que haya suficientes tomas para mantener el video dinámico y visualmente interesante.`;
+El tiempo total debe cubrir toda la canción con suficientes tomas para mantener el video dinámico e interesante.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto. SOLO responde con JSON válido que siga el formato especificado. No incluyas explicaciones ni texto adicional."
+            content: "Eres un director de videos musicales experto. Responde SOLAMENTE con JSON válido, sin ningún texto adicional o explicaciones."
           },
           { role: "user", content: prompt }
         ],
-        response_format: { type: "json_object" }
+        temperature: 0.7,
+        max_tokens: 2000
       });
 
       console.log("OpenAI response:", response.choices[0].message.content);
@@ -219,7 +221,11 @@ El tiempo total debe cubrir toda la canción. Asegúrate de que haya suficientes
       }
 
       try {
-        const scriptResult = JSON.parse(response.choices[0].message.content);
+        // Intentar encontrar y parsear el JSON incluso si hay texto adicional
+        const content = response.choices[0].message.content;
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : content;
+        const scriptResult = JSON.parse(jsonString);
 
         if (!scriptResult.shots || !Array.isArray(scriptResult.shots) || scriptResult.shots.length === 0) {
           throw new Error("El formato del guion no es válido");
