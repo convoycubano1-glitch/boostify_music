@@ -863,12 +863,12 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   };
 
   // Función para generar el guion basado en los segmentos
-  const generatePromptForSegment = async (segment: TimelineItem, mood: string, style: string) => {
+  const generatePromptForSegment = async (segment: TimelineItem) => {
     try {
       const prompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
     - Tipo de plano: ${segment.shotType}
-    - Mood: ${mood}
-    - Estilo visual: ${style}
+    - Mood: ${videoStyle.mood}
+    - Estilo visual: ${videoStyle.characterStyle}
     - Intensidad visual: ${videoStyle.visualIntensity}%
     - Paleta de colores: ${videoStyle.colorPalette}
     - Duración del segmento: ${segment.duration / 1000} segundos
@@ -904,17 +904,22 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       return;
     }
 
+    if (!videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle) {
+      toast({
+        title: "Error",
+        description: "Debes configurar todos los aspectos del estilo antes de generar los prompts",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGeneratingScript(true);
     try {
       console.log("Generando prompts para los segmentos...");
       const segmentsWithPrompts = [...timelineItems];
 
       for (let i = 0; i < segmentsWithPrompts.length; i++) {
-        const prompt = await generatePromptForSegment(
-          segmentsWithPrompts[i],
-          videoStyle.mood || "neutral",
-          videoStyle.characterStyle || "realista"
-        );
+        const prompt = await generatePromptForSegment(segmentsWithPrompts[i]);
         segmentsWithPrompts[i] = {
           ...segmentsWithPrompts[i],
           imagePrompt: prompt
@@ -1033,32 +1038,12 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             </RadioGroup>
           </div>
 
-          {/* Paso 3: Generar Prompts */}
+          {/* Paso 3: Estilo y Prompts */}
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">3. Generar Prompts</Label>
-            <Button
-              onClick={generatePromptsForSegments}
-              disabled={timelineItems.length === 0 || isGeneratingScript || currentStep < 3}
-              className="w-full"
-            >
-              {isGeneratingScript ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando prompts...
-                </>
-              ) : (
-                <>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Generar Prompts para Escenas
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Paso 4: Estilo del Video */}
-          <div className="border rounded-lg p-4">
-            <Label className="text-lg font-semibold mb-4">4. Estilo del Video</Label>
             <div className="space-y-4">
+              <h3 className="text-sm font-medium">Configura el estilo antes de generar los prompts:</h3>
+
               <div className="space-y-2">
                 <Label>Mood</Label>
                 <Select
@@ -1117,7 +1102,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               </div>
 
               <div className="space-y-2">
-                <Label>Intensidad Visual</Label>
+                <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
                 <Slider
                   min={0}
                   max={100}
@@ -1126,21 +1111,43 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
                 />
               </div>
+
+              <Button
+                onClick={generatePromptsForSegments}
+                disabled={
+                  timelineItems.length === 0 || 
+                  isGeneratingScript || 
+                  currentStep < 3 ||
+                  !videoStyle.mood ||
+                  !videoStyle.colorPalette ||
+                  !videoStyle.characterStyle
+                }
+                className="w-full mt-4"
+              >
+                {isGeneratingScript ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando prompts...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Generar Prompts con Estilo
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
-          {/* Paso 5: Generar Imágenes */}
+          {/* Paso 4: Generar Imágenes */}
           <div className="border rounded-lg p-4">
-            <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
+            <Label className="text-lg font-semibold mb-4">4. Generar Imágenes</Label>
             <Button
               onClick={generateShotImages}
               disabled={
                 !timelineItems.length ||
                 isGeneratingShots ||
-                currentStep < 4 ||
-                !videoStyle.mood ||
-                !videoStyle.colorPalette ||
-                !videoStyle.characterStyle
+                currentStep < 4
               }
               className="w-full"
             >
