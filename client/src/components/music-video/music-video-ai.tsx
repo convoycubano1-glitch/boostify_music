@@ -1145,10 +1145,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
                 </div>
 
                 <Button 
-                  onClick={() => {
-                    setShowStyleDialog(false);
-                    setCurrentStep(5); // Solo avanzar al paso 5 cuando se complete la configuración
-                  }}
+                  onClick={() => setShowStyleDialog(false)}
                   className="w-full"
                 >
                   Guardar Configuración
@@ -1162,13 +1159,13 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
             <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
             <Button
               onClick={generateShotImages}
-              disabled={currentStep < 5 || !videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle}
+              disabled={!videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle || currentStep < 4}
               className="w-full"
             >
               {isGeneratingShots ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando imágenes...
+                  Generando...
                 </>
               ) : (
                 <>
