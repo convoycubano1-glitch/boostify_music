@@ -656,21 +656,46 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     return segments;
   };
 
-  // Función para sincronizar el audio con el timeline
+  // Modificar la función de sincronización para que sea más eficiente
   const syncAudioWithTimeline = async () => {
-    if (!audioBuffer) return;
+    if (!audioBuffer || timelineItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "Primero genera las imágenes antes de sincronizar con el audio",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const segments = await detectBeatsAndCreateSegments();
-      if (segments && segments.length > 0) {
-        setTimelineItems(segments);
-        generateTimelineItems(segments);
+      const channelData = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const duration = audioBuffer.duration;
 
-        toast({
-          title: "Éxito",
-          description: `Se detectaron ${segments.length} segmentos en el audio`,
-        });
-      }
+      // Calcular número de segmentos basado en las imágenes existentes
+      const numberOfSegments = timelineItems.length;
+      const segmentDuration = duration / numberOfSegments;
+
+      // Crear nuevos segmentos manteniendo las imágenes existentes
+      const updatedItems = timelineItems.map((item, index) => {
+        const startTime = index * segmentDuration * 1000;
+        const endTime = (index + 1) * segmentDuration * 1000;
+
+        return {
+          ...item,
+          start_time: startTime,
+          end_time: endTime,
+          duration: endTime - startTime
+        };
+      });
+
+      setTimelineItems(updatedItems);
+
+      toast({
+        title: "Éxito",
+        description: `Audio sincronizado con ${numberOfSegments} segmentos`,
+      });
+
     } catch (error) {
       console.error("Error sincronizando audio:", error);
       toast({
@@ -710,18 +735,23 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 className="flex-1"
               />
               <Button
-                onClick={syncAudioWithTimeline}
-                disabled={!selectedFile || isTranscribing}
+                onClick={timelineItems.length > 0 ? syncAudioWithTimeline : generateShotImages}
+                disabled={!selectedFile || isGeneratingShots}
               >
-                {isTranscribing ? (
+                {isGeneratingShots ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Procesando...
+                    Generando...
+                  </>
+                ) : timelineItems.length > 0 ? (
+                  <>
+                    <Music2 className="mr-2 h-4 w-4" />
+                    Sincronizar con Audio
                   </>
                 ) : (
                   <>
-                    <Music2 className="mr-2 h-4 w-4" />
-                    Sincronizar Audio
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Generar Imágenes
                   </>
                 )}
               </Button>
