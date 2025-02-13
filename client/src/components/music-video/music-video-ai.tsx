@@ -169,91 +169,82 @@ export function MusicVideoAI() {
       const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción completa. 
 
 Estilo Visual:
-- Mood: ${videoStyle.mood}
-- Paleta de Color: ${videoStyle.colorPalette}
-- Estilo de Personajes/Escenas: ${videoStyle.characterStyle}
+- Mood: ${videoStyle.mood || 'Neutral'}
+- Paleta de Color: ${videoStyle.colorPalette || 'Natural'}
+- Estilo de Personajes/Escenas: ${videoStyle.characterStyle || 'Realista'}
 - Intensidad Visual: ${videoStyle.visualIntensity}%
 
 Letra de la canción:
 ${lyrics}
 
-Crea una secuencia dinámica de tomas que cubra toda la canción, con las siguientes especificaciones:
-1. Cada toma debe durar entre 1 y 5 segundos
-2. Varía los tipos de tomas (close-up, medium shot, wide shot, tracking shot, drone shot, etc.)
-3. Incluye transiciones y movimientos de cámara
-4. Sincroniza las tomas con momentos clave de la letra
-5. Asegura coherencia visual mientras mantienes dinamismo
-
-Para cada toma, incluye:
-1. Tiempo exacto en segundos desde el inicio
-2. Duración específica de la toma (1-5 segundos)
-3. Tipo de toma y movimiento de cámara
-4. Descripción detallada de la acción y elementos visuales
-5. Un prompt detallado para IA de generación de imágenes
-
-Para cada prompt de imagen, especifica:
-- Estilo visual (mood, paleta de color)
-- Composición y ángulo de cámara
-- Iluminación y atmósfera
-- Elementos principales y secundarios
-- Referencias específicas a la letra en ese momento
-
-Estructura el resultado en formato JSON:
+IMPORTANTE: Responde SOLAMENTE con un objeto JSON válido que siga exactamente esta estructura:
 {
   "shots": [
     {
-      "time": "segundos desde el inicio",
-      "duration": "duración en segundos",
-      "shotType": "tipo de toma y movimiento",
-      "description": "descripción detallada",
-      "imagePrompt": "prompt detallado para IA",
-      "transition": "tipo de transición a la siguiente toma"
+      "time": número de segundos desde el inicio,
+      "duration": número entre 1 y 5,
+      "shotType": "tipo de toma (close-up, medium shot, wide shot, etc)",
+      "description": "descripción detallada de la escena",
+      "imagePrompt": "prompt detallado para IA que describa la escena",
+      "transition": "corte directo, fade, dissolve, etc"
     }
   ]
-}`;
+}
+
+Cada toma debe:
+1. Durar entre 1 y 5 segundos
+2. Tener un tipo de toma específico
+3. Incluir una descripción clara de la acción
+4. Tener un prompt detallado para generar la imagen
+5. Especificar una transición a la siguiente toma
+
+El tiempo total debe cubrir toda la canción. Asegúrate de que haya suficientes tomas para mantener el video dinámico y visualmente interesante.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto especializado en crear secuencias visuales dinámicas y profesionales. Tus guiones deben mantener un ritmo visual coherente con transiciones fluidas entre tomas."
+            content: "Eres un director de videos musicales experto. SOLO responde con JSON válido que siga el formato especificado. No incluyas explicaciones ni texto adicional."
           },
           { role: "user", content: prompt }
-        ]
+        ],
+        response_format: { type: "json_object" }
       });
 
-      if (response.choices[0].message.content) {
-        try {
-          const scriptResult = JSON.parse(response.choices[0].message.content);
-          if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
-            generateTimelineItems(scriptResult.shots);
-            setScriptContent(JSON.stringify(scriptResult, null, 2));
-          }
-        } catch (parseError) {
-          const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const scriptResult = JSON.parse(jsonMatch[0]);
-            if (scriptResult.shots && Array.isArray(scriptResult.shots)) {
-              generateTimelineItems(scriptResult.shots);
-              setScriptContent(JSON.stringify(scriptResult, null, 2));
-            }
-          } else {
-            console.error("Error parsing JSON:", parseError);
-            toast({
-              title: "Error",
-              description: "Error al procesar la respuesta de la IA. Intenta de nuevo.",
-              variant: "destructive"
-            });
-          }
-        }
+      console.log("OpenAI response:", response.choices[0].message.content);
+
+      if (!response.choices[0].message.content) {
+        throw new Error("No se recibió respuesta del modelo");
       }
+
+      try {
+        const scriptResult = JSON.parse(response.choices[0].message.content);
+
+        if (!scriptResult.shots || !Array.isArray(scriptResult.shots) || scriptResult.shots.length === 0) {
+          throw new Error("El formato del guion no es válido");
+        }
+
+        generateTimelineItems(scriptResult.shots);
+        setScriptContent(JSON.stringify(scriptResult, null, 2));
+
+        toast({
+          title: "Éxito",
+          description: `Guion generado con ${scriptResult.shots.length} tomas`,
+        });
+
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        console.log("Raw response:", response.choices[0].message.content);
+        throw new Error("Error al procesar la respuesta de la IA");
+      }
+
     } catch (error) {
       console.error("Error generando el guion:", error);
       toast({
         title: "Error",
-        description: "Error al generar el guion del video.",
-        variant: "destructive"
+        description: error instanceof Error ? error.message : "Error al generar el guion del video",
+        variant: "destructive",
       });
     } finally {
       setIsGeneratingScript(false);
