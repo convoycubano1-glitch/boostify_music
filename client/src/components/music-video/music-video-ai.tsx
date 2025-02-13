@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import Timeline from "react-calendar-timeline";
+import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "@/components/ui/slider";
 import Editor from "@monaco-editor/react";
 import {
@@ -548,6 +548,41 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     </div>
   ), [currentTime, selectedShot]);
 
+  // Convertir timelineItems a formato de clips para el nuevo editor
+  const clips: TimelineClip[] = timelineItems.map(item => ({
+    id: item.id,
+    start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
+    duration: item.duration / 1000,
+    type: 'image',
+    thumbnail: item.generatedImage,
+    title: item.shotType,
+    description: item.description
+  }));
+
+  // Calcular duración total
+  const totalDuration = clips.reduce((acc, clip) => Math.max(acc, clip.start + clip.duration), 0);
+
+  // Función para actualizar el tiempo actual
+  const handleTimeUpdate = (time: number) => {
+    const baseTime = timelineItems[0]?.start_time || 0;
+    setCurrentTime(baseTime + time * 1000);
+  };
+
+  // Función para actualizar clips
+  const handleClipUpdate = (clipId: number, updates: Partial<TimelineClip>) => {
+    const updatedItems = timelineItems.map(item => {
+      if (item.id === clipId) {
+        return {
+          ...item,
+          start_time: timelineItems[0].start_time + updates.start! * 1000,
+          duration: updates.duration! * 1000,
+        };
+      }
+      return item;
+    });
+    setTimelineItems(updatedItems);
+  };
+
   return (
     <Card className="p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -716,70 +751,18 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <Label className="text-lg font-semibold">5. Secuencia de Video</Label>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleZoomOut}>
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  <Button variant="outline" size="sm" onClick={handleZoomIn}>
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
 
-              {/* Timeline Controls */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Button variant="ghost" size="sm" onClick={handleReset}>
-                  <SkipBack className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleSkipBackward}>
-                  <Rewind className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={togglePlayback}
-                  className="w-20"
-                >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleSkipForward}>
-                  <FastForward className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Timeline */}
-              <div className="relative">
-                <Timeline
-                  groups={groups}
-                  items={timelineItems}
-                  defaultTimeStart={visibleTimeStart}
-                  defaultTimeEnd={visibleTimeEnd}
-                  visibleTimeStart={visibleTimeStart}
-                  visibleTimeEnd={visibleTimeEnd}
-                  onTimeChange={handleTimeChange}
-                  canMove={false}
-                  canResize={false}
-                  stackItems
-                  itemHeightRatio={0.8}
-                  itemRenderer={itemRenderer}
-                  groupRenderer={({ group }) => (
-                    <div className="px-4 py-2">
-                      <span className="font-medium text-sm">{group.title}</span>
-                    </div>
-                  )}
-                />
-
-                <div
-                  className="absolute top-0 bottom-0 w-px bg-orange-500 z-50 pointer-events-none"
-                  style={{
-                    left: `${((currentTime - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart)) * 100}%`,
-                    display: timelineItems.length > 0 ? 'block' : 'none'
-                  }}
-                />
-              </div>
+              <TimelineEditor
+                clips={clips}
+                currentTime={(currentTime - timelineItems[0]?.start_time || 0) / 1000}
+                duration={totalDuration}
+                onTimeUpdate={handleTimeUpdate}
+                onClipUpdate={handleClipUpdate}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                isPlaying={isPlaying}
+              />
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-2 mt-4">
