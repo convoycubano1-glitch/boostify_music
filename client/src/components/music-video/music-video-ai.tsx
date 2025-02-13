@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
-  ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw
+  ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Palette
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -1065,10 +1065,12 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
               disabled={currentStep < 4}
               className="w-full"
             >
+              <Palette className="mr-2 h-4 w-4" />
               Configurar Estilo del Video
             </Button>
           </div>
 
+          {/* Dialog para configurar el estilo */}
           <Dialog open={showStyleDialog} onOpenChange={setShowStyleDialog}>
             <DialogContent>
               <DialogHeader>
@@ -1141,6 +1143,16 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
                     className="mt-2"
                   />
                 </div>
+
+                <Button 
+                  onClick={() => {
+                    setShowStyleDialog(false);
+                    setCurrentStep(5); // Solo avanzar al paso 5 cuando se complete la configuración
+                  }}
+                  className="w-full"
+                >
+                  Guardar Configuración
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -1150,7 +1162,7 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
             <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
             <Button
               onClick={generateShotImages}
-              disabled={!timelineItems.length || isGeneratingShots || currentStep < 4}
+              disabled={currentStep < 5 || !videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle}
               className="w-full"
             >
               {isGeneratingShots ? (
@@ -1161,11 +1173,12 @@ Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicacione
               ) : (
                 <>
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  Generar Imágenes para cada Escena
+                  Generar Imágenes para el Video
                 </>
               )}
             </Button>
           </div>
+
         </div>
 
         {/* Columna Derecha - Timeline */}
