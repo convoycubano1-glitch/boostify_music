@@ -985,151 +985,277 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   // Actualizar la interfaz para reflejar los pasos separados
   return (
     <div className="container py-6 space-y-8">
-      <div className="grid gap-6">
-        {/* Upload Section */}
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Music2 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold">Subir Audio</h2>
-              <p className="text-sm text-muted-foreground">
-                Sube un archivo de audio para comenzar
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={handleFileChange}
-              className="hidden"
-              id="audio-upload"
-            />
-            <label
-              htmlFor="audio-upload"
-              className="block w-full p-12 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-accent transition-colors"
-            >
-              <Music2 className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {selectedFile ? selectedFile.name : "Arrastra un archivo o haz clic para seleccionar"}
-              </p>
-            </label>
-          </div>
-        </Card>
-
-        {/* Timeline and Editor Section */}
-        <div className="grid gap-6">
-          {/* Style Configuration */}
-          <Card className="p-6">
-            <Label className="text-lg font-semibold mb-4">3. Estilo Visual</Label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Mood</Label>
-                <Select
-                  value={videoStyle.mood}
-                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar mood" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {videoStyles.moods.map((mood) => (
-                      <SelectItem key={mood} value={mood}>
-                        {mood}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Paleta de Colores</Label>
-                <Select
-                  value={videoStyle.colorPalette}
-                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar paleta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {videoStyles.colorPalettes.map((palette) => (
-                      <SelectItem key={palette} value={palette}>
-                        {palette}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Estilo de Personajes</Label>
-                <Select
-                  value={videoStyle.characterStyle}
-                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar estilo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {videoStyles.characterStyles.map((style) => (
-                      <SelectItem key={style} value={style}>
-                        {style}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
-                <Slider
-                  value={[videoStyle.visualIntensity]}
-                  onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                  max={100}
-                  step={1}
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Timeline Editor */}
-          <TimelineEditor
-            clips={clips}
-            currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
-            duration={totalDuration}
-            audioBuffer={audioBuffer}
-            onTimeUpdate={handleTimeUpdate}
-            onClipUpdate={handleClipUpdate}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            isPlaying={isPlaying}
-            onRegenerateImage={(clipId) => {
-              const item = timelineItems.find(item => item.id === clipId);
-              if (item) {
-                regenerateImage(item);
-              }
-            }}
-          />
-
-          {/* Video Generator */}
-          <VideoGenerator
-            clips={clips}
-            duration={audioBuffer?.duration || 0}
-            isGenerating={isGeneratingVideo}
-            onGenerate={generateVideo}
-          />
-
-          {/* Analysis Dashboard */}
-          <AnalyticsDashboard
-            clips={clips}
-            audioBuffer={audioBuffer}
-            duration={totalDuration}
-          />
+      <Card className="p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+          <Video className="h-6 w-6 text-orange-500" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold">Creador de Videos Musicales AI</h2>
+          <p className="text-sm text-muted-foreground">
+            Transforma tu música en experiencias visuales
+          </p>
         </div>
       </div>
+
+      {/* Layout Principal */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Columna Izquierda - Controles */}
+        <div className="space-y-6 order-2 lg:order-1">
+          {/* Paso 1: Subida de Audio */}
+          <div className="border rounded-lg p-4">
+            <Label className="text-lg font-semibold mb-4">1. Subir Audio</Label>
+            <div className="space-y-4">
+              <Input
+                type="file"
+                accept="audio/*"
+                onChange={handleFileChange}
+                disabled={isTranscribing}
+              />
+              {selectedFile && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Music2 className="h-4 w-4" />
+                  <span>{selectedFile.name}</span>
+                </div>
+              )}
+              {isTranscribing && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Transcribiendo audio...</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Resto de los pasos con clases responsive */}
+          <div className="space-y-6">
+            {/* Paso 2: Transcripción */}
+            <div className="border rounded-lg p-4">
+              <Label className="text-lg font-semibold mb-4">2. Transcripción</Label>
+              <div className="space-y-4">
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  <pre className="text-sm whitespace-pre-wrap">{transcription || "Sin transcripción"}</pre>
+                </ScrollArea>
+              </div>
+            </div>
+
+            {/* Paso 3: Estilo Visual */}
+            <div className="border rounded-lg p-4">
+              <Label className="text-lg font-semibold mb-4">3. Estilo Visual</Label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Mood</Label>
+                  <Select
+                    value={videoStyle.mood}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar mood" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoStyles.moods.map((mood) => (
+                        <SelectItem key={mood} value={mood}>
+                          {mood}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Paleta de Colores</Label>
+                  <Select
+                    value={videoStyle.colorPalette}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar paleta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoStyles.colorPalettes.map((palette) => (
+                        <SelectItem key={palette} value={palette}>
+                          {palette}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Estilo de Personajes</Label>
+                  <Select
+                    value={videoStyle.characterStyle}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar estilo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoStyles.characterStyles.map((style) => (
+                        <SelectItem key={style} value={style}>
+                          {style}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                  <Slider
+                    value={[videoStyle.visualIntensity]}
+                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Paso 4: Sincronizar Beats */}
+            <div className="border rounded-lg p-4">
+              <Label className="text-lg font-semibold mb-4">4. Sincronizar Beats</Label>
+              <Button
+                onClick={syncAudioWithTimeline}
+                disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
+                className="w-full"
+              >
+                {isGeneratingShots ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Detectando cortes...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Detectar Cortes Musicales
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="border rounded-lg p-4 mt-4">
+              <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
+              <RadioGroup
+                value={selectedEditingStyle}
+                onValueChange={setSelectedEditingStyle}
+                className="grid grid-cols-2 gap-4"
+              >
+                {editingStyles.map((style) => (
+                  <div key={style.id} className="flex items-start space-x-3">
+                    <RadioGroupItem value={style.id} id={style.id} />
+                    <div className="grid gap-1.5">
+                      <Label htmlFor={style.id} className="font-medium">
+                        {style.name}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {style.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+
+            {/* Paso 5: Generar Prompts */}
+            <div className="border rounded-lg p-4">
+              <Label className="text-lg font-semibold mb-4">5. Generar Prompts</Label>
+              <Button
+                onClick={generatePromptsForSegments}
+                disabled={
+                  timelineItems.length === 0 ||
+                  isGeneratingScript ||
+                  currentStep < 3 ||
+                  !videoStyle.mood ||
+                  !videoStyle.colorPalette ||
+                  !videoStyle.characterStyle
+                }
+                className="w-full mt-4"
+              >
+                {isGeneratingScript ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando prompts...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Generar Prompts con Estilo
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Paso 6: Generar Imágenes */}
+            <div className="border rounded-lg p-4">
+              <Label className="text-lg font-semibold mb-4">6. Generar Imágenes</Label>
+              <Button
+                onClick={generateShotImages}
+                disabled={
+                  !timelineItems.length ||
+                  isGeneratingShots ||
+                  currentStep < 4
+                }
+                className="w-full"
+              >
+                {isGeneratingShots ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando imágenes...
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Generar Imágenes
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Paso 7: Generación de Video */}
+            <div className="mt-6">
+              <VideoGenerator
+                clips={timelineItems}
+                duration={audioBuffer?.duration || 0}
+                isGenerating={isGeneratingVideo}
+                onGenerate={generateVideo}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Columna Derecha - Timeline y Preview */}
+        <div className="lg:order-2 order-1">
+          <div className="sticky top-4 space-y-4">
+            <div className="space-y-4">
+              <TimelineEditor
+                clips={clips}
+                currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
+                duration={totalDuration}
+                audioBuffer={audioBuffer}
+                onTimeUpdate={handleTimeUpdate}
+                onClipUpdate={handleClipUpdate}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                isPlaying={isPlaying}
+                onRegenerateImage={(clipId) => {
+                  const item = timelineItems.find(item => item.id === clipId);
+                  if (item) {
+                    regenerateImage(item);
+                  }
+                }}
+              />
+
+              <AnalyticsDashboard
+                clips={clips}
+                audioBuffer={audioBuffer}
+                duration={totalDuration}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
     </div>
   );
 }
