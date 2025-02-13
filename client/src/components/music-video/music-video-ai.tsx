@@ -308,7 +308,7 @@ Genera un prompt específico para cada segmento, considerando:
 - El tipo de plano asignado
 - La duración del segmento
 
-RESPONDE SOLO CON EL SIGUIENTE FORMATO JSON:
+Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 {
   "segments": [
     {
@@ -326,46 +326,65 @@ RESPONDE SOLO CON EL SIGUIENTE FORMATO JSON:
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto. Responde SOLAMENTE con JSON válido sin texto adicional."
+            content: "Eres un director de videos musicales experto. IMPORTANTE: Responde SOLAMENTE con el objeto JSON solicitado, sin ningún texto adicional o explicaciones."
           },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        response_format: { type: "json_object" }
+        max_tokens: 2000
       });
 
       if (!response.choices[0].message.content) {
         throw new Error("No se recibió respuesta del modelo");
       }
 
-      const scriptResult = JSON.parse(response.choices[0].message.content);
+      try {
+        // Intentar encontrar y parsear el JSON incluso si hay texto adicional
+        const content = response.choices[0].message.content;
+        console.log("Respuesta completa del modelo:", content); // Log para debugging
 
-      if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
-        throw new Error("El formato del guion no es válido");
-      }
+        // Limpiar la respuesta de cualquier texto adicional
+        const jsonContent = content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
+        console.log("JSON extraído:", jsonContent); // Log para debugging
 
-      // Actualizar los items existentes con los nuevos prompts y descripciones
-      const updatedItems = timelineItems.map(item => {
-        const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
-        if (scriptSegment) {
-          return {
-            ...item,
-            description: scriptSegment.description,
-            imagePrompt: scriptSegment.imagePrompt,
-            shotType: scriptSegment.shotType,
-            transition: scriptSegment.transition
-          };
+        const scriptResult = JSON.parse(jsonContent);
+        console.log("JSON parseado:", scriptResult); // Log para debugging
+
+        if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
+          throw new Error("El formato del guion no es válido");
         }
-        return item;
-      });
 
-      setTimelineItems(updatedItems);
-      setCurrentStep(4);
+        // Actualizar los items existentes con los nuevos prompts y descripciones
+        const updatedItems = timelineItems.map(item => {
+          const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
+          if (scriptSegment) {
+            return {
+              ...item,
+              description: scriptSegment.description,
+              imagePrompt: scriptSegment.imagePrompt,
+              shotType: scriptSegment.shotType,
+              transition: scriptSegment.transition
+            };
+          }
+          return item;
+        });
 
-      toast({
-        title: "Éxito",
-        description: "Guion generado correctamente",
-      });
+        setTimelineItems(updatedItems);
+        setCurrentStep(4);
+
+        toast({
+          title: "Éxito",
+          description: "Guion generado correctamente",
+        });
+
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        toast({
+          title: "Error",
+          description: "Error al procesar la respuesta. Por favor intenta de nuevo.",
+          variant: "destructive",
+        });
+      }
 
     } catch (error) {
       console.error("Error generando el guion:", error);
@@ -953,7 +972,7 @@ RESPONDE SOLO CON EL SIGUIENTE FORMATO JSON:
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">2. Sincronizar Beats</Label>
             <Button
-              onClick={syncAudioWithTimeline}
+              onClick={syncAudioWithTimelineAndGeneratePrompts}
               disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
               className="w-full"
             >
@@ -965,7 +984,7 @@ RESPONDE SOLO CON EL SIGUIENTE FORMATO JSON:
               ) : (
                 <>
                   <RefreshCcw className="mr-2 h-4 w-4" />
-                  Detectar Cortes Musicales
+                  Detectar Cortes Musicales y Generar Prompts
                 </>
               )}
             </Button>
