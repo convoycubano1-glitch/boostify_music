@@ -205,6 +205,7 @@ export function TimelineEditor({
             variant="ghost"
             size="icon"
             onClick={() => onTimeUpdate(0)}
+            disabled={clips.length === 0}
           >
             <SkipBack className="h-4 w-4" />
           </Button>
@@ -212,6 +213,7 @@ export function TimelineEditor({
             variant="ghost"
             size="icon"
             onClick={isPlaying ? onPause : onPlay}
+            disabled={clips.length === 0}
           >
             {isPlaying ? (
               <Pause className="h-4 w-4" />
@@ -223,6 +225,7 @@ export function TimelineEditor({
             variant="ghost"
             size="icon"
             onClick={() => onTimeUpdate(duration)}
+            disabled={clips.length === 0}
           >
             <SkipForward className="h-4 w-4" />
           </Button>
@@ -273,182 +276,190 @@ export function TimelineEditor({
         className="h-[300px] sm:h-[400px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
-        <div
-          ref={timelineRef}
-          className="relative"
-          style={{ width: `${timelineWidth}px`, minHeight: "300px" }}
-          onClick={handleTimelineClick}
-          onMouseMove={resizingSide ? handleResizeMove : undefined}
-          onMouseUp={resizingSide ? handleResizeEnd : undefined}
-          onMouseLeave={resizingSide ? handleResizeEnd : undefined}
-        >
-          <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
-            {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
-              <div
-                key={i}
-                className="border-l h-full flex items-center justify-center text-xs text-muted-foreground"
-                style={{ width: `${timeToPixels(1)}px` }}
-              >
-                {formatTimecode(i)}
-              </div>
-            ))}
+        {clips.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <Music className="h-12 w-12 mb-4" />
+            <p className="text-lg font-medium">No hay clips en el timeline</p>
+            <p className="text-sm">Utiliza "Detectar Cortes Musicales" para generar los clips automáticamente</p>
           </div>
-
-          {waveformData.length > 0 && (
-            <div
-              className="absolute left-0 right-0 h-24 mt-8"
-              onMouseEnter={() => setIsWaveformHovered(true)}
-              onMouseLeave={() => {
-                setIsWaveformHovered(false);
-                setHoveredTime(null);
-              }}
-              onMouseMove={handleWaveformMouseMove}
-            >
-              <div className="relative w-full h-full">
-                <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 to-orange-500/10" />
-                <svg
-                  width="100%"
-                  height="100%"
-                  preserveAspectRatio="none"
-                  className="relative z-10"
-                >
-                  <defs>
-                    <linearGradient id="waveformGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.6" />
-                      <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0.2" />
-                    </linearGradient>
-                  </defs>
-
-                  <path
-                    d={`M 0 ${48} ${waveformData.map((value, i) =>
-                      `L ${(i / waveformData.length) * timelineWidth} ${48 - value.max * 48}`
-                    ).join(' ')}`}
-                    stroke="url(#waveformGradient)"
-                    strokeWidth="2"
-                    fill="none"
-                  />
-
-                  <path
-                    d={`M 0 ${48} ${waveformData.map((value, i) =>
-                      `L ${(i / waveformData.length) * timelineWidth} ${48 + value.min * 48}`
-                    ).join(' ')}`}
-                    stroke="url(#waveformGradient)"
-                    strokeWidth="2"
-                    fill="none"
-                  />
-                </svg>
-
-                {isWaveformHovered && hoveredTime !== null && (
-                  <div
-                    className="absolute top-0 bottom-0 w-px bg-orange-500/50"
-                    style={{
-                      left: `${timeToPixels(hoveredTime)}px`,
-                      pointerEvents: 'none'
-                    }}
-                  >
-                    <div className="absolute -top-6 -translate-x-1/2 px-2 py-1 rounded bg-orange-500 text-white text-xs">
-                      {formatTimecode(hoveredTime)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-36">
-            <AnimatePresence>
-              {clips.map((clip) => (
-                <motion.div
-                  key={clip.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={cn(
-                    "absolute h-32 rounded-md overflow-hidden border cursor-pointer group",
-                    selectedClip === clip.id ? "ring-2 ring-primary" : "",
-                    isDragging ? "cursor-grabbing" : "cursor-grab"
-                  )}
-                  style={{
-                    left: `${timeToPixels(clip.start)}px`,
-                    width: `${timeToPixels(clip.duration)}px`,
-                    top: '8px'
-                  }}
-                  draggable
-                  onDragStart={(e) => handleClipDragStart(clip.id, e)}
-                  onDragEnd={handleClipDragEnd}
-                  onDoubleClick={() => handleClipDoubleClick(clip)}
-                >
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
-                    onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
-                  />
-                  <div
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
-                    onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10" />
-
-                  {clip.thumbnail && (
-                    <img
-                      src={clip.thumbnail}
-                      alt={clip.title}
-                      className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-75 transition-opacity"
-                    />
-                  )}
-
-                  <div className="absolute inset-0 p-2 flex flex-col justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ImageIcon className="h-4 w-4" />
-                          <span className="text-xs font-medium">
-                            {clip.shotType || 'Sin tipo de plano'}
-                          </span>
-                        </div>
-                        {onRegenerateImage && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => onRegenerateImage(clip.id)}
-                          >
-                            <RefreshCw className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-xs text-white/90 line-clamp-2">
-                        {clip.imagePrompt || clip.description || 'Sin descripción'}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {formatTimecode(clip.duration)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
-          <motion.div
-            animate={playheadAnimation}
-            className="absolute top-0 bottom-0 w-px bg-primary z-50"
-            initial={{ x: 0 }}
+        ) : (
+          <div
+            ref={timelineRef}
+            className="relative"
+            style={{ width: `${timelineWidth}px`, minHeight: "300px" }}
+            onClick={handleTimelineClick}
+            onMouseMove={resizingSide ? handleResizeMove : undefined}
+            onMouseUp={resizingSide ? handleResizeEnd : undefined}
+            onMouseLeave={resizingSide ? handleResizeEnd : undefined}
           >
-            <div className="absolute -top-1 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
-            <div className="absolute bottom-0 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
-          </motion.div>
-        </div>
+            <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
+              {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
+                <div
+                  key={i}
+                  className="border-l h-full flex items-center justify-center text-xs text-muted-foreground"
+                  style={{ width: `${timeToPixels(1)}px` }}
+                >
+                  {formatTimecode(i)}
+                </div>
+              ))}
+            </div>
+
+            {waveformData.length > 0 && (
+              <div
+                className="absolute left-0 right-0 h-24 mt-8"
+                onMouseEnter={() => setIsWaveformHovered(true)}
+                onMouseLeave={() => {
+                  setIsWaveformHovered(false);
+                  setHoveredTime(null);
+                }}
+                onMouseMove={handleWaveformMouseMove}
+              >
+                <div className="relative w-full h-full">
+                  <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 to-orange-500/10" />
+                  <svg
+                    width="100%"
+                    height="100%"
+                    preserveAspectRatio="none"
+                    className="relative z-10"
+                  >
+                    <defs>
+                      <linearGradient id="waveformGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.6" />
+                        <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0.2" />
+                      </linearGradient>
+                    </defs>
+
+                    <path
+                      d={`M 0 ${48} ${waveformData.map((value, i) =>
+                        `L ${(i / waveformData.length) * timelineWidth} ${48 - value.max * 48}`
+                      ).join(' ')}`}
+                      stroke="url(#waveformGradient)"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+
+                    <path
+                      d={`M 0 ${48} ${waveformData.map((value, i) =>
+                        `L ${(i / waveformData.length) * timelineWidth} ${48 + value.min * 48}`
+                      ).join(' ')}`}
+                      stroke="url(#waveformGradient)"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+                  </svg>
+
+                  {isWaveformHovered && hoveredTime !== null && (
+                    <div
+                      className="absolute top-0 bottom-0 w-px bg-orange-500/50"
+                      style={{
+                        left: `${timeToPixels(hoveredTime)}px`,
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      <div className="absolute -top-6 -translate-x-1/2 px-2 py-1 rounded bg-orange-500 text-white text-xs">
+                        {formatTimecode(hoveredTime)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-36">
+              <AnimatePresence>
+                {clips.map((clip) => (
+                  <motion.div
+                    key={clip.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className={cn(
+                      "absolute h-32 rounded-md overflow-hidden border cursor-pointer group",
+                      selectedClip === clip.id ? "ring-2 ring-primary" : "",
+                      isDragging ? "cursor-grabbing" : "cursor-grab"
+                    )}
+                    style={{
+                      left: `${timeToPixels(clip.start)}px`,
+                      width: `${timeToPixels(clip.duration)}px`,
+                      top: '8px'
+                    }}
+                    draggable
+                    onDragStart={(e) => handleClipDragStart(clip.id, e)}
+                    onDragEnd={handleClipDragEnd}
+                    onDoubleClick={() => handleClipDoubleClick(clip)}
+                  >
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
+                      onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
+                    />
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
+                      onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10" />
+
+                    {clip.thumbnail && (
+                      <img
+                        src={clip.thumbnail}
+                        alt={clip.title}
+                        className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-75 transition-opacity"
+                      />
+                    )}
+
+                    <div className="absolute inset-0 p-2 flex flex-col justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <ImageIcon className="h-4 w-4" />
+                            <span className="text-xs font-medium">
+                              {clip.shotType || 'Sin tipo de plano'}
+                            </span>
+                          </div>
+                          {onRegenerateImage && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => onRegenerateImage(clip.id)}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-xs text-white/90 line-clamp-2">
+                          {clip.imagePrompt || clip.description || 'Sin descripción'}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {formatTimecode(clip.duration)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            <motion.div
+              animate={playheadAnimation}
+              className="absolute top-0 bottom-0 w-px bg-primary z-50"
+              initial={{ x: 0 }}
+            >
+              <div className="absolute -top-1 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
+              <div className="absolute bottom-0 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
+            </motion.div>
+          </div>
+        )}
       </ScrollArea>
 
       <Dialog open={selectedImagePreview !== null} onOpenChange={() => setSelectedImagePreview(null)}>
