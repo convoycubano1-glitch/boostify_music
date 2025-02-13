@@ -1,10 +1,18 @@
-import { db } from "./firebase-admin";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import * as fal from "@fal-ai/serverless-client";
 
 // Configure fal.ai with environment variable
 fal.config({
   credentials: process.env.FAL_API_KEY,
 });
+
+// Initialize Firebase Admin
+const app = initializeApp({
+  credential: cert(JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS || '{}')),
+});
+
+const db = getFirestore(app);
 
 const sampleDirectors = [
   {
@@ -93,8 +101,9 @@ const generateDirectorImage = async (prompt: string): Promise<string> => {
       },
     });
 
-    if (result?.images?.[0]?.url) {
-      return result.images[0].url;
+    const imageUrl = result?.images?.[0]?.url;
+    if (imageUrl) {
+      return imageUrl;
     }
 
     console.log("No image URL in response:", result);

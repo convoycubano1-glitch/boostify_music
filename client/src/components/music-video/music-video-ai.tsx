@@ -17,14 +17,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/firebase"; 
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { VideoGenerator } from "./video-generator"; // Added import
+import { VideoGenerator } from "./video-generator";
 import { ArtistCustomization } from "./artist-customization";
 import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
-import { LipSyncIntegration } from "./lip-sync-integration"; // Added import
+import { LipSyncIntegration } from "./lip-sync-integration";
 
 
 // OpenAI configuration
@@ -154,7 +156,7 @@ interface TimelineItem {
   generatedImage?: string;
   duration: number;
   transition?: string;
-  firebaseUrl?: string; // Para almacenamiento en Firebase
+  firebaseUrl?: string; 
 }
 
 // Añadir tipos de grupos para mejor organización del timeline
@@ -165,6 +167,17 @@ const groups = [
 ];
 
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
+
+// Add interface for Director
+interface Director {
+  id: string;
+  name: string;
+  specialty: string;
+  style: string;
+  experience: string;
+  rating: number;
+  imageUrl?: string;
+}
 
 export function MusicVideoAI() {
   const { toast } = useToast();
@@ -193,17 +206,20 @@ export function MusicVideoAI() {
     cameraFormat: "",
     narrativeIntensity: 50,
     referenceImage: null as string | null,
-    styleDescription: ""
+    styleDescription: "",
+    selectedDirector: null as Director | null
   });
-  const storage = getStorage(); // Initialize Firebase Storage
+  const storage = getStorage(); 
   const [isSaving, setIsSaving] = useState(false);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
-  const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
+  const [currentStep, setCurrentStep] = useState<number>(1); 
   const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
-  const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000)); // Added seed state
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false); // State for video generation
+  const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000)); 
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false); 
+  const [directors, setDirectors] = useState<Director[]>([]);
+
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -278,7 +294,7 @@ export function MusicVideoAI() {
 
         const formattedLyrics = formattedResponse.choices[0].message.content;
         setTranscription(formattedLyrics || transcription.text);
-        setCurrentStep(2); // Avanzar al siguiente paso
+        setCurrentStep(2); 
 
         toast({
           title: "Éxito",
@@ -384,14 +400,14 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       try {
         // Intentar encontrar y parsear el JSON incluso si hay texto adicional
         const content = response.choices[0].message.content;
-        console.log("Respuesta completa del modelo:", content); // Log para debugging
+        console.log("Respuesta completa del modelo:", content); 
 
         // Limpiar la respuesta de cualquier texto adicional
         const jsonContent = content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
-        console.log("JSON extraído:", jsonContent); // Log para debugging
+        console.log("JSON extraído:", jsonContent); 
 
         const scriptResult = JSON.parse(jsonContent);
-        console.log("JSON parseado:", scriptResult); // Log para debugging
+        console.log("JSON parseado:", scriptResult); 
 
         if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
           throw new Error("El formato del guion no es válido");
@@ -599,7 +615,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                 prompt,
                 negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, text, watermark",
                 image_size: "landscape_16_9",
-                seed: seed, // Usar el mismo seed para todas las imágenes
+                seed: seed, 
               },
             });
 
@@ -703,7 +719,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
         {/* Miniatura de la imagen */}
         <div className="absolute inset-0">
           <img
-            src={item.generatedImage || fallbackImage}
+            src={item.generatedImage || item.firebaseUrl || fallbackImage}
             alt={item.description}
             className="w-full h-full object-cover"
           />
@@ -786,8 +802,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     const maxSegmentDuration = editingStyle.duration.max;
     let lastBeatTime = 0;
     let energyHistory: number[] = [];
-    const historySize = 43; // Aproximadamente 1 segundo de historia
-
+    const historySize = 43; 
     // Tipos de planos disponibles con sus descripciones
     const shotTypes = [
       {
@@ -871,7 +886,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             imagePrompt: shotType.prompt
           });
 
-          lastBeatTime = currentTime;
+                    lastBeatTime = currentTime;
         }
       }
     }
@@ -912,33 +927,39 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     - Paleta de colores: ${videoStyle.colorPalette}
     - Duración del segmento: ${segment.duration / 1000} segundos`;
 
-      // Añadir descripción del estilo de referencia si existe
-      if (videoStyle.styleDescription) {
-        basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
-      }
+    // Add director's style if selected
+    if (videoStyle.selectedDirector) {
+      basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
+    - Especialidad: ${videoStyle.selectedDirector.specialty}`;
+    }
 
-      basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
+    // Añadir descripción del estilo de referencia si existe
+    if (videoStyle.styleDescription) {
+      basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
+    }
+
+    basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          { 
-            role: "system", 
-            content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." 
-          },
-          { role: "user", content: basePrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 200
-      });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { 
+          role: "system", 
+          content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." 
+        },
+        { role: "user", content: basePrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 200
+    });
 
-      return response.choices[0].message.content;
-    } catch (error) {
-      console.error("Error generando prompt:", error);
-      return segment.imagePrompt || "Error generando prompt";
-    }
-  };
+    return response.choices[0].message.content;
+  } catch (error) {
+    console.error("Error generando prompt:", error);
+    return segment.imagePrompt || "Error generando prompt";
+  }
+};
 
   // Función separada para generar prompts
   const generatePromptsForSegments = async () => {
@@ -1069,6 +1090,28 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   };
 
   // Actualizar la interfaz para reflejar los pasos separados
+  useEffect(() => {
+    const loadDirectors = async () => {
+      try {
+        const directorsSnapshot = await getDocs(collection(db, "directors"));
+        const directorsData = directorsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Director[];
+        setDirectors(directorsData);
+      } catch (error) {
+        console.error("Error loading directors:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los directores",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadDirectors();
+  }, []);
+
   return (
     <div className="container py-6 space-y-8">
       <Card className="p-6">
@@ -1277,6 +1320,75 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Director del Video */}
+                <div className="space-y-2">
+                  <Label>Director del Video</Label>
+                  {directors.length > 0 ? (
+                    <div className="grid gap-4">
+                      <Select
+                        value={videoStyle.selectedDirector?.id || ""}
+                        onValueChange={(directorId) => {
+                          const director = directors.find(d => d.id === directorId);
+                          setVideoStyle(prev => ({
+                            ...prev,
+                            selectedDirector: director || null
+                          }));
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar director" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {directors.map((director) => (
+                            <SelectItem key={director.id} value={director.id}>
+                              <div className="flex items-center gap-2">
+                                {director.imageUrl && (
+                                  <img
+                                    src={director.imageUrl}
+                                    alt={director.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                )}
+                                <div className="grid gap-0.5">
+                                  <span className="font-medium">{director.name}</span>
+                                  <span className="text-xs text-muted-foreground">{director.specialty}</span>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {videoStyle.selectedDirector && (
+                        <div className="p-4 bg-muted rounded-lg">
+                          <div className="flex items-center gap-4">
+                            {videoStyle.selectedDirector.imageUrl && (
+                              <img
+                                src={videoStyle.selectedDirector.imageUrl}
+                                alt={videoStyle.selectedDirector.name}
+                                className="w-16 h-16 rounded-full object-cover"
+                              />
+                            )}
+                            <div className="space-y-1">
+                              <h4 className="font-semibold">{videoStyle.selectedDirector.name}</h4>
+                              <p className="text-sm text-muted-foreground">{videoStyle.selectedDirector.experience}</p>
+                              <p className="text-sm">{videoStyle.selectedDirector.style}</p>
+                              <div className="flex items-center gap-1">
+                                <span className="text-orange-500">★</span>
+                                <span className="text-sm">{videoStyle.selectedDirector.rating.toFixed(1)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-4 border rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">Cargando directores...</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
