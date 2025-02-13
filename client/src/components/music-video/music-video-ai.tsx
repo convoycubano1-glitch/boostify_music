@@ -24,6 +24,7 @@ import { VideoGenerator } from "./video-generator"; // Added import
 import { ArtistCustomization } from "./artist-customization";
 import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
+import { LipSyncIntegration } from "./lip-sync-integration"; // Added import
 
 
 // OpenAI configuration
@@ -1244,6 +1245,15 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               audioBuffer={audioBuffer}
               onUpdateClip={handleClipUpdate}
             />
+
+            {/* Paso 10: Sincronización de Labios */}
+            <LipSyncIntegration
+              clips={clips}
+              transcription={transcription}
+              audioBuffer={audioBuffer}
+              onUpdateClip={handleClipUpdate}
+            />
+
           </div>
         </div>
 
