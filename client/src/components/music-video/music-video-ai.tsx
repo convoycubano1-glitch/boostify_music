@@ -17,9 +17,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // OpenAI configuration
 const openai = new OpenAI({
@@ -166,6 +167,7 @@ export function MusicVideoAI() {
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
   const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
+  const [showStyleDialog, setShowStyleDialog] = useState(false);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -307,7 +309,7 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción y coincida con los ${timelineItems.length} cortes detectados.
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical basado en los siguiente parámetros:
 
 Letra de la canción:
 ${transcription}
@@ -321,15 +323,15 @@ Genera un prompt específico para cada segmento, considerando:
 - El tipo de plano asignado
 - La duración del segmento
 
-Responde SOLO con el objeto JSON solicitado, sin texto adicional:
+Responde SOLO con el siguiente formato JSON, sin texto adicional ni explicaciones:
 {
   "segments": [
     {
-      "id": (número que coincide con el id del segmento existente),
-      "description": "descripción de la escena",
-      "imagePrompt": "prompt detallado para generar la imagen",
-      "shotType": "tipo de plano",
-      "transition": "tipo de transición"
+      "id": number,
+      "description": "string",
+      "imagePrompt": "string",
+      "shotType": "string",
+      "transition": "string"
     }
   ]
 }`;
@@ -339,29 +341,22 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto. IMPORTANTE: Responde SOLAMENTE con el objeto JSON solicitado, sin ningún texto adicional o explicaciones."
+            content: `Eres un director de videos musicales experto. SOLO debes responder con un objeto JSON válido, sin texto adicional. No incluyas comentarios ni explicaciones.`
           },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        response_format: { type: "json_object" }
       });
 
-      if (!response.choices[0].message.content) {
+      const content = response.choices[0].message.content;
+
+      if (!content) {
         throw new Error("No se recibió respuesta del modelo");
       }
 
       try {
-        // Intentar encontrar y parsear el JSON incluso si hay texto adicional
-        const content = response.choices[0].message.content;
-        console.log("Respuesta completa del modelo:", content); // Log para debugging
-
-        // Limpiar la respuesta de cualquier texto adicional
-        const jsonContent = content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
-        console.log("JSON extraído:", jsonContent); // Log para debugging
-
-        const scriptResult = JSON.parse(jsonContent);
-        console.log("JSON parseado:", scriptResult); // Log para debugging
+        const scriptResult = JSON.parse(content);
 
         if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
           throw new Error("El formato del guion no es válido");
@@ -391,12 +386,8 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
         });
 
       } catch (parseError) {
-        console.error("Error parsing response:", parseError);
-        toast({
-          title: "Error",
-          description: "Error al procesar la respuesta. Por favor intenta de nuevo.",
-          variant: "destructive",
-        });
+        console.error("Error parsing response:", parseError, content);
+        throw new Error("Error al procesar la respuesta del modelo. El formato no es válido.");
       }
 
     } catch (error) {
@@ -1004,7 +995,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">2. Sincronizar Beats</Label>
             <Button
-              onClick={syncAudioWithTimeline}
+              onClick={syncAudioWithTimelineAndGeneratePrompts}
               disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
               className="w-full"
             >
@@ -1069,71 +1060,90 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           {/* Paso 4: Estilo del Video */}
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">4. Estilo del Video</Label>
-            <div className="grid gap-4">
-              <div>
-                <Label>Mood</Label>
-                <Select
-                  value={videoStyle.mood}
-                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona mood" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {videoStyles.moods.map((mood) => (
-                      <SelectItem key={mood} value={mood}>{mood}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Paleta de Color</Label>
-                <Select
-                  value={videoStyle.colorPalette}
-                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona paleta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {videoStyles.colorPalettes.map((palette) => (
-                      <SelectItem key={palette} value={palette}>{palette}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Estilo Visual</Label>
-                <Select
-                  value={videoStyle.characterStyle}
-                  onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona estilo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {videoStyles.characterStyles.map((style) => (
-                      <SelectItem key={style} value={style}>{style}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
-                <Slider
-                  value={[videoStyle.visualIntensity]}
-                  onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                  min={0}
-                  max={100}
-                  step={1}
-                  className="mt-2"
-                />
-              </div>
-            </div>
+            <Button 
+              onClick={() => setShowStyleDialog(true)}
+              disabled={currentStep < 4}
+              className="w-full"
+            >
+              Configurar Estilo del Video
+            </Button>
           </div>
+
+          <Dialog open={showStyleDialog} onOpenChange={setShowStyleDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Configuración del Estilo</DialogTitle>
+                <DialogDescription>
+                  Personaliza el estilo visual de tu video musical
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4">
+                <div>
+                  <Label>Mood</Label>
+                  <Select
+                    value={videoStyle.mood}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona mood" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoStyles.moods.map((mood) => (
+                        <SelectItem key={mood} value={mood}>{mood}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Paleta de Color</Label>
+                  <Select
+                    value={videoStyle.colorPalette}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona paleta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoStyles.colorPalettes.map((palette) => (
+                        <SelectItem key={palette} value={palette}>{palette}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Estilo Visual</Label>
+                  <Select
+                    value={videoStyle.characterStyle}
+                    onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona estilo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoStyles.characterStyles.map((style) => (
+                        <SelectItem key={style} value={style}>{style}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                  <Slider
+                    value={[videoStyle.visualIntensity]}
+                    onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Paso 5: Generar Imágenes */}
           <div className="border rounded-lg p-4">
