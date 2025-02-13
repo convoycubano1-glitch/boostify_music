@@ -166,6 +166,7 @@ export function MusicVideoAI() {
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
   const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
+  const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000)); // Added seed state
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -553,14 +554,15 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       for (let i = 0; i < updatedItems.length; i++) {
         const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
-          const prompt = `${item.imagePrompt}. Estilo: ${videoStyle.mood}, paleta de colores ${videoStyle.colorPalette}, estilo visual ${videoStyle.characterStyle}. Toma: ${item.shotType}`;
+          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style. Visual intensity: ${videoStyle.visualIntensity}%`;
 
           try {
             const result = await fal.subscribe("fal-ai/flux-pro", {
               input: {
                 prompt,
                 negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, text, watermark",
-                image_size: "landscape_16_9"
+                image_size: "landscape_16_9",
+                seed: seed, // Usar el mismo seed para todas las imágenes
               },
             });
 
@@ -863,10 +865,12 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   // Función para generar el guion basado en los segmentos
   const generatePromptForSegment = async (segment: TimelineItem, mood: string, style: string) => {
     try {
-      const prompt = `Genera un prompt detallado para una imagen de video musical con las siguientes características:
+      const prompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
     - Tipo de plano: ${segment.shotType}
     - Mood: ${mood}
     - Estilo visual: ${style}
+    - Intensidad visual: ${videoStyle.visualIntensity}%
+    - Paleta de colores: ${videoStyle.colorPalette}
     - Duración del segmento: ${segment.duration / 1000} segundos
 
     El prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
@@ -875,7 +879,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
-          { role: "system", content: "Eres un director de fotografía experto en crear prompts paragenerar imágenes de videos musicales." },
+          { role: "system", content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales." },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
@@ -1054,67 +1058,72 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           {/* Paso 4: Estilo del Video */}
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">4. Estilo del Video</Label>
-            <div className="grid gap-4">
-              <div>
+            <div className="space-y-4">
+              <div className="space-y-2">
                 <Label>Mood</Label>
                 <Select
                   value={videoStyle.mood}
                   onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona mood" />
+                    <SelectValue placeholder="Selecciona un mood" />
                   </SelectTrigger>
                   <SelectContent>
                     {videoStyles.moods.map((mood) => (
-                      <SelectItem key={mood} value={mood}>{mood}</SelectItem>
+                      <SelectItem key={mood} value={mood}>
+                        {mood}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label>Paleta de Color</Label>
+              <div className="space-y-2">
+                <Label>Paleta de Colores</Label>
                 <Select
                   value={videoStyle.colorPalette}
                   onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona paleta" />
+                    <SelectValue placeholder="Selecciona una paleta" />
                   </SelectTrigger>
                   <SelectContent>
                     {videoStyles.colorPalettes.map((palette) => (
-                      <SelectItem key={palette} value={palette}>{palette}</SelectItem>
+                      <SelectItem key={palette} value={palette}>
+                        {palette}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label>Estilo Visual</Label>
+              <div className="space-y-2">
+                <Label>Estilo de Personajes</Label>
                 <Select
                   value={videoStyle.characterStyle}
                   onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona estilo" />
+                    <SelectValue placeholder="Selecciona un estilo" />
                   </SelectTrigger>
                   <SelectContent>
                     {videoStyles.characterStyles.map((style) => (
-                      <SelectItem key={style} value={style}>{style}</SelectItem>
+                      <SelectItem key={style} value={style}>
+                        {style}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+              <div className="space-y-2">
+                <Label>Intensidad Visual</Label>
                 <Slider
-                  value={[videoStyle.visualIntensity]}
-                  onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
                   min={0}
                   max={100}
                   step={1}
-                  className="mt-2"
+                  value={[videoStyle.visualIntensity]}
+                  onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
                 />
               </div>
             </div>
@@ -1125,7 +1134,14 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
             <Button
               onClick={generateShotImages}
-              disabled={!timelineItems.length || isGeneratingShots || currentStep < 4}
+              disabled={
+                !timelineItems.length ||
+                isGeneratingShots ||
+                currentStep < 4 ||
+                !videoStyle.mood ||
+                !videoStyle.colorPalette ||
+                !videoStyle.characterStyle
+              }
               className="w-full"
             >
               {isGeneratingShots ? (
@@ -1136,7 +1152,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               ) : (
                 <>
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  Generar Imágenes para cada Escena
+                  Generar Imágenes
                 </>
               )}
             </Button>
