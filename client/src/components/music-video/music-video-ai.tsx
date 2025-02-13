@@ -21,6 +21,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { VideoGenerator } from "./video-generator"; // Added import
+import { ArtistCustomization } from "./artist-customization";
+import { MusicianIntegration } from "./musician-integration";
+import { MovementIntegration } from "./movement-integration";
 
 
 // OpenAI configuration
@@ -868,7 +871,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   // Función para generar el guion basado en los segmentos
   const generatePromptForSegment = async (segment: TimelineItem) => {
     try {
-      const prompt = `Generaun prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
+      const prompt = `Generaun prompt detallado para unaimagen de video musical que mantenga consistencia visual con estas características:
     - Tipo de plano: ${segment.shotType}
     - Mood: ${videoStyle.mood}
     - Estilo visual: ${videoStyle.characterStyle}
@@ -1223,267 +1226,24 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             </div>
 
             {/* Paso 7: Personalización de Artista */}
-            <div className="border rounded-lg p-4">
-              <Label className="text-lg font-semibold mb-4">7. Personalización de Artista</Label>
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-500/10 rounded-lg">
-                  <p className="text-sm text-orange-600">
-                    Próximamente: Face swap con IA para personalizar el video con tu imagen
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Foto del Artista</Label>
-                  <div className="grid gap-4">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      disabled
-                      className="cursor-not-allowed"
-                    />
-                    <div className="aspect-square w-32 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground/25" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Aplicar Face Swap en:</Label>
-                  <div className="grid gap-2">
-                    {['close-up', 'extreme close-up', 'medium shot'].map((shotType) => (
-                      <div key={shotType} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`faceswap-${shotType}`}
-                          disabled
-                          className="cursor-not-allowed"
-                        />
-                        <Label htmlFor={`faceswap-${shotType}`} className="text-sm">
-                          {shotType}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Button disabled className="w-full">
-                  <ImageIcon className="mr-2 h-4 w-4" />
-                  Aplicar Face Swap (Próximamente)
-                </Button>
-
-                <div className="text-xs text-muted-foreground">
-                  <p>Esta función permitirá:</p>
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Subir una foto del artista</li>
-                    <li>Seleccionar en qué tipos de planos aplicar el face swap</li>
-                    <li>Mantener la consistencia visual del estilo</li>
-                    <li>Preview en tiempo real de los resultados</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            <ArtistCustomization
+              clips={clips}
+              onUpdateClip={handleClipUpdate}
+            />
 
             {/* Paso 8: Integración de Músicos */}
-            <div className="border rounded-lg p-4">
-              <Label className="text-lg font-semibold mb-4">8. Integración de Músicos</Label>
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-500/10 rounded-lg">
-                  <p className="text-sm text-orange-600">
-                    Próximamente: Detección automática de solos y secciones musicales para integrar músicos virtuales
-                  </p>
-                </div>
-
-                {/* Selección de Músicos */}
-                <div className="space-y-2">
-                  <Label>Añadir Músicos</Label>
-                  <div className="grid gap-2">
-                    {[
-                      'Guitarrista',
-                      'Bajista',
-                      'Baterista',
-                      'Pianista',
-                      'Saxofonista',
-                      'Violinista'
-                    ].map((musician) => (
-                      <div key={musician} className="flex items-center justify-between p-2 border rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Music2 className="h-4 w-4 text-orange-500" />
-                          <span>{musician}</span>
-                        </div>
-                        <Button variant="ghost" size="sm" disabled>
-                          Añadir
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Detección de Solos */}
-                <div className="space-y-2">
-                  <Label>Detección de Solos y Secciones</Label>
-                  <div className="grid gap-2">
-                    <div className="flex items-center space-x-2 p-2 border rounded-lg bg-muted/50">
-                      <input
-                        type="checkbox"
-                        id="detect-solos"
-                        disabled
-                        className="cursor-not-allowed"
-                      />
-                      <Label htmlFor="detect-solos" className="text-sm">
-                        Detección automática de solos
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-2 border rounded-lg bg-muted/50">
-                      <input
-                        type="checkbox"
-                        id="detect-sections"
-                        disabled
-                        className="cursor-not-allowed"
-                      />
-                      <Label htmlFor="detect-sections" className="text-sm">
-                        Identificar secciones musicales
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Opciones de Sincronización */}
-                <div className="space-y-2">
-                  <Label>Opciones de Sincronización</Label>
-                  <Select disabled>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar modo de sincronización" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">Automática (basada en beats)</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="hybrid">Híbrida</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button disabled className="w-full">
-                  <Music2 className="mr-2 h-4 w-4" />
-                  Analizar y Sincronizar Músicos (Próximamente)
-                </Button>
-
-                <div className="text-xs text-muted-foreground">
-                  <p>Esta función permitirá:</p>
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Detección automática de solos instrumentales</li>
-                    <li>Identificación de secciones musicales (verso, coro, puente)</li>
-                    <li>Sincronización de músicos virtuales con el audio</li>
-                    <li>Generación de escenas específicas para cada músico</li>
-                    <li>Ajuste de planos según la intensidad musical</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            <MusicianIntegration
+              clips={clips}
+              audioBuffer={audioBuffer}
+              onUpdateClip={handleClipUpdate}
+            />
 
             {/* Paso 9: Integración de Movimientos */}
-            <div className="border rounded-lg p-4">
-              <Label className="text-lg font-semibold mb-4">9. Integración de Movimientos</Label>
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-500/10 rounded-lg">
-                  <p className="text-sm text-orange-600">
-                    Próximamente: Captura y transferencia de movimientos para personalizar las coreografías
-                  </p>
-                </div>
-
-                {/* Subida de Videos de Referencia */}
-                <div className="space-y-2">
-                  <Label>Videos de Referencia</Label>
-                  <div className="grid gap-4">
-                    <Input
-                      type="file"
-                      accept="video/*"
-                      disabled
-                      className="cursor-not-allowed"
-                      multiple
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
-                        <Video className="h-8 w-8 text-muted-foreground/25" />
-                      </div>
-                      <div className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
-                        <Plus className="h-8 w-8 text-muted-foreground/25" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Selección de Secciones */}
-                <div className="space-y-2">
-                  <Label>Aplicar Movimientos en:</Label>
-                  <div className="grid gap-2">
-                    {[
-                      'Coro',
-                      'Verso',
-                      'Puente',
-                      'Introducción',
-                      'Solo',
-                      'Final'
-                    ].map((section) => (
-                      <div key={section} className="flex items-center space-x-2 p-2 border rounded-lg">
-                        <input
-                          type="checkbox"
-                          id={`movement-${section}`}
-                          disabled
-                          className="cursor-not-allowed"
-                        />
-                        <Label htmlFor={`movement-${section}`} className="text-sm">
-                          {section}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Opciones de Transferencia */}
-                <div className="space-y-2">
-                  <Label>Opciones de Transferencia</Label>
-                  <Select disabled>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar estilo de transferencia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="exact">Movimientos Exactos</SelectItem>
-                      <SelectItem value="stylized">Estilizado</SelectItem>
-                      <SelectItem value="enhanced">Mejorado con IA</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Ajustes de Intensidad */}
-                <div className="space-y-2">
-                  <Label>Intensidad de Movimientos (50%)</Label>
-                  <Slider
-                    disabled
-                    defaultValue={[50]}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-
-                <Button disabled className="w-full">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Procesar y Aplicar Movimientos (Próximamente)
-                </Button>
-
-                <div className="text-xs text-muted-foreground">
-                  <p>Esta función permitirá:</p>
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Subir videos de referencia con movimientos del artista</li>
-                    <li>Capturar y analizar movimientos específicos</li>
-                    <li>Transferir los movimientos a las escenas seleccionadas</li>
-                    <li>Ajustar la intensidad y estilo de los movimientos</li>
-                    <li>Sincronizar con el ritmo de la música</li>
-                    <li>Previsualizar los resultados antes de aplicar</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
+            <MovementIntegration
+              clips={clips}
+              audioBuffer={audioBuffer}
+              onUpdateClip={handleClipUpdate}
+            />
           </div>
         </div>
 
