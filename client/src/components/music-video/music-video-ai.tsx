@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
 
 // OpenAI configuration
 const openai = new OpenAI({
@@ -56,9 +57,15 @@ interface TimelineItem {
   generatedImage?: string;
   duration: number;
   transition?: string;
+  firebaseUrl?: string; // Para almacenamiento en Firebase
 }
 
-const groups = [{ id: 1, title: "Secuencia de Video" }];
+// Añadir tipos de grupos para mejor organización del timeline
+const groups = [
+  { id: 1, title: "Video", stackItems: true },
+  { id: 2, title: "Transiciones", stackItems: false },
+  { id: 3, title: "Audio", stackItems: false }
+];
 
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
 
@@ -87,6 +94,9 @@ export function MusicVideoAI() {
     characterStyle: "",
     visualIntensity: 50
   });
+  const storage = getStorage(); // Initialize Firebase Storage
+  const [isSaving, setIsSaving] = useState(false);
+
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -381,6 +391,26 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     }
   };
 
+  // Función para guardar imágenes en Firebase Storage
+  const saveToFirebase = async (item: TimelineItem) => {
+    if (!item.generatedImage) return null;
+
+    try {
+      const response = await fetch(item.generatedImage);
+      const blob = await response.blob();
+
+      const storageRef = ref(storage, `videos/${Date.now()}_${item.id}.jpg`);
+      await uploadBytes(storageRef, blob);
+      const url = await getDownloadURL(storageRef);
+
+      return url;
+    } catch (error) {
+      console.error("Error saving to Firebase:", error);
+      return null;
+    }
+  };
+
+  // Función mejorada para generar imágenes
   const generateShotImages = async () => {
     setIsGeneratingShots(true);
     try {
@@ -401,12 +431,23 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
             });
 
             if (result?.images?.[0]?.url) {
-              updatedItems[i] = { ...item, generatedImage: result.images[0].url };
+              // Guardar en Firebase
+              const firebaseUrl = await saveToFirebase({
+                ...item,
+                generatedImage: result.images[0].url
+              });
+
+              updatedItems[i] = {
+                ...item,
+                generatedImage: result.images[0].url,
+                firebaseUrl
+              };
+
               setTimelineItems([...updatedItems]);
 
               toast({
                 title: "Progreso",
-                description: `Generada imagen ${i + 1} de ${updatedItems.length}`,
+                description: `Imagen ${i + 1} generada y guardada`,
               });
             }
           } catch (error) {
@@ -418,14 +459,13 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
             });
           }
 
-          // Esperar entre generaciones para evitar rate limiting
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
 
       toast({
         title: "Completado",
-        description: "Todas las imágenes han sido generadas",
+        description: "Todas las imágenes han sido generadas y guardadas",
       });
     } catch (error) {
       console.error("Error generando imágenes:", error);
@@ -459,24 +499,51 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     }
   };
 
-  const itemRenderer = useCallback(({ item }: { item: TimelineItem }) => (
+  const itemRenderer = useCallback(({ item, itemContext, getItemProps }: any) => (
     <div
+      {...getItemProps()}
       className="relative h-full cursor-pointer group"
       onMouseEnter={() => setHoveredShot(item)}
       onMouseLeave={() => setHoveredShot(null)}
       onClick={() => setSelectedShot(item)}
     >
       <div className={cn(
-        "absolute inset-0 bg-orange-500/10 rounded flex items-center justify-center text-xs p-1 transition-all",
+        "absolute inset-0 bg-card rounded-md border overflow-hidden",
+        "transition-all duration-200 ease-in-out",
         currentTime >= item.start_time && currentTime < item.end_time ? "ring-2 ring-orange-500" : "",
-        selectedShot?.id === item.id ? "ring-2 ring-blue-500" : ""
+        selectedShot?.id === item.id ? "ring-2 ring-blue-500" : "",
+        "hover:scale-[1.02] hover:z-10"
       )}>
-        <span className="z-10 font-medium text-foreground/80">{item.title}</span>
-        <img
-          src={item.generatedImage || fallbackImage}
-          alt={item.description}
-          className="absolute inset-0 w-full h-full object-cover rounded opacity-70 group-hover:opacity-100 transition-opacity"
-        />
+        {/* Miniatura de la imagen */}
+        <div className="absolute inset-0">
+          <img
+            src={item.generatedImage || fallbackImage}
+            alt={item.description}
+            className="w-full h-full object-cover"
+          />
+          {/* Overlay con información */}
+          <div className="absolute inset-0 bg-black/40 p-2 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+            <div>
+              <p className="text-xs font-medium text-white truncate">
+                {item.shotType}
+              </p>
+              <p className="text-xs text-white/80 truncate">
+                {item.description}
+              </p>
+            </div>
+            <div className="flex items-center justify-between text-xs text-white/60">
+              <span>{(item.duration / 1000).toFixed(1)}s</span>
+              <span>{item.transition}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Indicador de transición */}
+        {item.transition && item.transition !== "cut" && (
+          <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500/20 rounded-full z-10">
+            <div className="absolute inset-1 bg-orange-500 rounded-full" />
+          </div>
+        )}
       </div>
     </div>
   ), [currentTime, selectedShot]);
@@ -698,6 +765,11 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                   stackItems
                   itemHeightRatio={0.8}
                   itemRenderer={itemRenderer}
+                  groupRenderer={({ group }) => (
+                    <div className="px-4 py-2">
+                      <span className="font-medium text-sm">{group.title}</span>
+                    </div>
+                  )}
                 />
 
                 <div
