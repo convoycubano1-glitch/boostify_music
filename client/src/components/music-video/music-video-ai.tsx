@@ -266,21 +266,26 @@ export function MusicVideoAI() {
 
     setIsGeneratingShots(true);
     try {
+      console.log("Iniciando detección de beats...");
       const segments = await detectBeatsAndCreateSegments();
+      console.log("Segmentos detectados:", segments);
+
       if (segments && segments.length > 0) {
         setTimelineItems(segments);
-        setCurrentStep(3); // Avanzar al siguiente paso
+        setCurrentStep(3);
 
         toast({
           title: "Éxito",
           description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
         });
+      } else {
+        throw new Error("No se detectaron segmentos en el audio");
       }
     } catch (error) {
       console.error("Error sincronizando audio:", error);
       toast({
         title: "Error",
-        description: "Error al sincronizar el audio con el timeline",
+        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
         variant: "destructive",
       });
     } finally {
@@ -884,58 +889,55 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
-  // Función para sincronizar el audio con el timeline y generar prompts
-  const syncAudioWithTimelineAndGeneratePrompts = async () => {
-    if (!audioBuffer) return;
-    setIsGeneratingShots(true);
-    try {
-      console.log("Iniciando detección de beats...");
-      const segments = await detectBeatsAndCreateSegments();
-      console.log("Segmentos detectados:", segments);
-
-      if (segments && segments.length > 0) {
-        console.log("Generando prompts para los segmentos...");
-        const segmentsWithPrompts = [...segments];
-
-        // Generar prompts para cada segmento
-        for (let i = 0; i < segmentsWithPrompts.length; i++) {
-          const prompt = await generatePromptForSegment(
-            segmentsWithPrompts[i],
-            videoStyle.mood || "neutral",
-            videoStyle.characterStyle || "realista"
-          );
-          segmentsWithPrompts[i] = {
-            ...segmentsWithPrompts[i],
-            imagePrompt: prompt
-          };
-          console.log(`Prompt generado para segmento ${i + 1}:`, prompt);
-        }
-
-        console.log("Actualizando timeline con segmentos y prompts...");
-        setTimelineItems(segmentsWithPrompts);
-        setCurrentStep(3);
-
-        toast({
-          title: "Éxito",
-          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
-        });
-
-      } else {
-        throw new Error("No se detectaron segmentos en el audio");
-      }
-    } catch (error) {
-      console.error("Error sincronizando audio:", error);
+  // Función separada para generar prompts
+  const generatePromptsForSegments = async () => {
+    if (timelineItems.length === 0) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
+        description: "Primero debes detectar los cortes musicales",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingScript(true);
+    try {
+      console.log("Generando prompts para los segmentos...");
+      const segmentsWithPrompts = [...timelineItems];
+
+      for (let i = 0; i < segmentsWithPrompts.length; i++) {
+        const prompt = await generatePromptForSegment(
+          segmentsWithPrompts[i],
+          videoStyle.mood || "neutral",
+          videoStyle.characterStyle || "realista"
+        );
+        segmentsWithPrompts[i] = {
+          ...segmentsWithPrompts[i],
+          imagePrompt: prompt
+        };
+        console.log(`Prompt generado para segmento ${i + 1}:`, prompt);
+      }
+
+      setTimelineItems(segmentsWithPrompts);
+      setCurrentStep(4);
+
+      toast({
+        title: "Éxito",
+        description: "Prompts generados correctamente",
+      });
+    } catch (error) {
+      console.error("Error generando prompts:", error);
+      toast({
+        title: "Error",
+        description: "Error al generar los prompts para los segmentos",
         variant: "destructive",
       });
     } finally {
-      setIsGeneratingShots(false);
+      setIsGeneratingScript(false);
     }
   };
 
-
+  // Actualizar la interfaz para reflejar los pasos separados
   return (
     <Card className="p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -987,19 +989,19 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">2. Sincronizar Beats</Label>
             <Button
-              onClick={syncAudioWithTimelineAndGeneratePrompts}
+              onClick={syncAudioWithTimeline}
               disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
               className="w-full"
             >
               {isGeneratingShots ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Detectando beats...
+                  Detectando cortes...
                 </>
               ) : (
                 <>
                   <RefreshCcw className="mr-2 h-4 w-4" />
-                  Detectar Cortes Musicales y Generar Prompts
+                  Detectar Cortes Musicales
                 </>
               )}
             </Button>
@@ -1027,23 +1029,23 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             </RadioGroup>
           </div>
 
-          {/* Paso 3: Generar Guion */}
+          {/* Paso 3: Generar Prompts */}
           <div className="border rounded-lg p-4">
-            <Label className="text-lg font-semibold mb-4">3. Generar Guion</Label>
+            <Label className="text-lg font-semibold mb-4">3. Generar Prompts</Label>
             <Button
-              onClick={generateVideoScript}
-              disabled={!transcription || timelineItems.length === 0 || isGeneratingScript || currentStep < 3}
+              onClick={generatePromptsForSegments}
+              disabled={timelineItems.length === 0 || isGeneratingScript || currentStep < 3}
               className="w-full"
             >
               {isGeneratingScript ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando guion...
+                  Generando prompts...
                 </>
               ) : (
                 <>
                   <Edit className="mr-2 h-4 w-4" />
-                  Generar Guion del Video
+                  Generar Prompts para Escenas
                 </>
               )}
             </Button>
