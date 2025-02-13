@@ -53,6 +53,8 @@ export function TimelineEditor({
   const [waveformData, setWaveformData] = useState<Array<{ max: number; min: number; }>>([]);
   const [hoveredTime, setHoveredTime] = useState<number | null>(null);
   const [isWaveformHovered, setIsWaveformHovered] = useState(false);
+  const [dragStartX, setDragStartX] = useState<number>(0);
+  const [clipStartTime, setClipStartTime] = useState<number>(0);
 
   // Calcular el ancho total del timeline basado en la duración y el zoom
   const timelineWidth = duration * zoom;
@@ -92,7 +94,7 @@ export function TimelineEditor({
   }, [audioBuffer]);
 
   const handleTimelineClick = (e: React.MouseEvent) => {
-    if (!timelineRef.current) return;
+    if (!timelineRef.current || isDragging) return;
     const rect = timelineRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left + scrollPosition;
     const newTime = pixelsToTime(x);
@@ -104,6 +106,33 @@ export function TimelineEditor({
     const rect = timelineRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left + scrollPosition;
     setHoveredTime(pixelsToTime(x));
+  };
+
+  // Drag handlers
+  const handleClipDragStart = (clipId: number, e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+    const clip = clips.find(c => c.id === clipId);
+    if (clip) {
+      setIsDragging(true);
+      setSelectedClip(clipId);
+      setDragStartX(e.clientX);
+      setClipStartTime(clip.start);
+    }
+  };
+
+  const handleClipDragEnd = (e: React.DragEvent) => {
+    if (selectedClip !== null) {
+      const deltaX = e.clientX - dragStartX;
+      const deltaTime = pixelsToTime(deltaX);
+      const newStartTime = Math.max(0, clipStartTime + deltaTime);
+
+      onClipUpdate(selectedClip, {
+        start: newStartTime
+      });
+    }
+
+    setIsDragging(false);
+    setSelectedClip(null);
   };
 
   const formatTime = (time: number): string => {
@@ -271,7 +300,7 @@ export function TimelineEditor({
                     top: clip.type === 'transition' ? '88px' : '8px'
                   }}
                   draggable
-                  onDragStart={() => handleClipDragStart(clip.id)}
+                  onDragStart={(e) => handleClipDragStart(clip.id, e)}
                   onDragEnd={handleClipDragEnd}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10" />
