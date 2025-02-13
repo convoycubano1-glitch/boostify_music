@@ -19,6 +19,7 @@ import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase imports
 import { AnalyticsDashboard } from './analytics-dashboard';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // OpenAI configuration
 const openai = new OpenAI({
@@ -45,6 +46,69 @@ const videoStyles = {
     "Cinematográfico", "Documental", "Surrealista", "Vintage"
   ]
 };
+
+const editingStyles = [
+  {
+    id: "phrases",
+    name: "Edición por Frases",
+    description: "Cortes sincronizados con las frases musicales",
+    duration: { min: 4, max: 8 }
+  },
+  {
+    id: "random_bars",
+    name: "Compases Aleatorios",
+    description: "Cortes variados siguiendo el ritmo",
+    duration: { min: 2, max: 6 }
+  },
+  {
+    id: "dynamic",
+    name: "Dinámico",
+    description: "Cortes rápidos en momentos intensos, más lentos en partes suaves",
+    duration: { min: 1.5, max: 4 }
+  },
+  {
+    id: "slow",
+    name: "Lento",
+    description: "Cortes largos y suaves transiciones",
+    duration: { min: 5, max: 10 }
+  },
+  {
+    id: "cinematic",
+    name: "Cinematográfico",
+    description: "Estilo de película con variedad de duraciones",
+    duration: { min: 3, max: 8 }
+  },
+  {
+    id: "music_video",
+    name: "Video Musical",
+    description: "Estilo MTV con cortes rápidos y dinámicos",
+    duration: { min: 1, max: 3 }
+  },
+  {
+    id: "narrative",
+    name: "Narrativo",
+    description: "Cortes que siguen la historia de la letra",
+    duration: { min: 4, max: 7 }
+  },
+  {
+    id: "experimental",
+    name: "Experimental",
+    description: "Patrones de corte no convencionales",
+    duration: { min: 1, max: 6 }
+  },
+  {
+    id: "rhythmic",
+    name: "Rítmico",
+    description: "Cortes precisos en cada beat",
+    duration: { min: 1, max: 2 }
+  },
+  {
+    id: "minimalist",
+    name: "Minimalista",
+    description: "Pocos cortes, transiciones suaves",
+    duration: { min: 6, max: 12 }
+  }
+];
 
 interface TimelineItem {
   id: number;
@@ -101,7 +165,7 @@ export function MusicVideoAI() {
   const audioContext = useRef<AudioContext | null>(null);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
-
+  const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -224,7 +288,7 @@ export function MusicVideoAI() {
     }
   };
 
-  // Función para generar el guion basado en los segmentos
+  // Modificar la función generateVideoScript para manejar mejor los errores
   const generateVideoScript = async () => {
     if (!transcription || timelineItems.length === 0) return;
 
@@ -244,16 +308,14 @@ Genera un prompt específico para cada segmento, considerando:
 - El tipo de plano asignado
 - La duración del segmento
 
-IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
+RESPONDE SOLO CON EL SIGUIENTE FORMATO JSON:
 {
   "segments": [
     {
-      "id": número (debe coincidir con el id del segmento existente),
-      "time": número en segundos,
-      "duration": número en segundos,
-      "shotType": "tipo de plano actual",
+      "id": (número que coincide con el id del segmento existente),
       "description": "descripción de la escena",
-      "imagePrompt": "prompt detallado para IA que describa la escena",
+      "imagePrompt": "prompt detallado para generar la imagen",
+      "shotType": "tipo de plano",
       "transition": "tipo de transición"
     }
   ]
@@ -264,54 +326,46 @@ IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto. Responde SOLAMENTE con JSON válido."
+            content: "Eres un director de videos musicales experto. Responde SOLAMENTE con JSON válido sin texto adicional."
           },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        response_format: { type: "json_object" }
       });
 
       if (!response.choices[0].message.content) {
         throw new Error("No se recibió respuesta del modelo");
       }
 
-      try {
-        const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : response.choices[0].message.content;
-        const scriptResult = JSON.parse(jsonString);
+      const scriptResult = JSON.parse(response.choices[0].message.content);
 
-        if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
-          throw new Error("El formato del guion no es válido");
-        }
-
-        // Actualizar los items existentes con los nuevos prompts y descripciones
-        const updatedItems = timelineItems.map(item => {
-          const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
-          if (scriptSegment) {
-            return {
-              ...item,
-              description: scriptSegment.description,
-              imagePrompt: scriptSegment.imagePrompt,
-              shotType: scriptSegment.shotType,
-              transition: scriptSegment.transition
-            };
-          }
-          return item;
-        });
-
-        setTimelineItems(updatedItems);
-        setCurrentStep(4); // Avanzar al siguiente paso
-
-        toast({
-          title: "Éxito",
-          description: "Guion generado correctamente",
-        });
-
-      } catch (parseError) {
-        console.error("Error parsing response:", parseError);
-        throw new Error("Error al procesar la respuesta de la IA");
+      if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
+        throw new Error("El formato del guion no es válido");
       }
+
+      // Actualizar los items existentes con los nuevos prompts y descripciones
+      const updatedItems = timelineItems.map(item => {
+        const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
+        if (scriptSegment) {
+          return {
+            ...item,
+            description: scriptSegment.description,
+            imagePrompt: scriptSegment.imagePrompt,
+            shotType: scriptSegment.shotType,
+            transition: scriptSegment.transition
+          };
+        }
+        return item;
+      });
+
+      setTimelineItems(updatedItems);
+      setCurrentStep(4);
+
+      toast({
+        title: "Éxito",
+        description: "Guion generado correctamente",
+      });
 
     } catch (error) {
       console.error("Error generando el guion:", error);
@@ -662,10 +716,11 @@ IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
     const totalDuration = audioBuffer.duration;
 
     // Configuración mejorada para detección de beats
-    const windowSize = Math.floor(sampleRate * 0.05); // 50ms ventana
-    const threshold = 0.15; // Aumentado para detectar beats más significativos
-    const minSegmentDuration = 2; // segundos
-    const maxSegmentDuration = 5; // segundos
+    const editingStyle = editingStyles.find(style => style.id === selectedEditingStyle)!;
+    const windowSize = Math.floor(sampleRate * (selectedEditingStyle === "rhythmic" ? 0.025 : 0.05));
+    const threshold = selectedEditingStyle === "dynamic" ? 0.15 : 0.12;
+    const minSegmentDuration = editingStyle.duration.min;
+    const maxSegmentDuration = editingStyle.duration.max;
     let lastBeatTime = 0;
     let energyHistory: number[] = [];
     const historySize = 43; // Aproximadamente 1 segundo de historia
@@ -728,15 +783,27 @@ IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
           const transition = transitions[Math.floor(Math.random() * transitions.length)];
 
           // Crear segmento
+          let segmentDuration = currentTime - lastBeatTime;
+
+          if (selectedEditingStyle === "dynamic") {
+            // Hacer los cortes más cortos en momentos de alta energía
+            segmentDuration = Math.max(minSegmentDuration,
+              maxSegmentDuration * (1 - energy / (averageEnergy * 2)));
+          } else if (selectedEditingStyle === "minimalist") {
+            // Favorecer duraciones más largas
+            segmentDuration = Math.max(segmentDuration, minSegmentDuration);
+          }
+
+
           segments.push({
             id: segments.length + 1,
             group: 1,
             title: `Escena ${segments.length + 1}`,
             start_time: lastBeatTime * 1000,
-            end_time: currentTime * 1000,
+            end_time: (lastBeatTime + segmentDuration) * 1000,
             description: shotType.description,
             shotType: shotType.type,
-            duration: (currentTime - lastBeatTime) * 1000,
+            duration: segmentDuration * 1000,
             transition: transition,
             imagePrompt: shotType.prompt
           });
@@ -801,7 +868,6 @@ IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
   // Función para sincronizar el audio con el timeline y generar prompts
   const syncAudioWithTimelineAndGeneratePrompts = async () => {
     if (!audioBuffer) return;
-
     try {
       const segments = await detectBeatsAndCreateSegments();
       if (segments && segments.length > 0) {
@@ -903,6 +969,28 @@ IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
                 </>
               )}
             </Button>
+          </div>
+          <div className="border rounded-lg p-4 mt-4">
+            <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
+            <RadioGroup
+              value={selectedEditingStyle}
+              onValueChange={setSelectedEditingStyle}
+              className="grid grid-cols-2 gap-4"
+            >
+              {editingStyles.map((style) => (
+                <div key={style.id} className="flex items-start space-x-3">
+                  <RadioGroupItem value={style.id} id={style.id} />
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={style.id} className="font-medium">
+                      {style.name}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {style.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
 
           {/* Paso 3: Generar Guion */}
