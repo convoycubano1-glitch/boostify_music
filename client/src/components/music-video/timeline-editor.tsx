@@ -51,6 +51,7 @@ export function TimelineEditor({
   const [isDragging, setIsDragging] = useState(false);
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
   const [waveformData, setWaveformData] = useState<number[]>([]);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Calcular el ancho total del timeline basado en la duración y el zoom
   const timelineWidth = duration * zoom;
@@ -59,10 +60,85 @@ export function TimelineEditor({
   const timeToPixels = (time: number) => time * zoom;
   const pixelsToTime = (pixels: number) => pixels / zoom;
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.5, 10));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.5, 0.1));
+  // Zoom control functions
+  const handleZoomChange = (value: number) => {
+    if (!timelineRef.current || !scrollAreaRef.current) return;
 
-  // Generar datos de forma de onda cuando el audioBuffer cambia
+    const prevZoom = zoom;
+    const newZoom = value;
+    setZoom(newZoom);
+
+    // Get the current center point
+    const viewportWidth = scrollAreaRef.current.clientWidth;
+    const centerTime = currentTime;
+    const centerPixel = timeToPixels(centerTime);
+
+    // Calculate new scroll position to maintain center
+    const newScrollPosition = centerPixel - (viewportWidth / 2);
+    setScrollPosition(Math.max(0, newScrollPosition));
+  };
+
+  const handleZoomIn = () => handleZoomChange(Math.min(zoom * 1.5, 10));
+  const handleZoomOut = () => handleZoomChange(Math.max(zoom / 1.5, 0.1));
+
+  // Keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=') {
+          e.preventDefault();
+          handleZoomIn();
+        } else if (e.key === '-') {
+          e.preventDefault();
+          handleZoomOut();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [zoom]);
+
+  // Touch gestures for zoom
+  useEffect(() => {
+    if (!timelineRef.current) return;
+
+    let initialDistance = 0;
+    let initialZoom = zoom;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        initialDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialZoom = zoom;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const currentDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const scale = currentDistance / initialDistance;
+        const newZoom = Math.max(0.1, Math.min(10, initialZoom * scale));
+        handleZoomChange(newZoom);
+      }
+    };
+
+    const element = timelineRef.current;
+    element.addEventListener('touchstart', handleTouchStart);
+    element.addEventListener('touchmove', handleTouchMove);
+
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [zoom]);
+
+  // Generate waveform data from audio buffer
   useEffect(() => {
     if (audioBuffer) {
       const channelData = audioBuffer.getChannelData(0);
@@ -140,6 +216,16 @@ export function TimelineEditor({
           <Button variant="ghost" size="icon" onClick={handleZoomOut}>
             <ZoomOut className="h-4 w-4" />
           </Button>
+          <div className="w-32">
+            <Slider
+              value={[zoom]}
+              onValueChange={([value]) => handleZoomChange(value)}
+              min={0.1}
+              max={10}
+              step={0.1}
+              className="h-4"
+            />
+          </div>
           <Button variant="ghost" size="icon" onClick={handleZoomIn}>
             <ZoomIn className="h-4 w-4" />
           </Button>
@@ -148,6 +234,7 @@ export function TimelineEditor({
 
       {/* Timeline */}
       <ScrollArea 
+        ref={scrollAreaRef}
         className="h-[300px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
