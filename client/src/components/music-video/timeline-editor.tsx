@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
-  Music, Image as ImageIcon, Edit, RefreshCw
+  Music, Image as ImageIcon, Edit, RefreshCw, X
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export interface TimelineClip {
   id: number;
@@ -61,18 +62,15 @@ export function TimelineEditor({
   const [clipStartTime, setClipStartTime] = useState<number>(0);
   const [resizingSide, setResizingSide] = useState<'start' | 'end' | null>(null);
   const playheadAnimation = useAnimation();
+  const [selectedImagePreview, setSelectedImagePreview] = useState<TimelineClip | null>(null);
 
-  // Calcular el ancho total del timeline basado en la duración y el zoom
   const timelineWidth = duration * zoom;
-
-  // Convertir tiempo a pixels y viceversa
   const timeToPixels = (time: number) => time * zoom;
   const pixelsToTime = (pixels: number) => pixels / zoom;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.5, 10));
   const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.5, 0.1));
 
-  // Animación de la aguja de reproducción
   useEffect(() => {
     if (isPlaying) {
       playheadAnimation.start({
@@ -87,7 +85,6 @@ export function TimelineEditor({
     }
   }, [currentTime, isPlaying, timeToPixels, playheadAnimation]);
 
-  // Generar datos de forma de onda cuando el audioBuffer cambia
   useEffect(() => {
     if (!audioBuffer) return;
 
@@ -113,7 +110,6 @@ export function TimelineEditor({
     setWaveformData(waveform);
   }, [audioBuffer]);
 
-  // Funciones de manipulación del timeline
   const handleTimelineClick = (e: React.MouseEvent) => {
     if (!timelineRef.current || isDragging) return;
     const rect = timelineRef.current.getBoundingClientRect();
@@ -129,7 +125,6 @@ export function TimelineEditor({
     setHoveredTime(pixelsToTime(x));
   };
 
-  // Manejo del arrastre de clips
   const handleClipDragStart = (clipId: number, e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', '');
     const clip = clips.find(c => c.id === clipId);
@@ -156,7 +151,6 @@ export function TimelineEditor({
     setSelectedClip(null);
   };
 
-  // Manejo del redimensionamiento de clips
   const handleResizeStart = (clipId: number, side: 'start' | 'end', e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedClip(clipId);
@@ -199,9 +193,12 @@ export function TimelineEditor({
     setSelectedClip(null);
   };
 
+  const handleClipDoubleClick = (clip: TimelineClip) => {
+    setSelectedImagePreview(clip);
+  };
+
   return (
     <Card className="p-4 flex flex-col gap-4">
-      {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Button
@@ -232,12 +229,11 @@ export function TimelineEditor({
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          {/* Timecode Display */}
           <div className="bg-black/10 px-3 py-1.5 rounded-md font-mono text-sm">
             {formatTimecode(currentTime)}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <span className="text-sm text-muted-foreground hidden sm:inline">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
@@ -253,7 +249,6 @@ export function TimelineEditor({
         </div>
       </div>
 
-      {/* Preview Window */}
       <div className="relative w-full aspect-video bg-black/10 rounded-lg overflow-hidden mb-4">
         {selectedClip && clips.find(c => c.id === selectedClip)?.thumbnail ? (
           <img
@@ -274,7 +269,6 @@ export function TimelineEditor({
         </div>
       </div>
 
-      {/* Timeline */}
       <ScrollArea
         className="h-[300px] sm:h-[400px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
@@ -288,7 +282,6 @@ export function TimelineEditor({
           onMouseUp={resizingSide ? handleResizeEnd : undefined}
           onMouseLeave={resizingSide ? handleResizeEnd : undefined}
         >
-          {/* Time markers */}
           <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
             {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
               <div
@@ -301,7 +294,6 @@ export function TimelineEditor({
             ))}
           </div>
 
-          {/* Interactive Waveform */}
           {waveformData.length > 0 && (
             <div
               className="absolute left-0 right-0 h-24 mt-8"
@@ -363,7 +355,6 @@ export function TimelineEditor({
             </div>
           )}
 
-          {/* Clips */}
           <div className="mt-36">
             <AnimatePresence>
               {clips.map((clip) => (
@@ -386,8 +377,8 @@ export function TimelineEditor({
                   draggable
                   onDragStart={(e) => handleClipDragStart(clip.id, e)}
                   onDragEnd={handleClipDragEnd}
+                  onDoubleClick={() => handleClipDoubleClick(clip)}
                 >
-                  {/* Manejadores de redimensionamiento */}
                   <div
                     className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
                     onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
@@ -449,7 +440,6 @@ export function TimelineEditor({
             </AnimatePresence>
           </div>
 
-          {/* Playhead */}
           <motion.div
             animate={playheadAnimation}
             className="absolute top-0 bottom-0 w-px bg-primary z-50"
@@ -460,6 +450,60 @@ export function TimelineEditor({
           </motion.div>
         </div>
       </ScrollArea>
+
+      <Dialog open={selectedImagePreview !== null} onOpenChange={() => setSelectedImagePreview(null)}>
+        <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col p-0">
+          <div className="relative w-full h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10"
+              onClick={() => setSelectedImagePreview(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
+            <div className="relative w-full h-full flex items-center justify-center bg-black/50 p-4">
+              {selectedImagePreview?.thumbnail ? (
+                <img
+                  src={selectedImagePreview.thumbnail}
+                  alt={selectedImagePreview.title}
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                  <ImageIcon className="h-12 w-12" />
+                  <p className="mt-2">No hay imagen disponible</p>
+                </div>
+              )}
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="space-y-1">
+                  <h3 className="font-semibold">{selectedImagePreview?.shotType}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedImagePreview?.imagePrompt || selectedImagePreview?.description}
+                  </p>
+                </div>
+                {onRegenerateImage && selectedImagePreview && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      onRegenerateImage(selectedImagePreview.id);
+                      setSelectedImagePreview(null);
+                    }}
+                    className="shrink-0"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Regenerar Imagen
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
