@@ -99,6 +99,7 @@ export function MusicVideoAI() {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
+  const [currentStep, setCurrentStep] = useState<number>(1); // Nuevo estado para controlar el flujo
 
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,23 +138,23 @@ export function MusicVideoAI() {
           }
           const buffer = await audioContext.current.decodeAudioData(e.target.result);
           setAudioBuffer(buffer);
+          // Iniciar transcripción automáticamente
+          transcribeAudio(file);
         }
       };
       reader.readAsArrayBuffer(file);
     }
   }, [toast]);
 
-  const transcribeAudio = async () => {
-    if (!selectedFile) return;
-
+  const transcribeAudio = async (file: File) => {
     setIsTranscribing(true);
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('file', file);
       formData.append('model', 'whisper-1');
 
       const transcription = await openai.audio.transcriptions.create({
-        file: selectedFile,
+        file: file,
         model: "whisper-1",
       });
 
@@ -174,7 +175,12 @@ export function MusicVideoAI() {
 
         const formattedLyrics = formattedResponse.choices[0].message.content;
         setTranscription(formattedLyrics || transcription.text);
-        generateVideoScript(formattedLyrics || transcription.text);
+        setCurrentStep(2); // Avanzar al siguiente paso
+
+        toast({
+          title: "Éxito",
+          description: "Letra transcrita correctamente",
+        });
       }
 
     } catch (error) {
@@ -189,50 +195,75 @@ export function MusicVideoAI() {
     }
   };
 
-  const generateVideoScript = async (lyrics: string) => {
+  // Función para sincronizar beats y crear cortes
+  const syncAudioWithTimeline = async () => {
+    if (!audioBuffer) return;
+
+    setIsGeneratingShots(true);
+    try {
+      const segments = await detectBeatsAndCreateSegments();
+      if (segments && segments.length > 0) {
+        setTimelineItems(segments);
+        setCurrentStep(3); // Avanzar al siguiente paso
+
+        toast({
+          title: "Éxito",
+          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
+        });
+      }
+    } catch (error) {
+      console.error("Error sincronizando audio:", error);
+      toast({
+        title: "Error",
+        description: "Error al sincronizar el audio con el timeline",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingShots(false);
+    }
+  };
+
+  // Función para generar el guion basado en los segmentos
+  const generateVideoScript = async () => {
+    if (!transcription || timelineItems.length === 0) return;
+
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción completa.
-
-Estilo Visual:
-- Mood: ${videoStyle.mood || 'Neutral'}
-- Paleta de Color: ${videoStyle.colorPalette || 'Natural'}
-- Estilo de Personajes/Escenas: ${videoStyle.characterStyle || 'Realista'}
-- Intensidad Visual: ${videoStyle.visualIntensity}%
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción y coincida con los ${timelineItems.length} cortes detectados.
 
 Letra de la canción:
-${lyrics}
+${transcription}
 
-IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON que siga exactamente esta estructura, sin texto adicional:
+Número de segmentos: ${timelineItems.length}
+Duración total: ${audioBuffer?.duration.toFixed(2)} segundos
 
+Genera un prompt específico para cada segmento, considerando:
+- El momento de la canción
+- La letra correspondiente a ese momento
+- El tipo de plano asignado
+- La duración del segmento
+
+IMPORTANTE: Tu respuesta debe ser SOLAMENTE un objeto JSON con esta estructura:
 {
-  "shots": [
+  "segments": [
     {
-      "time": número de segundos desde el inicio,
-      "duration": número entre 1 y 5,
-      "shotType": "tipo de toma (close-up, medium shot, wide shot, etc)",
-      "description": "descripción detallada de la escena",
+      "id": número (debe coincidir con el id del segmento existente),
+      "time": número en segundos,
+      "duration": número en segundos,
+      "shotType": "tipo de plano actual",
+      "description": "descripción de la escena",
       "imagePrompt": "prompt detallado para IA que describa la escena",
-      "transition": "corte directo, fade, dissolve, etc"
+      "transition": "tipo de transición"
     }
   ]
-}
-
-Reglas para las tomas:
-1. Cada toma debe durar entre 1 y 5 segundos
-2. Las tomas deben variar en tipo y ángulo
-3. Las transiciones deben ser variadas y apropiadas
-4. Los prompts deben ser detallados y específicos
-5. Las escenas deben estar sincronizadas con la letra
-
-El tiempo total debe cubrir toda la canción con suficientes tomas para mantener el video dinámico e interesante.`;
+}`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
           {
             role: "system",
-            content: "Eres un director de videos musicales experto. Responde SOLAMENTE con JSON válido, sin ningún texto adicional o explicaciones."
+            content: "Eres un director de videos musicales experto. Responde SOLAMENTE con JSON válido."
           },
           { role: "user", content: prompt }
         ],
@@ -240,34 +271,44 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
         max_tokens: 2000
       });
 
-      console.log("OpenAI response:", response.choices[0].message.content);
-
       if (!response.choices[0].message.content) {
         throw new Error("No se recibió respuesta del modelo");
       }
 
       try {
-        // Intentar encontrar y parsear el JSON incluso si hay texto adicional
-        const content = response.choices[0].message.content;
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : content;
+        const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : response.choices[0].message.content;
         const scriptResult = JSON.parse(jsonString);
 
-        if (!scriptResult.shots || !Array.isArray(scriptResult.shots) || scriptResult.shots.length === 0) {
+        if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
           throw new Error("El formato del guion no es válido");
         }
 
-        generateTimelineItems(scriptResult.shots);
-        setScriptContent(JSON.stringify(scriptResult, null, 2));
+        // Actualizar los items existentes con los nuevos prompts y descripciones
+        const updatedItems = timelineItems.map(item => {
+          const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
+          if (scriptSegment) {
+            return {
+              ...item,
+              description: scriptSegment.description,
+              imagePrompt: scriptSegment.imagePrompt,
+              shotType: scriptSegment.shotType,
+              transition: scriptSegment.transition
+            };
+          }
+          return item;
+        });
+
+        setTimelineItems(updatedItems);
+        setCurrentStep(4); // Avanzar al siguiente paso
 
         toast({
           title: "Éxito",
-          description: `Guion generado con ${scriptResult.shots.length} tomas`,
+          description: "Guion generado correctamente",
         });
 
       } catch (parseError) {
         console.error("Error parsing response:", parseError);
-        console.log("Raw response:", response.choices[0].message.content);
         throw new Error("Error al procesar la respuesta de la IA");
       }
 
@@ -280,19 +321,6 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
       });
     } finally {
       setIsGeneratingScript(false);
-    }
-  };
-
-  const handleScriptChange = (value: string | undefined) => {
-    if (!value) return;
-    setScriptContent(value);
-    try {
-      const scriptData = JSON.parse(value);
-      if (scriptData.shots && Array.isArray(scriptData.shots)) {
-        generateTimelineItems(scriptData.shots);
-      }
-    } catch (error) {
-      console.error("Error parsing script:", error);
     }
   };
 
@@ -361,7 +389,6 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     setVisibleTimeEnd(currentTime);
     setZoomLevel(1);
   }, []);
-
 
   const handleTimeChange = (visibleTimeStart: number, visibleTimeEnd: number) => {
     setVisibleTimeStart(visibleTimeStart);
@@ -524,6 +551,19 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleScriptChange = (value: string | undefined) => {
+    if (!value) return;
+    setScriptContent(value);
+    try {
+      const scriptData = JSON.parse(value);
+      if (scriptData.shots && Array.isArray(scriptData.shots)) {
+        generateTimelineItems(scriptData.shots);
+      }
+    } catch (error) {
+      console.error("Error parsing script:", error);
     }
   };
 
@@ -758,7 +798,7 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
   };
 
   // Función para sincronizar el audio con el timeline y generar prompts
-  const syncAudioWithTimeline = async () => {
+  const syncAudioWithTimelineAndGeneratePrompts = async () => {
     if (!audioBuffer) return;
 
     try {
@@ -794,6 +834,7 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
     }
   };
 
+
   return (
     <Card className="p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -811,7 +852,7 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Columna Izquierda */}
         <div className="space-y-6">
-          {/* File Upload Section */}
+          {/* Paso 1: Subir Canción */}
           <div className="border rounded-lg p-4">
             <Label className="text-lg font-semibold mb-4">1. Subir Canción</Label>
             <div className="flex items-center gap-2 mt-2">
@@ -820,37 +861,74 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
                 accept="audio/mpeg"
                 onChange={handleFileChange}
                 className="flex-1"
+                disabled={isTranscribing}
               />
-              <Button
-                onClick={transcribeAudio}
-                disabled={!selectedFile || isTranscribing}
-              >
-                {isTranscribing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  <>
-                    <Music2 className="mr-2 h-4 w-4" />
-                    Generar Guion
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={syncAudioWithTimeline}
-                disabled={!audioBuffer || isGeneratingShots}
-                variant="outline"
-              >
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Sincronizar Beats
-              </Button>
+              {isTranscribing && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Transcribiendo...
+                </div>
+              )}
             </div>
+            {transcription && (
+              <div className="mt-4">
+                <Label>Letra Transcrita:</Label>
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {transcription}
+                  </pre>
+                </ScrollArea>
+              </div>
+            )}
           </div>
 
-          {/* Video Style Settings */}
+          {/* Paso 2: Sincronizar Beats */}
           <div className="border rounded-lg p-4">
-            <Label className="text-lg font-semibold mb-4">2. Estilo del Video</Label>
+            <Label className="text-lg font-semibold mb-4">2. Sincronizar Beats</Label>
+            <Button
+              onClick={syncAudioWithTimeline}
+              disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
+              className="w-full"
+            >
+              {isGeneratingShots ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Detectando beats...
+                </>
+              ) : (
+                <>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Detectar Cortes Musicales
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Paso 3: Generar Guion */}
+          <div className="border rounded-lg p-4">
+            <Label className="text-lg font-semibold mb-4">3. Generar Guion</Label>
+            <Button
+              onClick={generateVideoScript}
+              disabled={!transcription || timelineItems.length === 0 || isGeneratingScript || currentStep < 3}
+              className="w-full"
+            >
+              {isGeneratingScript ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generando guion...
+                </>
+              ) : (
+                <>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Generar Guion del Video
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Paso 4: Estilo del Video */}
+          <div className="border rounded-lg p-4">
+            <Label className="text-lg font-semibold mb-4">4. Estilo del Video</Label>
             <div className="grid gap-4">
               <div>
                 <Label>Mood</Label>
@@ -917,163 +995,45 @@ El tiempo total debe cubrir toda la canción con suficientes tomas para mantener
             </div>
           </div>
 
-          {/* Script Editor */}
-          {scriptContent && (
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <Label className="text-lg font-semibold">3. Guion del Video</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditingScript(!isEditingScript)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  {isEditingScript ? "Guardar" : "Editar Guion"}
-                </Button>
-              </div>
-              {isEditingScript ? (
-                <div className="h-[400px] border rounded-lg overflow-hidden">
-                  <Editor
-                    height="100%"
-                    defaultLanguage="json"
-                    value={scriptContent}
-                    onChange={handleScriptChange}
-                    theme="vs-dark"
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 14,
-                    }}
-                  />
-                </div>
+          {/* Paso 5: Generar Imágenes */}
+          <div className="border rounded-lg p-4">
+            <Label className="text-lg font-semibold mb-4">5. Generar Imágenes</Label>
+            <Button
+              onClick={generateShotImages}
+              disabled={!timelineItems.length || isGeneratingShots || currentStep < 4}
+              className="w-full"
+            >
+              {isGeneratingShots ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generando imágenes...
+                </>
               ) : (
-                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                  <pre className="text-sm">{scriptContent}</pre>
-                </ScrollArea>
+                <>
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Generar Imágenes para cada Escena
+                </>
               )}
-            </div>
-          )}
-
-          {/* Transcription Display */}
-          {transcription && (
-            <div className="border rounded-lg p-4">
-              <Label className="text-lg font-semibold mb-4">4. Letra Transcrita</Label>
-              <ScrollArea className="h-[200px] w-full rounded-md border p-4 mt-2">
-                <p className="text-sm whitespace-pre-wrap">{transcription}</p>
-              </ScrollArea>
-            </div>
-          )}
-        </div>
-
-        {/* Columna Derecha - Timeline y Preview */}
-        <div className="space-y-6">
-          {timelineItems.length > 0 && (
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <Label className="text-lg font-semibold">5. Secuencia de Video</Label>
-              </div>
-
-              <TimelineEditor
-                clips={clips}
-                currentTime={(currentTime - timelineItems[0]?.start_time || 0) / 1000}
-                duration={totalDuration}
-                audioBuffer={audioBuffer}
-                onTimeUpdate={handleTimeUpdate}
-                onClipUpdate={handleClipUpdate}
-                onPlay={togglePlayback}
-                onPause={togglePlayback}
-                isPlaying={isPlaying}
-              />
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  onClick={generateShotImages}
-                  disabled={isGeneratingShots}
-                  variant="outline"
-                >
-                  {isGeneratingShots ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generando...
-                    </>
-                  ) : (
-                    <>
-                      <ImageIcon className="mr-2 h-4 w-4" />
-                      Generar Imágenes
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleExportVideo}
-                  disabled={isExporting}
-                  variant="default"
-                >
-                  {isExporting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Exportando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Exportar Video
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Shot Preview and Editor */}
-          {selectedShot && (
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Detalles de la Toma</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => regenerateImage(selectedShot)}
-                >
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                  Regenerar Imagen
-                </Button>
-              </div>
-              <div className="space-y-4">
-                <div className="aspect-video relative rounded-lg overflow-hidden">
-                  <img
-                    src={selectedShot.generatedImage || fallbackImage}
-                    alt={selectedShot.description}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <Label>Tipo de Toma</Label>
-                  <p className="text-sm text-muted-foreground">{selectedShot.shotType}</p>
-                </div>
-                <div>
-                  <Label>Descripción</Label>
-                  <p className="text-sm text-muted-foreground">{selectedShot.description}</p>
-                </div>
-                <div>
-                  <Label>Prompt de Imagen</Label>
-                  <p className="text-sm text-muted-foreground">{selectedShot.imagePrompt}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {(isGeneratingScript || isTranscribing) && !timelineItems.length && (
-        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-orange-500 mb-4" />
-            <p className="text-lg font-medium">
-              {isTranscribing ? "Analizando audio..." : "Generando guion visual..."}
-            </p>
+            </Button>
           </div>
         </div>
-      )}
+
+        {/* Columna Derecha - Timeline */}
+        <div className="space-y-6">
+          <TimelineEditor
+            clips={clips}
+            currentTime={currentTime}
+            duration={totalDuration}
+            audioBuffer={audioBuffer || undefined}
+            onTimeUpdate={handleTimeUpdate}
+            onClipUpdate={handleClipUpdate}
+            onPlay={togglePlayback}
+            onPause={togglePlayback}
+            isPlaying={isPlaying}
+            onRegenerateImage={regenerateImage}
+          />
+        </div>
+      </div>
     </Card>
   );
 }
