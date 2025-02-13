@@ -920,10 +920,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
         });
 
-        // Iniciar generación de imágenes
-        console.log("Iniciando generación de imágenes...");
-        await generateShotImages();
-
       } else {
         throw new Error("No se detectaron segmentos en el audio");
       }
