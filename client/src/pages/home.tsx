@@ -2,7 +2,10 @@ import { WaitlistModal } from "@/components/marketing/waitlist-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
-import { Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe, MessageCircle, BarChart2, Calendar } from "lucide-react";
+import { 
+  Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe, 
+  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles 
+} from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
