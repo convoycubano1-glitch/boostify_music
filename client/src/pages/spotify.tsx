@@ -67,11 +67,11 @@ export default function SpotifyPage() {
           targetListeners: targetListeners
         }),
       });
-    
+
       if (!response.ok) {
         throw new Error('Failed to start monthly listeners tracking');
       }
-    
+
       toast({
         title: "Success",
         description: "Monthly listeners tracking has started",
@@ -142,7 +142,7 @@ export default function SpotifyPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pt-14">
       <Header />
       <main className="flex-1">
         <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
@@ -229,7 +229,7 @@ export default function SpotifyPage() {
                     </div>
                   </Card>
                 </motion.div>
-            
+
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}

@@ -11,7 +11,7 @@ export default function ArtistImageAdvisorPage() {
   const [activeTab, setActiveTab] = useState("upload");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-14">
       <Header />
 
       {/* Hero Section with Video Background */}
