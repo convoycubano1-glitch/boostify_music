@@ -1,154 +1,228 @@
 import { Megaphone } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
+import { useToast } from "@/hooks/use-toast";
 
 export function MarketingAgent() {
+  const { toast } = useToast();
+
   const theme: AgentTheme = {
     gradient: "from-green-500 to-emerald-700",
     iconColor: "text-white",
     accentColor: "#10B981",
-    personality: "💼 Estratega Digital"
+    personality: "💼 Digital Strategist"
   };
 
   const actions: AgentAction[] = [
     {
-      name: "Generar plan de marketing",
-      description: "Crear estrategia de marketing musical personalizada",
+      name: "Generate marketing plan",
+      description: "Create personalized music marketing strategy",
       parameters: [
         {
           name: "target",
           type: "select",
-          label: "Audiencia Objetivo",
-          description: "Selecciona el tipo de audiencia principal para la campaña",
+          label: "Target Audience",
+          description: "Select the main target audience for the campaign",
           options: [
-            { value: "gen-z", label: "Generación Z (13-25)" },
+            { value: "gen-z", label: "Generation Z (13-25)" },
             { value: "millennials", label: "Millennials (26-40)" },
-            { value: "gen-x", label: "Generación X (41-55)" },
-            { value: "broad", label: "Audiencia General" },
+            { value: "gen-x", label: "Generation X (41-55)" },
+            { value: "broad", label: "General Audience" },
           ],
           defaultValue: "millennials"
         },
         {
           name: "budget",
           type: "number",
-          label: "Presupuesto ($)",
-          description: "Presupuesto mensual para la campaña de marketing",
+          label: "Budget ($)",
+          description: "Monthly budget for the marketing campaign",
           defaultValue: "1000"
         },
         {
           name: "platform",
           type: "select",
-          label: "Plataforma Principal",
-          description: "Plataforma principal para la campaña",
+          label: "Main Platform",
+          description: "Primary platform for the campaign",
           options: [
             { value: "instagram", label: "Instagram" },
             { value: "tiktok", label: "TikTok" },
             { value: "youtube", label: "YouTube" },
             { value: "spotify", label: "Spotify" },
-            { value: "all", label: "Todas las plataformas" },
+            { value: "all", label: "All platforms" },
           ],
           defaultValue: "instagram"
         },
         {
           name: "duration",
           type: "select",
-          label: "Duración de Campaña",
-          description: "Duración planificada de la campaña",
+          label: "Campaign Duration",
+          description: "Planned duration of the campaign",
           options: [
-            { value: "1month", label: "1 mes" },
-            { value: "3months", label: "3 meses" },
-            { value: "6months", label: "6 meses" },
-            { value: "12months", label: "12 meses" },
+            { value: "1month", label: "1 month" },
+            { value: "3months", label: "3 months" },
+            { value: "6months", label: "6 months" },
+            { value: "12months", label: "12 months" },
           ],
           defaultValue: "3months"
         }
       ],
       action: async (params) => {
-        console.log("Generando plan de marketing:", params);
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        try {
+          const response = await fetch('/api/ai/campaign-suggestion', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: "Music Marketing Campaign",
+              description: `Target: ${params.target}, Platform: ${params.platform}, Duration: ${params.duration}`,
+              platform: params.platform,
+              budget: params.budget
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to generate marketing plan');
+          }
+
+          const data = await response.json();
+          toast({
+            title: "Marketing Plan Generated",
+            description: "Check your dashboard for the detailed strategy.",
+          });
+
+          return data;
+        } catch (error) {
+          console.error("Error generating marketing plan:", error);
+          toast({
+            title: "Error",
+            description: "Failed to generate marketing plan. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     },
     {
-      name: "Programar contenido",
-      description: "Planificar y programar publicaciones automáticamente",
+      name: "Schedule content",
+      description: "Plan and schedule posts automatically",
       parameters: [
         {
           name: "contentType",
           type: "select",
-          label: "Tipo de Contenido",
-          description: "Tipo principal de contenido a programar",
+          label: "Content Type",
+          description: "Main type of content to schedule",
           options: [
-            { value: "posts", label: "Posts Regulares" },
+            { value: "posts", label: "Regular Posts" },
             { value: "stories", label: "Stories" },
-            { value: "reels", label: "Reels/Videos Cortos" },
-            { value: "mixed", label: "Contenido Mixto" },
+            { value: "reels", label: "Reels/Short Videos" },
+            { value: "mixed", label: "Mixed Content" },
           ],
           defaultValue: "mixed"
         },
         {
           name: "frequency",
           type: "select",
-          label: "Frecuencia",
-          description: "Frecuencia de publicación",
+          label: "Frequency",
+          description: "Posting frequency",
           options: [
-            { value: "daily", label: "Diaria" },
-            { value: "3times", label: "3 veces por semana" },
-            { value: "weekly", label: "Semanal" },
-            { value: "custom", label: "Personalizada" },
+            { value: "daily", label: "Daily" },
+            { value: "3times", label: "3 times per week" },
+            { value: "weekly", label: "Weekly" },
+            { value: "custom", label: "Custom" },
           ],
           defaultValue: "3times"
         }
       ],
       action: async (params) => {
-        console.log("Programando contenido:", params);
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        try {
+          const response = await fetch('/api/generate-strategy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to generate content schedule');
+          }
+
+          const data = await response.json();
+          toast({
+            title: "Content Schedule Created",
+            description: "Your content calendar has been updated.",
+          });
+
+          return data;
+        } catch (error) {
+          console.error("Error scheduling content:", error);
+          toast({
+            title: "Error",
+            description: "Failed to create content schedule. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     },
     {
-      name: "Analizar resultados",
-      description: "Analizar métricas y generar informes de rendimiento",
+      name: "Analyze results",
+      description: "Analyze metrics and generate performance reports",
       parameters: [
         {
           name: "metrics",
           type: "select",
-          label: "Métricas Principales",
-          description: "Métricas clave a analizar",
+          label: "Key Metrics",
+          description: "Key metrics to analyze",
           options: [
             { value: "engagement", label: "Engagement" },
-            { value: "growth", label: "Crecimiento" },
-            { value: "conversion", label: "Conversión" },
-            { value: "all", label: "Todas las métricas" },
+            { value: "growth", label: "Growth" },
+            { value: "conversion", label: "Conversion" },
+            { value: "all", label: "All metrics" },
           ],
           defaultValue: "all"
         },
         {
           name: "timeframe",
           type: "select",
-          label: "Período de Análisis",
-          description: "Período de tiempo a analizar",
+          label: "Analysis Period",
+          description: "Time period to analyze",
           options: [
-            { value: "7days", label: "Últimos 7 días" },
-            { value: "30days", label: "Últimos 30 días" },
-            { value: "90days", label: "Últimos 90 días" },
-            { value: "custom", label: "Personalizado" },
+            { value: "7days", label: "Last 7 days" },
+            { value: "30days", label: "Last 30 days" },
+            { value: "90days", label: "Last 90 days" },
+            { value: "custom", label: "Custom" },
           ],
           defaultValue: "30days"
         }
       ],
       action: async (params) => {
-        console.log("Analizando resultados:", params);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+          // Here we would integrate with actual analytics APIs
+          // For now, we'll simulate the analysis
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          toast({
+            title: "Analysis Complete",
+            description: "Your performance report is ready to view.",
+          });
+        } catch (error) {
+          console.error("Error analyzing results:", error);
+          toast({
+            title: "Error",
+            description: "Failed to generate analysis. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     }
   ];
 
   return (
     <BaseAgent
-      name="Marketing Estratégico AI"
-      description="Tu experto en estrategias digitales y crecimiento"
+      name="Strategic Marketing AI"
+      description="Your expert in digital strategies and growth"
       icon={Megaphone}
       actions={actions}
       theme={theme}
-      helpText="Como tu Estratega Digital, me especializo en crear y ejecutar estrategias de marketing efectivas para maximizar tu presencia online y alcanzar a tu audiencia ideal. Utilizaré datos y análisis avanzados para optimizar cada campaña."
+      helpText="As your Digital Strategist, I specialize in creating and executing effective marketing strategies to maximize your online presence and reach your ideal audience. I'll use advanced data and analytics to optimize every campaign."
     />
   );
 }

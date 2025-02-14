@@ -39,11 +39,11 @@ export default function AIAgentsPage() {
               <Brain className="h-8 w-8 text-orange-500" />
             </div>
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-purple-500 to-blue-600">
-              Orquestador de Agentes IA
+              AI Agents Orchestra
             </h1>
           </div>
           <p className="text-xl text-muted-foreground mt-2 max-w-2xl mx-auto">
-            Potencia tu música con nuestro equipo de agentes especializados impulsados por inteligencia artificial
+            Power up your music with our team of specialized agents powered by artificial intelligence
           </p>
         </motion.div>
 

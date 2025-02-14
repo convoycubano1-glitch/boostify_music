@@ -7,81 +7,73 @@ import cors from 'cors';
 
 const app = express();
 
-// Habilitar CORS para todos los orígenes en desarrollo
+// Enable CORS for development
 app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Servir archivos estáticos desde la carpeta public
+// Serve static files from the public folder
 app.use(express.static(path.join(process.cwd(), 'client/public')));
 
+// Basic request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+    if (req.path.startsWith("/api")) {
+      log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
     }
   });
-
   next();
 });
 
-// Validar variables de entorno críticas
+// Validate critical environment variables
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('Error: STRIPE_SECRET_KEY no está definida en las variables de entorno');
-  process.exit(1);
+  log('Warning: STRIPE_SECRET_KEY is not defined in environment variables');
 }
 
 (async () => {
-  const server = registerRoutes(app);
+  try {
+    const server = registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // En producción, servir archivos estáticos antes de configurar Vite
-  if (app.get("env") === "production") {
-    // Servir archivos estáticos desde el directorio dist/public
-    const __dirname = new URL('.', import.meta.url).pathname;
-    app.use(express.static(path.join(__dirname, 'public')));
-
-    // Ruta catch-all para SPA
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // Global error handler
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      console.error('Server error:', err);
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
     });
-  } else {
-    // En desarrollo, usar Vite con configuración específica
-    await setupVite(app, server);
-  }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT} in ${app.get("env")} mode`);
-  });
+    // Setup Vite or static file serving based on environment
+    if (process.env.NODE_ENV === "production") {
+      const __dirname = new URL('.', import.meta.url).pathname;
+      app.use(express.static(path.join(__dirname, 'public')));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+      });
+    } else {
+      await setupVite(app, server);
+    }
+
+    // Start server on port 5000
+    const PORT = 5000;
+    server.listen(PORT, "0.0.0.0", () => {
+      log(`Server running on port ${PORT} in ${app.get("env")} mode`);
+    });
+
+    // Handle server startup errors
+    server.on('error', (error: any) => {
+      if (error.code === 'EADDRINUSE') {
+        log(`Error: Port ${PORT} is already in use`);
+      } else {
+        log(`Server error: ${error.message}`);
+      }
+      process.exit(1);
+    });
+
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
 })();

@@ -6,97 +6,97 @@ export function VideoDirectorAgent() {
     gradient: "from-blue-500 to-indigo-600",
     iconColor: "text-white",
     accentColor: "#3B82F6",
-    personality: "🎬 Director Visionario"
+    personality: "🎬 Visionary Director"
   };
 
   const actions: AgentAction[] = [
     {
-      name: "Generar guión de video musical",
-      description: "Crear un guión detallado basado en la letra y el género musical",
+      name: "Generate music video script",
+      description: "Create a detailed script based on lyrics and music genre",
       parameters: [
         {
           name: "lyrics",
           type: "text",
-          label: "Letra de la Canción",
-          description: "Letra completa de la canción para el video",
+          label: "Song Lyrics",
+          description: "Complete lyrics for the video",
         },
         {
           name: "style",
           type: "select",
-          label: "Estilo Visual",
-          description: "Estilo visual principal para el video",
+          label: "Visual Style",
+          description: "Main visual style for the video",
           options: [
-            { value: "narrative", label: "Narrativo" },
-            { value: "abstract", label: "Abstracto" },
+            { value: "narrative", label: "Narrative" },
+            { value: "abstract", label: "Abstract" },
             { value: "performance", label: "Performance" },
             { value: "experimental", label: "Experimental" },
-            { value: "animation", label: "Animación" },
+            { value: "animation", label: "Animation" },
           ],
           defaultValue: "narrative"
         },
         {
           name: "mood",
           type: "select",
-          label: "Atmósfera",
-          description: "Ambiente y tono emocional del video",
+          label: "Atmosphere",
+          description: "Emotional tone and atmosphere of the video",
           options: [
-            { value: "dramatic", label: "Dramático" },
-            { value: "upbeat", label: "Alegre" },
-            { value: "melancholic", label: "Melancólico" },
-            { value: "energetic", label: "Enérgico" },
-            { value: "mysterious", label: "Misterioso" },
+            { value: "dramatic", label: "Dramatic" },
+            { value: "upbeat", label: "Upbeat" },
+            { value: "melancholic", label: "Melancholic" },
+            { value: "energetic", label: "Energetic" },
+            { value: "mysterious", label: "Mysterious" },
           ],
           defaultValue: "dramatic"
         }
       ],
       action: async (params) => {
-        console.log("Generando guión con parámetros:", params);
+        console.log("Generating script with parameters:", params);
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
     },
     {
-      name: "Planificar secuencias",
-      description: "Crear un storyboard y planificación de escenas",
+      name: "Plan sequences",
+      description: "Create storyboard and scene planning",
       parameters: [
         {
           name: "duration",
           type: "number",
-          label: "Duración (segundos)",
-          description: "Duración total del video en segundos",
+          label: "Duration (seconds)",
+          description: "Total video duration in seconds",
           defaultValue: "240"
         },
         {
           name: "locations",
           type: "select",
-          label: "Tipo de Locación",
-          description: "Ambiente principal para las escenas",
+          label: "Location Type",
+          description: "Main environment for scenes",
           options: [
-            { value: "urban", label: "Urbano" },
-            { value: "nature", label: "Naturaleza" },
-            { value: "studio", label: "Estudio" },
-            { value: "mixed", label: "Mixto" },
+            { value: "urban", label: "Urban" },
+            { value: "nature", label: "Nature" },
+            { value: "studio", label: "Studio" },
+            { value: "mixed", label: "Mixed" },
           ],
           defaultValue: "urban"
         }
       ],
       action: async (params) => {
-        console.log("Planificando secuencias:", params);
+        console.log("Planning sequences:", params);
         await new Promise(resolve => setTimeout(resolve, 2500));
       }
     },
     {
-      name: "Sugerir efectos visuales",
-      description: "Recomendar efectos visuales y transiciones",
+      name: "Suggest visual effects",
+      description: "Recommend visual effects and transitions",
       parameters: [
         {
           name: "complexity",
           type: "select",
-          label: "Complejidad",
-          description: "Nivel de complejidad de los efectos",
+          label: "Complexity",
+          description: "Level of effects complexity",
           options: [
             { value: "simple", label: "Simple" },
-            { value: "moderate", label: "Moderado" },
-            { value: "complex", label: "Complejo" },
+            { value: "moderate", label: "Moderate" },
+            { value: "complex", label: "Complex" },
             { value: "experimental", label: "Experimental" },
           ],
           defaultValue: "moderate"
@@ -104,19 +104,19 @@ export function VideoDirectorAgent() {
         {
           name: "style",
           type: "select",
-          label: "Estilo de Efectos",
-          description: "Estilo principal de los efectos visuales",
+          label: "Effects Style",
+          description: "Main style of visual effects",
           options: [
-            { value: "cinematic", label: "Cinematográfico" },
+            { value: "cinematic", label: "Cinematic" },
             { value: "glitch", label: "Glitch" },
             { value: "retro", label: "Retro" },
-            { value: "minimal", label: "Minimalista" },
+            { value: "minimal", label: "Minimalist" },
           ],
           defaultValue: "cinematic"
         }
       ],
       action: async (params) => {
-        console.log("Generando sugerencias de efectos:", params);
+        console.log("Generating effects suggestions:", params);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
@@ -124,12 +124,12 @@ export function VideoDirectorAgent() {
 
   return (
     <BaseAgent
-      name="Agente Director de Video"
-      description="Asistente de dirección y producción de videos musicales"
+      name="Video Director AI"
+      description="Your assistant for music video direction and production"
       icon={Video}
       actions={actions}
       theme={theme}
-      helpText="Este agente te ayuda a crear guiones, planificar secuencias y seleccionar efectos visuales para tus videos musicales, optimizando el proceso creativo y la producción."
+      helpText="As your Visionary Director, I'll help you create compelling scripts, plan dynamic sequences, and select stunning visual effects for your music videos. Let's bring your visual storytelling to life with cutting-edge creativity!"
     />
   );
 }

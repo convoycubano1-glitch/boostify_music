@@ -6,90 +6,90 @@ export function SocialMediaAgent() {
     gradient: "from-pink-500 to-rose-600",
     iconColor: "text-white",
     accentColor: "#EC4899",
-    personality: "📱 Influencer Digital"
+    personality: "📱 Digital Influencer"
   };
 
   const actions: AgentAction[] = [
     {
-      name: "Planificar contenido",
-      description: "Crear calendario de contenido para redes sociales",
+      name: "Plan content",
+      description: "Create social media content calendar",
       parameters: [
         {
           name: "platforms",
           type: "select",
-          label: "Plataformas",
-          description: "Plataformas principales para el contenido",
+          label: "Platforms",
+          description: "Main platforms for content",
           options: [
             { value: "instagram", label: "Instagram" },
             { value: "tiktok", label: "TikTok" },
             { value: "youtube", label: "YouTube" },
-            { value: "all", label: "Todas las plataformas" },
+            { value: "all", label: "All platforms" },
           ],
           defaultValue: "all"
         },
         {
           name: "frequency",
           type: "select",
-          label: "Frecuencia",
-          description: "Frecuencia de publicación",
+          label: "Frequency",
+          description: "Posting frequency",
           options: [
-            { value: "daily", label: "Diario" },
-            { value: "weekly", label: "Semanal" },
-            { value: "biweekly", label: "Quincenal" },
-            { value: "monthly", label: "Mensual" },
+            { value: "daily", label: "Daily" },
+            { value: "weekly", label: "Weekly" },
+            { value: "biweekly", label: "Bi-weekly" },
+            { value: "monthly", label: "Monthly" },
           ],
           defaultValue: "weekly"
         }
       ],
       action: async (params) => {
-        console.log("Planificando contenido:", params);
+        console.log("Planning content:", params);
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
     },
     {
-      name: "Analizar engagement",
-      description: "Analizar métricas de engagement y sugerir mejoras",
+      name: "Analyze engagement",
+      description: "Analyze engagement metrics and suggest improvements",
       parameters: [
         {
           name: "period",
           type: "select",
-          label: "Período de Análisis",
-          description: "Período de tiempo a analizar",
+          label: "Analysis Period",
+          description: "Time period to analyze",
           options: [
-            { value: "week", label: "Última semana" },
-            { value: "month", label: "Último mes" },
-            { value: "quarter", label: "Último trimestre" },
-            { value: "year", label: "Último año" },
+            { value: "week", label: "Last week" },
+            { value: "month", label: "Last month" },
+            { value: "quarter", label: "Last quarter" },
+            { value: "year", label: "Last year" },
           ],
           defaultValue: "month"
         }
       ],
       action: async (params) => {
-        console.log("Analizando engagement:", params);
+        console.log("Analyzing engagement:", params);
         await new Promise(resolve => setTimeout(resolve, 2500));
       }
     },
     {
-      name: "Generar hashtags",
-      description: "Sugerir hashtags relevantes para mayor alcance",
+      name: "Generate hashtags",
+      description: "Suggest relevant hashtags for better reach",
       parameters: [
         {
           name: "genre",
           type: "select",
-          label: "Género Musical",
-          description: "Género principal de tu música",
+          label: "Music Genre",
+          description: "Main genre of your music",
           options: [
             { value: "pop", label: "Pop" },
             { value: "rock", label: "Rock" },
             { value: "hiphop", label: "Hip Hop" },
-            { value: "electronic", label: "Electrónica" },
-            { value: "latin", label: "Latino" },
+            { value: "electronic", label: "Electronic" },
+            { value: "latin", label: "Latin" },
           ],
           defaultValue: "pop"
         }
       ],
       action: async (params) => {
-        console.log("Generando hashtags:", params);
+        console.log("Generating hashtags:", params);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
@@ -98,11 +98,11 @@ export function SocialMediaAgent() {
   return (
     <BaseAgent
       name="Social Media AI"
-      description="Tu estratega en redes sociales"
+      description="Your social media strategy expert"
       icon={Share2}
       actions={actions}
       theme={theme}
-      helpText="¡Hola! Soy tu Influencer Digital personal. Me especializo en mantener tus redes sociales activas y atractivas, creando contenido que resuena con tu audiencia y aumenta tu visibilidad en el mundo digital. ¡Hagamos que tu música sea viral! 🚀"
+      helpText="Hey! I'm your Digital Influencer. I specialize in keeping your social media active and engaging, creating content that resonates with your audience and increases your visibility in the digital world. Let's make your music go viral! 🚀"
     />
   );
 }

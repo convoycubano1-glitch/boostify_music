@@ -6,23 +6,23 @@ export function MerchandiseAgent() {
     gradient: "from-amber-500 to-yellow-600",
     iconColor: "text-white",
     accentColor: "#F59E0B",
-    personality: "🛍️ Diseñador Creativo"
+    personality: "🛍️ Creative Designer"
   };
 
   const actions: AgentAction[] = [
     {
-      name: "Diseñar productos",
-      description: "Generar diseños para merchandising",
+      name: "Design products",
+      description: "Generate designs for merchandise",
       parameters: [
         {
           name: "productType",
           type: "select",
-          label: "Tipo de Producto",
-          description: "Selecciona el tipo de producto a diseñar",
+          label: "Product Type",
+          description: "Select the type of product to design",
           options: [
-            { value: "tshirt", label: "Camisetas" },
-            { value: "hoodie", label: "Sudaderas" },
-            { value: "accessories", label: "Accesorios" },
+            { value: "tshirt", label: "T-Shirts" },
+            { value: "hoodie", label: "Hoodies" },
+            { value: "accessories", label: "Accessories" },
             { value: "prints", label: "Prints/Posters" },
           ],
           defaultValue: "tshirt"
@@ -30,31 +30,31 @@ export function MerchandiseAgent() {
         {
           name: "style",
           type: "select",
-          label: "Estilo de Diseño",
-          description: "Estilo visual para el merchandising",
+          label: "Design Style",
+          description: "Visual style for merchandise",
           options: [
-            { value: "minimal", label: "Minimalista" },
-            { value: "artistic", label: "Artístico" },
-            { value: "urban", label: "Urbano" },
+            { value: "minimal", label: "Minimalist" },
+            { value: "artistic", label: "Artistic" },
+            { value: "urban", label: "Urban" },
             { value: "vintage", label: "Vintage" },
           ],
           defaultValue: "minimal"
         }
       ],
       action: async (params) => {
-        console.log("Diseñando productos:", params);
+        console.log("Designing products:", params);
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
     },
     {
-      name: "Analizar tendencias",
-      description: "Identificar tendencias en merchandising musical",
+      name: "Analyze trends",
+      description: "Identify trends in music merchandise",
       parameters: [
         {
           name: "market",
           type: "select",
-          label: "Mercado Objetivo",
-          description: "Mercado principal a analizar",
+          label: "Target Market",
+          description: "Main market to analyze",
           options: [
             { value: "global", label: "Global" },
             { value: "local", label: "Local" },
@@ -64,29 +64,29 @@ export function MerchandiseAgent() {
         }
       ],
       action: async (params) => {
-        console.log("Analizando tendencias:", params);
+        console.log("Analyzing trends:", params);
         await new Promise(resolve => setTimeout(resolve, 2500));
       }
     },
     {
-      name: "Optimizar precios",
-      description: "Sugerir estrategias de precios competitivos",
+      name: "Optimize pricing",
+      description: "Suggest competitive pricing strategies",
       parameters: [
         {
           name: "priceRange",
           type: "select",
-          label: "Rango de Precios",
-          description: "Rango de precios objetivo",
+          label: "Price Range",
+          description: "Target price range",
           options: [
-            { value: "budget", label: "Económico" },
-            { value: "mid", label: "Medio" },
+            { value: "budget", label: "Budget" },
+            { value: "mid", label: "Mid-range" },
             { value: "premium", label: "Premium" },
           ],
           defaultValue: "mid"
         }
       ],
       action: async (params) => {
-        console.log("Optimizando precios:", params);
+        console.log("Optimizing prices:", params);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
@@ -95,11 +95,11 @@ export function MerchandiseAgent() {
   return (
     <BaseAgent
       name="Merchandise Designer AI"
-      description="Tu experto en diseño y gestión de merchandising"
+      description="Your expert in merchandise design and management"
       icon={ShoppingBag}
       actions={actions}
       theme={theme}
-      helpText="¡Hey! Soy tu Diseñador Creativo de merchandising. Me especializo en crear productos únicos que conectan con tus fans y reflejan tu identidad artística. ¡Juntos crearemos merch que tus seguidores amarán! 🎨"
+      helpText="Hey there! I'm your Creative Designer for merchandise. I specialize in creating unique products that connect with your fans and reflect your artistic identity. Together, we'll create merch your followers will love! 🎨"
     />
   );
 }

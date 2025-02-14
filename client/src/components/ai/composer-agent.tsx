@@ -6,25 +6,25 @@ export function ComposerAgent() {
     gradient: "from-purple-600 to-blue-600",
     iconColor: "text-white",
     accentColor: "#7C3AED",
-    personality: "🎵 Maestro Creativo"
+    personality: "🎵 Creative Maestro"
   };
 
   const actions: AgentAction[] = [
     {
-      name: "Generar composición musical",
-      description: "Crear una nueva composición basada en parámetros específicos",
+      name: "Generate musical composition",
+      description: "Create a new composition based on specific parameters",
       parameters: [
         {
           name: "genre",
           type: "select",
-          label: "Género Musical",
-          description: "Selecciona el género musical base para la composición",
+          label: "Musical Genre",
+          description: "Select the base musical genre for the composition",
           options: [
             { value: "pop", label: "Pop" },
             { value: "rock", label: "Rock" },
             { value: "hiphop", label: "Hip Hop" },
-            { value: "electronic", label: "Electrónica" },
-            { value: "classical", label: "Clásica" },
+            { value: "electronic", label: "Electronic" },
+            { value: "classical", label: "Classical" },
             { value: "jazz", label: "Jazz" },
           ],
           defaultValue: "pop"
@@ -33,77 +33,77 @@ export function ComposerAgent() {
           name: "tempo",
           type: "number",
           label: "Tempo (BPM)",
-          description: "Velocidad de la composición en beats por minuto",
+          description: "Speed of the composition in beats per minute",
           defaultValue: "120"
         },
         {
           name: "mood",
           type: "select",
-          label: "Estado de Ánimo",
-          description: "Define el carácter emocional de la composición",
+          label: "Mood",
+          description: "Define the emotional character of the composition",
           options: [
-            { value: "happy", label: "Alegre" },
-            { value: "sad", label: "Melancólico" },
-            { value: "energetic", label: "Enérgico" },
-            { value: "calm", label: "Tranquilo" },
-            { value: "dark", label: "Oscuro" },
+            { value: "happy", label: "Happy" },
+            { value: "sad", label: "Melancholic" },
+            { value: "energetic", label: "Energetic" },
+            { value: "calm", label: "Calm" },
+            { value: "dark", label: "Dark" },
           ],
           defaultValue: "energetic"
         },
         {
           name: "duration",
           type: "select",
-          label: "Duración",
-          description: "Duración aproximada de la composición",
+          label: "Duration",
+          description: "Approximate duration of the composition",
           options: [
-            { value: "short", label: "Corta (2-3 min)" },
-            { value: "medium", label: "Media (3-4 min)" },
-            { value: "long", label: "Larga (4-5 min)" },
+            { value: "short", label: "Short (2-3 min)" },
+            { value: "medium", label: "Medium (3-4 min)" },
+            { value: "long", label: "Long (4-5 min)" },
           ],
           defaultValue: "medium"
         }
       ],
       action: async (params) => {
-        console.log("Generando composición con parámetros:", params);
+        console.log("Generating composition with parameters:", params);
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
     },
     {
-      name: "Analizar estructura musical",
-      description: "Analizar la estructura y elementos de una composición",
+      name: "Analyze musical structure",
+      description: "Analyze the structure and elements of a composition",
       parameters: [
         {
           name: "audioFile",
           type: "text",
-          label: "URL del Audio",
-          description: "URL del archivo de audio a analizar",
+          label: "Audio URL",
+          description: "URL of the audio file to analyze",
         }
       ],
       action: async (params) => {
-        console.log("Analizando audio:", params);
+        console.log("Analyzing audio:", params);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     },
     {
-      name: "Sugerir arreglos",
-      description: "Proponer mejoras y variaciones para una composición",
+      name: "Suggest arrangements",
+      description: "Propose improvements and variations for a composition",
       parameters: [
         {
           name: "style",
           type: "select",
-          label: "Estilo de Arreglo",
-          description: "Estilo musical para las sugerencias de arreglo",
+          label: "Arrangement Style",
+          description: "Musical style for arrangement suggestions",
           options: [
-            { value: "minimal", label: "Minimalista" },
-            { value: "orchestral", label: "Orquestal" },
-            { value: "electronic", label: "Electrónico" },
-            { value: "acoustic", label: "Acústico" },
+            { value: "minimal", label: "Minimalist" },
+            { value: "orchestral", label: "Orchestral" },
+            { value: "electronic", label: "Electronic" },
+            { value: "acoustic", label: "Acoustic" },
           ],
           defaultValue: "minimal"
         }
       ],
       action: async (params) => {
-        console.log("Generando sugerencias de arreglos:", params);
+        console.log("Generating arrangement suggestions:", params);
         await new Promise(resolve => setTimeout(resolve, 2500));
       }
     }
@@ -111,12 +111,12 @@ export function ComposerAgent() {
 
   return (
     <BaseAgent
-      name="Compositor Musical AI"
-      description="Tu compañero creativo para la composición musical"
+      name="AI Music Composer"
+      description="Your creative companion for musical composition"
       icon={Music2}
       actions={actions}
       theme={theme}
-      helpText="Soy tu Maestro Creativo musical. Con años de experiencia en composición y arreglos, te ayudaré a dar vida a tus ideas musicales utilizando mi avanzada inteligencia artificial. ¡Juntos crearemos obras maestras!"
+      helpText="I'm your Creative Maestro. With years of experience in composition and arrangements, I'll help bring your musical ideas to life using my advanced artificial intelligence. Together, we'll create masterpieces!"
     />
   );
 }

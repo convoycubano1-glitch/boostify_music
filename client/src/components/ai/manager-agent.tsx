@@ -6,88 +6,88 @@ export function ManagerAgent() {
     gradient: "from-red-500 to-orange-600",
     iconColor: "text-white",
     accentColor: "#EF4444",
-    personality: "👔 Manager Ejecutivo"
+    personality: "👔 Executive Manager"
   };
 
   const actions: AgentAction[] = [
     {
-      name: "Analizar rendimiento",
-      description: "Evaluar métricas de rendimiento del artista",
+      name: "Analyze performance",
+      description: "Evaluate artist performance metrics",
       parameters: [
         {
           name: "metrics",
           type: "select",
-          label: "Tipo de Métricas",
-          description: "Métricas principales a analizar",
+          label: "Metrics Type",
+          description: "Main metrics to analyze",
           options: [
             { value: "streaming", label: "Streaming" },
-            { value: "social", label: "Redes Sociales" },
-            { value: "live", label: "Eventos en Vivo" },
-            { value: "all", label: "Todas las métricas" },
+            { value: "social", label: "Social Media" },
+            { value: "live", label: "Live Events" },
+            { value: "all", label: "All metrics" },
           ],
           defaultValue: "all"
         },
         {
           name: "timeframe",
           type: "select",
-          label: "Período",
-          description: "Período de tiempo a analizar",
+          label: "Time Period",
+          description: "Time period to analyze",
           options: [
-            { value: "month", label: "Último mes" },
-            { value: "quarter", label: "Último trimestre" },
-            { value: "year", label: "Último año" },
+            { value: "month", label: "Last month" },
+            { value: "quarter", label: "Last quarter" },
+            { value: "year", label: "Last year" },
           ],
           defaultValue: "quarter"
         }
       ],
       action: async (params) => {
-        console.log("Analizando rendimiento:", params);
+        console.log("Analyzing performance:", params);
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
     },
     {
-      name: "Planificar estrategia",
-      description: "Desarrollar plan estratégico de carrera",
+      name: "Plan strategy",
+      description: "Develop career strategic plan",
       parameters: [
         {
           name: "focus",
           type: "select",
-          label: "Enfoque Principal",
-          description: "Área principal de enfoque estratégico",
+          label: "Main Focus",
+          description: "Main strategic focus area",
           options: [
-            { value: "growth", label: "Crecimiento de Audiencia" },
-            { value: "revenue", label: "Generación de Ingresos" },
-            { value: "branding", label: "Desarrollo de Marca" },
-            { value: "touring", label: "Giras y Eventos" },
+            { value: "growth", label: "Audience Growth" },
+            { value: "revenue", label: "Revenue Generation" },
+            { value: "branding", label: "Brand Development" },
+            { value: "touring", label: "Tours and Events" },
           ],
           defaultValue: "growth"
         }
       ],
       action: async (params) => {
-        console.log("Planificando estrategia:", params);
+        console.log("Planning strategy:", params);
         await new Promise(resolve => setTimeout(resolve, 2500));
       }
     },
     {
-      name: "Coordinar actividades",
-      description: "Sugerir y coordinar actividades promocionales",
+      name: "Coordinate activities",
+      description: "Suggest and coordinate promotional activities",
       parameters: [
         {
           name: "activityType",
           type: "select",
-          label: "Tipo de Actividad",
-          description: "Tipo principal de actividad promocional",
+          label: "Activity Type",
+          description: "Main type of promotional activity",
           options: [
-            { value: "press", label: "Prensa y Medios" },
-            { value: "events", label: "Eventos" },
-            { value: "collabs", label: "Colaboraciones" },
-            { value: "digital", label: "Campañas Digitales" },
+            { value: "press", label: "Press and Media" },
+            { value: "events", label: "Events" },
+            { value: "collabs", label: "Collaborations" },
+            { value: "digital", label: "Digital Campaigns" },
           ],
           defaultValue: "press"
         }
       ],
       action: async (params) => {
-        console.log("Coordinando actividades:", params);
+        console.log("Coordinating activities:", params);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
@@ -96,11 +96,11 @@ export function ManagerAgent() {
   return (
     <BaseAgent
       name="Manager AI"
-      description="Tu asistente ejecutivo para gestión artística"
+      description="Your executive assistant for artist management"
       icon={UserCog}
       actions={actions}
       theme={theme}
-      helpText="Como tu Manager Ejecutivo, me encargo de optimizar cada aspecto de tu carrera musical. Con mi experiencia en análisis de datos y planificación estratégica, te ayudaré a tomar decisiones informadas y alcanzar tus objetivos profesionales. ¡Llevemos tu carrera al siguiente nivel! 📈"
+      helpText="As your Executive Manager, I handle optimizing every aspect of your music career. With my expertise in data analysis and strategic planning, I'll help you make informed decisions and achieve your professional goals. Let's take your career to the next level! 📈"
     />
   );
 }

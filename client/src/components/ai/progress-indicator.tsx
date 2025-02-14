@@ -35,7 +35,7 @@ export function ProgressIndicator({ steps, progress, isComplete = false }: Progr
                 {new Date().toLocaleTimeString()}
               </div>
               <div className="flex-1 text-sm font-medium">
-                Proceso completado
+                Process completed
               </div>
             </div>
           )}
