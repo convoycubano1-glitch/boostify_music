@@ -649,74 +649,6 @@ export default function ArtistDashboard() {
               </div>
             </div>
 
-            {/* Strategy Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Card className="p-6 backdrop-blur-sm border-orange-500/10">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                          <BarChart2 className="h-6 w-6 text-orange-500" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-semibold">My Strategy</h2>
-                          <p className="text-sm text-muted-foreground">
-                            Monitor your current focus areas
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsStrategyGalleryOpen(true)}
-                        >
-                          <Grid className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          onClick={() => setIsStrategyDialogOpen(true)}
-                          className="bg-orange-500 hover:bg-orange-600"
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          New Strategy
-                        </Button>
-                      </div>
-                    </div>
-
-                    {isLoadingStrategy ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                      </div>
-                    ) : currentStrategy.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {currentStrategy.map((focus, index) => (
-                            <div
-                              key={index}
-                              className="p-4 rounded-lg bg-muted/50 flex items-center gap-2"
-                            >
-                              <CheckCircle2 className="h-4 w-4 text-orange-500" />
-                              <span className="text-sm font-medium">{focus}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No active strategy. Create one to get started.
-                      </div>
-                    )}
-                  </Card>
-                </motion.div>
-              </div>
-            </div>
-
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 {/* Sección de Videos */}
@@ -1339,187 +1271,187 @@ export default function ArtistDashboard() {
                 </motion.div>
               </div>
             </div>
-            {/* Analytics Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-              <div className="lg:col-span-2 space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Card className="p-6 backdrop-blur-sm border-orange-500/10">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                          <BarChart2 className="h-6 w-6 text-orange-500" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-semibold">Performance Analytics</h2>
-                          <p className="text-sm text-muted-foreground">
-                            Track your music performance metrics
-                          </p>
-                        </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Dashboard Analytics Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card className="p-6 backdrop-blur-sm border-orange-500/10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                        <BarChart2 className="h-6 w-6 text-orange-500" />
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("7d")}>
-                          <Calendar className="h-4 w-4" />
-                          7 días
-                        </Button>
-                        <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("30d")}>
-                          <Calendar className="h-4 w-4" />
-                          30 días
-                        </Button>
-                        <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("12m")}>
-                          <Calendar className="h-4 w-4" />
-                          12 meses
-                        </Button>
-                        <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
-                          <Download className="h-4 w-4" />
-                          Export Report
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* KPI Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                      <Card className="p-4 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                        <div className="relative">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Music2 className="h-4 w-4 text-orange-500" />
-                            <h3 className="text-sm font-medium">Total Streams</h3>
-                          </div>
-                          <p className="text-2xl font-bold">{musicMetrics.totalStreams.toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <span className="text-green-500">↑ 12.5%</span> vs last period
-                          </p>
-                        </div>
-                      </Card>
-
-                      <Card className="p-4 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                        <div className="relative">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Users className="h-4 w-4 text-orange-500" />
-                            <h3 className="text-sm font-medium">Monthly Listeners</h3>
-                          </div>
-                          <p className="text-2xl font-bold">{musicMetrics.monthlyListeners.toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <span className="text-green-500">↑ 8.3%</span> vs last month
-                          </p>
-                        </div>
-                      </Card>
-
-                      <Card className="p-4 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                        <div className="relative">
-                          <div className="flex items-center gap-2 mb-2">
-                            <DollarSign className="h-4 w-4 text-orange-500" />
-                            <h3 className="text-sm font-medium">Revenue Growth</h3>
-                          </div>
-                          <p className="text-2xl font-bold">+{musicMetrics.revenueGrowth}%</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Monthly growth
-                          </p>
-                        </div>
-                      </Card>
-
-                      <Card className="p-4 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                        <div className="relative">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Share2 className="h-4 w-4 text-orange-500" />
-                            <h3 className="text-sm font-medium">Social Engagement</h3>
-                          </div>
-                          <p className="text-2xl font-bold">87.2%</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <span className="text-green-500">↑ 5.2%</span> engagement rate
-                          </p>
-                        </div>
-                      </Card>
-                    </div>
-
-                    {/* Performance Charts */}
-                    <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <h3 className="text-lg font-semibold mb-4">Performance Overview</h3>
-                        <div className="h-[300px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={generateTimeData(30)}>
-                              <defs>
-                                <linearGradient id="colorPerformance" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                                  <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                              <XAxis dataKey="date" className="text-xs" />
-                              <YAxis className="text-xs" />
-                              <Tooltip
-                                contentStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: '8px'
-                                }}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="streams"
-                                name="Streams"
-                                stroke="hsl(24, 95%, 53%)"
-                                fillOpacity={1}
-                                fill="url(#colorPerformance)"
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Geographic Distribution</h3>
-                        <div className="h-[300px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <RePieChart>
-                              <Pie
-                                data={musicMetrics.topCountries}
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                              >
-                                {musicMetrics.topCountries.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                contentStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: '8px'
-                                }}
-                              />
-                            </RePieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mt-4">
-                          {musicMetrics.topCountries.map((country, index) => (
-                            <div key={country.name} className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                              />
-                              <span className="text-sm">{country.name}</span>
-                              <span className="text-sm text-muted-foreground ml-auto">
-                                {country.value}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        <h2 className="text-xl font-semibold">Performance Analytics</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Track your music performance metrics
+                        </p>
                       </div>
                     </div>
-                  </Card>
-                </motion.div>
-              </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("7d")}>
+                        <Calendar className="h-4 w-4" />
+                        7 días
+                      </Button>
+                      <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("30d")}>
+                        <Calendar className="h-4 w-4" />
+                        30 días
+                      </Button>
+                      <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("12m")}>
+                        <Calendar className="h-4 w-4" />
+                        12 meses
+                      </Button>
+                      <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
+                        <Download className="h-4 w-4" />
+                        Export Report
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* KPI Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <Card className="p-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Music2 className="h-4 w-4 text-orange-500" />
+                          <h3 className="text-sm font-medium">Total Streams</h3>
+                        </div>
+                        <p className="text-2xl font-bold">{musicMetrics.totalStreams.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          <span className="text-green-500">↑ 12.5%</span> vs last period
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="h-4 w-4 text-orange-500" />
+                          <h3 className="text-sm font-medium">Monthly Listeners</h3>
+                        </div>
+                        <p className="text-2xl font-bold">{musicMetrics.monthlyListeners.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          <span className="text-green-500">↑ 8.3%</span> vs last month
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <DollarSign className="h-4 w-4 text-orange-500" />
+                          <h3 className="text-sm font-medium">Revenue Growth</h3>
+                        </div>
+                        <p className="text-2xl font-bold">+{musicMetrics.revenueGrowth}%</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Monthly growth
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Share2 className="h-4 w-4 text-orange-500" />
+                          <h3 className="text-sm font-medium">Social Engagement</h3>
+                        </div>
+                        <p className="text-2xl font-bold">87.2%</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          <span className="text-green-500">↑ 5.2%</span> engagement rate
+                        </p>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Performance Charts */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Performance Overview</h3>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={generateTimeData(30)}>
+                            <defs>
+                              <linearGradient id="colorPerformance" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
+                                <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis dataKey="date" className="text-xs" />
+                            <YAxis className="text-xs" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(var(--background))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px'
+                              }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="streams"
+                              name="Streams"
+                              stroke="hsl(24, 95%, 53%)"
+                              fillOpacity={1}
+                              fill="url(#colorPerformance)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Geographic Distribution</h3>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RePieChart>
+                            <Pie
+                              data={musicMetrics.topCountries}
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {musicMetrics.topCountries.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(var(--background))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px'
+                              }}
+                            />
+                          </RePieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        {musicMetrics.topCountries.map((country, index) => (
+                          <div key={country.name} className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span className="text-sm">{country.name}</span>
+                            <span className="text-sm text-muted-foreground ml-auto">
+                              {country.value}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
             </div>
           </div>
         </ScrollArea>
