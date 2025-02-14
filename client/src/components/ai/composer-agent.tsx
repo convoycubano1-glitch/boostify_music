@@ -1,7 +1,14 @@
 import { Music2, Wand2 } from "lucide-react";
-import { BaseAgent, type AgentAction } from "./base-agent";
+import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 
 export function ComposerAgent() {
+  const theme: AgentTheme = {
+    gradient: "from-purple-600 to-blue-600",
+    iconColor: "text-white",
+    accentColor: "#7C3AED",
+    personality: "🎵 Maestro Creativo"
+  };
+
   const actions: AgentAction[] = [
     {
       name: "Generar composición musical",
@@ -57,7 +64,6 @@ export function ComposerAgent() {
         }
       ],
       action: async (params) => {
-        // Aquí iría la lógica de integración con la API de generación de música
         console.log("Generando composición con parámetros:", params);
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
@@ -105,11 +111,12 @@ export function ComposerAgent() {
 
   return (
     <BaseAgent
-      name="Agente Compositor"
-      description="Asistente de composición musical potenciado por IA"
+      name="Compositor Musical AI"
+      description="Tu compañero creativo para la composición musical"
       icon={Music2}
       actions={actions}
-      helpText="Este agente te ayuda a crear composiciones musicales originales, analizar estructuras musicales existentes y sugerir arreglos creativos utilizando inteligencia artificial."
+      theme={theme}
+      helpText="Soy tu Maestro Creativo musical. Con años de experiencia en composición y arreglos, te ayudaré a dar vida a tus ideas musicales utilizando mi avanzada inteligencia artificial. ¡Juntos crearemos obras maestras!"
     />
   );
 }

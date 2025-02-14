@@ -1,7 +1,14 @@
 import { Megaphone } from "lucide-react";
-import { BaseAgent, type AgentAction } from "./base-agent";
+import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 
 export function MarketingAgent() {
+  const theme: AgentTheme = {
+    gradient: "from-green-500 to-emerald-700",
+    iconColor: "text-white",
+    accentColor: "#10B981",
+    personality: "💼 Estratega Digital"
+  };
+
   const actions: AgentAction[] = [
     {
       name: "Generar plan de marketing",
@@ -136,11 +143,12 @@ export function MarketingAgent() {
 
   return (
     <BaseAgent
-      name="Agente de Marketing"
-      description="Automatización y gestión integral de marketing musical"
+      name="Marketing Estratégico AI"
+      description="Tu experto en estrategias digitales y crecimiento"
       icon={Megaphone}
       actions={actions}
-      helpText="Este agente te ayuda a automatizar tus campañas de marketing musical, programar contenido y analizar resultados utilizando inteligencia artificial para optimizar tu alcance y engagement."
+      theme={theme}
+      helpText="Como tu Estratega Digital, me especializo en crear y ejecutar estrategias de marketing efectivas para maximizar tu presencia online y alcanzar a tu audiencia ideal. Utilizaré datos y análisis avanzados para optimizar cada campaña."
     />
   );
 }

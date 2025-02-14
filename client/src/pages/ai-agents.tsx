@@ -1,22 +1,6 @@
 import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
-import {
-  Music2,
-  VideoIcon,
-  Palette,
-  MessageSquare,
-  Share2,
-  ShoppingBag,
-  UserCog,
-  Megaphone,
-  Brain,
-  Sparkles,
-} from "lucide-react";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { Brain } from "lucide-react";
 import { ComposerAgent } from "@/components/ai/composer-agent";
 import { VideoDirectorAgent } from "@/components/ai/video-director-agent";
 import { MarketingAgent } from "@/components/ai/marketing-agent";
@@ -24,104 +8,70 @@ import { SocialMediaAgent } from "@/components/ai/social-media-agent";
 import { MerchandiseAgent } from "@/components/ai/merchandise-agent";
 import { ManagerAgent } from "@/components/ai/manager-agent";
 
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  icon: React.ElementType;
-  color: string;
-  status: "idle" | "working" | "completed" | "error";
-}
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2
+    }
+  }
+};
 
-const agents: Agent[] = [
-  {
-    id: "composer",
-    name: "Agente Compositor",
-    description: "Genera composiciones musicales y arreglos",
-    icon: Music2,
-    color: "bg-orange-500",
-    status: "idle",
-  },
-  {
-    id: "music-creator",
-    name: "Agente Creador de Música",
-    description: "Produce y masteriza pistas musicales",
-    icon: Sparkles,
-    color: "bg-purple-500",
-    status: "idle",
-  },
-  {
-    id: "video-director",
-    name: "Agente Director de Video",
-    description: "Crea y dirige videos musicales con IA",
-    icon: VideoIcon,
-    color: "bg-blue-500",
-    status: "idle",
-  },
-  {
-    id: "marketing",
-    name: "Agente de Marketing",
-    description: "Desarrolla estrategias de marketing musical",
-    icon: Megaphone,
-    color: "bg-green-500",
-    status: "idle",
-  },
-  {
-    id: "social-media",
-    name: "Agente de Social Media",
-    description: "Gestiona y optimiza presencia en redes sociales",
-    icon: Share2,
-    color: "bg-pink-500",
-    status: "idle",
-  },
-  {
-    id: "image-creator",
-    name: "Agente Creador de Imagen",
-    description: "Genera artwork y contenido visual",
-    icon: Palette,
-    color: "bg-yellow-500",
-    status: "idle",
-  },
-  {
-    id: "manager",
-    name: "Agente Manager",
-    description: "Coordina y optimiza la gestión artística",
-    icon: UserCog,
-    color: "bg-red-500",
-    status: "idle",
-  },
-  {
-    id: "merchandise",
-    name: "Agente Merchandise",
-    description: "Diseña y gestiona productos merchandising",
-    icon: ShoppingBag,
-    color: "bg-indigo-500",
-    status: "idle",
-  },
-];
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
 
 export default function AIAgentsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
-            Orquestador de Agentes IA
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Conjunto de agentes especializados para potenciar tu música
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 text-center"
+        >
+          <div className="inline-flex items-center justify-center gap-2 mb-4">
+            <div className="p-2 rounded-full bg-orange-500/10">
+              <Brain className="h-8 w-8 text-orange-500" />
+            </div>
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-purple-500 to-blue-600">
+              Orquestador de Agentes IA
+            </h1>
+          </div>
+          <p className="text-xl text-muted-foreground mt-2 max-w-2xl mx-auto">
+            Potencia tu música con nuestro equipo de agentes especializados impulsados por inteligencia artificial
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ComposerAgent />
-          <VideoDirectorAgent />
-          <MarketingAgent />
-          <SocialMediaAgent />
-          <MerchandiseAgent />
-          <ManagerAgent />
-        </div>
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto"
+        >
+          <motion.div variants={item}>
+            <ComposerAgent />
+          </motion.div>
+          <motion.div variants={item}>
+            <VideoDirectorAgent />
+          </motion.div>
+          <motion.div variants={item}>
+            <MarketingAgent />
+          </motion.div>
+          <motion.div variants={item}>
+            <SocialMediaAgent />
+          </motion.div>
+          <motion.div variants={item}>
+            <MerchandiseAgent />
+          </motion.div>
+          <motion.div variants={item}>
+            <ManagerAgent />
+          </motion.div>
+        </motion.div>
       </main>
     </div>
   );
