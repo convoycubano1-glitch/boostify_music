@@ -28,6 +28,7 @@ import ProducerToolsPage from "@/pages/producer-tools";
 import MusicVideoCreator from "@/pages/music-video-creator";
 import RecordLabelServices from "@/pages/record-label-services";
 import AIAgentsPage from "@/pages/ai-agents";
+import ArtistImageAdvisor from "@/pages/artist-image-advisor";
 
 const Router = () => {
   return (
@@ -55,6 +56,7 @@ const Router = () => {
       <ProtectedRoute path="/music-video-creator" component={MusicVideoCreator} />
       <ProtectedRoute path="/record-label-services" component={RecordLabelServices} />
       <ProtectedRoute path="/ai-agents" component={AIAgentsPage} />
+      <ProtectedRoute path="/artist-image-advisor" component={ArtistImageAdvisor} />
       <Route component={NotFound} />
     </Switch>
   );
