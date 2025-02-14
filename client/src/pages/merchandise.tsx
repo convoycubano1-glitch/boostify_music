@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ShoppingBag,
@@ -16,12 +19,32 @@ import {
   Book,
   Watch,
   Headphones,
-  Badge,
+  Badge as BadgeIcon,
   Package,
-  ArrowRight
+  ArrowRight,
+  Printer,
+  LineChart,
+  ShoppingCart,
+  Building2,
+  Settings,
+  ImageIcon,
+  Music,
+  BarChart2
 } from "lucide-react";
+import { SiShopify } from "react-icons/si";
+import {
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area,
+  AreaChart
+} from "recharts";
 
-// Product type definition remains the same
+// Product type definition from original code
 interface Product {
   id: string;
   name: string;
@@ -33,7 +56,7 @@ interface Product {
   customizationOptions: string[];
 }
 
-// Products data remains the same
+// Products data from original code
 const products: Product[] = [
   {
     id: "1",
@@ -121,7 +144,7 @@ const products: Product[] = [
     category: "Accessories",
     basePrice: 12.99,
     image: "/assets/products/pin.jpg",
-    icon: <Badge className="h-8 w-8" />,
+    icon: <BadgeIcon className="h-8 w-8" />,
     description: "Custom enamel pins with your designs",
     customizationOptions: ["Size", "Backing Type", "Finish"]
   },
@@ -135,6 +158,15 @@ const products: Product[] = [
     description: "Curated merchandise bundles",
     customizationOptions: ["Bundle Items", "Packaging", "Price Tier"]
   }
+];
+
+const salesData = [
+  { name: 'Jan', value: 4000 },
+  { name: 'Feb', value: 3000 },
+  { name: 'Mar', value: 5000 },
+  { name: 'Apr', value: 2780 },
+  { name: 'May', value: 1890 },
+  { name: 'Jun', value: 2390 },
 ];
 
 export default function MerchandisePage() {
@@ -158,14 +190,14 @@ export default function MerchandisePage() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Artist Merchandise Hub
+            Merchandise Manager
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mb-8">
-            Create, customize, and sell your branded merchandise through our network of providers and influencers
+            Create, customize, and manage your merchandise with powerful tools and integrations
           </p>
           <Button 
             className="w-fit bg-orange-500 hover:bg-orange-600 text-lg px-8 py-6"
-            onClick={() => setSelectedTab("customize")}
+            onClick={() => setSelectedTab("products")}
           >
             Start Creating
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -177,109 +209,464 @@ export default function MerchandisePage() {
       <div className="container mx-auto px-4 py-12">
         <Tabs defaultValue="products" value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
           <div className="flex flex-col items-center mb-12">
-            <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-2 md:grid-cols-none gap-4 md:gap-0 p-1 bg-orange-500/5">
+            <TabsList className="grid w-full md:w-auto md:inline-flex grid-cols-2 md:grid-cols-none gap-4 md:gap-0 p-1">
               <TabsTrigger value="products" className="px-8 data-[state=active]:bg-orange-500">
                 <ShoppingBag className="w-4 h-4 mr-2" />
                 Products
               </TabsTrigger>
+              <TabsTrigger value="shopify" className="px-8 data-[state=active]:bg-orange-500">
+                <SiShopify className="w-4 h-4 mr-2" />
+                Shopify
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="px-8 data-[state=active]:bg-orange-500">
+                <LineChart className="w-4 h-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="marketing" className="px-8 data-[state=active]:bg-orange-500">
+                <Share2 className="w-4 h-4 mr-2" />
+                Marketing
+              </TabsTrigger>
               <TabsTrigger value="providers" className="px-8 data-[state=active]:bg-orange-500">
-                <Package className="w-4 h-4 mr-2" />
+                <Building2 className="w-4 h-4 mr-2" />
                 Providers
-              </TabsTrigger>
-              <TabsTrigger value="influencers" className="px-8 data-[state=active]:bg-orange-500">
-                <Users className="w-4 h-4 mr-2" />
-                Influencers
-              </TabsTrigger>
-              <TabsTrigger value="customize" className="px-8 data-[state=active]:bg-orange-500">
-                <Palette className="w-4 h-4 mr-2" />
-                Customize
               </TabsTrigger>
             </TabsList>
           </div>
 
           {/* Products Tab */}
-          <TabsContent value="products" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => (
-                <Card 
-                  key={product.id} 
-                  className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10"
-                >
-                  <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
-                    <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
-                      {product.icon}
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <TabsContent value="products">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* T-shirt Designer */}
+              <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10">
+                <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
+                  <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
+                    <Shirt className="h-12 w-12 text-orange-500" />
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold group-hover:text-orange-500 transition-colors">
-                        {product.name}
-                      </h3>
-                      <span className="text-orange-500 font-medium text-lg">
-                        ${product.basePrice}
-                      </span>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-2xl font-semibold group-hover:text-orange-500 transition-colors mb-3">
+                    T-shirt Designer
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Create custom t-shirt designs with our advanced design tools
+                  </p>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">DTG Printing</Badge>
                     </div>
-                    <p className="text-muted-foreground mb-4">{product.description}</p>
-                    <div className="space-y-2">
-                      {product.customizationOptions.map((option, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500/70" />
-                          <span>{option}</span>
-                        </div>
-                      ))}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Screen Printing</Badge>
                     </div>
-                    <Button className="w-full mt-6 bg-orange-500 hover:bg-orange-600 transition-transform group-hover:scale-105">
-                      Customize & Order
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Embroidery</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Custom Colors</Badge>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Launch Designer
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Poster Creator */}
+              <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10">
+                <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
+                  <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
+                    <ImageIcon className="h-12 w-12 text-orange-500" />
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-2xl font-semibold group-hover:text-orange-500 transition-colors mb-3">
+                    Poster Creator
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Design eye-catching posters and promotional materials
+                  </p>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">High Quality</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Multiple Sizes</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Templates</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Custom Designs</Badge>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Create Poster
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Vinyl Creator */}
+              <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10">
+                <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
+                  <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
+                    <Music className="h-12 w-12 text-orange-500" />
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-2xl font-semibold group-hover:text-orange-500 transition-colors mb-3">
+                    Vinyl Creator
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Create custom vinyl records and merchandise
+                  </p>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Album Covers</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Packaging</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Limited Editions</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Custom Colors</Badge>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Design Vinyl
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Shopify Integration Tab */}
+          <TabsContent value="shopify">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <SiShopify className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Shopify Integration</h3>
+                    <p className="text-muted-foreground">
+                      Connect and manage your Shopify store
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-orange-500/5 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="font-medium">Store Status</p>
+                        <p className="text-sm text-muted-foreground">mystore.shopify.com</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500">Connected</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button className="justify-start" variant="outline">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Store Settings
+                    </Button>
+                    <Button className="justify-start" variant="outline">
+                      <Package className="mr-2 h-4 w-4" />
+                      Products
                     </Button>
                   </div>
-                </Card>
-              ))}
+                </div>
+              </Card>
+
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Share2 className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Available Plugins</h3>
+                    <p className="text-muted-foreground">
+                      Enhance your store with powerful plugins
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Print on Demand</h4>
+                      <Badge>Popular</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Automatically fulfill print on demand orders
+                    </p>
+                    <Button variant="outline" size="sm">Install</Button>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Order Tracking</h4>
+                      <Badge>Essential</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Real-time order tracking and notifications
+                    </p>
+                    <Button variant="outline" size="sm">Install</Button>
+                  </div>
+                </div>
+              </Card>
             </div>
           </TabsContent>
 
-          {/* Other tabs content remains the same */}
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <BarChart2 className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Sales Analytics</h3>
+                    <p className="text-muted-foreground">
+                      Track your merchandise performance
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={salesData}>
+                      <defs>
+                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="rgb(249, 115, 22)" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="rgb(249, 115, 22)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area
+                        type="monotone"
+                        dataKey="value"
+                        stroke="rgb(249, 115, 22)"
+                        fillOpacity={1}
+                        fill="url(#colorSales)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Package className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Top Products</h3>
+                    <p className="text-muted-foreground">
+                      Best selling merchandise items
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Shirt className="h-5 w-5 text-orange-500" />
+                        <div>
+                          <p className="font-medium">Band T-Shirt</p>
+                          <p className="text-sm text-muted-foreground">Black, All Sizes</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">$1,234</p>
+                        <p className="text-sm text-green-500">+12%</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Music className="h-5 w-5 text-orange-500" />
+                        <div>
+                          <p className="font-medium">Limited Vinyl</p>
+                          <p className="text-sm text-muted-foreground">Special Edition</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">$987</p>
+                        <p className="text-sm text-green-500">+8%</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Marketing Tab */}
+          <TabsContent value="marketing">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Share2 className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Marketing Tools</h3>
+                    <p className="text-muted-foreground">
+                      Promote your merchandise effectively
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Email Marketing</h4>
+                      <Badge>Active</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Send promotional emails to your customers
+                    </p>
+                    <Progress value={75} className="mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Last campaign: 75% open rate
+                    </p>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Social Media</h4>
+                      <Badge>Connected</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Automatic social media promotion
+                    </p>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">Post Update</Button>
+                      <Button variant="outline" size="sm">Schedule</Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Settings className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Marketing Plugins</h3>
+                    <p className="text-muted-foreground">
+                      Enhance your marketing capabilities
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {['Abandoned Cart Recovery', 'Customer Reviews', 'Loyalty Program', 'SEO Optimizer'].map((plugin) => (
+                    <div key={plugin} className="p-4 border rounded-lg flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{plugin}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Click to configure settings
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Providers Tab */}
           <TabsContent value="providers">
-            <div className="grid gap-6">
-              <Card className="p-8 border-orange-500/10">
-                <h2 className="text-3xl font-bold mb-4">Connect with Providers</h2>
-                <p className="text-muted-foreground mb-6 text-lg">
-                  Partner with our verified merchandise providers to bring your designs to life. Our network includes industry leaders in custom merchandise production.
-                </p>
-                {/* Provider content will be implemented */}
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Find Providers
-                </Button>
-              </Card>
-            </div>
-          </TabsContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Building2 className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Connected Providers</h3>
+                    <p className="text-muted-foreground">
+                      Manage your merchandise providers
+                    </p>
+                  </div>
+                </div>
 
-          <TabsContent value="influencers">
-            <div className="grid gap-6">
-              <Card className="p-8 border-orange-500/10">
-                <h2 className="text-3xl font-bold mb-4">Influencer Marketplace</h2>
-                <p className="text-muted-foreground mb-6 text-lg">
-                  Connect with influencers to promote your merchandise. Reach new audiences and boost your sales through strategic partnerships.
-                </p>
-                {/* Influencer content will be implemented */}
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Browse Influencers
-                </Button>
+                <div className="space-y-4">
+                  {[
+                    { name: 'PrintfulPro', type: 'Print Provider', status: 'Active' },
+                    { name: 'VinylPress', type: 'Vinyl Manufacturer', status: 'Active' },
+                    { name: 'ShirtWorks', type: 'Clothing Provider', status: 'Pending' }
+                  ].map((provider) => (
+                    <div key={provider.name} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h4 className="font-medium">{provider.name}</h4>
+                          <p className="text-sm text-muted-foreground">{provider.type}</p>
+                        </div>
+                        <Badge variant={provider.status === 'Active' ? 'default' : 'secondary'}>
+                          {provider.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" size="sm">Configure</Button>
+                        <Button variant="outline" size="sm">View Orders</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="customize">
-            <div className="grid gap-6">
-              <Card className="p-8 border-orange-500/10">
-                <h2 className="text-3xl font-bold mb-4">Design Studio</h2>
-                <p className="text-muted-foreground mb-6 text-lg">
-                  Customize your merchandise with our interactive design tools. Create unique designs that represent your brand.
-                </p>
-                {/* Customization tools will be implemented */}
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Launch Design Studio
-                </Button>
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Package className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Provider Directory</h3>
+                    <p className="text-muted-foreground">
+                      Find and connect with new providers
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Input placeholder="Search providers..." className="mb-4" />
+
+                  {[
+                    { name: 'Global Print Solutions', rating: 4.8, speciality: 'All Print Products' },
+                    { name: 'Vinyl Masters', rating: 4.7, speciality: 'Vinyl Records' },
+                    { name: 'Eco Merch', rating: 4.9, speciality: 'Sustainable Products' }
+                  ].map((provider) => (
+                    <div key={provider.name} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h4 className="font-medium">{provider.name}</h4>
+                          <p className="text-sm text-muted-foreground">{provider.speciality}</p>
+                        </div>
+                        <div className="text-sm">
+                          ⭐ {provider.rating}
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="mt-4">
+                        View Details
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </div>
           </TabsContent>
