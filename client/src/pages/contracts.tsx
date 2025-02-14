@@ -178,6 +178,7 @@ export default function ContractsPage() {
       element.click();
       document.body.removeChild(element);
     };
+  
 
   // Save contract mutation using Firestore
   const saveContractMutation = useMutation({
@@ -271,280 +272,282 @@ export default function ContractsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <div className="flex-1 space-y-8 p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Contract Management
-            </h2>
-            <p className="text-muted-foreground">
-              Create, manage, and track your professional agreements efficiently
-            </p>
-          </div>
-          <Dialog open={showNewContractDialog} onOpenChange={setShowNewContractDialog}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Contract
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Contract</DialogTitle>
-                <DialogDescription>
-                  Fill out the form below to generate a professional contract using AI
-                </DialogDescription>
-              </DialogHeader>
-              {!generatedContract ? (
-                <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="title" className="text-sm font-medium">
-                      Contract Title
-                    </label>
-                    <input
-                      id="title"
-                      type="text"
-                      className="w-full p-2 border rounded"
-                      value={contractTitle}
-                      onChange={(e) => setContractTitle(e.target.value)}
-                    />
+      <main className="flex-1 pt-20">
+        <div className="flex-1 space-y-8 p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Contract Management
+              </h2>
+              <p className="text-muted-foreground">
+                Create, manage, and track your professional agreements efficiently
+              </p>
+            </div>
+            <Dialog open={showNewContractDialog} onOpenChange={setShowNewContractDialog}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Contract
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Contract</DialogTitle>
+                  <DialogDescription>
+                    Fill out the form below to generate a professional contract using AI
+                  </DialogDescription>
+                </DialogHeader>
+                {!generatedContract ? (
+                  <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="title" className="text-sm font-medium">
+                        Contract Title
+                      </label>
+                      <input
+                        id="title"
+                        type="text"
+                        className="w-full p-2 border rounded"
+                        value={contractTitle}
+                        onChange={(e) => setContractTitle(e.target.value)}
+                      />
+                    </div>
+                    <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                      <pre className="whitespace-pre-wrap font-mono text-sm">
+                        {generatedContract}
+                      </pre>
+                    </ScrollArea>
+                    <div className="flex justify-end gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setGeneratedContract(null);
+                          setShowNewContractDialog(false);
+                          setContractTitle("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSaveContract}
+                        disabled={!contractTitle || saveContractMutation.isPending}
+                      >
+                        {saveContractMutation.isPending ? "Saving..." : "Save Contract"}
+                      </Button>
+                    </div>
                   </div>
-                  <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                    <pre className="whitespace-pre-wrap font-mono text-sm">
-                      {generatedContract}
-                    </pre>
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card className="p-6">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-medium">Total Contracts</h3>
+                </div>
+                <p className="mt-2 text-3xl font-bold">{contracts.length}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  View and manage all your contracts in one place
+                </p>
+              </Card>
+              <Card className="p-6">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <h3 className="text-lg font-medium">Active Contracts</h3>
+                </div>
+                <p className="mt-2 text-3xl font-bold">
+                  {contracts.filter((c) => c.status === "active").length}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Currently active and enforced agreements
+                </p>
+              </Card>
+              <Card className="p-6">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-yellow-500" />
+                  <h3 className="text-lg font-medium">Pending</h3>
+                </div>
+                <p className="mt-2 text-3xl font-bold">
+                  {contracts.filter((c) => c.status === "draft").length}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Drafts and contracts pending review
+                </p>
+              </Card>
+            </div>
+
+            <Card>
+              {isLoading ? (
+                <div className="p-8 text-center">Loading contracts...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contracts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          <div className="space-y-3">
+                            <p className="text-lg font-medium">No contracts yet</p>
+                            <p className="text-sm text-muted-foreground">
+                              Click "New Contract" to create your first agreement
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      contracts.map((contract) => (
+                        <TableRow key={contract.id}>
+                          <TableCell className="font-medium">{contract.title}</TableCell>
+                          <TableCell>{contract.type}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={`gap-1 ${getStatusColor(contract.status)}`}
+                            >
+                              {getStatusIcon(contract.status)}
+                              {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
+                                  <Eye className="h-4 w-4" /> View
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
+                                  <FileDown className="h-4 w-4" /> Download PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
+                                  <Download className="h-4 w-4" /> Download TXT
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
+                                  <Edit className="h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
+                                  <Trash2 className="h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+
+            {/* View Dialog */}
+            <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+              <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold">{selectedContract?.title}</DialogTitle>
+                  <DialogDescription>
+                    Created on {selectedContract?.createdAt.toLocaleDateString()}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <ScrollArea className="h-full">
+                    <div className="p-4">
+                      <pre className="whitespace-pre-wrap font-mono text-sm">
+                        {selectedContract?.content}
+                      </pre>
+                    </div>
                   </ScrollArea>
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+                    Close
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+              <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Contract</DialogTitle>
+                  <DialogDescription>
+                    Make changes to your contract content below
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <textarea
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="w-full min-h-[400px] p-4 font-mono text-sm border rounded"
+                  />
                   <div className="flex justify-end gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGeneratedContract(null);
-                        setShowNewContractDialog(false);
-                        setContractTitle("");
-                      }}
-                    >
+                    <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                       Cancel
                     </Button>
                     <Button
-                      onClick={handleSaveContract}
-                      disabled={!contractTitle || saveContractMutation.isPending}
+                      onClick={() => {
+                        if (selectedContract) {
+                          updateContractMutation.mutate({
+                            id: selectedContract.id,
+                            updates: { content: editedContent }
+                          });
+                        }
+                      }}
+                      disabled={updateContractMutation.isPending}
                     >
-                      {saveContractMutation.isPending ? "Saving..." : "Save Contract"}
+                      {updateContractMutation.isPending ? "Saving..." : "Save Changes"}
                     </Button>
                   </div>
                 </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogContent>
+            </Dialog>
 
-        <div className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="p-6">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-medium">Total Contracts</h3>
-              </div>
-              <p className="mt-2 text-3xl font-bold">{contracts.length}</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                View and manage all your contracts in one place
-              </p>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <h3 className="text-lg font-medium">Active Contracts</h3>
-              </div>
-              <p className="mt-2 text-3xl font-bold">
-                {contracts.filter((c) => c.status === "active").length}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Currently active and enforced agreements
-              </p>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-lg font-medium">Pending</h3>
-              </div>
-              <p className="mt-2 text-3xl font-bold">
-                {contracts.filter((c) => c.status === "draft").length}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Drafts and contracts pending review
-              </p>
-            </Card>
-          </div>
-
-          <Card>
-            {isLoading ? (
-              <div className="p-8 text-center">Loading contracts...</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contracts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
-                        <div className="space-y-3">
-                          <p className="text-lg font-medium">No contracts yet</p>
-                          <p className="text-sm text-muted-foreground">
-                            Click "New Contract" to create your first agreement
-                          </p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    contracts.map((contract) => (
-                      <TableRow key={contract.id}>
-                        <TableCell className="font-medium">{contract.title}</TableCell>
-                        <TableCell>{contract.type}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={`gap-1 ${getStatusColor(contract.status)}`}
-                          >
-                            {getStatusIcon(contract.status)}
-                            {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
-                                <Eye className="h-4 w-4" /> View
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
-                                <FileDown className="h-4 w-4" /> Download PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
-                                <Download className="h-4 w-4" /> Download TXT
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
-                                <Edit className="h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
-                                <Trash2 className="h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </Card>
-
-          {/* View Dialog */}
-          <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-            <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold">{selectedContract?.title}</DialogTitle>
-                <DialogDescription>
-                  Created on {selectedContract?.createdAt.toLocaleDateString()}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex-1 min-h-0">
-                <ScrollArea className="h-full">
-                  <div className="p-4">
-                    <pre className="whitespace-pre-wrap font-mono text-sm">
-                      {selectedContract?.content}
-                    </pre>
-                  </div>
-                </ScrollArea>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setShowViewDialog(false)}>
-                  Close
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Edit Dialog */}
-          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Edit Contract</DialogTitle>
-                <DialogDescription>
-                  Make changes to your contract content below
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <textarea
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="w-full min-h-[400px] p-4 font-mono text-sm border rounded"
-                />
-                <div className="flex justify-end gap-4">
-                  <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button
+            {/* Delete Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. The contract will be permanently deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
                     onClick={() => {
                       if (selectedContract) {
-                        updateContractMutation.mutate({
-                          id: selectedContract.id,
-                          updates: { content: editedContent }
-                        });
+                        deleteContractMutation.mutate(selectedContract.id);
                       }
                     }}
-                    disabled={updateContractMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/90"
                   >
-                    {updateContractMutation.isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Delete Dialog */}
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. The contract will be permanently deleted.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (selectedContract) {
-                      deleteContractMutation.mutate(selectedContract.id);
-                    }
-                  }}
-                  className="bg-destructive hover:bg-destructive/90"
-                >
-                  {deleteContractMutation.isPending ? "Deleting..." : "Delete"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                    {deleteContractMutation.isPending ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
