@@ -224,211 +224,213 @@ export default function ContactsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                Manage Your Network
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Import, organize, and manage your professional contacts
-              </p>
-            </div>
-            <div className="flex gap-4">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-orange-500 hover:bg-orange-600">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Contact
+      <main className="flex-1 pt-20">
+        <ScrollArea className="flex-1">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
+                  Manage Your Network
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Import, organize, and manage your professional contacts
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-orange-500 hover:bg-orange-600">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Add Contact
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Contact</DialogTitle>
+                      <DialogDescription>
+                        Fill in the contact details below. Required fields are marked with *
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="name">Name *</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="Enter contact name"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="Enter email address"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="Enter phone number"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="company">Company</Label>
+                        <Input
+                          id="company"
+                          value={formData.company}
+                          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                          placeholder="Enter company name"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Input
+                          id="role"
+                          value={formData.role}
+                          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                          placeholder="Enter role or position"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea
+                          id="notes"
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          placeholder="Add any additional notes"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={resetForm}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleAddContact}
+                        disabled={isAddingContact}
+                      >
+                        {isAddingContact ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserPlus className="mr-2 h-4 w-4" />
+                        )}
+                        {isAddingContact ? "Adding..." : "Add Contact"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCSVImport}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={isImporting}
+                  />
+                  <Button variant="outline" disabled={isImporting}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    {isImporting ? "Importing..." : "Import CSV"}
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Contact</DialogTitle>
-                    <DialogDescription>
-                      Fill in the contact details below. Required fields are marked with *
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Name *</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Enter contact name"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter email address"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="company">Company</Label>
-                      <Input
-                        id="company"
-                        value={formData.company}
-                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                        placeholder="Enter company name"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="role">Role</Label>
-                      <Input
-                        id="role"
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        placeholder="Enter role or position"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        placeholder="Add any additional notes"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={resetForm}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleAddContact}
-                      disabled={isAddingContact}
-                    >
-                      {isAddingContact ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <UserPlus className="mr-2 h-4 w-4" />
-                      )}
-                      {isAddingContact ? "Adding..." : "Add Contact"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCSVImport}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={isImporting}
-                />
-                <Button variant="outline" disabled={isImporting}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  {isImporting ? "Importing..." : "Import CSV"}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Import Progress */}
-          {isImporting && (
-            <Card className="p-4 mb-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Importing Contacts...</span>
-                  <span className="text-sm text-muted-foreground">{Math.round(importProgress)}%</span>
                 </div>
-                <Progress value={importProgress} className="h-2" />
               </div>
-            </Card>
-          )}
+            </div>
 
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-            </div>
-          ) : contacts.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No Contacts Yet</h3>
-              <p className="text-muted-foreground mt-2">
-                Import your contacts using CSV or add them manually
-              </p>
-            </Card>
-          ) : (
-            <div className="grid gap-6">
-              {contacts.map((contact) => (
-                <Card key={contact.id} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-xl font-semibold">{contact.name}</h3>
-                          <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                            <Mail className="h-4 w-4" />
-                            <p>{contact.email}</p>
-                          </div>
-                        </div>
-                        <Button variant="outline">
-                          Edit Contact
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        {contact.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm text-muted-foreground">Phone</p>
-                              <p className="font-medium">{contact.phone}</p>
-                            </div>
-                          </div>
-                        )}
-                        {contact.company && (
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-sm text-muted-foreground">Company</p>
-                              <p className="font-medium">{contact.company}</p>
-                            </div>
-                          </div>
-                        )}
-                        {contact.role && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Role</p>
-                            <p className="font-medium">{contact.role}</p>
-                          </div>
-                        )}
-                      </div>
-                      {contact.notes && (
-                        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                          <p className="text-sm text-muted-foreground">Notes</p>
-                          <p className="mt-1">{contact.notes}</p>
-                        </div>
-                      )}
-                    </div>
+            {/* Import Progress */}
+            {isImporting && (
+              <Card className="p-4 mb-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Importing Contacts...</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(importProgress)}%</span>
                   </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+                  <Progress value={importProgress} className="h-2" />
+                </div>
+              </Card>
+            )}
+
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+              </div>
+            ) : contacts.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">No Contacts Yet</h3>
+                <p className="text-muted-foreground mt-2">
+                  Import your contacts using CSV or add them manually
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-6">
+                {contacts.map((contact) => (
+                  <Card key={contact.id} className="p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-xl font-semibold">{contact.name}</h3>
+                            <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                              <Mail className="h-4 w-4" />
+                              <p>{contact.email}</p>
+                            </div>
+                          </div>
+                          <Button variant="outline">
+                            Edit Contact
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                          {contact.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Phone</p>
+                                <p className="font-medium">{contact.phone}</p>
+                              </div>
+                            </div>
+                          )}
+                          {contact.company && (
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Company</p>
+                                <p className="font-medium">{contact.company}</p>
+                              </div>
+                            </div>
+                          )}
+                          {contact.role && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">Role</p>
+                              <p className="font-medium">{contact.role}</p>
+                            </div>
+                          )}
+                        </div>
+                        {contact.notes && (
+                          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                            <p className="text-sm text-muted-foreground">Notes</p>
+                            <p className="mt-1">{contact.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </main>
     </div>
   );
 }
