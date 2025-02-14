@@ -1,7 +1,14 @@
 import { Video, Film } from "lucide-react";
-import { BaseAgent, type AgentAction } from "./base-agent";
+import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 
 export function VideoDirectorAgent() {
+  const theme: AgentTheme = {
+    gradient: "from-blue-500 to-indigo-600",
+    iconColor: "text-white",
+    accentColor: "#3B82F6",
+    personality: "🎬 Director Visionario"
+  };
+
   const actions: AgentAction[] = [
     {
       name: "Generar guión de video musical",
@@ -121,6 +128,7 @@ export function VideoDirectorAgent() {
       description="Asistente de dirección y producción de videos musicales"
       icon={Video}
       actions={actions}
+      theme={theme}
       helpText="Este agente te ayuda a crear guiones, planificar secuencias y seleccionar efectos visuales para tus videos musicales, optimizando el proceso creativo y la producción."
     />
   );
