@@ -40,7 +40,7 @@ export default function ManagerToolsPage() {
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <div className="container mx-auto px-4 py-6">
             {/* Hero Section with Video Background */}
-            <section className="relative rounded-xl overflow-hidden mb-8">
+            <section className="relative rounded-xl overflow-hidden mb-12">
               <video
                 autoPlay
                 loop
@@ -50,112 +50,120 @@ export default function ManagerToolsPage() {
                 src="/assets/Standard_Mode_Generated_Video (9).mp4"
               />
               <div className="absolute inset-0 bg-black/60" />
-              <div className="relative p-8 md:p-12">
-                <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70 mb-4">
+              <div className="relative p-12 md:p-16">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
                   Manager Tools
                 </h1>
-                <p className="text-lg text-white/90 max-w-2xl">
+                <p className="text-xl text-white/90 max-w-2xl mb-8">
                   Professional tools for comprehensive artist and production management
                 </p>
+                <Button 
+                  className="bg-orange-500 hover:bg-orange-600 text-lg px-8 py-6"
+                >
+                  Get Started
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
               </div>
             </section>
 
-            <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-              <TabsList className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Technical Rider
-                </TabsTrigger>
-                <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500">
-                  <Utensils className="w-4 h-4 mr-2" />
-                  Requirements
-                </TabsTrigger>
-                <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Budget
-                </TabsTrigger>
-                <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500">
-                  <Truck className="w-4 h-4 mr-2" />
-                  Logistics
-                </TabsTrigger>
-                <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500">
-                  <Users2 className="w-4 h-4 mr-2" />
-                  Hiring
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500">
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI Assistant
-                </TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab}>
+              <div className="mb-12">
+                <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Technical Rider
+                  </TabsTrigger>
+                  <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500">
+                    <Utensils className="w-4 h-4 mr-2" />
+                    Requirements
+                  </TabsTrigger>
+                  <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Budget
+                  </TabsTrigger>
+                  <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500">
+                    <Truck className="w-4 h-4 mr-2" />
+                    Logistics
+                  </TabsTrigger>
+                  <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500">
+                    <Users2 className="w-4 h-4 mr-2" />
+                    Hiring
+                  </TabsTrigger>
+                  <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500">
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI Assistant
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Technical Rider Tab */}
-              <TabsContent value="technical" className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card className="p-6 hover:bg-orange-500/5 transition-colors">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <FileText className="h-6 w-6 text-orange-500" />
+              <TabsContent value="technical">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <Card className="p-8 hover:bg-orange-500/5 transition-colors">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="p-4 bg-orange-500/10 rounded-lg">
+                        <FileText className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg">Generate Technical Rider</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <h3 className="text-2xl font-semibold">Generate Technical Rider</h3>
+                        <p className="text-muted-foreground mt-1">
                           Create and manage technical specifications
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-6 mb-8">
                       <div className="flex items-center gap-3">
-                        <ChevronRight className="h-4 w-4 text-orange-500" />
-                        <span>Stage plot and dimensions</span>
+                        <ChevronRight className="h-5 w-5 text-orange-500" />
+                        <span className="text-lg">Stage plot and dimensions</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <ChevronRight className="h-4 w-4 text-orange-500" />
-                        <span>Equipment specifications</span>
+                        <ChevronRight className="h-5 w-5 text-orange-500" />
+                        <span className="text-lg">Equipment specifications</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <ChevronRight className="h-4 w-4 text-orange-500" />
-                        <span>Audio requirements</span>
+                        <ChevronRight className="h-5 w-5 text-orange-500" />
+                        <span className="text-lg">Audio requirements</span>
                       </div>
                     </div>
-                    <div className="flex gap-4 mt-6">
-                      <Button className="flex-1 bg-orange-500 hover:bg-orange-600">
-                        <Upload className="mr-2 h-4 w-4" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
+                        <Upload className="mr-2 h-5 w-5" />
                         Create New
                       </Button>
-                      <Button variant="outline" className="flex-1">
-                        <Download className="mr-2 h-4 w-4" />
+                      <Button size="lg" variant="outline">
+                        <Download className="mr-2 h-5 w-5" />
                         Download
                       </Button>
                     </div>
                   </Card>
 
-                  <Card className="p-6 hover:bg-orange-500/5 transition-colors">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Building2 className="h-6 w-6 text-orange-500" />
+                  <Card className="p-8 hover:bg-orange-500/5 transition-colors">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="p-4 bg-orange-500/10 rounded-lg">
+                        <Building2 className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg">Provider Directory</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <h3 className="text-2xl font-semibold">Provider Directory</h3>
+                        <p className="text-muted-foreground mt-1">
                           Connect with technical equipment providers
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-6 mb-8">
                       <div className="flex items-center gap-3">
-                        <BadgeCheck className="h-4 w-4 text-orange-500" />
-                        <span>Verified providers network</span>
+                        <BadgeCheck className="h-5 w-5 text-orange-500" />
+                        <span className="text-lg">Verified providers network</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Settings className="h-4 w-4 text-orange-500" />
-                        <span>Equipment specifications</span>
+                        <Settings className="h-5 w-5 text-orange-500" />
+                        <span className="text-lg">Equipment specifications</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Calendar className="h-4 w-4 text-orange-500" />
-                        <span>Availability calendar</span>
+                        <Calendar className="h-5 w-5 text-orange-500" />
+                        <span className="text-lg">Availability calendar</span>
                       </div>
                     </div>
-                    <Button className="w-full mt-6 bg-orange-500 hover:bg-orange-600">
+                    <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600">
                       Browse Providers
                     </Button>
                   </Card>
@@ -163,135 +171,135 @@ export default function ManagerToolsPage() {
               </TabsContent>
 
               {/* Production Requirements Tab */}
-              <TabsContent value="requirements" className="space-y-6">
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <ClipboardList className="h-6 w-6 text-orange-500" />
+              <TabsContent value="requirements">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <ClipboardList className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">Artist Requirements</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="text-2xl font-semibold">Artist Requirements</h3>
+                      <p className="text-muted-foreground mt-1">
                         Manage and track artist needs and preferences
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Coffee className="h-4 w-4 text-orange-500" />
-                        Catering & Hospitality
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Dietary restrictions</span>
+                  <div className="grid md:grid-cols-2 gap-12 mb-8">
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Coffee className="h-6 w-6 text-orange-500" />
+                        <h4 className="text-xl font-medium">Catering & Hospitality</h4>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Dietary restrictions</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Preferred meals</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Preferred meals</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Beverages</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Beverages</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-orange-500" />
-                        Accommodation
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Hotel preferences</span>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <MapPin className="h-6 w-6 text-orange-500" />
+                        <h4 className="text-xl font-medium">Accommodation</h4>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Hotel preferences</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Room requirements</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Room requirements</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Special requests</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Special requests</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <Button className="w-full mt-6 bg-orange-500 hover:bg-orange-600">
+                  <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600">
                     Update Requirements
                   </Button>
                 </Card>
               </TabsContent>
 
               {/* Budget Tab */}
-              <TabsContent value="budget" className="space-y-6">
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <DollarSign className="h-6 w-6 text-orange-500" />
+              <TabsContent value="budget">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <DollarSign className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">Production Budget</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="text-2xl font-semibold">Production Budget</h3>
+                      <p className="text-muted-foreground mt-1">
                         Manage and track production expenses
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Equipment & Technical</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
+                  <div className="grid md:grid-cols-2 gap-12 mb-8">
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Equipment & Technical</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between text-lg">
                           <span>Sound System</span>
-                          <span className="text-orange-500">$2,000</span>
+                          <span className="text-orange-500 font-medium">$2,000</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-lg">
                           <span>Lighting</span>
-                          <span className="text-orange-500">$1,500</span>
+                          <span className="text-orange-500 font-medium">$1,500</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-lg">
                           <span>Stage Setup</span>
-                          <span className="text-orange-500">$1,000</span>
+                          <span className="text-orange-500 font-medium">$1,000</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Staff & Services</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Staff & Services</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between text-lg">
                           <span>Technical Staff</span>
-                          <span className="text-orange-500">$1,200</span>
+                          <span className="text-orange-500 font-medium">$1,200</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-lg">
                           <span>Security</span>
-                          <span className="text-orange-500">$800</span>
+                          <span className="text-orange-500 font-medium">$800</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-lg">
                           <span>Catering</span>
-                          <span className="text-orange-500">$600</span>
+                          <span className="text-orange-500 font-medium">$600</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-6 p-4 bg-orange-500/5 rounded-lg">
+                  <div className="p-6 bg-orange-500/5 rounded-lg mb-8">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">Total Budget</span>
-                      <span className="text-xl font-bold text-orange-500">$7,100</span>
+                      <span className="text-xl font-semibold">Total Budget</span>
+                      <span className="text-3xl font-bold text-orange-500">$7,100</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-4 mt-6">
-                    <Button className="flex-1 bg-orange-500 hover:bg-orange-600">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
                       Create Budget
                     </Button>
-                    <Button variant="outline" className="flex-1">
+                    <Button size="lg" variant="outline">
                       Export Report
                     </Button>
                   </div>
@@ -299,122 +307,122 @@ export default function ManagerToolsPage() {
               </TabsContent>
 
               {/* Logistics Tab */}
-              <TabsContent value="logistics" className="space-y-6">
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Truck className="h-6 w-6 text-orange-500" />
+              <TabsContent value="logistics">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Truck className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">Production Logistics</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="text-2xl font-semibold">Production Logistics</h3>
+                      <p className="text-muted-foreground mt-1">
                         Coordinate and manage production logistics
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Transportation</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Equipment transport</span>
+                  <div className="grid md:grid-cols-2 gap-12 mb-8">
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Transportation</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Equipment transport</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Artist transportation</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Artist transportation</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Crew movement</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Crew movement</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Schedule</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Load-in times</span>
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Schedule</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Load-in times</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Setup schedule</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Setup schedule</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Performance timeline</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Performance timeline</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <Button className="w-full mt-6 bg-orange-500 hover:bg-orange-600">
+                  <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600">
                     Manage Logistics
                   </Button>
                 </Card>
               </TabsContent>
 
               {/* Hiring Tab */}
-              <TabsContent value="hiring" className="space-y-6">
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Briefcase className="h-6 w-6 text-orange-500" />
+              <TabsContent value="hiring">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Briefcase className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">Hiring Tools</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="text-2xl font-semibold">Hiring Tools</h3>
+                      <p className="text-muted-foreground mt-1">
                         Manage your production team recruitment
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Technical Staff</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Sound engineers</span>
+                  <div className="grid md:grid-cols-2 gap-12 mb-8">
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Technical Staff</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Sound engineers</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Lighting technicians</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Lighting technicians</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Stage managers</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Stage managers</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Support Staff</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Security personnel</span>
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Support Staff</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Security personnel</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Hospitality staff</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Hospitality staff</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                          <span>Transportation team</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <span className="text-lg">Transportation team</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-4 mt-6">
-                    <Button className="flex-1 bg-orange-500 hover:bg-orange-600">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
                       Post Job
                     </Button>
-                    <Button variant="outline" className="flex-1">
+                    <Button size="lg" variant="outline">
                       View Applications
                     </Button>
                   </div>
@@ -422,51 +430,51 @@ export default function ManagerToolsPage() {
               </TabsContent>
 
               {/* AI Assistant Tab */}
-              <TabsContent value="ai" className="space-y-6">
-                <Card className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Brain className="h-6 w-6 text-orange-500" />
+              <TabsContent value="ai">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Brain className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">AI Production Assistant</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="text-2xl font-semibold">AI Production Assistant</h3>
+                      <p className="text-muted-foreground mt-1">
                         Get AI-powered insights and recommendations
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    <div className="p-4 bg-orange-500/5 rounded-lg">
-                      <h4 className="font-medium mb-4">Ask AI Assistant</h4>
+                    <div className="p-6 bg-orange-500/5 rounded-lg">
+                      <h4 className="text-xl font-medium mb-4">Ask AI Assistant</h4>
                       <textarea
                         className="w-full p-3 rounded-lg bg-background border border-input"
                         placeholder="Type your question here..."
                         rows={4}
                       />
-                      <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600">
-                        <SendHorizontal className="mr-2 h-4 w-4" />
+                      <Button size="lg" className="w-full mt-4 bg-orange-500 hover:bg-orange-600">
+                        <SendHorizontal className="mr-2 h-5 w-5" />
                         Get AI Response
                       </Button>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Quick Actions</h4>
+                    <div className="space-y-6">
+                      <h4 className="text-xl font-medium">Quick Actions</h4>
                       <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" className="justify-start">
-                          <FileText className="mr-2 h-4 w-4" />
+                        <Button size="lg" variant="outline" className="justify-start">
+                          <FileText className="mr-2 h-5 w-5" />
                           Generate Report
                         </Button>
-                        <Button variant="outline" className="justify-start">
-                          <Calendar className="mr-2 h-4 w-4" />
+                        <Button size="lg" variant="outline" className="justify-start">
+                          <Calendar className="mr-2 h-5 w-5" />
                           Schedule Optimizer
                         </Button>
-                        <Button variant="outline" className="justify-start">
-                          <DollarSign className="mr-2 h-4 w-4" />
+                        <Button size="lg" variant="outline" className="justify-start">
+                          <DollarSign className="mr-2 h-5 w-5" />
                           Budget Analysis
                         </Button>
-                        <Button variant="outline" className="justify-start">
-                          <Users2 className="mr-2 h-4 w-4" />
+                        <Button size="lg" variant="outline" className="justify-start">
+                          <Users2 className="mr-2 h-5 w-5" />
                           Team Suggestions
                         </Button>
                       </div>
