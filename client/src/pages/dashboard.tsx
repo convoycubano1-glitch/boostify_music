@@ -86,6 +86,15 @@ export default function Dashboard() {
       color: "text-orange-500"
     },
     {
+      name: "Artist Image Advisor",
+      description: "Get personalized style recommendations",
+      icon: Users,
+      route: "/artist-image-advisor",
+      stats: metrics.totalEngagement,
+      statsLabel: "Style Sessions",
+      color: "text-orange-500"
+    },
+    {
       name: "Record Label Services",
       description: "Revive and monetize classic music",
       icon: Building2,

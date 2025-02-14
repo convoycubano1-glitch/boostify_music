@@ -24,6 +24,7 @@ export function Header() {
     { name: "Music Videos", href: "/music-video-creator", icon: Video },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
+    { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
     { name: "Spotify", href: "/spotify", icon: Music2 },
     { name: "Instagram Boost", href: "/instagram-boost", icon: Instagram },
     { name: "YouTube Views", href: "/youtube-views", icon: Youtube },
