@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +23,7 @@ export function Header() {
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
     { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
+    { name: "Merchandise", href: "/merchandise", icon: Store },
     { name: "Spotify", href: "/spotify", icon: Music2 },
     { name: "Instagram Boost", href: "/instagram-boost", icon: Instagram },
     { name: "YouTube Views", href: "/youtube-views", icon: Youtube },

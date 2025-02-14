@@ -4,7 +4,7 @@ import { PlaylistManager } from "@/components/spotify/playlist-manager";
 import { InstagramConnect } from "@/components/instagram/instagram-connect";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Music2, TrendingUp, Activity, Users, Calendar, Globe, Youtube, FileText, Megaphone, Building2 } from "lucide-react";
+import { Music2, TrendingUp, Activity, Users, Calendar, Globe, Youtube, FileText, Megaphone, Building2, Store } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import { useEffect, useState } from "react";
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
@@ -101,6 +101,15 @@ export default function Dashboard() {
       route: "/record-label-services",
       stats: metrics.totalEngagement,
       statsLabel: "Total Engagement",
+      color: "text-orange-500"
+    },
+    {
+      name: "Merchandise Store",
+      description: "Create and sell custom merchandise",
+      icon: Store,
+      route: "/merchandise",
+      stats: metrics.totalEngagement,
+      statsLabel: "Products",
       color: "text-orange-500"
     },
     {
