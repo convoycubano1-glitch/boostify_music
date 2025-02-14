@@ -2,9 +2,9 @@ import { WaitlistModal } from "@/components/marketing/waitlist-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
-import { 
-  Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe, 
-  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles 
+import {
+  Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
+  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -22,109 +22,109 @@ import { useState, useEffect } from "react";
    VARIANTES PARA ANIMACIONES
 ============================= */
 const containerVariants = {
- hidden: { opacity: 0 },
- visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
 const itemVariants = {
- hidden: { opacity: 0, y: 20 },
- visible: { opacity: 1, y: 0 }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
 };
 
 /* =============================
    DATOS ESTÁTICOS
 ============================= */
 const features = [
- {
-   icon: <Youtube className="h-6 w-6" />,
-   title: "YouTube Views Boost",
-   description: "Increase your video visibility and engagement through our advanced promotion strategies"
- },
- {
-   icon: <Music2 className="h-6 w-6" />,
-   title: "Spotify Integration",
-   description: "Connect your Spotify account to manage playlists and track performance metrics"
- },
- {
-   icon: <Users2 className="h-6 w-6" />,
-   title: "PR Management",
-   description: "Manage your public relations and grow your audience effectively"
- },
- {
-   icon: <TrendingUp className="h-6 w-6" />,
-   title: "Analytics Dashboard",
-   description: "Track your growth with comprehensive analytics and insights"
- },
- {
-   icon: <Globe className="h-6 w-6" />,
-   title: "Global Reach",
-   description: "Expand your audience worldwide with our international promotion tools"
- },
- {
-   icon: <MessageCircle className="h-6 w-6" />,
-   title: "Artist Community",
-   description: "Connect with other artists and industry professionals in our vibrant community"
- }
+  {
+    icon: <Youtube className="h-6 w-6" />,
+    title: "YouTube Views Boost",
+    description: "Increase your video visibility and engagement through our advanced promotion strategies"
+  },
+  {
+    icon: <Music2 className="h-6 w-6" />,
+    title: "Spotify Integration",
+    description: "Connect your Spotify account to manage playlists and track performance metrics"
+  },
+  {
+    icon: <Users2 className="h-6 w-6" />,
+    title: "PR Management",
+    description: "Manage your public relations and grow your audience effectively"
+  },
+  {
+    icon: <TrendingUp className="h-6 w-6" />,
+    title: "Analytics Dashboard",
+    description: "Track your growth with comprehensive analytics and insights"
+  },
+  {
+    icon: <Globe className="h-6 w-6" />,
+    title: "Global Reach",
+    description: "Expand your audience worldwide with our international promotion tools"
+  },
+  {
+    icon: <MessageCircle className="h-6 w-6" />,
+    title: "Artist Community",
+    description: "Connect with other artists and industry professionals in our vibrant community"
+  }
 ];
 
 const testimonials = [
- {
-   name: "Sarah Johnson",
-   role: "Independent Artist",
-   content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
-   rating: 5,
-   avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
- },
- {
-   name: "Michael Rodriguez",
-   role: "Music Producer",
-   content: "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
-   rating: 5,
-   avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
- },
- {
-   name: "Emma Thompson",
-   role: "Band Manager",
-   content: "Managing multiple artists has never been easier. The contract management system is a game-changer.",
-   rating: 5,
-   avatar: "https://i.pravatar.cc/150?u=emma.thompson"
- }
+  {
+    name: "Sarah Johnson",
+    role: "Independent Artist",
+    content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
+  },
+  {
+    name: "Michael Rodriguez",
+    role: "Music Producer",
+    content: "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
+  },
+  {
+    name: "Emma Thompson",
+    role: "Band Manager",
+    content: "Managing multiple artists has never been easier. The contract management system is a game-changer.",
+    rating: 5,
+    avatar: "https://i.pravatar.cc/150?u=emma.thompson"
+  }
 ];
 
 const plans = [
- {
-   name: "Basic",
-   price: "19",
-   features: [
-     "Basic Analytics",
-     "Spotify Integration",
-     "1 Artist Profile",
-     "Email Support"
-   ]
- },
- {
-   name: "Pro",
-   price: "49",
-   popular: true,
-   features: [
-     "Advanced Analytics",
-     "Priority Spotify Integration",
-     "5 Artist Profiles",
-     "PR Management Tools",
-     "24/7 Support"
-   ]
- },
- {
-   name: "Enterprise",
-   price: "99",
-   features: [
-     "Custom Analytics",
-     "Multiple Artist Management",
-     "Dedicated Account Manager",
-     "API Access",
-     "Custom Integrations"
-   ]
- }
+  {
+    name: "Basic",
+    price: "19",
+    features: [
+      "Basic Analytics",
+      "Spotify Integration",
+      "1 Artist Profile",
+      "Email Support"
+    ]
+  },
+  {
+    name: "Pro",
+    price: "49",
+    popular: true,
+    features: [
+      "Advanced Analytics",
+      "Priority Spotify Integration",
+      "5 Artist Profiles",
+      "PR Management Tools",
+      "24/7 Support"
+    ]
+  },
+  {
+    name: "Enterprise",
+    price: "99",
+    features: [
+      "Custom Analytics",
+      "Multiple Artist Management",
+      "Dedicated Account Manager",
+      "API Access",
+      "Custom Integrations"
+    ]
+  }
 ];
 
 /* =============================
@@ -387,7 +387,7 @@ export default function HomePage() {
                 AI-Powered Music Production
               </h2>
               <p className="text-lg text-white/90">
-                Transform your creative process with our advanced AI tools. Generate custom musician profiles, 
+                Transform your creative process with our advanced AI tools. Generate custom musician profiles,
                 create unique musical content, and collaborate with AI-generated artists tailored to your style.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -513,6 +513,95 @@ export default function HomePage() {
             ))}
           </div>
         </motion.div>
+      </section>
+
+      {/* Specialized Services Section */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-8 max-w-4xl mx-auto mb-12"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+              AI-Powered Music Tools
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Explore our specialized suite of AI tools designed to enhance your music career
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Artist Image Advisor */}
+            <Link href="/artist-image-advisor">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                  <UserCircle2 className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Artist Image Advisor</h3>
+                  <p className="text-muted-foreground">
+                    Create stunning visual identities with AI-powered image generation and style recommendations
+                  </p>
+                </Card>
+              </motion.div>
+            </Link>
+
+            {/* Record Label Services */}
+            <Link href="/record-label-services">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                  <Music2 className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Record Label Services</h3>
+                  <p className="text-muted-foreground">
+                    Professional label management tools and distribution services for independent artists
+                  </p>
+                </Card>
+              </motion.div>
+            </Link>
+
+            {/* AI Agents */}
+            <Link href="/ai-agents">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                  <Sparkles className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">AI Agents</h3>
+                  <p className="text-muted-foreground">
+                    Intelligent virtual assistants for marketing, promotion, and career guidance
+                  </p>
+                </Card>
+              </motion.div>
+            </Link>
+
+            {/* AI Music Video */}
+            <Link href="/music-video-creator">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                  <Video className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">AI Music Video</h3>
+                  <p className="text-muted-foreground">
+                    Create professional music videos with AI-powered video generation and editing tools
+                  </p>
+                </Card>
+              </motion.div>
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* YouTube Views Section */}
