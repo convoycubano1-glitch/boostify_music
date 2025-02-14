@@ -27,51 +27,53 @@ export default function AIAgentsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 text-center"
-        >
-          <div className="inline-flex items-center justify-center gap-2 mb-4">
-            <div className="p-2 rounded-full bg-orange-500/10">
-              <Brain className="h-8 w-8 text-orange-500" />
+      <main className="flex-1 pt-20">
+        <div className="container mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 text-center"
+          >
+            <div className="inline-flex items-center justify-center gap-2 mb-4">
+              <div className="p-2 rounded-full bg-orange-500/10">
+                <Brain className="h-8 w-8 text-orange-500" />
+              </div>
+              <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-purple-500 to-blue-600">
+                AI Agents Orchestra
+              </h1>
             </div>
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-purple-500 to-blue-600">
-              AI Agents Orchestra
-            </h1>
-          </div>
-          <p className="text-xl text-muted-foreground mt-2 max-w-2xl mx-auto">
-            Power up your music with our team of specialized agents powered by artificial intelligence
-          </p>
-        </motion.div>
+            <p className="text-xl text-muted-foreground mt-2 max-w-2xl mx-auto">
+              Power up your music with our team of specialized agents powered by artificial intelligence
+            </p>
+          </motion.div>
 
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto"
-        >
-          <motion.div variants={item}>
-            <ComposerAgent />
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto"
+          >
+            <motion.div variants={item}>
+              <ComposerAgent />
+            </motion.div>
+            <motion.div variants={item}>
+              <VideoDirectorAgent />
+            </motion.div>
+            <motion.div variants={item}>
+              <MarketingAgent />
+            </motion.div>
+            <motion.div variants={item}>
+              <SocialMediaAgent />
+            </motion.div>
+            <motion.div variants={item}>
+              <MerchandiseAgent />
+            </motion.div>
+            <motion.div variants={item}>
+              <ManagerAgent />
+            </motion.div>
           </motion.div>
-          <motion.div variants={item}>
-            <VideoDirectorAgent />
-          </motion.div>
-          <motion.div variants={item}>
-            <MarketingAgent />
-          </motion.div>
-          <motion.div variants={item}>
-            <SocialMediaAgent />
-          </motion.div>
-          <motion.div variants={item}>
-            <MerchandiseAgent />
-          </motion.div>
-          <motion.div variants={item}>
-            <ManagerAgent />
-          </motion.div>
-        </motion.div>
+        </div>
       </main>
     </div>
   );
