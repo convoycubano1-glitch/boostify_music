@@ -38,7 +38,7 @@ export default function ArtistImageAdvisorPage() {
             muted
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
-            src="/assets/style_advisor_bg.mp4"
+            src="/assets/hero-video.mp4"
           />
           <div className="absolute inset-0 bg-black/60" />
           <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
