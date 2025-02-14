@@ -142,9 +142,9 @@ export default function SpotifyPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pt-14">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pt-20">
         <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
