@@ -532,20 +532,45 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 gap-8">
             {/* Artist Image Advisor */}
             <Link href="/artist-image-advisor">
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 className="relative group cursor-pointer"
               >
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
-                  <UserCircle2 className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Artist Image Advisor</h3>
-                  <p className="text-muted-foreground">
-                    Create stunning visual identities with AI-powered image generation and style recommendations
-                  </p>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
+
+                  <div className="flex items-start gap-6">
+                    <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                      <UserCircle2 className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <h3 className="text-2xl font-bold">Artist Image Advisor</h3>
+                      <p className="text-muted-foreground text-lg">
+                        Create stunning visual identities with AI-powered image generation and style recommendations
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Advanced AI image generation for artist photos</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Style analysis and recommendations</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Brand identity development</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" className="mt-4 group-hover:bg-orange-500/20 transition-all duration-300">
+                        Explore Image Advisor <FileText className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               </motion.div>
             </Link>
@@ -553,16 +578,41 @@ export default function HomePage() {
             {/* Record Label Services */}
             <Link href="/record-label-services">
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 className="relative group cursor-pointer"
               >
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
-                  <Music2 className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Record Label Services</h3>
-                  <p className="text-muted-foreground">
-                    Professional label management tools and distribution services for independent artists
-                  </p>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
+
+                  <div className="flex items-start gap-6">
+                    <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                      <Music2 className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <h3 className="text-2xl font-bold">Record Label Services</h3>
+                      <p className="text-muted-foreground text-lg">
+                        Professional label management tools and distribution services for independent artists
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Digital distribution to major platforms</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Royalty tracking and management</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Marketing and promotion tools</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" className="mt-4 group-hover:bg-orange-500/20 transition-all duration-300">
+                        Explore Label Services <FileText className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               </motion.div>
             </Link>
@@ -570,16 +620,41 @@ export default function HomePage() {
             {/* AI Agents */}
             <Link href="/ai-agents">
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 className="relative group cursor-pointer"
               >
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
-                  <Sparkles className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">AI Agents</h3>
-                  <p className="text-muted-foreground">
-                    Intelligent virtual assistants for marketing, promotion, and career guidance
-                  </p>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
+
+                  <div className="flex items-start gap-6">
+                    <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                      <Sparkles className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <h3 className="text-2xl font-bold">AI Agents</h3>
+                      <p className="text-muted-foreground text-lg">
+                        Intelligent virtual assistants for marketing, promotion, and career guidance
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Automated social media management</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Personalized career strategies</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>24/7 virtual assistant support</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" className="mt-4 group-hover:bg-orange-500/20 transition-all duration-300">
+                        Explore AI Agents <FileText className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               </motion.div>
             </Link>
@@ -587,16 +662,41 @@ export default function HomePage() {
             {/* AI Music Video */}
             <Link href="/music-video-creator">
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 className="relative group cursor-pointer"
               >
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
-                  <Video className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">AI Music Video</h3>
-                  <p className="text-muted-foreground">
-                    Create professional music videos with AI-powered video generation and editing tools
-                  </p>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
+
+                  <div className="flex items-start gap-6">
+                    <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                      <Video className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <h3 className="text-2xl font-bold">AI Music Video</h3>
+                      <p className="text-muted-foreground text-lg">
+                        Create professional music videos with AI-powered video generation and editing tools
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>AI video generation from music</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Advanced video editing tools</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          <span>Visual effects and animations</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" className="mt-4 group-hover:bg-orange-500/20 transition-all duration-300">
+                        Explore Music Video Creator <FileText className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               </motion.div>
             </Link>
