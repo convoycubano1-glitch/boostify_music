@@ -538,7 +538,7 @@ export default function ArtistDashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-gray-100">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pt-20">
         {/* Sección Hero con video de fondo y overlay */}
         <div className="relative w-full h-[80vh] md:h-[90vh] overflow-hidden">
           <video
@@ -894,8 +894,7 @@ export default function ArtistDashboard() {
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                         </div>
-                      ) : songs.length > 0 ? (
-                        <div className="space-y-3">
+                      ) : songs.length > 0 ? (<div className="space-y-3">
                           {songs.map((song) => (
                             <div
                               key={song.id}
