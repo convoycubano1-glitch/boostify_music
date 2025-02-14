@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote,
+  Radio, Tv, Film, FileText, Brain, Play, Volume2, Pen, Clock,
+  Mic2, Music4, Database, FilmIcon, TrendingUp, Calculator, Search, Badge
+} from "lucide-react";
 import { motion } from "framer-motion";
-import { MusicAIGenerator } from "@/components/music/music-ai-generator";
-import { AudioMastering } from "@/components/music/audio-mastering";
-import { MusicVideoAI } from "@/components/music-video/music-video-ai";
 import { Link } from "wouter";
 
 export default function RecordLabelServices() {
@@ -22,9 +24,10 @@ export default function RecordLabelServices() {
     message: ""
   });
 
+  const [selectedTab, setSelectedTab] = useState("radio-tv");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
     console.log(formData);
   };
 
@@ -42,7 +45,7 @@ export default function RecordLabelServices() {
             playsInline
             className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
           >
-            <source src="/background-video.mp4" type="video/mp4" />
+            <source src="/assets/background-video.mp4" type="video/mp4" />
           </video>
           <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
             <motion.div
@@ -51,17 +54,362 @@ export default function RecordLabelServices() {
               className="max-w-2xl"
             >
               <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 text-shadow-lg">
-                Revive Classic Music
+                Publishing & Licensing Hub
               </h1>
               <p className="text-xl text-white/90 mb-8 text-shadow-sm font-medium">
-                Transform dormant catalogs into modern hits with AI-powered remixes and video content
+                Manage your music rights and explore publishing opportunities across multiple media channels
               </p>
               <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
-                Start Licensing Now
+                Explore Opportunities
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </motion.div>
           </div>
+        </div>
+
+        {/* Publishing Sections */}
+        <div className="container mx-auto px-4 py-16">
+          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <TabsTrigger value="radio-tv" className="data-[state=active]:bg-orange-500">
+                <Radio className="w-4 h-4 mr-2" />
+                Radio & TV
+              </TabsTrigger>
+              <TabsTrigger value="movies" className="data-[state=active]:bg-orange-500">
+                <Film className="w-4 h-4 mr-2" />
+                Movie Publishing
+              </TabsTrigger>
+              <TabsTrigger value="creator" className="data-[state=active]:bg-orange-500">
+                <Music4 className="w-4 h-4 mr-2" />
+                Movie Music Tools
+              </TabsTrigger>
+              <TabsTrigger value="contracts" className="data-[state=active]:bg-orange-500">
+                <FileText className="w-4 h-4 mr-2" />
+                Contracts
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500">
+                <Brain className="w-4 h-4 mr-2" />
+                AI Assistant
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Radio & TV Tab */}
+            <TabsContent value="radio-tv">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Radio className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Radio Publishing</h3>
+                      <p className="text-muted-foreground">
+                        Expand your music reach through radio networks
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Radio Networks</h4>
+                      <div className="space-y-2">
+                        {['National Networks', 'Local Stations', 'Internet Radio'].map((network) => (
+                          <div key={network} className="flex items-center justify-between p-2 hover:bg-orange-500/5 rounded">
+                            <span>{network}</span>
+                            <Button variant="outline" size="sm">Connect</Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Tv className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">TV Licensing</h3>
+                      <p className="text-muted-foreground">
+                        License your music for television programs
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">TV Opportunities</h4>
+                      <div className="space-y-2">
+                        {['Shows & Series', 'Commercials', 'Network Promos'].map((type) => (
+                          <div key={type} className="flex items-center justify-between p-2 hover:bg-orange-500/5 rounded">
+                            <span>{type}</span>
+                            <Button variant="outline" size="sm">View Details</Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Movie Publishing Tab */}
+            <TabsContent value="movies">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <FilmIcon className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Movie Sync Licensing</h3>
+                      <p className="text-muted-foreground">
+                        Place your music in films and documentaries
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {['Feature Films', 'Independent Movies', 'Documentaries'].map((category) => (
+                      <div key={category} className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">{category}</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Explore opportunities and submit your music
+                        </p>
+                        <Button variant="outline">Browse Opportunities</Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Database className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Music Library</h3>
+                      <p className="text-muted-foreground">
+                        Manage your movie-ready tracks
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg mb-4">
+                    <div className="flex items-center gap-4 mb-4">
+                      <Music2 className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <h4 className="font-medium">Movie-Ready Tracks</h4>
+                        <p className="text-sm text-muted-foreground">Organize and submit your music</p>
+                      </div>
+                    </div>
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                      Upload Tracks
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Movie Music Creator Tools Tab */}
+            <TabsContent value="creator">
+              <div className="grid gap-6 md:grid-cols-3">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Music4 className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Score Creator</h3>
+                      <p className="text-muted-foreground">
+                        Create and edit movie scores
+                      </p>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Launch Score Creator
+                  </Button>
+                </Card>
+
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Volume2 className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Sound Design</h3>
+                      <p className="text-muted-foreground">
+                        Create custom sound effects
+                      </p>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Open Sound Designer
+                  </Button>
+                </Card>
+
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Clock className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Timeline Editor</h3>
+                      <p className="text-muted-foreground">
+                        Sync music to video timeline
+                      </p>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Open Timeline Editor
+                  </Button>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Contracts Tab */}
+            <TabsContent value="contracts">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <FileText className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Publishing Contracts</h3>
+                      <p className="text-muted-foreground">
+                        Manage your publishing agreements
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {['TV Licensing', 'Movie Sync', 'Radio Broadcasting'].map((type) => (
+                      <div key={type} className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{type} Agreement</h4>
+                          <Badge>Template</Badge>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button variant="outline" size="sm">Preview</Button>
+                          <Button variant="outline" size="sm">Use Template</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-lg">
+                      <Pen className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold">Active Contracts</h3>
+                      <p className="text-muted-foreground">
+                        Monitor your active agreements
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {['Netflix Series License', 'Universal Pictures Sync', 'BBC Radio License'].map((contract) => (
+                      <div key={contract} className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">{contract}</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                          <Clock className="h-4 w-4" />
+                          <span>Expires in 8 months</span>
+                        </div>
+                        <Button variant="outline" size="sm">View Details</Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* AI Assistant Tab */}
+            <TabsContent value="ai">
+              <Card className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Brain className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Publishing AI Assistant</h3>
+                    <p className="text-muted-foreground">
+                      Get AI-powered insights and recommendations for your publishing strategy
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Ask AI Assistant</h4>
+                      <Textarea
+                        className="mb-4"
+                        placeholder="Ask about publishing strategies, contract terms, or market insights..."
+                        rows={4}
+                      />
+                      <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                        Get AI Response
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Quick Actions</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button variant="outline" className="justify-start">
+                          <FileText className="mr-2 h-4 w-4" />
+                          Analyze Contract
+                        </Button>
+                        <Button variant="outline" className="justify-start">
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          Market Analysis
+                        </Button>
+                        <Button variant="outline" className="justify-start">
+                          <Calculator className="mr-2 h-4 w-4" />
+                          Royalty Estimator
+                        </Button>
+                        <Button variant="outline" className="justify-start">
+                          <Search className="mr-2 h-4 w-4" />
+                          Opportunity Finder
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">AI Insights</h4>
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
+                          <div>
+                            <p className="font-medium">Publishing Opportunity</p>
+                            <p className="text-sm text-muted-foreground">
+                              Your catalog shows strong potential for TV commercial licensing based on recent trends.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
+                          <div>
+                            <p className="font-medium">Market Strategy</p>
+                            <p className="text-sm text-muted-foreground">
+                              Consider focusing on documentary film scoring based on your recent success rates.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Royalty Importance Section */}
@@ -118,7 +466,7 @@ export default function RecordLabelServices() {
                 Create modern remixes and variations while preserving the original essence
               </p>
               <div className="h-[300px] overflow-hidden rounded-lg mb-4">
-                <MusicAIGenerator />
+                {/* MusicAIGenerator Component */}
               </div>
             </Card>
 
@@ -129,7 +477,7 @@ export default function RecordLabelServices() {
                 State-of-the-art AI mastering for perfect sound quality
               </p>
               <div className="h-[300px] overflow-hidden rounded-lg mb-4">
-                <AudioMastering />
+                {/* AudioMastering Component */}
               </div>
             </Card>
 
@@ -140,7 +488,7 @@ export default function RecordLabelServices() {
                 Create compelling music videos for classic tracks
               </p>
               <div className="h-[300px] overflow-hidden rounded-lg mb-4">
-                <MusicVideoAI />
+                {/* MusicVideoAI Component */}
               </div>
               <Link href="/music-video-creator">
                 <Button className="w-full bg-orange-500 hover:bg-orange-600">
