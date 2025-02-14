@@ -29,6 +29,7 @@ import MusicVideoCreator from "@/pages/music-video-creator";
 import RecordLabelServices from "@/pages/record-label-services";
 import AIAgentsPage from "@/pages/ai-agents";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
+import MerchandisePage from "@/pages/merchandise";
 
 const Router = () => {
   return (
@@ -57,6 +58,7 @@ const Router = () => {
       <ProtectedRoute path="/record-label-services" component={RecordLabelServices} />
       <ProtectedRoute path="/ai-agents" component={AIAgentsPage} />
       <ProtectedRoute path="/artist-image-advisor" component={ArtistImageAdvisor} />
+      <ProtectedRoute path="/merchandise" component={MerchandisePage} />
       <Route component={NotFound} />
     </Switch>
   );

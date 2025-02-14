@@ -3,14 +3,14 @@ import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ShoppingBag, 
-  Users, 
-  Palette, 
-  Share2, 
-  TShirt,
+import {
+  ShoppingBag,
+  Users,
+  Palette,
+  Share2,
+  Shirt,
   Coffee,
-  Hat,
+  BackpackIcon,
   Smartphone,
   Sticker,
   Book,
@@ -40,7 +40,7 @@ const products: Product[] = [
     category: "Apparel",
     basePrice: 19.99,
     image: "/assets/products/tshirt.jpg",
-    icon: <TShirt className="h-8 w-8" />,
+    icon: <Shirt className="h-8 w-8" />,
     description: "High-quality cotton t-shirts with custom designs",
     customizationOptions: ["Print Location", "Size", "Color", "Material"]
   },
@@ -60,7 +60,7 @@ const products: Product[] = [
     category: "Apparel",
     basePrice: 24.99,
     image: "/assets/products/cap.jpg",
-    icon: <Hat className="h-8 w-8" />,
+    icon: <BackpackIcon className="h-8 w-8" />,
     description: "Adjustable snapback caps with embroidered designs",
     customizationOptions: ["Embroidery Location", "Color", "Size"]
   },
@@ -142,7 +142,7 @@ export default function MerchandisePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <div className="relative w-full h-[40vh] bg-gradient-to-r from-orange-500 to-red-500 overflow-hidden">
         <div className="absolute inset-0 bg-black/50" />
