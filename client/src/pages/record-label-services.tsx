@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote,
   Radio, Tv, Film, FileText, Brain, Play, Volume2, Pen, Clock,
-  Mic2, Music4, Database, FilmIcon, TrendingUp, Calculator, Search, Badge
+  Mic2, Music4, Database, FilmIcon, TrendingUp, Calculator, Search,
+  Badge, MapPin, Calendar, ChartBar, Users
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -71,40 +72,40 @@ export default function RecordLabelServices() {
         <div className="container mx-auto px-4 py-12 md:py-24">
           <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-8 md:space-y-12">
             <TabsList className="flex flex-wrap justify-center gap-3 md:gap-6 p-2 bg-background/50 backdrop-blur-sm rounded-lg border border-orange-500/20 overflow-x-auto">
-              <TabsTrigger 
-                value="radio-tv" 
+              <TabsTrigger
+                value="radio-tv"
                 className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
               >
                 <Radio className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Radio & TV</span>
                 <span className="md:hidden">Radio/TV</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="movies" 
+              <TabsTrigger
+                value="movies"
                 className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
               >
                 <Film className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Movie Publishing</span>
                 <span className="md:hidden">Movies</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="creator" 
+              <TabsTrigger
+                value="creator"
                 className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
               >
                 <Music4 className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Movie Music Tools</span>
                 <span className="md:hidden">Tools</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="contracts" 
+              <TabsTrigger
+                value="contracts"
                 className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Contracts</span>
                 <span className="md:hidden">Legal</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="ai" 
+              <TabsTrigger
+                value="ai"
                 className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
               >
                 <Brain className="w-4 h-4 mr-2" />
@@ -522,6 +523,93 @@ export default function RecordLabelServices() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
+            </Card>
+          </div>
+        </div>
+
+
+        {/* Nueva sección de Manager Tools */}
+        <div className="container mx-auto px-4 py-12 md:py-16">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
+              Manager Tools
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Essential tools for managing your artists and venues
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            {/* Venues Catalog */}
+            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                  <MapPin className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold">Venues Catalog</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Find perfect venues for your events
+                  </p>
+                </div>
+              </div>
+              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                Find Venues
+              </Button>
+            </Card>
+
+            {/* Venues Booking */}
+            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                  <Calendar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold">Venues Booking</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Schedule and manage bookings
+                  </p>
+                </div>
+              </div>
+              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                Book Now
+              </Button>
+            </Card>
+
+            {/* Venues Reports */}
+            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                  <ChartBar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold">Venues Reports</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Analytics and performance data
+                  </p>
+                </div>
+              </div>
+              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                View Reports
+              </Button>
+            </Card>
+
+            {/* Your Artists */}
+            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                  <Users className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold">Your Artists</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Manage your artist roster
+                  </p>
+                </div>
+              </div>
+              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                View Artists
+              </Button>
             </Card>
           </div>
         </div>
