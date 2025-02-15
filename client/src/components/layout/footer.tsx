@@ -7,7 +7,11 @@ import {
   MessageCircle, 
   Globe, 
   Instagram,
-  ChevronRight
+  ChevronRight,
+  Box, 
+  CircleDollarSign, 
+  Brain,
+  Gamepad2
 } from "lucide-react";
 
 export function Footer() {
@@ -61,48 +65,65 @@ export function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Resources</h3>
+            <h3 className="text-lg font-semibold">Metafeed & Boostify</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Button variant="link" className="p-0 h-auto font-normal">
-                  Success Stories
+                  <Box className="h-4 w-4 mr-2" />
+                  Metafeed Metaverse
                 </Button>
               </li>
               <li>
                 <Button variant="link" className="p-0 h-auto font-normal">
-                  Artist Guide
+                  <CircleDollarSign className="h-4 w-4 mr-2" />
+                  Metafeed Token
                 </Button>
               </li>
               <li>
                 <Button variant="link" className="p-0 h-auto font-normal">
-                  Marketing Tips
+                  <Music2 className="h-4 w-4 mr-2" />
+                  One Artist One Token
                 </Button>
               </li>
               <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  Blog
-                </Button>
+                <Link href="/ecosystem">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Globe className="h-4 w-4 mr-2" />
+                    View Ecosystem
+                  </Button>
+                </Link>
               </li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact</h3>
+            <h3 className="text-lg font-semibold">Avat Pro & Boostify</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Button variant="link" className="p-0 h-auto font-normal">
-                  Support
+                  <Brain className="h-4 w-4 mr-2" />
+                  Hyper Realistic Avatars
                 </Button>
               </li>
               <li>
                 <Button variant="link" className="p-0 h-auto font-normal">
-                  Sales
+                  <Gamepad2 className="h-4 w-4 mr-2" />
+                  Unreal Engine
                 </Button>
               </li>
               <li>
                 <Button variant="link" className="p-0 h-auto font-normal">
-                  Partnerships
+                  <Brain className="h-4 w-4 mr-2" />
+                  Motion Capture
                 </Button>
+              </li>
+              <li>
+                <Link href="/ecosystem">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Globe className="h-4 w-4 mr-2" />
+                    View Partnership
+                  </Button>
+                </Link>
               </li>
             </ul>
           </div>
