@@ -101,7 +101,8 @@ export function ImageStyleAdvisor() {
     <div className="w-full max-w-4xl mx-auto">
       <Card className="p-4 md:p-6 shadow-lg">
         <Tabs defaultValue="style" className="space-y-8">
-          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1 bg-background/95 backdrop-blur sticky top-0 z-10">
+          {/* Ajustando el TabsList para que no se superponga */}
+          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1 bg-background/95 backdrop-blur relative z-10 mb-8">
             <TabsTrigger value="style" className="flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2">
               <Palette className="h-4 w-4" />
               <span className="text-sm md:text-base">Preferencias de Estilo</span>
@@ -112,151 +113,154 @@ export function ImageStyleAdvisor() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="style" className="mt-6 md:mt-8">
-            <div className="grid gap-6 md:gap-8">
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Género Musical</Label>
-                <Select
-                  value={artistStyle.genre}
-                  onValueChange={(value) => setArtistStyle(prev => ({ ...prev, genre: value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona tu género" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pop">Pop</SelectItem>
-                    <SelectItem value="rock">Rock</SelectItem>
-                    <SelectItem value="hiphop">Hip Hop</SelectItem>
-                    <SelectItem value="electronic">Electrónica</SelectItem>
-                    <SelectItem value="jazz">Jazz</SelectItem>
-                    <SelectItem value="classical">Clásica</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Vibra Deseada</Label>
-                <Select
-                  value={artistStyle.vibe}
-                  onValueChange={(value) => setArtistStyle(prev => ({ ...prev, vibe: value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona la vibra" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Professional">Profesional</SelectItem>
-                    <SelectItem value="Edgy">Atrevida</SelectItem>
-                    <SelectItem value="Artistic">Artística</SelectItem>
-                    <SelectItem value="Minimalist">Minimalista</SelectItem>
-                    <SelectItem value="Avant-garde">Vanguardista</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Estilo Estético</Label>
-                <Select
-                  value={artistStyle.aesthetic}
-                  onValueChange={(value) => setArtistStyle(prev => ({ ...prev, aesthetic: value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona el estilo estético" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Modern">Moderno</SelectItem>
-                    <SelectItem value="Vintage">Vintage</SelectItem>
-                    <SelectItem value="Urban">Urbano</SelectItem>
-                    <SelectItem value="Natural">Natural</SelectItem>
-                    <SelectItem value="Futuristic">Futurista</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Imagen de Referencia (Opcional)</Label>
+          {/* Contenido con padding adicional en móvil */}
+          <div className="pt-4 sm:pt-0">
+            <TabsContent value="style" className="mt-8 md:mt-6">
+              <div className="grid gap-8 md:gap-6">
                 <div className="space-y-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="cursor-pointer w-full"
-                  />
-                  {referenceImage && (
-                    <div className="mt-4">
-                      <img 
-                        src={referenceImage} 
-                        alt="Reference" 
-                        className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-4">
-                <Button
-                  onClick={generateStyleAdvice}
-                  disabled={isGenerating || !artistStyle.genre}
-                  className="w-full"
-                >
-                  {isGenerating ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Generando Recomendaciones...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      <span>Generar Recomendaciones de Estilo</span>
-                    </div>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="preview" className="mt-6 md:mt-8">
-            {styleRecommendation && (
-              <Card className="p-4 bg-muted/50 mb-6">
-                <div className="flex items-start gap-3">
-                  <UserCircle2 className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold mb-2">Recomendaciones de Estilo</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">{styleRecommendation}</p>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {generatedImages.length > 0 && (
-              <div className="grid md:grid-cols-2 gap-6">
-                {generatedImages.map((imageUrl, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.2 }}
+                  <Label className="text-base font-medium">Género Musical</Label>
+                  <Select
+                    value={artistStyle.genre}
+                    onValueChange={(value) => setArtistStyle(prev => ({ ...prev, genre: value }))}
                   >
-                    <Card className="overflow-hidden">
-                      <div className="aspect-[9/16] relative">
-                        <img
-                          src={imageUrl}
-                          alt={`Style reference ${index + 1}`}
-                          className="w-full h-full object-cover"
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecciona tu género" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pop">Pop</SelectItem>
+                      <SelectItem value="rock">Rock</SelectItem>
+                      <SelectItem value="hiphop">Hip Hop</SelectItem>
+                      <SelectItem value="electronic">Electrónica</SelectItem>
+                      <SelectItem value="jazz">Jazz</SelectItem>
+                      <SelectItem value="classical">Clásica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-base font-medium">Vibra Deseada</Label>
+                  <Select
+                    value={artistStyle.vibe}
+                    onValueChange={(value) => setArtistStyle(prev => ({ ...prev, vibe: value }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecciona la vibra" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Professional">Profesional</SelectItem>
+                      <SelectItem value="Edgy">Atrevida</SelectItem>
+                      <SelectItem value="Artistic">Artística</SelectItem>
+                      <SelectItem value="Minimalist">Minimalista</SelectItem>
+                      <SelectItem value="Avant-garde">Vanguardista</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-base font-medium">Estilo Estético</Label>
+                  <Select
+                    value={artistStyle.aesthetic}
+                    onValueChange={(value) => setArtistStyle(prev => ({ ...prev, aesthetic: value }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecciona el estilo estético" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Modern">Moderno</SelectItem>
+                      <SelectItem value="Vintage">Vintage</SelectItem>
+                      <SelectItem value="Urban">Urbano</SelectItem>
+                      <SelectItem value="Natural">Natural</SelectItem>
+                      <SelectItem value="Futuristic">Futurista</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-base font-medium">Imagen de Referencia (Opcional)</Label>
+                  <div className="space-y-4">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="cursor-pointer w-full"
+                    />
+                    {referenceImage && (
+                      <div className="mt-4">
+                        <img 
+                          src={referenceImage} 
+                          alt="Reference" 
+                          className="w-full max-w-md mx-auto rounded-lg shadow-lg"
                         />
                       </div>
-                      <div className="p-4">
-                        <h4 className="font-medium text-sm md:text-base">Referencia {index + 1}</h4>
-                        <p className="text-xs md:text-sm text-muted-foreground">
-                          Basado en tus preferencias de {artistStyle.genre}
-                        </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Button
+                    onClick={generateStyleAdvice}
+                    disabled={isGenerating || !artistStyle.genre}
+                    className="w-full"
+                  >
+                    {isGenerating ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Generando Recomendaciones...</span>
                       </div>
-                    </Card>
-                  </motion.div>
-                ))}
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        <span>Generar Recomendaciones de Estilo</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
               </div>
-            )}
-          </TabsContent>
+            </TabsContent>
+
+            <TabsContent value="preview" className="mt-8 md:mt-6">
+              {styleRecommendation && (
+                <Card className="p-4 bg-muted/50 mb-6">
+                  <div className="flex items-start gap-3">
+                    <UserCircle2 className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold mb-2">Recomendaciones de Estilo</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">{styleRecommendation}</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {generatedImages.length > 0 && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {generatedImages.map((imageUrl, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.2 }}
+                    >
+                      <Card className="overflow-hidden">
+                        <div className="aspect-[9/16] relative">
+                          <img
+                            src={imageUrl}
+                            alt={`Style reference ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h4 className="font-medium text-sm md:text-base">Referencia {index + 1}</h4>
+                          <p className="text-xs md:text-sm text-muted-foreground">
+                            Basado en tus preferencias de {artistStyle.genre}
+                          </p>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </div>
         </Tabs>
       </Card>
     </div>
