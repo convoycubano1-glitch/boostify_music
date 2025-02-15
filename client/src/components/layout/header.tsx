@@ -79,12 +79,13 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Admin Button - Always visible on desktop */}
+            {/* Admin Button - Always visible on both mobile and desktop */}
             {isAdmin && (
               <Link href="/admin">
                 <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
                   <Shield className="h-4 w-4" />
-                  Admin Panel
+                  <span className="hidden sm:inline">Admin Panel</span>
+                  <span className="sm:hidden">Admin</span>
                 </Button>
               </Link>
             )}
@@ -112,14 +113,6 @@ export function Header() {
                     </DropdownMenuItem>
                   </Link>
                 ))}
-                {isAdmin && (
-                  <Link href="/admin">
-                    <DropdownMenuItem className="py-3">
-                      <Shield className="mr-3 h-4 w-4" />
-                      <span>Admin Panel</span>
-                    </DropdownMenuItem>
-                  </Link>
-                )}
                 <DropdownMenuItem onSelect={() => logout()} className="py-3">
                   <span>Logout</span>
                 </DropdownMenuItem>
