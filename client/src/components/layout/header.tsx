@@ -34,6 +34,9 @@ export function Header() {
 
   if (!user) return null;
 
+  // Check if user is admin by checking their email
+  const isAdmin = user?.email === 'admin@example.com' || user?.email?.includes('admin');
+
   return (
     <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
@@ -76,9 +79,10 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            {user?.isAdmin && (
-              <Link href="/admin" className="hidden lg:block">
-                <Button variant="default" className="bg-orange-500 hover:bg-orange-600 gap-2">
+            {/* Admin Button - Always visible on desktop */}
+            {isAdmin && (
+              <Link href="/admin">
+                <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
                   <Shield className="h-4 w-4" />
                   Admin Panel
                 </Button>
@@ -108,6 +112,14 @@ export function Header() {
                     </DropdownMenuItem>
                   </Link>
                 ))}
+                {isAdmin && (
+                  <Link href="/admin">
+                    <DropdownMenuItem className="py-3">
+                      <Shield className="mr-3 h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 <DropdownMenuItem onSelect={() => logout()} className="py-3">
                   <span>Logout</span>
                 </DropdownMenuItem>
