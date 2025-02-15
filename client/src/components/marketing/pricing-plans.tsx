@@ -7,10 +7,10 @@ import { loadStripe } from "@stripe/stripe-js";
 import { useState, useEffect } from "react";
 import { SiSpotify, SiInstagram } from "react-icons/si";
 
-// Manejar la inicialización de Stripe de manera segura
+// Handle Stripe initialization safely
 const getStripe = async () => {
   if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-    throw new Error("La clave pública de Stripe no está configurada");
+    throw new Error("Stripe public key is not configured");
   }
   return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 };
@@ -21,131 +21,155 @@ const plans = [
     price: 59.99,
     features: [
       {
-        text: "Análisis Básico de Spotify",
+        text: "Spotify Analytics Dashboard",
         icon: SiSpotify
       },
       {
-        text: "Gestión Básica de Instagram",
+        text: "Basic Instagram Management",
         icon: SiInstagram
       },
       {
-        text: "5,000 Vistas en YouTube",
+        text: "5,000 YouTube Views Boost",
         icon: Youtube
       },
       {
-        text: "Plantillas de Contratos Básicas",
+        text: "Basic Contract Templates",
         icon: FileText
       },
       {
-        text: "1 Diseño de Merch al Mes",
+        text: "1 Merchandise Design/Month",
         icon: ShoppingBag
       },
       {
-        text: "Acceso a 2 Modelos de IA",
+        text: "Access to 2 AI Models",
         icon: Brain
       },
       {
-        text: "Soporte por Email",
+        text: "Email Support",
         icon: Mail
+      },
+      {
+        text: "Basic Performance Metrics",
+        icon: LineChart
+      },
+      {
+        text: "Social Media Calendar",
+        icon: Settings
       }
     ],
-    description: "Perfecto para artistas emergentes que inician su carrera",
+    description: "Perfect for emerging artists taking their first steps into professional music marketing",
     popular: false,
-    priceId: "price_starter_monthly" // Actualizar con el ID real de Stripe
+    priceId: "price_starter_monthly"
   },
   {
     name: "Professional",
     price: 99.99,
     features: [
       {
-        text: "Analytics Avanzado de Spotify",
+        text: "Advanced Spotify Analytics",
         icon: SiSpotify
       },
       {
-        text: "Campañas de Instagram",
+        text: "Instagram Growth Campaigns",
         icon: SiInstagram
       },
       {
-        text: "25,000 Vistas en YouTube",
+        text: "25,000 YouTube Views Boost",
         icon: Youtube
       },
       {
-        text: "Creación de Contratos Personalizados",
+        text: "Custom Contract Creation",
         icon: FileText
       },
       {
-        text: "5 Diseños de Merch al Mes",
+        text: "5 Merchandise Designs/Month",
         icon: ShoppingBag
       },
       {
-        text: "Acceso a 5 Modelos de IA",
+        text: "Access to 5 AI Models",
         icon: Brain
       },
       {
-        text: "Campaña PR Básica",
+        text: "Basic PR Campaign",
         icon: Megaphone
       },
       {
-        text: "Marketing Automation",
+        text: "Marketing Automation Suite",
         icon: Settings
       },
       {
-        text: "Soporte Prioritario",
+        text: "Priority Support 24/7",
         icon: Star
+      },
+      {
+        text: "Advanced Analytics Dashboard",
+        icon: LineChart
+      },
+      {
+        text: "Content Calendar & Planner",
+        icon: Settings
       }
     ],
-    description: "Ideal para artistas en crecimiento y sellos pequeños",
+    description: "Ideal for growing artists and small labels ready to scale their presence",
     popular: true,
-    priceId: "price_pro_monthly" // Actualizar con el ID real de Stripe
+    priceId: "price_pro_monthly"
   },
   {
     name: "Enterprise",
     price: 149.99,
     features: [
       {
-        text: "Suite Completa de Marketing Musical",
+        text: "Complete Music Marketing Suite",
         icon: Music2
       },
       {
-        text: "Promoción Premium en Spotify",
+        text: "Premium Spotify Promotion",
         icon: SiSpotify
       },
       {
-        text: "Gestión Completa de Instagram",
+        text: "Full Instagram Management",
         icon: SiInstagram
       },
       {
-        text: "100,000 Vistas en YouTube",
+        text: "100,000 YouTube Views Boost",
         icon: Youtube
       },
       {
-        text: "Sistema Avanzado de Contratos",
+        text: "Advanced Contract System",
         icon: FileText
       },
       {
-        text: "Diseños Ilimitados de Merch",
+        text: "Unlimited Merchandise Designs",
         icon: ShoppingBag
       },
       {
-        text: "Acceso a Todos los Modelos de IA",
+        text: "Full AI Models Access",
         icon: Brain
       },
       {
-        text: "Campaña PR Completa",
+        text: "Complete PR Campaign",
         icon: Megaphone
       },
       {
-        text: "Analytics Personalizado",
+        text: "Custom Analytics Solution",
         icon: LineChart
       },
       {
-        text: "Gestor de Cuenta Dedicado",
+        text: "Dedicated Account Manager",
+        icon: Star
+      },
+      {
+        text: "Multi-platform Strategy",
+        icon: Settings
+      },
+      {
+        text: "Brand Development",
         icon: Star
       }
     ],
-    description: "Para artistas profesionales y sellos discográficos",
+    description: "For professional artists and record labels seeking comprehensive management",
     popular: false,
-    priceId: "price_enterprise_monthly" // Actualizar con el ID real de Stripe
+    priceId: "price_enterprise_monthly"
   }
 ];
 
@@ -156,13 +180,13 @@ export function PricingPlans() {
   const [stripeError, setStripeError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Verificar la configuración de Stripe al cargar el componente
+    // Verify Stripe configuration on component load
     getStripe().catch((error) => {
-      console.error('Error al inicializar Stripe:', error);
+      console.error('Error initializing Stripe:', error);
       setStripeError(error.message);
       toast({
-        title: "Error de configuración",
-        description: "Hay un problema con la configuración de pagos. Por favor, inténtelo más tarde.",
+        title: "Configuration Error",
+        description: "There's an issue with the payment setup. Please try again later.",
         variant: "destructive"
       });
     });
@@ -171,8 +195,8 @@ export function PricingPlans() {
   const handleSubscribe = async (plan: typeof plans[0]) => {
     if (!user) {
       toast({
-        title: "Inicio de sesión requerido",
-        description: "Por favor, inicia sesión para suscribirte a un plan",
+        title: "Login Required",
+        description: "Please log in to subscribe to a plan",
         variant: "destructive"
       });
       return;
@@ -180,8 +204,8 @@ export function PricingPlans() {
 
     if (stripeError) {
       toast({
-        title: "Error de configuración",
-        description: "El sistema de pagos no está disponible en este momento. Por favor, inténtelo más tarde.",
+        title: "Configuration Error",
+        description: "The payment system is currently unavailable. Please try again later.",
         variant: "destructive"
       });
       return;
@@ -205,22 +229,22 @@ export function PricingPlans() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al crear la sesión de pago');
+        throw new Error(errorData.error || 'Error creating payment session');
       }
 
       const { sessionId } = await response.json();
-      console.log('ID de sesión recibido:', sessionId);
+      console.log('Session ID received:', sessionId);
 
-      const { error } = await stripe.redirectToCheckout({ sessionId });
+      const { error } = await stripe!.redirectToCheckout({ sessionId });
       if (error) {
-        console.error('Error en redirectToCheckout:', error);
+        console.error('Error in redirectToCheckout:', error);
         throw error;
       }
     } catch (error: any) {
-      console.error('Error en el proceso de pago:', error);
+      console.error('Error in payment process:', error);
       toast({
         title: "Error",
-        description: error.message || "Hubo un error al procesar el pago",
+        description: error.message || "There was an error processing the payment",
         variant: "destructive"
       });
     } finally {
@@ -232,10 +256,10 @@ export function PricingPlans() {
     <div className="py-12 px-4">
       <div className="text-center mb-12 space-y-4">
         <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-          Potencia tu Música
+          Amplify Your Music Career
         </h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Elige el plan perfecto para impulsar tu carrera musical con nuestras herramientas de marketing integral
+          Choose the perfect plan to elevate your music career with our comprehensive marketing tools
         </p>
       </div>
 
@@ -250,7 +274,7 @@ export function PricingPlans() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                   <Crown className="w-4 h-4" />
-                  Más Popular
+                  Most Popular
                 </span>
               </div>
             )}
@@ -261,7 +285,7 @@ export function PricingPlans() {
                 <span className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                   ${plan.price}
                 </span>
-                <span className="text-muted-foreground ml-2">/mes</span>
+                <span className="text-muted-foreground ml-2">/month</span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {plan.description}
@@ -291,12 +315,12 @@ export function PricingPlans() {
               {processingPlanId === plan.priceId ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Procesando...
+                  Processing...
                 </>
               ) : (
                 <>
                   <Rocket className="mr-2 h-5 w-5" />
-                  {stripeError ? "No disponible" : "Comenzar Ahora"}
+                  {stripeError ? "Not Available" : "Get Started"}
                 </>
               )}
             </Button>
