@@ -297,169 +297,179 @@ export default function ContractsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">
-        <div className="flex-1 space-y-8 p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Legal Contract Management
-              </h2>
-              <p className="text-muted-foreground">
-                Create, analyze, and manage your professional agreements with AI assistance
-              </p>
-            </div>
+      <main className="flex-1 pt-16 px-4 md:pt-20 md:px-8">
+        <div className="flex-1 space-y-6 md:space-y-8">
+          <div className="flex flex-col space-y-2">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Legal Contract Management
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base">
+              Create, analyze, and manage your professional agreements with AI assistance
+            </p>
           </div>
 
-          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
-            <TabsList className="grid w-full grid-cols-4 gap-4">
-              <TabsTrigger value="contracts" className="gap-2">
+          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+              <TabsTrigger value="contracts" className="gap-2 text-sm">
                 <FileText className="h-4 w-4" />
-                Contracts
+                <span className="hidden md:inline">Contracts</span>
+                <span className="md:hidden">Docs</span>
               </TabsTrigger>
-              <TabsTrigger value="generator" className="gap-2">
+              <TabsTrigger value="generator" className="gap-2 text-sm">
                 <Sparkles className="h-4 w-4" />
-                Contract Generator
+                <span className="hidden md:inline">Contract Generator</span>
+                <span className="md:hidden">Generate</span>
               </TabsTrigger>
-              <TabsTrigger value="analyzer" className="gap-2">
+              <TabsTrigger value="analyzer" className="gap-2 text-sm">
                 <Scale className="h-4 w-4" />
-                Contract Analyzer
+                <span className="hidden md:inline">Contract Analyzer</span>
+                <span className="md:hidden">Analyze</span>
               </TabsTrigger>
-              <TabsTrigger value="ai-agent" className="gap-2">
+              <TabsTrigger value="ai-agent" className="gap-2 text-sm">
                 <Brain className="h-4 w-4" />
-                Legal AI Agent
+                <span className="hidden md:inline">Legal AI Agent</span>
+                <span className="md:hidden">AI Help</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Contracts Tab */}
             <TabsContent value="contracts">
               <div className="space-y-4">
-                <div className="grid gap-6 md:grid-cols-3">
-                  <Card className="p-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="p-4 md:p-6">
                     <div className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-medium">Total Contracts</h3>
+                      <h3 className="text-base md:text-lg font-medium">Total</h3>
                     </div>
-                    <p className="mt-2 text-3xl font-bold">{contracts.length}</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      View and manage all your contracts in one place
+                    <p className="mt-2 text-2xl md:text-3xl font-bold">{contracts.length}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
+                      All contracts
                     </p>
                   </Card>
-                  <Card className="p-6">
+                  <Card className="p-4 md:p-6">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      <h3 className="text-lg font-medium">Active Contracts</h3>
+                      <h3 className="text-base md:text-lg font-medium">Active</h3>
                     </div>
-                    <p className="mt-2 text-3xl font-bold">
+                    <p className="mt-2 text-2xl md:text-3xl font-bold">
                       {contracts.filter((c) => c.status === "active").length}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Currently active and enforced agreements
+                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
+                      Active contracts
                     </p>
                   </Card>
-                  <Card className="p-6">
+                  <Card className="p-4 md:p-6">
                     <div className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-yellow-500" />
-                      <h3 className="text-lg font-medium">Pending</h3>
+                      <h3 className="text-base md:text-lg font-medium">Pending</h3>
                     </div>
-                    <p className="mt-2 text-3xl font-bold">
+                    <p className="mt-2 text-2xl md:text-3xl font-bold">
                       {contracts.filter((c) => c.status === "draft").length}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Drafts and contracts pending review
+                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
+                      Drafts pending
                     </p>
                   </Card>
                 </div>
 
                 <Card>
-                  {isLoading ? (
-                    <div className="p-8 text-center">Loading contracts...</div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {contracts.length === 0 ? (
+                  <div className="overflow-x-auto">
+                    {isLoading ? (
+                      <div className="p-8 text-center">Loading contracts...</div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
-                              <div className="space-y-3">
-                                <p className="text-lg font-medium">No contracts yet</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Click "New Contract" to create your first agreement
-                                </p>
-                              </div>
-                            </TableCell>
+                            <TableHead>Title</TableHead>
+                            <TableHead className="hidden md:table-cell">Type</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="hidden md:table-cell">Date</TableHead>
+                            <TableHead className="w-[60px] md:w-[100px]">Actions</TableHead>
                           </TableRow>
-                        ) : (
-                          contracts.map((contract) => (
-                            <TableRow key={contract.id}>
-                              <TableCell className="font-medium">{contract.title}</TableCell>
-                              <TableCell>{contract.type}</TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="secondary"
-                                  className={`gap-1 ${getStatusColor(contract.status)}`}
-                                >
-                                  {getStatusIcon(contract.status)}
-                                  {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                      <span className="sr-only">Open menu</span>
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
-                                      <Eye className="h-4 w-4" /> View
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
-                                      <FileDown className="h-4 w-4" /> Download PDF
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
-                                      <Download className="h-4 w-4" /> Download TXT
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
-                                      <Edit className="h-4 w-4" /> Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
-                                      <Trash2 className="h-4 w-4" /> Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                        </TableHeader>
+                        <TableBody>
+                          {contracts.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center py-8">
+                                <div className="space-y-2">
+                                  <p className="text-base md:text-lg font-medium">No contracts yet</p>
+                                  <p className="text-xs md:text-sm text-muted-foreground">
+                                    Create your first contract
+                                  </p>
+                                </div>
                               </TableCell>
                             </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  )}
+                          ) : (
+                            contracts.map((contract) => (
+                              <TableRow key={contract.id}>
+                                <TableCell className="font-medium max-w-[120px] md:max-w-none truncate">
+                                  {contract.title}
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell">{contract.type}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="secondary"
+                                    className={`gap-1 ${getStatusColor(contract.status)}`}
+                                  >
+                                    {getStatusIcon(contract.status)}
+                                    <span className="hidden md:inline">
+                                      {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                                    </span>
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell">
+                                  {new Date(contract.createdAt).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" className="h-8 w-8 p-0">
+                                        <span className="sr-only">Open menu</span>
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[160px]">
+                                      <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
+                                        <Eye className="h-4 w-4" /> View
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
+                                        <FileDown className="h-4 w-4" /> PDF
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
+                                        <Download className="h-4 w-4" /> TXT
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
+                                        <Edit className="h-4 w-4" /> Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
+                                        <Trash2 className="h-4 w-4" /> Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
                 </Card>
               </div>
             </TabsContent>
 
             {/* Generator Tab */}
             <TabsContent value="generator">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Sparkles className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Contract Generator</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Contract Generator</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Create professional contracts with AI assistance
                     </p>
                   </div>
@@ -470,14 +480,14 @@ export default function ContractsPage() {
 
             {/* Analyzer Tab */}
             <TabsContent value="analyzer">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Scale className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Scale className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Contract Analyzer</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Contract Analyzer</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Analyze and review contracts with AI assistance
                     </p>
                   </div>
@@ -487,7 +497,7 @@ export default function ContractsPage() {
                     placeholder="Paste your contract text here for analysis..."
                     value={contractToAnalyze}
                     onChange={(e) => setContractToAnalyze(e.target.value)}
-                    className="min-h-[200px]"
+                    className="min-h-[150px] md:min-h-[200px]"
                   />
                   <Button 
                     onClick={() => analyzeContract(contractToAnalyze)}
@@ -497,11 +507,11 @@ export default function ContractsPage() {
                     {isAnalyzing ? "Analyzing..." : "Analyze Contract"}
                   </Button>
                   {analysisResult && (
-                    <div className="mt-6 p-4 border rounded-lg bg-background/50">
+                    <div className="mt-4 md:mt-6 p-4 border rounded-lg bg-background/50">
                       <h4 className="font-medium mb-2">Analysis Results</h4>
-                      <ScrollArea className="h-[300px]">
+                      <ScrollArea className="h-[200px] md:h-[300px]">
                         <div className="space-y-4">
-                          <pre className="whitespace-pre-wrap font-mono text-sm">
+                          <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">
                             {analysisResult}
                           </pre>
                         </div>
@@ -514,26 +524,26 @@ export default function ContractsPage() {
 
             {/* AI Agent Tab */}
             <TabsContent value="ai-agent">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Brain className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Brain className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Legal Artist AI Agent</h3>
-                    <p className="text-muted-foreground">
-                      Get expert legal advice and insights for your music career
+                    <h3 className="text-xl md:text-2xl font-semibold">Legal Artist AI Agent</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
+                      Get expert legal advice for your music career
                     </p>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                   <div className="space-y-6">
-                    <div className="p-6 border rounded-lg bg-background/50">
+                    <div className="p-4 md:p-6 border rounded-lg bg-background/50">
                       <h4 className="font-medium mb-4">Ask Legal AI Assistant</h4>
                       <Textarea
                         className="mb-4"
-                        placeholder="Ask about legal rights, contract terms, or industry standards..."
+                        placeholder="Ask about legal rights, contract terms..."
                         rows={4}
                       />
                       <Button className="w-full bg-orange-500 hover:bg-orange-600">
@@ -541,48 +551,48 @@ export default function ContractsPage() {
                       </Button>
                     </div>
 
-                    <div className="p-6 border rounded-lg bg-background/50">
-                      <h4 className="font-medium mb-4">Common Legal Questions</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" className="justify-start">
+                    <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                      <h4 className="font-medium mb-4">Quick Questions</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <Button variant="outline" className="justify-start text-sm">
                           <FileText className="mr-2 h-4 w-4" />
-                          Copyright Basics
+                          Copyright
                         </Button>
-                        <Button variant="outline" className="justify-start">
+                        <Button variant="outline" className="justify-start text-sm">
                           <Scale className="mr-2 h-4 w-4" />
-                          Royalty Rights
+                          Royalties
                         </Button>
-                        <Button variant="outline" className="justify-start">
+                        <Button variant="outline" className="justify-start text-sm">
                           <Shield className="mr-2 h-4 w-4" />
-                          Contract Terms
+                          Terms
                         </Button>
-                        <Button variant="outline" className="justify-start">
+                        <Button variant="outline" className="justify-start text-sm">
                           <Users className="mr-2 h-4 w-4" />
-                          Band Agreements
+                          Band
                         </Button>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    <div className="p-6 border rounded-lg bg-background/50">
+                    <div className="p-4 md:p-6 border rounded-lg bg-background/50">
                       <h4 className="font-medium mb-4">Legal Insights</h4>
                       <div className="space-y-4">
                         <div className="flex gap-3">
-                          <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
+                          <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Music Rights</p>
-                            <p className="text-sm text-muted-foreground">
-                              Understanding your rights as an artist and how to protect your work.
+                            <p className="text-xs md:text-sm text-muted-foreground">
+                              Understand and protect your work
                             </p>
                           </div>
                         </div>
                         <div className="flex gap-3">
-                          <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
+                          <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Contract Review</p>
-                            <p className="text-sm text-muted-foreground">
-                              Get professional analysis of your contracts and agreements.
+                            <p className="text-xs md:text-sm text-muted-foreground">
+                              Professional agreement analysis
                             </p>
                           </div>
                         </div>
