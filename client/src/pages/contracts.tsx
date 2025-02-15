@@ -13,7 +13,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -26,7 +25,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2, Clock, AlertCircle, FileDown, Brain, Scale, Sparkles, Shield, Users } from "lucide-react";
+import { 
+  FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2, 
+  Clock, AlertCircle, FileDown, Brain, Scale, Sparkles, Shield, Users 
+} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,29 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { motion } from "framer-motion";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.3 }
+  }
+};
 
 export default function ContractsPage() {
   const { toast } = useToast();
@@ -298,153 +323,194 @@ export default function ContractsPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-16 px-4 md:pt-20 md:px-8">
-        <div className="flex-1 space-y-6 md:space-y-8">
-          <div className="flex flex-col space-y-2">
+        <motion.div 
+          className="flex-1 space-y-8 md:space-y-10"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div 
+            className="flex flex-col space-y-3"
+            variants={itemVariants}
+          >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Legal Contract Management
             </h2>
-            <p className="text-muted-foreground text-sm md:text-base">
+            <p className="text-muted-foreground text-sm md:text-base max-w-2xl">
               Create, analyze, and manage your professional agreements with AI assistance
             </p>
-          </div>
+          </motion.div>
 
-          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-              <TabsTrigger value="contracts" className="gap-2 text-sm">
-                <FileText className="h-4 w-4" />
-                <span className="hidden md:inline">Contracts</span>
-                <span className="md:hidden">Docs</span>
-              </TabsTrigger>
-              <TabsTrigger value="generator" className="gap-2 text-sm">
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden md:inline">Contract Generator</span>
-                <span className="md:hidden">Generate</span>
-              </TabsTrigger>
-              <TabsTrigger value="analyzer" className="gap-2 text-sm">
-                <Scale className="h-4 w-4" />
-                <span className="hidden md:inline">Contract Analyzer</span>
-                <span className="md:hidden">Analyze</span>
-              </TabsTrigger>
-              <TabsTrigger value="ai-agent" className="gap-2 text-sm">
-                <Brain className="h-4 w-4" />
-                <span className="hidden md:inline">Legal AI Agent</span>
-                <span className="md:hidden">AI Help</span>
-              </TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
+            <motion.div variants={itemVariants}>
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 p-1 bg-muted/50 backdrop-blur-sm rounded-xl">
+                {[
+                  { value: "contracts", icon: FileText, label: "Contracts", shortLabel: "Docs" },
+                  { value: "generator", icon: Sparkles, label: "Contract Generator", shortLabel: "Generate" },
+                  { value: "analyzer", icon: Scale, label: "Contract Analyzer", shortLabel: "Analyze" },
+                  { value: "ai-agent", icon: Brain, label: "Legal AI Agent", shortLabel: "AI Help" }
+                ].map(tab => (
+                  <TabsTrigger 
+                    key={tab.value}
+                    value={tab.value} 
+                    className="gap-2 text-sm py-3 transition-all duration-300 data-[state=active]:bg-orange-500"
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    <span className="hidden md:inline">{tab.label}</span>
+                    <span className="md:hidden">{tab.shortLabel}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </motion.div>
 
             {/* Contracts Tab */}
             <TabsContent value="contracts">
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card className="p-4 md:p-6">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <h3 className="text-base md:text-lg font-medium">Total</h3>
-                    </div>
-                    <p className="mt-2 text-2xl md:text-3xl font-bold">{contracts.length}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
-                      All contracts
-                    </p>
-                  </Card>
-                  <Card className="p-4 md:p-6">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      <h3 className="text-base md:text-lg font-medium">Active</h3>
-                    </div>
-                    <p className="mt-2 text-2xl md:text-3xl font-bold">
-                      {contracts.filter((c) => c.status === "active").length}
-                    </p>
-                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
-                      Active contracts
-                    </p>
-                  </Card>
-                  <Card className="p-4 md:p-6">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-yellow-500" />
-                      <h3 className="text-base md:text-lg font-medium">Pending</h3>
-                    </div>
-                    <p className="mt-2 text-2xl md:text-3xl font-bold">
-                      {contracts.filter((c) => c.status === "draft").length}
-                    </p>
-                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
-                      Drafts pending
-                    </p>
-                  </Card>
+              <motion.div 
+                className="space-y-6"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <div className="grid gap-6 md:grid-cols-3">
+                  {[
+                    { title: "Total", icon: FileText, count: contracts.length, color: "primary" },
+                    { title: "Active", icon: CheckCircle2, count: contracts.filter(c => c.status === "active").length, color: "green" },
+                    { title: "Pending", icon: Clock, count: contracts.filter(c => c.status === "draft").length, color: "yellow" }
+                  ].map((stat, index) => (
+                    <motion.div 
+                      key={stat.title}
+                      variants={itemVariants}
+                      custom={index}
+                    >
+                      <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-3 rounded-lg bg-${stat.color}-500/10 group-hover:bg-${stat.color}-500/20 transition-colors`}>
+                            <stat.icon className={`h-6 w-6 text-${stat.color}-500`} />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-medium">{stat.title}</h3>
+                            <p className="mt-1 text-3xl font-bold">{stat.count}</p>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
                 </div>
 
-                <Card>
+                <Card className="overflow-hidden border-none shadow-lg">
                   <div className="overflow-x-auto">
                     {isLoading ? (
-                      <div className="p-8 text-center">Loading contracts...</div>
+                      <div className="p-12 text-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+                        </motion.div>
+                        <p className="text-muted-foreground">Loading contracts...</p>
+                      </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead className="hidden md:table-cell">Type</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="hidden md:table-cell">Date</TableHead>
+                          <TableRow className="hover:bg-muted/5">
+                            <TableHead className="font-semibold">Title</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold">Type</TableHead>
+                            <TableHead className="font-semibold">Status</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold">Date</TableHead>
                             <TableHead className="w-[60px] md:w-[100px]">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {contracts.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-8">
-                                <div className="space-y-2">
-                                  <p className="text-base md:text-lg font-medium">No contracts yet</p>
-                                  <p className="text-xs md:text-sm text-muted-foreground">
-                                    Create your first contract
-                                  </p>
+                              <TableCell colSpan={5} className="h-48">
+                                <div className="flex flex-col items-center justify-center space-y-3">
+                                  <FileText className="h-12 w-12 text-muted-foreground/50" />
+                                  <div className="text-center">
+                                    <p className="text-lg font-medium">No contracts yet</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Create your first contract to get started
+                                    </p>
+                                  </div>
+                                  <Button 
+                                    onClick={() => setSelectedTab("generator")}
+                                    className="mt-4 bg-orange-500 hover:bg-orange-600"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Contract
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
                           ) : (
                             contracts.map((contract) => (
-                              <TableRow key={contract.id}>
-                                <TableCell className="font-medium max-w-[120px] md:max-w-none truncate">
+                              <TableRow key={contract.id} className="group hover:bg-muted/5">
+                                <TableCell className="font-medium max-w-[200px] truncate">
                                   {contract.title}
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell">{contract.type}</TableCell>
+                                <TableCell className="hidden md:table-cell">
+                                  <Badge variant="outline">{contract.type}</Badge>
+                                </TableCell>
                                 <TableCell>
                                   <Badge
                                     variant="secondary"
-                                    className={`gap-1 ${getStatusColor(contract.status)}`}
+                                    className={`gap-1.5 py-1 ${getStatusColor(contract.status)}`}
                                   >
                                     {getStatusIcon(contract.status)}
-                                    <span className="hidden md:inline">
-                                      {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-                                    </span>
+                                    <span>{contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}</span>
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell">
+                                <TableCell className="hidden md:table-cell text-muted-foreground">
                                   {new Date(contract.createdAt).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <Button
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
                                         <span className="sr-only">Open menu</span>
                                         <MoreVertical className="h-4 w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[160px]">
-                                      <DropdownMenuItem onClick={() => handleViewContract(contract)} className="gap-2">
-                                        <Eye className="h-4 w-4" /> View
+                                    <DropdownMenuContent align="end" className="w-[180px]">
+                                      <DropdownMenuItem
+                                        onClick={() => handleViewContract(contract)}
+                                        className="gap-2 py-2 cursor-pointer"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                        View Contract
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleDownloadPDF(contract)} className="gap-2">
-                                        <FileDown className="h-4 w-4" /> PDF
+                                      <DropdownMenuItem
+                                        onClick={() => handleDownloadPDF(contract)}
+                                        className="gap-2 py-2 cursor-pointer"
+                                      >
+                                        <FileDown className="h-4 w-4" />
+                                        Download PDF
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDownloadText(contract)} className="gap-2">
-                                        <Download className="h-4 w-4" /> TXT
+                                      <DropdownMenuItem
+                                        onClick={() => handleDownloadText(contract)}
+                                        className="gap-2 py-2 cursor-pointer"
+                                      >
+                                        <Download className="h-4 w-4" />
+                                        Download Text
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleEditContract(contract)} className="gap-2">
-                                        <Edit className="h-4 w-4" /> Edit
+                                      <DropdownMenuItem
+                                        onClick={() => handleEditContract(contract)}
+                                        className="gap-2 py-2 cursor-pointer"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                        Edit Contract
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDeleteContract(contract)} className="gap-2 text-destructive">
-                                        <Trash2 className="h-4 w-4" /> Delete
+                                      <DropdownMenuItem
+                                        onClick={() => handleDeleteContract(contract)}
+                                        className="gap-2 py-2 cursor-pointer text-destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        Delete Contract
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -457,153 +523,159 @@ export default function ContractsPage() {
                     )}
                   </div>
                 </Card>
-              </div>
+              </motion.div>
             </TabsContent>
 
             {/* Generator Tab */}
-            <TabsContent value="generator">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
+            <motion.div variants={itemVariants}>
+              <TabsContent value="generator">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-semibold">Contract Generator</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
+                        Create professional contracts with AI assistance
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Contract Generator</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Create professional contracts with AI assistance
-                    </p>
-                  </div>
-                </div>
-                <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
-              </Card>
-            </TabsContent>
+                  <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
+                </Card>
+              </TabsContent>
+            </motion.div>
 
             {/* Analyzer Tab */}
-            <TabsContent value="analyzer">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Scale className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Contract Analyzer</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Analyze and review contracts with AI assistance
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <Textarea
-                    placeholder="Paste your contract text here for analysis..."
-                    value={contractToAnalyze}
-                    onChange={(e) => setContractToAnalyze(e.target.value)}
-                    className="min-h-[150px] md:min-h-[200px]"
-                  />
-                  <Button 
-                    onClick={() => analyzeContract(contractToAnalyze)}
-                    disabled={isAnalyzing || !contractToAnalyze}
-                    className="w-full bg-orange-500 hover:bg-orange-600"
-                  >
-                    {isAnalyzing ? "Analyzing..." : "Analyze Contract"}
-                  </Button>
-                  {analysisResult && (
-                    <div className="mt-4 md:mt-6 p-4 border rounded-lg bg-background/50">
-                      <h4 className="font-medium mb-2">Analysis Results</h4>
-                      <ScrollArea className="h-[200px] md:h-[300px]">
-                        <div className="space-y-4">
-                          <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">
-                            {analysisResult}
-                          </pre>
-                        </div>
-                      </ScrollArea>
+            <motion.div variants={itemVariants}>
+              <TabsContent value="analyzer">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Scale className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                     </div>
-                  )}
-                </div>
-              </Card>
-            </TabsContent>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-semibold">Contract Analyzer</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
+                        Analyze and review contracts with AI assistance
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <Textarea
+                      placeholder="Paste your contract text here for analysis..."
+                      value={contractToAnalyze}
+                      onChange={(e) => setContractToAnalyze(e.target.value)}
+                      className="min-h-[150px] md:min-h-[200px]"
+                    />
+                    <Button 
+                      onClick={() => analyzeContract(contractToAnalyze)}
+                      disabled={isAnalyzing || !contractToAnalyze}
+                      className="w-full bg-orange-500 hover:bg-orange-600"
+                    >
+                      {isAnalyzing ? "Analyzing..." : "Analyze Contract"}
+                    </Button>
+                    {analysisResult && (
+                      <div className="mt-4 md:mt-6 p-4 border rounded-lg bg-background/50">
+                        <h4 className="font-medium mb-2">Analysis Results</h4>
+                        <ScrollArea className="h-[200px] md:h-[300px]">
+                          <div className="space-y-4">
+                            <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">
+                              {analysisResult}
+                            </pre>
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </TabsContent>
+            </motion.div>
 
             {/* AI Agent Tab */}
-            <TabsContent value="ai-agent">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Brain className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Legal Artist AI Agent</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Get expert legal advice for your music career
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                  <div className="space-y-6">
-                    <div className="p-4 md:p-6 border rounded-lg bg-background/50">
-                      <h4 className="font-medium mb-4">Ask Legal AI Assistant</h4>
-                      <Textarea
-                        className="mb-4"
-                        placeholder="Ask about legal rights, contract terms..."
-                        rows={4}
-                      />
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                        Get AI Response
-                      </Button>
+            <motion.div variants={itemVariants}>
+              <TabsContent value="ai-agent">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Brain className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                     </div>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-semibold">Legal Artist AI Agent</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
+                        Get expert legal advice for your music career
+                      </p>
+                    </div>
+                  </div>
 
-                    <div className="p-4 md:p-6 border rounded-lg bg-background/50">
-                      <h4 className="font-medium mb-4">Quick Questions</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <Button variant="outline" className="justify-start text-sm">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Copyright
-                        </Button>
-                        <Button variant="outline" className="justify-start text-sm">
-                          <Scale className="mr-2 h-4 w-4" />
-                          Royalties
-                        </Button>
-                        <Button variant="outline" className="justify-start text-sm">
-                          <Shield className="mr-2 h-4 w-4" />
-                          Terms
-                        </Button>
-                        <Button variant="outline" className="justify-start text-sm">
-                          <Users className="mr-2 h-4 w-4" />
-                          Band
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                    <div className="space-y-6">
+                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                        <h4 className="font-medium mb-4">Ask Legal AI Assistant</h4>
+                        <Textarea
+                          className="mb-4"
+                          placeholder="Ask about legal rights, contract terms..."
+                          rows={4}
+                        />
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                          Get AI Response
                         </Button>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="space-y-6">
-                    <div className="p-4 md:p-6 border rounded-lg bg-background/50">
-                      <h4 className="font-medium mb-4">Legal Insights</h4>
-                      <div className="space-y-4">
-                        <div className="flex gap-3">
-                          <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Music Rights</p>
-                            <p className="text-xs md:text-sm text-muted-foreground">
-                              Understand and protect your work
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Contract Review</p>
-                            <p className="text-xs md:text-sm text-muted-foreground">
-                              Professional agreement analysis
-                            </p>
-                          </div>
+                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                        <h4 className="font-medium mb-4">Quick Questions</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Button variant="outline" className="justify-start text-sm">
+                            <FileText className="mr-2 h-4 w-4" />
+                            Copyright
+                          </Button>
+                          <Button variant="outline" className="justify-start text-sm">
+                            <Scale className="mr-2 h-4 w-4" />
+                            Royalties
+                          </Button>
+                          <Button variant="outline" className="justify-start text-sm">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Terms
+                          </Button>
+                          <Button variant="outline" className="justify-start text-sm">
+                            <Users className="mr-2 h-4 w-4" />
+                            Band
+                          </Button>
                         </div>
                       </div>
                     </div>
+
+                    <div className="space-y-6">
+                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                        <h4 className="font-medium mb-4">Legal Insights</h4>
+                        <div className="space-y-4">
+                          <div className="flex gap-3">
+                            <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Music Rights</p>
+                              <p className="text-xs md:text-sm text-muted-foreground">
+                                Understand and protect your work
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-3">
+                            <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Contract Review</p>
+                              <p className="text-xs md:text-sm text-muted-foreground">
+                                Professional agreement analysis
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </TabsContent>
+                </Card>
+              </TabsContent>
+            </motion.div>
+
           </Tabs>
-
           {/* View Dialog */}
           <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
             <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
@@ -691,7 +763,7 @@ export default function ContractsPage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </div>
+        </motion.div>
       </main>
     </div>
   );
