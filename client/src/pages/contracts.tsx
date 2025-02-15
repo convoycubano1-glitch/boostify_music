@@ -25,9 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2, 
-  Clock, AlertCircle, FileDown, Brain, Scale, Sparkles, Shield, Users 
+import {
+  FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2,
+  Clock, AlertCircle, FileDown, Brain, Scale, Sparkles, Shield, Users
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -47,7 +47,7 @@ const containerVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      staggerChildren: 0.1
+      staggerChildren: 0.15
     }
   }
 };
@@ -57,7 +57,20 @@ const itemVariants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.3 }
+    transition: {
+      duration: 0.4,
+      ease: "easeOut"
+    }
+  }
+};
+
+const buttonVariants = {
+  hover: {
+    scale: 1.05,
+    transition: { duration: 0.2 }
+  },
+  tap: {
+    scale: 0.95
   }
 };
 
@@ -322,40 +335,40 @@ export default function ContractsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-16 px-4 md:pt-20 md:px-8">
-        <motion.div 
-          className="flex-1 space-y-8 md:space-y-10"
+      <main className="flex-1 pt-20 px-6 md:pt-24 md:px-10">
+        <motion.div
+          className="flex-1 space-y-10"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div 
-            className="flex flex-col space-y-3"
+          <motion.div
+            className="flex flex-col space-y-4"
             variants={itemVariants}
           >
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-primary/60 bg-clip-text text-transparent">
               Legal Contract Management
             </h2>
-            <p className="text-muted-foreground text-sm md:text-base max-w-2xl">
+            <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
               Create, analyze, and manage your professional agreements with AI assistance
             </p>
           </motion.div>
 
-          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
+          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-10">
             <motion.div variants={itemVariants}>
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 p-1 bg-muted/50 backdrop-blur-sm rounded-xl">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-4 p-2 bg-muted/50 backdrop-blur-sm rounded-xl border border-orange-500/20">
                 {[
                   { value: "contracts", icon: FileText, label: "Contracts", shortLabel: "Docs" },
                   { value: "generator", icon: Sparkles, label: "Contract Generator", shortLabel: "Generate" },
                   { value: "analyzer", icon: Scale, label: "Contract Analyzer", shortLabel: "Analyze" },
                   { value: "ai-agent", icon: Brain, label: "Legal AI Agent", shortLabel: "AI Help" }
                 ].map(tab => (
-                  <TabsTrigger 
+                  <TabsTrigger
                     key={tab.value}
-                    value={tab.value} 
-                    className="gap-2 text-sm py-3 transition-all duration-300 data-[state=active]:bg-orange-500"
+                    value={tab.value}
+                    className="gap-3 text-base py-4 px-6 transition-all duration-300 data-[state=active]:bg-orange-500 data-[state=active]:text-white hover:bg-muted/80"
                   >
-                    <tab.icon className="h-4 w-4" />
+                    <tab.icon className="h-5 w-5" />
                     <span className="hidden md:inline">{tab.label}</span>
                     <span className="md:hidden">{tab.shortLabel}</span>
                   </TabsTrigger>
@@ -365,31 +378,34 @@ export default function ContractsPage() {
 
             {/* Contracts Tab */}
             <TabsContent value="contracts">
-              <motion.div 
-                className="space-y-6"
+              <motion.div
+                className="space-y-8"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
               >
-                <div className="grid gap-6 md:grid-cols-3">
+                <div className="grid gap-8 md:grid-cols-3">
                   {[
-                    { title: "Total", icon: FileText, count: contracts.length, color: "primary" },
-                    { title: "Active", icon: CheckCircle2, count: contracts.filter(c => c.status === "active").length, color: "green" },
-                    { title: "Pending", icon: Clock, count: contracts.filter(c => c.status === "draft").length, color: "yellow" }
+                    { title: "Total Contracts", icon: FileText, count: contracts.length, color: "orange" },
+                    { title: "Active Contracts", icon: CheckCircle2, count: contracts.filter(c => c.status === "active").length, color: "green" },
+                    { title: "Pending Review", icon: Clock, count: contracts.filter(c => c.status === "draft").length, color: "yellow" }
                   ].map((stat, index) => (
-                    <motion.div 
+                    <motion.div
                       key={stat.title}
                       variants={itemVariants}
-                      custom={index}
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-3 rounded-lg bg-${stat.color}-500/10 group-hover:bg-${stat.color}-500/20 transition-colors`}>
-                            <stat.icon className={`h-6 w-6 text-${stat.color}-500`} />
+                      <Card className="p-8 hover:shadow-xl transition-all duration-300 group border-t-4 border-t-orange-500/50">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-4 rounded-xl bg-${stat.color}-500/10 group-hover:bg-${stat.color}-500/20 transition-colors duration-300`}>
+                            <stat.icon className={`h-8 w-8 text-${stat.color}-500`} />
                           </div>
                           <div>
-                            <h3 className="text-lg font-medium">{stat.title}</h3>
-                            <p className="mt-1 text-3xl font-bold">{stat.count}</p>
+                            <h3 className="text-xl font-medium mb-1">{stat.title}</h3>
+                            <p className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-primary bg-clip-text text-transparent">
+                              {stat.count}
+                            </p>
                           </div>
                         </div>
                       </Card>
@@ -397,125 +413,149 @@ export default function ContractsPage() {
                   ))}
                 </div>
 
-                <Card className="overflow-hidden border-none shadow-lg">
+                <Card className="overflow-hidden border-none shadow-xl p-6">
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-semibold mb-2">Contract List</h3>
+                    <p className="text-muted-foreground">Manage and track all your legal agreements in one place</p>
+                  </div>
+
                   <div className="overflow-x-auto">
                     {isLoading ? (
-                      <div className="p-12 text-center">
+                      <div className="p-16 text-center">
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         >
-                          <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+                          <Clock className="h-10 w-10 text-orange-500 mx-auto mb-4" />
                         </motion.div>
-                        <p className="text-muted-foreground">Loading contracts...</p>
+                        <p className="text-lg text-muted-foreground">Loading your contracts...</p>
                       </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow className="hover:bg-muted/5">
-                            <TableHead className="font-semibold">Title</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold">Type</TableHead>
-                            <TableHead className="font-semibold">Status</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold">Date</TableHead>
-                            <TableHead className="w-[60px] md:w-[100px]">Actions</TableHead>
+                          <TableRow className="hover:bg-muted/5 border-b-2 border-border">
+                            <TableHead className="font-semibold text-lg py-4">Title</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold text-lg py-4">Type</TableHead>
+                            <TableHead className="font-semibold text-lg py-4">Status</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold text-lg py-4">Date</TableHead>
+                            <TableHead className="w-[100px] py-4">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {contracts.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={5} className="h-48">
-                                <div className="flex flex-col items-center justify-center space-y-3">
-                                  <FileText className="h-12 w-12 text-muted-foreground/50" />
-                                  <div className="text-center">
-                                    <p className="text-lg font-medium">No contracts yet</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Create your first contract to get started
+                              <TableCell colSpan={5} className="h-60">
+                                <motion.div
+                                  className="flex flex-col items-center justify-center space-y-4"
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.5 }}
+                                >
+                                  <FileText className="h-16 w-16 text-orange-500/50" />
+                                  <div className="text-center space-y-2">
+                                    <p className="text-2xl font-medium">No contracts yet</p>
+                                    <p className="text-muted-foreground">
+                                      Start by creating your first contract
                                     </p>
                                   </div>
-                                  <Button 
-                                    onClick={() => setSelectedTab("generator")}
-                                    className="mt-4 bg-orange-500 hover:bg-orange-600"
+                                  <motion.div
+                                    variants={buttonVariants}
+                                    whileHover="hover"
+                                    whileTap="tap"
                                   >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Contract
-                                  </Button>
-                                </div>
+                                    <Button
+                                      onClick={() => setSelectedTab("generator")}
+                                      className="mt-6 bg-orange-500 hover:bg-orange-600 text-lg px-8 py-6 h-auto"
+                                    >
+                                      <Plus className="mr-2 h-5 w-5" />
+                                      Create Your First Contract
+                                    </Button>
+                                  </motion.div>
+                                </motion.div>
                               </TableCell>
                             </TableRow>
                           ) : (
-                            contracts.map((contract) => (
-                              <TableRow key={contract.id} className="group hover:bg-muted/5">
-                                <TableCell className="font-medium max-w-[200px] truncate">
+                            contracts.map((contract, index) => (
+                              <motion.tr
+                                key={contract.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                className="group hover:bg-muted/5"
+                              >
+                                <TableCell className="font-medium text-base py-4">
                                   {contract.title}
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell">
-                                  <Badge variant="outline">{contract.type}</Badge>
+                                <TableCell className="hidden md:table-cell py-4">
+                                  <Badge variant="outline" className="text-sm px-3 py-1">
+                                    {contract.type}
+                                  </Badge>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-4">
                                   <Badge
                                     variant="secondary"
-                                    className={`gap-1.5 py-1 ${getStatusColor(contract.status)}`}
+                                    className={`gap-2 py-1.5 px-3 ${getStatusColor(contract.status)}`}
                                   >
                                     {getStatusIcon(contract.status)}
                                     <span>{contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}</span>
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell text-muted-foreground">
+                                <TableCell className="hidden md:table-cell text-muted-foreground py-4">
                                   {new Date(contract.createdAt).toLocaleDateString()}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-4">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button
                                         variant="ghost"
-                                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                       >
                                         <span className="sr-only">Open menu</span>
-                                        <MoreVertical className="h-4 w-4" />
+                                        <MoreVertical className="h-5 w-5" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[180px]">
+                                    <DropdownMenuContent align="end" className="w-52">
                                       <DropdownMenuItem
                                         onClick={() => handleViewContract(contract)}
-                                        className="gap-2 py-2 cursor-pointer"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
-                                        <Eye className="h-4 w-4" />
+                                        <Eye className="h-5 w-5" />
                                         View Contract
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem
                                         onClick={() => handleDownloadPDF(contract)}
-                                        className="gap-2 py-2 cursor-pointer"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
-                                        <FileDown className="h-4 w-4" />
+                                        <FileDown className="h-5 w-5" />
                                         Download PDF
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleDownloadText(contract)}
-                                        className="gap-2 py-2 cursor-pointer"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
-                                        <Download className="h-4 w-4" />
+                                        <Download className="h-5 w-5" />
                                         Download Text
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem
                                         onClick={() => handleEditContract(contract)}
-                                        className="gap-2 py-2 cursor-pointer"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
-                                        <Edit className="h-4 w-4" />
+                                        <Edit className="h-5 w-5" />
                                         Edit Contract
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleDeleteContract(contract)}
-                                        className="gap-2 py-2 cursor-pointer text-destructive"
+                                        className="gap-3 py-3 cursor-pointer text-destructive hover:bg-destructive/10"
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-5 w-5" />
                                         Delete Contract
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </TableCell>
-                              </TableRow>
+                              </motion.tr>
                             ))
                           )}
                         </TableBody>
@@ -568,7 +608,7 @@ export default function ContractsPage() {
                       onChange={(e) => setContractToAnalyze(e.target.value)}
                       className="min-h-[150px] md:min-h-[200px]"
                     />
-                    <Button 
+                    <Button
                       onClick={() => analyzeContract(contractToAnalyze)}
                       disabled={isAnalyzing || !contractToAnalyze}
                       className="w-full bg-orange-500 hover:bg-orange-600"
@@ -778,7 +818,7 @@ function getStatusColor(status: string) {
     case "draft":
       return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
     default:
-      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
+      return "bg-gray-500/10 text-gray500/20";
   }
 }
 
