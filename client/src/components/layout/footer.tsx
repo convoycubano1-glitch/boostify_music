@@ -24,21 +24,37 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Platform Features</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center">
-                <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                <span>AI-Powered Marketing</span>
+              <li>
+                <Link href="/ai-agents">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
+                    AI-Powered Marketing
+                  </Button>
+                </Link>
               </li>
-              <li className="flex items-center">
-                <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                <span>Content Management</span>
+              <li>
+                <Link href="/dashboard">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
+                    Content Management
+                  </Button>
+                </Link>
               </li>
-              <li className="flex items-center">
-                <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                <span>Analytics Dashboard</span>
+              <li>
+                <Link href="/analytics">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
+                    Analytics Dashboard
+                  </Button>
+                </Link>
               </li>
-              <li className="flex items-center">
-                <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                <span>Audience Growth</span>
+              <li>
+                <Link href="/pr">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
+                    Audience Growth
+                  </Button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -46,21 +62,37 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Services</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center">
-                <Youtube className="h-4 w-4 mr-2 text-orange-500" />
-                <span>YouTube Views Boost</span>
+              <li>
+                <Link href="/youtube-views">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Youtube className="h-4 w-4 mr-2 text-orange-500" />
+                    YouTube Views Boost
+                  </Button>
+                </Link>
               </li>
-              <li className="flex items-center">
-                <Instagram className="h-4 w-4 mr-2 text-orange-500" />
-                <span>Instagram Growth</span>
+              <li>
+                <Link href="/instagram">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Instagram className="h-4 w-4 mr-2 text-orange-500" />
+                    Instagram Growth
+                  </Button>
+                </Link>
               </li>
-              <li className="flex items-center">
-                <Music2 className="h-4 w-4 mr-2 text-orange-500" />
-                <span>Music Promotion</span>
+              <li>
+                <Link href="/promotion">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Music2 className="h-4 w-4 mr-2 text-orange-500" />
+                    Music Promotion
+                  </Button>
+                </Link>
               </li>
-              <li className="flex items-center">
-                <Globe className="h-4 w-4 mr-2 text-orange-500" />
-                <span>Global Reach</span>
+              <li>
+                <Link href="/global">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Globe className="h-4 w-4 mr-2 text-orange-500" />
+                    Global Reach
+                  </Button>
+                </Link>
               </li>
               <li>
                 <Link href="/admin">
