@@ -99,9 +99,9 @@ export function ImageStyleAdvisor() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <Card className="p-4 md:p-6 shadow-lg relative">
-        <Tabs defaultValue="style" className="space-y-6">
-          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1 sticky top-0 z-10 bg-background/95 backdrop-blur">
+      <Card className="p-4 md:p-6 shadow-lg">
+        <Tabs defaultValue="style" className="space-y-8">
+          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1 bg-background/95 backdrop-blur sticky top-0 z-10">
             <TabsTrigger value="style" className="flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2">
               <Palette className="h-4 w-4" />
               <span className="text-sm md:text-base">Preferencias de Estilo</span>
@@ -112,10 +112,10 @@ export function ImageStyleAdvisor() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="style" className="relative">
-            <div className="grid gap-4 md:gap-6">
-              <div>
-                <Label className="mb-2 block">Género Musical</Label>
+          <TabsContent value="style" className="mt-6 md:mt-8">
+            <div className="grid gap-6 md:gap-8">
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Género Musical</Label>
                 <Select
                   value={artistStyle.genre}
                   onValueChange={(value) => setArtistStyle(prev => ({ ...prev, genre: value }))}
@@ -134,8 +134,8 @@ export function ImageStyleAdvisor() {
                 </Select>
               </div>
 
-              <div>
-                <Label className="mb-2 block">Vibra Deseada</Label>
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Vibra Deseada</Label>
                 <Select
                   value={artistStyle.vibe}
                   onValueChange={(value) => setArtistStyle(prev => ({ ...prev, vibe: value }))}
@@ -153,8 +153,8 @@ export function ImageStyleAdvisor() {
                 </Select>
               </div>
 
-              <div>
-                <Label className="mb-2 block">Estilo Estético</Label>
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Estilo Estético</Label>
                 <Select
                   value={artistStyle.aesthetic}
                   onValueChange={(value) => setArtistStyle(prev => ({ ...prev, aesthetic: value }))}
@@ -172,28 +172,28 @@ export function ImageStyleAdvisor() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label className="block">Imagen de Referencia (Opcional)</Label>
-                <div className="relative">
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Imagen de Referencia (Opcional)</Label>
+                <div className="space-y-4">
                   <Input
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
                     className="cursor-pointer w-full"
                   />
+                  {referenceImage && (
+                    <div className="mt-4">
+                      <img 
+                        src={referenceImage} 
+                        alt="Reference" 
+                        className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+                      />
+                    </div>
+                  )}
                 </div>
-                {referenceImage && (
-                  <div className="mt-4">
-                    <img 
-                      src={referenceImage} 
-                      alt="Reference" 
-                      className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-                    />
-                  </div>
-                )}
               </div>
 
-              <div className="relative pt-4">
+              <div className="pt-4">
                 <Button
                   onClick={generateStyleAdvice}
                   disabled={isGenerating || !artistStyle.genre}
@@ -215,9 +215,9 @@ export function ImageStyleAdvisor() {
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="space-y-4">
+          <TabsContent value="preview" className="mt-6 md:mt-8">
             {styleRecommendation && (
-              <Card className="p-4 bg-muted/50">
+              <Card className="p-4 bg-muted/50 mb-6">
                 <div className="flex items-start gap-3">
                   <UserCircle2 className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                   <div>
@@ -229,7 +229,7 @@ export function ImageStyleAdvisor() {
             )}
 
             {generatedImages.length > 0 && (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-6">
                 {generatedImages.map((imageUrl, index) => (
                   <motion.div
                     key={index}
