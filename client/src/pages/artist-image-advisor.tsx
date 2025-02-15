@@ -128,37 +128,51 @@ export default function ArtistImageAdvisorPage() {
 
           {/* Main Interface */}
           <Card className="p-4 md:p-8 border-orange-500/20">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 md:space-y-8">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto">
-                <TabsTrigger value="upload" className="flex items-center gap-2 px-3 py-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8 md:space-y-12">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-1 rounded-lg">
+                <TabsTrigger 
+                  value="upload" 
+                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+                >
                   <Camera className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">Upload</span>
+                  <span className="text-[10px] md:text-sm">Upload</span>
                 </TabsTrigger>
-                <TabsTrigger value="style" className="flex items-center gap-2 px-3 py-2">
+                <TabsTrigger 
+                  value="style" 
+                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+                >
                   <Music2 className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">Style</span>
+                  <span className="text-[10px] md:text-sm">Style</span>
                 </TabsTrigger>
-                <TabsTrigger value="generate" className="flex items-center gap-2 px-3 py-2">
+                <TabsTrigger 
+                  value="generate" 
+                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+                >
                   <ImageIcon className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">Generate</span>
+                  <span className="text-[10px] md:text-sm">Generate</span>
                 </TabsTrigger>
-                <TabsTrigger value="results" className="flex items-center gap-2 px-3 py-2">
+                <TabsTrigger 
+                  value="results" 
+                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+                >
                   <TrendingUp className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">Results</span>
+                  <span className="text-[10px] md:text-sm">Results</span>
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="upload">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <ImageStyleAdvisor />
-                </motion.div>
-              </TabsContent>
+              <div className="mt-16 md:mt-12">
+                <TabsContent value="upload">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <ImageStyleAdvisor />
+                  </motion.div>
+                </TabsContent>
 
-              {/* Other TabsContent components will be implemented later */}
+                {/* Other TabsContent components will be implemented later */}
+              </div>
             </Tabs>
           </Card>
         </motion.div>
