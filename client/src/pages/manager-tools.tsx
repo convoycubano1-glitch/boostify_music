@@ -143,55 +143,53 @@ export default function ManagerToolsPage() {
               </Card>
             </div>
 
-            <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab}>
-              <div className="mb-8 md:mb-12">
-                <TabsList className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
-                  <TabsTrigger 
-                    value="technical" 
-                    className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
-                  >
-                    <FileText className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center">Technical</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="requirements" 
-                    className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
-                  >
-                    <Utensils className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center">Requirements</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="budget" 
-                    className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
-                  >
-                    <DollarSign className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center">Budget</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="logistics" 
-                    className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
-                  >
-                    <Truck className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center">Logistics</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="hiring" 
-                    className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
-                  >
-                    <Users2 className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center">Hiring</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="ai" 
-                    className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
-                  >
-                    <Brain className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-center">AI</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+            <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab} className="relative">
+              <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4 p-2">
+                <TabsTrigger 
+                  value="technical" 
+                  className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
+                >
+                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">Technical</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="requirements" 
+                  className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
+                >
+                  <Utensils className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">Requirements</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="budget" 
+                  className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
+                >
+                  <DollarSign className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">Budget</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="logistics" 
+                  className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
+                >
+                  <Truck className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">Logistics</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="hiring" 
+                  className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
+                >
+                  <Users2 className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">Hiring</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="ai" 
+                  className="data-[state=active]:bg-orange-500 px-2 md:px-4 py-4 md:py-3 h-auto text-[10px] md:text-sm flex flex-col md:flex-row items-center gap-1 md:gap-2"
+                >
+                  <Brain className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-center">AI</span>
+                </TabsTrigger>
+              </TabsList>
 
-              <div className="mt-8 md:mt-4">
+              <div className="relative z-40 bg-background mt-4">
                 {/* Technical Rider Tab */}
                 <TabsContent value="technical">
                   <div className="grid gap-6 md:gap-8 md:grid-cols-2">
