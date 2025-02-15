@@ -5,7 +5,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users } from "lucide-react";
+import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users, Key, Video, FileText, MessageSquare, Eye, Database, Brain, Music2, Scissors, Type, Sparkles, Music, Search, Image } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import mainVideo from '../images/videos/Standard_Mode_Generated_Video (1).mp4';
 import enhanceVideo from '../images/videos/bostify.mp4';
 import {
@@ -67,6 +69,11 @@ export default function YoutubeViewsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null);
+  const [activeTab, setActiveTab] = useState("strategy");
+  const [keywordInput, setKeywordInput] = useState("");
+  const [generatedKeywords, setGeneratedKeywords] = useState<string[]>([]);
+  const [videoTitle, setVideoTitle] = useState("");
+  const [generatingCover, setGeneratingCover] = useState(false);
 
   const { data: apifyData, refetch } = useQuery({
     queryKey: ["apify-run", orderId],
@@ -81,7 +88,7 @@ export default function YoutubeViewsPage() {
   const getPackagePrice = (views: number) => {
     if (views <= 1000) return 50;
     if (views <= 10000) return 450;
-    return Math.ceil(views * 0.04); // $0.04 per view for custom amounts
+    return Math.ceil(views * 0.04);
   };
 
   const currentPrice = getPackagePrice(desiredViews);
@@ -132,7 +139,6 @@ export default function YoutubeViewsPage() {
 
       setIsProcessing(true);
 
-      // Create order in Firebase first
       const orderData = await createYouTubeViewsOrder(user, {
         videoUrl,
         purchasedViews: desiredViews,
@@ -148,7 +154,6 @@ export default function YoutubeViewsPage() {
         throw new Error("Could not initialize Stripe");
       }
 
-      // Create Stripe checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -173,7 +178,6 @@ export default function YoutubeViewsPage() {
         throw new Error('Stripe session ID was not received');
       }
 
-      // Redirect to Stripe checkout
       const { error } = await stripe.redirectToCheckout({
         sessionId
       });
@@ -212,14 +216,13 @@ export default function YoutubeViewsPage() {
     }
 
     setIsProcessing(true);
-    // Simulate process steps
     let step = 0;
     const interval = setInterval(() => {
       step++;
       setProcessingStep(step);
       if (step >= 3) {
         clearInterval(interval);
-        setShowDialog(true); // Show payment dialog
+        setShowDialog(true);
       }
     }, 1500);
   };
@@ -237,7 +240,6 @@ export default function YoutubeViewsPage() {
     }
   };
 
-  // Add URL parameter handling
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
@@ -261,13 +263,30 @@ export default function YoutubeViewsPage() {
     }
   }, []);
 
+  const handleGenerateKeywords = async () => {
+    setGeneratedKeywords([
+      "#trending", "#viral", "#youtubegrowth",
+      "#contentcreator", "#youtubetips", "#socialmedia"
+    ]);
+  };
+
+  const handleGenerateCover = async () => {
+    setGeneratingCover(true);
+    setTimeout(() => {
+      setGeneratingCover(false);
+      toast({
+        title: "Cover Generated",
+        description: "Your video cover has been generated successfully",
+      });
+    }, 2000);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
-        {/* Hero Section with Video Background */}
+      <main className="flex-1 space-y-8 p-8 pt-6">
         <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden rounded-xl mb-12">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: "url('/assets/VzOu774PPeGzuzXmcP83y_5cd275d118e340239a4d0b6400689592.jpg')"
@@ -291,17 +310,17 @@ export default function YoutubeViewsPage() {
                   Enhance your videos with organic, high-retention views. Reach your ideal audience and increase your visibility.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                     onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
                   >
                     <Play className="w-5 h-5 mr-2" />
                     Start Now
                   </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
+                  <Button
+                    size="lg"
+                    variant="outline"
                     className="bg-black/50 hover:bg-black/60 border-white/20 text-white"
                   >
                     Watch Demo
@@ -359,151 +378,498 @@ export default function YoutubeViewsPage() {
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <Card className="overflow-hidden border-orange-500/10">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-6 flex flex-col justify-center">
-                <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                  Boost Your YouTube Presence
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Get real, high-retention views from genuine users. Our service helps you increase your video's visibility and engagement organically.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button className="bg-orange-500 hover:bg-orange-600">
-                    <Play className="w-4 h-4 mr-2" />
-                    Get Started
-                  </Button>
-                  <Button variant="outline">
-                    Learn More
-                  </Button>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-orange-500/5" />
-                <AspectRatio ratio={16 / 9} className="bg-muted">
-                  <div className="h-full w-full relative overflow-hidden">
-                    <video
-                      src={enhanceVideo}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                </AspectRatio>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+        <div className="container mx-auto px-4 py-16">
+          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="grid grid-cols-2 lg:grid-cols-7 gap-4">
+              <TabsTrigger value="strategy" className="data-[state=active]:bg-orange-500">
+                <Brain className="w-4 h-4 mr-2" />
+                AI Strategy
+              </TabsTrigger>
+              <TabsTrigger value="keywords" className="data-[state=active]:bg-orange-500">
+                <Key className="w-4 h-4 mr-2" />
+                Keywords
+              </TabsTrigger>
+              <TabsTrigger value="cover" className="data-[state=active]:bg-orange-500">
+                <Video className="w-4 h-4 mr-2" />
+                Cover Gen
+              </TabsTrigger>
+              <TabsTrigger value="shorts" className="data-[state=active]:bg-orange-500">
+                <FileText className="w-4 h-4 mr-2" />
+                Shorts
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="data-[state=active]:bg-orange-500">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Comments
+              </TabsTrigger>
+              <TabsTrigger value="views" className="data-[state=active]:bg-orange-500">
+                <Eye className="w-4 h-4 mr-2" />
+                Views
+              </TabsTrigger>
+              <TabsTrigger value="scraping" className="data-[state=active]:bg-orange-500">
+                <Database className="w-4 h-4 mr-2" />
+                Scraping
+              </TabsTrigger>
+            </TabsList>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-              <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="h-5 w-5 text-orange-500" />
-                  <h3 className="text-lg font-semibold">Real-Time Progress</h3>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="w-32 h-32 relative">
-                    <div className="absolute inset-0 bg-orange-500/5 rounded-full animate-pulse" />
-                    <CircularProgressbar
-                      value={progress}
-                      text={`${progress}%`}
-                      styles={buildStyles({
-                        pathColor: `hsl(var(--primary))`,
-                        textColor: `hsl(var(--primary))`,
-                        trailColor: 'rgba(255,255,255,0.1)',
-                        pathTransition: 'stroke-dashoffset 0.5s ease 0s',
-                      })}
-                    />
+            <TabsContent value="strategy">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Brain className="h-8 w-8 text-orange-500" />
                   </div>
-                  <div className="flex-1 ml-8">
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">Current Views</p>
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="text-4xl font-bold tabular-nums bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent"
-                      >
-                        {currentViews.toLocaleString()}
-                      </motion.div>
-                      <p className="text-sm text-orange-500 flex items-center">
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                        +2.5% since yesterday
-                      </p>
+                  <div>
+                    <h3 className="text-2xl font-semibold">AI YouTube Strategy</h3>
+                    <p className="text-muted-foreground">
+                      Get personalized content and growth strategies
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-4">Ask AI Assistant</h4>
+                    <Textarea
+                      className="mb-4"
+                      placeholder="Ask about content strategy, audience growth, or optimization tips..."
+                      rows={4}
+                    />
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                      Get AI Response
+                    </Button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Quick Analysis</h4>
+                      <div className="space-y-4">
+                        <Button variant="outline" className="w-full justify-start">
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          Analyze Channel Growth
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Users className="mr-2 h-4 w-4" />
+                          Audience Insights
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Strategy Tools</h4>
+                      <div className="space-y-4">
+                        <Button variant="outline" className="w-full justify-start">
+                          <Clock className="mr-2 h-4 w-4" />
+                          Best Upload Times
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          Trending Topics
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </motion.div>
+              </Card>
+            </TabsContent>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-              <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-orange-500" />
-                  <h3 className="text-lg font-semibold">Trends</h3>
+            <TabsContent value="keywords">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Key className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Keywords Generator</h3>
+                    <p className="text-muted-foreground">
+                      Generate optimized keywords for your videos
+                    </p>
+                  </div>
                 </div>
-                <div className="h-[180px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={[
-                      { time: '1h', views: 120 },
-                      { time: '2h', views: 250 },
-                      { time: '3h', views: 380 },
-                      { time: '4h', views: 470 },
-                      { time: '5h', views: 600 }
-                    ]}>
-                      <defs>
-                        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground)/0.1)" />
-                      <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="views"
-                        stroke="hsl(var(--primary))"
-                        fillOpacity={1}
-                        fill="url(#colorViews)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                <div className="space-y-6">
+                  <div className="p-4 border rounded-lg">
+                    <Input
+                      placeholder="Enter your video topic..."
+                      value={keywordInput}
+                      onChange={(e) => setKeywordInput(e.target.value)}
+                      className="mb-4"
+                    />
+                    <Button
+                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      onClick={handleGenerateKeywords}
+                    >
+                      Generate Keywords
+                    </Button>
+                  </div>
+                  {generatedKeywords.length > 0 && (
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Generated Keywords</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {generatedKeywords.map((keyword, index) => (
+                          <div key={index} className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">
+                            {keyword}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Card>
-          </motion.div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="cover">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Video className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Cover Generator</h3>
+                    <p className="text-muted-foreground">
+                      Create eye-catching thumbnails for your videos
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="p-4 border rounded-lg">
+                    <Input
+                      placeholder="Enter video title..."
+                      value={videoTitle}
+                      onChange={(e) => setVideoTitle(e.target.value)}
+                      className="mb-4"
+                    />
+                    <Button
+                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      onClick={handleGenerateCover}
+                      disabled={generatingCover}
+                    >
+                      {generatingCover ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        'Generate Cover'
+                      )}
+                    </Button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Style Presets</h4>
+                      <div className="space-y-4">
+                        <Button variant="outline" className="w-full justify-start">
+                          <Play className="mr-2 h-4 w-4" />
+                          Gaming Style
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Users className="mr-2 h-4 w-4" />
+                          Vlog Style
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Elements</h4>
+                      <div className="space-y-4">
+                        <Button variant="outline" className="w-full justify-start">
+                          <FileText className="mr-2 h-4 w-4" />
+                          Add Text
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Image className="mr-2 h-4 w-4" />
+                          Add Image
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="shorts">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <FileText className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Shorts Creator</h3>
+                    <p className="text-muted-foreground">
+                      Create engaging short-form videos
+                    </p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-4">Video Templates</h4>
+                    <div className="space-y-4">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Play className="mr-2 h-4 w-4" />
+                        Tutorial Template
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Music2 className="mr-2 h-4 w-4" />
+                        Music Template
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-4">Edit Tools</h4>
+                    <div className="space-y-4">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Scissors className="mr-2 h-4 w-4" />
+                        Trim Video
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Type className="mr-2 h-4 w-4" />
+                        Add Captions
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-4">Effects</h4>
+                    <div className="space-y-4">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Visual Effects
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Music className="mr-2 h-4 w-4" />
+                        Sound Effects
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="comments">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <MessageSquare className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Auto Comments</h3>
+                    <p className="text-muted-foreground">
+                      Manage automated comments and engagement
+                    </p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Comment Templates</h4>
+                      <Textarea
+                        className="mb-4"
+                        placeholder="Create your comment template..."
+                        rows={4}
+                      />
+                      <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                        Save Template
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-4">Bot Settings</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span>Comment Frequency</span>
+                          <Input type="number" className="w-24" placeholder="30" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Daily Limit</span>
+                          <Input type="number" className="w-24" placeholder="100" />
+                        </div>
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                          Start Bot
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="views">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Eye className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Views Generator</h3>
+                    <p className="text-muted-foreground">
+                      Boost your video views organically
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                      Start Growing Your Views
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Enter your video details and desired view count to begin
+                    </p>
+                  </div>
+
+                  <div className="grid gap-6">
+                    <div className="space-y-2">
+                      <label htmlFor="video-url" className="text-sm font-medium">
+                        Video URL
+                      </label>
+                      <div className="relative">
+                        <Input
+                          id="video-url"
+                          placeholder="https://youtube.com/watch?v=..."
+                          value={videoUrl}
+                          onChange={(e) => setVideoUrl(e.target.value)}
+                          className="bg-background/50 border-orange-500/10 focus:border-orange-500 pl-10"
+                        />
+                        <SiYoutube className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 h-4 w-4" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="desired-views" className="text-sm font-medium">
+                        Desired Views
+                      </label>
+                      <div className="relative">
+                        <Input
+                          id="desired-views"
+                          type="number"
+                          min="1000"
+                          step="1000"
+                          value={desiredViews}
+                          onChange={(e) => setDesiredViews(parseInt(e.target.value))}
+                          className="bg-background/50 border-orange-500/10 focus:border-orange-500"
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                          Views
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <PackageCheck className="h-4 w-4" />
+                        Minimum: 1,000 views
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-orange-500/5 rounded-lg border border-orange-500/10">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">Estimated Price</span>
+                        <span className="text-2xl font-bold">${currentPrice}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Based on {desiredViews.toLocaleString()} views at ${(currentPrice / desiredViews).toFixed(3)} per view
+                      </p>
+                    </div>
+
+                    {isProcessing ? (
+                      <div className="space-y-4">
+                        <div className="h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-orange-500"
+                            initial={{ width: "0%" }}
+                            animate={{ width: `${(processingStep / 3) * 100}%` }}
+                            transition={{ duration: 0.5 }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+                            {processingStep < 3 ? (
+                              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4 text-orange-500" />
+                            )}
+                          </div>
+                          <p className="text-sm font-medium">
+                            {getStepMessage(processingStep)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={startViewsProcess}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-lg h-12"
+                      >
+                        <Play className="w-5 h-5 mr-2" />
+                        Start Process
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 pt-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Secure</p>
+                        <p className="text-xs text-muted-foreground">SSL Protected</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Fast Delivery</p>
+                        <p className="text-xs text-muted-foreground">24-72 hours</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Support</p>
+                        <p className="text-xs text-muted-foreground">24/7 Available</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="scraping">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Database className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Scraping Tools</h3>
+                    <p className="text-muted-foreground">
+                      Analyze competitors and track trends
+                    </p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-4">Competitor Analysis</h4>
+                    <Input
+                      placeholder="Enter channel URL..."
+                      className="mb-4"
+                    />
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                      Analyze Channel
+                    </Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-4">Trend Tracking</h4>
+                    <div className="space-y-4">
+                      <Button variant="outline" className="w-full justify-start">
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Track Hashtags
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Search className="mr-2 h-4 w-4" />
+                        Find Keywords
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -595,7 +961,7 @@ export default function YoutubeViewsPage() {
                     </div>
                   </div>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={startViewsProcess}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-lg h-12"
                   >
@@ -629,15 +995,14 @@ export default function YoutubeViewsPage() {
                     <Users className="h-5 w-5 text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Real Views</p>
-                    <p className="text-xs text-muted-foreground">High Retention</p>
+                    <p className="text-sm font-medium">Support</p>
+                    <p className="text-xs text-muted-foreground">24/7 Available</p>
                   </div>
                 </div>
               </div>
             </div>
           </Card>
         </motion.div>
-        
 
         <div className="grid gap-6 md:grid-cols-3" id="packages">
           {viewsPackages.map((pkg, index) => (
@@ -666,7 +1031,7 @@ export default function YoutubeViewsPage() {
                     ))}
                   </ul>
 
-                  <Button 
+                  <Button
                     className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
                     onClick={() => handlePackageSelect(index)}
                   >
@@ -710,7 +1075,7 @@ export default function YoutubeViewsPage() {
                 <Button variant="outline" onClick={() => setShowDialog(false)}>
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={handlePayment}
                   className="bg-orange-500 hover:bg-orange-600"
                 >
@@ -814,7 +1179,7 @@ export default function YoutubeViewsPage() {
             </Card>
           </motion.div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
