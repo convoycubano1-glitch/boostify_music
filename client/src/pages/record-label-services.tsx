@@ -528,7 +528,7 @@ export default function RecordLabelServices() {
         </div>
 
 
-        {/* Nueva sección de Manager Tools */}
+        {/* Manager Tools Section - REPLACED */}
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
@@ -541,73 +541,73 @@ export default function RecordLabelServices() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {/* Venues Catalog */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <MapPin className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+            <Card className="p-4 md:p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
+                <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg shrink-0">
+                  <MapPin className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                 </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Venues Catalog</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="text-base md:text-lg font-semibold truncate mb-1">Venues Catalog</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                     Find perfect venues for your events
                   </p>
                 </div>
               </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+              <Button className="w-full bg-orange-500 hover:bg-orange-600 h-9 md:h-10 text-sm md:text-base">
                 Find Venues
               </Button>
             </Card>
 
             {/* Venues Booking */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <Calendar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+            <Card className="p-4 md:p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
+                <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg shrink-0">
+                  <Calendar className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                 </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Venues Booking</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="text-base md:text-lg font-semibold truncate mb-1">Venues Booking</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                     Schedule and manage bookings
                   </p>
                 </div>
               </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+              <Button className="w-full bg-orange-500 hover:bg-orange-600 h-9 md:h-10 text-sm md:text-base">
                 Book Now
               </Button>
             </Card>
 
             {/* Venues Reports */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <ChartBar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+            <Card className="p-4 md:p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
+                <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg shrink-0">
+                  <ChartBar className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                 </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Venues Reports</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="text-base md:text-lg font-semibold truncate mb-1">Venues Reports</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                     Analytics and performance data
                   </p>
                 </div>
               </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+              <Button className="w-full bg-orange-500 hover:bg-orange-600 h-9 md:h-10 text-sm md:text-base">
                 View Reports
               </Button>
             </Card>
 
             {/* Your Artists */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <Users className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+            <Card className="p-4 md:p-6 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
+                <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg shrink-0">
+                  <Users className="h-5 w-5 md:h-6 mdw-6 text-orange-500" />
                 </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Your Artists</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="text-base md:text-lg font-semibold truncate mb-1">Your Artists</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                     Manage your artist roster
                   </p>
                 </div>
               </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
+              <Button className="w-full bg-orange-500 hover:bg-orange-600 h-9 md:h-10 text-sm md:text-base">
                 View Artists
               </Button>
             </Card>
