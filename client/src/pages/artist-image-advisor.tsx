@@ -29,9 +29,9 @@ export default function ArtistImageAdvisorPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-20">
+      <main className="pt-16 md:pt-20">
         {/* Hero Section with Video Background */}
-        <div className="relative h-[60vh] overflow-hidden">
+        <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
           <video
             autoPlay
             loop
@@ -49,15 +49,15 @@ export default function ArtistImageAdvisorPage() {
             transition={{ duration: 0.8 }}
             className="relative container mx-auto px-4 h-full flex flex-col justify-center items-center text-center"
           >
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-4 md:mb-6">
               AI-Powered Image Advisor
             </h1>
-            <p className="text-xl text-white/90 max-w-2xl mb-8 leading-relaxed">
+            <p className="text-base md:text-xl text-white/90 max-w-2xl mb-6 md:mb-8 leading-relaxed px-4">
               Transform your artist image with cutting-edge AI technology. Get personalized style recommendations and visualize your perfect look.
             </p>
             <Button
               size="lg"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-orange-500 hover:bg-orange-600 text-white w-full md:w-auto"
               onClick={() => setActiveTab("upload")}
             >
               <Camera className="mr-2 h-5 w-5" />
@@ -71,18 +71,18 @@ export default function ArtistImageAdvisorPage() {
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="container mx-auto px-4 py-16"
+          className="container mx-auto px-4 py-8 md:py-16"
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
             <motion.div variants={itemVariants}>
-              <Card className="p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-14 w-14 rounded-full bg-orange-500/10 flex items-center justify-center">
-                    <Camera className="h-7 w-7 text-orange-500" />
+              <Card className="p-4 md:p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors h-full">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                    <Camera className="h-6 w-6 md:h-7 md:w-7 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">AI Analysis</h3>
-                    <p className="text-muted-foreground">Get instant style feedback</p>
+                    <h3 className="font-semibold text-base md:text-lg">AI Analysis</h3>
+                    <p className="text-sm text-muted-foreground">Get instant style feedback</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -92,14 +92,14 @@ export default function ArtistImageAdvisorPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-14 w-14 rounded-full bg-orange-500/10 flex items-center justify-center">
-                    <Star className="h-7 w-7 text-orange-500" />
+              <Card className="p-4 md:p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors h-full">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                    <Star className="h-6 w-6 md:h-7 md:w-7 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">Style Generation</h3>
-                    <p className="text-muted-foreground">Vision to reality</p>
+                    <h3 className="font-semibold text-base md:text-lg">Style Generation</h3>
+                    <p className="text-sm text-muted-foreground">Vision to reality</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -109,14 +109,14 @@ export default function ArtistImageAdvisorPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-14 w-14 rounded-full bg-orange-500/10 flex items-center justify-center">
-                    <TrendingUp className="h-7 w-7 text-orange-500" />
+              <Card className="p-4 md:p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors h-full">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="h-6 w-6 md:h-7 md:w-7 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">Brand Growth</h3>
-                    <p className="text-muted-foreground">Optimize your impact</p>
+                    <h3 className="font-semibold text-base md:text-lg">Brand Growth</h3>
+                    <p className="text-sm text-muted-foreground">Optimize your impact</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -127,24 +127,24 @@ export default function ArtistImageAdvisorPage() {
           </div>
 
           {/* Main Interface */}
-          <Card className="p-8 border-orange-500/20">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-              <TabsList className="grid w-full grid-cols-4 lg:max-w-[600px] mx-auto">
-                <TabsTrigger value="upload" className="gap-2">
-                  <Camera className="h-4 w-4" />
-                  Upload
+          <Card className="p-4 md:p-8 border-orange-500/20">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 md:space-y-8">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto">
+                <TabsTrigger value="upload" className="flex items-center gap-2 px-3 py-2">
+                  <Camera className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">Upload</span>
                 </TabsTrigger>
-                <TabsTrigger value="style" className="gap-2">
-                  <Music2 className="h-4 w-4" />
-                  Style
+                <TabsTrigger value="style" className="flex items-center gap-2 px-3 py-2">
+                  <Music2 className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">Style</span>
                 </TabsTrigger>
-                <TabsTrigger value="generate" className="gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  Generate
+                <TabsTrigger value="generate" className="flex items-center gap-2 px-3 py-2">
+                  <ImageIcon className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">Generate</span>
                 </TabsTrigger>
-                <TabsTrigger value="results" className="gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Results
+                <TabsTrigger value="results" className="flex items-center gap-2 px-3 py-2">
+                  <TrendingUp className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">Results</span>
                 </TabsTrigger>
               </TabsList>
 

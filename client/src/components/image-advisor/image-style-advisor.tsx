@@ -103,28 +103,28 @@ export function ImageStyleAdvisor() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Card className="p-6 shadow-lg">
+      <Card className="p-4 md:p-6 shadow-lg">
         <Tabs defaultValue="style" className="space-y-6">
-          <TabsList className="grid grid-cols-2 gap-4 p-1">
-            <TabsTrigger value="style" className="space-x-2">
+          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1">
+            <TabsTrigger value="style" className="flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2">
               <Palette className="h-4 w-4" />
-              <span>Preferencias de Estilo</span>
+              <span className="text-sm md:text-base">Preferencias de Estilo</span>
             </TabsTrigger>
-            <TabsTrigger value="preview" className="space-x-2">
+            <TabsTrigger value="preview" className="flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2">
               <Camera className="h-4 w-4" />
-              <span>Vista Previa & Resultados</span>
+              <span className="text-sm md:text-base">Vista Previa & Resultados</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="style" className="space-y-6">
-            <div className="grid gap-6">
+          <TabsContent value="style" className="space-y-4 md:space-y-6">
+            <div className="grid gap-4 md:gap-6">
               <div>
-                <Label>Género Musical</Label>
+                <Label className="mb-2 block">Género Musical</Label>
                 <Select
                   value={artistStyle.genre}
                   onValueChange={(value) => setArtistStyle(prev => ({ ...prev, genre: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona tu género" />
                   </SelectTrigger>
                   <SelectContent>
@@ -139,12 +139,12 @@ export function ImageStyleAdvisor() {
               </div>
 
               <div>
-                <Label>Vibra Deseada</Label>
+                <Label className="mb-2 block">Vibra Deseada</Label>
                 <Select
                   value={artistStyle.vibe}
                   onValueChange={(value) => setArtistStyle(prev => ({ ...prev, vibe: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona la vibra" />
                   </SelectTrigger>
                   <SelectContent>
@@ -158,12 +158,12 @@ export function ImageStyleAdvisor() {
               </div>
 
               <div>
-                <Label>Estilo Estético</Label>
+                <Label className="mb-2 block">Estilo Estético</Label>
                 <Select
                   value={artistStyle.aesthetic}
                   onValueChange={(value) => setArtistStyle(prev => ({ ...prev, aesthetic: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona el estilo estético" />
                   </SelectTrigger>
                   <SelectContent>
@@ -176,13 +176,13 @@ export function ImageStyleAdvisor() {
                 </Select>
               </div>
 
-              <div>
-                <Label>Imagen de Referencia (Opcional)</Label>
+              <div className="space-y-2">
+                <Label className="block">Imagen de Referencia (Opcional)</Label>
                 <Input
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="cursor-pointer"
+                  className="cursor-pointer w-full"
                 />
                 {referenceImage && (
                   <div className="mt-4">
@@ -198,31 +198,31 @@ export function ImageStyleAdvisor() {
               <Button
                 onClick={generateStyleAdvice}
                 disabled={isGenerating || !artistStyle.genre}
-                className="w-full"
+                className="w-full mt-4"
               >
                 {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando Recomendaciones...
-                  </>
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm md:text-base">Generando Recomendaciones...</span>
+                  </div>
                 ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generar Recomendaciones de Estilo
-                  </>
+                  <div className="flex items-center justify-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="text-sm md:text-base">Generar Recomendaciones de Estilo</span>
+                  </div>
                 )}
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="space-y-6">
+          <TabsContent value="preview" className="space-y-4 md:space-y-6">
             {styleRecommendation && (
               <Card className="p-4 bg-muted/50">
-                <div className="flex items-start space-x-2">
-                  <UserCircle2 className="h-5 w-5 text-primary mt-1" />
+                <div className="flex items-start gap-3">
+                  <UserCircle2 className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold mb-2">Recomendaciones de Estilo</h3>
-                    <p className="text-muted-foreground">{styleRecommendation}</p>
+                    <p className="text-sm md:text-base text-muted-foreground">{styleRecommendation}</p>
                   </div>
                 </div>
               </Card>
@@ -246,8 +246,8 @@ export function ImageStyleAdvisor() {
                         />
                       </div>
                       <div className="p-4">
-                        <h4 className="font-medium">Referencia {index + 1}</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-medium text-sm md:text-base">Referencia {index + 1}</h4>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           Basado en tus preferencias de {artistStyle.genre}
                         </p>
                       </div>
