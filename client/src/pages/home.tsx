@@ -37,33 +37,33 @@ const itemVariants = {
 const features = [
   {
     icon: <Youtube className="h-6 w-6" />,
-    title: "YouTube Views Boost",
-    description: "Increase your video visibility and engagement through our advanced promotion strategies"
+    title: "Strategic YouTube Promotion",
+    description: "Boost your video visibility with targeted promotion and AI-powered audience engagement strategies"
   },
   {
     icon: <Music2 className="h-6 w-6" />,
-    title: "Spotify Integration",
-    description: "Connect your Spotify account to manage playlists and track performance metrics"
+    title: "Advanced Spotify Growth",
+    description: "Optimize your Spotify presence with data-driven insights and algorithmic playlist targeting"
   },
   {
     icon: <Users2 className="h-6 w-6" />,
-    title: "PR Management",
-    description: "Manage your public relations and grow your audience effectively"
+    title: "Professional PR Management",
+    description: "Launch targeted PR campaigns and build your industry network with AI-assisted outreach"
   },
   {
     icon: <TrendingUp className="h-6 w-6" />,
-    title: "Analytics Dashboard",
-    description: "Track your growth with comprehensive analytics and insights"
+    title: "Comprehensive Analytics",
+    description: "Track your growth across all platforms with detailed insights and predictive trends"
   },
   {
     icon: <Globe className="h-6 w-6" />,
-    title: "Global Reach",
-    description: "Expand your audience worldwide with our international promotion tools"
+    title: "Global Audience Reach",
+    description: "Expand your fanbase worldwide with smart targeting and localized promotion strategies"
   },
   {
     icon: <MessageCircle className="h-6 w-6" />,
-    title: "Artist Community",
-    description: "Connect with other artists and industry professionals in our vibrant community"
+    title: "Artist Community Hub",
+    description: "Connect with industry professionals and fellow artists in our exclusive networking platform"
   }
 ];
 
@@ -71,21 +71,21 @@ const testimonials = [
   {
     name: "Sarah Johnson",
     role: "Independent Artist",
-    content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed!",
+    content: "This platform has revolutionized how I manage my music career. The analytics are incredibly detailed and the AI tools have saved me countless hours!",
     rating: 5,
     avatar: "https://i.pravatar.cc/150?u=sarah.johnson"
   },
   {
     name: "Michael Rodriguez",
     role: "Music Producer",
-    content: "The Spotify integration is seamless. I've seen a 200% increase in my monthly listeners.",
+    content: "The Spotify integration and YouTube promotion tools are game-changing. I've seen a 200% increase in my monthly listeners since using this platform.",
     rating: 5,
     avatar: "https://i.pravatar.cc/150?u=michael.rodriguez"
   },
   {
     name: "Emma Thompson",
     role: "Band Manager",
-    content: "Managing multiple artists has never been easier. The contract management system is a game-changer.",
+    content: "Managing multiple artists has never been easier. The automated marketing tools and PR campaigns have helped us reach new audiences globally.",
     rating: 5,
     avatar: "https://i.pravatar.cc/150?u=emma.thompson"
   }
@@ -96,13 +96,15 @@ const plans = [
     name: "Basic",
     price: "59.99",
     features: [
-      "Análisis Básico de Spotify",
-      "Gestión Básica de Instagram",
-      "5,000 Vistas en YouTube",
-      "Plantillas de Contratos Básicas",
-      "1 Diseño de Merch al Mes",
-      "Acceso a 2 Modelos de IA",
-      "Soporte por Email"
+      "Advanced Spotify Analytics Dashboard",
+      "Smart Instagram Growth Tools",
+      "5,000 Guaranteed YouTube Views",
+      "Professional Contract Templates",
+      "Monthly Merchandise Design",
+      "2 AI Models for Content Creation",
+      "Email Support & Tutorials",
+      "Basic Performance Analytics",
+      "Social Media Content Calendar"
     ]
   },
   {
@@ -110,31 +112,35 @@ const plans = [
     price: "99.99",
     popular: true,
     features: [
-      "Analytics Avanzado de Spotify",
-      "Campañas de Instagram",
-      "25,000 Vistas en YouTube",
-      "Creación de Contratos Personalizados",
-      "5 Diseños de Merch al Mes",
-      "Acceso a 5 Modelos de IA",
-      "Campaña PR Básica",
-      "Marketing Automation",
-      "Soporte Prioritario"
+      "Premium Analytics Suite",
+      "Advanced Instagram Campaign Manager",
+      "25,000 Targeted YouTube Views",
+      "Custom Contract Generator",
+      "5 Premium Merch Designs Monthly",
+      "Full AI Creative Suite Access",
+      "Targeted PR Campaigns",
+      "Automated Marketing Tools",
+      "24/7 Priority Support",
+      "Cross-Platform Analytics",
+      "Content Strategy Planning"
     ]
   },
   {
     name: "Enterprise",
     price: "149.99",
     features: [
-      "Suite Completa de Marketing Musical",
-      "Promoción Premium en Spotify",
-      "Gestión Completa de Instagram",
-      "100,000 Vistas en YouTube",
-      "Sistema Avanzado de Contratos",
-      "Diseños Ilimitados de Merch",
-      "Acceso a Todos los Modelos de IA",
-      "Campaña PR Completa",
-      "Analytics Personalizado",
-      "Gestor de Cuenta Dedicado"
+      "Complete Music Marketing Hub",
+      "Spotify Algorithm Optimization",
+      "Full-Service Instagram Management",
+      "100,000 Strategic YouTube Views",
+      "Advanced Legal Document System",
+      "Unlimited Merch Design Service",
+      "Exclusive AI Model Access",
+      "Comprehensive PR Campaigns",
+      "Custom Analytics Platform",
+      "Dedicated Account Manager",
+      "Multi-Platform Strategy",
+      "Brand Development Suite"
     ]
   }
 ];
