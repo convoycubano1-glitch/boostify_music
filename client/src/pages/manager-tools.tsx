@@ -189,7 +189,7 @@ export default function ManagerToolsPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="relative z-40 bg-background mt-4">
+              <div className="mt-12 relative z-20 bg-background">
                 {/* Technical Rider Tab */}
                 <TabsContent value="technical">
                   <div className="grid gap-6 md:gap-8 md:grid-cols-2">
