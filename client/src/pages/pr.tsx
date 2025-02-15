@@ -18,7 +18,9 @@ import {
   Globe,
   Youtube,
   FileText,
-  Megaphone
+  Megaphone,
+  BarChart2,
+  PieChart
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
@@ -37,8 +39,35 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  Legend
 } from 'recharts';
 
+const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa'];
+
+const prMetrics = {
+  mediaContacts: 1234,
+  monthlyReach: '2.5M',
+  engagementRate: '8.2%',
+  campaigns: 45,
+  distribution: [
+    { name: 'Music Press', value: 40 },
+    { name: 'Lifestyle Media', value: 25 },
+    { name: 'Digital Platforms', value: 20 },
+    { name: 'Industry News', value: 15 }
+  ],
+  campaignTypes: [
+    { name: 'Press Release', value: 30 },
+    { name: 'Media Coverage', value: 25 },
+    { name: 'Interviews', value: 20 },
+    { name: 'Features', value: 15 },
+    { name: 'Reviews', value: 10 }
+  ]
+};
 
 export default function PRPage() {
   const { toast } = useToast();
@@ -207,46 +236,192 @@ export default function PRPage() {
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                  Music Marketing Hub
+                  PR & Media Hub
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  Manage and enhance your music presence from one place
+                  Manage your media presence and PR campaigns effectively
                 </p>
               </div>
               <Button className="bg-orange-500 hover:bg-orange-600">
-                <Activity className="mr-2 h-4 w-4" />
-                Live View
+                <Plus className="mr-2 h-4 w-4" />
+                New Campaign
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {services.map((service) => (
-                <Link key={service.name} href={service.route}>
-                  <Card className="p-6 cursor-pointer hover:bg-orange-500/5 transition-colors border-orange-500/10 hover:border-orange-500/30">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                          <service.icon className={`h-5 w-5 ${service.color}`} />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{service.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {service.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline">
-                      <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                        {service.stats.toLocaleString()}
-                      </span>
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {service.statsLabel}
-                      </span>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users2 className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-sm font-medium">Media Contacts</h3>
+                  </div>
+                  <p className="text-2xl font-bold">{prMetrics.mediaContacts.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    <span className="text-green-500">↑ 12.5%</span> vs último periodo
+                  </p>
+                </div>
+              </Card>
+
+              <Card className="p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Globe className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-sm font-medium">Monthly Reach</h3>
+                  </div>
+                  <p className="text-2xl font-bold">{prMetrics.monthlyReach}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    <span className="text-green-500">↑ 8.3%</span> vs último mes
+                  </p>
+                </div>
+              </Card>
+
+              <Card className="p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Activity className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-sm font-medium">Engagement Rate</h3>
+                  </div>
+                  <p className="text-2xl font-bold">{prMetrics.engagementRate}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    <span className="text-green-500">↑ 2.1%</span> engagement
+                  </p>
+                </div>
+              </Card>
+
+              <Card className="p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Megaphone className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-sm font-medium">Active Campaigns</h3>
+                  </div>
+                  <p className="text-2xl font-bold">{prMetrics.campaigns}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    <span className="text-green-500">↑ 15%</span> más campañas
+                  </p>
+                </div>
+              </Card>
+            </div>
+
+            {/* Analytics Grid */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+              {/* Area Chart - Trends */}
+              <Card className="lg:col-span-2 p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-2">Media Coverage Trends</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Monthly coverage and engagement metrics
+                  </p>
+                </div>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={Array.from({ length: 12 }, (_, i) => ({
+                      month: new Date(2024, i, 1).toLocaleDateString('default', { month: 'short' }),
+                      coverage: Math.floor(Math.random() * 1000) + 500,
+                      engagement: Math.floor(Math.random() * 800) + 300,
+                    }))}>
+                      <defs>
+                        <linearGradient id="colorCoverage" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="coverage"
+                        name="Coverage"
+                        stroke="hsl(24, 95%, 53%)"
+                        fillOpacity={1}
+                        fill="url(#colorCoverage)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="engagement"
+                        name="Engagement"
+                        stroke="hsl(24, 95%, 53%)"
+                        fillOpacity={0.5}
+                        fill="url(#colorCoverage)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Pie Chart - Distribution */}
+              <Card className="p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-2">Media Distribution</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Coverage distribution by media type
+                  </p>
+                </div>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={prMetrics.distribution}
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {prMetrics.distribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Legend />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Bar Chart - Campaign Types */}
+              <Card className="lg:col-span-3 p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-2">Campaign Performance</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Distribution and success rate by campaign type
+                  </p>
+                </div>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={prMetrics.campaignTypes}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar dataKey="value" fill="hsl(24, 95%, 53%)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
             </div>
 
             <Card className="p-6 mb-8">
