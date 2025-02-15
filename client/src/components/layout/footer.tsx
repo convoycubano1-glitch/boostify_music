@@ -11,7 +11,8 @@ import {
   Box, 
   CircleDollarSign, 
   Brain,
-  Gamepad2
+  Gamepad2,
+  Settings
 } from "lucide-react";
 
 export function Footer() {
@@ -60,6 +61,14 @@ export function Footer() {
               <li className="flex items-center">
                 <Globe className="h-4 w-4 mr-2 text-orange-500" />
                 <span>Global Reach</span>
+              </li>
+              <li>
+                <Link href="/admin">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Settings className="h-4 w-4 mr-2 text-orange-500" />
+                    Admin Panel
+                  </Button>
+                </Link>
               </li>
             </ul>
           </div>
