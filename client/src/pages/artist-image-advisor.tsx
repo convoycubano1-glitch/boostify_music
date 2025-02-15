@@ -160,7 +160,7 @@ export default function ArtistImageAdvisorPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="mt-16 md:mt-12">
+              <div className="mt-32 md:mt-20">
                 <TabsContent value="upload">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
