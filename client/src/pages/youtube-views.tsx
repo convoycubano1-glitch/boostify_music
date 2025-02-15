@@ -18,8 +18,6 @@ import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import mainVideo from '../images/videos/Standard_Mode_Generated_Video (1).mp4';
-import enhanceVideo from '../images/videos/bostify.mp4';
 import {
   LineChart,
   Line,
@@ -31,7 +29,6 @@ import {
   Area,
   AreaChart
 } from "recharts";
-import youtubeImage from '../images/youtube.jpg';
 import { Users2 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 
@@ -284,7 +281,7 @@ export default function YoutubeViewsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 space-y-8 p-8 pt-6">
+      <main className="flex-1 space-y-8 p-4 md:p-8 pt-6">
         <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden rounded-xl mb-12">
           <div
             className="absolute inset-0 bg-cover bg-center"
@@ -293,26 +290,26 @@ export default function YoutubeViewsPage() {
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
-          <div className="relative h-full flex items-center justify-start px-8 md:px-12 pt-24 md:pt-0">
+          <div className="relative h-full flex items-center justify-start px-4 md:px-12 pt-16 md:pt-0">
             <div className="max-w-2xl">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                <h1 className="text-3xl md:text-6xl font-bold text-white mb-4">
                   Boost Your Presence on{" "}
                   <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
                     YouTube
                   </span>
                 </h1>
-                <p className="text-lg md:text-xl text-gray-200 mb-8">
+                <p className="text-base md:text-xl text-gray-200 mb-8">
                   Enhance your videos with organic, high-retention views. Reach your ideal audience and increase your visibility.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    className="bg-orange-500 hover:bg-orange-600 text-white w-full sm:w-auto"
                     onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
                   >
                     <Play className="w-5 h-5 mr-2" />
@@ -321,13 +318,13 @@ export default function YoutubeViewsPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="bg-black/50 hover:bg-black/60 border-white/20 text-white"
+                    className="bg-black/50 hover:bg-black/60 border-white/20 text-white w-full sm:w-auto"
                   >
                     Watch Demo
                   </Button>
                 </div>
-                <div className="mt-8 flex items-center gap-8">
-                  <div className="flex items-center gap-2">
+                <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+                  <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
                       <TrendingUp className="w-6 h-6 text-orange-500" />
                     </div>
@@ -336,7 +333,7 @@ export default function YoutubeViewsPage() {
                       <p className="text-gray-400 text-sm">Generated Views</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
                       <Users2 className="w-6 h-6 text-orange-500" />
                     </div>
@@ -355,12 +352,12 @@ export default function YoutubeViewsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex items-center justify-between"
+          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
         >
           <div className="flex items-center gap-4">
             <SiYoutube className="w-12 h-12 text-orange-500" />
             <div>
-              <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                 YouTube Views Generator
               </h2>
               <p className="text-muted-foreground mt-2">
@@ -370,7 +367,7 @@ export default function YoutubeViewsPage() {
           </div>
           <div className="flex gap-2">
             <Link href="/dashboard">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 w-full md:w-auto">
                 <Home className="w-4 h-4" />
                 Dashboard
               </Button>
@@ -378,48 +375,39 @@ export default function YoutubeViewsPage() {
           </div>
         </motion.div>
 
-        <div className="container mx-auto px-4 py-16">
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="grid grid-cols-2 lg:grid-cols-7 gap-4">
-              <TabsTrigger value="strategy" className="data-[state=active]:bg-orange-500">
-                <Brain className="w-4 h-4 mr-2" />
-                AI Strategy
-              </TabsTrigger>
-              <TabsTrigger value="keywords" className="data-[state=active]:bg-orange-500">
-                <Key className="w-4 h-4 mr-2" />
-                Keywords
-              </TabsTrigger>
-              <TabsTrigger value="cover" className="data-[state=active]:bg-orange-500">
-                <Video className="w-4 h-4 mr-2" />
-                Cover Gen
-              </TabsTrigger>
-              <TabsTrigger value="shorts" className="data-[state=active]:bg-orange-500">
-                <FileText className="w-4 h-4 mr-2" />
-                Shorts
-              </TabsTrigger>
-              <TabsTrigger value="comments" className="data-[state=active]:bg-orange-500">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Comments
-              </TabsTrigger>
-              <TabsTrigger value="views" className="data-[state=active]:bg-orange-500">
-                <Eye className="w-4 h-4 mr-2" />
-                Views
-              </TabsTrigger>
-              <TabsTrigger value="scraping" className="data-[state=active]:bg-orange-500">
-                <Database className="w-4 h-4 mr-2" />
-                Scraping
-              </TabsTrigger>
+        <div className="container mx-auto">
+          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="flex flex-wrap gap-2 md:grid md:grid-cols-7">
+              {[
+                { value: "strategy", icon: <Brain className="w-4 h-4" />, label: "AI Strategy" },
+                { value: "keywords", icon: <Key className="w-4 h-4" />, label: "Keywords" },
+                { value: "cover", icon: <Video className="w-4 h-4" />, label: "Cover Gen" },
+                { value: "shorts", icon: <FileText className="w-4 h-4" />, label: "Shorts" },
+                { value: "comments", icon: <MessageSquare className="w-4 h-4" />, label: "Comments" },
+                { value: "views", icon: <Eye className="w-4 h-4" />, label: "Views" },
+                { value: "scraping", icon: <Database className="w-4 h-4" />, label: "Scraping" }
+              ].map(({ value, icon, label }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="flex-1 md:flex-none data-[state=active]:bg-orange-500 min-w-[80px]"
+                >
+                  {icon}
+                  <span className="hidden md:inline ml-2">{label}</span>
+                  <span className="md:hidden ml-2">{label.split(' ')[0]}</span>
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="strategy">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Brain className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Brain className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">AI YouTube Strategy</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">AI YouTube Strategy</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Get personalized content and growth strategies
                     </p>
                   </div>
@@ -467,16 +455,15 @@ export default function YoutubeViewsPage() {
                 </div>
               </Card>
             </TabsContent>
-
             <TabsContent value="keywords">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Key className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Key className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Keywords Generator</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Keywords Generator</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Generate optimized keywords for your videos
                     </p>
                   </div>
@@ -511,16 +498,15 @@ export default function YoutubeViewsPage() {
                 </div>
               </Card>
             </TabsContent>
-
             <TabsContent value="cover">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Video className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Video className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Cover Generator</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Cover Generator</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Create eye-catching thumbnails for your videos
                     </p>
                   </div>
@@ -579,16 +565,15 @@ export default function YoutubeViewsPage() {
                 </div>
               </Card>
             </TabsContent>
-
             <TabsContent value="shorts">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <FileText className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <FileText className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Shorts Creator</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Shorts Creator</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Create engaging short-form videos
                     </p>
                   </div>
@@ -636,16 +621,15 @@ export default function YoutubeViewsPage() {
                 </div>
               </Card>
             </TabsContent>
-
             <TabsContent value="comments">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <MessageSquare className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <MessageSquare className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Auto Comments</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Auto Comments</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Manage automated comments and engagement
                     </p>
                   </div>
@@ -685,16 +669,15 @@ export default function YoutubeViewsPage() {
                 </div>
               </Card>
             </TabsContent>
-
             <TabsContent value="views">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Eye className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Eye className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Views Generator</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Views Generator</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Boost your video views organically
                     </p>
                   </div>
@@ -828,14 +811,14 @@ export default function YoutubeViewsPage() {
             </TabsContent>
 
             <TabsContent value="scraping">
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Database className="h-8 w-8 text-orange-500" />
+              <Card className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Database className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-semibold">Scraping Tools</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-xl md:text-2xl font-semibold">Scraping Tools</h3>
+                    <p className="text-sm md:text-base text-muted-foreground">
                       Analyze competitors and track trends
                     </p>
                   </div>
@@ -875,13 +858,13 @@ export default function YoutubeViewsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Card className="p-6 backdrop-blur-sm border-orange-500/10">
+          <Card className="p-4 md:p-6 backdrop-blur-sm border-orange-500/10">
             <div className="space-y-8">
               <div>
-                <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                <h3 className="text-xl md:text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                   Start Growing Your Views
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm md:text-base text-muted-foreground">
                   Enter your video details and desired view count to begin
                 </p>
               </div>
@@ -1004,174 +987,32 @@ export default function YoutubeViewsPage() {
           </Card>
         </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-3" id="packages">
-          {viewsPackages.map((pkg, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-            >
-              <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent opacity-50" />
-                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
-                <div className="relative">
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                    {pkg.views.toLocaleString()} Views
-                  </h3>
-                  <p className="text-3xl font-bold mt-2">${pkg.price}</p>
-                  <p className="text-sm text-muted-foreground mt-2">{pkg.description}</p>
-
-                  <ul className="mt-4 space-y-2">
-                    {pkg.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <PackageCheck className="h-4 w-4 text-orange-500" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => handlePackageSelect(index)}
-                  >
-                    Select Plan
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="sm:max-w-[425px] backdrop-blur-sm bg-background/95">
-            <DialogHeader>
-              <DialogTitle>Confirm Views Purchase</DialogTitle>
-              <DialogDescription>
-                Review your purchase details before proceeding
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Order details</h4>
-                  <div className="space-y-4 rounded-lg border p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Video URL:</span>
-                      <span className="text-sm font-medium">{videoUrl}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Views:</span>
-                      <span className="text-sm font-medium">{desiredViews.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Price:</span>
-                      <span className="text-lg font-bold">${currentPrice}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end gap-4">
-                <Button variant="outline" onClick={() => setShowDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handlePayment}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  Confirm Purchase
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {paymentStatus === 'success' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card className="p-6 border-green-500/20 bg-green-500/5 backdrop-blur-sm">
-              <div className="flex items-start gap-4">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-green-500">Payment Successful</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Your order is being processed. You can track the progress of your views here.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-
-        {paymentStatus === 'canceled' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card className="p-6 border-orange-500/20 bg-orange-500/5 backdrop-blur-sm">
-              <div className="flex items-start gap-4">
-                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-orange-500">Payment Canceled</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Your payment was not completed. You can try again when you're ready.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <Card className="p-6 border-orange-500/20 bg-orange-500/5 backdrop-blur-sm">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-orange-500">Important Information</h4>
-                <ul className="mt-2 space-y-1 text-sm">
-                  <li>• Views are delivered gradually to maintain natural growth</li>
-                  <li>• Process takes 24-72 hours depending on package size</li>
-                  <li>• We guarantee high retention and quality views</li>
-                  <li>• 24/7 Support for any questions</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
         {apifyData && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="p-6 backdrop-blur-sm border-orange-500/10">
+            <Card className="p-4 md:p-6 backdrop-blur-sm border-orange-500/10">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Process Status</h3>
+                <h3 className="text-lg md:text-xl font-semibold">Process Status</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Generated Views</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                    <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                       {apifyData.stats.viewsGenerated.toLocaleString()}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Remaining Views</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                    <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                       {apifyData.stats.remainingViews.toLocaleString()}
                     </p>
                   </div>
                 </div>
                 <div className="pt-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-orange-500" />
+                  <div className="flex items-center gap-2 text-sm md:text-base">
+                    <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-orange-500" />
                     <span>Status: {apifyData.status}</span>
                   </div>
                 </div>
