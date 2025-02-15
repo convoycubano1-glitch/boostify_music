@@ -48,7 +48,6 @@ export function ImageStyleAdvisor() {
   const generateStyleAdvice = async () => {
     setIsGenerating(true);
     try {
-      // Generate style recommendations
       const prompt = `Create an artist image style based on: 
         Genre: ${artistStyle.genre}, 
         Vibe: ${artistStyle.vibe}, 
@@ -56,7 +55,6 @@ export function ImageStyleAdvisor() {
         Color Palette: ${artistStyle.colorPalette}
         Style should be professional and suitable for music industry visuals.`;
 
-      // Generate multiple reference images
       const imageResults = await Promise.all([
         generateImageWithFal({
           prompt: `Professional portrait of a ${artistStyle.genre} musician, 
@@ -79,8 +77,6 @@ export function ImageStyleAdvisor() {
         .filter((url): url is string => !!url);
 
       setGeneratedImages(newImages);
-
-      // Set example style recommendation
       setStyleRecommendation(`Based on your ${artistStyle.genre} genre and ${artistStyle.vibe} vibe, 
         we recommend a ${artistStyle.aesthetic} aesthetic with ${artistStyle.colorPalette} color elements. 
         This style will resonate with your target audience while maintaining professional appeal.`);
@@ -102,10 +98,10 @@ export function ImageStyleAdvisor() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="p-4 md:p-6 shadow-lg">
+    <div className="w-full max-w-4xl mx-auto">
+      <Card className="p-4 md:p-6 shadow-lg relative">
         <Tabs defaultValue="style" className="space-y-6">
-          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1">
+          <TabsList className="grid grid-cols-2 gap-2 md:gap-4 p-1 sticky top-0 z-10 bg-background/95 backdrop-blur">
             <TabsTrigger value="style" className="flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2">
               <Palette className="h-4 w-4" />
               <span className="text-sm md:text-base">Preferencias de Estilo</span>
@@ -116,7 +112,7 @@ export function ImageStyleAdvisor() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="style" className="space-y-4 md:space-y-6">
+          <TabsContent value="style" className="relative">
             <div className="grid gap-4 md:gap-6">
               <div>
                 <Label className="mb-2 block">Género Musical</Label>
@@ -178,12 +174,14 @@ export function ImageStyleAdvisor() {
 
               <div className="space-y-2">
                 <Label className="block">Imagen de Referencia (Opcional)</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="cursor-pointer w-full"
-                />
+                <div className="relative">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="cursor-pointer w-full"
+                  />
+                </div>
                 {referenceImage && (
                   <div className="mt-4">
                     <img 
@@ -195,27 +193,29 @@ export function ImageStyleAdvisor() {
                 )}
               </div>
 
-              <Button
-                onClick={generateStyleAdvice}
-                disabled={isGenerating || !artistStyle.genre}
-                className="w-full mt-4"
-              >
-                {isGenerating ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm md:text-base">Generando Recomendaciones...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="text-sm md:text-base">Generar Recomendaciones de Estilo</span>
-                  </div>
-                )}
-              </Button>
+              <div className="relative pt-4">
+                <Button
+                  onClick={generateStyleAdvice}
+                  disabled={isGenerating || !artistStyle.genre}
+                  className="w-full"
+                >
+                  {isGenerating ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Generando Recomendaciones...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Generar Recomendaciones de Estilo</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="space-y-4 md:space-y-6">
+          <TabsContent value="preview" className="space-y-4">
             {styleRecommendation && (
               <Card className="p-4 bg-muted/50">
                 <div className="flex items-start gap-3">
