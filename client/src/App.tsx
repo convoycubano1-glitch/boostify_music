@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
+import AdminPage from "@/pages/admin";
 import ArtistDashboard from "@/pages/artist-dashboard";
 import HomePage from "@/pages/home";
 import SpotifyPage from "@/pages/spotify";
@@ -36,6 +37,7 @@ const Router = () => {
     <Switch>
       <Route path="/" component={HomePage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
       <ProtectedRoute path="/spotify" component={SpotifyPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
