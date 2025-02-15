@@ -129,7 +129,7 @@ export default function ArtistImageAdvisorPage() {
           {/* Main Interface */}
           <Card className="p-4 md:p-8 border-orange-500/20">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8 md:space-y-12">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-1 rounded-lg">
+              <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto p-2">
                 <TabsTrigger 
                   value="upload" 
                   className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
@@ -160,7 +160,7 @@ export default function ArtistImageAdvisorPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="mt-32 md:mt-20">
+              <div className="mt-40 md:mt-24 relative">
                 <TabsContent value="upload">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
