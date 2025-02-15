@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AIModelsManager } from "@/components/admin/ai-models-manager";
 import {
   Users,
   CreditCard,
@@ -12,7 +13,9 @@ import {
   RefreshCcw,
   Settings,
   Download,
-  UserCheck
+  UserCheck,
+  Brain,
+  Wand2
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,13 +51,13 @@ export default function AdminPage() {
                   Panel de Administración
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-2xl">
-                  Gestiona suscripciones, afiliados y datos de usuarios desde un solo lugar
+                  Gestiona suscripciones, afiliados, modelos de IA y más desde un solo lugar
                 </p>
               </div>
             </section>
 
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-3 max-w-[600px] mb-8">
+              <TabsList className="grid grid-cols-4 max-w-[800px] mb-8">
                 <TabsTrigger value="subscriptions" className="data-[state=active]:bg-orange-500">
                   <CreditCard className="w-4 h-4 mr-2" />
                   Suscripciones
@@ -62,6 +65,10 @@ export default function AdminPage() {
                 <TabsTrigger value="affiliates" className="data-[state=active]:bg-orange-500">
                   <Star className="w-4 h-4 mr-2" />
                   Afiliados
+                </TabsTrigger>
+                <TabsTrigger value="ai-models" className="data-[state=active]:bg-orange-500">
+                  <Brain className="w-4 h-4 mr-2" />
+                  Modelos IA
                 </TabsTrigger>
                 <TabsTrigger value="data" className="data-[state=active]:bg-orange-500">
                   <Mail className="w-4 h-4 mr-2" />
@@ -83,7 +90,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </Card>
-                  
+
                   <Card className="p-6">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-orange-500/10 rounded-lg">
@@ -191,6 +198,53 @@ export default function AdminPage() {
                 </Card>
               </TabsContent>
 
+              {/* Nueva Tab de Modelos IA */}
+              <TabsContent value="ai-models">
+                <div className="grid gap-6">
+                  {/* Estadísticas de uso de IA */}
+                  <div className="grid md:grid-cols-3 gap-6 mb-8">
+                    <Card className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <Brain className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Modelos Activos</p>
+                          <p className="text-2xl font-bold">8</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <Wand2 className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Generaciones AI</p>
+                          <p className="text-2xl font-bold">2.5K</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <Settings className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Configuraciones</p>
+                          <p className="text-2xl font-bold">12</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Gestor de Modelos IA */}
+                  <AIModelsManager />
+                </div>
+              </TabsContent>
+
               {/* Datos y Emails Tab */}
               <TabsContent value="data">
                 <Card className="p-6">
@@ -201,7 +255,7 @@ export default function AdminPage() {
                       Exportar Datos
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-6">
                     {/* Add email and data management interface here */}
                     <div className="text-center text-muted-foreground">
