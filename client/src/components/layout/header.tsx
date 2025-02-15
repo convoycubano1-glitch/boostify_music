@@ -32,11 +32,6 @@ export function Header() {
     { name: "Contacts", href: "/contacts", icon: Users },
   ];
 
-  // Add admin link if user is admin
-  if (user?.isAdmin) {
-    navigation.unshift({ name: "Admin", href: "/admin", icon: Shield });
-  }
-
   if (!user) return null;
 
   return (
@@ -81,6 +76,15 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
+            {user?.isAdmin && (
+              <Link href="/admin" className="hidden lg:block">
+                <Button variant="default" className="bg-orange-500 hover:bg-orange-600 gap-2">
+                  <Shield className="h-4 w-4" />
+                  Admin Panel
+                </Button>
+              </Link>
+            )}
+
             <Link href="/settings">
               <Button variant="ghost" size="icon" className="hidden lg:flex">
                 <Settings className="h-4 w-4" />
