@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Activity, Plus, Eye, MessageSquare, ThumbsUp, Clock } from "lucide-react";
+import { Activity, Plus, Eye, MessageSquare, ThumbsUp, Clock, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -12,6 +12,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BlogPost {
   id: number;
@@ -70,11 +76,34 @@ const blogData: BlogPost[] = [
 ];
 
 export default function BlogPage() {
+  const [showNewPostDialog, setShowNewPostDialog] = useState(false);
+  const [newPost, setNewPost] = useState({
+    title: '',
+    excerpt: '',
+    content: '',
+    tags: '',
+    image: '',
+  });
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const handleCreatePost = () => {
+    // Aquí iría la lógica para crear el post
+    console.log('Creating new post:', newPost);
+    setShowNewPostDialog(false);
+    setNewPost({
+      title: '',
+      excerpt: '',
+      content: '',
+      tags: '',
+      image: '',
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6 pt-20">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
@@ -84,10 +113,101 @@ export default function BlogPage() {
                 Share your insights and connect with your audience
               </p>
             </div>
-            <Button className="bg-orange-500 hover:bg-orange-600">
-              <Plus className="mr-2 h-4 w-4" />
-              New Post
-            </Button>
+            <Dialog open={showNewPostDialog} onOpenChange={setShowNewPostDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-orange-500 hover:bg-orange-600">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Post
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Blog Post</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={newPost.title}
+                      onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                      placeholder="Enter post title"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="excerpt">Excerpt</Label>
+                    <Input
+                      id="excerpt"
+                      value={newPost.excerpt}
+                      onChange={(e) => setNewPost({ ...newPost, excerpt: e.target.value })}
+                      placeholder="Brief description of your post"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea
+                      id="content"
+                      value={newPost.content}
+                      onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                      placeholder="Write your blog post content here..."
+                      className="min-h-[200px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="image">Featured Image URL</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="image"
+                        value={newPost.image}
+                        onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
+                        placeholder="Enter image URL"
+                      />
+                      <Button variant="outline" size="icon">
+                        <ImageIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tags">Tags</Label>
+                    <Input
+                      id="tags"
+                      value={newPost.tags}
+                      onChange={(e) => setNewPost({ ...newPost, tags: e.target.value })}
+                      placeholder="Enter tags separated by commas"
+                    />
+                  </div>
+
+                  <Button 
+                    className="w-full bg-orange-500 hover:bg-orange-600" 
+                    onClick={handleCreatePost}
+                  >
+                    Publish Post
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="flex items-center gap-4 mb-6">
+            <Select 
+              value={selectedCategory} 
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="marketing">Marketing</SelectItem>
+                <SelectItem value="technology">Technology</SelectItem>
+                <SelectItem value="industry">Industry News</SelectItem>
+                <SelectItem value="tutorials">Tutorials</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Card className="p-6 mb-8">
