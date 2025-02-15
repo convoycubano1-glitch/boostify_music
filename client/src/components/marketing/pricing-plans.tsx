@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Crown, Loader2, Music2, Star, Rocket, Youtube, FileText, Megaphone } from "lucide-react";
+import { Check, Crown, Loader2, Music2, Star, Rocket, Youtube, FileText, Megaphone, ShoppingBag, Brain, Mail, Settings, LineChart } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { loadStripe } from "@stripe/stripe-js";
@@ -18,102 +18,134 @@ const getStripe = async () => {
 const plans = [
   {
     name: "Starter",
-    price: 49,
+    price: 59.99,
     features: [
       {
-        text: "Spotify Basic Analytics",
+        text: "Análisis Básico de Spotify",
         icon: SiSpotify
       },
       {
-        text: "Instagram Profile Optimization",
+        text: "Gestión Básica de Instagram",
         icon: SiInstagram
       },
       {
-        text: "1,000 YouTube Views",
+        text: "5,000 Vistas en YouTube",
         icon: Youtube
       },
       {
-        text: "Basic Contract Templates",
+        text: "Plantillas de Contratos Básicas",
         icon: FileText
       },
       {
-        text: "Email Support",
-        icon: Megaphone
+        text: "1 Diseño de Merch al Mes",
+        icon: ShoppingBag
+      },
+      {
+        text: "Acceso a 2 Modelos de IA",
+        icon: Brain
+      },
+      {
+        text: "Soporte por Email",
+        icon: Mail
       }
     ],
-    description: "Perfect for emerging artists starting their journey",
+    description: "Perfecto para artistas emergentes que inician su carrera",
     popular: false,
-    priceId: "price_1Oq2YuBwX8aK6b3XhGjK9J2Y"
+    priceId: "price_starter_monthly" // Actualizar con el ID real de Stripe
   },
   {
     name: "Professional",
-    price: 149,
+    price: 99.99,
     features: [
       {
-        text: "Advanced Spotify Growth Tools",
+        text: "Analytics Avanzado de Spotify",
         icon: SiSpotify
       },
       {
-        text: "Instagram Boost Campaign",
+        text: "Campañas de Instagram",
         icon: SiInstagram
       },
       {
-        text: "10,000 YouTube Views",
+        text: "25,000 Vistas en YouTube",
         icon: Youtube
       },
       {
-        text: "Custom Contract Creation",
+        text: "Creación de Contratos Personalizados",
         icon: FileText
       },
       {
-        text: "Basic PR Campaign",
+        text: "5 Diseños de Merch al Mes",
+        icon: ShoppingBag
+      },
+      {
+        text: "Acceso a 5 Modelos de IA",
+        icon: Brain
+      },
+      {
+        text: "Campaña PR Básica",
         icon: Megaphone
       },
       {
-        text: "Priority Support",
+        text: "Marketing Automation",
+        icon: Settings
+      },
+      {
+        text: "Soporte Prioritario",
         icon: Star
       }
     ],
-    description: "Ideal for growing artists and small labels",
+    description: "Ideal para artistas en crecimiento y sellos pequeños",
     popular: true,
-    priceId: "price_1Oq2ZsBwX8aK6b3XQrY8K9L3"
+    priceId: "price_pro_monthly" // Actualizar con el ID real de Stripe
   },
   {
     name: "Enterprise",
-    price: 499,
+    price: 149.99,
     features: [
       {
-        text: "Full Music Marketing Suite",
+        text: "Suite Completa de Marketing Musical",
         icon: Music2
       },
       {
-        text: "Premium Spotify Promotion",
+        text: "Promoción Premium en Spotify",
         icon: SiSpotify
       },
       {
-        text: "Complete Instagram Management",
+        text: "Gestión Completa de Instagram",
         icon: SiInstagram
       },
       {
-        text: "100,000 YouTube Views",
+        text: "100,000 Vistas en YouTube",
         icon: Youtube
       },
       {
-        text: "Advanced Contract Management",
+        text: "Sistema Avanzado de Contratos",
         icon: FileText
       },
       {
-        text: "Full PR Campaign",
+        text: "Diseños Ilimitados de Merch",
+        icon: ShoppingBag
+      },
+      {
+        text: "Acceso a Todos los Modelos de IA",
+        icon: Brain
+      },
+      {
+        text: "Campaña PR Completa",
         icon: Megaphone
       },
       {
-        text: "Dedicated Account Manager",
+        text: "Analytics Personalizado",
+        icon: LineChart
+      },
+      {
+        text: "Gestor de Cuenta Dedicado",
         icon: Star
       }
     ],
-    description: "For professional artists and labels",
+    description: "Para artistas profesionales y sellos discográficos",
     popular: false,
-    priceId: "price_1Oq2a7BwX8aK6b3XmNpL5K8M"
+    priceId: "price_enterprise_monthly" // Actualizar con el ID real de Stripe
   }
 ];
 
