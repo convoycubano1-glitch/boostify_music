@@ -146,29 +146,31 @@ export default function ManagerToolsPage() {
             <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab}>
               <div className="mb-8 md:mb-12">
                 <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-                  <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                  <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500 py-3 h-auto text-xs md:text-sm">
                     <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span className="whitespace-nowrap">Technical Rider</span>
+                    <span className="whitespace-nowrap">Technical</span>
+                    <span className="hidden md:inline ml-1">Rider</span>
                   </TabsTrigger>
-                  <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                  <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500 py-3 h-auto text-xs md:text-sm">
                     <Utensils className="w-4 h-4 mr-2 flex-shrink-0" />
                     <span className="whitespace-nowrap">Requirements</span>
                   </TabsTrigger>
-                  <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                  <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500 py-3 h-auto text-xs md:text-sm">
                     <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
                     <span className="whitespace-nowrap">Budget</span>
                   </TabsTrigger>
-                  <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                  <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500 py-3 h-auto text-xs md:text-sm">
                     <Truck className="w-4 h-4 mr-2 flex-shrink-0" />
                     <span className="whitespace-nowrap">Logistics</span>
                   </TabsTrigger>
-                  <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                  <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500 py-3 h-auto text-xs md:text-sm">
                     <Users2 className="w-4 h-4 mr-2 flex-shrink-0" />
                     <span className="whitespace-nowrap">Hiring</span>
                   </TabsTrigger>
-                  <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                  <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500 py-3 h-auto text-xs md:text-sm">
                     <Brain className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span className="whitespace-nowrap">AI Assistant</span>
+                    <span className="whitespace-nowrap">AI</span>
+                    <span className="hidden md:inline ml-1">Assistant</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -384,58 +386,58 @@ export default function ManagerToolsPage() {
 
               {/* Logistics Tab */}
               <TabsContent value="logistics">
-                <Card className="p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="p-4 bg-orange-500/10 rounded-lg">
-                      <Truck className="h-8 w-8 text-orange-500" />
+                <Card className="p-4 md:p-8">
+                  <div className="flex items-center gap-4 mb-6 md:mb-8">
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Truck className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-semibold">Production Logistics</h3>
-                      <p className="text-muted-foreground mt-1">
+                      <h3 className="text-xl md:text-2xl font-semibold mb-1">Production Logistics</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
                         Coordinate and manage production logistics
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-12 mb-8">
+                  <div className="grid md:grid-cols-2 gap-8 mb-8">
                     <div className="space-y-6">
-                      <h4 className="text-xl font-medium">Transportation</h4>
+                      <h4 className="text-lg md:text-xl font-medium">Transportation</h4>
                       <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-lg">Equipment transport</span>
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
+                          <span className="text-sm md:text-base">Equipment transport</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-lg">Artist transportation</span>
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
+                          <span className="text-sm md:text-base">Artist transportation</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-lg">Crew movement</span>
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
+                          <span className="text-sm md:text-base">Crew movement</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-6">
-                      <h4 className="text-xl font-medium">Schedule</h4>
+                      <h4 className="text-lg md:text-xl font-medium">Schedule</h4>
                       <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-lg">Load-in times</span>
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
+                          <span className="text-sm md:text-base">Load-in times</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-lg">Setup schedule</span>
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
+                          <span className="text-sm md:text-base">Setup schedule</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-lg">Performance timeline</span>
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
+                          <span className="text-sm md:text-base">Performance timeline</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600">
+                  <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600 h-auto py-3">
                     Manage Logistics
                   </Button>
                 </Card>
