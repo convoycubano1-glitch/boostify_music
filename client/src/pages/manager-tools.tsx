@@ -21,7 +21,8 @@ import {
   BadgeCheck,
   ChevronRight,
   Settings,
-  ClipboardList
+  ClipboardList,
+  ChartBar
 } from "lucide-react";
 import {
   Tabs,
@@ -29,6 +30,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
 
 export default function ManagerToolsPage() {
   const [selectedTab, setSelectedTab] = useState("technical");
@@ -36,7 +38,7 @@ export default function ManagerToolsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">
+      <main className="flex-1">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <div className="container mx-auto px-4 py-6">
             {/* Hero Section with Video Background */}
@@ -50,15 +52,15 @@ export default function ManagerToolsPage() {
                 src="/assets/Standard_Mode_Generated_Video (9).mp4"
               />
               <div className="absolute inset-0 bg-black/60" />
-              <div className="relative p-12 md:p-16">
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              <div className="relative p-8 md:p-16">
+                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 md:mb-6">
                   Manager Tools
                 </h1>
-                <p className="text-xl text-white/90 max-w-2xl mb-8">
+                <p className="text-lg md:text-xl text-white/90 max-w-2xl mb-6 md:mb-8">
                   Professional tools for comprehensive artist and production management
                 </p>
                 <Button 
-                  className="bg-orange-500 hover:bg-orange-600 text-lg px-8 py-6"
+                  className="bg-orange-500 hover:bg-orange-600 text-base md:text-lg px-6 py-4 md:px-8 md:py-6 h-auto"
                 >
                   Get Started
                   <ChevronRight className="ml-2 h-5 w-5" />
@@ -66,110 +68,184 @@ export default function ManagerToolsPage() {
               </div>
             </section>
 
+            {/* Manager Tools Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-12">
+              {/* Venues Catalog */}
+              <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <MapPin className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold">Venues Catalog</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Find perfect venues for your events
+                    </p>
+                  </div>
+                </div>
+                <Button className="w-full bg-orange-500 hover:bg-orange-600 h-auto py-3">
+                  Find Venues
+                </Button>
+              </Card>
+
+              {/* Venues Booking */}
+              <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Calendar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold">Venues Booking</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Schedule and manage bookings
+                    </p>
+                  </div>
+                </div>
+                <Button className="w-full bg-orange-500 hover:bg-orange-600 h-auto py-3">
+                  Book Now
+                </Button>
+              </Card>
+
+              {/* Venues Reports */}
+              <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <ChartBar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold">Venues Reports</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Analytics and performance data
+                    </p>
+                  </div>
+                </div>
+                <Button className="w-full bg-orange-500 hover:bg-orange-600 h-auto py-3">
+                  View Reports
+                </Button>
+              </Card>
+
+              {/* Your Artists */}
+              <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                    <Users2 className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold">Your Artists</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Manage your artist roster
+                    </p>
+                  </div>
+                </div>
+                <Button className="w-full bg-orange-500 hover:bg-orange-600 h-auto py-3">
+                  View Artists
+                </Button>
+              </Card>
+            </div>
+
             <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab}>
-              <div className="mb-12">
-                <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Technical Rider
+              <div className="mb-8 md:mb-12">
+                <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+                  <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                    <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="whitespace-nowrap">Technical Rider</span>
                   </TabsTrigger>
-                  <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500">
-                    <Utensils className="w-4 h-4 mr-2" />
-                    Requirements
+                  <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                    <Utensils className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="whitespace-nowrap">Requirements</span>
                   </TabsTrigger>
-                  <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    Budget
+                  <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                    <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="whitespace-nowrap">Budget</span>
                   </TabsTrigger>
-                  <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500">
-                    <Truck className="w-4 h-4 mr-2" />
-                    Logistics
+                  <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                    <Truck className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="whitespace-nowrap">Logistics</span>
                   </TabsTrigger>
-                  <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500">
-                    <Users2 className="w-4 h-4 mr-2" />
-                    Hiring
+                  <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                    <Users2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="whitespace-nowrap">Hiring</span>
                   </TabsTrigger>
-                  <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500">
-                    <Brain className="w-4 h-4 mr-2" />
-                    AI Assistant
+                  <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500 py-3 h-auto">
+                    <Brain className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="whitespace-nowrap">AI Assistant</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
 
               {/* Technical Rider Tab */}
               <TabsContent value="technical">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <Card className="p-8 hover:bg-orange-500/5 transition-colors">
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="p-4 bg-orange-500/10 rounded-lg">
-                        <FileText className="h-8 w-8 text-orange-500" />
+                <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+                  <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
+                    <div className="flex items-center gap-4 mb-6 md:mb-8">
+                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                        <FileText className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Generate Technical Rider</h3>
-                        <p className="text-muted-foreground mt-1">
+                        <h3 className="text-xl md:text-2xl font-semibold">Generate Technical Rider</h3>
+                        <p className="text-sm md:text-base text-muted-foreground mt-1">
                           Create and manage technical specifications
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-6 mb-8">
+                    <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
                       <div className="flex items-center gap-3">
-                        <ChevronRight className="h-5 w-5 text-orange-500" />
-                        <span className="text-lg">Stage plot and dimensions</span>
+                        <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <span className="text-base md:text-lg">Stage plot and dimensions</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <ChevronRight className="h-5 w-5 text-orange-500" />
-                        <span className="text-lg">Equipment specifications</span>
+                        <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <span className="text-base md:text-lg">Equipment specifications</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <ChevronRight className="h-5 w-5 text-orange-500" />
-                        <span className="text-lg">Audio requirements</span>
+                        <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <span className="text-base md:text-lg">Audio requirements</span>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
-                        <Upload className="mr-2 h-5 w-5" />
+                      <Button size="lg" className="bg-orange-500 hover:bg-orange-600 h-auto py-3 whitespace-nowrap">
+                        <Upload className="mr-2 h-5 w-5 flex-shrink-0" />
                         Create New
                       </Button>
-                      <Button size="lg" variant="outline">
-                        <Download className="mr-2 h-5 w-5" />
+                      <Button size="lg" variant="outline" className="h-auto py-3 whitespace-nowrap">
+                        <Download className="mr-2 h-5 w-5 flex-shrink-0" />
                         Download
                       </Button>
                     </div>
                   </Card>
 
-                  <Card className="p-8 hover:bg-orange-500/5 transition-colors">
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="p-4 bg-orange-500/10 rounded-lg">
-                        <Building2 className="h-8 w-8 text-orange-500" />
+                  <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
+                    <div className="flex items-center gap-4 mb-6 md:mb-8">
+                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                        <Building2 className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Provider Directory</h3>
-                        <p className="text-muted-foreground mt-1">
+                        <h3 className="text-xl md:text-2xl font-semibold">Provider Directory</h3>
+                        <p className="text-sm md:text-base text-muted-foreground mt-1">
                           Connect with technical equipment providers
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-6 mb-8">
+                    <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
                       <div className="flex items-center gap-3">
-                        <BadgeCheck className="h-5 w-5 text-orange-500" />
-                        <span className="text-lg">Verified providers network</span>
+                        <BadgeCheck className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <span className="text-base md:text-lg">Verified providers network</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Settings className="h-5 w-5 text-orange-500" />
-                        <span className="text-lg">Equipment specifications</span>
+                        <Settings className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <span className="text-base md:text-lg">Equipment specifications</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-orange-500" />
-                        <span className="text-lg">Availability calendar</span>
+                        <Calendar className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <span className="text-base md:text-lg">Availability calendar</span>
                       </div>
                     </div>
-                    <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600">
+                    <Button size="lg" className="w-full bg-orange-500 hover:bg-orange-600 h-auto py-3">
                       Browse Providers
                     </Button>
                   </Card>
                 </div>
               </TabsContent>
-
               {/* Production Requirements Tab */}
               <TabsContent value="requirements">
                 <Card className="p-8">
