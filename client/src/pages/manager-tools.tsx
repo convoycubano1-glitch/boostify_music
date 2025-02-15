@@ -143,7 +143,7 @@ export default function ManagerToolsPage() {
               </Card>
             </div>
 
-            <Tabs defaultValue="technical" value={selectedTab} onValueChange={setSelectedTab} className="relative">
+            <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="relative">
               <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4 p-2">
                 <TabsTrigger 
                   value="technical" 
@@ -189,7 +189,7 @@ export default function ManagerToolsPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="mt-12 relative">
+              <div className="mt-24 md:mt-20 relative">
                 {/* Technical Rider Tab */}
                 <TabsContent value="technical">
                   <div className="grid gap-6 md:gap-8 md:grid-cols-2">
