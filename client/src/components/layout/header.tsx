@@ -50,7 +50,7 @@ export function Header() {
                 alt="Boostify Music" 
                 className="h-6 w-6"
               />
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                   Boostify
                 </span>
@@ -61,12 +61,12 @@ export function Header() {
             </Link>
 
             <Link href="/">
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden">
                 <Home className="h-4 w-4" />
               </Button>
             </Link>
 
-            <nav className="hidden md:flex items-center space-x-6">
+            <nav className="hidden lg:flex items-center space-x-6">
               {navigation.map((item) => (
                 <Link 
                   key={item.name} 
@@ -82,29 +82,29 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             <Link href="/settings">
-              <Button variant="ghost" size="icon" className="hidden md:flex">
+              <Button variant="ghost" size="icon" className="hidden lg:flex">
                 <Settings className="h-4 w-4" />
               </Button>
             </Link>
 
-            {/* Mobile Menu */}
+            {/* Mobile/Tablet Menu */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild className="md:hidden">
+              <DropdownMenuTrigger asChild className="lg:hidden">
                 <Button variant="ghost" size="icon">
                   <Menu className="h-4 w-4" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuContent align="end" className="w-[300px] max-h-[80vh] overflow-y-auto">
                 {navigation.map((item) => (
                   <Link key={item.name} href={item.href}>
-                    <DropdownMenuItem>
-                      <item.icon className="mr-2 h-4 w-4" />
+                    <DropdownMenuItem className="py-3">
+                      <item.icon className="mr-3 h-4 w-4" />
                       <span>{item.name}</span>
                     </DropdownMenuItem>
                   </Link>
                 ))}
-                <DropdownMenuItem onSelect={() => logout()}>
+                <DropdownMenuItem onSelect={() => logout()} className="py-3">
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
