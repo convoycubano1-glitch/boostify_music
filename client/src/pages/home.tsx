@@ -94,35 +94,47 @@ const testimonials = [
 const plans = [
   {
     name: "Basic",
-    price: "19",
+    price: "59.99",
     features: [
-      "Basic Analytics",
-      "Spotify Integration",
-      "1 Artist Profile",
-      "Email Support"
+      "Análisis Básico de Spotify",
+      "Gestión Básica de Instagram",
+      "5,000 Vistas en YouTube",
+      "Plantillas de Contratos Básicas",
+      "1 Diseño de Merch al Mes",
+      "Acceso a 2 Modelos de IA",
+      "Soporte por Email"
     ]
   },
   {
     name: "Pro",
-    price: "49",
+    price: "99.99",
     popular: true,
     features: [
-      "Advanced Analytics",
-      "Priority Spotify Integration",
-      "5 Artist Profiles",
-      "PR Management Tools",
-      "24/7 Support"
+      "Analytics Avanzado de Spotify",
+      "Campañas de Instagram",
+      "25,000 Vistas en YouTube",
+      "Creación de Contratos Personalizados",
+      "5 Diseños de Merch al Mes",
+      "Acceso a 5 Modelos de IA",
+      "Campaña PR Básica",
+      "Marketing Automation",
+      "Soporte Prioritario"
     ]
   },
   {
     name: "Enterprise",
-    price: "99",
+    price: "149.99",
     features: [
-      "Custom Analytics",
-      "Multiple Artist Management",
-      "Dedicated Account Manager",
-      "API Access",
-      "Custom Integrations"
+      "Suite Completa de Marketing Musical",
+      "Promoción Premium en Spotify",
+      "Gestión Completa de Instagram",
+      "100,000 Vistas en YouTube",
+      "Sistema Avanzado de Contratos",
+      "Diseños Ilimitados de Merch",
+      "Acceso a Todos los Modelos de IA",
+      "Campaña PR Completa",
+      "Analytics Personalizado",
+      "Gestor de Cuenta Dedicado"
     ]
   }
 ];
