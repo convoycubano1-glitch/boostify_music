@@ -29,9 +29,9 @@ export default function ArtistImageAdvisorPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-16 md:pt-20">
+      <main className="container mx-auto px-4 py-16 md:py-20">
         {/* Hero Section with Video Background */}
-        <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+        <div className="relative h-[50vh] md:h-[60vh] overflow-hidden rounded-lg mb-8">
           <video
             autoPlay
             loop
@@ -52,7 +52,7 @@ export default function ArtistImageAdvisorPage() {
             <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-4 md:mb-6">
               AI-Powered Image Advisor
             </h1>
-            <p className="text-base md:text-xl text-white/90 max-w-2xl mb-6 md:mb-8 leading-relaxed px-4">
+            <p className="text-base md:text-xl text-white/90 max-w-2xl mb-6 md:mb-8 leading-relaxed">
               Transform your artist image with cutting-edge AI technology. Get personalized style recommendations and visualize your perfect look.
             </p>
             <Button
@@ -71,12 +71,12 @@ export default function ArtistImageAdvisorPage() {
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="container mx-auto px-4 py-8 md:py-16"
+          className="mb-8 md:mb-12"
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             <motion.div variants={itemVariants}>
               <Card className="p-4 md:p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors h-full">
-                <div className="flex items-start gap-4 mb-4">
+                <div className="flex items-start gap-4">
                   <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
                     <Camera className="h-6 w-6 md:h-7 md:w-7 text-orange-500" />
                   </div>
@@ -85,7 +85,7 @@ export default function ArtistImageAdvisorPage() {
                     <p className="text-sm text-muted-foreground">Get instant style feedback</p>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-4">
                   Our AI analyzes your current style and provides personalized recommendations based on industry trends.
                 </p>
               </Card>
@@ -93,7 +93,7 @@ export default function ArtistImageAdvisorPage() {
 
             <motion.div variants={itemVariants}>
               <Card className="p-4 md:p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors h-full">
-                <div className="flex items-start gap-4 mb-4">
+                <div className="flex items-start gap-4">
                   <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
                     <Star className="h-6 w-6 md:h-7 md:w-7 text-orange-500" />
                   </div>
@@ -102,7 +102,7 @@ export default function ArtistImageAdvisorPage() {
                     <p className="text-sm text-muted-foreground">Vision to reality</p>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-4">
                   See AI-generated previews of your potential new looks, tailored to your brand and genre.
                 </p>
               </Card>
@@ -110,7 +110,7 @@ export default function ArtistImageAdvisorPage() {
 
             <motion.div variants={itemVariants}>
               <Card className="p-4 md:p-6 border-orange-500/20 bg-background/60 backdrop-blur-sm hover:bg-orange-500/5 transition-colors h-full">
-                <div className="flex items-start gap-4 mb-4">
+                <div className="flex items-start gap-4">
                   <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
                     <TrendingUp className="h-6 w-6 md:h-7 md:w-7 text-orange-500" />
                   </div>
@@ -119,63 +119,63 @@ export default function ArtistImageAdvisorPage() {
                     <p className="text-sm text-muted-foreground">Optimize your impact</p>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-4">
                   Get insights on how your image can help grow your audience and strengthen your brand.
                 </p>
               </Card>
             </motion.div>
           </div>
-
-          {/* Main Interface */}
-          <Card className="p-4 md:p-8 border-orange-500/20">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8 md:space-y-12">
-              <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto p-2">
-                <TabsTrigger 
-                  value="upload" 
-                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
-                >
-                  <Camera className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-[10px] md:text-sm">Upload</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="style" 
-                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
-                >
-                  <Music2 className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-[10px] md:text-sm">Style</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="generate" 
-                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
-                >
-                  <ImageIcon className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-[10px] md:text-sm">Generate</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="results" 
-                  className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
-                >
-                  <TrendingUp className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-[10px] md:text-sm">Results</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="mt-40 md:mt-24 relative">
-                <TabsContent value="upload">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <ImageStyleAdvisor />
-                  </motion.div>
-                </TabsContent>
-
-                {/* Other TabsContent components will be implemented later */}
-              </div>
-            </Tabs>
-          </Card>
         </motion.div>
+
+        {/* Main Interface */}
+        <Card className="p-4 md:p-8 border-orange-500/20">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto p-2">
+              <TabsTrigger 
+                value="upload" 
+                className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+              >
+                <Camera className="h-4 w-4 flex-shrink-0" />
+                <span className="text-[10px] md:text-sm">Upload</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="style" 
+                className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+              >
+                <Music2 className="h-4 w-4 flex-shrink-0" />
+                <span className="text-[10px] md:text-sm">Style</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="generate" 
+                className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+              >
+                <ImageIcon className="h-4 w-4 flex-shrink-0" />
+                <span className="text-[10px] md:text-sm">Generate</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="results" 
+                className="flex flex-col md:flex-row items-center gap-1 md:gap-2 px-2 py-3 md:py-2 data-[state=active]:bg-orange-500"
+              >
+                <TrendingUp className="h-4 w-4 flex-shrink-0" />
+                <span className="text-[10px] md:text-sm">Results</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="mt-6">
+              <TabsContent value="upload">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <ImageStyleAdvisor />
+                </motion.div>
+              </TabsContent>
+
+              {/* Other TabsContent components will be implemented later */}
+            </div>
+          </Tabs>
+        </Card>
       </main>
     </div>
   );
