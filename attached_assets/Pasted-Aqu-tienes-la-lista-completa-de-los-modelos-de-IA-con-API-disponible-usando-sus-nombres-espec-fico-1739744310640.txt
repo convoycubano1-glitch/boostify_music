@@ -1,0 +1,111 @@
+Aquí tienes la lista completa de los modelos de IA con API disponible, usando sus nombres específicos en cada categoría:
+
+1. Modelos de Procesamiento de Lenguaje Natural (NLP)
+	•	OpenAI GPT
+	•	Modelos:
+	•	gpt-4-turbo
+	•	gpt-4
+	•	gpt-3.5-turbo
+	•	API: OpenAI API
+	•	Anthropic Claude
+	•	Modelos:
+	•	claude-3-opus
+	•	claude-3-sonnet
+	•	claude-3-haiku
+	•	API: Anthropic API
+	•	Google Gemini
+	•	Modelos:
+	•	gemini-1-ultra
+	•	gemini-1-pro
+	•	gemini-1
+	•	API: Google Cloud AI
+	•	Cohere Command
+	•	Modelos:
+	•	command-r-plus
+	•	command-r
+	•	command
+	•	API: Cohere API
+	•	DeepSeek (China)
+	•	Modelos:
+	•	deepseek-67b
+	•	API: DeepSeek
+	•	Alibaba Qwen (China)
+	•	Modelos:
+	•	qwen-2.5-max
+	•	qwen-2.0
+	•	API: Alibaba Cloud Qwen
+	•	Baidu Ernie (China)
+	•	Modelos:
+	•	ernie-4.0
+	•	ernie-3.0
+	•	API: Baidu AI Cloud
+	•	Zhipu AI ChatGLM (China)
+	•	Modelos:
+	•	chatglm3-6b
+	•	chatglm2-6b
+	•	API: Zhipu AI
+
+2. Modelos de Generación de Imágenes
+	•	OpenAI DALL·E
+	•	Modelos:
+	•	dall-e-3
+	•	dall-e-2
+	•	API: OpenAI API
+	•	Stability AI Stable Diffusion
+	•	Modelos:
+	•	stable-diffusion-xl (SDXL)
+	•	stable-diffusion-2.1
+	•	API: Stability AI API
+	•	Baidu ERNIE-ViLG (China)
+	•	Modelos:
+	•	ernie-vilg-2.0
+	•	API: Baidu AI
+
+3. Modelos de Conversión de Texto a Voz (TTS)
+	•	Google Text-to-Speech
+	•	Modelos:
+	•	wavenet (varias versiones)
+	•	API: Google Cloud TTS
+	•	Microsoft Azure Speech
+	•	Modelos:
+	•	azure-neural-voices
+	•	API: Azure Speech API
+	•	ElevenLabs AI
+	•	Modelos:
+	•	elevenlabs-v2
+	•	elevenlabs-v1
+	•	API: ElevenLabs API
+	•	Baidu Text-to-Speech (China)
+	•	Modelos:
+	•	baidu-tts
+	•	API: Baidu AI Cloud
+
+4. Modelos de Generación de Video
+	•	Runway Gen-2
+	•	Modelos:
+	•	runway-gen-2
+	•	runway-gen-1
+	•	API: Runway API
+	•	Zhipu AI Ying (China)
+	•	Modelos:
+	•	zhipu-ai-ying
+	•	API: Zhipu AI
+
+5. Modelos Multimodales
+	•	Google Gemini
+	•	Modelos:
+	•	gemini-1-ultra
+	•	gemini-1-pro
+	•	API: Google Cloud AI
+	•	OpenAI GPT-4 Turbo (con visión y audio)
+	•	Modelos:
+	•	gpt-4-turbo
+	•	API: OpenAI API
+	•	Huawei PanGu-Σ (China)
+	•	Modelos:
+	•	pangu-sigma
+	•	API: Huawei Cloud
+
+Esta lista contiene solo modelos con API pública disponible, listados con sus nombres específicos para facilitar la integración en tu proyecto.
+
+Si necesitas más detalles sobre la autenticación o implementación de alguna API en particular, dime y te ayudo con la integración.

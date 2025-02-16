@@ -3,7 +3,7 @@ import { z } from "zod";
 export const textModelSchema = z.object({
   id: z.string(),
   name: z.string(),
-  provider: z.enum(["openai", "anthropic", "perplexity", "deepseek"]),
+  provider: z.enum(["openai", "anthropic", "google", "cohere", "deepseek", "alibaba", "baidu", "zhipu"]),
   modelId: z.string(),
   maxTokens: z.number(),
   temperature: z.number(),
@@ -15,7 +15,7 @@ export const textModelSchema = z.object({
 export const imageModelSchema = z.object({
   id: z.string(),
   name: z.string(),
-  provider: z.enum(["fal", "openai", "stability"]),
+  provider: z.enum(["fal", "openai", "stability", "baidu"]),
   modelId: z.string(),
   enabled: z.boolean(),
   apiKey: z.string().optional(),
