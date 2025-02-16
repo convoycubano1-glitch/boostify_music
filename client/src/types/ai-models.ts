@@ -25,12 +25,38 @@ export const imageModelSchema = z.object({
   }),
 });
 
+export const ttsModelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  provider: z.enum(["google", "microsoft", "elevenlabs", "baidu"]),
+  modelId: z.string(),
+  enabled: z.boolean(),
+  apiKey: z.string().optional(),
+  features: z.array(z.string()),
+});
+
+export const videoModelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  provider: z.enum(["runway", "zhipu"]),
+  modelId: z.string(),
+  enabled: z.boolean(),
+  apiKey: z.string().optional(),
+  maxDuration: z.number(),
+});
+
 export type TextModel = z.infer<typeof textModelSchema>;
 export type ImageModel = z.infer<typeof imageModelSchema>;
+export type TTSModel = z.infer<typeof ttsModelSchema>;
+export type VideoModel = z.infer<typeof videoModelSchema>;
 
 export interface AIModelsConfig {
   textModels: TextModel[];
   imageModels: ImageModel[];
+  ttsModels: TTSModel[];
+  videoModels: VideoModel[];
   defaultTextModel: string;
   defaultImageModel: string;
+  defaultTTSModel: string;
+  defaultVideoModel: string;
 }
