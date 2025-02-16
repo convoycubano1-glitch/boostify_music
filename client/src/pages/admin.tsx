@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Animation variants
@@ -83,22 +82,22 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">
-        <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
-          <div className="container mx-auto px-4 py-6">
+      <main className="flex-1 pt-16 sm:pt-20">
+        <ScrollArea className="flex-1 h-[calc(100vh-4rem)]">
+          <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
             {/* Hero Section */}
             <motion.section
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="relative rounded-xl overflow-hidden mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-8"
+              className="relative rounded-xl overflow-hidden mb-6 sm:mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-4 sm:p-8"
             >
               <div className="relative">
                 <motion.h1
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className="text-4xl md:text-5xl font-bold mb-4"
+                  className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 sm:mb-4"
                 >
                   Panel de Administración
                 </motion.h1>
@@ -106,7 +105,7 @@ export default function AdminPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className="text-xl text-muted-foreground max-w-2xl"
+                  className="text-lg sm:text-xl text-muted-foreground max-w-2xl"
                 >
                   Gestiona suscripciones, afiliados, modelos de IA y más desde un solo lugar
                 </motion.p>
@@ -114,19 +113,23 @@ export default function AdminPage() {
             </motion.section>
 
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-4 max-w-[800px] mb-8">
+              <TabsList className="flex flex-wrap sm:grid sm:grid-cols-4 max-w-[800px] mb-6 sm:mb-8 overflow-x-auto">
                 {[
                   { value: "subscriptions", icon: <CreditCard />, label: "Suscripciones" },
                   { value: "affiliates", icon: <Star />, label: "Afiliados" },
                   { value: "ai-models", icon: <Brain />, label: "Modelos IA" },
-                  { value: "data", icon: <Mail />, label: "Datos y Emails" }
+                  { value: "data", icon: <Mail />, label: "Datos" }
                 ].map(tab => (
                   <motion.div
                     key={tab.value}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    className="flex-shrink-0 w-full sm:w-auto"
                   >
-                    <TabsTrigger value={tab.value} className="data-[state=active]:bg-orange-500">
+                    <TabsTrigger 
+                      value={tab.value} 
+                      className="data-[state=active]:bg-orange-500 w-full sm:w-auto text-sm sm:text-base"
+                    >
                       {tab.icon && <span className="w-4 h-4 mr-2">{tab.icon}</span>}
                       {tab.label}
                     </TabsTrigger>
@@ -146,7 +149,7 @@ export default function AdminPage() {
                   <TabsContent value="subscriptions">
                     <motion.div
                       variants={containerVariants}
-                      className="grid md:grid-cols-3 gap-6 mb-8"
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8"
                     >
                       {[
                         {
@@ -167,18 +170,17 @@ export default function AdminPage() {
                       ].map((stat, index) => (
                         <motion.div
                           key={index}
-                          variants={itemVariants}
-                          whileHover="hover"
                           variants={cardVariants}
+                          whileHover="hover"
                         >
-                          <Card className="p-6">
+                          <Card className="p-4 sm:p-6">
                             <div className="flex items-center gap-4">
-                              <div className="p-3 bg-orange-500/10 rounded-lg">
+                              <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
                                 {stat.icon}
                               </div>
                               <div>
-                                <p className="text-sm text-muted-foreground">{stat.title}</p>
-                                <p className="text-2xl font-bold">{stat.value}</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">{stat.title}</p>
+                                <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
                               </div>
                             </div>
                           </Card>
@@ -187,11 +189,11 @@ export default function AdminPage() {
                     </motion.div>
 
                     <motion.div variants={itemVariants}>
-                      <Card className="p-6">
-                        <div className="flex justify-between items-center mb-6">
+                      <Card className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                           <h3 className="text-lg font-semibold">Gestión de Suscripciones</h3>
                           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
                               <RefreshCcw className="h-4 w-4 mr-2" />
                               Actualizar
                             </Button>
@@ -199,7 +201,6 @@ export default function AdminPage() {
                         </div>
 
                         <div className="space-y-6">
-                          {/* Add subscription management table/list here */}
                           <div className="text-center text-muted-foreground">
                             Tabla de suscripciones se implementará aquí
                           </div>
@@ -210,19 +211,19 @@ export default function AdminPage() {
 
                   {/* Afiliados Tab */}
                   <TabsContent value="affiliates">
-                    <motion.div variants={containerVariants} className="grid md:grid-cols-3 gap-6 mb-8">
+                    <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                       {[
                         { icon: <Users />, title: "Total Afiliados", value: affiliateData.totalAffiliates },
                         { icon: <UserCheck />, title: "Afiliados Activos", value: affiliateData.activeAffiliates },
                         { icon: <CreditCard />, title: "Comisiones Totales", value: `$${affiliateData.totalCommissions}` }
                       ].map((stat, index) => (
                         <motion.div key={index} variants={itemVariants} whileHover="hover" variants={cardVariants}>
-                          <Card className="p-6">
+                          <Card className="p-4 sm:p-6">
                             <div className="flex items-center gap-4">
-                              <div className="p-3 bg-orange-500/10 rounded-lg">{stat.icon}</div>
+                              <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">{stat.icon}</div>
                               <div>
-                                <p className="text-sm text-muted-foreground">{stat.title}</p>
-                                <p className="text-2xl font-bold">{stat.value}</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">{stat.title}</p>
+                                <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
                               </div>
                             </div>
                           </Card>
@@ -230,7 +231,7 @@ export default function AdminPage() {
                       ))}
                     </motion.div>
                     <motion.div variants={itemVariants}>
-                      <Card className="p-6">
+                      <Card className="p-4 sm:p-6">
                         <div className="flex justify-between items-center mb-6">
                           <h3 className="text-lg font-semibold">Programa de Afiliados</h3>
                           <div className="flex gap-2">
@@ -261,7 +262,7 @@ export default function AdminPage() {
                   {/* Nueva Tab de Modelos IA */}
                   <TabsContent value="ai-models">
                     <motion.div variants={containerVariants}>
-                      <div className="grid md:grid-cols-3 gap-6 mb-8">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                         {[
                           { icon: <Brain />, title: "Modelos Activos", value: 8 },
                           { icon: <Wand2 />, title: "Generaciones AI", value: "2.5K" },
@@ -273,12 +274,16 @@ export default function AdminPage() {
                             whileHover="hover"
                             variants={cardVariants}
                           >
-                            <Card className="p-6">
+                            <Card className="p-4 sm:p-6">
                               <div className="flex items-center gap-4">
-                                <div className="p-3 bg-orange-500/10 rounded-lg">{stat.icon}</div>
+                                <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
+                                  {stat.icon}
+                                </div>
                                 <div>
-                                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                                  <p className="text-2xl font-bold">{stat.value}</p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    {stat.title}
+                                  </p>
+                                  <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
                                 </div>
                               </div>
                             </Card>
@@ -292,7 +297,7 @@ export default function AdminPage() {
                   {/* Datos y Emails Tab */}
                   <TabsContent value="data">
                     <motion.div variants={itemVariants}>
-                      <Card className="p-6">
+                      <Card className="p-4 sm:p-6">
                         <div className="flex justify-between items-center mb-6">
                           <h3 className="text-lg font-semibold">Gestión de Datos y Emails</h3>
                           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
