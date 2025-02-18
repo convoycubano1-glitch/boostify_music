@@ -3,6 +3,7 @@ import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProgressIndicator } from "./progress-indicator";
+import { MusicLoadingSpinner } from "@/components/ui/music-loading-spinner";
 
 const containerVariants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -146,21 +147,31 @@ export function CareerDevelopmentAgent() {
     >
       <AnimatePresence>
         {isThinking && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: [0.3, 0.6, 0.3],
-              scale: [1, 1.02, 1]
-            }}
-            transition={{ 
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            exit={{ opacity: 0 }}
-            className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-xl opacity-75 blur-xl"
-            style={{ zIndex: -1 }}
-          />
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: [0.3, 0.6, 0.3],
+                scale: [1, 1.02, 1]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              exit={{ opacity: 0 }}
+              className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-xl opacity-75 blur-xl"
+              style={{ zIndex: -1 }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            >
+              <MusicLoadingSpinner size="lg" variant="subtle" />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

@@ -2,7 +2,8 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Music2, Mic2, Radio } from "lucide-react";
+import { MusicLoadingSpinner } from "@/components/ui/music-loading-spinner";
 
 interface ProgressStep {
   message: string;
@@ -75,7 +76,7 @@ export function ProgressIndicator({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="space-y-4 p-6 border rounded-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-lg"
+      className="space-y-4 p-6 border rounded-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-lg relative overflow-hidden"
     >
       <div className="flex items-center space-x-4">
         <Progress value={progress} className="flex-1" />
@@ -113,8 +114,8 @@ export function ProgressIndicator({
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2 text-primary">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm font-medium">
+                  <MusicLoadingSpinner size="sm" variant="subtle" />
+                  <span className="text-sm font-medium ml-2">
                     {displayedMessage}
                     {isTyping && (
                       <motion.span
@@ -141,14 +142,15 @@ export function ProgressIndicator({
               </div>
               <div className="flex-1">
                 <motion.div 
-                  className="text-sm font-medium text-green-500"
+                  className="text-sm font-medium text-green-500 flex items-center"
                   animate={{ 
                     scale: [1, 1.05, 1],
                     opacity: [0, 1]
                   }}
                   transition={{ duration: 0.5 }}
                 >
-                  Analysis complete! 🎉
+                  <Music2 className="w-4 h-4 mr-2" />
+                  Analysis complete! 🎵
                 </motion.div>
               </div>
             </motion.div>
@@ -156,7 +158,7 @@ export function ProgressIndicator({
         </div>
       </ScrollArea>
 
-      {/* Animated background blur effect when thinking */}
+      {/* Enhanced background effect when thinking */}
       {isThinking && (
         <motion.div
           className="absolute inset-0 -z-10"
