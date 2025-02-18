@@ -638,138 +638,127 @@ export default function ManagerToolsPage() {
 
                 {/* Calendar Tab */}
                 <TabsContent value="calendar">
-                  <Card className="p-3 md:p-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-orange-500/10 rounded-lg">
-                        <CalendarIcon className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">Calendario de Eventos</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Gestiona tus eventos y fechas importantes
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={handleDateSelect}
-                          className="rounded-md border shadow max-w-[300px]"
-                          locale={es}
-                        />
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">Eventos del día</h4>
-                        <div className="space-y-3">
-                          {events
-                            .filter(event => 
-                              selectedDate && 
-                              format(event.date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-                            )
-                            .map((event, index) => (
-                              <Card key={index} className="p-3">
-                                <h5 className="text-sm font-medium">{event.title}</h5>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(event.date, 'PPP', { locale: es })}
-                                </p>
-                                <p className="text-xs">
-                                  {event.startTime} - {event.endTime}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {event.location}
-                                </p>
-                              </Card>
-                            ))}
+                    <Card className="p-6 md:p-8">
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="p-4 bg-orange-500/10 rounded-lg">
+                          <CalendarIcon className="h-8 w-8 text-orange-500" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl md:text-2xl font-semibold">Event Calendar</h3>
+                          <p className="text-muted-foreground mt-1">
+                            Manage your events and important dates
+                          </p>
                         </div>
                       </div>
-                    </div>
 
+                      <div className="grid gap-8 md:grid-cols-2">
+                        {/* Calendar Section */}
+                        <div className="space-y-6">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={handleDateSelect}
+                            className="rounded-lg border shadow"
+                            locale={es}
+                          />
+                        </div>
+
+                        {/* Events List Section */}
+                        <div className="space-y-6">
+                          <h4 className="text-lg font-medium">Upcoming Events</h4>
+                          <ScrollArea className="h-[400px] rounded-lg border p-4">
+                            {events.length > 0 ? (
+                              <div className="space-y-4">
+                                {events.map((event, index) => (
+                                  <Card key={index} className="p-4 hover:bg-orange-500/5 transition-colors">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h5 className="font-medium">{event.title}</h5>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                          {format(event.date, 'PPP', { locale: es })}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          {event.startTime} - {event.endTime}
+                                        </p>
+                                        <p className="text-sm mt-2">{event.location}</p>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-muted-foreground">
+                                No events scheduled
+                              </div>
+                            )}
+                          </ScrollArea>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Event Dialog */}
                     <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-                      <DialogContent className="sm:max-w-[400px]">
+                      <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                          <DialogTitle className="text-lg">Nuevo Evento</DialogTitle>
+                          <DialogTitle>Add New Event</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-3 pt-2">
-                          <div>
-                            <Label htmlFor="title" className="text-sm">Título</Label>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="title">Event Title</Label>
                             <Input
                               id="title"
-                              className="h-8 text-sm"
                               value={eventDetails.title}
-                              onChange={(e) => setEventDetails(prev => ({
-                                ...prev,
-                                title: e.target.value
-                              }))}
+                              onChange={(e) => setEventDetails(prev => ({ ...prev, title: e.target.value }))}
                             />
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label htmlFor="startTime" className="text-sm">Hora inicio</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="startTime">Start Time</Label>
                               <Input
                                 id="startTime"
                                 type="time"
-                                className="h-8 text-sm"
                                 value={eventDetails.startTime}
-                                onChange={(e) => setEventDetails(prev => ({
-                                  ...prev,
-                                  startTime: e.target.value
-                                }))}
+                                onChange={(e) => setEventDetails(prev => ({ ...prev, startTime: e.target.value }))}
                               />
                             </div>
-                            <div>
-                              <Label htmlFor="endTime" className="text-sm">Hora fin</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor="endTime">End Time</Label>
                               <Input
                                 id="endTime"
                                 type="time"
-                                className="h-8 text-sm"
                                 value={eventDetails.endTime}
-                                onChange={(e) => setEventDetails(prev => ({
-                                  ...prev,
-                                  endTime: e.target.value
-                                }))}
+                                onChange={(e) => setEventDetails(prev => ({ ...prev, endTime: e.target.value }))}
                               />
                             </div>
                           </div>
-                          <div>
-                            <Label htmlFor="location" className="text-sm">Ubicación</Label>
+                          <div className="space-y-2">
+                            <Label htmlFor="location">Location</Label>
                             <Input
                               id="location"
-                              className="h-8 text-sm"
                               value={eventDetails.location}
-                              onChange={(e) => setEventDetails(prev => ({
-                                ...prev,
-                                location: e.target.value
-                              }))}
+                              onChange={(e) => setEventDetails(prev => ({ ...prev, location: e.target.value }))}
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="description" className="text-sm">Descripción</Label>
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
                             <Input
                               id="description"
-                              className="h-8 text-sm"
                               value={eventDetails.description}
-                              onChange={(e) => setEventDetails(prev => ({
-                                ...prev,
-                                description: e.target.value
-                              }))}
+                              onChange={(e) => setEventDetails(prev => ({ ...prev, description: e.target.value }))}
                             />
                           </div>
-                          <Button 
-                            size="sm"
-                            className="w-full bg-orange-500 hover:bg-orange-600 h-8 text-sm"
-                            onClick={handleAddEvent}
-                          >
-                            Agregar Evento
+                        </div>
+                        <div className="flex justify-end gap-4">
+                          <Button variant="outline" onClick={() => setShowEventDialog(false)}>
+                            Cancel
+                          </Button>
+                          <Button className="bg-orange-500 hover:bg-orange-600" onClick={handleAddEvent}>
+                            Add Event
                           </Button>
                         </div>
                       </DialogContent>
                     </Dialog>
-                  </Card>
-                </TabsContent>
+                  </TabsContent>
               </div>
             </Tabs>
           </div>
