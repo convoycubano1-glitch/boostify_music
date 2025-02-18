@@ -32,11 +32,17 @@ import AIAgentsPage from "@/pages/ai-agents";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
 import MerchandisePage from "@/pages/merchandise";
 import EcosystemPage from "@/pages/ecosystem";
+import TermsPage from "@/pages/terms";
+import PrivacyPage from "@/pages/privacy";
+import CookiesPage from "@/pages/cookies";
 
 const Router = () => {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/cookies" component={CookiesPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
