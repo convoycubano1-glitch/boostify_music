@@ -66,10 +66,10 @@ export default function RecordLabelServices() {
             </motion.div>
           </div>
 
-          {/* Floating Stats */}
-          <div className="absolute bottom-8 left-0 right-0 z-20">
+          {/* Floating Stats - Only visible on desktop */}
+          <div className="absolute bottom-8 left-0 right-0 z-20 hidden lg:block">
             <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-4 gap-6">
                 {[
                   { label: "Active Artists", value: "2,500+" },
                   { label: "Songs Published", value: "10,000+" },
@@ -83,11 +83,36 @@ export default function RecordLabelServices() {
                     transition={{ duration: 0.6, delay: index * 0.1 }}
                     className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20"
                   >
-                    <p className="text-xl sm:text-2xl font-bold text-white mb-2">{stat.value}</p>
+                    <p className="text-2xl font-bold text-white mb-2">{stat.value}</p>
                     <p className="text-sm text-white/70">{stat.label}</p>
                   </motion.div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Stats Section */}
+        <div className="lg:hidden bg-gradient-to-b from-background to-orange-500/5 py-8">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {[
+                { label: "Active Artists", value: "2,500+" },
+                { label: "Songs Published", value: "10,000+" },
+                { label: "Revenue Generated", value: "$5M+" },
+                { label: "Global Reach", value: "150+ Countries" }
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20"
+                >
+                  <p className="text-xl sm:text-2xl font-bold text-white mb-2">{stat.value}</p>
+                  <p className="text-sm text-white/70">{stat.label}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
