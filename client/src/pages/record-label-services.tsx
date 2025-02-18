@@ -10,432 +10,469 @@ import {
   Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote,
   Radio, Tv, Film, FileText, Brain, Play, Volume2, Pen, Clock,
   Mic2, Music4, Database, FilmIcon, TrendingUp, Calculator, Search,
-  Badge, MapPin, Calendar, ChartBar, Users
+  Badge, MapPin, Calendar, ChartBar, Users, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 
 export default function RecordLabelServices() {
-  const [formData, setFormData] = useState({
-    companyName: "",
-    contactName: "",
-    email: "",
-    phone: "",
-    website: "",
-    message: ""
-  });
-
   const [selectedTab, setSelectedTab] = useState("radio-tv");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log(formData);
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1">
-        {/* Hero Section with Video Background */}
-        <div className="relative w-full min-h-[50vh] md:min-h-[60vh] overflow-hidden">
+      <main className="flex-1 pt-16"> {/* Adjusted pt-16 to fix header overlap */}
+        {/* Hero Section with Enhanced Video Background */}
+        <div className="relative w-full min-h-[70vh] overflow-hidden">
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
             src="/assets/Standard_Mode_Generated_Video (9).mp4"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-900 to-orange-600 opacity-90" />
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-orange-600/80 to-background" />
+          <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-20" />
           <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
               className="max-w-2xl"
             >
-              <h1 className="text-3xl md:text-6xl font-bold text-white mb-4 md:mb-6 text-shadow-lg">
-                Publishing & Licensing Hub
+              <span className="inline-flex items-center rounded-full bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-4">
+                <Sparkles className="mr-1 h-3 w-3" /> New Features Available
+              </span>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                Publishing & Licensing <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-purple-400">
+                  Reimagined
+                </span>
               </h1>
-              <p className="text-lg md:text-xl text-white/90 mb-6 md:mb-8 text-shadow-sm font-medium">
-                Manage your music rights and explore publishing opportunities across multiple media channels
+              <p className="text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl">
+                Transform your music rights management with our AI-powered platform. Explore new opportunities across multiple media channels.
               </p>
-              <Button size="lg" className="w-full md:w-auto bg-orange-500 hover:bg-orange-600">
-                Explore Opportunities
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
+                  Start Publishing
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                  Watch Demo
+                  <Play className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </motion.div>
+          </div>
+
+          {/* Floating Stats */}
+          <div className="absolute bottom-8 left-0 right-0 z-20">
+            <div className="container mx-auto px-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: "Active Artists", value: "2,500+" },
+                  { label: "Songs Published", value: "10,000+" },
+                  { label: "Revenue Generated", value: "$5M+" },
+                  { label: "Global Reach", value: "150+ Countries" }
+                ].map((stat, index) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20"
+                  >
+                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-sm text-white/70">{stat.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Publishing Sections with Improved Spacing */}
-        <div className="container mx-auto px-4 py-12 md:py-24">
-          <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-8 md:space-y-12">
-            <TabsList className="flex flex-wrap justify-center gap-3 md:gap-6 p-2 bg-background/50 backdrop-blur-sm rounded-lg border border-orange-500/20 overflow-x-auto">
-              <TabsTrigger
-                value="radio-tv"
-                className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
-              >
-                <Radio className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Radio & TV</span>
-                <span className="md:hidden">Radio/TV</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="movies"
-                className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
-              >
-                <Film className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Movie Publishing</span>
-                <span className="md:hidden">Movies</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="creator"
-                className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
-              >
-                <Music4 className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Movie Music Tools</span>
-                <span className="md:hidden">Tools</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="contracts"
-                className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">Contracts</span>
-                <span className="md:hidden">Legal</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="ai"
-                className="data-[state=active]:bg-orange-500 px-4 md:px-8 py-2 md:py-3 transition-all duration-300 whitespace-nowrap"
-              >
-                <Brain className="w-4 h-4 mr-2" />
-                <span className="hidden md:inline">AI Assistant</span>
-                <span className="md:hidden">AI</span>
-              </TabsTrigger>
-            </TabsList>
+        {/* Services Tabs with Modern Design */}
+        <div className="container mx-auto px-4 py-16">
+          <Tabs 
+            defaultValue={selectedTab} 
+            value={selectedTab} 
+            onValueChange={setSelectedTab} 
+            className="space-y-8"
+          >
+            <div className="flex justify-center">
+              <TabsList className="inline-flex p-1 bg-background/50 backdrop-blur-sm rounded-full border border-orange-500/20 overflow-x-auto">
+                <TabsTrigger
+                  value="radio-tv"
+                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                >
+                  <Radio className="w-4 h-4 mr-2" />
+                  <span>Radio & TV</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="movies"
+                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                >
+                  <Film className="w-4 h-4 mr-2" />
+                  <span>Movies</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="creator"
+                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                >
+                  <Music4 className="w-4 h-4 mr-2" />
+                  <span>Creator Tools</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="contracts"
+                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  <span>Contracts</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="ai"
+                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  <span>AI Assistant</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            {/* Tab Content with Improved Spacing */}
-            <div className="mt-8 md:mt-12 space-y-8 md:space-y-12">
-              {/* Radio & TV Tab */}
-              <TabsContent value="radio-tv">
-                <div className="grid gap-6 md:gap-8 md:grid-cols-2">
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Radio className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+            {/* Radio & TV Content */}
+            <TabsContent value="radio-tv">
+              <div className="grid gap-6 md:grid-cols-2">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-orange-500/10 rounded-2xl">
+                        <Radio className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Radio Publishing</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                          Expand your music reach through radio networks
+                        <h3 className="text-2xl font-semibold">Radio Publishing</h3>
+                        <p className="text-muted-foreground">
+                          Expand your reach through radio networks
                         </p>
                       </div>
                     </div>
 
-                    <div className="space-y-4 md:space-y-6">
-                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
-                        <h4 className="font-medium mb-4">Radio Networks</h4>
-                        <div className="space-y-3 md:space-y-4">
-                          {['National Networks', 'Local Stations', 'Internet Radio'].map((network) => (
-                            <div key={network} className="flex items-center justify-between p-3 md:p-4 hover:bg-orange-500/5 rounded-lg transition-colors">
-                              <span className="font-medium text-sm md:text-base">{network}</span>
-                              <Button variant="outline" size="sm" className="min-w-[100px]">
-                                Connect
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                    <div className="space-y-4">
+                      {['National Networks', 'Local Stations', 'Internet Radio'].map((network) => (
+                        <motion.div
+                          key={network}
+                          whileHover={{ x: 5 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{network}</span>
+                            <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                              Explore <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
                   </Card>
+                </motion.div>
 
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Tv className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-orange-500/10 rounded-2xl">
+                        <Tv className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">TV Licensing</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                          License your music for television programs
+                        <h3 className="text-2xl font-semibold">TV Licensing</h3>
+                        <p className="text-muted-foreground">
+                          License your music for television
                         </p>
                       </div>
                     </div>
 
-                    <div className="space-y-4 md:space-y-6">
-                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
-                        <h4 className="font-medium mb-4">TV Opportunities</h4>
-                        <div className="space-y-3 md:space-y-4">
-                          {['Shows & Series', 'Commercials', 'Network Promos'].map((type) => (
-                            <div key={type} className="flex items-center justify-between p-3 md:p-4 hover:bg-orange-500/5 rounded-lg transition-colors">
-                              <span className="font-medium text-sm md:text-base">{type}</span>
-                              <Button variant="outline" size="sm" className="min-w-[100px]">
-                                View Details
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                    <div className="space-y-4">
+                      {['Shows & Series', 'Commercials', 'Network Promos'].map((type) => (
+                        <motion.div
+                          key={type}
+                          whileHover={{ x: 5 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{type}</span>
+                            <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                              View Details <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
                   </Card>
-                </div>
-              </TabsContent>
+                </motion.div>
+              </div>
+            </TabsContent>
 
-              {/* Movie Publishing Tab */}
-              <TabsContent value="movies">
-                <div className="grid gap-6 md:gap-8 md:grid-cols-2">
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <FilmIcon className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+            {/* Movies Tab Content */}
+            <TabsContent value="movies">
+              <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-orange-500/10 rounded-2xl">
+                        <FilmIcon className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Movie Sync Licensing</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
+                        <h3 className="text-2xl font-semibold">Movie Sync Licensing</h3>
+                        <p className="text-muted-foreground">
                           Place your music in films and documentaries
                         </p>
                       </div>
                     </div>
-
-                    <div className="space-y-4 md:space-y-6">
+                    <div className="space-y-4">
                       {['Feature Films', 'Independent Movies', 'Documentaries'].map((category) => (
-                        <div key={category} className="p-4 md:p-6 border rounded-lg bg-background/50">
-                          <h4 className="font-medium mb-3 md:mb-4">{category}</h4>
-                          <p className="text-xs md:text-sm text-muted-foreground mb-4">
-                            Explore opportunities and submit your music
-                          </p>
-                          <Button variant="outline" className="w-full md:w-auto">Browse Opportunities</Button>
-                        </div>
+                        <motion.div
+                          key={category}
+                          whileHover={{ x: 5 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{category}</span>
+                            <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                              Browse <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </motion.div>
                       ))}
                     </div>
                   </Card>
-
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Database className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-orange-500/10 rounded-2xl">
+                        <Database className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Music Library</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
+                        <h3 className="text-2xl font-semibold">Music Library</h3>
+                        <p className="text-muted-foreground">
                           Manage your movie-ready tracks
                         </p>
                       </div>
                     </div>
-
-                    <div className="p-4 md:p-6 border rounded-lg bg-background/50 mb-4">
-                      <div className="flex items-center gap-4 mb-4">
-                        <Music2 className="h-5 w-5 text-orange-500" />
-                        <div>
-                          <h4 className="font-medium">Movie-Ready Tracks</h4>
-                          <p className="text-xs md:text-sm text-muted-foreground">Organize and submit your music</p>
+                    <div className="space-y-4">
+                      <motion.div
+                        whileHover={{ y: 5 }}
+                        className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">Movie-Ready Tracks</span>
+                          <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                            Upload Tracks <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                        Upload Tracks
-                      </Button>
+                      </motion.div>
                     </div>
                   </Card>
-                </div>
-              </TabsContent>
+                </motion.div>
+              </div>
+            </TabsContent>
 
-              {/* Movie Music Creator Tools Tab */}
-              <TabsContent value="creator">
-                <div className="grid gap-6 md:gap-8 md:grid-cols-3">
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Music4 className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+
+            {/* Creator Tools Tab Content */}
+            <TabsContent value="creator">
+              <div className="grid gap-6 md:gap-8 md:grid-cols-3">
+                {
+                  [
+                    { icon: Music4, title: "Score Creator", description: "Create and edit movie scores", buttonText: "Launch Score Creator" },
+                    { icon: Volume2, title: "Sound Design", description: "Create custom sound effects", buttonText: "Open Sound Designer" },
+                    { icon: Clock, title: "Timeline Editor", description: "Sync music to video timeline", buttonText: "Open Timeline Editor" }
+                  ].map((tool, index) => (
+                    <motion.div
+                      key={tool.title}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                    >
+                      <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                        <tool.icon className="h-8 w-8 text-orange-500 mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
+                        <p className="text-muted-foreground mb-4">{tool.description}</p>
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                          {tool.buttonText}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Card>
+                    </motion.div>
+                  ))
+                }
+              </div>
+            </TabsContent>
+
+            {/* Contracts Tab Content */}
+            <TabsContent value="contracts">
+              <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-orange-500/10 rounded-2xl">
+                        <FileText className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Score Creator</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                          Create and edit movie scores
-                        </p>
-                      </div>
-                    </div>
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      Launch Score Creator
-                    </Button>
-                  </Card>
-
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Volume2 className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Sound Design</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                          Create custom sound effects
-                        </p>
-                      </div>
-                    </div>
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      Open Sound Designer
-                    </Button>
-                  </Card>
-
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Clock className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Timeline Editor</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                          Sync music to video timeline
-                        </p>
-                      </div>
-                    </div>
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      Open Timeline Editor
-                    </Button>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              {/* Contracts Tab */}
-              <TabsContent value="contracts">
-                <div className="grid gap-6 md:gap-8 md:grid-cols-2">
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <FileText className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Publishing Contracts</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
+                        <h3 className="text-2xl font-semibold">Publishing Contracts</h3>
+                        <p className="text-muted-foreground">
                           Manage your publishing agreements
                         </p>
                       </div>
                     </div>
-
-                    <div className="space-y-4 md:space-y-6">
+                    <div className="space-y-4">
                       {['TV Licensing', 'Movie Sync', 'Radio Broadcasting'].map((type) => (
-                        <div key={type} className="p-4 md:p-6 border rounded-lg bg-background/50">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-medium text-sm md:text-base">{type} Agreement</h4>
+                        <motion.div
+                          key={type}
+                          whileHover={{ x: 5 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{type} Agreement</span>
                             <Badge>Template</Badge>
                           </div>
-                          <div className="flex gap-4 mt-4">
-                            <Button variant="outline" size="sm">Preview</Button>
-                            <Button variant="outline" size="sm">Use Template</Button>
-                          </div>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   </Card>
-
-                  <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4 mb-6 md:mb-8">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <Pen className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-orange-500/10 rounded-2xl">
+                        <Pen className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-xl md:text-2xl font-semibold">Active Contracts</h3>
-                        <p className="text-sm md:text-base text-muted-foreground">
+                        <h3 className="text-2xl font-semibold">Active Contracts</h3>
+                        <p className="text-muted-foreground">
                           Monitor your active agreements
                         </p>
                       </div>
                     </div>
-
-                    <div className="space-y-4 md:space-y-6">
+                    <div className="space-y-4">
                       {['Netflix Series License', 'Universal Pictures Sync', 'BBC Radio License'].map((contract) => (
-                        <div key={contract} className="p-4 md:p-6 border rounded-lg bg-background/50">
-                          <h4 className="font-medium mb-3 md:mb-4">{contract}</h4>
-                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-4">
-                            <Clock className="h-4 w-4" />
-                            <span>Expires in 8 months</span>
+                        <motion.div
+                          key={contract}
+                          whileHover={{ x: 5 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{contract}</span>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>Expires in 8 months</span>
+                            </div>
                           </div>
-                          <Button variant="outline" size="sm">View Details</Button>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   </Card>
-                </div>
-              </TabsContent>
-              {/* AI Assistant Tab */}
-              <TabsContent value="ai">
-                <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center gap-4 mb-6 md:mb-8">
-                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                      <Brain className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                </motion.div>
+              </div>
+            </TabsContent>
+
+            {/* AI Assistant Tab Content */}
+            <TabsContent value="ai">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-4 bg-orange-500/10 rounded-2xl">
+                      <Brain className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-semibold">Publishing AI Assistant</h3>
-                      <p className="text-sm md:text-base text-muted-foreground">
-                        Get AI-powered insights and recommendations for your publishing strategy
+                      <h3 className="text-2xl font-semibold">Publishing AI Assistant</h3>
+                      <p className="text-muted-foreground">
+                        Get AI-powered insights and recommendations
                       </p>
                     </div>
                   </div>
-
-                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                    <div className="space-y-4 md:space-y-6">
-                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all">
                         <h4 className="font-medium mb-4">Ask AI Assistant</h4>
                         <Textarea
                           className="mb-4"
-                          placeholder="Ask about publishing strategies, contract terms, or market insights..."
+                          placeholder="Ask about publishing strategies..."
                           rows={4}
                         />
                         <Button className="w-full bg-orange-500 hover:bg-orange-600">
                           Get AI Response
+                          <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </div>
-
-                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                      <div className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all">
                         <h4 className="font-medium mb-4">Quick Actions</h4>
                         <div className="grid grid-cols-2 gap-4">
-                          <Button variant="outline" className="justify-start">
-                            <FileText className="mr-2 h-4 w-4" />
-                            Analyze Contract
-                          </Button>
-                          <Button variant="outline" className="justify-start">
-                            <TrendingUp className="mr-2 h-4 w-4" />
-                            Market Analysis
-                          </Button>
-                          <Button variant="outline" className="justify-start">
-                            <Calculator className="mr-2 h-4 w-4" />
-                            Royalty Estimator
-                          </Button>
-                          <Button variant="outline" className="justify-start">
-                            <Search className="mr-2 h-4 w-4" />
-                            Opportunity Finder
-                          </Button>
+                          {[
+                            { icon: FileText, text: "Analyze Contract" },
+                            { icon: TrendingUp, text: "Market Analysis" },
+                            { icon: Calculator, text: "Royalty Estimator" },
+                            { icon: Search, text: "Opportunity Finder" }
+                          ].map((action, index) => (
+                            <Button key={index} variant="ghost" className="justify-start hover:bg-orange-500/10">
+                              <action.icon className="mr-2 h-4 w-4" />
+                              {action.text}
+                            </Button>
+                          ))}
                         </div>
                       </div>
                     </div>
-
-                    <div className="space-y-4 md:space-y-6">
-                      <div className="p-4 md:p-6 border rounded-lg bg-background/50">
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all">
                         <h4 className="font-medium mb-4">AI Insights</h4>
-                        <div className="space-y-3 md:space-y-4">
-                          <div className="flex gap-3">
-                            <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
-                            <div>
-                              <p className="font-medium text-sm md:text-base">Publishing Opportunity</p>
-                              <p className="text-xs md:text-sm text-muted-foreground">
-                                Your catalog shows strong potential for TV commercial licensing based on recent trends.
-                              </p>
+                        <div className="space-y-3">
+                          {[
+                            { title: "Publishing Opportunity", description: "Your catalog shows strong potential for TV commercial licensing based on recent trends." },
+                            { title: "Market Strategy", description: "Consider focusing on documentary film scoring based on your recent success rates." }
+                          ].map((insight, index) => (
+                            <div className="flex gap-3" key={index}>
+                              <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
+                              <div>
+                                <p className="font-medium">{insight.title}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {insight.description}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex gap-3">
-                            <Brain className="h-5 w-5 text-orange-500 mt-0.5" />
-                            <div>
-                              <p className="font-medium text-sm md:text-base">Market Strategy</p>
-                              <p className="text-xs md:text-sm text-muted-foreground">
-                                Consider focusing on documentary film scoring based on your recent success rates.
-                              </p>
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     </div>
                   </div>
                 </Card>
-              </TabsContent>
-            </div>
+              </motion.div>
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -474,61 +511,64 @@ export default function RecordLabelServices() {
           </div>
         </div>
 
-        {/* Features Section */}
-        <div className="container mx-auto px-4 py-12 md:py-16">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
-              Comprehensive Revival Tools
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Everything you need to bring classic music into the modern era
-            </p>
+        {/* Features Grid with Modern Cards */}
+        <div className="container mx-auto px-4 py-16 bg-gradient-to-b from-background via-orange-500/5 to-background">
+          <div className="text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
+                Comprehensive Revival Tools
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Everything you need to bring your music into the modern era
+              </p>
+            </motion.div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <Music2 className="h-10 md:h-12 w-10 md:w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg md:text-xl font-semibold mb-2">AI Music Generation</h3>
-              <p className="text-sm md:text-base text-muted-foreground mb-4">
-                Create modern remixes and variations while preserving the original essence
-              </p>
-              <div className="h-[200px] md:h-[300px] overflow-hidden rounded-lg mb-4">
-                {/* MusicAIGenerator Component */}
-              </div>
-            </Card>
-
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <Wand2 className="h-10 md:h-12 w-10 md:w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg md:text-xl font-semibold mb-2">Professional Mastering</h3>
-              <p className="text-sm md:text-base text-muted-foreground mb-4">
-                State-of-the-art AI mastering for perfect sound quality
-              </p>
-              <div className="h-[200px] md:h-[300px] overflow-hidden rounded-lg mb-4">
-                {/* AudioMastering Component */}
-              </div>
-            </Card>
-
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <Video className="h-10 md:h-12 w-10 md:w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg md:text-xl font-semibold mb-2">Video Generation</h3>
-              <p className="text-sm md:text-base text-muted-foreground mb-4">
-                Create compelling music videos for classic tracks
-              </p>
-              <div className="h-[200px] md:h-[300px] overflow-hidden rounded-lg mb-4">
-                {/* MusicVideoAI Component */}
-              </div>
-              <Link href="/music-video-creator">
-                <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                  Open Full Video Creator
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </Card>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Music2,
+                title: "AI Music Generation",
+                description: "Create modern remixes while preserving the original essence"
+              },
+              {
+                icon: Wand2,
+                title: "Professional Mastering",
+                description: "State-of-the-art AI mastering for perfect sound"
+              },
+              {
+                icon: Video,
+                title: "Video Generation",
+                description: "Create compelling music videos with AI"
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Card className="p-6 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5 border-orange-500/20 hover:border-orange-500/40">
+                  <feature.icon className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {feature.description}
+                  </p>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Try Now
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
 
-
-        {/* Nueva sección de Manager Tools */}
+        {/* Manager Tools Section */}
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
@@ -538,79 +578,39 @@ export default function RecordLabelServices() {
               Essential tools for managing your artists and venues
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {/* Venues Catalog */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <MapPin className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Venues Catalog</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Find perfect venues for your events
-                  </p>
-                </div>
-              </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                Find Venues
-              </Button>
-            </Card>
-
-            {/* Venues Booking */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <Calendar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Venues Booking</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Schedule and manage bookings
-                  </p>
-                </div>
-              </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                Book Now
-              </Button>
-            </Card>
-
-            {/* Venues Reports */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <ChartBar className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Venues Reports</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Analytics and performance data
-                  </p>
-                </div>
-              </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                View Reports
-              </Button>
-            </Card>
-
-            {/* Your Artists */}
-            <Card className="p-6 md:p-8 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                  <Users className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold">Your Artists</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Manage your artist roster
-                  </p>
-                </div>
-              </div>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                View Artists
-              </Button>
-            </Card>
+            {/* Manager Tools Cards */}
+            {
+              [
+                { icon: MapPin, title: "Venues Catalog", text: "Find perfect venues for your events", buttonText: "Find Venues" },
+                { icon: Calendar, title: "Venues Booking", text: "Schedule and manage bookings", buttonText: "Book Now" },
+                { icon: ChartBar, title: "Venues Reports", text: "Analytics and performance data", buttonText: "View Reports" },
+                { icon: Users, title: "Your Artists", text: "Manage your artist roster", buttonText: "View Artists" }
+              ].map((tool, index) => (
+                <motion.div
+                  key={tool.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                        <tool.icon className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg md:text-xl font-semibold">{tool.title}</h3>
+                        <p className="text-sm text-muted-foreground">{tool.text}</p>
+                      </div>
+                    </div>
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                      {tool.buttonText}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Card>
+                </motion.div>
+              ))
+            }
           </div>
         </div>
 
@@ -629,17 +629,14 @@ export default function RecordLabelServices() {
               </div>
 
               <Card className="p-4 md:p-8">
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <form className="space-y-4 md:space-y-6">
+                  {/* Registration Form */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="companyName">Company Name</Label>
                       <Input
                         id="companyName"
-                        value={formData.companyName}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          companyName: e.target.value
-                        }))}
+                        type="text"
                         required
                         className="bg-background"
                       />
@@ -648,11 +645,7 @@ export default function RecordLabelServices() {
                       <Label htmlFor="contactName">Contact Name</Label>
                       <Input
                         id="contactName"
-                        value={formData.contactName}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          contactName: e.target.value
-                        }))}
+                        type="text"
                         required
                         className="bg-background"
                       />
@@ -665,11 +658,6 @@ export default function RecordLabelServices() {
                       <Input
                         id="email"
                         type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          email: e.target.value
-                        }))}
                         required
                         className="bg-background"
                       />
@@ -679,11 +667,6 @@ export default function RecordLabelServices() {
                       <Input
                         id="phone"
                         type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          phone: e.target.value
-                        }))}
                         className="bg-background"
                       />
                     </div>
@@ -694,11 +677,6 @@ export default function RecordLabelServices() {
                     <Input
                       id="website"
                       type="url"
-                      value={formData.website}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        website: e.target.value
-                      }))}
                       className="bg-background"
                     />
                   </div>
@@ -707,11 +685,6 @@ export default function RecordLabelServices() {
                     <Label htmlFor="message">Additional Information</Label>
                     <Textarea
                       id="message"
-                      value={formData.message}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        message: e.target.value
-                      }))}
                       placeholder="Tell us about your catalog and what you're looking to achieve"
                       className="min-h-[100px] bg-background"
                     />
@@ -719,6 +692,7 @@ export default function RecordLabelServices() {
 
                   <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
                     Submit Registration
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
 
                   <div className="mt-4 md:mt-6 flex items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground">
