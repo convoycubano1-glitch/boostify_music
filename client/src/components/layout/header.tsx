@@ -22,6 +22,8 @@ export function Header() {
     { name: "Music Videos", href: "/music-video-creator", icon: Video },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
+    // Agregamos Store con highlight
+    { name: "Store", href: "/store", icon: Store, highlight: true },
     { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
     { name: "Merchandise", href: "/merchandise", icon: Store },
     { name: "Spotify", href: "/spotify", icon: Music2 },
@@ -34,7 +36,6 @@ export function Header() {
 
   if (!user) return null;
 
-  // Check if user is admin by checking their email
   const isAdmin = user?.email === 'admin@example.com' || user?.email?.includes('admin');
 
   return (
@@ -69,7 +70,9 @@ export function Header() {
                 <Link 
                   key={item.name} 
                   href={item.href}
-                  className="flex items-center text-sm font-medium transition-colors hover:text-orange-500"
+                  className={`flex items-center text-sm font-medium transition-colors hover:text-orange-500 ${
+                    item.highlight ? 'text-orange-500 bg-orange-500/10 px-3 py-1 rounded-full' : ''
+                  }`}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}
@@ -79,7 +82,6 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Admin Button - Always visible on both mobile and desktop */}
             {isAdmin && (
               <Link href="/admin">
                 <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
@@ -96,7 +98,6 @@ export function Header() {
               </Button>
             </Link>
 
-            {/* Mobile/Tablet Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="lg:hidden">
                 <Button variant="ghost" size="icon">
@@ -107,7 +108,9 @@ export function Header() {
               <DropdownMenuContent align="end" className="w-[300px] max-h-[80vh] overflow-y-auto">
                 {navigation.map((item) => (
                   <Link key={item.name} href={item.href}>
-                    <DropdownMenuItem className="py-3">
+                    <DropdownMenuItem className={`py-3 ${
+                      item.highlight ? 'text-orange-500 bg-orange-500/10' : ''
+                    }`}>
                       <item.icon className="mr-3 h-4 w-4" />
                       <span>{item.name}</span>
                     </DropdownMenuItem>
@@ -119,7 +122,6 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
