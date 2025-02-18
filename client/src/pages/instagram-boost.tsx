@@ -16,10 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import { 
-  Users, 
-  TrendingUp, 
-  MessageCircle, 
+import {
+  Users,
+  TrendingUp,
+  MessageCircle,
   Calendar,
   Brain,
   BarChart2,
@@ -31,7 +31,8 @@ import {
   BadgeCheck,
   Share2,
   Rocket,
-  SendHorizontal
+  SendHorizontal,
+  Globe
 } from "lucide-react";
 import 'react-circular-progressbar/dist/styles.css';
 import {
@@ -103,7 +104,7 @@ export default function InstagramBoostPage() {
       <main className="flex-1 pt-20">
         <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
           {/* Hero Section with Video Background */}
-          <div className="relative w-full h-[50vh] overflow-hidden rounded-xl mb-12">
+          <div className="relative w-full min-h-[60vh] sm:min-h-[70vh] overflow-hidden">
             <video
               autoPlay
               loop
@@ -113,42 +114,45 @@ export default function InstagramBoostPage() {
               src="/assets/instagram_promo.mp4"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-orange-900/90 via-orange-600/80 to-background" />
-            <div className="relative h-full flex items-center justify-start px-8 md:px-12">
-              <div className="max-w-2xl">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <span className="inline-flex items-center rounded-full bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-4">
-                    <Sparkles className="mr-1 h-3 w-3" /> AI-Powered Growth
-                  </span>
-                  <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                    Instagram Growth
-                    <span className="block bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
-                      Reimagined
+            <div className="relative h-full flex items-center">
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-2xl space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <span className="inline-flex items-center rounded-full bg-orange-500/10 px-3 py-1.5 text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-6">
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" /> AI-Powered Growth
                     </span>
-                  </h1>
-                  <p className="text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl">
-                    Transform your Instagram presence with our AI-powered platform. Grow organically and engage authentically.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button 
-                      size="lg" 
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                      <Rocket className="mr-2 h-5 w-5" />
-                      Start Growing
-                    </Button>
-                    <Button 
-                      size="lg" 
-                      variant="outline" 
-                      className="bg-black/50 hover:bg-black/60 border-white/20 text-white"
-                    >
-                      Learn More
-                    </Button>
-                  </div>
-                </motion.div>
+                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+                      Instagram Growth
+                      <span className="block bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
+                        Reimagined
+                      </span>
+                    </h1>
+                    <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl">
+                      Transform your Instagram presence with our AI-powered platform. Grow organically and engage authentically.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Button
+                        size="lg"
+                        className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3"
+                      >
+                        <Rocket className="mr-2 h-5 w-5" />
+                        Start Growing
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full sm:w-auto bg-black/50 hover:bg-black/60 border-white/20 text-white px-6 py-3"
+                      >
+                        Learn More
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </div>
@@ -180,76 +184,30 @@ export default function InstagramBoostPage() {
             </div>
           </motion.div>
 
-          {/* Stats Overview */}
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users className="h-5 w-5 text-orange-500" />
-                    <h3 className="text-lg font-medium">Followers</h3>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold">{stats.followers.toLocaleString()}</p>
+          {/* Stats Grid - Responsive adjustments */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12">
+            {[
+              { icon: Users, label: "Active Users", value: "10K+" },
+              { icon: TrendingUp, label: "Growth Rate", value: "85%" },
+              { icon: MessageCircle, label: "Engagement", value: "95%" },
+              { icon: Globe, label: "Countries", value: "150+" }
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-white/20"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <stat.icon className="h-5 w-5 text-orange-500" />
+                  <h3 className="text-sm font-medium text-white/70">{stat.label}</h3>
                 </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-5 w-5 text-orange-500" />
-                    <h3 className="text-lg font-medium">Engagement Rate</h3>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold">{stats.engagement}%</p>
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="h-5 w-5 text-orange-500" />
-                    <h3 className="text-lg font-medium">Growth Rate</h3>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold">+12%</p>
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageCircle className="h-5 w-5 text-orange-500" />
-                    <h3 className="text-lg font-medium">Engagement</h3>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold">89%</p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
+              </motion.div>
+            ))}
           </div>
+
 
           {/* Main Content */}
           <Tabs defaultValue="community" value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
@@ -378,8 +336,8 @@ export default function InstagramBoostPage() {
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <Input 
-                      placeholder="Search influencers by niche..." 
+                    <Input
+                      placeholder="Search influencers by niche..."
                       className="bg-background border-orange-500/20 focus:border-orange-500"
                     />
                     <div className="space-y-4">
@@ -521,8 +479,8 @@ export default function InstagramBoostPage() {
                       </span>
                       {/* Add more hashtags */}
                     </div>
-                    <Input 
-                      placeholder="Search hashtags..." 
+                    <Input
+                      placeholder="Search hashtags..."
                       className="bg-background border-orange-500/20 focus:border-orange-500"
                     />
                   </div>
