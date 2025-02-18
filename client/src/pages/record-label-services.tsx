@@ -23,7 +23,7 @@ export default function RecordLabelServices() {
       <Header />
       <main className="flex-1 pt-16"> {/* Adjusted pt-16 to fix header overlap */}
         {/* Hero Section with Enhanced Video Background */}
-        <div className="relative w-full min-h-[70vh] overflow-hidden">
+        <div className="relative w-full min-h-[60vh] sm:min-h-[70vh] overflow-hidden">
           <video
             autoPlay
             loop
@@ -41,24 +41,24 @@ export default function RecordLabelServices() {
               transition={{ duration: 0.6 }}
               className="max-w-2xl"
             >
-              <span className="inline-flex items-center rounded-full bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-4">
+              <span className="inline-flex items-center rounded-full bg-orange-500/10 px-2 py-1 text-xs sm:text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-4">
                 <Sparkles className="mr-1 h-3 w-3" /> New Features Available
               </span>
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
                 Publishing & Licensing <br />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-purple-400">
                   Reimagined
                 </span>
               </h1>
-              <p className="text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl">
+              <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 font-medium max-w-xl">
                 Transform your music rights management with our AI-powered platform. Explore new opportunities across multiple media channels.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
+                <Button size="lg" className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600">
                   Start Publishing
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10">
                   Watch Demo
                   <Play className="ml-2 h-4 w-4" />
                 </Button>
@@ -93,9 +93,9 @@ export default function RecordLabelServices() {
         </div>
 
         {/* Mobile Stats Section */}
-        <div className="lg:hidden bg-gradient-to-b from-background to-orange-500/5 py-8">
+        <div className="lg:hidden bg-gradient-to-b from-background to-orange-500/5 py-6 sm:py-8">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {[
                 { label: "Active Artists", value: "2,500+" },
                 { label: "Songs Published", value: "10,000+" },
@@ -107,10 +107,10 @@ export default function RecordLabelServices() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20"
+                  className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-white/20"
                 >
-                  <p className="text-xl sm:text-2xl font-bold text-white mb-2">{stat.value}</p>
-                  <p className="text-sm text-white/70">{stat.label}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">{stat.value}</p>
+                  <p className="text-xs sm:text-sm text-white/70">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -118,69 +118,74 @@ export default function RecordLabelServices() {
         </div>
 
         {/* Services Tabs with Modern Design */}
-        <div className="container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 py-8 sm:py-16">
           <Tabs
             defaultValue={selectedTab}
             value={selectedTab}
             onValueChange={setSelectedTab}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="flex justify-center">
-              <TabsList className="inline-flex p-1 bg-background/50 backdrop-blur-sm rounded-full border border-orange-500/20 overflow-x-auto">
+            <div className="flex justify-start sm:justify-center overflow-x-auto pb-2 sm:pb-0">
+              <TabsList className="inline-flex p-1 bg-background/50 backdrop-blur-sm rounded-full border border-orange-500/20">
                 <TabsTrigger
                   value="radio-tv"
-                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                  className="rounded-full px-3 sm:px-6 py-2 data-[state=active]:bg-orange-500 whitespace-nowrap text-sm"
                 >
-                  <Radio className="w-4 h-4 mr-2" />
-                  <span>Radio & TV</span>
+                  <Radio className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Radio & TV</span>
+                  <span className="sm:hidden">Radio</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="movies"
-                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                  className="rounded-full px-3 sm:px-6 py-2 data-[state=active]:bg-orange-500 whitespace-nowrap text-sm"
                 >
-                  <Film className="w-4 h-4 mr-2" />
-                  <span>Movies</span>
+                  <Film className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Movies</span>
+                  <span className="sm:hidden">Movies</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="creator"
-                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                  className="rounded-full px-3 sm:px-6 py-2 data-[state=active]:bg-orange-500 whitespace-nowrap text-sm"
                 >
-                  <Music4 className="w-4 h-4 mr-2" />
-                  <span>Creator Tools</span>
+                  <Music4 className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Creator Tools</span>
+                  <span className="sm:hidden">Tools</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="contracts"
-                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                  className="rounded-full px-3 sm:px-6 py-2 data-[state=active]:bg-orange-500 whitespace-nowrap text-sm"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  <span>Contracts</span>
+                  <FileText className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Contracts</span>
+                  <span className="sm:hidden">Contracts</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="ai"
-                  className="rounded-full px-6 py-2 data-[state=active]:bg-orange-500"
+                  className="rounded-full px-3 sm:px-6 py-2 data-[state=active]:bg-orange-500 whitespace-nowrap text-sm"
                 >
-                  <Brain className="w-4 h-4 mr-2" />
-                  <span>AI Assistant</span>
+                  <Brain className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">AI Assistant</span>
+                  <span className="sm:hidden">AI</span>
                 </TabsTrigger>
               </TabsList>
             </div>
 
             {/* Radio & TV Content */}
             <TabsContent value="radio-tv">
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-orange-500/10 rounded-2xl">
                         <Radio className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Radio Publishing</h3>
-                        <p className="text-muted-foreground">
+                        <h3 className="text-xl sm:text-2xl font-semibold">Radio Publishing</h3>
+                        <p className="text-sm text-muted-foreground">
                           Expand your reach through radio networks
                         </p>
                       </div>
@@ -210,14 +215,14 @@ export default function RecordLabelServices() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-orange-500/10 rounded-2xl">
                         <Tv className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">TV Licensing</h3>
-                        <p className="text-muted-foreground">
+                        <h3 className="text-xl sm:text-2xl font-semibold">TV Licensing</h3>
+                        <p className="text-sm text-muted-foreground">
                           License your music for television
                         </p>
                       </div>
@@ -246,20 +251,20 @@ export default function RecordLabelServices() {
 
             {/* Movies Tab Content */}
             <TabsContent value="movies">
-              <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-2">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-orange-500/10 rounded-2xl">
                         <FilmIcon className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Movie Sync Licensing</h3>
-                        <p className="text-muted-foreground">
+                        <h3 className="text-xl sm:text-2xl font-semibold">Movie Sync Licensing</h3>
+                        <p className="text-sm text-muted-foreground">
                           Place your music in films and documentaries
                         </p>
                       </div>
@@ -287,14 +292,14 @@ export default function RecordLabelServices() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-orange-500/10 rounded-2xl">
                         <Database className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Music Library</h3>
-                        <p className="text-muted-foreground">
+                        <h3 className="text-xl sm:text-2xl font-semibold">Music Library</h3>
+                        <p className="text-sm text-muted-foreground">
                           Manage your movie-ready tracks
                         </p>
                       </div>
@@ -320,7 +325,7 @@ export default function RecordLabelServices() {
 
             {/* Creator Tools Tab Content */}
             <TabsContent value="creator">
-              <div className="grid gap-6 md:gap-8 md:grid-cols-3">
+              <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-3">
                 {
                   [
                     { icon: Music4, title: "Score Creator", description: "Create and edit movie scores", buttonText: "Launch Score Creator" },
@@ -333,10 +338,10 @@ export default function RecordLabelServices() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                     >
-                      <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                      <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                         <tool.icon className="h-8 w-8 text-orange-500 mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
-                        <p className="text-muted-foreground mb-4">{tool.description}</p>
+                        <h3 className="text-lg sm:text-xl font-semibold mb-2">{tool.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
                         <Button className="w-full bg-orange-500 hover:bg-orange-600">
                           {tool.buttonText}
                           <ArrowRight className="ml-2 h-4 w-4" />
@@ -350,20 +355,20 @@ export default function RecordLabelServices() {
 
             {/* Contracts Tab Content */}
             <TabsContent value="contracts">
-              <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-2">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-orange-500/10 rounded-2xl">
                         <FileText className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Publishing Contracts</h3>
-                        <p className="text-muted-foreground">
+                        <h3 className="text-xl sm:text-2xl font-semibold">Publishing Contracts</h3>
+                        <p className="text-sm text-muted-foreground">
                           Manage your publishing agreements
                         </p>
                       </div>
@@ -389,14 +394,14 @@ export default function RecordLabelServices() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-orange-500/10 rounded-2xl">
                         <Pen className="h-8 w-8 text-orange-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-semibold">Active Contracts</h3>
-                        <p className="text-muted-foreground">
+                        <h3 className="text-xl sm:text-2xl font-semibold">Active Contracts</h3>
+                        <p className="text-sm text-muted-foreground">
                           Monitor your active agreements
                         </p>
                       </div>
@@ -430,19 +435,19 @@ export default function RecordLabelServices() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <Card className="p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                <Card className="p-4 sm:p-8 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="p-4 bg-orange-500/10 rounded-2xl">
                       <Brain className="h-8 w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-semibold">Publishing AI Assistant</h3>
-                      <p className="text-muted-foreground">
+                      <h3 className="text-xl sm:text-2xl font-semibold">Publishing AI Assistant</h3>
+                      <p className="text-sm text-muted-foreground">
                         Get AI-powered insights and recommendations
                       </p>
                     </div>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-4">
                       <div className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all">
                         <h4 className="font-medium mb-4">Ask AI Assistant</h4>
@@ -458,7 +463,7 @@ export default function RecordLabelServices() {
                       </div>
                       <div className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all">
                         <h4 className="font-medium mb-4">Quick Actions</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4 sm:gap-6">
                           {[
                             { icon: FileText, text: "Analyze Contract" },
                             { icon: TrendingUp, text: "Market Analysis" },
@@ -577,10 +582,10 @@ export default function RecordLabelServices() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="p-6 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5 border-orange-500/20 hover:border-orange-500/40">
+                <Card className="p-4 sm:p-6 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5 border-orange-500/20 hover:border-orange-500/40">
                   <feature.icon className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
                     {feature.description}
                   </p>
                   <Button className="w-full bg-orange-500 hover:bg-orange-600">
@@ -608,7 +613,7 @@ export default function RecordLabelServices() {
             {
               [
                 { icon: MapPin, title: "Venues Catalog", text: "Find perfect venues for your events", buttonText: "Find Venues" },
-                { icon: Calendar, title: "Venues Booking", text: "Schedule and manage bookings", buttonText: "Book Now" },
+                { icon: Calendar, title: "Venues Booking", text: "Scheduleand manage bookings", buttonText: "Book Now" },
                 { icon: ChartBar, title: "Venues Reports", text: "Analytics and performance data", buttonText: "View Reports" },
                 { icon: Users, title: "Your Artists", text: "Manage your artist roster", buttonText: "View Artists" }
               ].map((tool, index) => (
@@ -618,7 +623,7 @@ export default function RecordLabelServices() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <Card className="p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
+                  <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
                         <tool.icon className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
