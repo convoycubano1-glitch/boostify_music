@@ -176,15 +176,21 @@ export function Footer() {
               © {new Date().getFullYear()} Boostify Music. All rights reserved.
             </p>
             <div className="flex gap-4">
-              <Button variant="ghost" size="sm">
-                Terms
-              </Button>
-              <Button variant="ghost" size="sm">
-                Privacy
-              </Button>
-              <Button variant="ghost" size="sm">
-                Cookies
-              </Button>
+              <Link href="/terms">
+                <Button variant="ghost" size="sm">
+                  Terms
+                </Button>
+              </Link>
+              <Link href="/privacy">
+                <Button variant="ghost" size="sm">
+                  Privacy
+                </Button>
+              </Link>
+              <Link href="/cookies">
+                <Button variant="ghost" size="sm">
+                  Cookies
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
