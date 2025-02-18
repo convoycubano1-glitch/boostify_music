@@ -130,7 +130,7 @@ const ContentSection = ({ activeTab, setActiveTab }: ContentSectionProps) => (
           <Bot className="h-4 w-4 mr-2" />
           AI Video Creation
         </Button>
-  que     </div>
+      </div>
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
       <div className="lg:col-span-2 order-2 lg:order-1">
