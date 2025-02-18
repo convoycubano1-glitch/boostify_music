@@ -117,7 +117,7 @@ export default function Dashboard() {
       name: "AI Video Creation",
       description: "Generate videos with AI",
       icon: Bot,
-      route: "/ai-video-creator",
+      route: "/music-video-creator", 
       stats: metrics.aiVideos,
       statsLabel: "AI Videos",
       color: "text-cyan-500",
