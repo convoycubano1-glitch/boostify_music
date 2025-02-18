@@ -7,50 +7,51 @@ export default function PrivacyPage() {
       <main className="container mx-auto px-4 py-16 pt-24">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
-          
+
           <div className="prose dark:prose-invert">
             <h2>1. Information We Collect</h2>
             <p>
-              We collect information that you provide directly to us, including when you register for an account, make a purchase, or communicate with us.
-            </p>
-
-            <h2>2. How We Use Your Information</h2>
-            <p>
-              We use the information we collect to:
+              We collect information you provide when you:
             </p>
             <ul>
-              <li>Provide, maintain, and improve our services</li>
-              <li>Process your transactions</li>
-              <li>Send you technical notices and support messages</li>
-              <li>Communicate with you about products, services, and events</li>
-              <li>Monitor and analyze trends and usage</li>
+              <li>Create an account</li>
+              <li>Upload content</li>
+              <li>Use our services</li>
+              <li>Contact support</li>
             </ul>
 
-            <h2>3. Information Sharing</h2>
+            <h2>2. How We Use Your Data</h2>
             <p>
-              We do not share your personal information with third parties except as described in this privacy policy or with your consent.
-            </p>
-
-            <h2>4. Data Security</h2>
-            <p>
-              We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction.
-            </p>
-
-            <h2>5. Your Rights</h2>
-            <p>
-              You have the right to:
+              Your data helps us:
             </p>
             <ul>
-              <li>Access your personal information</li>
-              <li>Correct inaccurate data</li>
-              <li>Request deletion of your data</li>
-              <li>Object to data processing</li>
-              <li>Request data portability</li>
+              <li>Provide our services to you</li>
+              <li>Improve our platform</li>
+              <li>Send important updates</li>
+              <li>Protect your account</li>
+              <li>Analyze usage patterns</li>
             </ul>
 
-            <h2>6. Updates to Privacy Policy</h2>
+            <h2>3. Data Protection</h2>
             <p>
-              We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page.
+              We protect your data using industry-standard security measures. This includes encryption and secure servers.
+            </p>
+
+            <h2>4. Your Rights</h2>
+            <p>
+              You can:
+            </p>
+            <ul>
+              <li>See your data</li>
+              <li>Change your information</li>
+              <li>Delete your account</li>
+              <li>Control your privacy settings</li>
+              <li>Opt out of marketing</li>
+            </ul>
+
+            <h2>5. Questions?</h2>
+            <p>
+              Contact our privacy team if you have questions about your data or this policy.
             </p>
           </div>
         </div>

@@ -7,46 +7,58 @@ export default function TermsPage() {
       <main className="container mx-auto px-4 py-16 pt-24">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Terms of Service</h1>
-          
+
           <div className="prose dark:prose-invert">
-            <h2>1. Acceptance of Terms</h2>
+            <h2>1. Your Agreement</h2>
             <p>
-              By accessing and using this website, you accept and agree to be bound by the terms and provision of this agreement.
+              By using Boostify Music, you agree to these terms. Please read them carefully before using our services.
             </p>
 
-            <h2>2. Use License</h2>
+            <h2>2. Account Creation</h2>
             <p>
-              Permission is granted to temporarily download one copy of the materials (information or software) on Boostify's website for personal, non-commercial transitory viewing only.
+              To use our services, you must create an account with accurate information. Keep your login details secure and don't share them with others.
             </p>
 
-            <h2>3. User Account</h2>
+            <h2>3. Our Services</h2>
             <p>
-              To access certain features of the platform, you must register for an account. You agree to provide accurate information and keep it updated.
+              We provide music marketing and promotion tools. Services include:
+            </p>
+            <ul>
+              <li>Social media promotion</li>
+              <li>Music distribution</li>
+              <li>Analytics and tracking</li>
+              <li>Artist branding tools</li>
+            </ul>
+
+            <h2>4. Your Content</h2>
+            <p>
+              When you upload content to our platform, you keep your rights but give us permission to use it to provide our services.
             </p>
 
-            <h2>4. Service Description</h2>
+            <h2>5. Payments</h2>
             <p>
-              Boostify provides a platform for music marketing and promotion services. We reserve the right to modify, suspend, or discontinue any aspect of our services at any time.
+              All prices are in USD. You agree to pay for services according to our current pricing. We process payments securely through trusted providers.
             </p>
 
-            <h2>5. Payment Terms</h2>
+            <h2>6. Rules of Use</h2>
             <p>
-              All fees are in USD unless otherwise stated. You agree to pay all applicable fees according to the pricing terms in effect when the fee becomes payable.
+              You agree not to:
+            </p>
+            <ul>
+              <li>Share harmful content</li>
+              <li>Violate others' rights</li>
+              <li>Misuse our platform</li>
+              <li>Share false information</li>
+            </ul>
+
+            <h2>7. Service Changes</h2>
+            <p>
+              We may update our services and these terms. We'll notify you about important changes via email or our platform.
             </p>
 
-            <h2>6. Intellectual Property</h2>
+            <h2>8. Contact Us</h2>
             <p>
-              The Service and its original content, features, and functionality are owned by Boostify and are protected by international copyright, trademark, and other intellectual property laws.
-            </p>
-
-            <h2>7. Limitation of Liability</h2>
-            <p>
-              In no event shall Boostify be liable for any indirect, incidental, special, consequential or punitive damages arising out of or relating to your use of the service.
-            </p>
-
-            <h2>8. Changes to Terms</h2>
-            <p>
-              We reserve the right to modify these terms at any time. We will notify users of any material changes via email or through the platform.
+              If you have questions about these terms, please contact our support team.
             </p>
           </div>
         </div>
