@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
 import { aiAgentChat } from '@/lib/openai';
 
 interface Message {
@@ -14,13 +13,69 @@ interface Message {
 }
 
 const questions = [
-  "What's your current stage as an artist? (e.g., just starting, have released music, touring)",
-  "How many songs have you released so far?",
-  "Do you have a team? (manager, PR, etc.)",
-  "What's your monthly budget for music promotion?",
-  "What are your main goals for the next 6 months?",
-  "Which platforms are you most active on?",
-  "What genre best describes your music?",
+  {
+    question: "What's your current stage as an artist?",
+    options: [
+      "Just starting out",
+      "Released some music",
+      "Actively touring",
+      "Established artist"
+    ]
+  },
+  {
+    question: "How many songs have you released so far?",
+    options: [
+      "None yet",
+      "1-3 songs",
+      "4-10 songs",
+      "More than 10 songs"
+    ]
+  },
+  {
+    question: "Do you have a team?",
+    options: [
+      "Solo artist, no team",
+      "Working with a manager",
+      "Have PR and management",
+      "Full professional team"
+    ]
+  },
+  {
+    question: "What's your monthly budget for music promotion?",
+    options: [
+      "Under $100",
+      "$100-$500",
+      "$500-$2000",
+      "Over $2000"
+    ]
+  },
+  {
+    question: "What are your main goals for the next 6 months?",
+    options: [
+      "Release first single/EP",
+      "Grow streaming numbers",
+      "Book more live shows",
+      "Build industry connections"
+    ]
+  },
+  {
+    question: "Which platforms are you most active on?",
+    options: [
+      "Instagram/TikTok",
+      "YouTube",
+      "Spotify/Apple Music",
+      "All platforms equally"
+    ]
+  },
+  {
+    question: "What genre best describes your music?",
+    options: [
+      "Pop",
+      "Hip-Hop/Rap",
+      "Rock/Alternative",
+      "Electronic/Dance"
+    ]
+  }
 ];
 
 export function SuperAgent() {
@@ -29,24 +84,20 @@ export function SuperAgent() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [userInput, setUserInput] = useState('');
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [plan, setPlan] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
-  const handleSendMessage = async () => {
-    if (!userInput.trim()) return;
-
-    setAnswers(prev => ({ ...prev, [currentQuestion]: userInput }));
-    const newMessages = [...messages, { role: 'user' as const, content: userInput }];
+  const handleOptionSelect = async (option: string) => {
+    setAnswers(prev => ({ ...prev, [currentQuestion]: option }));
+    const newMessages = [...messages, { role: 'user' as const, content: option }];
     setMessages(newMessages);
-    setUserInput('');
     setIsTyping(true);
 
     try {
       const response = await aiAgentChat([
-        { role: 'user' as const, content: questions[currentQuestion] },
-        { role: 'user' as const, content: userInput }
+        { role: 'user' as const, content: questions[currentQuestion].question },
+        { role: 'user' as const, content: option }
       ]);
       setMessages([...newMessages, { role: 'assistant' as const, content: response }]);
 
@@ -68,7 +119,7 @@ export function SuperAgent() {
     setProgress(90);
     try {
       const prompt = `Based on the following information about the artist, create a detailed career development plan:
-      ${Object.entries(answers).map(([q, a]) => `${questions[parseInt(q)]}: ${a}`).join('\n')}
+      ${Object.entries(answers).map(([q, a]) => `${questions[parseInt(q)].question}: ${a}`).join('\n')}
 
       Please provide a structured plan with:
       1. Immediate Actions (Next 30 days)
@@ -105,12 +156,10 @@ export function SuperAgent() {
 
   const handleClose = () => {
     setIsOpen(false);
-    // Reset state after animation completes
     setTimeout(() => {
       setMessages([]);
       setCurrentQuestion(0);
       setProgress(0);
-      setUserInput('');
       setIsGeneratingPlan(false);
       setPlan(null);
       setAnswers({});
@@ -141,143 +190,136 @@ export function SuperAgent() {
             exit={{ opacity: 0, y: 20 }}
             className="fixed inset-x-4 bottom-24 md:inset-auto md:bottom-24 md:right-6 z-50 md:w-[400px]"
           >
-            <Card className="p-4 shadow-xl border-orange-500/20 relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
+            <Card className="relative shadow-xl border-orange-500/20">
+              {/* Nuevo botón de cerrar en la esquina superior derecha */}
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleClose}
+                className="absolute top-2 right-2 hover:bg-orange-500/10 z-10"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-6">
                   <Bot className="h-5 w-5 text-orange-500" />
                   <h3 className="font-semibold text-sm md:text-base">Career Development Agent</h3>
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleClose}
-                  className="hover:bg-orange-500/10"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{Math.round(progress)}%</span>
+                <div className="space-y-4 mb-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium">{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
                   </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
 
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { icon: Star, label: "Profile" },
-                    { icon: Music2, label: "Goals" },
-                    { icon: BarChart2, label: "Analysis" },
-                    { icon: Sparkles, label: "Plan" }
-                  ].map((item, index) => {
-                    const isActive = progress >= (index + 1) * 25;
-                    return (
-                      <div
-                        key={item.label}
-                        className={`flex flex-col items-center p-2 rounded-lg transition-all duration-300 ${
-                          isActive ? 'bg-orange-500/20' : 'bg-background/50'
-                        }`}
-                      >
-                        <item.icon
-                          className={`h-5 w-5 mb-1 transition-colors duration-300 ${
-                            isActive ? 'text-orange-500' : 'text-muted-foreground'
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { icon: Star, label: "Profile" },
+                      { icon: Music2, label: "Goals" },
+                      { icon: BarChart2, label: "Analysis" },
+                      { icon: Sparkles, label: "Plan" }
+                    ].map((item, index) => {
+                      const isActive = progress >= (index + 1) * 25;
+                      return (
+                        <div
+                          key={item.label}
+                          className={`flex flex-col items-center p-2 rounded-lg transition-all duration-300 ${
+                            isActive ? 'bg-orange-500/20' : 'bg-background/50'
                           }`}
-                        />
-                        <span className="text-xs text-muted-foreground">{item.label}</span>
-                      </div>
-                    );
-                  })}
+                        >
+                          <item.icon
+                            className={`h-5 w-5 mb-1 transition-colors duration-300 ${
+                              isActive ? 'text-orange-500' : 'text-muted-foreground'
+                            }`}
+                          />
+                          <span className="text-xs text-muted-foreground">{item.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <ScrollArea className="h-[40vh] md:h-[300px] pr-4 mb-4">
-                <div className="space-y-4">
-                  {messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className={`max-w-[85%] rounded-lg p-3 text-sm md:text-base ${
-                          message.role === 'user'
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-orange-500/10 text-foreground'
+                <ScrollArea className="h-[40vh] md:h-[300px] pr-4 mb-4">
+                  <div className="space-y-4">
+                    {messages.map((message, index) => (
+                      <div
+                        key={index}
+                        className={`flex ${
+                          message.role === 'user' ? 'justify-end' : 'justify-start'
                         }`}
                       >
-                        {message.content}
-                      </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className={`max-w-[85%] rounded-lg p-3 text-sm md:text-base ${
+                            message.role === 'user'
+                              ? 'bg-orange-500 text-white'
+                              : 'bg-orange-500/10 text-foreground'
+                          }`}
+                        >
+                          {message.content}
+                        </motion.div>
+                      </div>
+                    ))}
+                    {isTyping && (
+                      <div className="flex justify-start">
+                        <motion.div
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                          className="bg-orange-500/10 rounded-lg p-3"
+                        >
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </motion.div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+
+                {!isGeneratingPlan && !plan && (
+                  <div className="space-y-4">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-sm md:text-base font-medium mb-3"
+                    >
+                      {questions[currentQuestion].question}
+                    </motion.div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {questions[currentQuestion].options.map((option, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="w-full justify-start text-left hover:bg-orange-500/10 hover:text-orange-500 transition-colors"
+                          onClick={() => handleOptionSelect(option)}
+                        >
+                          {option}
+                        </Button>
+                      ))}
                     </div>
-                  ))}
-                  {isTyping && (
-                    <div className="flex justify-start">
-                      <motion.div
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                        className="bg-orange-500/10 rounded-lg p-3"
-                      >
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      </motion.div>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+                  </div>
+                )}
 
-              {!isGeneratingPlan && !plan && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-sm md:text-base text-muted-foreground mb-4 p-3 bg-orange-500/5 rounded-lg border border-orange-500/10"
-                >
-                  {questions[currentQuestion]}
-                </motion.div>
-              )}
-
-              {!plan && (
-                <div className="flex gap-2">
-                  <Textarea
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    placeholder="Type your answer..."
-                    className="resize-none text-sm md:text-base"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  <Button
-                    className="bg-orange-500 hover:bg-orange-600"
-                    onClick={handleSendMessage}
+                {plan && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4"
                   >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-
-              {plan && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-4"
-                >
-                  <Button
-                    className="w-full bg-orange-500 hover:bg-orange-600 gap-2 text-sm md:text-base"
-                    onClick={downloadPlan}
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Career Plan
-                  </Button>
-                </motion.div>
-              )}
+                    <Button
+                      className="w-full bg-orange-500 hover:bg-orange-600 gap-2 text-sm md:text-base"
+                      onClick={downloadPlan}
+                    >
+                      <Download className="h-4 w-4" />
+                      Download Career Plan
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
             </Card>
           </motion.div>
         )}
