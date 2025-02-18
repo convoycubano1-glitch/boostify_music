@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bot, X, Download, Send, Loader2, Star, Sparkles, Music2, BarChart2 } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, X, Download, Loader2, Star, Sparkles, Music2, BarChart2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -188,35 +188,33 @@ export function SuperAgent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-x-4 bottom-24 md:inset-auto md:bottom-24 md:right-6 z-50 md:w-[400px]"
+            className="fixed inset-x-4 bottom-24 md:inset-auto md:bottom-24 md:right-6 z-50 md:w-[350px]"
           >
             <Card className="relative shadow-xl border-orange-500/20">
-              {/* Nuevo botón de cerrar en la esquina superior derecha */}
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleClose}
-                className="absolute top-2 right-2 hover:bg-orange-500/10 z-10"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-6">
-                  <Bot className="h-5 w-5 text-orange-500" />
-                  <h3 className="font-semibold text-sm md:text-base">Career Development Agent</h3>
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-orange-500" />
+                    <h3 className="text-sm font-medium">Career Development Agent</h3>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleClose}
+                    className="hover:bg-orange-500/10 h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
 
-                <div className="space-y-4 mb-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{Math.round(progress)}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2" />
+                <div className="space-y-3 mb-4">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">{Math.round(progress)}%</span>
                   </div>
+                  <Progress value={progress} className="h-1" />
 
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-1">
                     {[
                       { icon: Star, label: "Profile" },
                       { icon: Music2, label: "Goals" },
@@ -227,24 +225,24 @@ export function SuperAgent() {
                       return (
                         <div
                           key={item.label}
-                          className={`flex flex-col items-center p-2 rounded-lg transition-all duration-300 ${
+                          className={`flex flex-col items-center p-1 rounded-lg transition-all duration-300 ${
                             isActive ? 'bg-orange-500/20' : 'bg-background/50'
                           }`}
                         >
                           <item.icon
-                            className={`h-5 w-5 mb-1 transition-colors duration-300 ${
+                            className={`h-4 w-4 mb-1 transition-colors duration-300 ${
                               isActive ? 'text-orange-500' : 'text-muted-foreground'
                             }`}
                           />
-                          <span className="text-xs text-muted-foreground">{item.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{item.label}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                <ScrollArea className="h-[40vh] md:h-[300px] pr-4 mb-4">
-                  <div className="space-y-4">
+                <ScrollArea className="h-[35vh] md:h-[250px] pr-4 mb-3">
+                  <div className="space-y-3">
                     {messages.map((message, index) => (
                       <div
                         key={index}
@@ -256,7 +254,7 @@ export function SuperAgent() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3 }}
-                          className={`max-w-[85%] rounded-lg p-3 text-sm md:text-base ${
+                          className={`max-w-[85%] rounded-lg p-2 text-xs ${
                             message.role === 'user'
                               ? 'bg-orange-500 text-white'
                               : 'bg-orange-500/10 text-foreground'
@@ -271,9 +269,9 @@ export function SuperAgent() {
                         <motion.div
                           animate={{ opacity: [0.5, 1, 0.5] }}
                           transition={{ repeat: Infinity, duration: 1.5 }}
-                          className="bg-orange-500/10 rounded-lg p-3"
+                          className="bg-orange-500/10 rounded-lg p-2"
                         >
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         </motion.div>
                       </div>
                     )}
@@ -281,20 +279,21 @@ export function SuperAgent() {
                 </ScrollArea>
 
                 {!isGeneratingPlan && !plan && (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-sm md:text-base font-medium mb-3"
+                      className="text-xs font-medium mb-2"
                     >
                       {questions[currentQuestion].question}
                     </motion.div>
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="grid grid-cols-1 gap-1.5">
                       {questions[currentQuestion].options.map((option, index) => (
                         <Button
                           key={index}
                           variant="outline"
-                          className="w-full justify-start text-left hover:bg-orange-500/10 hover:text-orange-500 transition-colors"
+                          size="sm"
+                          className="w-full justify-start text-left text-xs hover:bg-orange-500/10 hover:text-orange-500 transition-colors h-8"
                           onClick={() => handleOptionSelect(option)}
                         >
                           {option}
@@ -308,13 +307,14 @@ export function SuperAgent() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-4"
+                    className="mt-3"
                   >
                     <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600 gap-2 text-sm md:text-base"
+                      size="sm"
+                      className="w-full bg-orange-500 hover:bg-orange-600 gap-2 text-xs h-8"
                       onClick={downloadPlan}
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="h-3 w-3" />
                       Download Career Plan
                     </Button>
                   </motion.div>
