@@ -18,11 +18,23 @@ export function ManagerAgent() {
   const simulateThinking = async () => {
     setIsThinking(true);
     setProgress(0);
+    setSteps([]);
 
-    // Simulate progress steps
-    for (let i = 0; i <= 100; i += 20) {
-      setProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    const simulatedSteps = [
+      "Initializing analysis engine...",
+      "Loading historical data...",
+      "Processing market trends...",
+      "Generating strategic insights...",
+      "Optimizing recommendations..."
+    ];
+
+    for (let i = 0; i < simulatedSteps.length; i++) {
+      setSteps(prev => [...prev, {
+        message: simulatedSteps[i],
+        timestamp: new Date()
+      }]);
+      setProgress((i + 1) * 20);
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
     setIsThinking(false);
@@ -121,11 +133,11 @@ export function ManagerAgent() {
       theme={theme}
       helpText="As your Executive Manager, I handle optimizing every aspect of your music career. With my expertise in data analysis and strategic planning, I'll help you make informed decisions and achieve your professional goals. Let's take your career to the next level! 📈"
     >
-      {isThinking && (
+      {(isThinking || steps.length > 0) && (
         <ProgressIndicator
           steps={steps}
           progress={progress}
-          isThinking={true}
+          isThinking={isThinking}
           isComplete={progress === 100}
         />
       )}
