@@ -155,6 +155,25 @@ export function ProgressIndicator({
           )}
         </div>
       </ScrollArea>
+
+      {/* Animated background blur effect when thinking */}
+      {isThinking && (
+        <motion.div
+          className="absolute inset-0 -z-10"
+          initial={{ opacity: 0 }}
+          animate={{ 
+            opacity: [0.3, 0.15, 0.3],
+            scale: [1, 1.02, 1]
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-blue-500/20 rounded-xl blur-xl" />
+        </motion.div>
+      )}
     </motion.div>
   );
 }
