@@ -109,10 +109,10 @@ export default function InstagramBoostPage() {
               loop
               muted
               playsInline
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover opacity-50"
               src="/assets/instagram_promo.mp4"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-900/90 via-orange-600/80 to-background" />
             <div className="relative h-full flex items-center justify-start px-8 md:px-12">
               <div className="max-w-2xl">
                 <motion.div
@@ -120,19 +120,22 @@ export default function InstagramBoostPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                    Boost Your{" "}
-                    <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-                      Instagram
+                  <span className="inline-flex items-center rounded-full bg-orange-500/10 px-3 py-1 text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-4">
+                    <Sparkles className="mr-1 h-3 w-3" /> AI-Powered Growth
+                  </span>
+                  <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                    Instagram Growth
+                    <span className="block bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
+                      Reimagined
                     </span>
                   </h1>
-                  <p className="text-lg md:text-xl text-gray-200 mb-8">
-                    Grow your Instagram presence with AI-powered tools, community management, and strategic promotion
+                  <p className="text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl">
+                    Transform your Instagram presence with our AI-powered platform. Grow organically and engage authentically.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Button 
                       size="lg" 
-                      className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
                     >
                       <Rocket className="mr-2 h-5 w-5" />
                       Start Growing
@@ -157,9 +160,9 @@ export default function InstagramBoostPage() {
             className="flex items-center justify-between"
           >
             <div className="flex items-center gap-4">
-              <SiInstagram className="w-12 h-12 text-pink-500" />
+              <SiInstagram className="w-12 h-12 text-orange-500" />
               <div>
-                <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                   Instagram Growth Suite
                 </h2>
                 <p className="text-muted-foreground mt-2">
@@ -178,156 +181,180 @@ export default function InstagramBoostPage() {
           </motion.div>
 
           {/* Stats Overview */}
-          <div className="grid gap-6 md:grid-cols-4">
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-pink-500/10">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-transparent" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="h-5 w-5 text-pink-500" />
-                  <h3 className="text-lg font-medium">Followers</h3>
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-lg font-medium">Followers</h3>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold">{stats.followers.toLocaleString()}</p>
                 </div>
-                <p className="text-3xl font-bold">{stats.followers.toLocaleString()}</p>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
 
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-pink-500/10">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-transparent" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-5 w-5 text-pink-500" />
-                  <h3 className="text-lg font-medium">Engagement Rate</h3>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-lg font-medium">Engagement Rate</h3>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold">{stats.engagement}%</p>
                 </div>
-                <p className="text-3xl font-bold">{stats.engagement}%</p>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
 
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-pink-500/10">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-transparent" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-5 w-5 text-pink-500" />
-                  <h3 className="text-lg font-medium">Growth Rate</h3>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-lg font-medium">Growth Rate</h3>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold">+12%</p>
                 </div>
-                <p className="text-3xl font-bold">+12%</p>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
 
-            <Card className="p-6 relative overflow-hidden backdrop-blur-sm border-pink-500/10">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-transparent" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageCircle className="h-5 w-5 text-pink-500" />
-                  <h3 className="text-lg font-medium">Engagement</h3>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Card className="p-4 sm:p-6 relative overflow-hidden backdrop-blur-sm border-orange-500/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageCircle className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-lg font-medium">Engagement</h3>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold">89%</p>
                 </div>
-                <p className="text-3xl font-bold">89%</p>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Main Content */}
           <Tabs defaultValue="community" value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <TabsTrigger value="community" className="data-[state=active]:bg-pink-500">
+            <TabsList className="flex flex-nowrap overflow-x-auto p-1 bg-background/50 backdrop-blur-sm rounded-full border border-orange-500/20">
+              <TabsTrigger value="community" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
                 <Calendar className="w-4 h-4 mr-2" />
-                Community
+                <span className="hidden sm:inline">Community</span>
+                <span className="sm:hidden">Com</span>
               </TabsTrigger>
-              <TabsTrigger value="influencers" className="data-[state=active]:bg-pink-500">
+              <TabsTrigger value="influencers" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
                 <UserPlus className="w-4 h-4 mr-2" />
-                Influencers
+                <span className="hidden sm:inline">Influencers</span>
+                <span className="sm:hidden">Inf</span>
               </TabsTrigger>
-              <TabsTrigger value="strategies" className="data-[state=active]:bg-pink-500">
+              <TabsTrigger value="strategies" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
                 <Sparkles className="w-4 h-4 mr-2" />
-                Strategies
+                <span className="hidden sm:inline">Strategies</span>
+                <span className="sm:hidden">Str</span>
               </TabsTrigger>
-              <TabsTrigger value="reports" className="data-[state=active]:bg-pink-500">
+              <TabsTrigger value="reports" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
                 <BarChart2 className="w-4 h-4 mr-2" />
-                Reports
+                <span className="hidden sm:inline">Reports</span>
+                <span className="sm:hidden">Rep</span>
               </TabsTrigger>
-              <TabsTrigger value="ai" className="data-[state=active]:bg-pink-500">
+              <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
                 <Brain className="w-4 h-4 mr-2" />
-                AI Assistant
+                <span className="hidden sm:inline">AI Assistant</span>
+                <span className="sm:hidden">AI</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Community Tab */}
             <TabsContent value="community">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6 hover:bg-pink-500/5 transition-colors">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <Calendar className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Calendar className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Content Calendar</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Plan and schedule your content
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <span>Product Showcase</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">Today, 2PM</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span>Behind the Scenes</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">Tomorrow, 11AM</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-purple-500" />
-                        <span>User Feature</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">Friday, 3PM</span>
-                    </div>
+                    {['Product Showcase', 'Behind the Scenes', 'User Feature'].map((task, index) => (
+                      <motion.div
+                        key={task}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{task}</span>
+                          <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                            Schedule <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
 
-                  <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
                     Schedule New Post
                   </Button>
                 </Card>
 
-                <Card className="p-6 hover:bg-pink-500/5 transition-colors">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <MessageCircle className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <MessageCircle className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Community Management</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Engage with your audience
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <div className="p-4 bg-background rounded-lg">
-                      <h4 className="font-medium mb-2">Engagement Tasks</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <BadgeCheck className="h-4 w-4 text-pink-500" />
-                          <span>Respond to comments</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <BadgeCheck className="h-4 w-4 text-pink-500" />
-                          <span>Like relevant posts</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <BadgeCheck className="h-4 w-4 text-pink-500" />
-                          <span>Follow back engaged users</span>
-                        </div>
+                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
+                      <h4 className="font-medium mb-4">Engagement Tasks</h4>
+                      <div className="space-y-3">
+                        {['Respond to comments', 'Like relevant posts', 'Follow back engaged users'].map((task, index) => (
+                          <motion.div
+                            key={task}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                            className="flex items-center gap-2"
+                          >
+                            <BadgeCheck className="h-4 w-4 text-orange-500" />
+                            <span>{task}</span>
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
                     View Community Dashboard
                   </Button>
                 </Card>
@@ -336,15 +363,15 @@ export default function InstagramBoostPage() {
 
             {/* Influencers Tab */}
             <TabsContent value="influencers">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <UserPlus className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <UserPlus className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Influencer Discovery</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Find and connect with relevant influencers
                       </p>
                     </div>
@@ -353,57 +380,55 @@ export default function InstagramBoostPage() {
                   <div className="space-y-4 mb-6">
                     <Input 
                       placeholder="Search influencers by niche..." 
-                      className="bg-background"
+                      className="bg-background border-orange-500/20 focus:border-orange-500"
                     />
                     <div className="space-y-4">
-                      {/* Sample influencer cards */}
-                      <div className="p-4 bg-background rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-pink-500/20" />
-                          <div>
-                            <h4 className="font-medium">Sarah Johnson</h4>
-                            <p className="text-sm text-muted-foreground">Fashion & Lifestyle</p>
+                      {[
+                        { name: 'Sarah Johnson', niche: 'Fashion & Lifestyle' },
+                        { name: 'Mike Stevens', niche: 'Tech & Gaming' }
+                      ].map((influencer, index) => (
+                        <motion.div
+                          key={influencer.name}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-orange-500/20" />
+                            <div>
+                              <h4 className="font-medium">{influencer.name}</h4>
+                              <p className="text-sm text-muted-foreground">{influencer.niche}</p>
+                            </div>
+                            <Button className="ml-auto" variant="outline">
+                              Connect
+                            </Button>
                           </div>
-                          <Button className="ml-auto" variant="outline">
-                            Connect
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-background rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-pink-500/20" />
-                          <div>
-                            <h4 className="font-medium">Mike Stevens</h4>
-                            <p className="text-sm text-muted-foreground">Tech & Gaming</p>
-                          </div>
-                          <Button className="ml-auto" variant="outline">
-                            Connect
-                          </Button>
-                        </div>
-                      </div>
+                        </motion.div>
+                      ))}
                     </div>
                   </div>
 
-                  <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
                     View All Influencers
                   </Button>
                 </Card>
 
-                <Card className="p-6">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <Share2 className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Share2 className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Active Collaborations</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Manage your influencer partnerships
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <div className="p-4 bg-background rounded-lg">
+                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <h4 className="font-medium">Summer Collection Campaign</h4>
@@ -413,12 +438,12 @@ export default function InstagramBoostPage() {
                           Active
                         </Badge>
                       </div>
-                      <Progress value={75} className="bg-pink-500/20" />
+                      <Progress value={75} className="bg-orange-500/20" indicatorClassName="bg-orange-500" />
                       <p className="text-sm text-muted-foreground mt-2">75% Complete</p>
                     </div>
                   </div>
 
-                  <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
                     Create New Campaign
                   </Button>
                 </Card>
@@ -427,15 +452,15 @@ export default function InstagramBoostPage() {
 
             {/* Strategies Tab */}
             <TabsContent value="strategies">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <Sparkles className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Sparkles className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Growth Strategies</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Optimize your Instagram presence
                       </p>
                     </div>
@@ -443,41 +468,41 @@ export default function InstagramBoostPage() {
 
                   <div className="space-y-4 mb-6">
                     {/* Strategy cards */}
-                    <div className="p-4 bg-background rounded-lg">
+                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
                       <h4 className="font-medium mb-2">Content Mix Strategy</h4>
                       <p className="text-sm text-muted-foreground mb-4">
                         Optimal content distribution for maximum engagement
                       </p>
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="p-2 bg-pink-500/10 rounded text-center">
-                          <div className="text-lg font-bold text-pink-500">40%</div>
+                        <div className="p-2 bg-orange-500/10 rounded text-center">
+                          <div className="text-lg font-bold text-orange-500">40%</div>
                           <div className="text-xs">Entertainment</div>
                         </div>
-                        <div className="p-2 bg-purple-500/10 rounded text-center">
-                          <div className="text-lg font-bold text-purple-500">35%</div>
+                        <div className="p-2 bg-orange-600/10 rounded text-center">
+                          <div className="text-lg font-bold text-orange-600">35%</div>
                           <div className="text-xs">Education</div>
                         </div>
-                        <div className="p-2 bg-blue-500/10 rounded text-center">
-                          <div className="text-lg font-bold text-blue-500">25%</div>
+                        <div className="p-2 bg-orange-700/10 rounded text-center">
+                          <div className="text-lg font-bold text-orange-700">25%</div>
                           <div className="text-xs">Promotion</div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
                     Get Custom Strategy
                   </Button>
                 </Card>
 
-                <Card className="p-6">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <Target className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Target className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Hashtag Strategy</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Optimize your hashtag usage
                       </p>
                     </div>
@@ -485,24 +510,24 @@ export default function InstagramBoostPage() {
 
                   <div className="space-y-4 mb-6">
                     <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-1 bg-pink-500/10 rounded-full text-sm">
+                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">
                         #fashion
                       </span>
-                      <span className="px-3 py-1 bg-pink-500/10 rounded-full text-sm">
+                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">
                         #style
                       </span>
-                      <span className="px-3 py-1 bg-pink-500/10 rounded-full text-sm">
+                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">
                         #beauty
                       </span>
                       {/* Add more hashtags */}
                     </div>
                     <Input 
                       placeholder="Search hashtags..." 
-                      className="bg-background"
+                      className="bg-background border-orange-500/20 focus:border-orange-500"
                     />
                   </div>
 
-                  <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
                     Generate Hashtags
                   </Button>
                 </Card>
@@ -511,15 +536,15 @@ export default function InstagramBoostPage() {
 
             {/* Reports Tab */}
             <TabsContent value="reports">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <BarChart2 className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <BarChart2 className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Growth Analytics</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Track your Instagram growth
                       </p>
                     </div>
@@ -550,14 +575,14 @@ export default function InstagramBoostPage() {
                   </div>
                 </Card>
 
-                <Card className="p-6">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-pink-500/10 rounded-lg">
-                      <Users className="h-6 w-6 text-pink-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Users className="h-6 w-6 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Audience Insights</h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Understand your followers
                       </p>
                     </div>
@@ -569,15 +594,15 @@ export default function InstagramBoostPage() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span>Age 18-24</span>
-                          <div className="w-48 h-2 bg-pink-500/20 rounded-full overflow-hidden">
-                            <div className="w-3/4 h-full bg-pink-500" />
+                          <div className="w-48 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-3/4 h-full bg-orange-500" />
                           </div>
                           <span>75%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Age 25-34</span>
-                          <div className="w-48 h-2 bg-pink-500/20 rounded-full overflow-hidden">
-                            <div className="w-1/2 h-full bg-pink-500" />
+                          <div className="w-48 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-1/2 h-full bg-orange-500" />
                           </div>
                           <span>50%</span>
                         </div>
@@ -589,15 +614,15 @@ export default function InstagramBoostPage() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span>United States</span>
-                          <div className="w-48 h-2 bg-pink-500/20 rounded-full overflow-hidden">
-                            <div className="w-4/5 h-full bg-pink-500" />
+                          <div className="w-48 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-4/5 h-full bg-orange-500" />
                           </div>
                           <span>80%</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>United Kingdom</span>
-                          <div className="w-48 h-2 bg-pink-500/20 rounded-full overflow-hidden">
-                            <div className="w-2/5 h-full bg-pink-500" />
+                          <div className="w-48 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-2/5 h-full bg-orange-500" />
                           </div>
                           <span>40%</span>
                         </div>
@@ -610,28 +635,28 @@ export default function InstagramBoostPage() {
 
             {/* AI Assistant Tab */}
             <TabsContent value="ai">
-              <Card className="p-6">
+              <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-pink-500/10 rounded-lg">
-                    <Brain className="h-6 w-6 text-pink-500" />
+                  <div className="p-3 bg-orange-500/10 rounded-lg">
+                    <Brain className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold">AI Assistant</h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       Get AI-powered insights and recommendations
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="p-4 bg-background rounded-lg">
+                  <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
                     <h4 className="font-medium mb-4">Ask AI Assistant</h4>
                     <textarea
                       className="w-full p-3 rounded-lg bg-background border border-input"
                       placeholder="Ask anything about Instagram growth..."
                       rows={4}
                     />
-                    <Button className="w-full mt-4 bg-pink-500 hover:bg-pink-600">
+                    <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600">
                       <SendHorizontal className="mr-2 h-4 w-4" />
                       Get AI Response
                     </Button>
@@ -659,11 +684,11 @@ export default function InstagramBoostPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-background rounded-lg">
+                  <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
                     <h4 className="font-medium mb-4">Recent AI Insights</h4>
                     <div className="space-y-4">
                       <div className="flex gap-3">
-                        <Brain className="h-5 w-5 text-pink-500 mt-0.5 flex-shrink-0" />
+                        <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="font-medium">Content Performance Analysis</p>
                           <p className="text-sm text-muted-foreground">
@@ -672,7 +697,7 @@ export default function InstagramBoostPage() {
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <Brain className="h-5 w-5 text-pink-500 mt-0.5 flex-shrink-0" />
+                        <Brain className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="font-medium">Growth Opportunity</p>
                           <p className="text-sm text-muted-foreground">
