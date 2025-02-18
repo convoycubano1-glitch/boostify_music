@@ -32,6 +32,7 @@ import AIAgentsPage from "@/pages/ai-agents";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
 import MerchandisePage from "@/pages/merchandise";
 import EcosystemPage from "@/pages/ecosystem";
+import StorePage from "@/pages/store";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import CookiesPage from "@/pages/cookies";
@@ -69,6 +70,7 @@ const Router = () => {
       <ProtectedRoute path="/artist-image-advisor" component={ArtistImageAdvisor} />
       <ProtectedRoute path="/merchandise" component={MerchandisePage} />
       <ProtectedRoute path="/ecosystem" component={EcosystemPage} />
+      <ProtectedRoute path="/store" component={StorePage} />
       <Route component={NotFound} />
     </Switch>
   );
