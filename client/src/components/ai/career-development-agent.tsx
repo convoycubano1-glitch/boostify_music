@@ -139,69 +139,71 @@ export function CareerDevelopmentAgent() {
   ];
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="relative"
-    >
-      <AnimatePresence>
-        {isThinking && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: [0.3, 0.6, 0.3],
-                scale: [1, 1.02, 1]
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              exit={{ opacity: 0 }}
-              className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-xl opacity-75 blur-xl"
-              style={{ zIndex: -1 }}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-            >
-              <MusicLoadingSpinner size="lg" variant="subtle" />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      <BaseAgent
-        name="Career Development AI"
-        description="Your personal career strategist and development advisor"
-        icon={Brain}
-        actions={actions}
-        theme={theme}
-        helpText="I'm your Career Strategist AI, dedicated to helping you navigate and accelerate your music industry career. Using advanced analytics and industry insights, I'll help you make strategic decisions and develop the skills needed for success. Let's build your path to stardom! 🌟"
+    <div className="relative">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative"
       >
-        <AnimatePresence mode="wait">
-          {(isThinking || steps.length > 0) && (
-            <motion.div
-              key="progress"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ProgressIndicator
-                steps={steps}
-                progress={progress}
-                isThinking={isThinking}
-                isComplete={progress === 100}
+        <AnimatePresence>
+          {isThinking && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: [0.3, 0.6, 0.3],
+                  scale: [1, 1.02, 1]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                exit={{ opacity: 0 }}
+                className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-xl opacity-75 blur-xl"
+                style={{ zIndex: -1 }}
               />
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+              >
+                <MusicLoadingSpinner size="lg" variant="subtle" />
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
-      </BaseAgent>
-    </motion.div>
+
+        <BaseAgent
+          name="Career Development AI"
+          description="Your personal career strategist and development advisor"
+          icon={Brain}
+          actions={actions}
+          theme={theme}
+          helpText="I'm your Career Strategist AI, dedicated to helping you navigate and accelerate your music industry career. Using advanced analytics and industry insights, I'll help you make strategic decisions and develop the skills needed for success. Let's build your path to stardom! 🌟"
+        >
+          <AnimatePresence mode="wait">
+            {(isThinking || steps.length > 0) && (
+              <motion.div
+                key="progress"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+              >
+                <ProgressIndicator
+                  steps={steps}
+                  progress={progress}
+                  isThinking={isThinking}
+                  isComplete={progress === 100}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </BaseAgent>
+      </motion.div>
+    </div>
   );
 }
