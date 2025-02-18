@@ -17,6 +17,7 @@ import bostifyVideo from "../images/videos/bostify.mp4";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect } from "react";
+import { SuperAgent } from "@/components/agents/super-agent";
 
 /* =============================
    VARIANTES PARA ANIMACIONES
@@ -1047,6 +1048,7 @@ export default function HomePage() {
           </div>
         </motion.div>
       </section>
+      <SuperAgent />
       <Footer />
     </div>
   );
