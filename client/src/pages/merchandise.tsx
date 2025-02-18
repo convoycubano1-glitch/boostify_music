@@ -43,6 +43,7 @@ import {
   Area,
   AreaChart
 } from "recharts";
+import { Download, Video } from "lucide-react";
 
 // Product type definition from original code
 interface Product {
@@ -56,7 +57,7 @@ interface Product {
   customizationOptions: string[];
 }
 
-// Products data from original code
+// Products data from original code and edited snippet
 const products: Product[] = [
   {
     id: "1",
@@ -157,6 +158,106 @@ const products: Product[] = [
     icon: <Package className="h-8 w-8" />,
     description: "Curated merchandise bundles",
     customizationOptions: ["Bundle Items", "Packaging", "Price Tier"]
+  },
+  {
+    id: "11",
+    name: "Limited Edition Vinyl Box Set",
+    category: "Music",
+    basePrice: 149.99,
+    image: "/assets/products/vinyl-box.jpg",
+    icon: <Music className="h-8 w-8" />,
+    description: "Collector's edition vinyl box set with exclusive artwork",
+    customizationOptions: ["Box Design", "Vinyl Color", "Artwork Style", "Packaging"]
+  },
+  {
+    id: "12",
+    name: "Artist Signature Guitar Pick",
+    category: "Accessories",
+    basePrice: 15.99,
+    image: "/assets/products/pick.jpg",
+    icon: <Music className="h-8 w-8" />,
+    description: "Custom guitar picks with artist signature and design",
+    customizationOptions: ["Material", "Thickness", "Design", "Finish"]
+  },
+  {
+    id: "13",
+    name: "Tour Photo Book",
+    category: "Print",
+    basePrice: 39.99,
+    image: "/assets/products/photobook.jpg",
+    icon: <ImageIcon className="h-8 w-8" />,
+    description: "High-quality photo book featuring tour moments",
+    customizationOptions: ["Size", "Cover Type", "Paper Quality", "Layout"]
+  },
+  {
+    id: "14",
+    name: "Premium Leather Jacket",
+    category: "Apparel",
+    basePrice: 199.99,
+    image: "/assets/products/jacket.jpg",
+    icon: <Shirt className="h-8 w-8" />,
+    description: "Custom leather jacket with embroidered artist logo",
+    customizationOptions: ["Size", "Color", "Logo Placement", "Hardware Finish"]
+  },
+  {
+    id: "15",
+    name: "Digital Music Bundle",
+    category: "Digital",
+    basePrice: 24.99,
+    image: "/assets/products/digital-bundle.jpg",
+    icon: <Download className="h-8 w-8" />,
+    description: "Exclusive digital content package with unreleased tracks",
+    customizationOptions: ["Format", "Bonus Content", "Artwork", "Resolution"]
+  },
+  {
+    id: "16",
+    name: "Concert Photography Print",
+    category: "Print",
+    basePrice: 29.99,
+    image: "/assets/products/concert-print.jpg",
+    icon: <ImageIcon className="h-8 w-8" />,
+    description: "Limited edition concert photography prints",
+    customizationOptions: ["Size", "Frame", "Paper Type", "Finish"]
+  },
+  {
+    id: "17",
+    name: "Artist Collection Backpack",
+    category: "Accessories",
+    basePrice: 69.99,
+    image: "/assets/products/backpack.jpg",
+    icon: <BackpackIcon className="h-8 w-8" />,
+    description: "Premium backpack with custom artist designs",
+    customizationOptions: ["Style", "Color", "Size", "Pattern"]
+  },
+  {
+    id: "18",
+    name: "Premium Sound Pack",
+    category: "Digital",
+    basePrice: 49.99,
+    image: "/assets/products/sound-pack.jpg",
+    icon: <Music className="h-8 w-8" />,
+    description: "Exclusive sound samples and production elements",
+    customizationOptions: ["Format", "Genre", "Sample Rate", "Pack Size"]
+  },
+  {
+    id: "19",
+    name: "Artist Documentary",
+    category: "Digital",
+    basePrice: 19.99,
+    image: "/assets/products/documentary.jpg",
+    icon: <Video className="h-8 w-8" />,
+    description: "Behind-the-scenes documentary with exclusive footage",
+    customizationOptions: ["Format", "Resolution", "Subtitles", "Extras"]
+  },
+  {
+    id: "20",
+    name: "VIP Meet & Greet Package",
+    category: "Experience",
+    basePrice: 299.99,
+    image: "/assets/products/vip-package.jpg",
+    icon: <Users className="h-8 w-8" />,
+    description: "Exclusive VIP experience with merchandise bundle",
+    customizationOptions: ["Event Date", "Package Tier", "Merchandise", "Experience Type"]
   }
 ];
 
@@ -195,7 +296,7 @@ export default function MerchandisePage() {
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mb-8">
             Create, customize, and manage your merchandise with powerful tools and integrations
           </p>
-          <Button 
+          <Button
             className="w-fit bg-orange-500 hover:bg-orange-600 text-lg px-8 py-6"
             onClick={() => setSelectedTab("products")}
           >
@@ -666,8 +767,7 @@ export default function MerchandisePage() {
                       </Button>
                     </div>
                   ))}
-                </div>
-              </Card>
+                </div>              </Card>
             </div>
           </TabsContent>
         </Tabs>
