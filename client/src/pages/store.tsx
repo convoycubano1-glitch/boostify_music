@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { SiInstagram, SiFacebook, SiTelegram } from "react-icons/si";
+import { SiInstagram, SiFacebook, SiTelegram, SiTiktok, SiYoutube, SiX, SiLinkedin, SiPinterest } from "react-icons/si";
 import {
   Download,
   Zap,
@@ -21,15 +21,15 @@ const products = [
   {
     id: 1,
     name: "InstagramPro Bot",
-    description: "Bot avanzado de automatización para crecimiento orgánico en Instagram",
+    description: "Advanced automation bot for organic Instagram growth",
     price: 49.99,
     platform: "instagram",
     features: [
-      "Seguimiento/Dejar de seguir automático",
-      "Gestión de comentarios",
-      "Programación de posts",
-      "Análisis de engagement",
-      "Filtros de audiencia personalizados"
+      "Automated follow/unfollow",
+      "Comment management",
+      "Post scheduling",
+      "Engagement analysis",
+      "Custom audience filters"
     ],
     icon: SiInstagram,
     popular: true
@@ -37,107 +37,230 @@ const products = [
   {
     id: 2,
     name: "Facebook Growth Engine",
-    description: "Automatización completa para páginas y grupos de Facebook",
+    description: "Complete automation for Facebook pages and groups",
     price: 59.99,
     platform: "facebook",
     features: [
-      "Gestión de páginas múltiples",
-      "Automatización de grupos",
-      "Respuestas automáticas",
-      "Programación de contenido",
-      "Análisis de rendimiento"
+      "Multi-page management",
+      "Group automation",
+      "Auto-responses",
+      "Content scheduling",
+      "Performance analytics"
     ],
     icon: SiFacebook
   },
   {
     id: 3,
     name: "TelegramMaster Bot",
-    description: "Bot multiusos para gestión y crecimiento en Telegram",
+    description: "Multi-purpose bot for Telegram management and growth",
     price: 39.99,
     platform: "telegram",
     features: [
-      "Gestión de canales",
-      "Respuestas automáticas",
-      "Análisis de miembros",
-      "Filtro de spam",
-      "Programación de mensajes"
+      "Channel management",
+      "Auto-responses",
+      "Member analytics",
+      "Spam filtering",
+      "Message scheduling"
     ],
     icon: SiTelegram
   },
   {
     id: 4,
     name: "Instagram Engagement Pro",
-    description: "Bot especializado en maximizar el engagement de Instagram",
+    description: "Specialized bot for maximizing Instagram engagement",
     price: 44.99,
     platform: "instagram",
     features: [
-      "Gestión de comentarios AI",
-      "Like automático inteligente",
-      "Análisis de hashtags",
-      "Reportes detallados",
-      "Engagement personalizado"
+      "AI comment management",
+      "Smart auto-liking",
+      "Hashtag analysis",
+      "Detailed reporting",
+      "Custom engagement"
     ],
     icon: SiInstagram
   },
   {
     id: 5,
     name: "Facebook Ads Assistant",
-    description: "Bot para optimización y gestión de anuncios en Facebook",
+    description: "Bot for Facebook ad optimization and management",
     price: 69.99,
     platform: "facebook",
     features: [
-      "Optimización de campañas",
-      "Análisis de audiencia",
-      "A/B testing automático",
-      "Reportes de ROI",
-      "Ajuste de presupuesto"
+      "Campaign optimization",
+      "Audience analysis",
+      "Automated A/B testing",
+      "ROI reporting",
+      "Budget adjustment"
     ],
     icon: SiFacebook
   },
   {
     id: 6,
     name: "Telegram Business Bot",
-    description: "Bot avanzado para negocios en Telegram",
+    description: "Advanced business bot for Telegram",
     price: 49.99,
     platform: "telegram",
     features: [
-      "CRM integrado",
-      "Chatbot AI",
-      "Automatización de ventas",
-      "Análisis de conversiones",
-      "Integración con pagos"
+      "Integrated CRM",
+      "AI chatbot",
+      "Sales automation",
+      "Conversion tracking",
+      "Payment integration"
     ],
     icon: SiTelegram
   },
   {
     id: 7,
     name: "Instagram Story Pro",
-    description: "Bot especializado en automatización de Stories",
+    description: "Specialized bot for Story automation",
     price: 34.99,
     platform: "instagram",
     features: [
-      "Programación de stories",
-      "Análisis de visualizaciones",
-      "Respuestas automáticas",
-      "Highlights automáticos",
-      "Estadísticas avanzadas"
+      "Story scheduling",
+      "View analytics",
+      "Auto-responses",
+      "Auto highlights",
+      "Advanced statistics"
     ],
     icon: SiInstagram
   },
   {
     id: 8,
     name: "Social Media Suite",
-    description: "Suite completa de bots para todas las plataformas",
+    description: "Complete bot suite for all platforms",
     price: 99.99,
     platform: "all",
     features: [
-      "Gestión multiplataforma",
-      "Panel unificado",
-      "Automatización cruzada",
-      "Análisis integrado",
-      "Soporte prioritario"
+      "Multi-platform management",
+      "Unified dashboard",
+      "Cross-platform automation",
+      "Integrated analytics",
+      "Priority support"
     ],
     icon: Bot,
+    premium: true
+  },
+  {
+    id: 9,
+    name: "TikTok Growth Pro",
+    description: "Advanced automation for TikTok growth and engagement",
+    price: 54.99,
+    platform: "tiktok",
+    features: [
+      "Trend analysis",
+      "Content scheduling",
+      "Hashtag optimization",
+      "Engagement automation",
+      "Performance tracking"
+    ],
+    icon: SiTiktok,
+    popular: true
+  },
+  {
+    id: 10,
+    name: "YouTube Channel Manager",
+    description: "Comprehensive bot for YouTube channel growth",
+    price: 64.99,
+    platform: "youtube",
+    features: [
+      "Comment management",
+      "Video optimization",
+      "Subscriber growth",
+      "Analytics dashboard",
+      "SEO automation"
+    ],
+    icon: SiYoutube
+  },
+  {
+    id: 11,
+    name: "X Engagement Bot",
+    description: "Smart automation for X (formerly Twitter) growth and engagement",
+    price: 44.99,
+    platform: "x",
+    features: [
+      "Tweet scheduling",
+      "Auto-engagement",
+      "Follower growth",
+      "Analytics tools",
+      "Content curation"
+    ],
+    icon: SiX
+  },
+  {
+    id: 12,
+    name: "LinkedIn Business Pro",
+    description: "Professional automation for LinkedIn growth",
+    price: 79.99,
+    platform: "linkedin",
+    features: [
+      "Connection automation",
+      "Content scheduling",
+      "Lead generation",
+      "Profile optimization",
+      "Business analytics"
+    ],
+    icon: SiLinkedin,
+    premium: true
+  },
+  {
+    id: 13,
+    name: "Pinterest Growth Engine",
+    description: "Automated Pinterest marketing and management",
+    price: 49.99,
+    platform: "pinterest",
+    features: [
+      "Pin scheduling",
+      "Board management",
+      "Traffic analysis",
+      "SEO optimization",
+      "Engagement tracking"
+    ],
+    icon: SiPinterest
+  },
+  {
+    id: 14,
+    name: "Cross-Platform Analytics",
+    description: "Unified analytics for all social media platforms",
+    price: 89.99,
+    platform: "all",
+    features: [
+      "Multi-platform tracking",
+      "Performance comparison",
+      "ROI calculation",
+      "Custom reporting",
+      "Trend analysis"
+    ],
+    icon: Activity
+  },
+  {
+    id: 15,
+    name: "Social CRM Pro",
+    description: "Advanced CRM system for social media management",
+    price: 74.99,
+    platform: "all",
+    features: [
+      "Lead tracking",
+      "Customer segmentation",
+      "Automated responses",
+      "Campaign management",
+      "Integration APIs"
+    ],
+    icon: Users
+  },
+  {
+    id: 16,
+    name: "Enterprise Social Suite",
+    description: "Complete enterprise solution for social media automation",
+    price: 149.99,
+    platform: "all",
+    features: [
+      "Full platform access",
+      "Priority support",
+      "Custom development",
+      "Advanced security",
+      "Team collaboration"
+    ],
+    icon: Shield,
     premium: true
   }
 ];
@@ -162,7 +285,7 @@ export default function StorePage() {
                 </span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Potencia tu presencia en redes sociales con nuestros bots de automatización. Optimiza tu tiempo y maximiza tus resultados.
+                Power up your social media presence with our automation bots. Optimize your time and maximize your results.
               </p>
             </motion.div>
           </div>
@@ -183,7 +306,7 @@ export default function StorePage() {
                   {product.premium && (
                     <Badge className="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-purple-500">Premium</Badge>
                   )}
-                  
+
                   <div className="flex items-center gap-4 mb-6">
                     <div className="p-3 bg-orange-500/10 rounded-xl">
                       <product.icon className="h-8 w-8 text-orange-500" />
@@ -209,15 +332,15 @@ export default function StorePage() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold">${product.price}</span>
-                        <span className="text-sm text-muted-foreground">/mes</span>
+                        <span className="text-sm text-muted-foreground">/month</span>
                       </div>
                       <Badge variant="outline" className="bg-orange-500/10 text-orange-500">
-                        {product.platform === 'all' ? 'Todas las plataformas' : 
-                         product.platform.charAt(0).toUpperCase() + product.platform.slice(1)}
+                        {product.platform === 'all' ? 'All platforms' :
+                          product.platform.charAt(0).toUpperCase() + product.platform.slice(1)}
                       </Badge>
                     </div>
                     <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      Comprar ahora
+                      Purchase Now
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -229,17 +352,17 @@ export default function StorePage() {
           {/* Features Section */}
           <div className="mt-20 text-center">
             <h2 className="text-3xl font-bold mb-12">
-              Por qué elegir nuestros{" "}
+              Why Choose Our{" "}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">
                 Bots
               </span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
-                { icon: Zap, title: "Alto Rendimiento", description: "Optimizados para máxima eficiencia" },
-                { icon: Shield, title: "100% Seguros", description: "Cumplimos con todas las normativas" },
-                { icon: Users, title: "Soporte 24/7", description: "Equipo técnico siempre disponible" },
-                { icon: Activity, title: "Actualizaciones", description: "Mejoras continuas garantizadas" }
+                { icon: Zap, title: "High Performance", description: "Optimized for maximum efficiency" },
+                { icon: Shield, title: "100% Secure", description: "Compliant with all regulations" },
+                { icon: Users, title: "24/7 Support", description: "Technical team always available" },
+                { icon: Activity, title: "Updates", description: "Continuous improvements guaranteed" }
               ].map((feature, index) => (
                 <motion.div
                   key={index}
