@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -51,6 +51,7 @@ interface BaseAgentProps {
   actions: AgentAction[];
   helpText?: string;
   theme: AgentTheme;
+  children?: React.ReactNode;
 }
 
 interface ProgressStep {
@@ -58,7 +59,7 @@ interface ProgressStep {
   timestamp: Date;
 }
 
-export function BaseAgent({ name, description, icon: Icon, actions, helpText, theme }: BaseAgentProps) {
+export function BaseAgent({ name, description, icon: Icon, actions, helpText, theme, children }: BaseAgentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<ProgressStep[]>([]);
@@ -87,7 +88,6 @@ export function BaseAgent({ name, description, icon: Icon, actions, helpText, th
       setSteps([]);
       setIsComplete(false);
 
-      // Añadir mensaje personalizado según la personalidad del agente
       const personalityPrefix = theme.personality ? `[${theme.personality}] ` : "";
       addStep(`${personalityPrefix}Iniciando ${action.name}...`);
       setProgress(10);
@@ -121,8 +121,8 @@ export function BaseAgent({ name, description, icon: Icon, actions, helpText, th
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className={`p-6 space-y-6 hover:shadow-lg transition-all duration-300 border-t-4`} 
-           style={{ borderColor: theme.accentColor }}>
+      <Card className={`p-6 space-y-6 hover:shadow-lg transition-all duration-300 border-t-4`}
+            style={{ borderColor: theme.accentColor }}>
         <div className="flex items-center gap-4">
           <div className={`h-14 w-14 rounded-xl flex items-center justify-center bg-gradient-to-br ${theme.gradient}`}>
             <Icon className={`h-7 w-7 ${theme.iconColor}`} />
@@ -228,9 +228,9 @@ export function BaseAgent({ name, description, icon: Icon, actions, helpText, th
                 onClick={() => handleAction(action)}
                 disabled={isProcessing}
                 className="w-full justify-start gap-2 bg-gradient-to-r hover:opacity-90 transition-opacity"
-                style={{ 
+                style={{
                   backgroundImage: theme.gradient,
-                  color: "white" 
+                  color: "white"
                 }}
               >
                 {isProcessing ? (
@@ -242,7 +242,9 @@ export function BaseAgent({ name, description, icon: Icon, actions, helpText, th
           ))}
         </div>
 
-        {(isProcessing || steps.length > 0) && (
+        {children}
+
+        {(isProcessing || steps.length > 0) && !children && (
           <ProgressIndicator
             steps={steps}
             progress={progress}

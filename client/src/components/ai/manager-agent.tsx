@@ -1,12 +1,31 @@
 import { UserCog } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
+import { useState } from "react";
+import { ProgressIndicator } from "./progress-indicator";
 
 export function ManagerAgent() {
+  const [isThinking, setIsThinking] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [steps, setSteps] = useState([]);
+
   const theme: AgentTheme = {
     gradient: "from-red-500 to-orange-600",
     iconColor: "text-white",
     accentColor: "#EF4444",
     personality: "👔 Executive Manager"
+  };
+
+  const simulateThinking = async () => {
+    setIsThinking(true);
+    setProgress(0);
+
+    // Simulate progress steps
+    for (let i = 0; i <= 100; i += 20) {
+      setProgress(i);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    setIsThinking(false);
   };
 
   const actions: AgentAction[] = [
@@ -41,8 +60,8 @@ export function ManagerAgent() {
         }
       ],
       action: async (params) => {
+        await simulateThinking();
         console.log("Analyzing performance:", params);
-        await new Promise(resolve => setTimeout(resolve, 3000));
       }
     },
     {
@@ -64,8 +83,8 @@ export function ManagerAgent() {
         }
       ],
       action: async (params) => {
+        await simulateThinking();
         console.log("Planning strategy:", params);
-        await new Promise(resolve => setTimeout(resolve, 2500));
       }
     },
     {
@@ -87,8 +106,8 @@ export function ManagerAgent() {
         }
       ],
       action: async (params) => {
+        await simulateThinking();
         console.log("Coordinating activities:", params);
-        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
   ];
@@ -101,6 +120,15 @@ export function ManagerAgent() {
       actions={actions}
       theme={theme}
       helpText="As your Executive Manager, I handle optimizing every aspect of your music career. With my expertise in data analysis and strategic planning, I'll help you make informed decisions and achieve your professional goals. Let's take your career to the next level! 📈"
-    />
+    >
+      {isThinking && (
+        <ProgressIndicator
+          steps={steps}
+          progress={progress}
+          isThinking={true}
+          isComplete={progress === 100}
+        />
+      )}
+    </BaseAgent>
   );
 }
