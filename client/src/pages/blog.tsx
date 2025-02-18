@@ -36,42 +36,133 @@ interface BlogPost {
 const blogData: BlogPost[] = [
   {
     id: 1,
-    title: "The Future of Music Marketing in 2025",
-    excerpt: "Exploring innovative strategies for music promotion in the digital age",
-    content: "Lorem ipsum dolor sit amet...",
-    image: "https://source.unsplash.com/random/800x600/?music-marketing",
-    author: "John Smith",
-    date: "2025-02-01",
-    views: 2500,
-    likes: 180,
-    comments: 45,
-    tags: ["Marketing", "Digital", "Strategy"]
+    title: "The Evolution of Music Streaming in 2025",
+    excerpt: "How AI and blockchain are revolutionizing the streaming landscape",
+    content: "An in-depth analysis of the latest trends in music streaming...",
+    image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&h=600&q=80",
+    author: "Sarah Johnson",
+    date: "2025-02-15",
+    views: 15200,
+    likes: 2840,
+    comments: 342,
+    tags: ["Streaming", "Technology", "Industry"]
   },
   {
     id: 2,
-    title: "Building Your Artist Brand",
-    excerpt: "Essential tips for creating a strong and memorable artist brand",
-    content: "Lorem ipsum dolor sit amet...",
-    image: "https://source.unsplash.com/random/800x600/?artist-branding",
-    author: "Sarah Johnson",
-    date: "2025-01-28",
-    views: 1800,
-    likes: 150,
-    comments: 32,
-    tags: ["Branding", "Identity", "Marketing"]
+    title: "Virtual Concert Revolution",
+    excerpt: "How virtual reality is transforming live music experiences",
+    content: "Exploring the intersection of technology and live performances...",
+    image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&q=80",
+    author: "Michael Chen",
+    date: "2025-02-12",
+    views: 12800,
+    likes: 2100,
+    comments: 285,
+    tags: ["Virtual Reality", "Concerts", "Innovation"]
   },
   {
     id: 3,
-    title: "Maximizing Social Media Impact",
-    excerpt: "Leveraging social platforms for music promotion",
-    content: "Lorem ipsum dolor sit amet...",
-    image: "https://source.unsplash.com/random/800x600/?social-media",
-    author: "Mike Wilson",
+    title: "AI-Powered Music Production",
+    excerpt: "The future of music creation with artificial intelligence",
+    content: "Discover how AI is revolutionizing the music production process...",
+    image: "https://images.unsplash.com/photo-1598488035139-bdaa7543d5d6?w=800&h=600&q=80",
+    author: "Alex Rivera",
+    date: "2025-02-10",
+    views: 18500,
+    likes: 3200,
+    comments: 425,
+    tags: ["AI", "Production", "Technology"]
+  },
+  {
+    id: 4,
+    title: "Building Your Artist Brand in 2025",
+    excerpt: "Essential strategies for modern music marketing",
+    content: "A comprehensive guide to building a strong artist brand...",
+    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=600&q=80",
+    author: "Emma Thompson",
+    date: "2025-02-08",
+    views: 21000,
+    likes: 3800,
+    comments: 512,
+    tags: ["Branding", "Marketing", "Strategy"]
+  },
+  {
+    id: 5,
+    title: "The Rise of Web3 Music Platforms",
+    excerpt: "How blockchain is changing music ownership and distribution",
+    content: "Understanding the impact of blockchain technology on the music industry...",
+    image: "https://images.unsplash.com/photo-1526394931762-090dced5bc3c?w=800&h=600&q=80",
+    author: "David Wilson",
+    date: "2025-02-05",
+    views: 16700,
+    likes: 2950,
+    comments: 368,
+    tags: ["Web3", "Blockchain", "Innovation"]
+  },
+  {
+    id: 6,
+    title: "Social Media Strategies for Musicians",
+    excerpt: "Maximizing your impact across digital platforms",
+    content: "Learn how to leverage social media for music promotion...",
+    image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&h=600&q=80",
+    author: "Jessica Lee",
+    date: "2025-02-03",
+    views: 19200,
+    likes: 3400,
+    comments: 445,
+    tags: ["Social Media", "Marketing", "Digital"]
+  },
+  {
+    id: 7,
+    title: "The Future of Music Copyright",
+    excerpt: "Navigating rights management in the digital age",
+    content: "Understanding the evolving landscape of music copyright...",
+    image: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800&h=600&q=80",
+    author: "Robert Martinez",
+    date: "2025-02-01",
+    views: 14500,
+    likes: 2600,
+    comments: 315,
+    tags: ["Copyright", "Legal", "Industry"]
+  },
+  {
+    id: 8,
+    title: "Sustainable Music Tours",
+    excerpt: "Green initiatives reshaping concert productions",
+    content: "How the music industry is embracing environmental responsibility...",
+    image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=600&q=80",
+    author: "Nina Patel",
+    date: "2025-01-30",
+    views: 13800,
+    likes: 2400,
+    comments: 298,
+    tags: ["Sustainability", "Tours", "Environment"]
+  },
+  {
+    id: 9,
+    title: "Mental Health in the Music Industry",
+    excerpt: "Supporting artist wellness in the digital era",
+    content: "Addressing the importance of mental health for musicians...",
+    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&q=80",
+    author: "Chris Anderson",
+    date: "2025-01-28",
+    views: 22400,
+    likes: 4100,
+    comments: 535,
+    tags: ["Health", "Wellness", "Industry"]
+  },
+  {
+    id: 10,
+    title: "Emerging Music Markets",
+    excerpt: "Global opportunities in the music business",
+    content: "Exploring new territories and opportunities in the global music market...",
+    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=600&q=80",
+    author: "Maria Santos",
     date: "2025-01-25",
-    views: 2100,
-    likes: 165,
-    comments: 38,
-    tags: ["Social Media", "Engagement", "Growth"]
+    views: 17900,
+    likes: 3150,
+    comments: 389,
+    tags: ["Global", "Business", "Markets"]
   }
 ];
 
@@ -181,8 +272,8 @@ export default function BlogPage() {
                     />
                   </div>
 
-                  <Button 
-                    className="w-full bg-orange-500 hover:bg-orange-600" 
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600"
                     onClick={handleCreatePost}
                   >
                     Publish Post
@@ -193,8 +284,8 @@ export default function BlogPage() {
           </div>
 
           <div className="flex items-center gap-4 mb-6">
-            <Select 
-              value={selectedCategory} 
+            <Select
+              value={selectedCategory}
               onValueChange={setSelectedCategory}
             >
               <SelectTrigger className="w-[180px]">
