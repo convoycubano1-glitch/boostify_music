@@ -45,13 +45,13 @@ export default function VideosPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const [videoForm, setVideoForm] = useState<Partial<Video>>({
     title: '',
     description: '',
     youtubeId: '',
     thumbnail: '',
   });
+  const [isAwaitingApiKey, setIsAwaitingApiKey] = useState(false);
 
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['videos'],
@@ -177,14 +177,16 @@ export default function VideosPage() {
 
       const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
       if (!apiKey) {
+        setIsAwaitingApiKey(true);
         toast({
           title: "Error",
-          description: "No se encontró la clave de API de YouTube",
+          description: "No se encontró la clave de API de YouTube. Por favor, asegúrate de que la clave API esté configurada correctamente en las variables de entorno.",
           variant: "destructive"
         });
         return;
       }
 
+      setIsAwaitingApiKey(false);
       const response = await axios.get(
         `https://www.googleapis.com/youtube/v3/videos`,
         {
@@ -208,7 +210,7 @@ export default function VideosPage() {
       } else {
         toast({
           title: "Error",
-          description: "No se encontró el video con ese ID",
+          description: "No se encontró el video con ese ID. Verifica que el ID sea correcto.",
           variant: "destructive"
         });
       }
@@ -221,6 +223,8 @@ export default function VideosPage() {
           errorMessage = "Error en la petición a YouTube API. Verifica que el ID del video sea válido.";
         } else if (error.response?.status === 403) {
           errorMessage = "Error de autenticación con YouTube API. Verifica la clave API.";
+        } else if (error.response?.status === 404) {
+          errorMessage = "Video no encontrado. Verifica el ID del video.";
         }
       }
 
@@ -280,19 +284,21 @@ export default function VideosPage() {
                       {editingVideo ? 'Edit Video' : 'Upload New Video'}
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                      Add or edit your video details below. Enter a YouTube video ID to automatically fetch its information.
+                      Ingresa el ID de un video de YouTube para cargar automáticamente su información. 
+                      El ID se encuentra en la URL del video después de "v=".
                     </p>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>YouTube Video ID</Label>
+                      <Label htmlFor="youtubeId">YouTube Video ID</Label>
                       <Input
+                        id="youtubeId"
                         value={videoForm.youtubeId}
                         onChange={handleYouTubeIdChange}
                         placeholder="e.g. dQw4w9WgXcQ"
                       />
-                      <p className="text-sm text-muted-foreground">
-                        Ingresa el ID del video de YouTube para auto-completar los detalles
+                      <p className="text-xs text-muted-foreground">
+                        El ID debe tener 11 caracteres y lo puedes encontrar en la URL del video de YouTube
                       </p>
                     </div>
 
@@ -351,24 +357,15 @@ export default function VideosPage() {
                 <Card key={video.id} className="p-6 hover:bg-muted/50 transition-colors">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3">
-                      <div className="relative aspect-video rounded-lg overflow-hidden group">
+                      <div className="relative aspect-video rounded-lg overflow-hidden">
                         {video.youtubeId ? (
-                          <>
-                            <img
-                              src={`https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`}
-                              alt={video.title}
-                              className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-0"
-                            />
-                            <iframe
-                              src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=0&controls=1`}
-                              className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 group-hover:opacity-0 transition-opacity">
-                              <PlaySquare className="h-12 w-12 text-white" />
-                            </div>
-                          </>
+                          <iframe
+                            src={`https://www.youtube.com/embed/${video.youtubeId}`}
+                            title={video.title}
+                            className="absolute inset-0 w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
                         ) : (
                           <div className="w-full h-full bg-muted flex items-center justify-center">
                             <PlaySquare className="h-12 w-12 text-muted-foreground" />
