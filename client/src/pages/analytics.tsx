@@ -2,18 +2,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, TrendingUp, BarChart2, LineChart, PieChart, Download, Calendar, Music2, Users, DollarSign, Share2 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import html2pdf from 'html2pdf.js';
 
 const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa'];
 
 export default function AnalyticsPage() {
+  const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState("7d");
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['analytics', 'metrics'],
@@ -91,6 +94,83 @@ export default function AnalyticsPage() {
     return data;
   };
 
+  const handleExportReport = async () => {
+    try {
+      setIsExporting(true);
+
+      // Create report content
+      const reportContent = document.createElement('div');
+      reportContent.innerHTML = `
+        <div style="padding: 20px; font-family: Arial, sans-serif;">
+          <h1 style="color: #f97316; margin-bottom: 20px;">Informe de Analytics</h1>
+
+          <div style="margin-bottom: 30px;">
+            <h2>Métricas Principales</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+              <div>
+                <h3>Total Streams</h3>
+                <p>${formatMetricValue(summary?.currentMetrics?.totalEngagement || 0)}</p>
+              </div>
+              <div>
+                <h3>Monthly Listeners</h3>
+                <p>${formatMetricValue(summary?.currentMetrics?.monthlyListeners || 0)}</p>
+              </div>
+              <div>
+                <h3>Revenue</h3>
+                <p>$${formatMetricValue(summary?.currentMetrics?.totalRevenue || 0)}</p>
+              </div>
+              <div>
+                <h3>Social Engagement</h3>
+                <p>${formatMetricValue(summary?.currentMetrics?.totalEngagement || 0)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 30px;">
+            <h2>Distribución por Plataforma</h2>
+            <ul>
+              <li>Spotify: ${formatMetricValue(summary?.currentMetrics?.spotifyFollowers || 0)} seguidores</li>
+              <li>Instagram: ${formatMetricValue(summary?.currentMetrics?.instagramFollowers || 0)} seguidores</li>
+              <li>YouTube: ${formatMetricValue(summary?.currentMetrics?.youtubeViews || 0)} vistas</li>
+            </ul>
+          </div>
+
+          <div>
+            <h2>Período del Informe</h2>
+            <p>Desde: ${format(subDays(new Date(), selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 365), 'dd/MM/yyyy')}</p>
+            <p>Hasta: ${format(new Date(), 'dd/MM/yyyy')}</p>
+          </div>
+        </div>
+      `;
+
+      // Configure PDF options
+      const options = {
+        margin: 1,
+        filename: `analytics-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      // Generate and download PDF
+      await html2pdf().from(reportContent).set(options).save();
+
+      toast({
+        title: "Informe Exportado",
+        description: "El informe ha sido generado y descargado exitosamente.",
+      });
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el informe. Por favor, intente nuevamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -119,9 +199,13 @@ export default function AnalyticsPage() {
                   <Calendar className="h-4 w-4" />
                   {selectedPeriod === "7d" ? "7 días" : selectedPeriod === "30d" ? "30 días" : "12 meses"}
                 </Button>
-                <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
-                  <Download className="h-4 w-4" />
-                  Exportar Informe
+                <Button 
+                  className="bg-orange-500 hover:bg-orange-600 gap-2"
+                  onClick={handleExportReport}
+                  disabled={isExporting}
+                >
+                  <Download className={`h-4 w-4 ${isExporting ? 'animate-spin' : ''}`} />
+                  {isExporting ? 'Exportando...' : 'Exportar Informe'}
                 </Button>
               </div>
             </div>
