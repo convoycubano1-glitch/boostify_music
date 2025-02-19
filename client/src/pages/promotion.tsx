@@ -84,10 +84,12 @@ export default function PromotionPage() {
 
       try {
         const campaignsRef = collection(db, "campaigns");
+        // Modificar la consulta para que coincida exactamente con el índice
         const q = query(
           campaignsRef,
           where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          orderBy("createdAt", "desc"),
+          orderBy("__name__", "desc")
         );
 
         const querySnapshot = await getDocs(q);
