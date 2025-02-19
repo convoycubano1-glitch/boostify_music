@@ -23,6 +23,7 @@ export function Header() {
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
     { name: "Store", href: "/store", icon: Store, highlight: true },
+    { name: "Real-Time Translator", href: "/translator", icon: Globe },
     { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
     { name: "Merchandise", href: "/merchandise", icon: Store },
     { name: "Spotify", href: "/spotify", icon: Music2 },
