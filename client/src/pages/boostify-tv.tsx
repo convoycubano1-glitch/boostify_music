@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,8 @@ const videoContent: VideoContent[] = [
     id: 1,
     title: "AI Generated Music Video Sample",
     description: "Experience the future of music video creation with our AI technology",
-    source: "./assets/Standard_Mode_Generated_Video (7).mp4",
-    thumbnail: "./assets/video-thumbnail-1.jpg",
+    source: "/Standard_Mode_Generated_Video (7).mp4",
+    thumbnail: "/video-thumbnail-1.jpg",
     duration: "3:45",
     views: 12500,
     category: "featured"
@@ -32,8 +33,8 @@ const videoContent: VideoContent[] = [
     id: 2,
     title: "Behind the Scenes - Studio Session",
     description: "Watch how our artists create magic in the studio",
-    source: "./assets/Standard_Mode_Generated_Video (2).mp4",
-    thumbnail: "./assets/video-thumbnail-2.jpg",
+    source: "/Standard_Mode_Generated_Video (2).mp4",
+    thumbnail: "/video-thumbnail-2.jpg",
     duration: "5:20",
     views: 8300,
     category: "featured"
@@ -42,8 +43,8 @@ const videoContent: VideoContent[] = [
     id: 3,
     title: "Live Performance Highlights",
     description: "Best moments from our latest live performances",
-    source: "./assets/Standard_Mode_Generated_Video (3).mp4",
-    thumbnail: "./assets/video-thumbnail-3.jpg",
+    source: "/Standard_Mode_Generated_Video (3).mp4",
+    thumbnail: "/video-thumbnail-3.jpg",
     duration: "4:15",
     views: 15700,
     category: "live"
@@ -51,6 +52,16 @@ const videoContent: VideoContent[] = [
 ];
 
 export default function BoostifyTvPage() {
+  const [playingVideo, setPlayingVideo] = useState<number | null>(null);
+
+  const handlePlayVideo = (videoId: number) => {
+    setPlayingVideo(videoId);
+    const video = document.getElementById(`video-${videoId}`) as HTMLVideoElement;
+    if (video) {
+      video.play();
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -64,7 +75,7 @@ export default function BoostifyTvPage() {
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           >
-            <source src="./assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
+            <source src="/Standard_Mode_Generated_Video (7).mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
           <div className="relative h-full flex items-center justify-start px-4 md:px-12">
@@ -134,19 +145,24 @@ export default function BoostifyTvPage() {
                   <Card key={video.id} className="overflow-hidden group">
                     <div className="aspect-video relative">
                       <video
+                        id={`video-${video.id}`}
                         className="w-full h-full object-cover"
                         poster={video.thumbnail}
+                        controls={playingVideo === video.id}
                       >
                         <source src={video.source} type="video/mp4" />
                       </video>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute inset-0 m-auto bg-white/20 hover:bg-white/30 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Play className="w-8 h-8" />
-                      </Button>
+                      {playingVideo !== video.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePlayVideo(video.id)}
+                          className="absolute inset-0 m-auto bg-white/20 hover:bg-white/30 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Play className="w-8 h-8" />
+                        </Button>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold mb-2">{video.title}</h3>
@@ -178,21 +194,26 @@ export default function BoostifyTvPage() {
                   <Card key={video.id} className="overflow-hidden group">
                     <div className="aspect-video relative">
                       <video
+                        id={`video-${video.id}`}
                         className="w-full h-full object-cover"
                         poster={video.thumbnail}
+                        controls={playingVideo === video.id}
                       >
                         <source src={video.source} type="video/mp4" />
                       </video>
                       <div className="absolute top-2 left-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
                         LIVE
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute inset-0 m-auto bg-white/20 hover:bg-white/30 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Play className="w-8 h-8" />
-                      </Button>
+                      {playingVideo !== video.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePlayVideo(video.id)}
+                          className="absolute inset-0 m-auto bg-white/20 hover:bg-white/30 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Play className="w-8 h-8" />
+                        </Button>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold mb-2">{video.title}</h3>
