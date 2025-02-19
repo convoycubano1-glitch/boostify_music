@@ -12,6 +12,7 @@ import ArtistDashboard from "@/pages/artist-dashboard";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
 import BlogPage from "@/pages/blog";
 import BoostifyInternationalPage from "@/pages/boostify-international";
+import BoostifyTVPage from "@/pages/boostify-tv";
 import ContactsPage from "@/pages/contacts";
 import ContractsPage from "@/pages/contracts";
 import CookiesPage from "@/pages/cookies";
@@ -52,6 +53,7 @@ const Router = () => {
       <ProtectedRoute path="/spotify" component={SpotifyPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
       <ProtectedRoute path="/boostify-international" component={BoostifyInternationalPage} />
+      <ProtectedRoute path="/boostify-tv" component={BoostifyTVPage} />
       <ProtectedRoute path="/pr" component={PRPage} />
       <ProtectedRoute path="/news" component={NewsPage} />
       <ProtectedRoute path="/events" component={EventsPage} />
