@@ -2,8 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Activity, TrendingUp, BarChart2, LineChart, PieChart, Download, Calendar, Music2, Users, DollarSign, Share2 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { Activity, TrendingUp, Download, Calendar, Music2, Users, DollarSign, Share2 } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -77,7 +77,6 @@ export default function AnalyticsPage() {
     const data: any[] = [];
     const metrics = ['streams', 'engagement', 'revenue'];
 
-    // Group by date and combine metrics
     analyticsHistory.forEach((record: any) => {
       const date = format(new Date(record.timestamp), 'MM/dd/yyyy');
       const existingDay = data.find(d => d.date === date);
@@ -98,52 +97,50 @@ export default function AnalyticsPage() {
     try {
       setIsExporting(true);
 
-      // Create report content
       const reportContent = document.createElement('div');
       reportContent.innerHTML = `
-        <div style="padding: 20px; font-family: Arial, sans-serif;">
-          <h1 style="color: #f97316; margin-bottom: 20px;">Informe de Analytics</h1>
+        <div style="padding: 20px; font-family: Arial, sans-serif; color: #000000;">
+          <h1 style="color: #000000; margin-bottom: 20px;">Analytics Report</h1>
 
           <div style="margin-bottom: 30px;">
-            <h2>Métricas Principales</h2>
+            <h2 style="color: #000000;">Key Metrics</h2>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
               <div>
-                <h3>Total Streams</h3>
+                <h3 style="color: #000000;">Total Streams</h3>
                 <p>${formatMetricValue(summary?.currentMetrics?.totalEngagement || 0)}</p>
               </div>
               <div>
-                <h3>Monthly Listeners</h3>
+                <h3 style="color: #000000;">Monthly Listeners</h3>
                 <p>${formatMetricValue(summary?.currentMetrics?.monthlyListeners || 0)}</p>
               </div>
               <div>
-                <h3>Revenue</h3>
+                <h3 style="color: #000000;">Revenue</h3>
                 <p>$${formatMetricValue(summary?.currentMetrics?.totalRevenue || 0)}</p>
               </div>
               <div>
-                <h3>Social Engagement</h3>
+                <h3 style="color: #000000;">Social Engagement</h3>
                 <p>${formatMetricValue(summary?.currentMetrics?.totalEngagement || 0)}</p>
               </div>
             </div>
           </div>
 
           <div style="margin-bottom: 30px;">
-            <h2>Distribución por Plataforma</h2>
+            <h2 style="color: #000000;">Platform Distribution</h2>
             <ul>
-              <li>Spotify: ${formatMetricValue(summary?.currentMetrics?.spotifyFollowers || 0)} seguidores</li>
-              <li>Instagram: ${formatMetricValue(summary?.currentMetrics?.instagramFollowers || 0)} seguidores</li>
-              <li>YouTube: ${formatMetricValue(summary?.currentMetrics?.youtubeViews || 0)} vistas</li>
+              <li>Spotify: ${formatMetricValue(summary?.currentMetrics?.spotifyFollowers || 0)} followers</li>
+              <li>Instagram: ${formatMetricValue(summary?.currentMetrics?.instagramFollowers || 0)} followers</li>
+              <li>YouTube: ${formatMetricValue(summary?.currentMetrics?.youtubeViews || 0)} views</li>
             </ul>
           </div>
 
           <div>
-            <h2>Período del Informe</h2>
-            <p>Desde: ${format(subDays(new Date(), selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 365), 'dd/MM/yyyy')}</p>
-            <p>Hasta: ${format(new Date(), 'dd/MM/yyyy')}</p>
+            <h2 style="color: #000000;">Report Period</h2>
+            <p>From: ${format(subDays(new Date(), selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 365), 'MM/dd/yyyy')}</p>
+            <p>To: ${format(new Date(), 'MM/dd/yyyy')}</p>
           </div>
         </div>
       `;
 
-      // Configure PDF options
       const options = {
         margin: 1,
         filename: `analytics-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`,
@@ -152,18 +149,17 @@ export default function AnalyticsPage() {
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
-      // Generate and download PDF
       await html2pdf().from(reportContent).set(options).save();
 
       toast({
-        title: "Informe Exportado",
-        description: "El informe ha sido generado y descargado exitosamente.",
+        title: "Report Exported",
+        description: "The report has been generated and downloaded successfully.",
       });
     } catch (error) {
       console.error('Error exporting report:', error);
       toast({
         title: "Error",
-        description: "No se pudo generar el informe. Por favor, intente nuevamente.",
+        description: "Could not generate the report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -176,36 +172,36 @@ export default function AnalyticsPage() {
       <Header />
       <main className="flex-1 pt-20">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex justify-between items-center mb-8">
+          <div className="container mx-auto px-4 py-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
+                <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
                   Analytics Dashboard
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  Análisis detallado y métricas de rendimiento
+                  Detailed analysis and performance metrics
                 </p>
               </motion.div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button 
                   variant="outline" 
-                  className="gap-2"
+                  className="gap-2 min-w-[120px]"
                   onClick={() => handlePeriodChange(selectedPeriod === '7d' ? '30d' : selectedPeriod === '30d' ? '12m' : '7d')}
                 >
                   <Calendar className="h-4 w-4" />
-                  {selectedPeriod === "7d" ? "7 días" : selectedPeriod === "30d" ? "30 días" : "12 meses"}
+                  {selectedPeriod === "7d" ? "7 Days" : selectedPeriod === "30d" ? "30 Days" : "12 Months"}
                 </Button>
                 <Button 
-                  className="bg-orange-500 hover:bg-orange-600 gap-2"
+                  className="bg-orange-500 hover:bg-orange-600 gap-2 min-w-[150px]"
                   onClick={handleExportReport}
                   disabled={isExporting}
                 >
                   <Download className={`h-4 w-4 ${isExporting ? 'animate-spin' : ''}`} />
-                  {isExporting ? 'Exportando...' : 'Exportar Informe'}
+                  {isExporting ? 'Exporting...' : 'Export Report'}
                 </Button>
               </div>
             </div>
@@ -217,7 +213,7 @@ export default function AnalyticsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                <Card className="p-6 relative overflow-hidden">
+                <Card className="p-6 relative overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
                   <div className="relative">
                     <div className="flex items-center gap-2 mb-4">
@@ -228,7 +224,7 @@ export default function AnalyticsPage() {
                       {formatMetricValue(summary?.currentMetrics?.totalEngagement || 0)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      <span className="text-green-500">↑ 12.5%</span> vs último periodo
+                      <span className="text-green-500">↑ 12.5%</span> vs last period
                     </p>
                   </div>
                 </Card>
@@ -239,7 +235,7 @@ export default function AnalyticsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Card className="p-6 relative overflow-hidden">
+                <Card className="p-6 relative overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
                   <div className="relative">
                     <div className="flex items-center gap-2 mb-4">
@@ -250,7 +246,7 @@ export default function AnalyticsPage() {
                       {formatMetricValue(summary?.currentMetrics?.monthlyListeners || 0)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      <span className="text-green-500">↑ 8.3%</span> vs último mes
+                      <span className="text-green-500">↑ 8.3%</span> vs last month
                     </p>
                   </div>
                 </Card>
@@ -261,7 +257,7 @@ export default function AnalyticsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <Card className="p-6 relative overflow-hidden">
+                <Card className="p-6 relative overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
                   <div className="relative">
                     <div className="flex items-center gap-2 mb-4">
@@ -272,7 +268,7 @@ export default function AnalyticsPage() {
                       ${formatMetricValue(summary?.currentMetrics?.totalRevenue || 0)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Ingresos totales
+                      Total revenue
                     </p>
                   </div>
                 </Card>
@@ -283,7 +279,7 @@ export default function AnalyticsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
-                <Card className="p-6 relative overflow-hidden">
+                <Card className="p-6 relative overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
                   <div className="relative">
                     <div className="flex items-center gap-2 mb-4">
@@ -294,7 +290,7 @@ export default function AnalyticsPage() {
                       {formatMetricValue(summary?.currentMetrics?.totalEngagement || 0)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Interacciones totales
+                      Total interactions
                     </p>
                   </div>
                 </Card>
@@ -304,90 +300,102 @@ export default function AnalyticsPage() {
             {/* Charts Section */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Performance Overview Chart */}
-              <Card className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-2">Performance Overview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Tendencias de streams y engagement
-                  </p>
-                </div>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={generateTimeSeriesData()}>
-                      <defs>
-                        <linearGradient id="colorPerformance" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="date" className="text-xs" />
-                      <YAxis className="text-xs" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="streams"
-                        name="Streams"
-                        stroke="hsl(24, 95%, 53%)"
-                        fillOpacity={1}
-                        fill="url(#colorPerformance)"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="engagement"
-                        name="Engagement"
-                        stroke="hsl(24, 95%, 53%)"
-                        fillOpacity={0.5}
-                        fill="url(#colorPerformance)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                <Card className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-2">Performance Overview</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Streams and engagement trends
+                    </p>
+                  </div>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={generateTimeSeriesData()}>
+                        <defs>
+                          <linearGradient id="colorPerformance" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="date" className="text-xs" />
+                        <YAxis className="text-xs" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="streams"
+                          name="Streams"
+                          stroke="hsl(24, 95%, 53%)"
+                          fillOpacity={1}
+                          fill="url(#colorPerformance)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="engagement"
+                          name="Engagement"
+                          stroke="hsl(24, 95%, 53%)"
+                          fillOpacity={0.5}
+                          fill="url(#colorPerformance)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </motion.div>
 
-              {/* Geographic Distribution */}
-              <Card className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-2">Platform Distribution</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Distribución de engagement por plataforma
-                  </p>
-                </div>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RePieChart>
-                      <Pie
-                        data={[
-                          { name: 'Spotify', value: summary?.currentMetrics?.spotifyFollowers || 0 },
-                          { name: 'Instagram', value: summary?.currentMetrics?.instagramFollowers || 0 },
-                          { name: 'YouTube', value: summary?.currentMetrics?.youtubeViews || 0 },
-                        ]}
-                        innerRadius={60}
-                        outerRadius={120}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {COLORS.map((color, index) => (
-                          <Cell key={`cell-${index}`} fill={color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px'
-                        }}
-                      />
-                    </RePieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
+              {/* Platform Distribution */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
+                <Card className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-2">Platform Distribution</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Engagement distribution by platform
+                    </p>
+                  </div>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RePieChart>
+                        <Pie
+                          data={[
+                            { name: 'Spotify', value: summary?.currentMetrics?.spotifyFollowers || 0 },
+                            { name: 'Instagram', value: summary?.currentMetrics?.instagramFollowers || 0 },
+                            { name: 'YouTube', value: summary?.currentMetrics?.youtubeViews || 0 },
+                          ]}
+                          innerRadius={60}
+                          outerRadius={120}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {COLORS.map((color, index) => (
+                            <Cell key={`cell-${index}`} fill={color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                        />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </motion.div>
             </div>
           </div>
         </ScrollArea>
