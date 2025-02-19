@@ -246,16 +246,18 @@ export default function PromotionPage() {
                       Set up your campaign details and get AI-powered suggestions
                     </DialogDescription>
                   </DialogHeader>
-                  <CampaignForm
-                    onSuccess={(campaignData: any) => {
-                      createCampaignMutation.mutate({
-                        ...campaignData,
-                        userId: auth.currentUser!.uid,
-                        status: 'draft',
-                        progress: 0
-                      } as Omit<Campaign, 'id'>);
-                    }}
-                  />
+                  <div className="py-4">
+                    <CampaignForm
+                      onSuccess={(campaignData: any) => {
+                        createCampaignMutation.mutate({
+                          ...campaignData,
+                          userId: auth.currentUser!.uid,
+                          status: 'draft',
+                          progress: 0
+                        } as Omit<Campaign, 'id'>);
+                      }}
+                    />
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
@@ -436,15 +438,17 @@ export default function PromotionPage() {
                 Update your campaign details
               </DialogDescription>
             </DialogHeader>
-            <CampaignForm
-              campaign={editingCampaign}
-              onSuccess={(campaignData: any) => {
-                updateCampaignMutation.mutate({
-                  ...editingCampaign,
-                  ...campaignData,
-                });
-              }}
-            />
+            <div className="py-4">
+              <CampaignForm
+                campaign={editingCampaign}
+                onSuccess={(campaignData: any) => {
+                  updateCampaignMutation.mutate({
+                    ...editingCampaign,
+                    ...campaignData,
+                  });
+                }}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
