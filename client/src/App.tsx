@@ -5,37 +5,38 @@ import { Toaster } from "@/components/ui/toaster";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
-import ArtistDashboard from "@/pages/artist-dashboard";
-import HomePage from "@/pages/home";
-import SpotifyPage from "@/pages/spotify";
-import ContractsPage from "@/pages/contracts";
-import PRPage from "@/pages/pr";
-import NewsPage from "@/pages/news";
-import EventsPage from "@/pages/events";
-import AnalyticsPage from "@/pages/analytics";
-import GlobalPage from "@/pages/global";
-import VideosPage from "@/pages/videos";
-import BlogPage from "@/pages/blog";
-import PromotionPage from "@/pages/promotion";
-import SettingsPage from "@/pages/settings";
-import YoutubeViewsPage from "@/pages/youtube-views";
-import InstagramBoostPage from "@/pages/instagram-boost";
-import ContactsPage from "@/pages/contacts";
-import MessagesPage from "@/pages/messages";
-import ManagerToolsPage from "@/pages/manager-tools";
-import ProducerToolsPage from "@/pages/producer-tools";
-import MusicVideoCreator from "@/pages/music-video-creator";
-import RecordLabelServices from "@/pages/record-label-services";
 import AIAgentsPage from "@/pages/ai-agents";
+import AnalyticsPage from "@/pages/analytics";
+import ArtistDashboard from "@/pages/artist-dashboard";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
-import MerchandisePage from "@/pages/merchandise";
+import BlogPage from "@/pages/blog";
+import BoostifyInternationalPage from "@/pages/boostify-international";
+import ContactsPage from "@/pages/contacts";
+import ContractsPage from "@/pages/contracts";
+import CookiesPage from "@/pages/cookies";
+import DashboardPage from "@/pages/dashboard";
 import EcosystemPage from "@/pages/ecosystem";
+import EventsPage from "@/pages/events";
+import GlobalPage from "@/pages/global";
+import HomePage from "@/pages/home";
+import InstagramBoostPage from "@/pages/instagram-boost";
+import ManagerToolsPage from "@/pages/manager-tools";
+import MerchandisePage from "@/pages/merchandise";
+import MessagesPage from "@/pages/messages";
+import MusicVideoCreator from "@/pages/music-video-creator";
+import NewsPage from "@/pages/news";
+import PRPage from "@/pages/pr";
+import PrivacyPage from "@/pages/privacy";
+import ProducerToolsPage from "@/pages/producer-tools";
+import PromotionPage from "@/pages/promotion";
+import RecordLabelServices from "@/pages/record-label-services";
+import SettingsPage from "@/pages/settings";
+import SpotifyPage from "@/pages/spotify";
 import StorePage from "@/pages/store";
 import TermsPage from "@/pages/terms";
-import PrivacyPage from "@/pages/privacy";
-import CookiesPage from "@/pages/cookies";
+import VideosPage from "@/pages/videos";
+import YoutubeViewsPage from "@/pages/youtube-views";
 
 const Router = () => {
   return (
@@ -44,11 +45,12 @@ const Router = () => {
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/cookies" component={CookiesPage} />
-      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
       <ProtectedRoute path="/spotify" component={SpotifyPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
+      <ProtectedRoute path="/boostify-international" component={BoostifyInternationalPage} />
       <ProtectedRoute path="/pr" component={PRPage} />
       <ProtectedRoute path="/news" component={NewsPage} />
       <ProtectedRoute path="/events" component={EventsPage} />

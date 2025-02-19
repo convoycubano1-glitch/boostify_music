@@ -396,7 +396,10 @@ export default function InstagramBoostPage() {
                           Active
                         </Badge>
                       </div>
-                      <Progress value={75} className="bg-orange-500/20" indicatorClassName="bg-orange-500" />
+                      <Progress
+                        value={75}
+                        className="bg-orange-500/20 h-2 rounded-full" //Added styling here
+                      />
                       <p className="text-sm text-muted-foreground mt-2">75% Complete</p>
                     </div>
                   </div>
