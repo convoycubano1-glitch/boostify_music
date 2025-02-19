@@ -53,8 +53,8 @@ interface Campaign {
   description: string;
   platform: string;
   budget: number;
-  startDate: Timestamp;
-  endDate: Timestamp;
+  startDate: Timestamp | string;
+  endDate: Timestamp | string;
   status: 'active' | 'scheduled' | 'completed' | 'draft';
   progress: number;
   userId: string;
@@ -151,8 +151,11 @@ export default function PromotionPage() {
       console.log("Intentando crear nueva campaña:", newCampaign);
       const campaignsRef = collection(db, "campaigns");
       try {
+        // Convertir las fechas a Timestamp
         const docRef = await addDoc(campaignsRef, {
           ...newCampaign,
+          startDate: Timestamp.fromDate(new Date(newCampaign.startDate)),
+          endDate: Timestamp.fromDate(new Date(newCampaign.endDate)),
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now()
         });
@@ -414,7 +417,18 @@ export default function PromotionPage() {
                                     <Calendar className="h-4 w-4" /> Duration
                                   </p>
                                   <p className="font-semibold">
-                                    {campaign.startDate?.toDate().toLocaleDateString()} - {campaign.endDate?.toDate().toLocaleDateString()}
+                                    {typeof campaign.startDate === 'string' 
+                                      ? new Date(campaign.startDate).toLocaleDateString()
+                                      : campaign.startDate instanceof Timestamp 
+                                        ? campaign.startDate.toDate().toLocaleDateString()
+                                        : 'Fecha no disponible'
+                                    } - {
+                                      typeof campaign.endDate === 'string'
+                                        ? new Date(campaign.endDate).toLocaleDateString()
+                                        : campaign.endDate instanceof Timestamp
+                                          ? campaign.endDate.toDate().toLocaleDateString()
+                                          : 'Fecha no disponible'
+                                    }
                                   </p>
                                 </div>
                                 <div>
