@@ -91,7 +91,10 @@ export function Header() {
             </Link>
 
             {/* Google Translate Element */}
-            <div id="google_translate_element" className="px-2"></div>
+            <div 
+              id="google_translate_element" 
+              className="min-w-[120px] flex items-center justify-center bg-background/80 rounded-md px-2 h-9"
+            ></div>
 
             {isAdmin && (
               <Link href="/admin">
