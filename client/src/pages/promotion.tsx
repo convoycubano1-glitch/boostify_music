@@ -239,7 +239,7 @@ export default function PromotionPage() {
                     New Campaign
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
                     <DialogTitle>Create New Campaign</DialogTitle>
                     <DialogDescription>
@@ -247,7 +247,7 @@ export default function PromotionPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <CampaignForm
-                    onSuccess={(campaignData) => {
+                    onSuccess={(campaignData: any) => {
                       createCampaignMutation.mutate({
                         ...campaignData,
                         userId: auth.currentUser!.uid,
@@ -429,7 +429,7 @@ export default function PromotionPage() {
       {/* Edit Campaign Dialog */}
       {editingCampaign && (
         <Dialog open={!!editingCampaign} onOpenChange={() => setEditingCampaign(null)}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Edit Campaign</DialogTitle>
               <DialogDescription>
@@ -438,7 +438,7 @@ export default function PromotionPage() {
             </DialogHeader>
             <CampaignForm
               campaign={editingCampaign}
-              onSuccess={(campaignData) => {
+              onSuccess={(campaignData: any) => {
                 updateCampaignMutation.mutate({
                   ...editingCampaign,
                   ...campaignData,
