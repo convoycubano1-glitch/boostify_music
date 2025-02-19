@@ -84,7 +84,6 @@ export default function PromotionPage() {
 
       try {
         const campaignsRef = collection(db, "campaigns");
-        // Modificar la consulta para que coincida exactamente con el índice
         const q = query(
           campaignsRef,
           where("userId", "==", user.uid),
@@ -250,7 +249,7 @@ export default function PromotionPage() {
                   </DialogHeader>
                   <div className="py-4">
                     <CampaignForm
-                      onSuccess={(campaignData: any) => {
+                      onSuccess={(campaignData) => {
                         createCampaignMutation.mutate({
                           ...campaignData,
                           userId: auth.currentUser!.uid,
@@ -443,7 +442,7 @@ export default function PromotionPage() {
             <div className="py-4">
               <CampaignForm
                 campaign={editingCampaign}
-                onSuccess={(campaignData: any) => {
+                onSuccess={(campaignData) => {
                   updateCampaignMutation.mutate({
                     ...editingCampaign,
                     ...campaignData,
