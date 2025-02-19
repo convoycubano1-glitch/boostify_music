@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,6 @@ export function Header() {
     { name: "Music Videos", href: "/music-video-creator", icon: Video },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
-    // Agregamos Store con highlight
     { name: "Store", href: "/store", icon: Store, highlight: true },
     { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
     { name: "Merchandise", href: "/merchandise", icon: Store },
@@ -82,6 +81,15 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Boostify International button - always visible */}
+            <Link href="/boostify-international">
+              <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
+                <Globe className="h-4 w-4" />
+                <span className="hidden sm:inline">Boostify International</span>
+                <span className="sm:hidden">International</span>
+              </Button>
+            </Link>
+
             {isAdmin && (
               <Link href="/admin">
                 <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
