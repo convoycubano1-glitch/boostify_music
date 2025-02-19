@@ -88,7 +88,7 @@ export default function PromotionPage() {
         const q = query(
           campaignsRef,
           where("userId", "==", user.uid),
-          orderBy("createdAt", "desc") // Simplificamos la consulta removiendo orderBy("__name__")
+          orderBy("createdAt", "desc") 
         );
 
         const querySnapshot = await getDocs(q);
