@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { Globe, Home, Building2, Languages, Users, MapPin, BriefcaseIcon } from "lucide-react";
+import { Globe, Home, Building2, Languages, Users, MapPin, BriefcaseIcon, Bot, Check } from "lucide-react";
 import { useState } from "react";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import cn from 'classnames';
 import { Badge } from "@/components/ui/badge";
+import { CircularProgress } from "@/components/ui/circular-progress";
 
 interface Country {
   id: string;
@@ -37,6 +38,13 @@ interface Department {
   employees: number;
   description?: string;
   status?: 'active' | 'expanding' | 'new';
+  automationLevel?: number;
+  assistantTypes?: {
+    type: string;
+    count: number;
+    functions: string[];
+    efficiency?: number;
+  }[];
 }
 
 const applicationFormSchema = z.object({
@@ -75,9 +83,9 @@ export default function BoostifyInternational() {
       nativeName: "France",
       flag: "🇫🇷",
       departments: [
-        { id: "fr-marketing", name: "Marketing", localName: "Marketing", employees: 25 },
-        { id: "fr-sales", name: "Sales", localName: "Ventes", employees: 30 },
-        { id: "fr-tech", name: "Technology", localName: "Technologie", employees: 40 }
+        { id: "fr-marketing", name: "Marketing", localName: "Marketing", employees: 5, description: "Marketing Department", automationLevel: 85, assistantTypes: [{ type: "Content Writer", count: 2, functions: ["Content Creation", "SEO Optimization"], efficiency: 90 }, { type: "Social Media Assistant", count: 3, functions: ["Scheduling", "Engagement Analysis"], efficiency: 80 }] },
+        { id: "fr-sales", name: "Sales", localName: "Ventes", employees: 5, description: "Sales Department", automationLevel: 70, assistantTypes: [{ type: "Lead Generation Assistant", count: 2, functions: ["Lead Qualification", "Data Entry"], efficiency: 75 }, { type: "Sales Reporting Assistant", count: 3, functions: ["Sales Data Analysis", "Reporting"], efficiency: 65 }] },
+        { id: "fr-tech", name: "Technology", localName: "Technologie", employees: 5, description: "Technology Department", automationLevel: 95, assistantTypes: [{ type: "Code Assistant", count: 2, functions: ["Code Generation", "Bug Fixing"], efficiency: 92 }, { type: "DevOps Assistant", count: 3, functions: ["Deployment", "Monitoring"], efficiency: 88 }] }
       ]
     },
     {
@@ -86,9 +94,9 @@ export default function BoostifyInternational() {
       nativeName: "भारत",
       flag: "🇮🇳",
       departments: [
-        { id: "in-marketing", name: "Marketing", localName: "विपणन", employees: 35 },
-        { id: "in-sales", name: "Sales", localName: "बिक्री", employees: 45 },
-        { id: "in-tech", name: "Technology", localName: "प्रौद्योगिकी", employees: 60 }
+        { id: "in-marketing", name: "Marketing", localName: "विपणन", employees: 5, description: "Marketing Department", automationLevel: 80, assistantTypes: [{ type: "Content Writer", count: 2, functions: ["Content Creation", "SEO Optimization"], efficiency: 85 }, { type: "Social Media Assistant", count: 3, functions: ["Scheduling", "Engagement Analysis"], efficiency: 75 }] },
+        { id: "in-sales", name: "Sales", localName: "बिक्री", employees: 5, description: "Sales Department", automationLevel: 65, assistantTypes: [{ type: "Lead Generation Assistant", count: 2, functions: ["Lead Qualification", "Data Entry"], efficiency: 70 }, { type: "Sales Reporting Assistant", count: 3, functions: ["Sales Data Analysis", "Reporting"], efficiency: 60 }] },
+        { id: "in-tech", name: "Technology", localName: "प्रौद्योगिकी", employees: 5, description: "Technology Department", automationLevel: 90, assistantTypes: [{ type: "Code Assistant", count: 2, functions: ["Code Generation", "Bug Fixing"], efficiency: 88 }, { type: "DevOps Assistant", count: 3, functions: ["Deployment", "Monitoring"], efficiency: 80 }] }
       ]
     },
     {
@@ -97,64 +105,9 @@ export default function BoostifyInternational() {
       nativeName: "United States",
       flag: "🇺🇸",
       departments: [
-        { id: "us-marketing", name: "Marketing", localName: "Marketing", employees: 50 },
-        { id: "us-sales", name: "Sales", localName: "Sales", employees: 65 },
-        { id: "us-tech", name: "Technology", localName: "Technology", employees: 80 }
-      ]
-    },
-    {
-      id: "pt",
-      name: "Portugal",
-      nativeName: "Portugal",
-      flag: "🇵🇹",
-      departments: [
-        { id: "pt-marketing", name: "Marketing", localName: "Marketing", employees: 20 },
-        { id: "pt-sales", name: "Sales", localName: "Vendas", employees: 25 },
-        { id: "pt-tech", name: "Technology", localName: "Tecnologia", employees: 30 }
-      ]
-    },
-    {
-      id: "de",
-      name: "Germany",
-      nativeName: "Deutschland",
-      flag: "🇩🇪",
-      departments: [
-        { id: "de-marketing", name: "Marketing", localName: "Marketing", employees: 40 },
-        { id: "de-sales", name: "Sales", localName: "Vertrieb", employees: 45 },
-        { id: "de-tech", name: "Technology", localName: "Technologie", employees: 55 }
-      ]
-    },
-    {
-      id: "gb",
-      name: "United Kingdom",
-      nativeName: "United Kingdom",
-      flag: "🇬🇧",
-      departments: [
-        { id: "gb-marketing", name: "Marketing", localName: "Marketing", employees: 35 },
-        { id: "gb-sales", name: "Sales", localName: "Sales", employees: 40 },
-        { id: "gb-tech", name: "Technology", localName: "Technology", employees: 50 }
-      ]
-    },
-    {
-      id: "au",
-      name: "Australia",
-      nativeName: "Australia",
-      flag: "🇦🇺",
-      departments: [
-        { id: "au-marketing", name: "Marketing", localName: "Marketing", employees: 25 },
-        { id: "au-sales", name: "Sales", localName: "Sales", employees: 30 },
-        { id: "au-tech", name: "Technology", localName: "Technology", employees: 35 }
-      ]
-    },
-    {
-      id: "se",
-      name: "Sweden",
-      nativeName: "Sverige",
-      flag: "🇸🇪",
-      departments: [
-        { id: "se-marketing", name: "Marketing", localName: "Marknadsföring", employees: 20 },
-        { id: "se-sales", name: "Sales", localName: "Försäljning", employees: 25 },
-        { id: "se-tech", name: "Technology", localName: "Teknologi", employees: 30 }
+        { id: "us-marketing", name: "Marketing", localName: "Marketing", employees: 5, description: "Marketing Department", automationLevel: 90, assistantTypes: [{ type: "Content Writer", count: 2, functions: ["Content Creation", "SEO Optimization"], efficiency: 95 }, { type: "Social Media Assistant", count: 3, functions: ["Scheduling", "Engagement Analysis"], efficiency: 85 }] },
+        { id: "us-sales", name: "Sales", localName: "Sales", employees: 5, description: "Sales Department", automationLevel: 75, assistantTypes: [{ type: "Lead Generation Assistant", count: 2, functions: ["Lead Qualification", "Data Entry"], efficiency: 80 }, { type: "Sales Reporting Assistant", count: 3, functions: ["Sales Data Analysis", "Reporting"], efficiency: 70 }] },
+        { id: "us-tech", name: "Technology", localName: "Technology", employees: 5, description: "Technology Department", automationLevel: 98, assistantTypes: [{ type: "Code Assistant", count: 2, functions: ["Code Generation", "Bug Fixing"], efficiency: 95 }, { type: "DevOps Assistant", count: 3, functions: ["Deployment", "Monitoring"], efficiency: 90 }] }
       ]
     },
     {
@@ -163,143 +116,35 @@ export default function BoostifyInternational() {
       nativeName: "日本",
       flag: "🇯🇵",
       region: "Asia",
-      employeeCount: 120,
+      employeeCount: 8,
       established: "2022",
       departments: [
-        { id: "jp-marketing", name: "Marketing", localName: "マーケティング", employees: 30, status: 'active' },
-        { id: "jp-sales", name: "Sales", localName: "営業", employees: 40, status: 'expanding' },
-        { id: "jp-tech", name: "Technology", localName: "技術", employees: 50, status: 'active' },
-        { id: "jp-creative", name: "Creative", localName: "クリエイティブ", employees: 25, status: 'new' }
+        {
+          id: "jp-marketing",
+          name: "Marketing",
+          localName: "マーケティング",
+          employees: 5,
+          status: 'active',
+          automationLevel: 92,
+          assistantTypes: [
+            {
+              type: "Content Generator",
+              count: 2,
+              functions: ["Generación de contenido multilingüe", "Optimización SEO", "Análisis de tendencias"],
+              efficiency: 95
+            },
+            {
+              type: "Social Media Manager",
+              count: 3,
+              functions: ["Programación de posts", "Análisis de engagement", "Respuesta automática"],
+              efficiency: 88
+            }
+          ]
+        },
       ]
     },
-    {
-      id: "br",
-      name: "Brazil",
-      nativeName: "Brasil",
-      flag: "🇧🇷",
-      region: "South America",
-      employeeCount: 150,
-      established: "2021",
-      departments: [
-        { id: "br-marketing", name: "Marketing", localName: "Marketing", employees: 35, status: 'active' },
-        { id: "br-sales", name: "Sales", localName: "Vendas", employees: 45, status: 'expanding' },
-        { id: "br-tech", name: "Technology", localName: "Tecnologia", employees: 40, status: 'active' },
-        { id: "br-content", name: "Content", localName: "Conteúdo", employees: 30, status: 'new' }
-      ]
-    },
-    {
-      id: "kr",
-      name: "South Korea",
-      nativeName: "대한민국",
-      flag: "🇰🇷",
-      region: "Asia",
-      employeeCount: 90,
-      established: "2023",
-      departments: [
-        { id: "kr-marketing", name: "Marketing", localName: "마케팅", employees: 25, status: 'active' },
-        { id: "kr-sales", name: "Sales", localName: "영업", employees: 30, status: 'expanding' },
-        { id: "kr-tech", name: "Technology", localName: "기술", employees: 35, status: 'new' }
-      ]
-    },
-    {
-      id: "mx",
-      name: "Mexico",
-      nativeName: "México",
-      flag: "🇲🇽",
-      region: "North America",
-      employeeCount: 110,
-      established: "2022",
-      departments: [
-        { id: "mx-marketing", name: "Marketing", localName: "Marketing", employees: 30, status: 'active' },
-        { id: "mx-sales", name: "Sales", localName: "Ventas", employees: 35, status: 'expanding' },
-        { id: "mx-tech", name: "Technology", localName: "Tecnología", employees: 45, status: 'active' }
-      ]
-    },
-    {
-      id: "za",
-      name: "South Africa",
-      nativeName: "South Africa",
-      flag: "🇿🇦",
-      region: "Africa",
-      employeeCount: 80,
-      established: "2023",
-      departments: [
-        { id: "za-marketing", name: "Marketing", localName: "Marketing", employees: 20, status: 'active' },
-        { id: "za-sales", name: "Sales", localName: "Sales", employees: 30, status: 'expanding' },
-        { id: "za-tech", name: "Technology", localName: "Technology", employees: 30, status: 'new' }
-      ]
-    },
-    {
-      id: "ae",
-      name: "UAE",
-      nativeName: "الإمارات",
-      flag: "🇦🇪",
-      region: "Middle East",
-      employeeCount: 95,
-      established: "2023",
-      departments: [
-        { id: "ae-marketing", name: "Marketing", localName: "تسويق", employees: 25, status: 'active' },
-        { id: "ae-sales", name: "Sales", localName: "مبيعات", employees: 35, status: 'expanding' },
-        { id: "ae-tech", name: "Technology", localName: "تكنولوجيا", employees: 35, status: 'new' }
-      ]
-    },
-    {
-      id: "sg",
-      name: "Singapore",
-      nativeName: "Singapore",
-      flag: "🇸🇬",
-      region: "Asia",
-      employeeCount: 85,
-      established: "2023",
-      departments: [
-        { id: "sg-marketing", name: "Marketing", localName: "Marketing", employees: 25, status: 'active' },
-        { id: "sg-sales", name: "Sales", localName: "Sales", employees: 30, status: 'expanding' },
-        { id: "sg-tech", name: "Technology", localName: "Technology", employees: 30, status: 'new' }
-      ]
-    },
-    {
-      id: "ca",
-      name: "Canada",
-      nativeName: "Canada",
-      flag: "🇨🇦",
-      region: "North America",
-      employeeCount: 130,
-      established: "2022",
-      departments: [
-        { id: "ca-marketing", name: "Marketing", localName: "Marketing", employees: 35, status: 'active' },
-        { id: "ca-sales", name: "Sales", localName: "Sales", employees: 45, status: 'expanding' },
-        { id: "ca-tech", name: "Technology", localName: "Technology", employees: 50, status: 'active' }
-      ]
-    },
-    {
-      id: "nl",
-      name: "Netherlands",
-      nativeName: "Nederland",
-      flag: "🇳🇱",
-      region: "Europe",
-      employeeCount: 75,
-      established: "2023",
-      departments: [
-        { id: "nl-marketing", name: "Marketing", localName: "Marketing", employees: 20, status: 'active' },
-        { id: "nl-sales", name: "Sales", localName: "Verkoop", employees: 25, status: 'expanding' },
-        { id: "nl-tech", name: "Technology", localName: "Technologie", employees: 30, status: 'new' }
-      ]
-    },
-    {
-      id: "it",
-      name: "Italy",
-      nativeName: "Italia",
-      flag: "🇮🇹",
-      region: "Europe",
-      employeeCount: 95,
-      established: "2023",
-      departments: [
-        { id: "it-marketing", name: "Marketing", localName: "Marketing", employees: 25, status: 'active' },
-        { id: "it-sales", name: "Sales", localName: "Vendite", employees: 35, status: 'expanding' },
-        { id: "it-tech", name: "Technology", localName: "Tecnologia", employees: 35, status: 'new' }
-      ]
-    }
   ];
+
 
   const handleDepartmentAction = (countryId: string, departmentId: string) => {
     toast({
@@ -570,34 +415,68 @@ export default function BoostifyInternational() {
                     {country.departments.map((dept) => (
                       <div
                         key={dept.id}
-                        className="flex items-center justify-between p-2 rounded-md transition-colors hover:bg-orange-500/10"
+                        className="flex flex-col p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-orange-500/20 hover:border-orange-500/40 transition-all"
                       >
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-orange-500" />
-                          <div>
-                            <span className="text-sm font-medium">{dept.localName}</span>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {dept.employees} empleados
-                              </span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-5 h-5 text-orange-500" />
+                            <div>
+                              <span className="font-medium">{dept.localName}</span>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Bot className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
+                                  {dept.employees} asistentes automatizados
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          {dept.automationLevel && (
+                            <div className="flex items-center gap-2">
+                              <CircularProgress
+                                value={dept.automationLevel}
+                                className="w-8 h-8"
+                                strokeWidth={8}
+                              >
+                                <span className="text-xs font-medium">{dept.automationLevel}%</span>
+                              </CircularProgress>
+                            </div>
+                          )}
                         </div>
-                        {dept.status && (
-                          <Badge
-                            variant={
-                              dept.status === 'expanding'
-                                ? 'default'
-                                : dept.status === 'new'
-                                ? 'secondary'
-                                : 'outline'
-                            }
-                            className="text-xs"
+
+                        {dept.assistantTypes?.map((assistant, idx) => (
+                          <div
+                            key={idx}
+                            className="mt-2 p-2 rounded-md bg-orange-500/5 hover:bg-orange-500/10 transition-colors"
                           >
-                            {dept.status}
-                          </Badge>
-                        )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{assistant.type}</span>
+                              <Badge variant="outline" className="text-xs">
+                                x{assistant.count}
+                              </Badge>
+                            </div>
+                            <div className="mt-1 space-y-1">
+                              {assistant.functions.map((func, fidx) => (
+                                <div key={fidx} className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Check className="w-3 h-3 text-green-500" />
+                                  <span>{func}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {assistant.efficiency && (
+                              <div className="mt-2 flex items-center gap-2">
+                                <div className="flex-1 h-1 bg-orange-500/20 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-orange-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${assistant.efficiency}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {assistant.efficiency}% eficiencia
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
