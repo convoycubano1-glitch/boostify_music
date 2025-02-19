@@ -10,10 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useEffect } from "react";
+import { useLanguageDetection } from "@/hooks/use-language-detection";
 
 export function Header() {
   const { user } = useAuth();
   const { logout } = useFirebaseAuth();
+  const { detectedLanguage } = useLanguageDetection();
 
   useEffect(() => {
     // Wait for Google Translate script to load
@@ -31,7 +33,7 @@ export function Header() {
     };
 
     initTranslate();
-  }, []);
+  }, [detectedLanguage]); // Re-init when language changes
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },

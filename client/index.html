@@ -9,8 +9,11 @@
     <link rel="apple-touch-icon" href="/assets/freepik__boostify-music___orange.png" />
     <script type="text/javascript">
       function googleTranslateElementInit() {
+        // Get the stored language preference or default to browser language
+        const storedLang = localStorage.getItem('preferredLanguage') || navigator.language.split('-')[0];
+
         new google.translate.TranslateElement({
-          pageLanguage: 'en',
+          pageLanguage: storedLang || 'en',
           includedLanguages: 'en,es,fr,de,it,pt,ja,ko,zh-CN,ru',
           layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
           autoDisplay: false
