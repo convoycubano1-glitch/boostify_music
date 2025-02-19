@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
 import { Activity, Plus, Eye, MessageSquare, ThumbsUp, Clock, ImageIcon } from "lucide-react";
-import { collection, query, where, orderBy, getDocs, addDoc, Timestamp, updateDoc, doc } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, addDoc, Timestamp, updateDoc, doc, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BlogPost {
@@ -48,6 +48,45 @@ export default function BlogPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Asegurarse de que la colección existe al cargar la página
+  useEffect(() => {
+    const initializeCollection = async () => {
+      if (!user) return;
+
+      try {
+        const postsRef = collection(db, "blog-posts");
+        const q = query(postsRef, where("userId", "==", user.uid), limit(1));
+        const snapshot = await getDocs(q);
+
+        // Si no hay documentos, crear uno inicial
+        if (snapshot.empty) {
+          console.log("Creando post inicial para inicializar la colección");
+          const now = Timestamp.now();
+          await addDoc(postsRef, {
+            title: "Mi primer post",
+            excerpt: "Bienvenido a mi blog",
+            content: "Este es un post inicial para comenzar tu blog.",
+            image: "https://via.placeholder.com/800x600",
+            author: user.displayName || 'Anonymous',
+            date: now,
+            views: 0,
+            likes: 0,
+            comments: 0,
+            tags: ["bienvenida"],
+            userId: user.uid,
+            createdAt: now,
+            updatedAt: now,
+          });
+          console.log("Post inicial creado exitosamente");
+        }
+      } catch (error) {
+        console.error("Error al inicializar la colección:", error);
+      }
+    };
+
+    initializeCollection();
+  }, [user]);
+
   const [newPost, setNewPost] = useState<Partial<BlogPost>>({
     title: '',
     excerpt: '',
@@ -65,10 +104,11 @@ export default function BlogPage() {
       try {
         console.log("Intentando obtener posts para usuario:", user.uid);
         const postsRef = collection(db, "blog-posts");
+
+        // Primero intentar sin ordenamiento para debug
         const q = query(
           postsRef,
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("userId", "==", user.uid)
         );
 
         console.log("Ejecutando consulta de Firestore");
@@ -237,9 +277,9 @@ export default function BlogPage() {
                     <Input
                       id="tags"
                       value={newPost.tags?.join(', ')}
-                      onChange={(e) => setNewPost({ 
-                        ...newPost, 
-                        tags: e.target.value.split(',').map(tag => tag.trim()) 
+                      onChange={(e) => setNewPost({
+                        ...newPost,
+                        tags: e.target.value.split(',').map(tag => tag.trim())
                       })}
                       placeholder="Enter tags separated by commas"
                     />
@@ -292,8 +332,8 @@ export default function BlogPage() {
                 }))}>
                   <defs>
                     <linearGradient id="colorBlog" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -373,7 +413,7 @@ export default function BlogPage() {
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        {post.date instanceof Timestamp 
+                        {post.date instanceof Timestamp
                           ? post.date.toDate().toLocaleDateString()
                           : new Date(post.date).toLocaleDateString()}
                       </div>
