@@ -23,7 +23,6 @@ export function Header() {
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
     { name: "Store", href: "/store", icon: Store, highlight: true },
-    { name: "Real-Time Translator", href: "/translator", icon: Globe },
     { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
     { name: "Merchandise", href: "/merchandise", icon: Store },
     { name: "Spotify", href: "/spotify", icon: Music2 },
@@ -82,7 +81,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Boostify International button - always visible */}
+            {/* Boostify International button */}
             <Link href="/boostify-international">
               <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
                 <Globe className="h-4 w-4" />
@@ -90,6 +89,9 @@ export function Header() {
                 <span className="sm:hidden">International</span>
               </Button>
             </Link>
+
+            {/* Google Translate Element */}
+            <div id="google_translate_element" className="px-2"></div>
 
             {isAdmin && (
               <Link href="/admin">
