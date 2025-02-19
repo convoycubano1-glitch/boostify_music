@@ -37,6 +37,7 @@ import StorePage from "@/pages/store";
 import TermsPage from "@/pages/terms";
 import VideosPage from "@/pages/videos";
 import YoutubeViewsPage from "@/pages/youtube-views";
+import RealTimeTranslator from "@/pages/real-time-translator";
 
 const Router = () => {
   return (
@@ -73,6 +74,7 @@ const Router = () => {
       <ProtectedRoute path="/merchandise" component={MerchandisePage} />
       <ProtectedRoute path="/ecosystem" component={EcosystemPage} />
       <ProtectedRoute path="/store" component={StorePage} />
+      <ProtectedRoute path="/translator" component={RealTimeTranslator} />
       <Route component={NotFound} />
     </Switch>
   );
