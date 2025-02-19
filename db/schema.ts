@@ -24,11 +24,27 @@ export const subscriptions = pgTable("subscriptions", {
 export const marketingMetrics = pgTable("marketing_metrics", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  spotifyFollowers: integer("spotify_followers"),
-  instagramFollowers: integer("instagram_followers"),
-  playlistPlacements: integer("playlist_placements"),
-  monthlyListeners: integer("monthly_listeners"),
+  spotifyFollowers: integer("spotify_followers").default(0),
+  instagramFollowers: integer("instagram_followers").default(0),
+  youtubeViews: integer("youtube_views").default(0),
+  playlistPlacements: integer("playlist_placements").default(0),
+  monthlyListeners: integer("monthly_listeners").default(0),
+  totalEngagement: integer("total_engagement").default(0),
+  websiteVisits: integer("website_visits").default(0),
+  videoUploads: integer("video_uploads").default(0),
+  averageViewDuration: decimal("average_view_duration", { precision: 10, scale: 2 }).default('0'),
+  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).default('0'),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const analyticsHistory = pgTable("analytics_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  metricName: text("metric_name").notNull(),
+  metricValue: decimal("metric_value", { precision: 10, scale: 2 }).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  source: text("source").notNull(), 
+  metadata: json("metadata")
 });
 
 export const contracts = pgTable("contracts", {
@@ -41,7 +57,6 @@ export const contracts = pgTable("contracts", {
   metadata: json("metadata")
 });
 
-// New table for storing audio demos
 export const audioDemos = pgTable("audio_demos", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -68,7 +83,6 @@ export const payments = pgTable("payments", {
   metadata: json("metadata")
 });
 
-// Update bookings table to include price and payment status
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -87,10 +101,10 @@ export const bookings = pgTable("bookings", {
   audioDemoId: integer("audio_demo_id").references(() => audioDemos.id)
 });
 
-// Relations
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
+  analyticsHistory: many(analyticsHistory),
   contracts: many(contracts),
   bookings: many(bookings),
   audioDemos: many(audioDemos)
@@ -126,7 +140,20 @@ export const audioDemosRelations = relations(audioDemos, ({ one }) => ({
   }),
 }));
 
-// Schemas
+export const marketingMetricsRelations = relations(marketingMetrics, ({ one }) => ({
+  user: one(users, {
+    fields: [marketingMetrics.userId],
+    references: [users.id],
+  }),
+}));
+
+export const analyticsHistoryRelations = relations(analyticsHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [analyticsHistory.userId],
+    references: [users.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertBookingSchema = createInsertSchema(bookings);
@@ -135,8 +162,11 @@ export const insertAudioDemoSchema = createInsertSchema(audioDemos);
 export const selectAudioDemoSchema = createSelectSchema(audioDemos);
 export const insertPaymentSchema = createInsertSchema(payments);
 export const selectPaymentSchema = createSelectSchema(payments);
+export const insertMarketingMetricsSchema = createInsertSchema(marketingMetrics);
+export const selectMarketingMetricsSchema = createSelectSchema(marketingMetrics);
+export const insertAnalyticsHistorySchema = createInsertSchema(analyticsHistory);
+export const selectAnalyticsHistorySchema = createSelectSchema(analyticsHistory);
 
-// Types
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
@@ -145,3 +175,7 @@ export type InsertAudioDemo = typeof audioDemos.$inferInsert;
 export type SelectAudioDemo = typeof audioDemos.$inferSelect;
 export type InsertPayment = typeof payments.$inferInsert;
 export type SelectPayment = typeof payments.$inferSelect;
+export type InsertMarketingMetrics = typeof marketingMetrics.$inferInsert;
+export type SelectMarketingMetrics = typeof marketingMetrics.$inferSelect;
+export type InsertAnalyticsHistory = typeof analyticsHistory.$inferInsert;
+export type SelectAnalyticsHistory = typeof analyticsHistory.$inferSelect;

@@ -4,8 +4,8 @@ import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
-import { marketingMetrics, contracts, bookings, payments } from "@db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { marketingMetrics, contracts, bookings, payments, analyticsHistory } from "@db/schema";
+import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
 import express from 'express';
@@ -485,6 +485,117 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error('Error handling webhook:', error);
       res.status(400).send(`Webhook Error: ${error.message}`);
+    }
+  });
+
+  // Get user's current analytics metrics
+  app.get("/api/analytics/metrics", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const [metrics] = await db
+        .select()
+        .from(marketingMetrics)
+        .where(eq(marketingMetrics.userId, req.user!.id))
+        .limit(1);
+
+      if (!metrics) {
+        // Initialize metrics if they don't exist
+        const [newMetrics] = await db
+          .insert(marketingMetrics)
+          .values({
+            userId: req.user!.id,
+            updatedAt: new Date(),
+          })
+          .returning();
+
+        return res.json(newMetrics);
+      }
+
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching analytics metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics metrics' });
+    }
+  });
+
+  // Get analytics history with optional date range
+  app.get("/api/analytics/history", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const { startDate, endDate, metrics } = req.query;
+      let query = db
+        .select()
+        .from(analyticsHistory)
+        .where(eq(analyticsHistory.userId, req.user!.id))
+        .orderBy(desc(analyticsHistory.timestamp));
+
+      if (startDate) {
+        query = query.where(gte(analyticsHistory.timestamp, new Date(startDate as string)));
+      }
+
+      if (endDate) {
+        query = query.where(lte(analyticsHistory.timestamp, new Date(endDate as string)));
+      }
+
+      if (metrics) {
+        const metricsList = (metrics as string).split(',');
+        query = query.where(inArray(analyticsHistory.metricName, metricsList));
+      }
+
+      const history = await query;
+
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching analytics history:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics history' });
+    }
+  });
+
+  // Get analytics summary for dashboard
+  app.get("/api/analytics/summary", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const [metrics] = await db
+        .select({
+          totalEngagement: marketingMetrics.totalEngagement,
+          websiteVisits: marketingMetrics.websiteVisits,
+          totalRevenue: marketingMetrics.totalRevenue,
+          spotifyFollowers: marketingMetrics.spotifyFollowers,
+          instagramFollowers: marketingMetrics.instagramFollowers,
+          youtubeViews: marketingMetrics.youtubeViews
+        })
+        .from(marketingMetrics)
+        .where(eq(marketingMetrics.userId, req.user!.id))
+        .limit(1);
+
+      const last30DaysHistory = await db
+        .select()
+        .from(analyticsHistory)
+        .where(
+          and(
+            eq(analyticsHistory.userId, req.user!.id),
+            gte(analyticsHistory.timestamp, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+          )
+        )
+        .orderBy(desc(analyticsHistory.timestamp));
+
+      res.json({
+        currentMetrics: metrics || {
+          totalEngagement: 0,
+          websiteVisits: 0,
+          totalRevenue: 0,
+          spotifyFollowers: 0,
+          instagramFollowers: 0,
+          youtubeViews: 0
+        },
+        history: last30DaysHistory
+      });
+    } catch (error) {
+      console.error('Error fetching analytics summary:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics summary' });
     }
   });
 
