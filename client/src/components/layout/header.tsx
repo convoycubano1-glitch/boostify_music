@@ -44,11 +44,11 @@ export function Header() {
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
     { name: "Store", href: "/store", icon: Store, highlight: true },
-    { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: Users },
-    { name: "Merchandise", href: "/merchandise", icon: Store },
+    { name: "Artist Image", href: "/artist-image-advisor", icon: Users }, 
+    { name: "Merch", href: "/merchandise", icon: Store }, 
     { name: "Spotify", href: "/spotify", icon: Music2 },
-    { name: "Instagram Boost", href: "/instagram-boost", icon: Instagram },
-    { name: "YouTube Views", href: "/youtube-views", icon: Youtube },
+    { name: "Instagram", href: "/instagram-boost", icon: Instagram }, 
+    { name: "YouTube", href: "/youtube-views", icon: Youtube }, 
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
@@ -62,7 +62,7 @@ export function Header() {
     <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4"> 
             <Link href="/" className="flex items-center space-x-2 hover:opacity-90 transition-opacity">
               <img 
                 src="/assets/freepik__boostify-music___orange.png" 
@@ -70,10 +70,10 @@ export function Header() {
                 className="h-6 w-6"
               />
               <div className="hidden lg:block">
-                <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
                   Boostify
                 </span>
-                <span className="text-xs block text-muted-foreground -mt-1">
+                <span className="text-[10px] block text-muted-foreground -mt-1">
                   Music Marketing Platform
                 </span>
               </div>
@@ -85,16 +85,16 @@ export function Header() {
               </Button>
             </Link>
 
-            <nav className="hidden lg:flex items-center space-x-6">
+            <nav className="hidden lg:flex items-center space-x-2"> 
               {navigation.map((item) => (
                 <Link 
                   key={item.name} 
                   href={item.href}
-                  className={`flex items-center text-sm font-medium transition-colors hover:text-orange-500 ${
-                    item.highlight ? 'text-orange-500 bg-orange-500/10 px-3 py-1 rounded-full' : ''
+                  className={`flex items-center text-xs font-medium transition-colors hover:text-orange-500 ${
+                    item.highlight ? 'text-orange-500 bg-orange-500/10 px-2 py-1 rounded-full' : 'px-1'
                   }`}
                 >
-                  <item.icon className="mr-2 h-4 w-4" />
+                  <item.icon className="mr-1 h-3 w-3" /> 
                   {item.name}
                 </Link>
               ))}
@@ -102,25 +102,23 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Boostify International button */}
             <Link href="/boostify-international">
-              <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
-                <Globe className="h-4 w-4" />
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 gap-1 text-xs h-8"> 
+                <Globe className="h-3 w-3" />
                 <span className="hidden sm:inline">Boostify International</span>
-                <span className="sm:hidden">International</span>
+                <span className="sm:hidden">Int'l</span>
               </Button>
             </Link>
 
-            {/* Google Translate Element */}
             <div 
               id="google_translate_element" 
-              className="min-w-[120px] flex items-center justify-center bg-background/80 rounded-md px-2 h-9"
+              className="min-w-[100px] flex items-center justify-center bg-background/80 rounded-md px-2 h-8"
             ></div>
 
             {isAdmin && (
               <Link href="/admin">
-                <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
-                  <Shield className="h-4 w-4" />
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 gap-1 text-xs h-8"> 
+                  <Shield className="h-3 w-3" />
                   <span className="hidden sm:inline">Admin Panel</span>
                   <span className="sm:hidden">Admin</span>
                 </Button>
@@ -128,30 +126,30 @@ export function Header() {
             )}
 
             <Link href="/settings">
-              <Button variant="ghost" size="icon" className="hidden lg:flex">
-                <Settings className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hidden lg:flex h-8 w-8"> 
+                <Settings className="h-3 w-3" />
               </Button>
             </Link>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8"> 
+                  <Menu className="h-3 w-3" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[300px] max-h-[80vh] overflow-y-auto">
                 {navigation.map((item) => (
                   <Link key={item.name} href={item.href}>
-                    <DropdownMenuItem className={`py-3 ${
+                    <DropdownMenuItem className={`py-2 text-xs ${
                       item.highlight ? 'text-orange-500 bg-orange-500/10' : ''
                     }`}>
-                      <item.icon className="mr-3 h-4 w-4" />
+                      <item.icon className="mr-2 h-3 w-3" />
                       <span>{item.name}</span>
                     </DropdownMenuItem>
                   </Link>
                 ))}
-                <DropdownMenuItem onSelect={() => logout()} className="py-3">
+                <DropdownMenuItem onSelect={() => logout()} className="py-2 text-xs">
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -159,16 +157,16 @@ export function Header() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button variant="ghost" className="relative h-7 w-7 rounded-full"> 
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
                       alt={user.displayName || "User avatar"}
-                      className="h-8 w-8 rounded-full"
+                      className="h-7 w-7 rounded-full"
                     />
                   ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/10">
-                      <span className="text-sm font-medium text-orange-500">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/10">
+                      <span className="text-xs font-medium text-orange-500">
                         {user.displayName?.[0] || user.email?.[0] || "U"}
                       </span>
                     </div>
@@ -179,17 +177,17 @@ export function Header() {
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
                     {user.displayName && (
-                      <p className="font-medium">{user.displayName}</p>
+                      <p className="text-xs font-medium">{user.displayName}</p>
                     )}
                     {user.email && (
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="text-[10px] text-muted-foreground">{user.email}</p>
                     )}
                   </div>
                 </div>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings">Settings</Link>
+                  <Link href="/settings" className="text-xs">Settings</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => logout()}>
+                <DropdownMenuItem onSelect={() => logout()} className="text-xs">
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
