@@ -11,33 +11,33 @@ interface ProductionPhase {
 
 const productionPhases: ProductionPhase[] = [
   {
-    name: "Pre-producción",
+    name: "Pre-production",
     status: "completed",
     progress: 100,
   },
   {
-    name: "Grabación",
+    name: "Recording",
     status: "in-progress",
     progress: 65,
-    eta: "2 días"
+    eta: "2 days"
   },
   {
-    name: "Edición",
+    name: "Editing",
     status: "pending",
     progress: 0,
-    eta: "5 días"
+    eta: "5 days"
   },
   {
-    name: "Mezcla",
+    name: "Mixing",
     status: "pending",
     progress: 0,
-    eta: "7 días"
+    eta: "7 days"
   },
   {
-    name: "Masterización",
+    name: "Mastering",
     status: "pending",
     progress: 0,
-    eta: "9 días"
+    eta: "9 days"
   }
 ];
 
@@ -71,9 +71,9 @@ export function ProductionProgress() {
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold">Progreso de Producción</h3>
+        <h3 className="text-lg font-semibold">Production Progress</h3>
         <p className="text-sm text-muted-foreground">
-          Seguimiento del proceso creativo
+          Track your creative process and production timeline
         </p>
       </div>
 

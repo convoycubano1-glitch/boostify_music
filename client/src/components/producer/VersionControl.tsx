@@ -30,7 +30,7 @@ const versions: Version[] = [
     date: "2024-02-19",
     duration: "3:45",
     status: "approved",
-    feedback: "Buen balance, ajustar graves"
+    feedback: "Good balance, adjust the bass levels"
   },
   {
     id: 2,
@@ -51,9 +51,9 @@ export function VersionControl() {
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold">Control de Versiones</h3>
+        <h3 className="text-lg font-semibold">Version Control</h3>
         <p className="text-sm text-muted-foreground">
-          Escucha y aprueba las diferentes versiones
+          Listen and approve different versions of your tracks
         </p>
       </div>
 
@@ -92,7 +92,7 @@ export function VersionControl() {
                   className="h-7"
                 >
                   <ThumbsUp className="h-3 w-3 mr-1" />
-                  Aprobar
+                  Approve
                 </Button>
                 <Button
                   variant={version.status === "rejected" ? "destructive" : "outline"}
@@ -100,7 +100,7 @@ export function VersionControl() {
                   className="h-7"
                 >
                   <ThumbsDown className="h-3 w-3 mr-1" />
-                  Rechazar
+                  Reject
                 </Button>
               </div>
             </div>
@@ -144,14 +144,14 @@ export function VersionControl() {
             {version.status === "pending" && (
               <div className="space-y-2">
                 <Textarea
-                  placeholder="Añade tu feedback aquí..."
+                  placeholder="Add your feedback here..."
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   className="h-20"
                 />
                 <Button className="w-full">
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Enviar Feedback
+                  Send Feedback
                 </Button>
               </div>
             )}

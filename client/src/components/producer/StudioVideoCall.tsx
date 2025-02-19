@@ -16,36 +16,39 @@ export function StudioVideoCall() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold">Sesión de Estudio Virtual</h3>
+          <h3 className="text-lg font-semibold">Virtual Studio Session</h3>
           <p className="text-sm text-muted-foreground">
-            Conecta con otros productores en tiempo real
+            Connect with producers and artists in real-time video collaboration
           </p>
         </div>
         <Button variant="outline" size="sm">
           <Users className="w-4 h-4 mr-2" />
-          4 Participantes
+          4 Participants
         </Button>
       </div>
 
-      <div className="aspect-video bg-black rounded-lg mb-4 relative overflow-hidden">
+      <div className="aspect-video bg-zinc-900 rounded-lg mb-4 relative overflow-hidden shadow-lg">
         {isCallActive ? (
           <div className="absolute inset-0 grid grid-cols-2 gap-2 p-2">
-            <div className="bg-zinc-800 rounded-lg relative">
-              <video className="w-full h-full object-cover rounded-lg" />
-              <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded-full">
-                Producer
-              </span>
+            <div className="bg-zinc-800 rounded-lg relative overflow-hidden shadow-inner">
+              <video className="w-full h-full object-cover rounded-lg opacity-90" />
+              <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded-full">
+                <span className="text-xs text-white font-medium">Producer</span>
+              </div>
             </div>
-            <div className="bg-zinc-800 rounded-lg relative">
-              <video className="w-full h-full object-cover rounded-lg" />
-              <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded-full">
-                Artist
-              </span>
+            <div className="bg-zinc-800 rounded-lg relative overflow-hidden shadow-inner">
+              <video className="w-full h-full object-cover rounded-lg opacity-90" />
+              <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded-full">
+                <span className="text-xs text-white font-medium">Artist</span>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <Button onClick={toggleCall}>Iniciar Sesión de Estudio</Button>
+          <div className="flex flex-col items-center justify-center h-full space-y-4 text-white/80">
+            <p className="text-sm">Start a virtual studio session to collaborate in real-time</p>
+            <Button onClick={toggleCall} variant="default" className="bg-primary">
+              Start Studio Session
+            </Button>
           </div>
         )}
       </div>
@@ -55,6 +58,7 @@ export function StudioVideoCall() {
           variant={isMuted ? "destructive" : "secondary"}
           size="icon"
           onClick={toggleMute}
+          className="hover:opacity-90 transition-opacity"
         >
           {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </Button>
@@ -62,6 +66,7 @@ export function StudioVideoCall() {
           variant={!isVideoOn ? "destructive" : "secondary"}
           size="icon"
           onClick={toggleVideo}
+          className="hover:opacity-90 transition-opacity"
         >
           {isVideoOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
         </Button>
@@ -69,6 +74,7 @@ export function StudioVideoCall() {
           variant={isCallActive ? "destructive" : "default"}
           size="icon"
           onClick={toggleCall}
+          className="hover:opacity-90 transition-opacity"
         >
           <Phone className="w-4 h-4" />
         </Button>
