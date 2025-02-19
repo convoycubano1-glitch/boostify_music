@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,12 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from 'axios';
 
 interface Comment {
   id?: string;
@@ -45,7 +46,6 @@ export default function VideosPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Estado del formulario de video
   const [videoForm, setVideoForm] = useState<Partial<Video>>({
     title: '',
     description: '',
@@ -53,7 +53,6 @@ export default function VideosPage() {
     thumbnail: '',
   });
 
-  // Query para obtener videos
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['videos'],
     queryFn: async () => {
@@ -71,7 +70,6 @@ export default function VideosPage() {
     enabled: !!user
   });
 
-  // Mutation para crear videos
   const createVideoMutation = useMutation({
     mutationFn: async (newVideo: Partial<Video>) => {
       if (!user) throw new Error("Usuario no autenticado");
@@ -104,7 +102,6 @@ export default function VideosPage() {
     }
   });
 
-  // Mutation para editar videos
   const editVideoMutation = useMutation({
     mutationFn: async (updatedVideo: Partial<Video>) => {
       if (!user || !editingVideo?.id) throw new Error("No se puede editar el video");
@@ -126,7 +123,6 @@ export default function VideosPage() {
     }
   });
 
-  // Mutation para eliminar videos
   const deleteVideoMutation = useMutation({
     mutationFn: async (videoId: string) => {
       if (!user) throw new Error("Usuario no autenticado");
@@ -141,7 +137,6 @@ export default function VideosPage() {
     }
   });
 
-  // Mutation para añadir comentarios
   const addCommentMutation = useMutation({
     mutationFn: async ({ videoId, text }: { videoId: string, text: string }) => {
       if (!user) throw new Error("Usuario no autenticado");
@@ -167,6 +162,52 @@ export default function VideosPage() {
       });
     }
   });
+
+  const fetchYouTubeMetadata = async (youtubeId: string) => {
+    try {
+      const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${youtubeId}&key=${import.meta.env.YOUTUBE_API_KEY}`);
+
+      if (response.data.items && response.data.items.length > 0) {
+        const videoData = response.data.items[0].snippet;
+        setVideoForm(prev => ({
+          ...prev,
+          title: videoData.title,
+          description: videoData.description,
+          youtubeId,
+          thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`,
+        }));
+      } else {
+        toast({
+          title: "Error",
+          description: "No se encontró el video con ese ID",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching YouTube metadata:', error);
+      toast({
+        title: "Error",
+        description: "Error al obtener la información del video. Verifica que el ID sea válido.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleYouTubeIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const youtubeId = e.target.value.trim();
+    setVideoForm(prev => ({ ...prev, youtubeId }));
+
+    // Verificar si es un ID válido de YouTube (11 caracteres)
+    if (youtubeId && youtubeId.length === 11) {
+      fetchYouTubeMetadata(youtubeId);
+    } else if (youtubeId.length > 11) {
+      toast({
+        title: "Error",
+        description: "El ID de YouTube debe tener exactamente 11 caracteres",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -209,6 +250,18 @@ export default function VideosPage() {
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
+                      <Label>YouTube Video ID</Label>
+                      <Input
+                        value={videoForm.youtubeId}
+                        onChange={handleYouTubeIdChange}
+                        placeholder="e.g. dQw4w9WgXcQ"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Ingresa el ID del video de YouTube para auto-completar los detalles
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
                       <Label>Title</Label>
                       <Input
                         value={videoForm.title}
@@ -216,22 +269,30 @@ export default function VideosPage() {
                         placeholder="Enter video title"
                       />
                     </div>
+
                     <div className="space-y-2">
                       <Label>Description</Label>
                       <Textarea
                         value={videoForm.description}
                         onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
                         placeholder="Enter video description"
+                        className="min-h-[100px]"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>YouTube Video ID</Label>
-                      <Input
-                        value={videoForm.youtubeId}
-                        onChange={(e) => setVideoForm({ ...videoForm, youtubeId: e.target.value })}
-                        placeholder="e.g. dQw4w9WgXcQ"
-                      />
-                    </div>
+
+                    {videoForm.thumbnail && (
+                      <div className="space-y-2">
+                        <Label>Preview</Label>
+                        <div className="relative aspect-video rounded-lg overflow-hidden">
+                          <img
+                            src={videoForm.thumbnail}
+                            alt="Video thumbnail"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <Button
                       className="w-full"
                       onClick={() => {
@@ -241,6 +302,7 @@ export default function VideosPage() {
                           createVideoMutation.mutate(videoForm);
                         }
                       }}
+                      disabled={!videoForm.youtubeId || !videoForm.title}
                     >
                       {editingVideo ? 'Update Video' : 'Upload Video'}
                     </Button>
@@ -350,7 +412,6 @@ export default function VideosPage() {
                         </div>
                       </div>
 
-                      {/* Sección de comentarios */}
                       <div className="mt-4">
                         <Button
                           variant="outline"
