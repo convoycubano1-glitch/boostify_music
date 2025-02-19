@@ -255,12 +255,28 @@ export default function VideosPage() {
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3">
                       <div className="relative aspect-video rounded-lg overflow-hidden group">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${video.youtubeId}`}
-                          className="absolute inset-0 w-full h-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
+                        {video.youtubeId ? (
+                          <>
+                            <img
+                              src={`https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`}
+                              alt={video.title}
+                              className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-0"
+                            />
+                            <iframe
+                              src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=0&controls=1`}
+                              className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 group-hover:opacity-0 transition-opacity">
+                              <PlaySquare className="h-12 w-12 text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <PlaySquare className="h-12 w-12 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex-1">
