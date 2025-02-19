@@ -83,24 +83,31 @@ export default function PromotionPage() {
       if (!user) return [];
 
       try {
+        console.log("Intentando obtener campañas para usuario:", user.uid);
         const campaignsRef = collection(db, "campaigns");
+
+        // Simplificar la consulta para debug
         const q = query(
           campaignsRef,
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "asc"),
-          orderBy("__name__", "asc")
+          where("userId", "==", user.uid)
         );
 
+        console.log("Ejecutando consulta de Firestore");
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
+        console.log("Resultado de la consulta:", querySnapshot.size, "documentos");
+
+        const results = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Campaign[];
+
+        console.log("Campañas recuperadas:", results);
+        return results;
       } catch (error) {
-        console.error("Error fetching campaigns:", error);
+        console.error("Error detallado al obtener campañas:", error);
         toast({
           title: "Error",
-          description: "Could not load campaigns. Please try again.",
+          description: "No se pudieron cargar las campañas. Por favor, intenta de nuevo.",
           variant: "destructive"
         });
         return [];
@@ -141,26 +148,34 @@ export default function PromotionPage() {
   // Mutations
   const createCampaignMutation = useMutation({
     mutationFn: async (newCampaign: Omit<Campaign, 'id'>) => {
+      console.log("Intentando crear nueva campaña:", newCampaign);
       const campaignsRef = collection(db, "campaigns");
-      const docRef = await addDoc(campaignsRef, {
-        ...newCampaign,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
-      });
-      return docRef;
+      try {
+        const docRef = await addDoc(campaignsRef, {
+          ...newCampaign,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+        console.log("Campaña creada exitosamente con ID:", docRef.id);
+        return docRef;
+      } catch (error) {
+        console.error("Error al crear campaña:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
       toast({
-        title: "Success",
-        description: "Campaign created successfully",
+        title: "Éxito",
+        description: "Campaña creada exitosamente",
       });
       setShowNewCampaignDialog(false);
     },
     onError: (error) => {
+      console.error("Error en mutation al crear campaña:", error);
       toast({
         title: "Error",
-        description: "Failed to create campaign. Please try again.",
+        description: "No se pudo crear la campaña. Por favor, intenta de nuevo.",
         variant: "destructive"
       });
     }

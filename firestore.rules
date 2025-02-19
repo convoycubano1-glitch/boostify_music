@@ -1,23 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Función auxiliar para verificar la propiedad del documento
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Reglas específicas para campañas
     match /campaigns/{campaignId} {
-      allow read: if request.auth != null && 
-        (resource == null || resource.data.userId == request.auth.uid);
-      allow create: if request.auth != null && 
-        request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null && 
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.userId == request.auth.uid;
-      allow delete: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
-      allow list: if request.auth != null;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
     match /music-video-request/{requestId} {
@@ -29,27 +15,25 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /waitlist/{docId} {
-      allow read: if true;  // Lectura pública
+      allow read: if true;  
       allow create: if 
-        // Validar que el email es un campo requerido y es una cadena
         request.resource.data.keys().hasAll(['email']) &&
         request.resource.data.email is string &&
-        // Validar el formato básico del email
         request.resource.data.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$');
     }
     match /directors/{directorId} {
-      allow read: if true;  // Public read access
-      allow write: if request.auth != null;  // Only authenticated users can write
+      allow read: if true;  
+      allow write: if request.auth != null;  
     }
     match /projects/{projectId} {
       allow read: if true;
-      allow create: if true;  // Allow public creation for music video requests
+      allow create: if true;  
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
     match /musicianImages/{imageId} {
-      allow read: if true;  // Public read
-      allow write: if request.auth != null;  // Only authenticated users can write
+      allow read: if true;  
+      allow write: if request.auth != null;  
     }
     match /strategies/{strategyId} {
       allow read: if request.auth != null;
@@ -67,10 +51,10 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
     match /users/{userId}/metrics/{metricId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     match /spotify_data/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     match /videos/{videoId} {
       allow read: if request.auth != null && 
@@ -110,10 +94,10 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid;
     }
     match /subscriptions/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     match /plans/{planId} {
-      allow read: if true;  // Public read access
+      allow read: if true;  
     }
     match /contracts/{contractId} {
       allow read: if request.auth != null && 
@@ -122,12 +106,12 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid;
     }
     match /musician_images/{imageId} {
-      allow read: if true;  // Public read access
-      allow write: if request.auth != null;  // Only authenticated users can write
+      allow read: if true;  
+      allow write: if request.auth != null;  
     }
     match /campaign_stats/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     match /campaign_metrics/{campaignId} {
       allow read: if request.auth != null && 
