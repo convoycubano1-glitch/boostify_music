@@ -9,10 +9,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useEffect } from "react";
 
 export function Header() {
   const { user } = useAuth();
   const { logout } = useFirebaseAuth();
+
+  useEffect(() => {
+    // Wait for Google Translate script to load
+    const initTranslate = () => {
+      if (window.google && window.google.translate) {
+        const translateElement = document.getElementById('google_translate_element');
+        if (translateElement && translateElement.innerHTML === '') {
+          console.log('Initializing Google Translate');
+          window.googleTranslateElementInit();
+        }
+      } else {
+        console.log('Google Translate not loaded yet, retrying...');
+        setTimeout(initTranslate, 500);
+      }
+    };
+
+    initTranslate();
+  }, []);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
