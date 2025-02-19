@@ -165,7 +165,36 @@ export default function VideosPage() {
 
   const fetchYouTubeMetadata = async (youtubeId: string) => {
     try {
-      const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${youtubeId}&key=${import.meta.env.YOUTUBE_API_KEY}`);
+      // Validate YouTube ID format
+      if (!youtubeId.match(/^[a-zA-Z0-9_-]{11}$/)) {
+        toast({
+          title: "Error",
+          description: "El ID de YouTube debe tener 11 caracteres y solo puede contener letras, números, guiones y guiones bajos",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+      if (!apiKey) {
+        toast({
+          title: "Error",
+          description: "No se encontró la clave de API de YouTube",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await axios.get(
+        `https://www.googleapis.com/youtube/v3/videos`,
+        {
+          params: {
+            part: 'snippet',
+            id: youtubeId,
+            key: apiKey
+          }
+        }
+      );
 
       if (response.data.items && response.data.items.length > 0) {
         const videoData = response.data.items[0].snippet;
@@ -185,9 +214,19 @@ export default function VideosPage() {
       }
     } catch (error) {
       console.error('Error fetching YouTube metadata:', error);
+      let errorMessage = "Error al obtener la información del video";
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          errorMessage = "Error en la petición a YouTube API. Verifica que el ID del video sea válido.";
+        } else if (error.response?.status === 403) {
+          errorMessage = "Error de autenticación con YouTube API. Verifica la clave API.";
+        }
+      }
+
       toast({
         title: "Error",
-        description: "Error al obtener la información del video. Verifica que el ID sea válido.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -197,15 +236,8 @@ export default function VideosPage() {
     const youtubeId = e.target.value.trim();
     setVideoForm(prev => ({ ...prev, youtubeId }));
 
-    // Verificar si es un ID válido de YouTube (11 caracteres)
-    if (youtubeId && youtubeId.length === 11) {
+    if (youtubeId.match(/^[a-zA-Z0-9_-]{11}$/)) {
       fetchYouTubeMetadata(youtubeId);
-    } else if (youtubeId.length > 11) {
-      toast({
-        title: "Error",
-        description: "El ID de YouTube debe tener exactamente 11 caracteres",
-        variant: "destructive"
-      });
     }
   };
 
@@ -247,6 +279,9 @@ export default function VideosPage() {
                     <DialogTitle>
                       {editingVideo ? 'Edit Video' : 'Upload New Video'}
                     </DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Add or edit your video details below. Enter a YouTube video ID to automatically fetch its information.
+                    </p>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
