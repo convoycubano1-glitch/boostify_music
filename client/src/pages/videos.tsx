@@ -2,147 +2,175 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Activity, PlaySquare, Plus, Edit2 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+import { Activity, PlaySquare, Plus, Edit2, Trash2, MessageSquare, Send } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, query, where, orderBy, getDocs } from "firebase/firestore";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface Comment {
+  id?: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Timestamp;
+}
 
 interface Video {
-  id: number;
+  id?: string;
   title: string;
   description: string;
   thumbnail: string;
   views: number;
   likes: number;
-  comments: number;
-  date: string;
+  comments: Comment[];
+  date: Timestamp;
   youtubeId?: string;
+  userId: string;
 }
 
-const videosData: Video[] = [
-  {
-    id: 1,
-    title: "Concert Live Performance Highlights 2024",
-    description: "Experience the energy and excitement of our latest concert tour",
-    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-    youtubeId: "dQw4w9WgXcQ",
-    views: 1250000,
-    likes: 98000,
-    comments: 12400,
-    date: "2024-02-15"
-  },
-  {
-    id: 2,
-    title: "Behind the Scenes - Studio Session",
-    description: "Get an exclusive look at our creative process in the studio",
-    thumbnail: "https://img.youtube.com/vi/kJQP7kiw5Fk/maxresdefault.jpg",
-    youtubeId: "kJQP7kiw5Fk",
-    views: 890000,
-    likes: 75000,
-    comments: 8900,
-    date: "2024-02-10"
-  },
-  {
-    id: 3,
-    title: "Music Video - 'Neon Dreams' Official",
-    description: "Official music video for our latest single 'Neon Dreams'",
-    thumbnail: "https://img.youtube.com/vi/JGwWNGJdvx8/maxresdefault.jpg",
-    youtubeId: "JGwWNGJdvx8",
-    views: 2100000,
-    likes: 185000,
-    comments: 25600,
-    date: "2024-02-05"
-  },
-  {
-    id: 4,
-    title: "Acoustic Cover Session - Unplugged",
-    description: "Special acoustic performance of our top hits",
-    thumbnail: "https://img.youtube.com/vi/RgKAFK5djSk/maxresdefault.jpg",
-    youtubeId: "RgKAFK5djSk",
-    views: 750000,
-    likes: 65000,
-    comments: 7800,
-    date: "2024-01-28"
-  },
-  {
-    id: 5,
-    title: "Fan Meet & Greet Highlights",
-    description: "Special moments with our amazing fans from the world tour",
-    thumbnail: "https://img.youtube.com/vi/OPf0YbXqDm0/maxresdefault.jpg",
-    youtubeId: "OPf0YbXqDm0",
-    views: 520000,
-    likes: 45000,
-    comments: 5600,
-    date: "2024-01-25"
-  },
-  {
-    id: 6,
-    title: "Making of 'Electric Nights' - Documentary",
-    description: "Behind the scenes documentary of our latest album",
-    thumbnail: "https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg",
-    youtubeId: "9bZkp7q19f0",
-    views: 980000,
-    likes: 88000,
-    comments: 10200,
-    date: "2024-01-20"
-  },
-  {
-    id: 7,
-    title: "Live at Madison Square Garden",
-    description: "Full concert recording from our biggest show yet",
-    thumbnail: "https://img.youtube.com/vi/vjW8wmF5VWc/maxresdefault.jpg",
-    youtubeId: "vjW8wmF5VWc",
-    views: 1800000,
-    likes: 156000,
-    comments: 19500,
-    date: "2024-01-15"
-  },
-  {
-    id: 8,
-    title: "Interview - The Creative Process",
-    description: "In-depth interview about our songwriting and production",
-    thumbnail: "https://img.youtube.com/vi/pRpeEdMmmQ0/maxresdefault.jpg",
-    youtubeId: "pRpeEdMmmQ0",
-    views: 420000,
-    likes: 38000,
-    comments: 4200,
-    date: "2024-01-10"
-  },
-  {
-    id: 9,
-    title: "Music Video - 'Midnight Drive' Official",
-    description: "Official music video for fan-favorite track 'Midnight Drive'",
-    thumbnail: "https://img.youtube.com/vi/YykjpeuMNEk/maxresdefault.jpg",
-    youtubeId: "YykjpeuMNEk",
-    views: 1650000,
-    likes: 142000,
-    comments: 16800,
-    date: "2024-01-05"
-  },
-  {
-    id: 10,
-    title: "Studio Vlog - Creating the Beat",
-    description: "Watch how we created the viral beat that took over TikTok",
-    thumbnail: "https://img.youtube.com/vi/HC9OlVoFqfE/maxresdefault.jpg",
-    youtubeId: "HC9OlVoFqfE",
-    views: 890000,
-    likes: 76000,
-    comments: 8900,
-    date: "2024-01-01"
-  }
-];
-
 export default function VideosPage() {
+  const [showVideoDialog, setShowVideoDialog] = useState(false);
+  const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+  const [commentText, setCommentText] = useState<string>("");
+  const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Estado del formulario de video
+  const [videoForm, setVideoForm] = useState<Partial<Video>>({
+    title: '',
+    description: '',
+    youtubeId: '',
+    thumbnail: '',
+  });
+
+  // Query para obtener videos
+  const { data: videos = [], isLoading } = useQuery({
+    queryKey: ['videos'],
+    queryFn: async () => {
+      if (!user) throw new Error("Usuario no autenticado");
+
+      const videosRef = collection(db, "videos");
+      const q = query(videosRef, orderBy("date", "desc"));
+      const snapshot = await getDocs(q);
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Video[];
+    },
+    enabled: !!user
+  });
+
+  // Mutation para crear videos
+  const createVideoMutation = useMutation({
+    mutationFn: async (newVideo: Partial<Video>) => {
+      if (!user) throw new Error("Usuario no autenticado");
+
+      const videoData = {
+        ...newVideo,
+        views: 0,
+        likes: 0,
+        comments: [],
+        date: Timestamp.now(),
+        userId: user.uid,
+        thumbnail: `https://img.youtube.com/vi/${newVideo.youtubeId}/maxresdefault.jpg`
+      };
+
+      await addDoc(collection(db, "videos"), videoData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      toast({
+        title: "Éxito",
+        description: "Video añadido exitosamente",
+      });
+      setShowVideoDialog(false);
+      setVideoForm({
+        title: '',
+        description: '',
+        youtubeId: '',
+        thumbnail: '',
+      });
+    }
+  });
+
+  // Mutation para editar videos
+  const editVideoMutation = useMutation({
+    mutationFn: async (updatedVideo: Partial<Video>) => {
+      if (!user || !editingVideo?.id) throw new Error("No se puede editar el video");
+
+      const videoRef = doc(db, "videos", editingVideo.id);
+      await updateDoc(videoRef, {
+        ...updatedVideo,
+        updatedAt: Timestamp.now(),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      toast({
+        title: "Éxito",
+        description: "Video actualizado exitosamente",
+      });
+      setShowVideoDialog(false);
+      setEditingVideo(null);
+    }
+  });
+
+  // Mutation para eliminar videos
+  const deleteVideoMutation = useMutation({
+    mutationFn: async (videoId: string) => {
+      if (!user) throw new Error("Usuario no autenticado");
+      await deleteDoc(doc(db, "videos", videoId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      toast({
+        title: "Éxito",
+        description: "Video eliminado exitosamente",
+      });
+    }
+  });
+
+  // Mutation para añadir comentarios
+  const addCommentMutation = useMutation({
+    mutationFn: async ({ videoId, text }: { videoId: string, text: string }) => {
+      if (!user) throw new Error("Usuario no autenticado");
+
+      const videoRef = doc(db, "videos", videoId);
+      const comment: Comment = {
+        userId: user.uid,
+        userName: user.displayName || 'Anonymous',
+        text,
+        createdAt: Timestamp.now()
+      };
+
+      await updateDoc(videoRef, {
+        comments: [...(videos.find(v => v.id === videoId)?.comments || []), comment]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      setCommentText("");
+      toast({
+        title: "Éxito",
+        description: "Comentario añadido exitosamente",
+      });
+    }
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      {/* Added pt-24 instead of pt-6 to fix header overlap */}
       <main className="flex-1 pt-24">
         <ScrollArea className="h-[calc(100vh-6rem)]">
           <div className="container mx-auto px-4">
@@ -155,86 +183,84 @@ export default function VideosPage() {
                   Manage and analyze your video content across platforms
                 </p>
               </div>
-              <Button className="bg-orange-500 hover:bg-orange-600">
-                <Plus className="mr-2 h-4 w-4" />
-                Upload Video
-              </Button>
+              <Dialog open={showVideoDialog} onOpenChange={(open) => {
+                if (!open) {
+                  setEditingVideo(null);
+                  setVideoForm({
+                    title: '',
+                    description: '',
+                    youtubeId: '',
+                    thumbnail: '',
+                  });
+                }
+                setShowVideoDialog(open);
+              }}>
+                <DialogTrigger asChild>
+                  <Button className="bg-orange-500 hover:bg-orange-600">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Upload Video
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingVideo ? 'Edit Video' : 'Upload New Video'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Title</Label>
+                      <Input
+                        value={videoForm.title}
+                        onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })}
+                        placeholder="Enter video title"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea
+                        value={videoForm.description}
+                        onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
+                        placeholder="Enter video description"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>YouTube Video ID</Label>
+                      <Input
+                        value={videoForm.youtubeId}
+                        onChange={(e) => setVideoForm({ ...videoForm, youtubeId: e.target.value })}
+                        placeholder="e.g. dQw4w9WgXcQ"
+                      />
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        if (editingVideo) {
+                          editVideoMutation.mutate(videoForm);
+                        } else {
+                          createVideoMutation.mutate(videoForm);
+                        }
+                      }}
+                    >
+                      {editingVideo ? 'Update Video' : 'Upload Video'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
-            <Card className="p-6 mb-8">
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2">Video Performance</h3>
-                <p className="text-sm text-muted-foreground">
-                  Track your video metrics and engagement
-                </p>
-              </div>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={Array.from({ length: 30 }, (_, i) => ({
-                    date: new Date(2024, 0, i + 1).toLocaleDateString(),
-                    views: Math.floor(Math.random() * 1000) + 500,
-                    engagement: Math.floor(Math.random() * 800) + 300,
-                    shares: Math.floor(Math.random() * 600) + 200,
-                  }))}>
-                    <defs>
-                      <linearGradient id="colorVideos" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="views"
-                      name="Views"
-                      stroke="hsl(24, 95%, 53%)"
-                      fillOpacity={1}
-                      fill="url(#colorVideos)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="engagement"
-                      name="Engagement"
-                      stroke="hsl(24, 95%, 53%)"
-                      fillOpacity={0.5}
-                      fill="url(#colorVideos)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="shares"
-                      name="Shares"
-                      stroke="hsl(24, 95%, 53%)"
-                      fillOpacity={0.3}
-                      fill="url(#colorVideos)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
             <div className="grid gap-6">
-              {videosData.map((video) => (
+              {videos.map((video) => (
                 <Card key={video.id} className="p-6 hover:bg-muted/50 transition-colors">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3">
                       <div className="relative aspect-video rounded-lg overflow-hidden group">
-                        <img
-                          src={video.thumbnail}
-                          alt={video.title}
-                          className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                        <iframe
+                          src={`https://www.youtube.com/embed/${video.youtubeId}`}
+                          className="absolute inset-0 w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
                         />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <PlaySquare className="h-12 w-12 text-white" />
-                        </div>
                       </div>
                     </div>
                     <div className="flex-1">
@@ -244,15 +270,50 @@ export default function VideosPage() {
                           <p className="text-muted-foreground mb-4">{video.description}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="icon">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setEditingVideo(video);
+                              setVideoForm({
+                                title: video.title,
+                                description: video.description,
+                                youtubeId: video.youtubeId,
+                              });
+                              setShowVideoDialog(true);
+                            }}
+                          >
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="icon" className="text-orange-500">
-                            <Activity className="h-4 w-4" />
-                          </Button>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción no se puede deshacer. El video será eliminado permanentemente.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => video.id && deleteVideoMutation.mutate(video.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground mb-4">
                         <div>
                           <span className="font-semibold">{video.views.toLocaleString()}</span> views
                         </div>
@@ -260,11 +321,79 @@ export default function VideosPage() {
                           <span className="font-semibold">{video.likes.toLocaleString()}</span> likes
                         </div>
                         <div>
-                          <span className="font-semibold">{video.comments.toLocaleString()}</span> comments
+                          <span className="font-semibold">
+                            {(video.comments || []).length}
+                          </span> comments
                         </div>
                         <div>
-                          <span className="font-semibold">{video.date}</span>
+                          <span className="font-semibold">
+                            {video.date instanceof Timestamp
+                              ? video.date.toDate().toLocaleDateString()
+                              : new Date(video.date).toLocaleDateString()}
+                          </span>
                         </div>
+                      </div>
+
+                      {/* Sección de comentarios */}
+                      <div className="mt-4">
+                        <Button
+                          variant="outline"
+                          className="mb-4"
+                          onClick={() => setShowComments({
+                            ...showComments,
+                            [video.id!]: !showComments[video.id!]
+                          })}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          {showComments[video.id!] ? 'Hide Comments' : 'Show Comments'}
+                        </Button>
+
+                        {showComments[video.id!] && (
+                          <div className="space-y-4">
+                            <div className="flex gap-2">
+                              <Input
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                placeholder="Write a comment..."
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={() => {
+                                  if (video.id && commentText.trim()) {
+                                    addCommentMutation.mutate({
+                                      videoId: video.id,
+                                      text: commentText
+                                    });
+                                  }
+                                }}
+                                disabled={!commentText.trim()}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            <div className="space-y-2">
+                              {(video.comments || []).map((comment, index) => (
+                                <div
+                                  key={index}
+                                  className="bg-muted/50 p-3 rounded-lg"
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <p className="font-semibold text-sm">
+                                      {comment.userName}
+                                    </p>
+                                    <span className="text-xs text-muted-foreground">
+                                      {comment.createdAt instanceof Timestamp
+                                        ? comment.createdAt.toDate().toLocaleString()
+                                        : new Date(comment.createdAt).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm mt-1">{comment.text}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
