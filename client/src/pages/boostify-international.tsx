@@ -7,8 +7,15 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { Globe, Home, Building2, Languages, Users, MapPin } from "lucide-react";
+import { Globe, Home, Building2, Languages, Users, MapPin, BriefcaseIcon } from "lucide-react";
 import { useState } from "react";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Country {
   id: string;
@@ -25,10 +32,34 @@ interface Department {
   employees: number;
 }
 
+const applicationFormSchema = z.object({
+  fullName: z.string().min(2, "El nombre completo es requerido"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(6, "Número de teléfono inválido"),
+  country: z.string().min(1, "Selecciona un país"),
+  department: z.string().min(1, "Selecciona un departamento"),
+  experience: z.string().min(50, "Por favor proporciona más detalles sobre tu experiencia"),
+  languages: z.string().min(1, "Lista los idiomas que hablas"),
+});
+
 export default function BoostifyInternational() {
   const { toast } = useToast();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+
+  const form = useForm<z.infer<typeof applicationFormSchema>>({
+    resolver: zodResolver(applicationFormSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      country: "",
+      department: "",
+      experience: "",
+      languages: "",
+    },
+  });
+
   const countries: Country[] = [
     {
       id: "fr",
@@ -127,6 +158,14 @@ export default function BoostifyInternational() {
     });
   };
 
+  const onSubmitApplication = (values: z.infer<typeof applicationFormSchema>) => {
+    toast({
+      title: "Application Submitted",
+      description: "Your application has been received. We'll be in touch soon.",
+    });
+    console.log(values);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -149,12 +188,184 @@ export default function BoostifyInternational() {
                 </p>
               </div>
             </div>
-            <Link href="/dashboard">
-              <Button variant="outline" className="gap-2">
-                <Home className="w-4 h-4" />
-                Dashboard
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button className="gap-2 bg-orange-500 hover:bg-orange-600">
+                    <BriefcaseIcon className="w-4 h-4" />
+                    Apply Now
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <div className="mx-auto w-full max-w-2xl">
+                    <DrawerHeader>
+                      <DrawerTitle>Apply for International Position</DrawerTitle>
+                      <DrawerDescription>
+                        Fill out the form below to apply for a position in our international offices.
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-4">
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmitApplication)} className="space-y-6">
+                          <FormField
+                            control={form.control}
+                            name="fullName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Full Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="John Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="you@example.com" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="phone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Phone Number</FormLabel>
+                                  <FormControl>
+                                    <Input type="tel" placeholder="+1234567890" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="country"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Country</FormLabel>
+                                  <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select country" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {countries.map((country) => (
+                                        <SelectItem key={country.id} value={country.id}>
+                                          <span className="mr-2">{country.flag}</span>
+                                          {country.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="department"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Department</FormLabel>
+                                  <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select department" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {countries
+                                        .find(c => c.id === form.watch('country'))
+                                        ?.departments.map((dept) => (
+                                          <SelectItem key={dept.id} value={dept.id}>
+                                            {dept.name}
+                                          </SelectItem>
+                                        )) || []}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <FormField
+                            control={form.control}
+                            name="languages"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Languages</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="English, Spanish, French..." 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  List all languages you speak, separated by commas
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="experience"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Professional Experience</FormLabel>
+                                <FormControl>
+                                  <Textarea 
+                                    placeholder="Tell us about your relevant experience..."
+                                    className="min-h-[100px]"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
+                            Submit Application
+                          </Button>
+                        </form>
+                      </Form>
+                    </div>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+              <Link href="/dashboard">
+                <Button variant="outline" className="gap-2">
+                  <Home className="w-4 h-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            </div>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -174,7 +385,7 @@ export default function BoostifyInternational() {
                       <p className="text-sm text-muted-foreground">{country.nativeName}</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {country.departments.map((dept) => (
                       <div key={dept.id} className="flex items-center justify-between">
@@ -188,7 +399,7 @@ export default function BoostifyInternational() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="mt-4 pt-4 border-t border-orange-500/20">
                     <Button
                       variant="outline"
