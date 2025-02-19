@@ -2,7 +2,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Activity, Plus, Eye, MessageSquare, ThumbsUp, Clock, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
+import { Activity, Plus, Eye, MessageSquare, ThumbsUp, Clock, ImageIcon } from "lucide-react";
+import { collection, query, where, orderBy, getDocs, addDoc, Timestamp, updateDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AreaChart,
   Area,
@@ -20,174 +25,139 @@ import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BlogPost {
-  id: number;
+  id?: string;
   title: string;
   excerpt: string;
   content: string;
   image: string;
   author: string;
-  date: string;
+  date: Timestamp;
   views: number;
   likes: number;
   comments: number;
   tags: string[];
+  userId: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
-
-const blogData: BlogPost[] = [
-  {
-    id: 1,
-    title: "The Evolution of Music Streaming in 2025",
-    excerpt: "How AI and blockchain are revolutionizing the streaming landscape",
-    content: "An in-depth analysis of the latest trends in music streaming...",
-    image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&h=600&q=80",
-    author: "Sarah Johnson",
-    date: "2025-02-15",
-    views: 15200,
-    likes: 2840,
-    comments: 342,
-    tags: ["Streaming", "Technology", "Industry"]
-  },
-  {
-    id: 2,
-    title: "Virtual Concert Revolution",
-    excerpt: "How virtual reality is transforming live music experiences",
-    content: "Exploring the intersection of technology and live performances...",
-    image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&q=80",
-    author: "Michael Chen",
-    date: "2025-02-12",
-    views: 12800,
-    likes: 2100,
-    comments: 285,
-    tags: ["Virtual Reality", "Concerts", "Innovation"]
-  },
-  {
-    id: 3,
-    title: "AI-Powered Music Production",
-    excerpt: "The future of music creation with artificial intelligence",
-    content: "Discover how AI is revolutionizing the music production process...",
-    image: "https://images.unsplash.com/photo-1598488035139-bdaa7543d5d6?w=800&h=600&q=80",
-    author: "Alex Rivera",
-    date: "2025-02-10",
-    views: 18500,
-    likes: 3200,
-    comments: 425,
-    tags: ["AI", "Production", "Technology"]
-  },
-  {
-    id: 4,
-    title: "Building Your Artist Brand in 2025",
-    excerpt: "Essential strategies for modern music marketing",
-    content: "A comprehensive guide to building a strong artist brand...",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=600&q=80",
-    author: "Emma Thompson",
-    date: "2025-02-08",
-    views: 21000,
-    likes: 3800,
-    comments: 512,
-    tags: ["Branding", "Marketing", "Strategy"]
-  },
-  {
-    id: 5,
-    title: "The Rise of Web3 Music Platforms",
-    excerpt: "How blockchain is changing music ownership and distribution",
-    content: "Understanding the impact of blockchain technology on the music industry...",
-    image: "https://images.unsplash.com/photo-1526394931762-090dced5bc3c?w=800&h=600&q=80",
-    author: "David Wilson",
-    date: "2025-02-05",
-    views: 16700,
-    likes: 2950,
-    comments: 368,
-    tags: ["Web3", "Blockchain", "Innovation"]
-  },
-  {
-    id: 6,
-    title: "Social Media Strategies for Musicians",
-    excerpt: "Maximizing your impact across digital platforms",
-    content: "Learn how to leverage social media for music promotion...",
-    image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&h=600&q=80",
-    author: "Jessica Lee",
-    date: "2025-02-03",
-    views: 19200,
-    likes: 3400,
-    comments: 445,
-    tags: ["Social Media", "Marketing", "Digital"]
-  },
-  {
-    id: 7,
-    title: "The Future of Music Copyright",
-    excerpt: "Navigating rights management in the digital age",
-    content: "Understanding the evolving landscape of music copyright...",
-    image: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800&h=600&q=80",
-    author: "Robert Martinez",
-    date: "2025-02-01",
-    views: 14500,
-    likes: 2600,
-    comments: 315,
-    tags: ["Copyright", "Legal", "Industry"]
-  },
-  {
-    id: 8,
-    title: "Sustainable Music Tours",
-    excerpt: "Green initiatives reshaping concert productions",
-    content: "How the music industry is embracing environmental responsibility...",
-    image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=600&q=80",
-    author: "Nina Patel",
-    date: "2025-01-30",
-    views: 13800,
-    likes: 2400,
-    comments: 298,
-    tags: ["Sustainability", "Tours", "Environment"]
-  },
-  {
-    id: 9,
-    title: "Mental Health in the Music Industry",
-    excerpt: "Supporting artist wellness in the digital era",
-    content: "Addressing the importance of mental health for musicians...",
-    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&q=80",
-    author: "Chris Anderson",
-    date: "2025-01-28",
-    views: 22400,
-    likes: 4100,
-    comments: 535,
-    tags: ["Health", "Wellness", "Industry"]
-  },
-  {
-    id: 10,
-    title: "Emerging Music Markets",
-    excerpt: "Global opportunities in the music business",
-    content: "Exploring new territories and opportunities in the global music market...",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=600&q=80",
-    author: "Maria Santos",
-    date: "2025-01-25",
-    views: 17900,
-    likes: 3150,
-    comments: 389,
-    tags: ["Global", "Business", "Markets"]
-  }
-];
 
 export default function BlogPage() {
   const [showNewPostDialog, setShowNewPostDialog] = useState(false);
-  const [newPost, setNewPost] = useState({
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [newPost, setNewPost] = useState<Partial<BlogPost>>({
     title: '',
     excerpt: '',
     content: '',
-    tags: '',
+    tags: [],
     image: '',
   });
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Query para obtener posts
+  const { data: blogPosts = [], isLoading } = useQuery({
+    queryKey: ['blog-posts'],
+    queryFn: async () => {
+      if (!user) return [];
+
+      try {
+        console.log("Intentando obtener posts para usuario:", user.uid);
+        const postsRef = collection(db, "blog-posts");
+        const q = query(
+          postsRef,
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
+
+        console.log("Ejecutando consulta de Firestore");
+        const querySnapshot = await getDocs(q);
+        console.log("Resultado de la consulta:", querySnapshot.size, "documentos");
+
+        const results = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as BlogPost[];
+
+        console.log("Posts recuperados:", results);
+        return results;
+      } catch (error) {
+        console.error("Error detallado al obtener posts:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los posts. Por favor, intenta de nuevo.",
+          variant: "destructive"
+        });
+        return [];
+      }
+    },
+    enabled: !!user
+  });
+
+  // Mutation para crear posts
+  const createPostMutation = useMutation({
+    mutationFn: async (newBlogPost: Partial<BlogPost>) => {
+      if (!user) throw new Error("Usuario no autenticado");
+
+      console.log("Intentando crear nuevo post:", newBlogPost);
+      const postsRef = collection(db, "blog-posts");
+      try {
+        const now = Timestamp.now();
+        const docRef = await addDoc(postsRef, {
+          ...newBlogPost,
+          userId: user.uid,
+          author: user.displayName || 'Anonymous',
+          date: now,
+          views: 0,
+          likes: 0,
+          comments: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+        console.log("Post creado exitosamente con ID:", docRef.id);
+        return docRef;
+      } catch (error) {
+        console.error("Error al crear post:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+      toast({
+        title: "Éxito",
+        description: "Post creado exitosamente",
+      });
+      setShowNewPostDialog(false);
+      setNewPost({
+        title: '',
+        excerpt: '',
+        content: '',
+        tags: [],
+        image: '',
+      });
+    },
+    onError: (error) => {
+      console.error("Error en mutation al crear post:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el post. Por favor, intenta de nuevo.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleCreatePost = () => {
-    // Aquí iría la lógica para crear el post
-    console.log('Creating new post:', newPost);
-    setShowNewPostDialog(false);
-    setNewPost({
-      title: '',
-      excerpt: '',
-      content: '',
-      tags: '',
-      image: '',
-    });
+    if (!newPost.title || !newPost.content) {
+      toast({
+        title: "Error",
+        description: "Por favor completa los campos requeridos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    createPostMutation.mutate(newPost);
   };
 
   return (
@@ -266,8 +236,11 @@ export default function BlogPage() {
                     <Label htmlFor="tags">Tags</Label>
                     <Input
                       id="tags"
-                      value={newPost.tags}
-                      onChange={(e) => setNewPost({ ...newPost, tags: e.target.value })}
+                      value={newPost.tags?.join(', ')}
+                      onChange={(e) => setNewPost({ 
+                        ...newPost, 
+                        tags: e.target.value.split(',').map(tag => tag.trim()) 
+                      })}
                       placeholder="Enter tags separated by commas"
                     />
                   </div>
@@ -275,8 +248,9 @@ export default function BlogPage() {
                   <Button
                     className="w-full bg-orange-500 hover:bg-orange-600"
                     onClick={handleCreatePost}
+                    disabled={createPostMutation.isPending}
                   >
-                    Publish Post
+                    {createPostMutation.isPending ? 'Creating...' : 'Publish Post'}
                   </Button>
                 </div>
               </DialogContent>
@@ -362,7 +336,14 @@ export default function BlogPage() {
           </Card>
 
           <div className="grid gap-6">
-            {blogData.map((post) => (
+            {isLoading ? (
+              <Card className="p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
+                </div>
+              </Card>
+            ) : blogPosts.map((post) => (
               <Card key={post.id} className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="w-full md:w-1/3">
@@ -392,7 +373,9 @@ export default function BlogPage() {
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        {post.date}
+                        {post.date instanceof Timestamp 
+                          ? post.date.toDate().toLocaleDateString()
+                          : new Date(post.date).toLocaleDateString()}
                       </div>
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
