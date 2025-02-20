@@ -32,10 +32,15 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-
-interface ArtistProfileProps {
-  artistId: string;
-}
+import { db, auth, storage } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc
+} from "firebase/firestore";
 
 interface ArtistData {
   name: string;
@@ -61,38 +66,119 @@ interface ArtistData {
     lighting: string;
     backline: string;
   };
-  music: Array<{
-    id: string;
-    title: string;
-    duration: string;
-    url: string;
-  }>;
-  videos: Array<{
-    id: string;
-    title: string;
-    thumbnail: string;
-    url: string;
-  }>;
+}
+
+interface FirestoreSong {
+  id: string;
+  name: string;
+  audioUrl: string;
+  duration: string;
+  createdAt: Date;
+  userId: string;
+}
+
+interface FirestoreVideo {
+  id: string;
+  url: string;
+  title: string;
+  thumbnail: string;
+  createdAt: Date;
+  userId: string;
+}
+
+interface ArtistProfileProps {
+  artistId: string;
 }
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [showTechnicalRider, setShowTechnicalRider] = useState(false);
 
-  const { data: artist, isLoading } = useQuery<ArtistData>({
+  // Fetch artist data
+  const { data: artist, isLoading: isLoadingArtist } = useQuery({
     queryKey: ['artist', artistId],
     queryFn: async () => {
-      const response = await fetch(`/api/artists/${artistId}`);
-      if (!response.ok) throw new Error('Failed to fetch artist data');
-      return response.json();
+      try {
+        const artistDoc = await getDoc(doc(db, "artists", artistId));
+        if (!artistDoc.exists()) throw new Error('Artist not found');
+        return artistDoc.data() as ArtistData;
+      } catch (error) {
+        console.error("Error fetching artist:", error);
+        return null;
+      }
     }
   });
 
-  if (isLoading || !artist) {
+  // Fetch artist's music
+  const { data: songs = [], isLoading: isLoadingSongs } = useQuery<FirestoreSong[]>({
+    queryKey: ['artist-songs', artistId],
+    queryFn: async () => {
+      try {
+        const songsRef = collection(db, "songs");
+        const q = query(songsRef, where("userId", "==", artistId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        })) as FirestoreSong[];
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+        return [];
+      }
+    }
+  });
+
+  // Fetch artist's videos
+  const { data: videos = [], isLoading: isLoadingVideos } = useQuery<FirestoreVideo[]>({
+    queryKey: ['artist-videos', artistId],
+    queryFn: async () => {
+      try {
+        const videosRef = collection(db, "videos");
+        const q = query(videosRef, where("userId", "==", artistId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        })) as FirestoreVideo[];
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+        return [];
+      }
+    }
+  });
+
+  // Handle audio playback
+  const togglePlay = (song: FirestoreSong) => {
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+      setIsPlaying(false);
+    }
+
+    if (song.audioUrl) {
+      const audio = new Audio(song.audioUrl);
+      audio.play();
+      setCurrentAudio(audio);
+      setIsPlaying(true);
+    }
+  };
+
+  if (isLoadingArtist || isLoadingSongs || isLoadingVideos) {
     return (
       <div className="flex items-center justify-center min-h-[600px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+      </div>
+    );
+  }
+
+  if (!artist) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Artist not found</p>
       </div>
     );
   }
@@ -127,14 +213,25 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     >
       {/* Hero Section */}
       <div className="relative h-[50vh] rounded-xl overflow-hidden mb-8">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/assets/artist-background.mp4"
-        />
+        {videos[0] ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            src={videos[0].url}
+          />
+        ) : (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            src="/assets/artist-background.mp4"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8">
           <motion.h1 
@@ -164,9 +261,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 Latest Tracks
               </h3>
               <div className="space-y-4">
-                {artist.music.map((track, index) => (
+                {songs.map((song, index) => (
                   <div
-                    key={track.id}
+                    key={song.id}
                     className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
                       currentTrack === index ? 'bg-orange-500/10' : 'hover:bg-muted/50'
                     }`}
@@ -175,10 +272,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          setCurrentTrack(index);
-                          setIsPlaying(!isPlaying);
-                        }}
+                        onClick={() => togglePlay(song)}
                         className="mr-2"
                       >
                         {currentTrack === index && isPlaying ? (
@@ -187,10 +281,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           <Play className="h-5 w-5" />
                         )}
                       </Button>
-                      <span className="font-medium">{track.title}</span>
+                      <span className="font-medium">{song.name}</span>
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {track.duration}
+                      {song.duration}
                     </span>
                   </div>
                 ))}
@@ -206,10 +300,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 Videos
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                {artist.videos.map((video) => (
+                {videos.map((video) => (
                   <div
                     key={video.id}
                     className="relative rounded-lg overflow-hidden group cursor-pointer"
+                    onClick={() => window.open(video.url, '_blank')}
                   >
                     <img
                       src={video.thumbnail}
@@ -218,6 +313,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Play className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/80">
+                      <p className="text-sm text-white truncate">{video.title}</p>
                     </div>
                   </div>
                 ))}
@@ -238,7 +336,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="grid grid-cols-3 gap-6">
                 <div className="w-24 h-24 mx-auto">
                   <CircularProgressbar
-                    value={75}
+                    value={artist.stats.monthlyListeners > 0 ? Math.min(100, (artist.stats.monthlyListeners / 1000) * 100) : 0}
                     text={`${artist.stats.monthlyListeners}k`}
                     styles={buildStyles({
                       pathColor: '#f97316',
@@ -252,7 +350,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
                 <div className="w-24 h-24 mx-auto">
                   <CircularProgressbar
-                    value={85}
+                    value={artist.stats.followers > 0 ? Math.min(100, (artist.stats.followers / 1000) * 100) : 0}
                     text={`${artist.stats.followers}k`}
                     styles={buildStyles({
                       pathColor: '#f97316',
@@ -266,7 +364,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
                 <div className="w-24 h-24 mx-auto">
                   <CircularProgressbar
-                    value={60}
+                    value={artist.stats.views > 0 ? Math.min(100, (artist.stats.views / 1000000) * 100) : 0}
                     text={`${artist.stats.views}M`}
                     styles={buildStyles({
                       pathColor: '#f97316',
@@ -346,16 +444,33 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
                 <div className="flex items-center">
                   <Globe className="w-5 h-5 text-orange-500 mr-3" />
-                  <span>{artist.website}</span>
+                  <a href={artist.website} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500">
+                    {artist.website}
+                  </a>
                 </div>
                 <div className="flex gap-4 mt-4">
-                  <Button variant="ghost" size="icon" className="hover:text-orange-500">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:text-orange-500"
+                    onClick={() => window.open(artist.socialMedia.instagram, '_blank')}
+                  >
                     <Instagram className="w-5 h-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="hover:text-orange-500">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:text-orange-500"
+                    onClick={() => window.open(artist.socialMedia.twitter, '_blank')}
+                  >
                     <Twitter className="w-5 h-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="hover:text-orange-500">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:text-orange-500"
+                    onClick={() => window.open(artist.socialMedia.youtube, '_blank')}
+                  >
                     <Youtube className="w-5 h-5" />
                   </Button>
                 </div>
@@ -371,7 +486,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           <h3 className="text-2xl font-semibold mb-6">Biography</h3>
           <div className="prose prose-orange max-w-none">
             {artist.biography.split('\n').map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
+              <p key={index} className="text-muted-foreground">{paragraph}</p>
             ))}
           </div>
         </motion.div>
