@@ -379,53 +379,49 @@ export default function HomePage() {
 
       {/* AI Music Video Section */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
-        {/* Video background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <iframe
-            src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
-            className="absolute w-[200vw] h-[200vh] -top-[50vh] -left-[50vw] pointer-events-none scale-150 md:scale-[2]"
-            allow="autoplay; encrypted-media"
-            frameBorder="0"
-            title="Redwine - Eternal Love"
-          />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative max-w-4xl mx-auto mb-16"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
+          <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
+            <div className="aspect-video relative rounded-lg overflow-hidden">
+              <iframe
+                src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
+                className="absolute inset-0 w-full h-full"
+                allow="autoplay; encrypted-media"
+                frameBorder="0"
+                title="Redwine - Eternal Love"
+              />
+              {/* Overlay gradients */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-orange-500/30 via-background/70 to-background/90" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
 
-        {/* Gradientes mejorados */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/30 via-background/70 to-background" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
-
-        {/* Efecto de brillo superior */}
-        <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-orange-500/40 to-transparent opacity-60" />
-
-        <div className="container relative z-10 mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <div className="space-y-8 mb-24">
-              <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight">
-                AI Music Video Creation
-              </h2>
-              <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-                Transform your music into stunning visual experiences with our AI-powered video generation
-              </p>
+              {/* Content overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-end p-8 text-center">
+                <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight mb-4">
+                  AI Music Video Creation
+                </h2>
+                <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
+                  Transform your music into stunning visual experiences with our AI-powered video generation
+                </p>
+                <Link href="/music-video-creator">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+                  >
+                    Create Your AI Music Video
+                    <Video className="inline-block ml-2 h-6 w-6" />
+                  </motion.button>
+                </Link>
+              </div>
             </div>
-
-            <Link href="/music-video-creator">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 mt-12"
-              >
-                Create Your AI Music Video
-                <Video className="inline-block ml-2 h-6 w-6" />
-              </motion.button>
-            </Link>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* Features Section - Enhanced with modern design */}
@@ -616,7 +612,7 @@ export default function HomePage() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
-                    <div className="p-4 rounded-2xl`bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                    <div className="p-4 rounded2xl`bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
                       <UserCircle2 className="h-8 w-8 text-orange-500" />
                     </div>
                     <div className="flex-1 space-y-4">
