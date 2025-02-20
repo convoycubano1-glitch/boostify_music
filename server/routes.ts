@@ -617,7 +617,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Create a new event
+  // Update the events creation route
   app.post("/api/events", async (req, res) => {
     console.log('Create event request:', {
       body: req.body,
@@ -631,11 +631,17 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      if (!req.body.title || !req.body.startDate || !req.body.endDate || !req.body.location) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
       const eventData = {
         ...req.body,
         userId: req.user!.id,
         startDate: new Date(req.body.startDate),
-        endDate: new Date(req.body.endDate)
+        endDate: new Date(req.body.endDate),
+        status: req.body.status || 'upcoming',
+        type: req.body.type || 'other'
       };
 
       console.log('Attempting to create event with data:', eventData);
@@ -645,11 +651,18 @@ export function registerRoutes(app: Express): Server {
         .values(eventData)
         .returning();
 
+      if (!event) {
+        throw new Error('Failed to create event in database');
+      }
+
       console.log('Event created successfully:', event);
       res.status(201).json(event);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
-      res.status(400).json({ error: 'Failed to create event' });
+      res.status(400).json({
+        error: error.message || "Failed to create event",
+        details: error
+      });
     }
   });
 

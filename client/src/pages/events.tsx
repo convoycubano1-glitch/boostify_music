@@ -19,7 +19,7 @@ import {
   Legend
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -304,7 +304,7 @@ interface Event {
   status: "upcoming" | "ongoing" | "completed" | "cancelled";
   createdAt: string;
   updatedAt: string;
-  registrationLink?: string; // Added registrationLink to Event interface
+  registrationLink?: string; 
 }
 
 export default function EventsPage() {
@@ -326,7 +326,10 @@ export default function EventsPage() {
     queryKey: ['events'],
     queryFn: async () => {
       const response = await fetch('/api/events');
-      if (!response.ok) throw new Error('Failed to fetch events');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch events');
+      }
       return response.json();
     }
   });
@@ -334,22 +337,29 @@ export default function EventsPage() {
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
-      console.log('Creating event with data:', eventData); // Debug log
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...eventData,
-          // Ensure dates are properly formatted
-          startDate: new Date(eventData.startDate).toISOString(),
-          endDate: new Date(eventData.endDate).toISOString(),
-        }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create event');
+      console.log('Creating event with data:', eventData);
+      try {
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...eventData,
+            startDate: new Date(eventData.startDate).toISOString(),
+            endDate: new Date(eventData.endDate).toISOString(),
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create event');
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Event creation error:', error);
+        throw error;
       }
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
@@ -485,14 +495,18 @@ export default function EventsPage() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create New Event</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details below to create a new event.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="title">Event Title</Label>
+                    <Label htmlFor="title">Event Title *</Label>
                     <Input
                       id="title"
                       value={newEvent.title}
                       onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                      required
                     />
                   </div>
                   <div>
@@ -504,29 +518,32 @@ export default function EventsPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="startDate">Start Date</Label>
+                    <Label htmlFor="startDate">Start Date *</Label>
                     <Input
                       id="startDate"
                       type="datetime-local"
                       value={newEvent.startDate}
                       onChange={(e) => setNewEvent({...newEvent, startDate: e.target.value})}
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="endDate">End Date</Label>
+                    <Label htmlFor="endDate">End Date *</Label>
                     <Input
                       id="endDate"
                       type="datetime-local"
                       value={newEvent.endDate}
                       onChange={(e) => setNewEvent({...newEvent, endDate: e.target.value})}
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location">Location *</Label>
                     <Input
                       id="location"
                       value={newEvent.location}
                       onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                      required
                     />
                   </div>
                   <div>
