@@ -377,8 +377,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* AI Music Video Section - REPLACED */}
-      <section className="py-12 md:py-16 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
+      {/* AI Music Video Section */}
+      <section className="py-12 md:py-16 relative overflow-hidden bg-black">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -395,12 +395,9 @@ export default function HomePage() {
                 frameBorder="0"
                 title="Redwine - Eternal Love"
               />
-              {/* Overlay gradients */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-orange-500/30 via-background/70 to-background/90" />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
 
-              {/* Content overlay - solo textos */}
+              {/* Content overlay - solo textos con gradiente mínimo para legibilidad */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center px-8">
                   <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight mb-6">
@@ -414,7 +411,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Botón fuera del video */}
+          {/* Botón sobre fondo negro */}
           <div className="flex justify-center mt-8">
             <Link href="/music-video-creator">
               <motion.button
@@ -625,8 +622,7 @@ export default function HomePage() {
                       <h3 className="text-2xl font-bold">Artist Image Advisor</h3>
                       <p className="text-muted-foreground text-lg">
                         Create stunning visual identities with AI-powered image generation and style recommendations
-                      </p>
-                      <div className="space-y-3">
+                      </p><div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           <span>Advanced AI image generation for artist photos</span>
