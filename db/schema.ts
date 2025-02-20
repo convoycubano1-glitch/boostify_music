@@ -101,13 +101,29 @@ export const bookings = pgTable("bookings", {
   audioDemoId: integer("audio_demo_id").references(() => audioDemos.id)
 });
 
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  location: text("location"),
+  type: text("type", { enum: ["concert", "release", "promotion", "other"] }).default("other").notNull(),
+  status: text("status", { enum: ["upcoming", "ongoing", "completed", "cancelled"] }).default("upcoming").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  metadata: json("metadata")
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
   analyticsHistory: many(analyticsHistory),
   contracts: many(contracts),
   bookings: many(bookings),
-  audioDemos: many(audioDemos)
+  audioDemos: many(audioDemos),
+  events: many(events)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -154,6 +170,13 @@ export const analyticsHistoryRelations = relations(analyticsHistory, ({ one }) =
   }),
 }));
 
+export const eventsRelations = relations(events, ({ one }) => ({
+  user: one(users, {
+    fields: [events.userId],
+    references: [users.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertBookingSchema = createInsertSchema(bookings);
@@ -166,6 +189,8 @@ export const insertMarketingMetricsSchema = createInsertSchema(marketingMetrics)
 export const selectMarketingMetricsSchema = createSelectSchema(marketingMetrics);
 export const insertAnalyticsHistorySchema = createInsertSchema(analyticsHistory);
 export const selectAnalyticsHistorySchema = createSelectSchema(analyticsHistory);
+export const insertEventSchema = createInsertSchema(events);
+export const selectEventSchema = createSelectSchema(events);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
@@ -179,3 +204,5 @@ export type InsertMarketingMetrics = typeof marketingMetrics.$inferInsert;
 export type SelectMarketingMetrics = typeof marketingMetrics.$inferSelect;
 export type InsertAnalyticsHistory = typeof analyticsHistory.$inferInsert;
 export type SelectAnalyticsHistory = typeof analyticsHistory.$inferSelect;
+export type InsertEvent = typeof events.$inferInsert;
+export type SelectEvent = typeof events.$inferSelect;

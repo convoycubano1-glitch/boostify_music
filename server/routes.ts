@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
-import { marketingMetrics, contracts, bookings, payments, analyticsHistory } from "@db/schema";
+import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events } from "@db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
@@ -596,6 +596,102 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching analytics summary:', error);
       res.status(500).json({ error: 'Failed to fetch analytics summary' });
+    }
+  });
+
+  // Get all events for a user
+  app.get("/api/events", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const userEvents = await db
+        .select()
+        .from(events)
+        .where(eq(events.userId, req.user!.id))
+        .orderBy(desc(events.startDate));
+
+      res.json(userEvents);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      res.status(500).json({ error: 'Failed to fetch events' });
+    }
+  });
+
+  // Create a new event
+  app.post("/api/events", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const [event] = await db
+        .insert(events)
+        .values({
+          ...req.body,
+          userId: req.user!.id,
+          startDate: new Date(req.body.startDate),
+          endDate: new Date(req.body.endDate)
+        })
+        .returning();
+
+      res.status(201).json(event);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      res.status(400).json({ error: 'Failed to create event' });
+    }
+  });
+
+  // Delete an event
+  app.delete("/api/events/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const [deletedEvent] = await db
+        .delete(events)
+        .where(
+          and(
+            eq(events.id, parseInt(req.params.id)),
+            eq(events.userId, req.user!.id)
+          )
+        )
+        .returning();
+
+      if (!deletedEvent) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      res.json({ message: 'Event deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      res.status(500).json({ error: 'Failed to delete event' });
+    }
+  });
+
+  // Update an event
+  app.patch("/api/events/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      const [updatedEvent] = await db
+        .update(events)
+        .set({
+          ...req.body,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(events.id, parseInt(req.params.id)),
+            eq(events.userId, req.user!.id)
+          )
+        )
+        .returning();
+
+      if (!updatedEvent) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error('Error updating event:', error);
+      res.status(500).json({ error: 'Failed to update event' });
     }
   });
 

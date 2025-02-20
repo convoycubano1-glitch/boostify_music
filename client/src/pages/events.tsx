@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { Activity, Calendar, MapPin, Users, Clock, Plus } from "lucide-react";
+import { Activity, Calendar, MapPin, Users, Clock, Plus, Trash2 } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
+  PieChart as RePieChart,
   Pie,
   Cell,
   Legend
@@ -22,24 +22,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  attendees: number;
-  maxCapacity: number;
-  image: string;
-  type: string;
-  registrationLink?: string;
-}
-
-const majorEventsData: Event[] = [
+// Keep the sample events as a fallback
+const majorEventsData: any[] = [
   {
     id: 1,
     title: "The 67th Annual Grammy Awards",
@@ -302,37 +293,155 @@ const majorEventsData: Event[] = [
   }
 ];
 
-const chartData = {
-  monthlyAttendance: Array.from({ length: 12 }, (_, month) => ({
-    month: new Date(2025, month).toLocaleString('default', { month: 'short' }),
-    attendance: Math.floor(Math.random() * 50000 + 10000),
-  })),
-  eventTypes: [
-    { name: 'Awards Shows', value: 45 },
-    { name: 'Music Festivals', value: 30 },
-    { name: 'Conferences', value: 15 },
-    { name: 'Industry Events', value: 10 },
-  ],
-  venueCapacity: [
-    { venue: 'Crypto.com Arena', capacity: 20000 },
-    { venue: 'O2 Arena', capacity: 20000 },
-    { venue: 'Madison Square Garden', capacity: 18000 },
-    { venue: 'Barclays Center', capacity: 19000 },
-  ]
-};
-
-const COLORS = ['#f97316', '#ea580c', '#c2410c', '#9a3412'];
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  type: "concert" | "release" | "promotion" | "other";
+  status: "upcoming" | "ongoing" | "completed" | "cancelled";
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function EventsPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
-    date: '',
-    time: '',
+    startDate: '',
+    endDate: '',
     location: '',
-    maxCapacity: '',
+    type: 'other' as const,
   });
+
+  // Fetch events from the database
+  const { data: dbEvents, isLoading } = useQuery<Event[]>({
+    queryKey: ['events'],
+    queryFn: async () => {
+      const response = await fetch('/api/events');
+      if (!response.ok) throw new Error('Failed to fetch events');
+      return response.json();
+    }
+  });
+
+  // Create event mutation
+  const createEventMutation = useMutation({
+    mutationFn: async (eventData: typeof newEvent) => {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      });
+      if (!response.ok) throw new Error('Failed to create event');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setShowCreateEventDialog(false);
+      toast({
+        title: "Event Created",
+        description: "Your event has been created successfully.",
+      });
+      setNewEvent({
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        location: '',
+        type: 'other',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete event mutation
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete event');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: "Event Deleted",
+        description: "The event has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete event. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateEvent = async () => {
+    if (!newEvent.title || !newEvent.startDate || !newEvent.endDate) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createEventMutation.mutate(newEvent);
+  };
+
+  const handleDeleteEvent = async (eventId: number) => {
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      deleteEventMutation.mutate(eventId);
+    }
+  };
+
+  // Combine sample events with database events
+  const allEvents = [
+    ...(dbEvents || []),
+    ...majorEventsData.map(event => ({
+      ...event,
+      startDate: event.date,
+      endDate: event.date,
+      type: 'other' as const,
+      status: 'upcoming' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }))
+  ];
+
+  const chartData = {
+    monthlyAttendance: Array.from({ length: 12 }, (_, month) => ({
+      month: new Date(2025, month).toLocaleString('default', { month: 'short' }),
+      attendance: Math.floor(Math.random() * 50000 + 10000),
+    })),
+    eventTypes: [
+      { name: 'Awards Shows', value: 45 },
+      { name: 'Music Festivals', value: 30 },
+      { name: 'Conferences', value: 15 },
+      { name: 'Industry Events', value: 10 },
+    ],
+    venueCapacity: [
+      { venue: 'Crypto.com Arena', capacity: 20000 },
+      { venue: 'O2 Arena', capacity: 20000 },
+      { venue: 'Madison Square Garden', capacity: 18000 },
+      { venue: 'Barclays Center', capacity: 19000 },
+    ]
+  };
+
+  const COLORS = ['#f97316', '#ea580c', '#c2410c', '#9a3412'];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -370,28 +479,28 @@ export default function EventsPage() {
                   </div>
                   <div>
                     <Label htmlFor="description">Description</Label>
-                    <Input
+                    <Textarea
                       id="description"
                       value={newEvent.description}
                       onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date">Start Date</Label>
                     <Input
-                      id="date"
-                      type="date"
-                      value={newEvent.date}
-                      onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                      id="startDate"
+                      type="datetime-local"
+                      value={newEvent.startDate}
+                      onChange={(e) => setNewEvent({...newEvent, startDate: e.target.value})}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="time">Time</Label>
+                    <Label htmlFor="endDate">End Date</Label>
                     <Input
-                      id="time"
-                      type="time"
-                      value={newEvent.time}
-                      onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                      id="endDate"
+                      type="datetime-local"
+                      value={newEvent.endDate}
+                      onChange={(e) => setNewEvent({...newEvent, endDate: e.target.value})}
                     />
                   </div>
                   <div>
@@ -403,29 +512,31 @@ export default function EventsPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="capacity">Maximum Capacity</Label>
-                    <Input
-                      id="capacity"
-                      type="number"
-                      value={newEvent.maxCapacity}
-                      onChange={(e) => setNewEvent({...newEvent, maxCapacity: e.target.value})}
-                    />
+                    <Label htmlFor="type">Event Type</Label>
+                    <select
+                      id="type"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2"
+                      value={newEvent.type}
+                      onChange={(e) => setNewEvent({...newEvent, type: e.target.value as any})}
+                    >
+                      <option value="concert">Concert</option>
+                      <option value="release">Release</option>
+                      <option value="promotion">Promotion</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
                   <Button 
                     className="w-full bg-orange-500 hover:bg-orange-600"
-                    onClick={() => {
-                      // Add event handling logic here
-                      setShowCreateEventDialog(false);
-                    }}
+                    onClick={handleCreateEvent}
+                    disabled={createEventMutation.isPending}
                   >
-                    Create Event
+                    {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          {/* Events Section */}
           <Tabs defaultValue="upcoming" className="w-full mb-8">
             <TabsList className="mb-4">
               <TabsTrigger value="upcoming">Upcoming Events</TabsTrigger>
@@ -435,71 +546,103 @@ export default function EventsPage() {
 
             <TabsContent value="upcoming">
               <div className="grid gap-6">
-                {majorEventsData.map((event) => (
-                  <Card key={event.id} className="p-6">
-                    <div className="flex flex-col md:flex-row gap-6">
-                      <div className="w-full md:w-1/3">
-                        <div className="relative aspect-video rounded-lg overflow-hidden">
-                          <img
-                            src={event.image}
-                            alt={event.title}
-                            className="object-cover w-full h-full"
-                          />
+                {isLoading ? (
+                  <div>Loading events...</div>
+                ) : (
+                  allEvents.map((event) => (
+                    <Card key={event.id} className="p-6">
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
+                              <p className="text-muted-foreground mb-4">{event.description}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              {event.type !== 'other' && (
+                                <Button 
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  disabled={deleteEventMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {format(new Date(event.startDate), 'MM/dd/yyyy')}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              {format(new Date(event.startDate), 'HH:mm')}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4" />
+                              {event.location}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Activity className="h-4 w-4" />
+                              {event.type}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
-                            <p className="text-muted-foreground mb-4">{event.description}</p>
-                          </div>
-                          {event.registrationLink && (
-                            <Button 
-                              variant="outline"
-                              onClick={() => window.open(event.registrationLink, '_blank')}
-                            >
-                              Register
-                            </Button>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            {event.date}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            {event.time}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            {event.location}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            {event.attendees}/{event.maxCapacity}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="my-events">
-              <div className="text-center py-8">
-                <h3 className="text-xl font-semibold mb-4">Create Your Own Events</h3>
-                <p className="text-muted-foreground mb-6">
-                  Start managing your own music industry events
-                </p>
-                <Button 
-                  className="bg-orange-500 hover:bg-orange-600"
-                  onClick={() => setShowCreateEventDialog(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create New Event
-                </Button>
+              <div className="grid gap-6">
+                {isLoading ? (
+                  <div>Loading your events...</div>
+                ) : (
+                  (dbEvents || []).map((event) => (
+                    <Card key={event.id} className="p-6">
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
+                              <p className="text-muted-foreground mb-4">{event.description}</p>
+                            </div>
+                            <Button 
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteEvent(event.id)}
+                              disabled={deleteEventMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {format(new Date(event.startDate), 'MM/dd/yyyy')}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              {format(new Date(event.startDate), 'HH:mm')}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4" />
+                              {event.location}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Activity className="h-4 w-4" />
+                              {event.type}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -530,7 +673,7 @@ export default function EventsPage() {
               <h3 className="text-xl font-semibold mb-4">Event Distribution</h3>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <RePieChart>
                     <Pie
                       data={chartData.eventTypes}
                       cx="50%"
@@ -546,7 +689,7 @@ export default function EventsPage() {
                     </Pie>
                     <Tooltip />
                     <Legend />
-                  </PieChart>
+                  </RePieChart>
                 </ResponsiveContainer>
               </div>
             </Card>
