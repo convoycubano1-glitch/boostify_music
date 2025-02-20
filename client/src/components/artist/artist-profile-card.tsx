@@ -24,7 +24,8 @@ import {
   Share2,
   Calendar,
   HeartPulse,
-  Users
+  Users,
+  DollarSign
 } from "lucide-react";
 import {
   Dialog,
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { Link } from "wouter";
 
 interface ArtistProfileProps {
   artistId: string;
@@ -205,6 +207,23 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       animate="visible"
       className="w-full max-w-7xl mx-auto"
     >
+      {/* Promotional CTA Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-4 right-4 z-20"
+      >
+        <Link href="/auth">
+          <Button
+            size="lg"
+            className="bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            <User className="mr-2 h-5 w-5" />
+            Create Your Artist Profile
+          </Button>
+        </Link>
+      </motion.div>
+
       {/* Featured Video Section */}
       <div className="relative h-[90vh] rounded-xl overflow-hidden mb-8">
         <iframe
@@ -220,17 +239,17 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
         {/* Artist Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-12">
-          <motion.div 
+          <motion.div
             variants={itemVariants}
             className="max-w-4xl mx-auto"
           >
-            <motion.h1 
+            <motion.h1
               className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
               variants={itemVariants}
             >
               {mockArtist.name}
             </motion.h1>
-            <motion.p 
+            <motion.p
               className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-400"
               variants={itemVariants}
             >
@@ -238,8 +257,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             </motion.p>
             <div className="prose prose-invert max-w-2xl mb-8">
               {mockArtist.biography.split('\n').map((paragraph, index) => (
-                <motion.p 
-                  key={index} 
+                <motion.p
+                  key={index}
                   className="text-lg text-white/90 leading-relaxed"
                   variants={itemVariants}
                 >
@@ -247,7 +266,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </motion.p>
               ))}
             </div>
-            <motion.div 
+            <motion.div
               className="flex flex-wrap gap-4"
               variants={itemVariants}
             >
@@ -272,13 +291,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </div>
 
         {/* Floating Stats */}
-        <motion.div 
+        <motion.div
           className="absolute top-8 right-8 flex gap-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div 
+          <motion.div
             className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
             variants={itemVariants}
           >
@@ -288,7 +307,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <p className="text-xl font-bold text-white">{mockArtist.stats.monthlyListeners}k</p>
             </div>
           </motion.div>
-          <motion.div 
+          <motion.div
             className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
             variants={itemVariants}
           >
@@ -612,6 +631,50 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </Dialog>
         </div>
       </div>
+
+      {/* Add Affiliate Program Section at the bottom */}
+      <Card className="p-8 mt-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
+        <motion.div variants={itemVariants} className="text-center">
+          <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
+            Become a Boostify Affiliate
+          </h2>
+          <p className="text-xl text-muted-foreground mb-6">
+            Promote artists and earn money with Boostify's affiliate program
+          </p>
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="p-6 rounded-lg bg-black/5 backdrop-blur-sm">
+              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+                <Users className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Refer Artists</h3>
+              <p className="text-muted-foreground">Share your unique referral link with other artists</p>
+            </div>
+            <div className="p-6 rounded-lg bg-black/5 backdrop-blur-sm">
+              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+                <DollarSign className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Earn Commission</h3>
+              <p className="text-muted-foreground">Get paid for every successful referral</p>
+            </div>
+            <div className="p-6 rounded-lg bg-black/5 backdrop-blur-sm">
+              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+                <ChartBar className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Track Performance</h3>
+              <p className="text-muted-foreground">Monitor your earnings and referrals in real-time</p>
+            </div>
+          </div>
+          <Link href="/auth">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <DollarSign className="mr-2 h-5 w-5" />
+              Join Affiliate Program
+            </Button>
+          </Link>
+        </motion.div>
+      </Card>
 
       {/* Message Dialog */}
       <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
