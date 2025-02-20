@@ -314,22 +314,22 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* AI Music Video Section - New section added above Production Tools */}
-      <section className="py-24 relative overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          poster="/assets/video-fallback.jpg"
-        >
-          <source src="https://www.youtube.com/watch?v=O90iHkU3cPU" type="video/mp4" />
-        </video>
+      {/* AI Music Video Section - Positioned between hero and production tools */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
+        {/* Video background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <iframe
+            src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
+            className="absolute w-[100vw] h-[100vh] -top-[15vh] left-0 pointer-events-none scale-125"
+            allow="autoplay; encrypted-media"
+            frameBorder="0"
+            title="Redwine - Eternal Love"
+          />
+        </div>
         <div className="absolute inset-0 bg-black/70" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container relative z-10 mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -615,13 +615,12 @@ export default function HomePage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Artist Image Advisor */}
-            <Link href="/artist-image-advisor">
+            {/* Artist Image Advisor            <Link href="/artist-image-advisor">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className="relative group cursor-pointer"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <div className="absolute inset0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
                 <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
                   <div className="absolute top-0 right-0 w-32h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
