@@ -220,14 +220,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     >
       {/* Promotional CTA Button */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute top-4 right-4 z-20"
+        className="fixed top-4 right-4 z-50"
       >
         <Link href="/">
           <Button
             size="lg"
-            className="bg-orange-500 hover:bg-orange-600 text-white"
+            className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
           >
             <User className="mr-2 h-5 w-5" />
             Create Your Artist Profile
@@ -711,7 +711,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
                 <ChartBar className="h-6 w-6 text-orange-500" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Track Performance</h3>
+              <h3 className="text-lg fontsemibold mb-2">Track Performance</h3>
               <p className="text-muted-foreground">Monitor your earnings and referrals in real-time</p>
             </div>
           </div>

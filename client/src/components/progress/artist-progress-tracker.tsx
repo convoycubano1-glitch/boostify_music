@@ -26,43 +26,43 @@ export function ArtistProgressTracker({ artistId }: ArtistProgressTrackerProps) 
   const [milestones] = useState<Milestone[]>([
     {
       id: 1,
-      title: "Establecimiento de Marca",
-      description: "Crear y definir tu identidad musical única",
-      progress: 80,
-      category: "Branding",
+      title: "Artistic Development",
+      description: "Track your musical growth and achievements",
+      progress: 75,
+      category: "Development",
       icon: <Star className="w-6 h-6 text-orange-500" />,
       completed: true,
-      nextStep: "¡Completa tu perfil al 100%!"
+      nextStep: "Complete next workshop session"
     },
     {
       id: 2,
-      title: "Alcance en Redes Sociales",
-      description: "Construir presencia en plataformas sociales",
+      title: "Professional Network",
+      description: "Build industry connections and collaborations",
       progress: 60,
-      category: "Marketing",
+      category: "Networking",
       icon: <Users className="w-6 h-6 text-orange-500" />,
       completed: false,
-      nextStep: "Alcanza 1000 seguidores en Instagram"
+      nextStep: "Connect with 3 new producers"
     },
     {
       id: 3,
-      title: "Producción Musical",
-      description: "Lanzamiento de tracks y álbumes",
+      title: "New Compositions",
+      description: "Track your songwriting progress",
       progress: 40,
-      category: "Música",
+      category: "Development",
       icon: <Music className="w-6 h-6 text-orange-500" />,
       completed: false,
-      nextStep: "Lanza tu próximo single"
+      nextStep: "Complete your next fusion track"
     },
     {
       id: 4,
-      title: "Actuaciones en Vivo",
-      description: "Experiencia en presentaciones",
-      progress: 75,
-      category: "Performances",
-      icon: <Mic2 className="w-6 h-6 text-orange-500" />,
-      completed: false,
-      nextStep: "Agenda tu próximo show"
+      title: "Industry Memberships",
+      description: "Professional associations and communities",
+      progress: 80,
+      category: "Networking",
+      icon: <Award className="w-6 h-6 text-orange-500" />,
+      completed: true,
+      nextStep: "Attend next industry meetup"
     }
   ]);
 
@@ -98,18 +98,18 @@ export function ArtistProgressTracker({ artistId }: ArtistProgressTrackerProps) 
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <Trophy className="w-6 h-6 text-orange-500" />
-              Progreso Artístico
+              Artist Journey Progress
             </h2>
             <p className="text-muted-foreground">
-              Seguimiento de tu desarrollo musical
+              Track your musical development and networking
             </p>
           </div>
           <div className="flex gap-2">
             <Badge variant="outline" className="bg-orange-500/10 text-orange-500">
-              Nivel Actual: Emergente
+              Current Level: Rising Star
             </Badge>
             <Badge variant="outline" className="bg-green-500/10 text-green-500">
-              4 Logros Desbloqueados
+              4 Achievements Unlocked
             </Badge>
           </div>
         </div>
@@ -151,7 +151,7 @@ export function ArtistProgressTracker({ artistId }: ArtistProgressTrackerProps) 
                     />
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-sm text-muted-foreground">
-                        Próximo paso: {milestone.nextStep}
+                        Next step: {milestone.nextStep}
                       </p>
                       <Button
                         variant="ghost"
@@ -159,7 +159,7 @@ export function ArtistProgressTracker({ artistId }: ArtistProgressTrackerProps) 
                         className="text-orange-500 hover:text-orange-600"
                       >
                         <Target className="w-4 h-4 mr-1" />
-                        Ver Detalles
+                        View Details
                       </Button>
                     </div>
                   </div>
@@ -173,12 +173,12 @@ export function ArtistProgressTracker({ artistId }: ArtistProgressTrackerProps) 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-orange-500" />
-              <span className="font-medium">Progreso General:</span>
+              <span className="font-medium">Overall Progress:</span>
               <span className="text-orange-500 font-bold">63%</span>
             </div>
             <Button variant="outline" className="border-orange-500/50 text-orange-500">
               <Award className="w-4 h-4 mr-2" />
-              Ver Todos los Logros
+              View All Achievements
             </Button>
           </div>
         </div>
