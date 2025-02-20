@@ -23,7 +23,8 @@ import {
   MessageCircle,
   Share2,
   Calendar,
-  HeartPulse
+  HeartPulse,
+  Users
 } from "lucide-react";
 import {
   Dialog,
@@ -205,36 +206,55 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       className="w-full max-w-7xl mx-auto"
     >
       {/* Featured Video Section */}
-      <div className="relative h-[70vh] rounded-xl overflow-hidden mb-8">
+      <div className="relative h-[90vh] rounded-xl overflow-hidden mb-8">
         <iframe
           className="absolute inset-0 w-full h-full object-cover"
-          src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ"
+          src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ&controls=0&showinfo=0&rel=0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         ></iframe>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+        {/* Multiple gradient layers for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
 
         {/* Artist Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-8">
+        <div className="absolute bottom-0 left-0 right-0 p-12">
           <motion.div 
             variants={itemVariants}
-            className="max-w-3xl"
+            className="max-w-4xl mx-auto"
           >
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            <motion.h1 
+              className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
+              variants={itemVariants}
+            >
               {mockArtist.name}
-            </h1>
-            <p className="text-xl text-white/90 mb-6">
+            </motion.h1>
+            <motion.p 
+              className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-400"
+              variants={itemVariants}
+            >
               {mockArtist.genre}
-            </p>
-            <div className="prose prose-invert max-w-2xl mb-6">
+            </motion.p>
+            <div className="prose prose-invert max-w-2xl mb-8">
               {mockArtist.biography.split('\n').map((paragraph, index) => (
-                <p key={index} className="text-white/80">{paragraph}</p>
+                <motion.p 
+                  key={index} 
+                  className="text-lg text-white/90 leading-relaxed"
+                  variants={itemVariants}
+                >
+                  {paragraph}
+                </motion.p>
               ))}
             </div>
-            <div className="flex flex-wrap gap-4">
+            <motion.div 
+              className="flex flex-wrap gap-4"
+              variants={itemVariants}
+            >
               <Button
                 size="lg"
-                className="bg-orange-500 hover:bg-orange-600"
+                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => setShowMessageDialog(true)}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
                 Contact Me
@@ -242,30 +262,69 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-300"
               >
                 <Share2 className="mr-2 h-5 w-5" />
                 Share Profile
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
+
+        {/* Floating Stats */}
+        <motion.div 
+          className="absolute top-8 right-8 flex gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div 
+            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+            variants={itemVariants}
+          >
+            <HeartPulse className="h-6 w-6 text-orange-500" />
+            <div>
+              <p className="text-sm text-white/70">Monthly Listeners</p>
+              <p className="text-xl font-bold text-white">{mockArtist.stats.monthlyListeners}k</p>
+            </div>
+          </motion.div>
+          <motion.div 
+            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+            variants={itemVariants}
+          >
+            <Users className="h-6 w-6 text-orange-500" />
+            <div>
+              <p className="text-sm text-white/70">Followers</p>
+              <p className="text-xl font-bold text-white">{mockArtist.stats.followers}k</p>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
 
-      {/* New Release Promo */}
-      <Card className="p-6 mb-8 bg-gradient-to-r from-orange-500/10 to-orange-500/5">
+      {/* New Release Promo with enhanced styling */}
+      <Card className="p-8 mb-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
         <motion.div variants={itemVariants} className="flex items-center gap-8">
-          <img
-            src={mockArtist.newRelease.coverArt}
-            alt={mockArtist.newRelease.title}
-            className="w-40 h-40 rounded-lg shadow-lg"
-          />
+          <div className="relative group">
+            <img
+              src={mockArtist.newRelease.coverArt}
+              alt={mockArtist.newRelease.title}
+              className="w-48 h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+              <div className="absolute bottom-4 left-4">
+                <Play className="h-8 w-8 text-white" />
+              </div>
+            </div>
+          </div>
           <div>
-            <h3 className="text-2xl font-bold mb-2">{mockArtist.newRelease.title}</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
+              {mockArtist.newRelease.title}
+            </h3>
+            <p className="text-lg text-muted-foreground mb-4">
               Coming {new Date(mockArtist.newRelease.releaseDate).toLocaleDateString()}
             </p>
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
+              <Music2 className="mr-2 h-5 w-5" />
               Pre-order Now
             </Button>
           </div>
