@@ -304,6 +304,7 @@ interface Event {
   status: "upcoming" | "ongoing" | "completed" | "cancelled";
   createdAt: string;
   updatedAt: string;
+  registrationLink?: string; // Added registrationLink to Event interface
 }
 
 export default function EventsPage() {
@@ -559,6 +560,14 @@ export default function EventsPage() {
                               <p className="text-muted-foreground mb-4">{event.description}</p>
                             </div>
                             <div className="flex gap-2">
+                              {event.registrationLink && (
+                                <Button 
+                                  variant="outline"
+                                  onClick={() => window.open(event.registrationLink, '_blank')}
+                                >
+                                  Register
+                                </Button>
+                              )}
                               {event.type !== 'other' && (
                                 <Button 
                                   variant="destructive"
