@@ -416,27 +416,63 @@ export default function HomePage() {
                 <Video className="inline-block ml-2 h-6 w-6" />
               </motion.button>
             </Link>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-                <Video className="h-10 w-10 text-orange-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Smart Video Generation</h3>
-                <p className="text-white/80">Create professional music videos powered by AI</p>
-              </div>
-
-              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-                <Wand2 className="h-10 w-10 text-orange-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Style Transfer</h3>
-                <p className="text-white/80">Apply unique visual styles to match your music</p>
-              </div>
-
-              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-                <Sparkles className="h-10 w-10 text-orange-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Visual Effects</h3>
-                <p className="text-white/80">Add stunning AI-generated effects and transitions</p>
-              </div>
-            </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* AI Features Section - Separated from video */}
+      <section className="py-24 relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background to-background/95" />
+        <div className="absolute inset-0 bg-grid-white/[0.02]" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
+
+        <div className="container relative z-10 mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <div className="bg-background/40 backdrop-blur-sm p-8 rounded-xl border border-orange-500/20 relative h-full">
+                  <Video className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Smart Video Generation</h3>
+                  <p className="text-white/80">Create professional music videos powered by AI</p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <div className="bg-background/40 backdrop-blur-sm p-8 rounded-xl border border-orange-500/20 relative h-full">
+                  <Wand2 className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Style Transfer</h3>
+                  <p className="text-white/80">Apply unique visual styles to match your music</p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <div className="bg-background/40 backdrop-blur-sm p-8 rounded-xl border border-orange-500/20 relative h-full">
+                  <Sparkles className="h-12 w-12 text-orange-500 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Visual Effects</h3>
+                  <p className="text-white/80">Add stunning AI-generated effects and transitions</p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
