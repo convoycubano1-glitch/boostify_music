@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
-  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles
+  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -314,6 +314,69 @@ export default function HomePage() {
         )}
       </section>
 
+      {/* AI Music Video Section - New section added above Production Tools */}
+      <section className="py-24 relative overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          poster="/assets/video-fallback.jpg"
+        >
+          <source src="https://www.youtube.com/watch?v=O90iHkU3cPU" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-8"
+          >
+            <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+              AI Music Video Creation
+            </h2>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto">
+              Transform your music into stunning visual experiences with our AI-powered video generation
+            </p>
+
+            <Link href="/music-video-creator">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                Create Your AI Music Video
+                <Video className="inline-block ml-2 h-6 w-6" />
+              </motion.button>
+            </Link>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+                <Video className="h-10 w-10 text-orange-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Smart Video Generation</h3>
+                <p className="text-white/80">Create professional music videos powered by AI</p>
+              </div>
+
+              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+                <Wand2 className="h-10 w-10 text-orange-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Style Transfer</h3>
+                <p className="text-white/80">Apply unique visual styles to match your music</p>
+              </div>
+
+              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+                <Sparkles className="h-10 w-10 text-orange-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Visual Effects</h3>
+                <p className="text-white/80">Add stunning AI-generated effects and transitions</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Analytics Section - Moved after hero */}
       <section className="py-24 relative overflow-hidden">
         <div className="container mx-auto px-4">
@@ -377,7 +440,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Production Tools Section - New section added */}
+      {/* Production Tools Section - Keep existing section */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
         <video
           autoPlay
@@ -560,7 +623,7 @@ export default function HomePage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
                 <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
+                  <div className="absolute top-0 right-0 w-32h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
                     <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
