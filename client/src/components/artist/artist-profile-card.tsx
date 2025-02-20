@@ -1,19 +1,16 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Play,
   Pause,
-  SkipBack,
-  SkipForward,
   Music2,
   Video,
   FileText,
   ChartBar,
   User,
-  Calendar,
   MapPin,
   Mail,
   Phone,
@@ -32,14 +29,16 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { db, auth, storage } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import {
   collection,
   query,
   where,
   getDocs,
   doc,
-  getDoc
+  getDoc,
+  setDoc,
+  serverTimestamp
 } from "firebase/firestore";
 
 interface ArtistData {
@@ -66,6 +65,8 @@ interface ArtistData {
     lighting: string;
     backline: string;
   };
+  createdAt?: any;
+  userId?: string;
 }
 
 interface FirestoreSong {
@@ -90,6 +91,49 @@ interface ArtistProfileProps {
   artistId: string;
 }
 
+async function initializeArtistData(artistId: string) {
+  const artistRef = doc(db, "artists", artistId);
+  const artistDoc = await getDoc(artistRef);
+
+  if (!artistDoc.exists()) {
+    const sampleArtist: ArtistData = {
+      name: "Sample Artist",
+      biography: "A talented musician with a unique sound and powerful presence.\n\nWith years of experience in the industry, this artist has developed a distinctive style that blends multiple genres.",
+      genre: "Pop/Rock/Electronic",
+      location: "San Francisco, CA",
+      email: "contact@sampleartist.com",
+      phone: "+1 (555) 123-4567",
+      website: "https://sampleartist.com",
+      socialMedia: {
+        instagram: "https://instagram.com/sampleartist",
+        twitter: "https://twitter.com/sampleartist",
+        youtube: "https://youtube.com/sampleartist"
+      },
+      stats: {
+        monthlyListeners: 250,
+        followers: 15,
+        views: 1
+      },
+      technicalRider: {
+        stage: "Minimum stage size: 20x15 feet",
+        sound: "Professional PA system with subwoofers, 4 monitor speakers",
+        lighting: "Full lighting rig with DMX control",
+        backline: "Drum kit, guitar amps, keyboard stand"
+      }
+    };
+
+    await setDoc(artistRef, {
+      ...sampleArtist,
+      createdAt: serverTimestamp(),
+      userId: auth.currentUser?.uid
+    });
+
+    return sampleArtist;
+  }
+
+  return artistDoc.data() as ArtistData;
+}
+
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
@@ -101,11 +145,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ['artist', artistId],
     queryFn: async () => {
       try {
-        const artistDoc = await getDoc(doc(db, "artists", artistId));
-        if (!artistDoc.exists()) throw new Error('Artist not found');
-        return artistDoc.data() as ArtistData;
+        return await initializeArtistData(artistId);
       } catch (error) {
-        console.error("Error fetching artist:", error);
+        console.error("Error fetching/initializing artist:", error);
         return null;
       }
     }

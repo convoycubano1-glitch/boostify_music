@@ -581,7 +581,7 @@ export default function ArtistDashboard() {
                 <DialogTitle className="text-2xl font-bold">Artist Profile</DialogTitle>
               </DialogHeader>
               <ScrollArea className="h-full px-6 pb-6">
-                <ArtistProfileCard artistId="1" />
+                <ArtistProfileCard artistId={auth.currentUser?.uid || "1"} />
               </ScrollArea>
             </DialogContent>
           </Dialog>
