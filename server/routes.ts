@@ -619,7 +619,16 @@ export function registerRoutes(app: Express): Server {
 
   // Create a new event
   app.post("/api/events", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+    console.log('Create event request:', {
+      body: req.body,
+      user: req.user,
+      isAuthenticated: req.isAuthenticated()
+    });
+
+    if (!req.isAuthenticated()) {
+      console.log('User not authenticated');
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     try {
       const [event] = await db
@@ -632,6 +641,7 @@ export function registerRoutes(app: Express): Server {
         })
         .returning();
 
+      console.log('Event created successfully:', event);
       res.status(201).json(event);
     } catch (error) {
       console.error('Error creating event:', error);
