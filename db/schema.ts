@@ -43,7 +43,7 @@ export const analyticsHistory = pgTable("analytics_history", {
   metricName: text("metric_name").notNull(),
   metricValue: decimal("metric_value", { precision: 10, scale: 2 }).notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  source: text("source").notNull(), 
+  source: text("source").notNull(),
   metadata: json("metadata")
 });
 
@@ -116,6 +116,56 @@ export const events = pgTable("events", {
   metadata: json("metadata")
 });
 
+export const managerTasks = pgTable("manager_tasks", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status", { enum: ["pending", "in_progress", "completed", "cancelled"] }).default("pending").notNull(),
+  priority: text("priority", { enum: ["low", "medium", "high"] }).default("medium").notNull(),
+  dueDate: timestamp("due_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const managerContacts = pgTable("manager_contacts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  role: text("role"),
+  email: text("email"),
+  phone: text("phone"),
+  company: text("company"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const managerSchedule = pgTable("manager_schedule", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  location: text("location"),
+  type: text("type", { enum: ["meeting", "rehearsal", "performance", "other"] }).default("other").notNull(),
+  status: text("status", { enum: ["scheduled", "completed", "cancelled"] }).default("scheduled").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const managerNotes = pgTable("manager_notes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category", { enum: ["general", "meeting", "idea", "todo"] }).default("general").notNull(),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
@@ -177,6 +227,13 @@ export const eventsRelations = relations(events, ({ one }) => ({
   }),
 }));
 
+export const managerToolsRelations = relations(users, ({ many }) => ({
+  tasks: many(managerTasks),
+  contacts: many(managerContacts),
+  schedule: many(managerSchedule),
+  notes: many(managerNotes)
+}));
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertBookingSchema = createInsertSchema(bookings);
@@ -191,6 +248,14 @@ export const insertAnalyticsHistorySchema = createInsertSchema(analyticsHistory)
 export const selectAnalyticsHistorySchema = createSelectSchema(analyticsHistory);
 export const insertEventSchema = createInsertSchema(events);
 export const selectEventSchema = createSelectSchema(events);
+export const insertManagerTaskSchema = createInsertSchema(managerTasks);
+export const selectManagerTaskSchema = createSelectSchema(managerTasks);
+export const insertManagerContactSchema = createInsertSchema(managerContacts);
+export const selectManagerContactSchema = createSelectSchema(managerContacts);
+export const insertManagerScheduleSchema = createInsertSchema(managerSchedule);
+export const selectManagerScheduleSchema = createSelectSchema(managerSchedule);
+export const insertManagerNoteSchema = createInsertSchema(managerNotes);
+export const selectManagerNoteSchema = createSelectSchema(managerNotes);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
@@ -206,3 +271,11 @@ export type InsertAnalyticsHistory = typeof analyticsHistory.$inferInsert;
 export type SelectAnalyticsHistory = typeof analyticsHistory.$inferSelect;
 export type InsertEvent = typeof events.$inferInsert;
 export type SelectEvent = typeof events.$inferSelect;
+export type InsertManagerTask = typeof managerTasks.$inferInsert;
+export type SelectManagerTask = typeof managerTasks.$inferSelect;
+export type InsertManagerContact = typeof managerContacts.$inferInsert;
+export type SelectManagerContact = typeof managerContacts.$inferSelect;
+export type InsertManagerSchedule = typeof managerSchedule.$inferInsert;
+export type SelectManagerSchedule = typeof managerSchedule.$inferSelect;
+export type InsertManagerNote = typeof managerNotes.$inferInsert;
+export type SelectManagerNote = typeof managerNotes.$inferSelect;

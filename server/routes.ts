@@ -14,6 +14,7 @@ import session from 'express-session';
 import OpenAI from "openai";
 import { insertBookingSchema } from "@db/schema";
 import translationRouter from './routes/translation';
+import managerRouter from './routes/manager'; // Added import
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing Stripe secret key');
@@ -40,6 +41,8 @@ export function registerRoutes(app: Express): Server {
 
   // Register translation routes
   app.use('/api', translationRouter);
+
+  app.use('/api/manager', managerRouter); // Added route registration
 
   setupAuth(app);
   setupInstagramRoutes(app);
