@@ -206,7 +206,7 @@ export default function HomePage() {
   const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 text-white">
+    <div className="min-h-screen bg-black text-white">
       <WaitlistModal />
       {/* HERO SECTION */}
       <section className="relative min-h-[100svh] flex items-center overflow-hidden">
@@ -220,9 +220,6 @@ export default function HomePage() {
           src="/assets/Standard_Mode_Generated_Video (9).mp4"
         />
         <div className="absolute inset-0 bg-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200%] h-[500px] bg-orange-500/20 rounded-full blur-[100px] rotate-12 opacity-50" />
-
         <div className="container relative mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -260,8 +257,7 @@ export default function HomePage() {
                 transition={{ delay: 0.4 }}
                 className="relative w-full max-w-md"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500/20 rounded-lg blur-lg" />
-                <div className="relative bg-background/50 backdrop-blur-sm rounded-lg p-6 border border-orange-500/20">
+                <div className="relative bg-black/50 backdrop-blur-sm rounded-lg p-6 border border-orange-500/20">
                   <div className="flex flex-col items-center gap-4">
                     <div className="bg-orange-500/10 rounded-lg px-4 py-2 mb-2">
                       <p className="text-xl font-bold text-orange-500">
@@ -305,7 +301,7 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="bg-background/20 backdrop-blur-lg border-orange-500/20 hover:bg-orange-500/10"
+                className="bg-black/20 backdrop-blur-lg border-orange-500/20 hover:bg-orange-500/10"
               >
                 <Home className="h-5 w-5" />
               </Button>
@@ -323,7 +319,7 @@ export default function HomePage() {
             transition={{ delay: 0.4 }}
             className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
           >
-            <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
+            <div className="bg-black/20 backdrop-blur-lg rounded-xl p-6 relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <div className="w-24 h-24 mx-auto mb-4">
@@ -346,7 +342,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
+            <div className="bg-black/20 backdrop-blur-lg rounded-xl p-6 relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
@@ -360,7 +356,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="bg-background/20 backdrop-blur-lg rounded-xl p-6 relative group">
+            <div className="bg-black/20 backdrop-blur-lg rounded-xl p-6 relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
@@ -385,8 +381,8 @@ export default function HomePage() {
           viewport={{ once: true }}
           className="relative max-w-4xl mx-auto"
         >
-          <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
-          <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
+          {/* Video container */}
+          <div className="relative rounded-xl overflow-hidden">
             <div className="aspect-video relative rounded-lg overflow-hidden">
               <iframe
                 src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
@@ -396,7 +392,7 @@ export default function HomePage() {
                 title="Redwine - Eternal Love"
               />
 
-              {/* Content overlay - solo textos con gradiente mínimo para legibilidad */}
+              {/* Minimal gradient for text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center px-8">
@@ -411,8 +407,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Botón sobre fondo negro */}
-          <div className="flex justify-center mt-8">
+          {/* Button without background */}
+          <div className="mt-8 text-center">
             <Link href="/music-video-creator">
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -456,8 +452,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="relative max-w-4xl mx-auto mb-16"
           >
-            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
-            <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
+            <div className="relative rounded-xl overflow-hidden bg-black/50 backdrop-blur-sm p-2">
               <video
                 className="w-full rounded-lg"
                 controls
@@ -483,7 +478,7 @@ export default function HomePage() {
                 className="relative group"
               >
                 <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full">
                   <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
                     <div className="text-orange-500">{feature.icon}</div>
                   </div>
@@ -529,19 +524,19 @@ export default function HomePage() {
                 create unique musical content, and collaborate with AI-generated artists tailored to your style.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
+                <div className="p-6 bg-black/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-black/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">Virtual Musicians</h3>
                   <p className="text-sm text-white/80">AI-generated artist profiles and images</p>
                 </div>
-                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
+                <div className="p-6 bg-black/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-black/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">Smart Collaboration</h3>
                   <p className="text-sm text-white/80">Find the perfect match for your music</p>
                 </div>
-                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
+                <div className="p-6 bg-black/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-black/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">Custom Generation</h3>
                   <p className="text-sm text-white/80">Create unique content for your brand</p>
                 </div>
-                <div className="p-6 bg-background/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-background/20 transition-all duration-300">
+                <div className="p-6 bg-black/10 backdrop-blur-sm rounded-lg border border-orange-500/20 hover:bg-black/20 transition-all duration-300">
                   <h3 className="text-xl font-bold text-orange-500">AI Analytics</h3>
                   <p className="text-sm text-white/80">Data-driven music production</p>
                 </div>
@@ -549,10 +544,10 @@ export default function HomePage() {
             </div>
             <div className="flex-1 relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg blur opacity-75" />
-              <div className="relative bg-background/20 backdrop-blur-sm rounded-lg p-8 border border-orange-500/20">
+              <div className="relative bg-black/20 backdrop-blur-sm rounded-lg p-8 border border-orange-500/20">
                 <h3 className="text-xl font-semibold mb-6 text-white">Featured AI Tools</h3>
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4 group hover:bg-background/10 p-4 rounded-lg transition-all duration-300">
+                  <div className="flex items-center gap-4 group hover:bg-black/10 p-4 rounded-lg transition-all duration-300">
                     <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20">
                       <FileText className="h-6 w-6 text-orange-500" />
                     </div>
@@ -561,7 +556,7 @@ export default function HomePage() {
                       <p className="text-sm text-white/70">Create detailed artist bios and images</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 group hover:bg-background/10 p-4 rounded-lg transition-all duration-300">
+                  <div className="flex items-center gap-4 group hover:bg-black/10 p-4 rounded-lg transition-all duration-300">
                     <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20">
                       <Music2 className="h-6 w-6 text-orange-500" />
                     </div>
@@ -570,7 +565,7 @@ export default function HomePage() {
                       <p className="text-sm text-white/70">AI-powered music style insights</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 group hover:bg-background/10 p-4 rounded-lg transition-all duration-300">
+                  <div className="flex items-center gap-4 group hover:bg-black/10 p-4 rounded-lg transition-all duration-300">
                     <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20">
                       <Users2 className="h-6 w-6 text-orange-500" />
                     </div>
@@ -611,18 +606,19 @@ export default function HomePage() {
                 className="relative group cursor-pointer"
               >
                 <div className="absolute inset0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                <Card className="p-8 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
-                    <div className="p-4 rounded2xl`bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration300">
+                    <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
                       <UserCircle2 className="h-8 w-8 text-orange-500" />
                     </div>
                     <div className="flex-1 space-y-4">
                       <h3 className="text-2xl font-bold">Artist Image Advisor</h3>
                       <p className="text-muted-foreground text-lg">
                         Create stunning visual identities with AI-powered image generation and style recommendations
-                      </p><div className="space-y-3">
+                      </p>
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           <span>Advanced AI image generation for artist photos</span>
@@ -652,7 +648,7 @@ export default function HomePage() {
                 className="relative group cursor-pointer"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                <Card className="p-8 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
@@ -694,7 +690,7 @@ export default function HomePage() {
                 className="relative group cursor-pointer"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                <Card className="p-8 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
@@ -736,7 +732,7 @@ export default function HomePage() {
                 className="relative group cursor-pointer"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
+                <Card className="p-8 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
@@ -856,21 +852,21 @@ export default function HomePage() {
               Our platform provides all the tools you need to manage and grow your music career professionally. From analytics to promotion, we've got you covered.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
-              <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10">
+              <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10">
                 <BarChart2 className="h-8 w-8 text-orange-500 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Data-Driven Growth</h3>
                 <p className="text-muted-foreground">
                   Make informed decisions with comprehensive analytics and insights
                 </p>
               </Card>
-              <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10">
+              <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10">
                 <Globe className="h-8 w-8 text-orange-500 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Global Reach</h3>
                 <p className="text-muted-foreground">
                   Connect with fans worldwide through our international network
                 </p>
               </Card>
-              <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10">
+              <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10">
                 <MessageCircle className="h-8 w-8 text-orange-500 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Artist Community</h3>
                 <p className="text-muted-foreground">
@@ -911,7 +907,7 @@ export default function HomePage() {
                   className="relative group"
                 >
                   <div className="absolute inset-0 bg-orange-500/10 rounded-lg blur-xl group-hover:bg-orange-500/20 transition-all duration-300" />
-                  <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative">
+                  <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10 relative">
                     <div className="flex gap-1 mb-4">
                       {[...Array(testimonial.rating)].map((_, j) => (
                         <Star key={j} className="h-4 w-4 fill-orange-500 text-orange-500" />
@@ -1050,7 +1046,7 @@ export default function HomePage() {
                   className={`p-6 relative ${
                     plan.popular
                       ? "border-orange-500 bg-orange-500/5"
-                      : "bg-background/50 backdrop-blur-sm border-orange-500/10"
+                      : "bg-black/50 backdrop-blur-sm border-orange-500/10"
                   }`}
                 >
                   {plan.popular && (
