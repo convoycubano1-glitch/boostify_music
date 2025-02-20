@@ -422,60 +422,73 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* AI Features Section - Separated from video */}
-      <section className="py-24 relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background to-background/95" />
-        <div className="absolute inset-0 bg-grid-white/[0.02]" />
+      {/* Features Section - Enhanced with modern design */}
+      <section className="py-24 container mx-auto px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
 
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <div className="bg-background/40 backdrop-blur-sm p-8 rounded-xl border border-orange-500/20 relative h-full">
-                  <Video className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">Smart Video Generation</h3>
-                  <p className="text-white/80">Create professional music videos powered by AI</p>
-                </div>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <div className="bg-background/40 backdrop-blur-sm p-8 rounded-xl border border-orange-500/20 relative h-full">
-                  <Wand2 className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">Style Transfer</h3>
-                  <p className="text-white/80">Apply unique visual styles to match your music</p>
-                </div>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <div className="bg-background/40 backdrop-blur-sm p-8 rounded-xl border border-orange-500/20 relative h-full">
-                  <Sparkles className="h-12 w-12 text-orange-500 mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">Visual Effects</h3>
-                  <p className="text-white/80">Add stunning AI-generated effects and transitions</p>
-                </div>
-              </motion.div>
-            </motion.div>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="space-y-12 relative"
+        >
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+              Everything You Need
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Comprehensive tools to boost your music career and reach new audiences
+            </p>
           </div>
-        </div>
+
+          {/* Video showcase */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative max-w-4xl mx-auto mb-16"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
+            <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
+              <video
+                className="w-full rounded-lg"
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src={bostifyVideo} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </motion.div>
+
+          {/* Features grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, i) => (
+              <motion.div
+                key={i}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
+                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
+                    <div className="text-orange-500">{feature.icon}</div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </section>
 
       {/* Production Tools Section - Keep existing section */}
@@ -567,7 +580,6 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-
 
       {/* Specialized Services Section */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
