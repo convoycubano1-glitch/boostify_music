@@ -6,6 +6,8 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
+export { openai };
+
 export const CONTRACT_TYPES = {
   DISTRIBUTION: 'distribution',
   RECORDING: 'recording',

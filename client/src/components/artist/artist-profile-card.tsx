@@ -225,10 +225,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       </motion.div>
 
       {/* Featured Video Section */}
-      <div className="relative h-[90vh] rounded-xl overflow-hidden mb-8">
+      <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
         <iframe
           className="absolute inset-0 w-full h-full object-cover"
-          src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ&controls=0&showinfo=0&rel=0"
+          src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&loop=1&playlist=O90iHkU3cPU&controls=0&showinfo=0&rel=0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         ></iframe>
