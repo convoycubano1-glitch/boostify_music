@@ -631,14 +631,18 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      const eventData = {
+        ...req.body,
+        userId: req.user!.id,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate)
+      };
+
+      console.log('Attempting to create event with data:', eventData);
+
       const [event] = await db
         .insert(events)
-        .values({
-          ...req.body,
-          userId: req.user!.id,
-          startDate: new Date(req.body.startDate),
-          endDate: new Date(req.body.endDate)
-        })
+        .values(eventData)
         .returning();
 
       console.log('Event created successfully:', event);

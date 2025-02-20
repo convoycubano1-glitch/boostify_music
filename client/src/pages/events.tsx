@@ -504,7 +504,7 @@ export default function EventsPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="date">Start Date</Label>
+                    <Label htmlFor="startDate">Start Date</Label>
                     <Input
                       id="startDate"
                       type="datetime-local"
@@ -728,8 +728,7 @@ export default function EventsPage() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="venue" type="category" width={100} />
-                    <Tooltip 
-                      contentStyle={{
+                    <Tooltip                      contentStyle={{
                         backgroundColor: 'hsl(var(--background))',
                         border: '1px solid hsl(var(--border))',
                       }}
