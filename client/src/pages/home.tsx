@@ -383,14 +383,20 @@ export default function HomePage() {
         <div className="absolute inset-0 overflow-hidden">
           <iframe
             src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
-            className="absolute w-[100vw] h-[100vh] -top-[15vh] left-0 pointer-events-none scale-125"
+            className="absolute w-[200vw] h-[200vh] -top-[50vh] -left-[50vw] pointer-events-none scale-150 md:scale-[2]"
             allow="autoplay; encrypted-media"
             frameBorder="0"
             title="Redwine - Eternal Love"
           />
         </div>
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+
+        {/* Gradientes mejorados */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/30 via-background/70 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+
+        {/* Efecto de brillo superior */}
+        <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-orange-500/40 to-transparent opacity-60" />
 
         <div className="container relative z-10 mx-auto px-4">
           <motion.div
@@ -399,7 +405,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center max-w-4xl mx-auto"
           >
-            <div className="space-y-8 mb-20">
+            <div className="space-y-8 mb-24">
               <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight">
                 AI Music Video Creation
               </h2>
@@ -412,7 +418,7 @@ export default function HomePage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 mt-12"
               >
                 Create Your AI Music Video
                 <Video className="inline-block ml-2 h-6 w-6" />
@@ -607,17 +613,18 @@ export default function HomePage() {
               >
                 <div className="absolute inset0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
                 <Card className="p-8 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
-                    <div className="p-4 rounded-2xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                    <div className="p-4 rounded-2xl`bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
                       <UserCircle2 className="h-8 w-8 text-orange-500" />
                     </div>
                     <div className="flex-1 space-y-4">
                       <h3 className="text-2xl font-bold">Artist Image Advisor</h3>
                       <p className="text-muted-foreground text-lg">
                         Create stunning visual identities with AI-powered image generation and style recommendations
-                      </p>                      <div className="space-y-3">
+                      </p>
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           <span>Advanced AI image generation for artist photos</span>
