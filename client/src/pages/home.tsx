@@ -389,7 +389,7 @@ export default function HomePage() {
             title="Redwine - Eternal Love"
           />
         </div>
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black/30" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
         <div className="container relative z-10 mx-auto px-4">
@@ -397,14 +397,16 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center space-y-8"
+            className="text-center max-w-4xl mx-auto"
           >
-            <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-              AI Music Video Creation
-            </h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto">
-              Transform your music into stunning visual experiences with our AI-powered video generation
-            </p>
+            <div className="space-y-8 mb-20">
+              <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight">
+                AI Music Video Creation
+              </h2>
+              <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+                Transform your music into stunning visual experiences with our AI-powered video generation
+              </p>
+            </div>
 
             <Link href="/music-video-creator">
               <motion.button
@@ -609,8 +611,9 @@ export default function HomePage() {
               </video>
             </div>
           </motion.div>
+        </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid sm:grid-cols2 lg:grid-cols-3 gap-6 md:gap8">
             {features.map((feature, i) => (
               <motion.div
                 key={i}
@@ -651,7 +654,8 @@ export default function HomePage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Artist Image Advisor            <Link href="/artist-image-advisor">
+            {/* Artist Image Advisor */}
+            <Link href="/artist-image-advisor">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className="relative group cursor-pointer"
