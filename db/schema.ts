@@ -180,6 +180,16 @@ export const technicalRiders = pgTable("technical_riders", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+export const translations = pgTable("translations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sourceText: text("source_text").notNull(),
+  translatedText: text("translated_text").notNull(),
+  sourceLanguage: text("source_language").notNull(),
+  targetLanguage: text("target_language").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
@@ -188,7 +198,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
   audioDemos: many(audioDemos),
   events: many(events),
-  technicalRiders: many(technicalRiders)
+  technicalRiders: many(technicalRiders),
+  translations: many(translations)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -274,6 +285,9 @@ export const selectManagerNoteSchema = createSelectSchema(managerNotes);
 export const insertTechnicalRiderSchema = createInsertSchema(technicalRiders);
 export const selectTechnicalRiderSchema = createSelectSchema(technicalRiders);
 
+export const insertTranslationSchema = createInsertSchema(translations);
+export const selectTranslationSchema = createSelectSchema(translations);
+
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
@@ -298,3 +312,5 @@ export type InsertManagerNote = typeof managerNotes.$inferInsert;
 export type SelectManagerNote = typeof managerNotes.$inferSelect;
 export type InsertTechnicalRider = typeof technicalRiders.$inferInsert;
 export type SelectTechnicalRider = typeof technicalRiders.$inferSelect;
+export type InsertTranslation = typeof translations.$inferInsert;
+export type SelectTranslation = typeof translations.$inferSelect;
