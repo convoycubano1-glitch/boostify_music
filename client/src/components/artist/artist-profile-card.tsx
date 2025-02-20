@@ -37,6 +37,7 @@ import {
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
+import { ArtistProgressTracker } from "@/components/progress/artist-progress-tracker";
 
 interface ArtistProfileProps {
   artistId: string;
@@ -364,6 +365,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Progress Tracker */}
+          <ArtistProgressTracker artistId={artistId} />
+
           {/* Music Player */}
           <Card className="p-6">
             <motion.div variants={itemVariants}>
