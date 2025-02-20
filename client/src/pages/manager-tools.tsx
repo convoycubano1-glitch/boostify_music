@@ -125,6 +125,26 @@ export default function ManagerToolsPage() {
     tags: []
   });
 
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      // Update the newEvent state with the selected date
+      const startOfDay = new Date(date);
+      startOfDay.setHours(9, 0, 0); // Default to 9 AM
+
+      const endOfDay = new Date(date);
+      endOfDay.setHours(17, 0, 0); // Default to 5 PM
+
+      setNewEvent(prev => ({
+        ...prev,
+        startTime: startOfDay.toISOString(),
+        endTime: endOfDay.toISOString()
+      }));
+      setShowEventDialog(true);
+    }
+  };
+
+
   // Queries
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryKey: ['manager/tasks'],
@@ -728,7 +748,7 @@ export default function ManagerToolsPage() {
                             </div>
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
-                              <span className="text-sm md:text-base">Artist transportation</span>
+                              <span className="text-smmd:text-base">Artist transportation</span>
                             </div>
                             <div className="flex items-start gap-3">
                               <div className="w-2 h-2 rounded-full bg-orange-500 mt-2" />
