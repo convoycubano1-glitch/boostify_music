@@ -318,6 +318,7 @@ export default function EventsPage() {
     endDate: '',
     location: '',
     type: 'other' as const,
+    status: 'upcoming' as const,
   });
 
   // Fetch events from the database
@@ -333,12 +334,21 @@ export default function EventsPage() {
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
+      console.log('Creating event with data:', eventData); // Debug log
       const response = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify({
+          ...eventData,
+          // Ensure dates are properly formatted
+          startDate: new Date(eventData.startDate).toISOString(),
+          endDate: new Date(eventData.endDate).toISOString(),
+        }),
       });
-      if (!response.ok) throw new Error('Failed to create event');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create event');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -355,12 +365,14 @@ export default function EventsPage() {
         endDate: '',
         location: '',
         type: 'other',
+        status: 'upcoming',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error('Error creating event:', error);
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: error.message || "Failed to create event. Please try again.",
         variant: "destructive",
       });
     },
@@ -400,7 +412,12 @@ export default function EventsPage() {
       });
       return;
     }
-    createEventMutation.mutate(newEvent);
+
+    try {
+      await createEventMutation.mutateAsync(newEvent);
+    } catch (error) {
+      console.error('Error in handleCreateEvent:', error);
+    }
   };
 
   const handleDeleteEvent = async (eventId: number) => {
