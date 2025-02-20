@@ -568,73 +568,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section - Enhanced with modern design */}
-      <section className="py-24 container mx-auto px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="space-y-12 relative"
-        >
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-              Everything You Need
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Comprehensive tools to boost your music career and reach new audiences
-            </p>
-          </div>
-
-          {/* Add the video section here */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative max-w-4xl mx-auto"
-          >
-            <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
-            <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
-              <video
-                className="w-full rounded-lg"
-                controls
-                autoPlay
-                loop
-                muted
-                playsInline
-              >
-                <source src={bostifyVideo} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          </motion.div>
-        </motion.div>
-
-          <div className="grid sm:grid-cols2 lg:grid-cols-3 gap-6 md:gap8">
-            {features.map((feature, i) => (
-              <motion.div
-                key={i}
-                variants={itemVariants}
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
-                <Card className="p-6 bg-background/50 backdrop-blur-sm border-orange-500/10 relative h-full">
-                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
-                    <div className="text-orange-500">{feature.icon}</div>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
 
       {/* Specialized Services Section */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-orange-500/5 to-background">
@@ -672,8 +605,7 @@ export default function HomePage() {
                       <h3 className="text-2xl font-bold">Artist Image Advisor</h3>
                       <p className="text-muted-foreground text-lg">
                         Create stunning visual identities with AI-powered image generation and style recommendations
-                      </p>
-                      <div className="space-y-3">
+                      </p>                      <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           <span>Advanced AI image generation for artist photos</span>
