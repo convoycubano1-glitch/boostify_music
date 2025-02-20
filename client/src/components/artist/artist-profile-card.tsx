@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,113 +26,80 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useQuery } from "@tanstack/react-query";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { db, auth } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp
-} from "firebase/firestore";
-
-interface ArtistData {
-  name: string;
-  biography: string;
-  genre: string;
-  location: string;
-  email: string;
-  phone: string;
-  website: string;
-  socialMedia: {
-    instagram: string;
-    twitter: string;
-    youtube: string;
-  };
-  stats: {
-    monthlyListeners: number;
-    followers: number;
-    views: number;
-  };
-  technicalRider: {
-    stage: string;
-    sound: string;
-    lighting: string;
-    backline: string;
-  };
-  createdAt?: any;
-  userId?: string;
-}
-
-interface FirestoreSong {
-  id: string;
-  name: string;
-  audioUrl: string;
-  duration: string;
-  createdAt: Date;
-  userId: string;
-}
-
-interface FirestoreVideo {
-  id: string;
-  url: string;
-  title: string;
-  thumbnail: string;
-  createdAt: Date;
-  userId: string;
-}
 
 interface ArtistProfileProps {
   artistId: string;
 }
 
-async function initializeArtistData(artistId: string) {
-  const artistRef = doc(db, "artists", artistId);
-  const artistDoc = await getDoc(artistRef);
-
-  if (!artistDoc.exists()) {
-    const sampleArtist: ArtistData = {
-      name: "Sample Artist",
-      biography: "A talented musician with a unique sound and powerful presence.\n\nWith years of experience in the industry, this artist has developed a distinctive style that blends multiple genres.",
-      genre: "Pop/Rock/Electronic",
-      location: "San Francisco, CA",
-      email: "contact@sampleartist.com",
-      phone: "+1 (555) 123-4567",
-      website: "https://sampleartist.com",
-      socialMedia: {
-        instagram: "https://instagram.com/sampleartist",
-        twitter: "https://twitter.com/sampleartist",
-        youtube: "https://youtube.com/sampleartist"
-      },
-      stats: {
-        monthlyListeners: 250,
-        followers: 15,
-        views: 1
-      },
-      technicalRider: {
-        stage: "Minimum stage size: 20x15 feet",
-        sound: "Professional PA system with subwoofers, 4 monitor speakers",
-        lighting: "Full lighting rig with DMX control",
-        backline: "Drum kit, guitar amps, keyboard stand"
-      }
-    };
-
-    await setDoc(artistRef, {
-      ...sampleArtist,
-      createdAt: serverTimestamp(),
-      userId: auth.currentUser?.uid
-    });
-
-    return sampleArtist;
+const mockArtist = {
+  name: "Sarah Anderson",
+  biography: "A groundbreaking artist who seamlessly blends electronic and acoustic elements.\n\nWith over a decade of experience in the music industry, Sarah has developed a unique sound that resonates with audiences worldwide. Her innovative approach to music production and compelling live performances have earned her a dedicated following.",
+  genre: "Electronic/Pop/Alternative",
+  location: "Los Angeles, CA",
+  email: "contact@sarahanderson.com",
+  phone: "+1 (310) 555-0123",
+  website: "https://sarahanderson.com",
+  socialMedia: {
+    instagram: "https://instagram.com/sarahanderson",
+    twitter: "https://twitter.com/sarahanderson",
+    youtube: "https://youtube.com/sarahanderson"
+  },
+  stats: {
+    monthlyListeners: 250,
+    followers: 15,
+    views: 1
+  },
+  technicalRider: {
+    stage: "Minimum stage size: 24x16 feet\nDrums riser: 8x8 feet, height 1 foot\nKeyboard riser: 6x8 feet, height 1 foot",
+    sound: "Professional PA system with subwoofers\n4 monitor speakers\n32 channel digital mixing console\nWireless microphone system",
+    lighting: "Full lighting rig with DMX control\nLED wash lights\nMoving head spots\nHaze machine",
+    backline: "Drum kit (DW or Pearl)\nTwo guitar amps (Fender Twin Reverb)\nBass amp (Ampeg)\nKeyboard stand\nAll necessary microphones and DI boxes"
   }
+};
 
-  return artistDoc.data() as ArtistData;
-}
+const mockSongs = [
+  {
+    id: "1",
+    name: "Electric Dreams",
+    duration: "3:45",
+    audioUrl: "/assets/sample-track-1.mp3"
+  },
+  {
+    id: "2",
+    name: "Midnight Echo",
+    duration: "4:12",
+    audioUrl: "/assets/sample-track-2.mp3"
+  },
+  {
+    id: "3",
+    name: "Neon Lights",
+    duration: "3:58",
+    audioUrl: "/assets/sample-track-3.mp3"
+  }
+];
+
+const mockVideos = [
+  {
+    id: "1",
+    title: "Live at Sunset Festival",
+    thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  {
+    id: "2",
+    title: "Studio Session - New Album",
+    thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  },
+  {
+    id: "3",
+    title: "Behind the Scenes",
+    thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  }
+];
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -140,61 +107,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [showTechnicalRider, setShowTechnicalRider] = useState(false);
 
-  // Fetch artist data
-  const { data: artist, isLoading: isLoadingArtist } = useQuery({
-    queryKey: ['artist', artistId],
-    queryFn: async () => {
-      try {
-        return await initializeArtistData(artistId);
-      } catch (error) {
-        console.error("Error fetching/initializing artist:", error);
-        return null;
-      }
-    }
-  });
-
-  // Fetch artist's music
-  const { data: songs = [], isLoading: isLoadingSongs } = useQuery<FirestoreSong[]>({
-    queryKey: ['artist-songs', artistId],
-    queryFn: async () => {
-      try {
-        const songsRef = collection(db, "songs");
-        const q = query(songsRef, where("userId", "==", artistId));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        })) as FirestoreSong[];
-      } catch (error) {
-        console.error("Error fetching songs:", error);
-        return [];
-      }
-    }
-  });
-
-  // Fetch artist's videos
-  const { data: videos = [], isLoading: isLoadingVideos } = useQuery<FirestoreVideo[]>({
-    queryKey: ['artist-videos', artistId],
-    queryFn: async () => {
-      try {
-        const videosRef = collection(db, "videos");
-        const q = query(videosRef, where("userId", "==", artistId));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        })) as FirestoreVideo[];
-      } catch (error) {
-        console.error("Error fetching videos:", error);
-        return [];
-      }
-    }
-  });
-
   // Handle audio playback
-  const togglePlay = (song: FirestoreSong) => {
+  const togglePlay = (song: typeof mockSongs[0], index: number) => {
     if (currentAudio) {
       currentAudio.pause();
       setCurrentAudio(null);
@@ -205,25 +119,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       const audio = new Audio(song.audioUrl);
       audio.play();
       setCurrentAudio(audio);
+      setCurrentTrack(index);
       setIsPlaying(true);
     }
   };
-
-  if (isLoadingArtist || isLoadingSongs || isLoadingVideos) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
-      </div>
-    );
-  }
-
-  if (!artist) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Artist not found</p>
-      </div>
-    );
-  }
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -255,38 +154,27 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     >
       {/* Hero Section */}
       <div className="relative h-[50vh] rounded-xl overflow-hidden mb-8">
-        {videos[0] ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            src={videos[0].url}
-          />
-        ) : (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            src="/assets/artist-background.mp4"
-          />
-        )}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/assets/artist-background.mp4"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8">
           <motion.h1 
             className="text-4xl md:text-6xl font-bold text-white mb-4"
             variants={itemVariants}
           >
-            {artist.name}
+            {mockArtist.name}
           </motion.h1>
           <motion.p 
             className="text-xl text-white/90 max-w-2xl"
             variants={itemVariants}
           >
-            {artist.genre}
+            {mockArtist.genre}
           </motion.p>
         </div>
       </div>
@@ -303,7 +191,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 Latest Tracks
               </h3>
               <div className="space-y-4">
-                {songs.map((song, index) => (
+                {mockSongs.map((song, index) => (
                   <div
                     key={song.id}
                     className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
@@ -314,7 +202,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => togglePlay(song)}
+                        onClick={() => togglePlay(song, index)}
                         className="mr-2"
                       >
                         {currentTrack === index && isPlaying ? (
@@ -342,7 +230,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 Videos
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                {videos.map((video) => (
+                {mockVideos.map((video) => (
                   <div
                     key={video.id}
                     className="relative rounded-lg overflow-hidden group cursor-pointer"
@@ -378,8 +266,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="grid grid-cols-3 gap-6">
                 <div className="w-24 h-24 mx-auto">
                   <CircularProgressbar
-                    value={artist.stats.monthlyListeners > 0 ? Math.min(100, (artist.stats.monthlyListeners / 1000) * 100) : 0}
-                    text={`${artist.stats.monthlyListeners}k`}
+                    value={75}
+                    text={`${mockArtist.stats.monthlyListeners}k`}
                     styles={buildStyles({
                       pathColor: '#f97316',
                       textColor: '#f97316',
@@ -392,8 +280,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
                 <div className="w-24 h-24 mx-auto">
                   <CircularProgressbar
-                    value={artist.stats.followers > 0 ? Math.min(100, (artist.stats.followers / 1000) * 100) : 0}
-                    text={`${artist.stats.followers}k`}
+                    value={85}
+                    text={`${mockArtist.stats.followers}k`}
                     styles={buildStyles({
                       pathColor: '#f97316',
                       textColor: '#f97316',
@@ -406,8 +294,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
                 <div className="w-24 h-24 mx-auto">
                   <CircularProgressbar
-                    value={artist.stats.views > 0 ? Math.min(100, (artist.stats.views / 1000000) * 100) : 0}
-                    text={`${artist.stats.views}M`}
+                    value={60}
+                    text={`${mockArtist.stats.views}M`}
                     styles={buildStyles({
                       pathColor: '#f97316',
                       textColor: '#f97316',
@@ -439,25 +327,25 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             </DialogTrigger>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>Technical Rider - {artist.name}</DialogTitle>
+                <DialogTitle>Technical Rider - {mockArtist.name}</DialogTitle>
               </DialogHeader>
               <ScrollArea className="h-[60vh] mt-4">
                 <div className="space-y-6 p-4">
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Stage Requirements</h4>
-                    <p className="text-muted-foreground">{artist.technicalRider.stage}</p>
+                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.stage}</p>
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Sound System</h4>
-                    <p className="text-muted-foreground">{artist.technicalRider.sound}</p>
+                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.sound}</p>
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Lighting</h4>
-                    <p className="text-muted-foreground">{artist.technicalRider.lighting}</p>
+                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.lighting}</p>
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Backline</h4>
-                    <p className="text-muted-foreground">{artist.technicalRider.backline}</p>
+                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.backline}</p>
                   </div>
                 </div>
               </ScrollArea>
@@ -474,20 +362,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="space-y-4">
                 <div className="flex items-center">
                   <MapPin className="w-5 h-5 text-orange-500 mr-3" />
-                  <span>{artist.location}</span>
+                  <span>{mockArtist.location}</span>
                 </div>
                 <div className="flex items-center">
                   <Mail className="w-5 h-5 text-orange-500 mr-3" />
-                  <span>{artist.email}</span>
+                  <span>{mockArtist.email}</span>
                 </div>
                 <div className="flex items-center">
                   <Phone className="w-5 h-5 text-orange-500 mr-3" />
-                  <span>{artist.phone}</span>
+                  <span>{mockArtist.phone}</span>
                 </div>
                 <div className="flex items-center">
                   <Globe className="w-5 h-5 text-orange-500 mr-3" />
-                  <a href={artist.website} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500">
-                    {artist.website}
+                  <a href={mockArtist.website} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500">
+                    {mockArtist.website}
                   </a>
                 </div>
                 <div className="flex gap-4 mt-4">
@@ -495,7 +383,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     variant="ghost"
                     size="icon"
                     className="hover:text-orange-500"
-                    onClick={() => window.open(artist.socialMedia.instagram, '_blank')}
+                    onClick={() => window.open(mockArtist.socialMedia.instagram, '_blank')}
                   >
                     <Instagram className="w-5 h-5" />
                   </Button>
@@ -503,7 +391,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     variant="ghost"
                     size="icon"
                     className="hover:text-orange-500"
-                    onClick={() => window.open(artist.socialMedia.twitter, '_blank')}
+                    onClick={() => window.open(mockArtist.socialMedia.twitter, '_blank')}
                   >
                     <Twitter className="w-5 h-5" />
                   </Button>
@@ -511,7 +399,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     variant="ghost"
                     size="icon"
                     className="hover:text-orange-500"
-                    onClick={() => window.open(artist.socialMedia.youtube, '_blank')}
+                    onClick={() => window.open(mockArtist.socialMedia.youtube, '_blank')}
                   >
                     <Youtube className="w-5 h-5" />
                   </Button>
@@ -527,7 +415,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <motion.div variants={itemVariants}>
           <h3 className="text-2xl font-semibold mb-6">Biography</h3>
           <div className="prose prose-orange max-w-none">
-            {artist.biography.split('\n').map((paragraph, index) => (
+            {mockArtist.biography.split('\n').map((paragraph, index) => (
               <p key={index} className="text-muted-foreground">{paragraph}</p>
             ))}
           </div>
