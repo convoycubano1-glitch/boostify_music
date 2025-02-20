@@ -75,6 +75,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { ArtistProfileCard } from "@/components/artist/artist-profile-card";
 
 const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa'];
 
@@ -571,6 +572,21 @@ export default function ArtistDashboard() {
               >
                 Manage and enhance your musical presence from one place
               </motion.p>
+
+              {/* Add floating profile button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6"
+              >
+                {auth.currentUser && (
+                  <ArtistProfileCard
+                    artistId={auth.currentUser.uid}
+                    isFloating={true}
+                  />
+                )}
+              </motion.div>
             </div>
 
             {/* Estadísticas en tarjetas */}

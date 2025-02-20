@@ -6,8 +6,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Play,
   Pause,
-  SkipBack,
-  SkipForward,
   Music2,
   Video,
   FileText,
@@ -20,7 +18,8 @@ import {
   Globe,
   Instagram,
   Twitter,
-  Youtube
+  Youtube,
+  Share2
 } from "lucide-react";
 import {
   Dialog,
@@ -35,6 +34,7 @@ import 'react-circular-progressbar/dist/styles.css';
 
 interface ArtistProfileProps {
   artistId: string;
+  isFloating?: boolean;
 }
 
 interface ArtistData {
@@ -75,10 +75,15 @@ interface ArtistData {
   }>;
 }
 
-export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
+interface ShareOptions {
+  platform: 'twitter' | 'facebook' | 'linkedin';
+  url: string;
+  title: string;
+}
+
+export function ArtistProfileCard({ artistId, isFloating = false }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
-  const [showTechnicalRider, setShowTechnicalRider] = useState(false);
 
   const { data: artist, isLoading } = useQuery<ArtistData>({
     queryKey: ['artist', artistId],
@@ -89,13 +94,25 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
   });
 
-  if (isLoading || !artist) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
-      </div>
-    );
-  }
+  const handleShare = ({ platform, url, title }: ShareOptions) => {
+    let shareUrl = '';
+    const encodedUrl = encodeURIComponent(url);
+    const encodedTitle = encodeURIComponent(title);
+
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+        break;
+    }
+
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+  };
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -118,13 +135,31 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
   };
 
-  return (
+  const content = (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       className="w-full max-w-7xl mx-auto"
     >
+      {/* Add share button at the top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => {
+            const url = `${window.location.origin}/artist/${artistId}`;
+            handleShare({
+              platform: 'twitter',
+              url,
+              title: `Check out ${artist?.name}'s profile!`
+            });
+          }}
+        >
+          <Share2 className="h-5 w-5" />
+        </Button>
+      </div>
+
       {/* Hero Section */}
       <div className="relative h-[50vh] rounded-xl overflow-hidden mb-8">
         <video
@@ -378,4 +413,26 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       </Card>
     </motion.div>
   );
+
+  // If isFloating is true, wrap content in Dialog
+  if (isFloating) {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="bg-orange-500 hover:bg-orange-600">
+            View Artist Profile
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-7xl h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Artist Profile</DialogTitle>
+          </DialogHeader>
+          {content}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Otherwise return content directly
+  return content;
 }
