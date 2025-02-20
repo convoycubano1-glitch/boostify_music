@@ -81,21 +81,31 @@ const mockArtist = {
       id: 1,
       name: "Limited Edition Vinyl",
       price: 29.99,
-      image: "https://placehold.co/300x300",
+      image: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
+      description: "Exclusive double vinyl with special artwork and signed insert",
+      inStock: true,
+      category: "Music",
       url: "#"
     },
     {
       id: 2,
       name: "Tour T-Shirt 2024",
       price: 24.99,
-      image: "https://placehold.co/300x300",
+      image: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
+      description: "100% cotton premium quality tour shirt with unique design",
+      inStock: true,
+      category: "Apparel",
+      sizes: ["S", "M", "L", "XL"],
       url: "#"
     },
     {
       id: 3,
-      name: "Signed Poster",
+      name: "Signed Poster Collection",
       price: 19.99,
-      image: "https://placehold.co/300x300",
+      image: "https://images.unsplash.com/photo-1509347436349-7f96c36f4537?w=800&auto=format&fit=crop&q=60",
+      description: "Set of 3 high-quality art prints, hand-signed",
+      inStock: true,
+      category: "Art",
       url: "#"
     }
   ],
@@ -431,32 +441,69 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
                 <ShoppingBag className="w-6 h-6 mr-2 text-orange-500" />
-                Merchandise
+                Official Merchandise
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {mockArtist.merchandise.map((item) => (
-                  <div
+                  <motion.div
                     key={item.id}
-                    className="group relative rounded-lg overflow-hidden"
+                    className="group relative rounded-lg overflow-hidden bg-gradient-to-br from-orange-500/5 to-transparent"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full aspect-square object-cover transition-transform group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <p className="text-white font-medium">{item.name}</p>
-                        <p className="text-orange-500 font-bold">${item.price}</p>
-                        <Button
-                          className="w-full mt-2 bg-orange-500 hover:bg-orange-600"
-                          onClick={() => window.open(item.url, '_blank')}
-                        >
-                          Buy Now
-                        </Button>
+                    <div className="aspect-square overflow-hidden relative">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                          <div className="space-y-2">
+                            <p className="text-white font-medium text-lg">{item.name}</p>
+                            <p className="text-orange-400 font-bold text-xl">${item.price.toFixed(2)}</p>
+                            <p className="text-white/80 text-sm line-clamp-2">{item.description}</p>
+                            {item.sizes && (
+                              <div className="flex gap-2 mt-2">
+                                {item.sizes.map((size) => (
+                                  <span key={size} className="px-2 py-1 text-xs bg-white/10 rounded-md text-white/90">
+                                    {size}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 pt-2">
+                              <Button
+                                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                                onClick={() => window.open(item.url, '_blank')}
+                              >
+                                Buy Now
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="border-orange-500/50 hover:bg-orange-500/20"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-orange-500">{item.category}</span>
+                        {item.inStock ? (
+                          <span className="text-xs px-2 py-1 bg-green-500/10 text-green-500 rounded-full">In Stock</span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 bg-red-500/10 text-red-500 rounded-full">Out of Stock</span>
+                        )}
+                      </div>
+                      <h4 className="font-semibold truncate">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{item.description}</p>
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>
