@@ -43,56 +43,56 @@ interface ArtistProfileProps {
 }
 
 const mockArtist = {
-  name: "Sarah Anderson",
-  biography: "A groundbreaking artist who seamlessly blends electronic and acoustic elements.\n\nWith over a decade of experience in the music industry, Sarah has developed a unique sound that resonates with audiences worldwide. Her innovative approach to music production and compelling live performances have earned her a dedicated following.",
-  genre: "Electronic/Pop/Alternative",
-  location: "Los Angeles, CA",
-  email: "contact@sarahanderson.com",
-  phone: "+1 (310) 555-0123",
-  website: "https://sarahanderson.com",
+  name: "Redwine",
+  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
+  genre: "Blues Latin Fusion",
+  location: "Miami, FL",
+  email: "booking@redwinemusic.com",
+  phone: "+1 (305) 555-0123",
+  website: "https://redwinemusic.com",
   socialMedia: {
-    instagram: "https://instagram.com/sarahanderson",
-    twitter: "https://twitter.com/sarahanderson",
-    youtube: "https://youtube.com/sarahanderson"
+    instagram: "https://instagram.com/redwinemusic",
+    twitter: "https://twitter.com/redwinemusic",
+    youtube: "https://youtube.com/redwinemusic"
   },
   stats: {
-    monthlyListeners: 250,
-    followers: 15,
-    views: 1
+    monthlyListeners: 180,
+    followers: 12,
+    views: 2
   },
   upcomingShows: [
     {
       id: 1,
       date: "2024-03-15",
-      venue: "The Grand Hall",
-      city: "Los Angeles, CA",
+      venue: "Blue Martini Lounge",
+      city: "Miami, FL",
       ticketUrl: "#"
     },
     {
       id: 2,
       date: "2024-04-01",
-      venue: "Sunset Arena",
-      city: "San Francisco, CA",
+      venue: "Ball & Chain",
+      city: "Little Havana, Miami",
       ticketUrl: "#"
     }
   ],
   merchandise: [
     {
       id: 1,
-      name: "Limited Edition Vinyl",
+      name: "Miami Blues Vinyl Edition",
       price: 29.99,
       image: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
-      description: "Exclusive double vinyl with special artwork and signed insert",
+      description: "Edición especial en vinilo con arte exclusivo y notas firmadas",
       inStock: true,
       category: "Music",
       url: "#"
     },
     {
       id: 2,
-      name: "Tour T-Shirt 2024",
+      name: "Latin Blues Tour 2024",
       price: 24.99,
       image: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
-      description: "100% cotton premium quality tour shirt with unique design",
+      description: "Camiseta oficial del tour en algodón premium con diseño exclusivo",
       inStock: true,
       category: "Apparel",
       sizes: ["S", "M", "L", "XL"],
@@ -100,46 +100,46 @@ const mockArtist = {
     },
     {
       id: 3,
-      name: "Signed Poster Collection",
+      name: "Colección Arte Latino Blues",
       price: 19.99,
       image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
-      description: "Set of 3 high-quality art prints, hand-signed",
+      description: "Set de 3 prints artísticos firmados inspirados en la fusión del Blues y la cultura latina",
       inStock: true,
       category: "Art",
       url: "#"
     }
   ],
   newRelease: {
-    title: "Electric Dreams - New Single",
+    title: "Havana Blues - Nuevo Single",
     releaseDate: "2024-03-01",
     coverArt: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60",
     preOrderUrl: "#"
   },
   technicalRider: {
-    stage: "Minimum stage size: 24x16 feet\nDrums riser: 8x8 feet, height 1 foot\nKeyboard riser: 6x8 feet, height 1 foot",
-    sound: "Professional PA system with subwoofers\n4 monitor speakers\n32 channel digital mixing console\nWireless microphone system",
-    lighting: "Full lighting rig with DMX control\nLED wash lights\nMoving head spots\nHaze machine",
-    backline: "Drum kit (DW or Pearl)\nTwo guitar amps (Fender Twin Reverb)\nBass amp (Ampeg)\nKeyboard stand\nAll necessary microphones and DI boxes"
+    stage: "Tarima mínima: 24x16 pies\nTarima para percusión: 8x8 pies, altura 1 pie\nTarima para teclados: 6x8 pies, altura 1 pie",
+    sound: "Sistema PA profesional con subwoofers\n4 monitores\nConsola digital de 32 canales\nSistema de micrófono inalámbrico",
+    lighting: "Sistema completo de iluminación con control DMX\nLuces LED wash\nSpots móviles\nMáquina de humo",
+    backline: "Batería completa (DW o Pearl)\nDos amplificadores de guitarra (Fender Twin Reverb)\nAmplificador de bajo (Ampeg)\nSoporte para teclado\nTodos los micrófonos y cajas DI necesarios\nSet de percusión latina completo"
   }
 };
 
 const mockSongs = [
   {
     id: "1",
-    name: "Electric Dreams",
-    duration: "3:45",
+    name: "Havana Blues",
+    duration: "4:15",
     audioUrl: "/assets/sample-track-1.mp3"
   },
   {
     id: "2",
-    name: "Midnight Echo",
-    duration: "4:12",
+    name: "Calle Ocho Nights",
+    duration: "5:32",
     audioUrl: "/assets/sample-track-2.mp3"
   },
   {
     id: "3",
-    name: "Neon Lights",
-    duration: "3:58",
+    name: "Latin Guitar Soul",
+    duration: "4:48",
     audioUrl: "/assets/sample-track-3.mp3"
   }
 ];
@@ -147,21 +147,21 @@ const mockSongs = [
 const mockVideos = [
   {
     id: "1",
-    title: "Live at Sunset Festival",
-    thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    title: "Live at Ball & Chain",
+    thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
+    url: "https://www.youtube.com/watch?v=O90iHkU3cPU"
   },
   {
     id: "2",
-    title: "Studio Session - New Album",
-    thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    title: "Miami Blues Sessions",
+    thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
+    url: "https://www.youtube.com/watch?v=O90iHkU3cPU"
   },
   {
     id: "3",
-    title: "Behind the Scenes",
-    thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    title: "Behind the Fusion",
+    thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
+    url: "https://www.youtube.com/watch?v=O90iHkU3cPU"
   }
 ];
 
