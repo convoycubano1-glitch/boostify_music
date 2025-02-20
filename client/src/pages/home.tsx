@@ -326,7 +326,7 @@ export default function HomePage() {
             title="Redwine - Eternal Love"
           />
         </div>
-        <div className="absolute inset-0 bg-black/70" />
+        <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
         <div className="container relative z-10 mx-auto px-4">
