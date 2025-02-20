@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { translateText, detectLanguage } from "@/lib/api/translation-service";
 import { useToast } from "@/hooks/use-toast";
 import { Languages, ArrowRight, Loader2 } from "lucide-react";
-import debounce from "lodash/debounce";
+import { debounce } from "lodash";
 
 const SUPPORTED_LANGUAGES = [
   { code: "es", name: "Español" },
@@ -42,10 +42,10 @@ export function RealTimeTranslator() {
         targetLanguage,
       });
       setTranslatedText(response.translatedText);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error de traducción",
-        description: error.message || "No se pudo traducir el texto",
+        description: error instanceof Error ? error.message : "No se pudo traducir el texto",
         variant: "destructive",
       });
     } finally {
@@ -69,10 +69,10 @@ export function RealTimeTranslator() {
         description: `El texto está en ${languageName}`,
       });
       setDetectedLanguage(detected);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "No se pudo detectar el idioma",
+        description: error instanceof Error ? error.message : "No se pudo detectar el idioma",
         variant: "destructive",
       });
     }
@@ -94,12 +94,11 @@ export function RealTimeTranslator() {
               Detectar idioma
             </Button>
           </div>
-          <Input
+          <Textarea
             placeholder="Escribe o pega el texto aquí..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="min-h-[100px]"
-            multiline
           />
         </div>
 
