@@ -102,7 +102,7 @@ const mockArtist = {
       id: 3,
       name: "Signed Poster Collection",
       price: 19.99,
-      image: "https://images.unsplash.com/photo-1509347436349-7f96c36f4537?w=800&auto=format&fit=crop&q=60",
+      image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
       description: "Set of 3 high-quality art prints, hand-signed",
       inStock: true,
       category: "Art",
@@ -112,7 +112,7 @@ const mockArtist = {
   newRelease: {
     title: "Electric Dreams - New Single",
     releaseDate: "2024-03-01",
-    coverArt: "https://placehold.co/500x500",
+    coverArt: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60",
     preOrderUrl: "#"
   },
   technicalRider: {
