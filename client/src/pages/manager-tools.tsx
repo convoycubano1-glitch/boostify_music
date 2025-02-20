@@ -80,6 +80,18 @@ interface Note {
   tags: string[];
 }
 
+// Add TechnicalRider interface
+interface TechnicalRider {
+  id: number;
+  title: string;
+  stagePlot: Record<string, any>;
+  equipmentSpecs: Record<string, any>;
+  audioRequirements: Record<string, any>;
+  additionalNotes?: string;
+  version: number;
+  status: "draft" | "published" | "archived";
+}
+
 export default function ManagerToolsPage() {
   const [selectedTab, setSelectedTab] = useState("technical");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -125,15 +137,36 @@ export default function ManagerToolsPage() {
     tags: []
   });
 
+  // Add technical rider state
+  const [newTechnicalRider, setNewTechnicalRider] = useState<Partial<TechnicalRider>>({
+    title: "",
+    stagePlot: {
+      dimensions: "",
+      layout: "",
+      notes: ""
+    },
+    equipmentSpecs: {
+      sound: "",
+      lighting: "",
+      backline: ""
+    },
+    audioRequirements: {
+      pa: "",
+      monitoring: "",
+      microphones: ""
+    },
+    additionalNotes: "",
+    status: "draft"
+  });
+
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     if (date) {
-      // Update the newEvent state with the selected date
       const startOfDay = new Date(date);
-      startOfDay.setHours(9, 0, 0); // Default to 9 AM
+      startOfDay.setHours(9, 0, 0); 
 
       const endOfDay = new Date(date);
-      endOfDay.setHours(17, 0, 0); // Default to 5 PM
+      endOfDay.setHours(17, 0, 0); 
 
       setNewEvent(prev => ({
         ...prev,
@@ -178,6 +211,16 @@ export default function ManagerToolsPage() {
     queryFn: async () => {
       const response = await fetch('/api/manager/notes');
       if (!response.ok) throw new Error('Failed to fetch notes');
+      return response.json();
+    }
+  });
+
+  // Add technical rider query
+  const { data: technicalRiders, isLoading: technicalRidersLoading } = useQuery({
+    queryKey: ['manager/technical-riders'],
+    queryFn: async () => {
+      const response = await fetch('/api/manager/technical-riders');
+      if (!response.ok) throw new Error('Failed to fetch technical riders');
       return response.json();
     }
   });
@@ -275,6 +318,30 @@ export default function ManagerToolsPage() {
     }
   });
 
+  // Add technical rider mutation
+  const createTechnicalRiderMutation = useMutation({
+    mutationFn: async (riderData: Partial<TechnicalRider>) => {
+      const response = await fetch('/api/manager/technical-riders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(riderData),
+      });
+      if (!response.ok) throw new Error('Failed to create technical rider');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manager/technical-riders'] });
+      toast({ title: "Technical rider created successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to create technical rider", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
   // Handler functions
   const handleCreateTask = async () => {
     if (!newTask.title || !newTask.dueDate) {
@@ -353,6 +420,66 @@ export default function ManagerToolsPage() {
       category: "general",
       tags: []
     });
+  };
+
+  // Add handler for creating technical rider
+  const handleCreateTechnicalRider = async () => {
+    if (!newTechnicalRider.title) {
+      toast({ 
+        title: "Missing required fields",
+        description: "Please provide a title for the technical rider",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await createTechnicalRiderMutation.mutateAsync(newTechnicalRider);
+    setNewTechnicalRider({
+      title: "",
+      stagePlot: {
+        dimensions: "",
+        layout: "",
+        notes: ""
+      },
+      equipmentSpecs: {
+        sound: "",
+        lighting: "",
+        backline: ""
+      },
+      audioRequirements: {
+        pa: "",
+        monitoring: "",
+        microphones: ""
+      },
+      additionalNotes: "",
+      status: "draft"
+    });
+  };
+
+  // Add handler for downloading technical rider
+  const handleDownloadTechnicalRider = async (rider: TechnicalRider) => {
+    try {
+      const response = await fetch(`/api/manager/technical-riders/${rider.id}`);
+      if (!response.ok) throw new Error('Failed to fetch technical rider');
+
+      const data = await response.json();
+      const fileData = JSON.stringify(data, null, 2);
+      const blob = new Blob([fileData], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `technical-rider-${rider.title}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({ 
+        title: "Failed to download technical rider",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -530,29 +657,113 @@ export default function ManagerToolsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-                        <div className="flex items-center gap-3">
-                          <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                          <span className="text-base md:text-lg">Stage plot and dimensions</span>
+
+                      <div className="space-y-6 mb-8">
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-medium">Stage Plot & Dimensions</h4>
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Stage dimensions"
+                              value={newTechnicalRider.stagePlot.dimensions}
+                              onChange={(e) => setNewTechnicalRider(prev => ({
+                                ...prev,
+                                stagePlot: {
+                                  ...prev.stagePlot,
+                                  dimensions: e.target.value
+                                }
+                              }))}
+                            />
+                            <Textarea
+                              placeholder="Stage layout description"
+                              value={newTechnicalRider.stagePlot.layout}
+                              onChange={(e) => setNewTechnicalRider(prev => ({
+                                ...prev,
+                                stagePlot: {
+                                  ...prev.stagePlot,
+                                  layout: e.target.value
+                                }
+                              }))}
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                          <span className="text-base md:text-lg">Equipment specifications</span>
+
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-medium">Equipment Specifications</h4>
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="Sound equipment requirements"
+                              value={newTechnicalRider.equipmentSpecs.sound}
+                              onChange={(e) => setNewTechnicalRider(prev => ({
+                                ...prev,
+                                equipmentSpecs: {
+                                  ...prev.equipmentSpecs,
+                                  sound: e.target.value
+                                }
+                              }))}
+                            />
+                            <Textarea
+                              placeholder="Lighting requirements"
+                              value={newTechnicalRider.equipmentSpecs.lighting}
+                              onChange={(e) => setNewTechnicalRider(prev => ({
+                                ...prev,
+                                equipmentSpecs: {
+                                  ...prev.equipmentSpecs,
+                                  backline: e.target.value
+                                }
+                              }))}
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                          <span className="text-base md:text-lg">Audio requirements</span>
+
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-medium">Audio Requirements</h4>
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="PA System requirements"
+                              value={newTechnicalRider.audioRequirements.pa}
+                              onChange={(e) => setNewTechnicalRider(prev => ({
+                                ...prev,
+                                audioRequirements: {
+                                  ...prev.audioRequirements,
+                                  pa: e.target.value
+                                }
+                              }))}
+                            />
+                            <Textarea
+                              placeholder="Monitoring requirements"
+                              value={newTechnicalRider.audioRequirements.monitoring}
+                              onChange={(e) => setNewTechnicalRider(prev => ({
+                                ...prev,
+                                audioRequirements: {
+                                  ...prev.audioRequirements,
+                                  microphones: e.target.value
+                                }
+                              }))}
+                            />
+                          </div>
                         </div>
                       </div>
+
                       <div className="grid grid-cols-2 gap-4">
-                        <Button size="lg" className="bg-orange-500 hover:bg-orange-600 h-auto py-3 whitespace-nowrap">
+                        <Button 
+                          size="lg" 
+                          className="bg-orange-500 hover:bg-orange-600 h-auto py-3 whitespace-nowrap"
+                          onClick={handleCreateTechnicalRider}
+                        >
                           <Upload className="mr-2 h-5 w-5 flex-shrink-0" />
                           Create New
                         </Button>
-                        <Button size="lg" variant="outline" className="h-auto py-3 whitespace-nowrap">
-                          <Download className="mr-2 h-5 w-5 flex-shrink-0" />
-                          Download
-                        </Button>
+                        {technicalRiders?.length > 0 && (
+                          <Button 
+                            size="lg" 
+                            variant="outline" 
+                            className="h-auto py-3 whitespace-nowrap"
+                            onClick={() => handleDownloadTechnicalRider(technicalRiders[0])}
+                          >
+                            <Download className="mr-2 h-5 w-5 flex-shrink-0" />
+                            Download Latest
+                          </Button>
+                        )}
                       </div>
                     </Card>
 

@@ -166,6 +166,20 @@ export const managerNotes = pgTable("manager_notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+export const technicalRiders = pgTable("technical_riders", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  stagePlot: json("stage_plot").notNull(),
+  equipmentSpecs: json("equipment_specs").notNull(),
+  audioRequirements: json("audio_requirements").notNull(),
+  additionalNotes: text("additional_notes"),
+  version: integer("version").default(1).notNull(),
+  status: text("status", { enum: ["draft", "published", "archived"] }).default("draft").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
@@ -173,7 +187,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   contracts: many(contracts),
   bookings: many(bookings),
   audioDemos: many(audioDemos),
-  events: many(events)
+  events: many(events),
+  technicalRiders: many(technicalRiders)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -256,6 +271,8 @@ export const insertManagerScheduleSchema = createInsertSchema(managerSchedule);
 export const selectManagerScheduleSchema = createSelectSchema(managerSchedule);
 export const insertManagerNoteSchema = createInsertSchema(managerNotes);
 export const selectManagerNoteSchema = createSelectSchema(managerNotes);
+export const insertTechnicalRiderSchema = createInsertSchema(technicalRiders);
+export const selectTechnicalRiderSchema = createSelectSchema(technicalRiders);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
@@ -279,3 +296,5 @@ export type InsertManagerSchedule = typeof managerSchedule.$inferInsert;
 export type SelectManagerSchedule = typeof managerSchedule.$inferSelect;
 export type InsertManagerNote = typeof managerNotes.$inferInsert;
 export type SelectManagerNote = typeof managerNotes.$inferSelect;
+export type InsertTechnicalRider = typeof technicalRiders.$inferInsert;
+export type SelectTechnicalRider = typeof technicalRiders.$inferSelect;
