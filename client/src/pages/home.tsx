@@ -314,70 +314,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* AI Music Video Section - Positioned between hero and production tools */}
-      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
-        {/* Video background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <iframe
-            src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
-            className="absolute w-[100vw] h-[100vh] -top-[15vh] left-0 pointer-events-none scale-125"
-            allow="autoplay; encrypted-media"
-            frameBorder="0"
-            title="Redwine - Eternal Love"
-          />
-        </div>
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
-
-        <div className="container relative z-10 mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center space-y-8"
-          >
-            <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-              AI Music Video Creation
-            </h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto">
-              Transform your music into stunning visual experiences with our AI-powered video generation
-            </p>
-
-            <Link href="/music-video-creator">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
-              >
-                Create Your AI Music Video
-                <Video className="inline-block ml-2 h-6 w-6" />
-              </motion.button>
-            </Link>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-                <Video className="h-10 w-10 text-orange-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Smart Video Generation</h3>
-                <p className="text-white/80">Create professional music videos powered by AI</p>
-              </div>
-
-              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-                <Wand2 className="h-10 w-10 text-orange-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Style Transfer</h3>
-                <p className="text-white/80">Apply unique visual styles to match your music</p>
-              </div>
-
-              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
-                <Sparkles className="h-10 w-10 text-orange-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Visual Effects</h3>
-                <p className="text-white/80">Add stunning AI-generated effects and transitions</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Analytics Section - Moved after hero */}
+      {/* Analytics Section - Moved before AI Music Video */}
       <section className="py-24 relative overflow-hidden">
         <div className="container mx-auto px-4">
           <motion.div
@@ -434,6 +371,69 @@ export default function HomePage() {
                   +{progress}%
                 </p>
                 <p className="text-sm text-center text-muted-foreground">Month over Month</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* AI Music Video Section */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
+        {/* Video background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <iframe
+            src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&controls=0&loop=1&playlist=O90iHkU3cPU&showinfo=0&rel=0&modestbranding=1"
+            className="absolute w-[100vw] h-[100vh] -top-[15vh] left-0 pointer-events-none scale-125"
+            allow="autoplay; encrypted-media"
+            frameBorder="0"
+            title="Redwine - Eternal Love"
+          />
+        </div>
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
+
+        <div className="container relative z-10 mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-8"
+          >
+            <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+              AI Music Video Creation
+            </h2>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto">
+              Transform your music into stunning visual experiences with our AI-powered video generation
+            </p>
+
+            <Link href="/music-video-creator">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                Create Your AI Music Video
+                <Video className="inline-block ml-2 h-6 w-6" />
+              </motion.button>
+            </Link>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+                <Video className="h-10 w-10 text-orange-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Smart Video Generation</h3>
+                <p className="text-white/80">Create professional music videos powered by AI</p>
+              </div>
+
+              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+                <Wand2 className="h-10 w-10 text-orange-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Style Transfer</h3>
+                <p className="text-white/80">Apply unique visual styles to match your music</p>
+              </div>
+
+              <div className="bg-background/10 backdrop-blur-sm p-6 rounded-xl border border-orange-500/20">
+                <Sparkles className="h-10 w-10 text-orange-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Visual Effects</h3>
+                <p className="text-white/80">Add stunning AI-generated effects and transitions</p>
               </div>
             </div>
           </motion.div>
