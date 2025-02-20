@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
+import { ArtistProfileCard } from "@/components/artist/artist-profile-card";
 import { motion } from "framer-motion";
 import {
   Video,
@@ -24,6 +25,7 @@ import {
   Share2,
   Calendar,
   Download,
+  User
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -145,6 +147,7 @@ export default function ArtistDashboard() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState("7d");
+  const [showProfileCard, setShowProfileCard] = useState(false);
 
   // Datos de ejemplo para las métricas
   const musicMetrics = {
@@ -554,6 +557,35 @@ export default function ArtistDashboard() {
             />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-background" />
+
+          {/* Profile Card Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute top-4 right-4 z-20"
+          >
+            <Button
+              size="lg"
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={() => setShowProfileCard(true)}
+            >
+              <User className="mr-2 h-5 w-5" />
+              View Artist Profile
+            </Button>
+          </motion.div>
+
+          {/* Profile Card Dialog */}
+          <Dialog open={showProfileCard} onOpenChange={setShowProfileCard}>
+            <DialogContent className="max-w-7xl h-[90vh] overflow-hidden p-0">
+              <DialogHeader className="px-6 pt-6">
+                <DialogTitle className="text-2xl font-bold">Artist Profile</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="h-full px-6 pb-6">
+                <ArtistProfileCard artistId="1" />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+
           <div className="relative z-10 container mx-auto h-full flex flex-col justify-end items-center md:items-start px-4 md:px-8 py-8">
             <div className="text-center md:text-left mb-12">
               <motion.h1
@@ -853,8 +885,7 @@ export default function ArtistDashboard() {
                               >
                                 {isSubmittingVideo ? (
                                   <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Adding...
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />                                    Adding...
                                   </>
                                 ) : (
                                   <>
