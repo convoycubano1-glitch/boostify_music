@@ -377,7 +377,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* AI Music Video Section */}
+      {/* AI Music Video Section - REPLACED */}
       <section className="py-12 md:py-16 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -400,28 +400,32 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-b from-orange-500/30 via-background/70 to-background/90" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
 
-              {/* Content overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight">
+              {/* Content overlay - solo textos */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center px-8">
+                  <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 leading-tight mb-6">
                     AI Music Video Creation
                   </h2>
-                  <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+                  <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
                     Transform your music into stunning visual experiences with our AI-powered video generation
                   </p>
-                  <Link href="/music-video-creator">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 mt-6"
-                    >
-                      Create Your AI Music Video
-                      <Video className="inline-block ml-2 h-6 w-6" />
-                    </motion.button>
-                  </Link>
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Botón fuera del video */}
+          <div className="flex justify-center mt-8">
+            <Link href="/music-video-creator">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                Create Your AI Music Video
+                <Video className="inline-block ml-2 h-6 w-6" />
+              </motion.button>
+            </Link>
           </div>
         </motion.div>
       </section>
