@@ -378,12 +378,12 @@ export default function HomePage() {
       </section>
 
       {/* AI Music Video Section */}
-      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
+      <section className="py-12 md:py-16 relative overflow-hidden bg-gradient-to-b from-background via-background/95 to-background/90">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative max-w-4xl mx-auto mb-16"
+          className="relative max-w-4xl mx-auto"
         >
           <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75" />
           <div className="relative rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm p-2">
@@ -425,7 +425,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section - Enhanced with modern design */}
-      <section className="py-24 container mx-auto px-4 relative overflow-hidden">
+      <section className="py-12 md:py-16 container mx-auto px-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
@@ -612,7 +612,7 @@ export default function HomePage() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 
                   <div className="flex items-start gap-6">
-                    <div className="p-4 rounded2xl`bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300">
+                    <div className="p-4 rounded2xl`bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration300">
                       <UserCircle2 className="h-8 w-8 text-orange-500" />
                     </div>
                     <div className="flex-1 space-y-4">
