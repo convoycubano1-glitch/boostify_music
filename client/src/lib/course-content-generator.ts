@@ -43,36 +43,29 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       dangerouslyAllowBrowser: true
     });
 
+    const prompt = {
+      title: lessonTitle,
+      description: lessonDescription,
+      requirements: {
+        introduction: "2-3 paragraphs",
+        keyPoints: "4-6 bullet points",
+        mainContent: "2-4 sections with subtitle and paragraphs",
+        practicalExercises: "3-5 exercises",
+        additionalResources: "3-5 resources",
+        exam: "2-3 multiple choice questions"
+      }
+    };
+
     const completion = await openai.chat.completions.create({
       model: 'deepseek/deepseek-r1:free',
       messages: [
         {
           role: 'system',
-          content: `You are an expert music industry educator. Create a detailed lesson with exam questions in pure JSON format without any markdown code blocks or additional formatting.`
+          content: 'You are an expert music industry educator. Create educational content in pure JSON format without any markdown or formatting.'
         },
         {
           role: 'user',
-          content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}. Return a JSON object with this structure:
-{
-  "title": string,
-  "content": {
-    "introduction": string (2-3 paragraphs),
-    "keyPoints": string[] (4-6 items),
-    "mainContent": Array<{
-      "subtitle": string,
-      "paragraphs": string[]
-    }>,
-    "practicalExercises": string[] (3-5 items),
-    "additionalResources": string[] (3-5 items),
-    "summary": string,
-    "exam": Array<{
-      "question": string,
-      "options": string[],
-      "correctAnswer": number,
-      "explanation": string
-    }> (minimum 2 questions)
-  }
-}`
+          content: JSON.stringify(prompt)
         }
       ],
       temperature: 0.3,
@@ -83,7 +76,8 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       throw new Error('Invalid API response format');
     }
 
-    const parsedContent = JSON.parse(completion.choices[0].message.content.trim());
+    const content = completion.choices[0].message.content.trim();
+    const parsedContent = JSON.parse(content);
     return lessonContentSchema.parse(parsedContent);
 
   } catch (error) {

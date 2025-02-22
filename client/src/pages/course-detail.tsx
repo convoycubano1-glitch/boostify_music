@@ -694,20 +694,22 @@ export default function CourseDetailPage() {
 
       <Dialog open={showExam} onOpenChange={setShowExam}>
         <DialogContent className="max-w-2xl">
-          <DialogTitle className="text-xl font-bold">
-            Course Exam - {currentExamLesson}
-          </DialogTitle>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Course Exam - {currentExamLesson}
+            </DialogTitle>
+          </DialogHeader>
           <div className="mt-4">
             {currentExamLesson &&
               progress.lessonContents[currentExamLesson]?.content?.exam &&
               progress.lessonContents[currentExamLesson]?.content?.exam[selectedExamQuestion] && (
                 <>
-                  <h3 className="text-lg font-semibold mb-4">
+                  <div className="text-lg font-semibold mb-4">
                     Question {selectedExamQuestion + 1} of {progress.lessonContents[currentExamLesson].content.exam.length}
-                  </h3>
-                  <p className="mb-4">
+                  </div>
+                  <div className="mb-4">
                     {progress.lessonContents[currentExamLesson].content.exam[selectedExamQuestion].question}
-                  </p>
+                  </div>
                   <div className="space-y-4">
                     <RadioGroup
                       value={selectedAnswer?.toString()}
@@ -734,7 +736,7 @@ export default function CourseDetailPage() {
                 </>
               )}
           </div>
-          <div className="flex justify-end gap-2 mt-4">
+          <DialogFooter className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setShowExam(false)}>
               Cancel
             </Button>
@@ -756,7 +758,7 @@ export default function CourseDetailPage() {
                   : 'Finish Exam'}
               </Button>
             )}
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
