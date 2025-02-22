@@ -61,41 +61,59 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       dangerouslyAllowBrowser: true
     });
 
-    // Define the lesson structure template with more detailed content
+    // Define the lesson structure template
     const lessonTemplate = {
       title: lessonTitle,
       content: {
-        introduction: "Write a detailed 3-4 paragraph introduction",
-        coverImagePrompt: "Describe an image that represents this lesson's main concept",
-        keyPoints: [{
-          point: "Key learning objective",
-          icon: "Suggest a Lucide icon name (e.g., 'Music', 'Star', etc.)"
-        }],
-        mainContent: [{
-          subtitle: "Section heading",
-          icon: "Suggest a Lucide icon name",
-          paragraphs: ["Write 3-4 detailed paragraphs"],
-          imagePrompt: "Describe an image that would illustrate this section"
-        }],
-        practicalExercises: [{
-          title: "Exercise title",
-          description: "Detailed exercise description",
-          steps: ["Step-by-step instructions"],
-          icon: "Suggest a Lucide icon name"
-        }],
-        additionalResources: [{
-          title: "Resource title",
-          url: "URL to resource",
-          description: "Brief description of the resource",
-          icon: "Suggest a Lucide icon name"
-        }],
-        summary: "Write a comprehensive one-paragraph summary",
-        exam: [{
-          question: "Detailed question about the content",
-          options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-          correctAnswer: 0,
-          explanation: "Detailed explanation of why this answer is correct"
-        }]
+        introduction: "Write a detailed introduction to the topic (2-3 paragraphs)",
+        coverImagePrompt: "Describe a professional image that represents this lesson",
+        keyPoints: [
+          {
+            point: "Key point 1",
+            icon: "Music"
+          },
+          {
+            point: "Key point 2",
+            icon: "Star"
+          },
+          {
+            point: "Key point 3",
+            icon: "Book"
+          }
+        ],
+        mainContent: [
+          {
+            subtitle: "First Section",
+            icon: "Lightbulb",
+            paragraphs: ["Detailed content paragraph"],
+            imagePrompt: "Description for section image"
+          }
+        ],
+        practicalExercises: [
+          {
+            title: "Exercise 1",
+            description: "Exercise description",
+            steps: ["Step 1", "Step 2", "Step 3"],
+            icon: "Pencil"
+          }
+        ],
+        additionalResources: [
+          {
+            title: "Resource 1",
+            url: "https://example.com",
+            description: "Resource description",
+            icon: "Link"
+          }
+        ],
+        summary: "Comprehensive summary of the lesson",
+        exam: [
+          {
+            question: "Sample question",
+            options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+            correctAnswer: 0,
+            explanation: "Explanation for the correct answer"
+          }
+        ]
       }
     };
 
@@ -104,21 +122,20 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       messages: [
         {
           role: 'system',
-          content: 'You are an expert music industry educator creating comprehensive educational content. Generate detailed lesson content following the exact JSON structure provided. Include relevant Lucide icon names (see https://lucide.dev) for visual elements. Create detailed, practical content that is immediately applicable to music industry professionals.'
+          content: `You are an expert music industry educator creating comprehensive educational content. Generate detailed lesson content following the exact JSON structure provided. Include relevant Lucide icon names from this list: Music, Star, Book, Lightbulb, FileText, Link, Pencil, Trophy, Clock, Users, Award, ChevronRight. Create detailed, practical content that is immediately applicable to music industry professionals.`
         },
         {
           role: 'user',
           content: `Create a comprehensive lesson about "${lessonTitle}" with this description: "${lessonDescription}". 
-            Return a JSON object exactly matching this structure: ${JSON.stringify(lessonTemplate, null, 2)}
+            Return valid JSON matching this structure exactly: ${JSON.stringify(lessonTemplate, null, 2)}
 
             Requirements:
-            - Minimum 3 key points
-            - Minimum 3 main content sections
-            - Minimum 3 practical exercises
-            - Minimum 3 additional resources
-            - Minimum 3 exam questions
-            - All icons should be valid Lucide icon names (e.g., Music, Star, Book, etc.)
-            - Image prompts should be detailed enough for image generation
+            - Must have at least 3 key points
+            - Must have at least 3 main content sections
+            - Must have at least 3 practical exercises
+            - Must have at least 3 additional resources
+            - Must have at least 3 exam questions
+            - Only use icon names from the provided list
             - Content should be practical and immediately applicable`
         }
       ],
@@ -127,16 +144,20 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
     });
 
     if (!completion.choices[0]?.message?.content) {
+      console.error('Invalid API response format:', completion);
       throw new Error('Invalid API response format');
     }
 
     const content = completion.choices[0].message.content.trim();
+    console.log('Generated content:', content);
 
     try {
       const parsedContent = JSON.parse(content);
+      console.log('Parsed content:', parsedContent);
       return lessonContentSchema.parse(parsedContent);
     } catch (parseError) {
       console.error('Error parsing content:', parseError);
+      console.error('Raw content:', content);
       throw new Error('Failed to parse lesson content: Invalid JSON format');
     }
 
