@@ -683,16 +683,19 @@ export default function CourseDetailPage() {
       <Dialog open={showExam} onOpenChange={setShowExam}>
         <DialogContent className="max-w-2xl">
           <DialogTitle className="text-xl font-bold">
-            Course Exam
+            Course Exam - {currentExamLesson}
           </DialogTitle>
           <div className="mt-4">
             {currentExamLesson &&
-              progress.lessonContents[currentExamLesson]?.content.exam &&
-              progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion] && (
+              progress.lessonContents[currentExamLesson]?.content?.exam &&
+              progress.lessonContents[currentExamLesson]?.content?.exam[selectedExamQuestion] && (
                 <>
                   <h3 className="text-lg font-semibold mb-4">
-                    Question {selectedExamQuestion + 1}: {progress.lessonContents[currentExamLesson].content.exam[selectedExamQuestion].question}
+                    Question {selectedExamQuestion + 1} of {progress.lessonContents[currentExamLesson].content.exam.length}
                   </h3>
+                  <p className="mb-4">
+                    {progress.lessonContents[currentExamLesson].content.exam[selectedExamQuestion].question}
+                  </p>
                   <div className="space-y-4">
                     <RadioGroup
                       value={selectedAnswer?.toString()}
@@ -736,9 +739,7 @@ export default function CourseDetailPage() {
                 onClick={nextQuestion}
                 className="bg-orange-500 hover:bg-orange-600"
               >
-                {currentExamLesson &&
-                  progress.lessonContents[currentExamLesson]?.content.exam &&
-                  selectedExamQuestion < progress.lessonContents[currentExamLesson].content.exam.length - 1
+                {selectedExamQuestion < (progress.lessonContents[currentExamLesson]?.content.exam.length || 0) - 1
                   ? 'Next Question'
                   : 'Finish Exam'}
               </Button>
