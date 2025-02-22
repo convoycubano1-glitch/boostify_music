@@ -9,9 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent } from "@/lib/api/openrouter";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import type { SelectCourse } from "@db/schema";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 interface CourseFormData {
   title: string;
@@ -21,52 +21,29 @@ interface CourseFormData {
   level: "Beginner" | "Intermediate" | "Advanced";
 }
 
-const predefinedCourses = [
-  {
-    id: 1,
-    title: "Music Business Fundamentals",
-    description: "Master the essentials of the music industry, from copyright law to revenue streams.",
-    price: 199.99,
-    category: "Business",
-    level: "Beginner",
-    thumbnail: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop",
-    rating: 4.8,
-    totalReviews: 245,
-    duration: "8 weeks",
-    lessons: 16
-  },
-  {
-    id: 2,
-    title: "Digital Music Marketing",
-    description: "Learn advanced social media strategies and digital promotion techniques for musicians.",
-    price: 249.99,
-    category: "Marketing",
-    level: "Intermediate",
-    thumbnail: "https://images.unsplash.com/photo-1595491542937-3de00ac7e08a?w=800&auto=format&fit=crop",
-    rating: 4.9,
-    totalReviews: 189,
-    duration: "6 weeks",
-    lessons: 12
-  },
-  {
-    id: 3,
-    title: "Music Production Masterclass",
-    description: "Learn professional music production techniques from industry experts.",
-    price: 299.99,
-    category: "Production",
-    level: "Advanced",
-    thumbnail: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?w=800&auto=format&fit=crop",
-    rating: 4.7,
-    totalReviews: 312,
-    duration: "10 weeks",
-    lessons: 20
-  }
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  level: string;
+  thumbnail: string;
+  rating: number;
+  totalReviews: number;
+  duration: string;
+  lessons: number;
+  content?: any;
+  createdAt: Date;
+  createdBy: string; // Added createdBy field
+}
 
 export default function EducationPage() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const auth = getAuth();
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newCourse, setNewCourse] = useState<CourseFormData>({
     title: "",
     description: "",
@@ -75,46 +52,49 @@ export default function EducationPage() {
     level: "Beginner"
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [hoveredCourse, setHoveredCourse] = useState<number | null>(null);
+  const [hoveredCourse, setHoveredCourse] = useState<string | null>(null);
 
-  const { data: courses = predefinedCourses, isLoading } = useQuery<SelectCourse[]>({
-    queryKey: ["/api/courses"],
-  });
+  // Fetch courses from Firestore
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const coursesRef = collection(db, 'courses');
+        const q = query(coursesRef, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const coursesData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Course[];
+        setCourses(coursesData);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load courses",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const createCourseMutation = useMutation({
-    mutationFn: async (courseData: any) => {
-      const response = await apiRequest("POST", "/api/courses", courseData);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
-      setIsCreatingCourse(false);
-      setNewCourse({
-        title: "",
-        description: "",
-        price: 0,
-        category: "",
-        level: "Beginner"
-      });
-      toast({
-        title: "Success",
-        description: "Course created successfully!"
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
+    fetchCourses();
+  }, [toast]);
 
   const handleCreateCourse = async () => {
+    if (!auth.currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a course",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!newCourse.title || !newCourse.description || !newCourse.price || !newCourse.category || !newCourse.level) {
       toast({
         title: "Error",
-        description: "Por favor complete todos los campos requeridos",
+        description: "Please complete all required fields",
         variant: "destructive"
       });
       return;
@@ -122,36 +102,39 @@ export default function EducationPage() {
 
     try {
       setIsGenerating(true);
-      console.log("Iniciando generación de curso:", newCourse);
+      const prompt = `Generate a professional music course with these characteristics:
+        - Title: "${newCourse.title}"
+        - Description: "${newCourse.description}"
+        - Level: ${newCourse.level}
+        - Category: ${newCourse.category}
 
-      const prompt = `Genera un curso de música profesional con estas características:
-        - Título: "${newCourse.title}"
-        - Descripción: "${newCourse.description}"
-        - Nivel: ${newCourse.level}
-        - Categoría: ${newCourse.category}
+        The course should be detailed and practical, focused on the current music industry.`;
 
-        El curso debe ser detallado y práctico, enfocado en la industria musical actual.`;
-
-      console.log("Enviando prompt a OpenRouter:", prompt);
       const courseContent = await generateCourseContent(prompt);
-      console.log("Contenido del curso generado:", courseContent);
 
       const courseData = {
         ...newCourse,
         content: courseContent,
-        thumbnail: predefinedCourses[0].thumbnail, 
+        thumbnail: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&auto=format&fit=crop",
         lessons: courseContent.curriculum.length,
         duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
         rating: 0,
-        totalReviews: 0
+        totalReviews: 0,
+        createdAt: new Date(),
+        createdBy: auth.currentUser.uid
       };
 
-      console.log("Creando nuevo curso con datos:", courseData);
-      await createCourseMutation.mutateAsync(courseData);
+      const courseRef = await addDoc(collection(db, 'courses'), courseData);
+
+      // Add the new course to the local state
+      setCourses(prev => [{
+        id: courseRef.id,
+        ...courseData
+      } as Course, ...prev]);
 
       toast({
-        title: "¡Éxito!",
-        description: "Curso creado correctamente"
+        title: "Success",
+        description: "Course created successfully"
       });
 
       setIsCreatingCourse(false);
@@ -163,10 +146,10 @@ export default function EducationPage() {
         level: "Beginner"
       });
     } catch (error: any) {
-      console.error('Error al crear el curso:', error);
+      console.error('Error creating course:', error);
       toast({
-        title: "Error en la creación del curso",
-        description: error.message || "Error al crear el curso. Por favor intente nuevamente.",
+        title: "Error creating course",
+        description: error.message || "Failed to create course. Please try again.",
         variant: "destructive"
       });
     } finally {
