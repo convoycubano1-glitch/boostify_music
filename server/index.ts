@@ -13,17 +13,26 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve static files from the public folder
-app.use(express.static(path.join(process.cwd(), 'client/public')));
+// Setup static file serving based on environment
+if (process.env.NODE_ENV === "production") {
+  log('Running in production mode');
+  // Serve static files from the dist directory
+  const distPath = path.join(process.cwd(), 'dist');
+  log(`Serving static files from: ${distPath}`);
+  app.use(express.static(distPath));
+} else {
+  log('Running in development mode');
+  // Serve static files from the public folder in development
+  app.use(express.static(path.join(process.cwd(), 'client/public')));
+}
 
 // Basic request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
+  log(`Incoming request: ${req.method} ${req.path}`);
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (req.path.startsWith("/api")) {
-      log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-    }
+    log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
   });
   next();
 });
@@ -47,10 +56,23 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
     // Setup Vite or static file serving based on environment
     if (process.env.NODE_ENV === "production") {
-      const __dirname = new URL('.', import.meta.url).pathname;
-      app.use(express.static(path.join(__dirname, 'public')));
-      app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+      // In production, serve the built client files
+      app.get('*', (req, res, next) => {
+        // Don't handle API routes here
+        if (req.path.startsWith('/api')) {
+          log(`Skipping client-side routing for API path: ${req.path}`);
+          return next();
+        }
+
+        // Send index.html for all other routes to support client-side routing
+        const indexPath = path.join(process.cwd(), 'dist', 'index.html');
+        log(`Serving index.html for path: ${req.path} from: ${indexPath}`);
+        res.sendFile(indexPath, (err) => {
+          if (err) {
+            log(`Error serving index.html: ${err.message}`);
+            next(err);
+          }
+        });
       });
     } else {
       await setupVite(app, server);
