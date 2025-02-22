@@ -97,9 +97,9 @@ export default function EducationPage() {
 
   const generateRandomCourseData = () => {
     return {
-      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), 
-      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50, 
-      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100, 
+      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), // Convert to number explicitly
+      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50,
+      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
     };
   };
 
@@ -478,7 +478,11 @@ export default function EducationPage() {
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      <span className="font-medium text-white">{course.rating.toFixed(1)}</span>
+                      <span className="font-medium text-white">
+                        {typeof course.rating === 'number'
+                          ? course.rating.toFixed(1)
+                          : Number(course.rating).toFixed(1)}
+                      </span>
                       <span className="text-gray-400">({course.totalReviews} reviews)</span>
                     </div>
                     <div className="flex items-center gap-2">
