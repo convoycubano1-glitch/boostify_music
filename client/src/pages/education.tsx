@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/layout/header";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent } from "@/lib/api/openrouter";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
@@ -210,15 +210,12 @@ export default function EducationPage() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <label htmlFor="title" className="text-sm font-medium">
-                    Course Title
-                  </label>
+                  <label htmlFor="title" className="text-sm font-medium">Course Title</label>
                   <Input
                     id="title"
                     value={newCourse.title}
                     onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
                     placeholder="Enter course title"
-                    aria-label="Course title"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -230,7 +227,6 @@ export default function EducationPage() {
                     value={newCourse.description}
                     onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                     placeholder="Enter course description"
-                    aria-label="Course description"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -243,7 +239,6 @@ export default function EducationPage() {
                     value={newCourse.price}
                     onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) })}
                     placeholder="Enter price"
-                    aria-label="Course price in USD"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -255,7 +250,6 @@ export default function EducationPage() {
                     value={newCourse.category}
                     onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
                     placeholder="Enter category"
-                    aria-label="Course category"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -267,13 +261,14 @@ export default function EducationPage() {
                     value={newCourse.level}
                     onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value as "Beginner" | "Intermediate" | "Advanced" })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                    aria-label="Course difficulty level"
                   >
                     <option value="Beginner">Beginner</option>
                     <option value="Intermediate">Intermediate</option>
                     <option value="Advanced">Advanced</option>
                   </select>
                 </div>
+              </div>
+              <DialogFooter>
                 <Button onClick={handleCreateCourse} disabled={isGenerating}>
                   {isGenerating ? (
                     <>
@@ -284,7 +279,7 @@ export default function EducationPage() {
                     "Create Course"
                   )}
                 </Button>
-              </div>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>

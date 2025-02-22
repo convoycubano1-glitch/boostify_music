@@ -43,16 +43,25 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       dangerouslyAllowBrowser: true
     });
 
-    const prompt = {
+    // Define the lesson structure template
+    const lessonTemplate = {
       title: lessonTitle,
-      description: lessonDescription,
-      requirements: {
-        introduction: "2-3 paragraphs",
-        keyPoints: "4-6 bullet points",
-        mainContent: "2-4 sections with subtitle and paragraphs",
-        practicalExercises: "3-5 exercises",
-        additionalResources: "3-5 resources",
-        exam: "2-3 multiple choice questions"
+      content: {
+        introduction: "Write 2-3 paragraphs here",
+        keyPoints: ["4-6 key points"],
+        mainContent: [{
+          subtitle: "Section heading",
+          paragraphs: ["Detailed explanation"]
+        }],
+        practicalExercises: ["3-5 exercises"],
+        additionalResources: ["3-5 resources"],
+        summary: "One paragraph summary",
+        exam: [{
+          question: "Question about content",
+          options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+          correctAnswer: 0,
+          explanation: "Why this is correct"
+        }]
       }
     };
 
@@ -61,11 +70,12 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       messages: [
         {
           role: 'system',
-          content: 'You are an expert music industry educator. Create educational content in pure JSON format without any markdown or formatting.'
+          content: 'You are an expert music industry educator. Generate lesson content following the exact JSON structure provided, with no additional formatting or markdown.'
         },
         {
           role: 'user',
-          content: JSON.stringify(prompt)
+          content: `Create a lesson about "${lessonTitle}" with description: "${lessonDescription}". 
+            Return a JSON object exactly matching this structure: ${JSON.stringify(lessonTemplate, null, 2)}`
         }
       ],
       temperature: 0.3,
@@ -77,8 +87,14 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
     }
 
     const content = completion.choices[0].message.content.trim();
-    const parsedContent = JSON.parse(content);
-    return lessonContentSchema.parse(parsedContent);
+
+    try {
+      const parsedContent = JSON.parse(content);
+      return lessonContentSchema.parse(parsedContent);
+    } catch (parseError) {
+      console.error('Error parsing content:', parseError);
+      throw new Error('Failed to parse lesson content: Invalid JSON format');
+    }
 
   } catch (error) {
     console.error('Error in generateLessonContent:', error);
