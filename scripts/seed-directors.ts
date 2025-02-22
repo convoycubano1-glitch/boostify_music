@@ -1,18 +1,10 @@
-import { initializeApp, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { db } from './firebase-admin';
 import * as fal from "@fal-ai/serverless-client";
 
 // Configure fal.ai with environment variable
 fal.config({
   credentials: process.env.FAL_API_KEY,
 });
-
-// Initialize Firebase Admin
-const app = initializeApp({
-  credential: cert(JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS || '{}')),
-});
-
-const db = getFirestore(app);
 
 const sampleDirectors = [
   {

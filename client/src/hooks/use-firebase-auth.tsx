@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  getAuth, 
   signInWithPopup, 
   GoogleAuthProvider, 
   onAuthStateChanged,
   signOut,
   User
 } from 'firebase/auth';
-import { app } from '../lib/firebase';
+import { auth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
-const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 export function useFirebaseAuth() {

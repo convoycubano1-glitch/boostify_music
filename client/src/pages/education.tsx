@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent } from "@/lib/api/openrouter";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { auth, db } from "@/firebase"; // Updated import
+import { auth, db } from "@/firebase";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -135,7 +135,7 @@ export default function EducationPage() {
         rating: 0,
         totalReviews: 0,
         createdAt: Timestamp.now(),
-        createdBy: auth.currentUser?.uid || "" // Handle potential null user
+        createdBy: auth.currentUser?.uid || ""
       };
 
       const courseRef = await addDoc(collection(db, 'courses'), courseData);
