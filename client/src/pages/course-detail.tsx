@@ -318,31 +318,42 @@ export default function CourseDetailPage() {
   };
 
   const startExam = async (lessonTitle: string) => {
-    if (!progress.lessonContents[lessonTitle]) {
+    try {
+      if (!progress.lessonContents[lessonTitle]) {
+        toast({
+          title: "Error",
+          description: "Please generate lesson content first",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const examContent = progress.lessonContents[lessonTitle]?.content?.exam;
+      console.log('Exam content:', examContent); // Para debugging
+
+      if (!examContent || !Array.isArray(examContent) || examContent.length === 0) {
+        console.error('Invalid exam content:', examContent);
+        toast({
+          title: "Error",
+          description: "No exam questions available. Please try regenerating the lesson content.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setCurrentExamLesson(lessonTitle);
+      setSelectedExamQuestion(0);
+      setSelectedAnswer(null);
+      setExamResult(null);
+      setShowExam(true);
+    } catch (error) {
+      console.error('Error starting exam:', error);
       toast({
         title: "Error",
-        description: "Please generate lesson content first",
+        description: "Failed to start exam. Please try again.",
         variant: "destructive"
       });
-      return;
     }
-
-    // Validate that exam content exists before starting
-    const examContent = progress.lessonContents[lessonTitle]?.content.exam;
-    if (!examContent || examContent.length === 0) {
-      toast({
-        title: "Error",
-        description: "No exam questions available",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setCurrentExamLesson(lessonTitle);
-    setSelectedExamQuestion(0);
-    setSelectedAnswer(null);
-    setExamResult(null);
-    setShowExam(true);
   };
 
   const checkAnswer = async () => {
