@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/header";
 import { Loader2, CheckCircle2, Lock, ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { auth, db } from "@/firebase";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import * as fal from "@fal-ai/serverless-client";
 
@@ -18,11 +18,23 @@ interface CourseProgress {
   generatedImages: Record<string, string>;
 }
 
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  content: {
+    curriculum: Array<{
+      title: string;
+      description: string;
+    }>;
+  };
+}
+
 export default function CourseDetailPage() {
-  const [, params] = useLocation();
-  const courseId = params.id;
+  const [location] = useLocation();
+  const courseId = location.split('/').pop() || '';
   const { toast } = useToast();
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [progress, setProgress] = useState<CourseProgress>({
     completedLessons: [],
     lastAccessedAt: new Date(),
@@ -35,10 +47,19 @@ export default function CourseDetailPage() {
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
       try {
+        if (!courseId) {
+          toast({
+            title: "Error",
+            description: "Invalid course ID",
+            variant: "destructive"
+          });
+          return;
+        }
+
         // Fetch course details
         const courseRef = doc(db, 'courses', courseId);
         const courseSnap = await getDoc(courseRef);
-        
+
         if (!courseSnap.exists()) {
           toast({
             title: "Error",
@@ -48,16 +69,21 @@ export default function CourseDetailPage() {
           return;
         }
 
-        const courseData = courseSnap.data();
+        const courseData = courseSnap.data() as Course;
+        courseData.id = courseSnap.id;
         setCourse(courseData);
 
         // Fetch user's progress if authenticated
         if (auth.currentUser) {
           const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
           const progressSnap = await getDoc(progressRef);
-          
+
           if (progressSnap.exists()) {
-            setProgress(progressSnap.data() as CourseProgress);
+            const progressData = progressSnap.data() as CourseProgress;
+            setProgress({
+              ...progressData,
+              lastAccessedAt: new Date(progressData.lastAccessedAt)
+            });
           }
         }
       } catch (error) {
@@ -92,8 +118,9 @@ export default function CourseDetailPage() {
         },
       });
 
-      const imageUrl = result?.images?.[0]?.url;
-      if (imageUrl) {
+      if (result && 'images' in result && result.images && result.images[0] && result.images[0].url) {
+        const imageUrl = result.images[0].url;
+
         // Update progress with new image
         const newProgress = {
           ...progress,
@@ -102,7 +129,7 @@ export default function CourseDetailPage() {
             [lessonTitle]: imageUrl
           }
         };
-        
+
         // Save to Firestore
         if (auth.currentUser) {
           const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
@@ -110,11 +137,16 @@ export default function CourseDetailPage() {
             generatedImages: newProgress.generatedImages
           });
         }
-        
+
         setProgress(newProgress);
       }
     } catch (error) {
       console.error('Error generating image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate image",
+        variant: "destructive"
+      });
     } finally {
       setIsGeneratingImage(false);
     }
@@ -188,7 +220,7 @@ export default function CourseDetailPage() {
         </div>
 
         <div className="grid gap-6">
-          {course.content.curriculum.map((lesson: any, index: number) => {
+          {course.content.curriculum.map((lesson, index) => {
             const isCompleted = progress.completedLessons.includes(lesson.title);
             const isLocked = index > progress.currentLesson;
             const hasImage = progress.generatedImages[lesson.title];

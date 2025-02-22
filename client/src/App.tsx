@@ -41,6 +41,7 @@ import YoutubeViewsPage from "@/pages/youtube-views";
 import RealTimeTranslator from "@/pages/real-time-translator";
 import EducationPage from "@/pages/education";
 import AchievementsPage from "@/pages/achievements-page";
+import CourseDetailPage from "@/pages/course-detail";
 
 const Router = () => {
   return (
@@ -81,6 +82,7 @@ const Router = () => {
       <ProtectedRoute path="/translator" component={RealTimeTranslator} />
       <ProtectedRoute path="/education" component={EducationPage} />
       <ProtectedRoute path="/achievements" component={AchievementsPage} />
+      <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );
