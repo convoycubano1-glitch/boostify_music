@@ -40,7 +40,6 @@ interface Course {
 
 export default function EducationPage() {
   const { toast } = useToast();
-  const auth = getAuth();
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +61,7 @@ export default function EducationPage() {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
 
   // Fetch courses from Firestore
   useEffect(() => {
