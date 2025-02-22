@@ -30,7 +30,7 @@ const predefinedCourses = [
     price: 199.99,
     category: "Business",
     level: "Beginner",
-    thumbnail: "/assets/courses/business-1.jpg",
+    thumbnail: "https://images.unsplash.com/photo-1598488035139-bdaa7543d5d4?w=800&auto=format&fit=crop",
     rating: 4.8,
     totalReviews: 245,
     duration: "8 weeks",
@@ -43,13 +43,25 @@ const predefinedCourses = [
     price: 249.99,
     category: "Marketing",
     level: "Intermediate",
-    thumbnail: "/assets/courses/marketing-1.jpg",
+    thumbnail: "https://images.unsplash.com/photo-1595491542937-3de00ac7e08a?w=800&auto=format&fit=crop",
     rating: 4.9,
     totalReviews: 189,
     duration: "6 weeks",
     lessons: 12
   },
-  // Add more predefined courses here...
+  {
+    id: 3,
+    title: "Music Production Masterclass",
+    description: "Learn professional music production techniques from industry experts.",
+    price: 299.99,
+    category: "Production",
+    level: "Advanced",
+    thumbnail: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?w=800&auto=format&fit=crop",
+    rating: 4.7,
+    totalReviews: 312,
+    duration: "10 weeks",
+    lessons: 20
+  }
 ];
 
 export default function EducationPage() {

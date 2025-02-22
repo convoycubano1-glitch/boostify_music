@@ -1,12 +1,14 @@
 import { env } from "@/env";
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
 export async function generateCourseContent(prompt: string) {
   try {
+    console.log("Starting course content generation...");
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -20,7 +22,7 @@ export async function generateCourseContent(prompt: string) {
         messages: [
           {
             role: "system",
-            content: "You are a music industry education expert. Create detailed course outlines with structured lessons, practical assignments, and industry applications. Format responses as JSON."
+            content: "You are a music industry education expert. Create detailed course outlines with structured lessons, practical assignments, and industry applications. Return response in a valid JSON format with the following structure: { overview: string, objectives: string[], curriculum: { title: string, description: string, duration: number }[], topics: string[], assignments: string[], applications: string[] }"
           },
           {
             role: "user",
@@ -33,13 +35,21 @@ export async function generateCourseContent(prompt: string) {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate course content');
+      const errorData = await response.json().catch(() => ({}));
+      console.error("OpenRouter API error:", errorData);
+      throw new Error(`Failed to generate course content: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log("Course content generated successfully:", data);
+
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error("Invalid response format from OpenRouter API");
+    }
+
     return data.choices[0].message.content;
   } catch (error) {
     console.error("Error generating course content:", error);
-    throw new Error("Failed to generate course content. Please try again.");
+    throw new Error("Failed to generate course content. Please try again later.");
   }
 }
