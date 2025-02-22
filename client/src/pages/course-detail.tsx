@@ -51,7 +51,7 @@ export default function CourseDetailPage() {
     generatedImages: {},
     timeSpent: 0,
     startedAt: new Date(),
-    lessonContents: {} // Ensure this is initialized as an empty object
+    lessonContents: {},
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -59,7 +59,7 @@ export default function CourseDetailPage() {
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<LessonContent | null>(null);
 
-  useEffect(() => {
+useEffect(() => {
     const fetchCourseAndProgress = async () => {
       try {
         if (!courseId) {
@@ -94,13 +94,16 @@ export default function CourseDetailPage() {
           const progressSnap = await getDoc(progressRef);
 
           if (progressSnap.exists()) {
-            const progressData = progressSnap.data() as CourseProgress;
+            const progressData = progressSnap.data();
             setProgress({
-              ...progressData,
+              completedLessons: progressData.completedLessons || [],
               lastAccessedAt: new Date(progressData.lastAccessedAt),
+              currentLesson: progressData.currentLesson || 0,
+              generatedImages: progressData.generatedImages || {},
+              timeSpent: progressData.timeSpent || 0,
               startedAt: new Date(progressData.startedAt),
               lastCompletedAt: progressData.lastCompletedAt ? new Date(progressData.lastCompletedAt) : undefined,
-              lessonContents: progressData.lessonContents
+              lessonContents: progressData.lessonContents || {}
             });
           } else {
             // Initialize progress document if it doesn't exist
@@ -174,12 +177,15 @@ export default function CourseDetailPage() {
   };
 
   const generateLessonContentForUser = async (lessonTitle: string, lessonDescription: string) => {
-    if (!progress.lessonContents) {
-      setProgress(prev => ({ ...prev, lessonContents: {} }));
+    if (!lessonTitle || !lessonDescription) {
+      console.error('Missing lesson title or description');
+      return;
     }
 
-    if (progress.lessonContents[lessonTitle]) {
-      setSelectedLesson(progress.lessonContents[lessonTitle]);
+    const currentLessonContents = progress.lessonContents || {};
+
+    if (currentLessonContents[lessonTitle]) {
+      setSelectedLesson(currentLessonContents[lessonTitle]);
       return;
     }
 
@@ -194,7 +200,7 @@ export default function CourseDetailPage() {
       const newProgress = {
         ...progress,
         lessonContents: {
-          ...progress.lessonContents,
+          ...currentLessonContents,
           [lessonTitle]: content
         }
       };
@@ -209,6 +215,11 @@ export default function CourseDetailPage() {
 
       setProgress(newProgress);
       setSelectedLesson(content);
+
+      toast({
+        title: "Success",
+        description: "Lesson content generated successfully"
+      });
     } catch (error) {
       console.error('Error generating lesson content:', error);
       toast({
