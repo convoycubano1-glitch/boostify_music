@@ -14,6 +14,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Basic request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  log(`Incoming request: ${req.method} ${req.path}`);
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
+  });
+  next();
+});
+
 // Setup static file serving based on environment
 if (process.env.NODE_ENV === "production") {
   log('Running in production mode');
@@ -27,28 +38,46 @@ if (process.env.NODE_ENV === "production") {
     );
   }
 
-  app.use(express.static(distPath));
+  // Serve static files with detailed error logging
+  app.use(express.static(distPath, {
+    fallthrough: true,
+    setHeaders: (res, path) => {
+      // Set caching headers
+      if (path.endsWith('.js') || path.endsWith('.css')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+      }
+    }
+  }));
+
+  // Log static file requests
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api')) {
+      log(`Static file request: ${req.path}`);
+      // Check if file exists
+      const filePath = path.join(distPath, req.path);
+      if (fs.existsSync(filePath)) {
+        log(`File exists: ${filePath}`);
+      } else {
+        log(`File not found: ${filePath}, serving index.html`);
+      }
+    }
+    next();
+  });
 
   // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  app.use("*", (req, res, next) => {
+    const indexPath = path.join(distPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      next(new Error(`index.html not found at ${indexPath}`));
+    }
   });
 } else {
   log('Running in development mode');
   // Serve static files from the public folder in development
   app.use(express.static(path.join(process.cwd(), 'client/public')));
 }
-
-// Basic request logging middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  log(`Incoming request: ${req.method} ${req.path}`);
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-  });
-  next();
-});
 
 // Validate critical environment variables
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -59,12 +88,23 @@ if (!process.env.STRIPE_SECRET_KEY) {
   try {
     const server = registerRoutes(app);
 
-    // Global error handler
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    // Global error handler with detailed logging
+    app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
       console.error('Server error:', err);
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
+
+      // Log detailed error information
+      log(`Error handling request ${req.method} ${req.path}: ${err.message}`);
+      if (err.stack) {
+        log(`Stack trace: ${err.stack}`);
+      }
+
+      res.status(status).json({ 
+        message,
+        path: req.path,
+        timestamp: new Date().toISOString()
+      });
     });
 
     // Setup Vite or static file serving based on environment
@@ -78,6 +118,9 @@ if (!process.env.STRIPE_SECRET_KEY) {
     const PORT = 5000;
     server.listen(PORT, "0.0.0.0", () => {
       log(`Server running on port ${PORT} in ${app.get("env")} mode`);
+      log(`Static files will be served from: ${process.env.NODE_ENV === "production" ? 
+        path.join(process.cwd(), 'dist', 'public') : 
+        path.join(process.cwd(), 'client/public')}`);
     });
 
     // Handle server startup errors

@@ -1,9 +1,11 @@
+import React, { ReactNode, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 import AdminPage from "@/pages/admin";
 import AIAgentsPage from "@/pages/ai-agents";
@@ -42,6 +44,107 @@ import RealTimeTranslator from "@/pages/real-time-translator";
 import EducationPage from "@/pages/education";
 import AchievementsPage from "@/pages/achievements-page";
 import CourseDetailPage from "@/pages/course-detail";
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    console.error('React Error Boundary caught an error:', error, errorInfo);
+  }
+
+  render(): React.ReactNode {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="max-w-md p-8 rounded-lg bg-card border text-center">
+            <h2 className="text-2xl font-bold text-destructive mb-4">Something went wrong</h2>
+            <p className="text-muted-foreground mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <button
+              className="bg-primary text-primary-foreground px-4 py-2 rounded"
+              onClick={() => window.location.reload()}
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+interface AssetLoadingHandlerProps {
+  children: ReactNode;
+}
+
+function AssetLoadingHandler({ children }: AssetLoadingHandlerProps): JSX.Element {
+  const { toast } = useToast();
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  useEffect(() => {
+    const checkAssets = () => {
+      const scripts = document.querySelectorAll('script[src*="index-"]');
+      const styles = document.querySelectorAll('link[href*="index-"]');
+
+      const allLoaded = Array.from(scripts).every((script: Element) => {
+        const htmlScript = script as HTMLScriptElement;
+        return htmlScript.complete && !htmlScript.getAttribute('loading');
+      }) &&
+      Array.from(styles).every((style: Element) => {
+        const htmlLink = style as HTMLLinkElement;
+        return htmlLink.sheet !== null;
+      });
+
+      if (!allLoaded) {
+        toast({
+          title: "Error loading assets",
+          description: "Please check your internet connection and try again",
+          variant: "destructive"
+        });
+      }
+
+      setAssetsLoaded(allLoaded);
+    };
+
+    window.addEventListener('load', checkAssets);
+    // Check after a timeout as fallback
+    setTimeout(checkAssets, 5000);
+
+    return () => window.removeEventListener('load', checkAssets);
+  }, [toast]);
+
+  if (!assetsLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+          <p className="mt-4 text-muted-foreground">Loading application assets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 const Router = () => {
   return (
@@ -90,12 +193,16 @@ const Router = () => {
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AssetLoadingHandler>
+            <Router />
+            <Toaster />
+          </AssetLoadingHandler>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
