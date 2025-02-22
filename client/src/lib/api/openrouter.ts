@@ -19,10 +19,16 @@ export async function generateCourseContent(prompt: string) {
         model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [
           {
+            role: "system",
+            content: "You are a music industry education expert. Create detailed course outlines with structured lessons, practical assignments, and industry applications. Format responses as JSON."
+          },
+          {
             role: "user",
             content: prompt
           }
-        ]
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
       })
     });
 
@@ -34,6 +40,6 @@ export async function generateCourseContent(prompt: string) {
     return data.choices[0].message.content;
   } catch (error) {
     console.error("Error generating course content:", error);
-    throw error;
+    throw new Error("Failed to generate course content. Please try again.");
   }
 }

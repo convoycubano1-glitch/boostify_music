@@ -21,6 +21,37 @@ interface CourseFormData {
   level: "Beginner" | "Intermediate" | "Advanced";
 }
 
+// Predefined courses as fallback
+const predefinedCourses = [
+  {
+    id: 1,
+    title: "Music Business Fundamentals",
+    description: "Master the essentials of the music industry, from copyright law to revenue streams.",
+    price: 199.99,
+    category: "Business",
+    level: "Beginner",
+    thumbnail: "/assets/courses/business-1.jpg",
+    rating: 4.8,
+    totalReviews: 245,
+    duration: "8 weeks",
+    lessons: 16
+  },
+  {
+    id: 2,
+    title: "Digital Music Marketing",
+    description: "Learn advanced social media strategies and digital promotion techniques for musicians.",
+    price: 249.99,
+    category: "Marketing",
+    level: "Intermediate",
+    thumbnail: "/assets/courses/marketing-1.jpg",
+    rating: 4.9,
+    totalReviews: 189,
+    duration: "6 weeks",
+    lessons: 12
+  },
+  // Add more predefined courses here...
+];
+
 export default function EducationPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -35,7 +66,7 @@ export default function EducationPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [hoveredCourse, setHoveredCourse] = useState<number | null>(null);
 
-  const { data: courses = [], isLoading } = useQuery<SelectCourse[]>({
+  const { data: courses = predefinedCourses, isLoading } = useQuery<SelectCourse[]>({
     queryKey: ["/api/courses"],
   });
 
@@ -87,7 +118,15 @@ export default function EducationPage() {
       4. Key Topics
       5. Practical Assignments
       6. Industry Applications
-      Format the response as a structured JSON object.`;
+      Format the response as a structured JSON object with the following fields:
+      {
+        "overview": "string",
+        "objectives": ["string"],
+        "curriculum": [{"title": "string", "description": "string", "duration": "number"}],
+        "topics": ["string"],
+        "assignments": ["string"],
+        "applications": ["string"]
+      }`;
 
       const courseContent = await generateCourseContent(prompt);
       const parsedContent = JSON.parse(courseContent);
@@ -97,9 +136,12 @@ export default function EducationPage() {
         content: parsedContent,
         thumbnail: `/assets/courses/${newCourse.category.toLowerCase()}-${Math.floor(Math.random() * 5) + 1}.jpg`,
         lessons: parsedContent.curriculum?.length || 12,
-        duration: "8 weeks"
+        duration: "8 weeks",
+        rating: 0,
+        totalReviews: 0
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error creating course:', error);
       toast({
         title: "Error",
         description: "Failed to create course. Please try again.",
