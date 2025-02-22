@@ -9,6 +9,23 @@ export async function generateCourseContent(prompt: string) {
   try {
     console.log("Starting course content generation...");
 
+    const systemPrompt = `Eres un experto en educación musical. Genera el contenido del curso en formato JSON con EXACTAMENTE esta estructura:
+{
+  "overview": "descripción general del curso",
+  "objectives": ["objetivo 1", "objetivo 2", "objetivo 3"],
+  "curriculum": [
+    {
+      "title": "título de la lección",
+      "description": "descripción de la lección",
+      "duration": 60
+    }
+  ],
+  "topics": ["tema 1", "tema 2", "tema 3", "tema 4", "tema 5"],
+  "assignments": ["tarea 1", "tarea 2", "tarea 3"],
+  "applications": ["aplicación 1", "aplicación 2"]
+}
+IMPORTANTE: Solo devuelve el objeto JSON, sin texto adicional ni formato extra.`;
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -22,7 +39,7 @@ export async function generateCourseContent(prompt: string) {
         messages: [
           {
             role: "system",
-            content: "You are a music industry education expert. You must ONLY return a valid JSON object with EXACTLY this structure, no additional text or formatting:\n{\n  \"overview\": \"string describing the course overview\",\n  \"objectives\": [\"list of 3-5 learning objectives\"],\n  \"curriculum\": [{\"title\": \"lesson title\", \"description\": \"lesson description\", \"duration\": 60}],\n  \"topics\": [\"list of 5-7 key topics\"],\n  \"assignments\": [\"list of 3-4 practical assignments\"],\n  \"applications\": [\"list of 2-3 industry applications\"]\n}"
+            content: systemPrompt
           },
           {
             role: "user",

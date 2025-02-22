@@ -125,7 +125,9 @@ export default function EducationPage() {
       setIsGenerating(true);
       console.log("Iniciando generación de curso:", newCourse);
 
-      const prompt = `Crea un curso detallado de la industria musical titulado "${newCourse.title}" con la siguiente descripción: "${newCourse.description}". El curso debe ser del nivel ${newCourse.level} y estar en la categoría ${newCourse.category}.`;
+      const prompt = `Por favor genera un curso completo de música con el título "${newCourse.title}" y la siguiente descripción: "${newCourse.description}". 
+      Este es un curso de nivel ${newCourse.level} en la categoría ${newCourse.category}.
+      Incluye una descripción general, objetivos de aprendizaje, un plan de estudios detallado, temas principales, tareas prácticas y aplicaciones en la industria.`;
 
       console.log("Enviando prompt a OpenRouter:", prompt);
       const courseContent = await generateCourseContent(prompt);
