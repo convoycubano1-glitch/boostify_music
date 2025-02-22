@@ -18,7 +18,7 @@ export async function generateCourseContent(prompt: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistralai/mixtral-8x7b-instruct",
+        model: "deepseek/deepseek-r1-distill-llama-70b:free",
         messages: [
           {
             role: "system",

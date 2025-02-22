@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
-import { Loader2, CheckCircle2, Lock, ImageIcon, BookOpen, Clock, Trophy } from "lucide-react";
+import { Loader2, CheckCircle2, Lock, BookOpen, Clock, Trophy, Star, Book, Lightbulb, FileText, Pencil, Link, List } from "lucide-react";
 import { motion } from "framer-motion";
 import { auth, db } from "@/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
@@ -17,6 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import * as LucideIcons from "lucide-react";
 
 interface CourseProgress {
   completedLessons: string[];
@@ -44,6 +45,11 @@ interface Course {
     }>;
   };
 }
+
+const DynamicIcon = ({ name, className }: { name: string; className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.HelpCircle;
+  return <IconComponent className={className} />;
+};
 
 export default function CourseDetailPage() {
   const [location] = useLocation();
@@ -281,6 +287,43 @@ export default function CourseDetailPage() {
     }
   };
 
+  const generateSectionImage = async (lessonTitle: string, imagePrompt: string, sectionIndex: number) => {
+    if (!auth.currentUser || !courseId) return;
+
+    setIsGeneratingImage(true);
+    try {
+      const imageUrl = await getRelevantImage(imagePrompt);
+
+      const newProgress = {
+        ...progress,
+        generatedImages: {
+          ...progress.generatedImages,
+          [`${lessonTitle}_section_${sectionIndex}`]: imageUrl
+        }
+      };
+
+      const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
+      await updateDoc(progressRef, {
+        generatedImages: newProgress.generatedImages
+      });
+
+      setProgress(newProgress);
+      toast({
+        title: "Success",
+        description: "Section illustration generated successfully"
+      });
+    } catch (error) {
+      console.error('Error generating section image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate section illustration",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const markLessonComplete = async (lessonIndex: number) => {
     if (!auth.currentUser || !course) return;
 
@@ -459,7 +502,6 @@ export default function CourseDetailPage() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-orange-950/20">
       <Header />
@@ -569,52 +611,138 @@ export default function CourseDetailPage() {
                             <AccordionContent>
                               <ScrollArea className="h-[400px] rounded-md border border-orange-500/10 p-4">
                                 <div className="space-y-6">
+                                  {/* Introduction */}
                                   <div>
-                                    <h4 className="font-semibold text-lg text-orange-500">Introduction</h4>
-                                    <div className="text-gray-300 mt-2">{progress.lessonContents[lesson.title].content.introduction}</div>
+                                    <h4 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+                                      <Book className="h-5 w-5" />
+                                      Introduction
+                                    </h4>
+                                    <div className="text-gray-300 mt-2">
+                                      {progress.lessonContents[lesson.title].content.introduction}
+                                    </div>
                                   </div>
 
+                                  {/* Key Points */}
                                   <div>
-                                    <h4 className="font-semibold text-lg text-orange-500">Key Points</h4>
-                                    <ul className="list-disc list-inside space-y-2 mt-2">
+                                    <h4 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+                                      <Lightbulb className="h-5 w-5" />
+                                      Key Points
+                                    </h4>
+                                    <ul className="space-y-2 mt-2">
                                       {progress.lessonContents[lesson.title].content.keyPoints.map((point, i) => (
-                                        <li key={i} className="text-gray-300">{point}</li>
+                                        <li key={i} className="flex items-center gap-2 text-gray-300">
+                                          <DynamicIcon name={point.icon} className="h-4 w-4 text-orange-500" />
+                                          <span>{point.point}</span>
+                                        </li>
                                       ))}
                                     </ul>
                                   </div>
 
+                                  {/* Main Content */}
                                   {progress.lessonContents[lesson.title].content.mainContent.map((section, i) => (
                                     <div key={i}>
-                                      <h4 className="font-semibold text-lg text-orange-500">{section.subtitle}</h4>
+                                      <h4 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+                                        <DynamicIcon name={section.icon} className="h-5 w-5" />
+                                        {section.subtitle}
+                                      </h4>
                                       <div className="space-y-2 mt-2">
                                         {section.paragraphs.map((paragraph, j) => (
-                                          <div key={j} className="text-gray-300">{paragraph}</div>
+                                          <p key={j} className="text-gray-300">{paragraph}</p>
                                         ))}
+                                        {section.imagePrompt && (
+                                          <div className="mt-4 relative aspect-video rounded-lg overflow-hidden bg-black/50">
+                                            {progress.generatedImages?.[`${lesson.title}_section_${i}`] ? (
+                                              <img
+                                                src={progress.generatedImages[`${lesson.title}_section_${i}`]}
+                                                alt={section.subtitle}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            ) : (
+                                              <div className="absolute inset-0 flex items-center justify-center">
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => generateSectionImage(lesson.title, section.imagePrompt, i)}
+                                                  disabled={isGeneratingImage}
+                                                >
+                                                  {isGeneratingImage ? (
+                                                    <>
+                                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                      Generating Image...
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <FileText className="mr-2 h-4 w-4" />
+                                                      Generate Section Image
+                                                    </>
+                                                  )}
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   ))}
 
+                                  {/* Practical Exercises */}
                                   <div>
-                                    <h4 className="font-semibold text-lg text-orange-500">Practical Exercises</h4>
-                                    <ul className="list-decimal list-inside space-y-2 mt-2">
+                                    <h4 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+                                      <Pencil className="h-5 w-5" />
+                                      Practical Exercises
+                                    </h4>
+                                    <div className="space-y-4 mt-2">
                                       {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
-                                        <li key={i} className="text-gray-300">{exercise}</li>
+                                        <div key={i} className="bg-black/30 rounded-lg p-4">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <DynamicIcon name={exercise.icon} className="h-4 w-4 text-orange-500" />
+                                            <h5 className="font-medium text-white">{exercise.title}</h5>
+                                          </div>
+                                          <p className="text-gray-300 mb-2">{exercise.description}</p>
+                                          <ol className="list-decimal list-inside space-y-1">
+                                            {exercise.steps.map((step, j) => (
+                                              <li key={j} className="text-gray-300">{step}</li>
+                                            ))}
+                                          </ol>
+                                        </div>
                                       ))}
-                                    </ul>
+                                    </div>
                                   </div>
 
+                                  {/* Additional Resources */}
                                   <div>
-                                    <h4 className="font-semibold text-lg text-orange-500">Additional Resources</h4>
-                                    <ul className="list-disc list-inside space-y-2 mt-2">
+                                    <h4 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+                                      <Link className="h-5 w-5" />
+                                      Additional Resources
+                                    </h4>
+                                    <div className="grid gap-3 mt-2">
                                       {progress.lessonContents[lesson.title].content.additionalResources.map((resource, i) => (
-                                        <li key={i} className="text-gray-300">{resource}</li>
+                                        <a
+                                          key={i}
+                                          href={resource.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-start gap-3 bg-black/30 p-3 rounded-lg hover:bg-black/40 transition-colors"
+                                        >
+                                          <DynamicIcon name={resource.icon} className="h-5 w-5 text-orange-500 mt-1" />
+                                          <div>
+                                            <h5 className="font-medium text-white">{resource.title}</h5>
+                                            <p className="text-sm text-gray-300">{resource.description}</p>
+                                          </div>
+                                        </a>
                                       ))}
-                                    </ul>
+                                    </div>
                                   </div>
 
+                                  {/* Summary */}
                                   <div>
-                                    <h4 className="font-semibold text-lg text-orange-500">Summary</h4>
-                                    <div className="text-gray-300 mt-2">{progress.lessonContents[lesson.title].content.summary}</div>
+                                    <h4 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+                                      <List className="h-5 w-5" />
+                                      Summary
+                                    </h4>
+                                    <div className="text-gray-300 mt-2">
+                                      {progress.lessonContents[lesson.title].content.summary}
+                                    </div>
                                   </div>
                                 </div>
                               </ScrollArea>
@@ -754,8 +882,8 @@ export default function CourseDetailPage() {
                 className="bg-orange-500 hover:bg-orange-600"
               >
                 {selectedExamQuestion < (progress.lessonContents[currentExamLesson]?.content.exam.length || 0) - 1
-                  ? 'Next Question'
-                  : 'Finish Exam'}
+                                    ? 'Next Question'
+                    : 'Finish Exam'}
               </Button>
             )}
           </DialogFooter>

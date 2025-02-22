@@ -8,19 +8,37 @@ const examQuestionSchema = z.object({
   explanation: z.string()
 });
 
+const sectionSchema = z.object({
+  subtitle: z.string(),
+  icon: z.string(),
+  paragraphs: z.array(z.string()),
+  imagePrompt: z.string().optional()
+});
+
 const lessonContentSchema = z.object({
   title: z.string(),
   content: z.object({
     introduction: z.string(),
-    keyPoints: z.array(z.string()),
-    mainContent: z.array(z.object({
-      subtitle: z.string(),
-      paragraphs: z.array(z.string())
+    coverImagePrompt: z.string(),
+    keyPoints: z.array(z.object({
+      point: z.string(),
+      icon: z.string()
     })),
-    practicalExercises: z.array(z.string()),
-    additionalResources: z.array(z.string()),
+    mainContent: z.array(sectionSchema),
+    practicalExercises: z.array(z.object({
+      title: z.string(),
+      description: z.string(),
+      steps: z.array(z.string()),
+      icon: z.string()
+    })),
+    additionalResources: z.array(z.object({
+      title: z.string(),
+      url: z.string(),
+      description: z.string(),
+      icon: z.string()
+    })),
     summary: z.string(),
-    exam: z.array(examQuestionSchema).min(1)
+    exam: z.array(examQuestionSchema).min(3)
   })
 });
 
@@ -43,42 +61,68 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       dangerouslyAllowBrowser: true
     });
 
-    // Define the lesson structure template
+    // Define the lesson structure template with more detailed content
     const lessonTemplate = {
       title: lessonTitle,
       content: {
-        introduction: "Write 2-3 paragraphs here",
-        keyPoints: ["4-6 key points"],
+        introduction: "Write a detailed 3-4 paragraph introduction",
+        coverImagePrompt: "Describe an image that represents this lesson's main concept",
+        keyPoints: [{
+          point: "Key learning objective",
+          icon: "Suggest a Lucide icon name (e.g., 'Music', 'Star', etc.)"
+        }],
         mainContent: [{
           subtitle: "Section heading",
-          paragraphs: ["Detailed explanation"]
+          icon: "Suggest a Lucide icon name",
+          paragraphs: ["Write 3-4 detailed paragraphs"],
+          imagePrompt: "Describe an image that would illustrate this section"
         }],
-        practicalExercises: ["3-5 exercises"],
-        additionalResources: ["3-5 resources"],
-        summary: "One paragraph summary",
+        practicalExercises: [{
+          title: "Exercise title",
+          description: "Detailed exercise description",
+          steps: ["Step-by-step instructions"],
+          icon: "Suggest a Lucide icon name"
+        }],
+        additionalResources: [{
+          title: "Resource title",
+          url: "URL to resource",
+          description: "Brief description of the resource",
+          icon: "Suggest a Lucide icon name"
+        }],
+        summary: "Write a comprehensive one-paragraph summary",
         exam: [{
-          question: "Question about content",
+          question: "Detailed question about the content",
           options: ["Option 1", "Option 2", "Option 3", "Option 4"],
           correctAnswer: 0,
-          explanation: "Why this is correct"
+          explanation: "Detailed explanation of why this answer is correct"
         }]
       }
     };
 
     const completion = await openai.chat.completions.create({
-      model: 'deepseek/deepseek-r1:free',
+      model: 'anthropic/claude-3-opus:beta',
       messages: [
         {
           role: 'system',
-          content: 'You are an expert music industry educator. Generate lesson content following the exact JSON structure provided, with no additional formatting or markdown.'
+          content: 'You are an expert music industry educator creating comprehensive educational content. Generate detailed lesson content following the exact JSON structure provided. Include relevant Lucide icon names (see https://lucide.dev) for visual elements. Create detailed, practical content that is immediately applicable to music industry professionals.'
         },
         {
           role: 'user',
-          content: `Create a lesson about "${lessonTitle}" with description: "${lessonDescription}". 
-            Return a JSON object exactly matching this structure: ${JSON.stringify(lessonTemplate, null, 2)}`
+          content: `Create a comprehensive lesson about "${lessonTitle}" with this description: "${lessonDescription}". 
+            Return a JSON object exactly matching this structure: ${JSON.stringify(lessonTemplate, null, 2)}
+
+            Requirements:
+            - Minimum 3 key points
+            - Minimum 3 main content sections
+            - Minimum 3 practical exercises
+            - Minimum 3 additional resources
+            - Minimum 3 exam questions
+            - All icons should be valid Lucide icon names
+            - Image prompts should be detailed enough for image generation
+            - Content should be practical and immediately applicable`
         }
       ],
-      temperature: 0.3,
+      temperature: 0.7,
       response_format: { type: "json_object" }
     });
 
