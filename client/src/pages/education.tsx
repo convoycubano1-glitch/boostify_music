@@ -125,9 +125,13 @@ export default function EducationPage() {
       setIsGenerating(true);
       console.log("Iniciando generación de curso:", newCourse);
 
-      const prompt = `Por favor genera un curso completo de música con el título "${newCourse.title}" y la siguiente descripción: "${newCourse.description}". 
-      Este es un curso de nivel ${newCourse.level} en la categoría ${newCourse.category}.
-      Incluye una descripción general, objetivos de aprendizaje, un plan de estudios detallado, temas principales, tareas prácticas y aplicaciones en la industria.`;
+      const prompt = `Genera un curso de música profesional con estas características:
+        - Título: "${newCourse.title}"
+        - Descripción: "${newCourse.description}"
+        - Nivel: ${newCourse.level}
+        - Categoría: ${newCourse.category}
+
+        El curso debe ser detallado y práctico, enfocado en la industria musical actual.`;
 
       console.log("Enviando prompt a OpenRouter:", prompt);
       const courseContent = await generateCourseContent(prompt);
@@ -136,9 +140,9 @@ export default function EducationPage() {
       const courseData = {
         ...newCourse,
         content: courseContent,
-        thumbnail: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?w=800&auto=format&fit=crop",
-        lessons: courseContent.curriculum?.length || 12,
-        duration: "8 weeks",
+        thumbnail: predefinedCourses[0].thumbnail, // Usar una imagen predefinida para evitar problemas
+        lessons: courseContent.curriculum.length,
+        duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
         rating: 0,
         totalReviews: 0
       };
@@ -162,7 +166,7 @@ export default function EducationPage() {
     } catch (error: any) {
       console.error('Error al crear el curso:', error);
       toast({
-        title: "Error",
+        title: "Error en la creación del curso",
         description: error.message || "Error al crear el curso. Por favor intente nuevamente.",
         variant: "destructive"
       });
