@@ -185,6 +185,44 @@ export default function EducationPage() {
     }
   };
 
+  const sampleCourses = [
+    {
+      title: "Music Marketing Mastery",
+      description: "Learn advanced digital marketing strategies specifically tailored for musicians and music industry professionals. From social media optimization to email campaigns, discover how to effectively promote your music in the digital age.",
+      category: "Marketing",
+      level: "Intermediate",
+      price: 199
+    },
+    {
+      title: "Music Business Essentials",
+      description: "Master the fundamentals of the music business. Learn about copyright law, royalties, music licensing, and how to navigate contracts. Essential knowledge for any music professional.",
+      category: "Business",
+      level: "Beginner",
+      price: 249
+    },
+    {
+      title: "Advanced Music Production & Engineering",
+      description: "Deep dive into professional music production techniques. From advanced mixing and mastering to studio workflow optimization, take your production skills to the next level.",
+      category: "Production",
+      level: "Advanced",
+      price: 299
+    },
+    {
+      title: "Artist Brand Development",
+      description: "Learn how to build and maintain a strong artist brand. Cover everything from visual identity to social media presence, and create a compelling artist narrative that resonates with your audience.",
+      category: "Branding",
+      level: "Intermediate",
+      price: 179
+    },
+    {
+      title: "Digital Music Distribution Mastery",
+      description: "Master the digital distribution landscape. Learn about streaming platforms, playlist pitching, release strategies, and how to maximize your music's reach in the digital age.",
+      category: "Distribution",
+      level: "Beginner",
+      price: 149
+    }
+  ];
+
   const createSampleCourses = async () => {
     if (!isAuthenticated) {
       toast({
@@ -195,46 +233,13 @@ export default function EducationPage() {
       return;
     }
 
-    const sampleCourses = [
-      {
-        title: "Music Marketing Mastery",
-        description: "Learn advanced digital marketing strategies specifically tailored for musicians and music industry professionals. From social media optimization to email campaigns.",
-        category: "Marketing",
-        level: "Intermediate"
-      },
-      {
-        title: "Professional Music Production",
-        description: "Master the art of music production with industry-standard tools and techniques. Learn mixing, mastering, and professional studio workflow.",
-        category: "Production",
-        level: "Advanced"
-      },
-      {
-        title: "Music Business Fundamentals",
-        description: "Essential knowledge for anyone wanting to succeed in the music industry. Cover contracts, royalties, licensing, and revenue streams.",
-        category: "Business",
-        level: "Beginner"
-      },
-      {
-        title: "Artist Brand Development",
-        description: "Create and develop your unique artist brand. Learn about image creation, brand storytelling, and maintaining consistent brand identity.",
-        category: "Branding",
-        level: "Intermediate"
-      },
-      {
-        title: "Digital Music Distribution",
-        description: "Navigate the modern music distribution landscape. Learn about streaming platforms, release strategies, and maximizing your digital presence.",
-        category: "Distribution",
-        level: "Beginner"
-      }
-    ];
-
     setIsGenerating(true);
     let createdCount = 0;
 
     try {
       for (const course of sampleCourses) {
         // Generate course thumbnail
-        const imagePrompt = `professional education ${course.title} ${course.category} course cover`;
+        const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
         const thumbnailUrl = await getRelevantImage(imagePrompt);
 
         const prompt = `Generate a professional music course with these characteristics:
@@ -243,7 +248,7 @@ export default function EducationPage() {
           - Level: ${course.level}
           - Category: ${course.category}
 
-          The course should be detailed and practical, focused on the current music industry.`;
+          The course should be detailed and practical, focused on the current music industry. Include specific actionable steps and real-world examples.`;
 
         const courseContent = await generateCourseContent(prompt);
         const randomData = generateRandomCourseData();
@@ -268,11 +273,17 @@ export default function EducationPage() {
         } as Course, ...prev]);
 
         createdCount++;
+
+        // Notify progress
+        toast({
+          title: "Progress",
+          description: `Created course ${createdCount}/5: ${course.title}`
+        });
       }
 
       toast({
         title: "Success",
-        description: `Created ${createdCount} sample courses successfully`
+        description: `Created ${createdCount} new courses successfully`
       });
     } catch (error: any) {
       console.error('Error creating sample courses:', error);
@@ -396,7 +407,7 @@ export default function EducationPage() {
                     "Create Course"
                   )}
                 </Button>
-                <Button 
+                <Button
                   className="bg-orange-500 hover:bg-orange-600"
                   onClick={createSampleCourses}
                   disabled={isGenerating}
@@ -512,8 +523,8 @@ export default function EducationPage() {
                         <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                       </Button>
                     </Link>
-                    <Button 
-                      className="bg-orange-500 hover:bg-orange-600" 
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600"
                       onClick={() => window.location.href = `/course/${course.id}`}
                     >
                       <span>Enroll Now</span>
