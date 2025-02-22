@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { db } from "@db";
-import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events } from "@db/schema";
+import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments } from "@db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
@@ -17,6 +17,10 @@ import translationRouter from './routes/translation';
 import managerRouter from './routes/manager';
 import artistRouter from './routes/artist';
 import coursesRouter from './routes/courses';
+import achievementsRouter from './routes/achievements';
+import { authenticate } from './middleware/auth'; // Fixed import path
+import { awardCourseCompletionAchievement } from './achievements';
+
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing Stripe secret key');
@@ -53,6 +57,10 @@ export function registerRoutes(app: Express): Server {
 
   // Register courses routes
   app.use(coursesRouter);
+
+  // Register achievements routes
+  app.use(achievementsRouter);
+
 
   // AI Campaign Suggestions Route
   app.post("/api/ai/campaign-suggestion", async (req, res) => {
@@ -191,6 +199,7 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
+
 
 
   // Create checkout session
@@ -728,6 +737,40 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error updating event:', error);
       res.status(500).json({ error: 'Failed to update event' });
+    }
+  });
+
+  // When a course is completed, award the achievement
+  app.post("/api/courses/:courseId/complete", authenticate, async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      const courseId = parseInt(req.params.courseId);
+
+      // Update course enrollment status
+      await db
+        .update(courseEnrollments)
+        .set({
+          status: 'completed',
+          completedAt: new Date(),
+          progress: 100
+        })
+        .where(
+          and(
+            eq(courseEnrollments.courseId, courseId),
+            eq(courseEnrollments.userId, req.user.id)
+          )
+        );
+
+      // Award achievement
+      await awardCourseCompletionAchievement(req.user.id, courseId);
+
+      res.json({ message: 'Course completed successfully' });
+    } catch (error) {
+      console.error('Error completing course:', error);
+      res.status(500).json({ error: 'Failed to complete course' });
     }
   });
 

@@ -219,6 +219,28 @@ export const courseEnrollments = pgTable("course_enrollments", {
   expiresAt: timestamp("expires_at")
 });
 
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  badgeImage: text("badge_image").notNull(),
+  type: text("type", { 
+    enum: ["course_completion", "streak", "participation", "excellence"] 
+  }).notNull(),
+  requirements: json("requirements").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  achievementId: integer("achievement_id").references(() => achievements.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+  metadata: json("metadata")
+});
+
 export const courseReviews = pgTable("course_reviews", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -236,7 +258,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   contracts: many(contracts),
   bookings: many(bookings),
   audioDemos: many(audioDemos),
-  events: many(events)
+  events: many(events),
+  achievements: many(userAchievements)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -315,6 +338,25 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   reviews: many(courseReviews)
 }));
 
+export const achievementsRelations = relations(achievements, ({ many }) => ({
+  userAchievements: many(userAchievements)
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id],
+  }),
+  achievement: one(achievements, {
+    fields: [userAchievements.achievementId],
+    references: [achievements.id],
+  }),
+  course: one(courses, {
+    fields: [userAchievements.courseId],
+    references: [courses.id],
+  })
+}));
+
 
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
@@ -350,6 +392,11 @@ export const selectCourseEnrollmentSchema = createSelectSchema(courseEnrollments
 export const insertCourseReviewSchema = createInsertSchema(courseReviews);
 export const selectCourseReviewSchema = createSelectSchema(courseReviews);
 
+export const insertAchievementSchema = createInsertSchema(achievements);
+export const selectAchievementSchema = createSelectSchema(achievements);
+export const insertUserAchievementSchema = createInsertSchema(userAchievements);
+export const selectUserAchievementSchema = createSelectSchema(userAchievements);
+
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
@@ -383,3 +430,8 @@ export type InsertCourseEnrollment = typeof courseEnrollments.$inferInsert;
 export type SelectCourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type InsertCourseReview = typeof courseReviews.$inferInsert;
 export type SelectCourseReview = typeof courseReviews.$inferSelect;
+
+export type InsertAchievement = typeof achievements.$inferInsert;
+export type SelectAchievement = typeof achievements.$inferSelect;
+export type InsertUserAchievement = typeof userAchievements.$inferInsert;
+export type SelectUserAchievement = typeof userAchievements.$inferSelect;
