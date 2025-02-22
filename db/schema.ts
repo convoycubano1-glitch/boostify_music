@@ -166,6 +166,69 @@ export const managerNotes = pgTable("manager_notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+export const courseInstructors = pgTable("course_instructors", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  bio: text("bio"),
+  specialization: text("specialization"),
+  yearsOfExperience: integer("years_of_experience"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const courses = pgTable("courses", {
+  id: serial("id").primaryKey(),
+  instructorId: integer("instructor_id").references(() => courseInstructors.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  category: text("category").notNull(),
+  level: text("level", { enum: ["Beginner", "Intermediate", "Advanced"] }).notNull(),
+  duration: text("duration").notNull(),
+  lessons: integer("lessons").notNull(),
+  thumbnail: text("thumbnail").notNull(),
+  rating: decimal("rating", { precision: 3, scale: 2 }).default('0'),
+  totalReviews: integer("total_reviews").default(0),
+  status: text("status", { enum: ["draft", "published", "archived"] }).default("draft").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const courseLessons = pgTable("course_lessons", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  duration: integer("duration").notNull(), // in minutes
+  orderIndex: integer("order_index").notNull(),
+  videoUrl: text("video_url"),
+  materials: json("materials"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const courseEnrollments = pgTable("course_enrollments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  status: text("status", { enum: ["active", "completed", "cancelled"] }).default("active").notNull(),
+  progress: integer("progress").default(0),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  expiresAt: timestamp("expires_at")
+});
+
+export const courseReviews = pgTable("course_reviews", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   marketingMetrics: many(marketingMetrics),
@@ -234,6 +297,25 @@ export const managerToolsRelations = relations(users, ({ many }) => ({
   notes: many(managerNotes)
 }));
 
+export const courseInstructorsRelations = relations(courseInstructors, ({ one, many }) => ({
+  user: one(users, {
+    fields: [courseInstructors.userId],
+    references: [users.id],
+  }),
+  courses: many(courses)
+}));
+
+export const coursesRelations = relations(courses, ({ one, many }) => ({
+  instructor: one(courseInstructors, {
+    fields: [courses.instructorId],
+    references: [courseInstructors.id],
+  }),
+  lessons: many(courseLessons),
+  enrollments: many(courseEnrollments),
+  reviews: many(courseReviews)
+}));
+
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertBookingSchema = createInsertSchema(bookings);
@@ -257,6 +339,17 @@ export const selectManagerScheduleSchema = createSelectSchema(managerSchedule);
 export const insertManagerNoteSchema = createInsertSchema(managerNotes);
 export const selectManagerNoteSchema = createSelectSchema(managerNotes);
 
+export const insertCourseInstructorSchema = createInsertSchema(courseInstructors);
+export const selectCourseInstructorSchema = createSelectSchema(courseInstructors);
+export const insertCourseSchema = createInsertSchema(courses);
+export const selectCourseSchema = createSelectSchema(courses);
+export const insertCourseLessonSchema = createInsertSchema(courseLessons);
+export const selectCourseLessonSchema = createSelectSchema(courseLessons);
+export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments);
+export const selectCourseEnrollmentSchema = createSelectSchema(courseEnrollments);
+export const insertCourseReviewSchema = createInsertSchema(courseReviews);
+export const selectCourseReviewSchema = createSelectSchema(courseReviews);
+
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
@@ -279,3 +372,14 @@ export type InsertManagerSchedule = typeof managerSchedule.$inferInsert;
 export type SelectManagerSchedule = typeof managerSchedule.$inferSelect;
 export type InsertManagerNote = typeof managerNotes.$inferInsert;
 export type SelectManagerNote = typeof managerNotes.$inferSelect;
+
+export type InsertCourseInstructor = typeof courseInstructors.$inferInsert;
+export type SelectCourseInstructor = typeof courseInstructors.$inferSelect;
+export type InsertCourse = typeof courses.$inferInsert;
+export type SelectCourse = typeof courses.$inferSelect;
+export type InsertCourseLesson = typeof courseLessons.$inferInsert;
+export type SelectCourseLesson = typeof courseLessons.$inferSelect;
+export type InsertCourseEnrollment = typeof courseEnrollments.$inferInsert;
+export type SelectCourseEnrollment = typeof courseEnrollments.$inferSelect;
+export type InsertCourseReview = typeof courseReviews.$inferInsert;
+export type SelectCourseReview = typeof courseReviews.$inferSelect;

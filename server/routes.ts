@@ -16,6 +16,7 @@ import { insertBookingSchema } from "@db/schema";
 import translationRouter from './routes/translation';
 import managerRouter from './routes/manager';
 import artistRouter from './routes/artist';
+import coursesRouter from './routes/courses';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing Stripe secret key');
@@ -47,8 +48,11 @@ export function registerRoutes(app: Express): Server {
   app.use('/api/artist', artistRouter);
 
   setupAuth(app);
-  setupInstagramRoutes(app);
   setupSpotifyRoutes(app);
+  setupInstagramRoutes(app);
+
+  // Register courses routes
+  app.use(coursesRouter);
 
   // AI Campaign Suggestions Route
   app.post("/api/ai/campaign-suggestion", async (req, res) => {
