@@ -139,7 +139,7 @@ export default function CourseDetailPage() {
               lessonImages: {},
               timeSpent: 0,
               startedAt: new Date(),
-              lessonContents: {} ,
+              lessonContents: {},
               examScores: {}
             });
             setProgress({
@@ -335,7 +335,7 @@ export default function CourseDetailPage() {
         completedExams: [...(progress.completedExams || []), currentExamLesson],
         examScores: {
           ...(progress.examScores || {}),
-          [currentExamLesson]: 100 
+          [currentExamLesson]: 100
         }
       };
 
@@ -607,7 +607,10 @@ export default function CourseDetailPage() {
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {currentExamLesson && progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.question}
+              {currentExamLesson && 
+               progress.lessonContents[currentExamLesson]?.content.exam && 
+               progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion] && 
+               progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion].question}
             </AlertDialogTitle>
             <AlertDialogDescription>
               <RadioGroup
@@ -616,7 +619,8 @@ export default function CourseDetailPage() {
                 className="space-y-4 mt-4"
               >
                 {currentExamLesson &&
-                  progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.options.map(
+                 progress.lessonContents[currentExamLesson]?.content.exam && 
+                 progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.options.map(
                     (option, idx) => (
                       <div key={idx} className="flex items-center space-x-2">
                         <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
@@ -645,7 +649,9 @@ export default function CourseDetailPage() {
               </AlertDialogAction>
             ) : (
               <AlertDialogAction onClick={nextQuestion}>
-                {selectedExamQuestion < (currentExamLesson && progress.lessonContents[currentExamLesson]?.content.exam.length - 1)
+                {currentExamLesson && 
+                 progress.lessonContents[currentExamLesson]?.content.exam && 
+                 selectedExamQuestion < progress.lessonContents[currentExamLesson].content.exam.length - 1
                   ? 'Next Question'
                   : 'Finish Exam'}
               </AlertDialogAction>
