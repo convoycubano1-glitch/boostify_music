@@ -125,22 +125,13 @@ export default function EducationPage() {
       setIsGenerating(true);
       console.log("Iniciando generación de curso:", newCourse);
 
-      const prompt = `Create a detailed course outline for a music industry course titled "${newCourse.title}" with the following description: "${newCourse.description}". Include:
-      1. Course Overview
-      2. Learning Objectives
-      3. Detailed Curriculum Structure (minimum 12 lessons)
-      4. Key Topics
-      5. Practical Assignments
-      6. Industry Applications
-      Format the response as a structured JSON object with the following fields:
-      {
-        "overview": "string",
-        "objectives": ["string"],
-        "curriculum": [{"title": "string", "description": "string", "duration": "number"}],
-        "topics": ["string"],
-        "assignments": ["string"],
-        "applications": ["string"]
-      }`;
+      const prompt = `Create a detailed course outline for a music industry course titled "${newCourse.title}" with the following description: "${newCourse.description}". The response must include:
+      1. A brief overview of the course
+      2. 3-5 learning objectives
+      3. A curriculum with 10-12 lessons (each with title, description, and duration in minutes)
+      4. 5-7 key topics
+      5. 3-4 practical assignments
+      6. 2-3 industry applications`;
 
       console.log("Enviando prompt a OpenRouter:", prompt);
       const courseContent = await generateCourseContent(prompt);
@@ -151,18 +142,19 @@ export default function EducationPage() {
         parsedContent = JSON.parse(courseContent);
       } catch (parseError) {
         console.error("Error al parsear el contenido del curso:", parseError);
-        throw new Error("El contenido generado no tiene el formato JSON esperado");
+        throw new Error("El contenido generado no tiene el formato JSON esperado. Por favor intente nuevamente.");
       }
 
-      // Validate the parsed content
+      // Validate the parsed content structure
       if (!parsedContent.overview || !Array.isArray(parsedContent.curriculum)) {
-        throw new Error("El contenido generado no tiene la estructura esperada");
+        console.error("Contenido inválido:", parsedContent);
+        throw new Error("El contenido generado no tiene la estructura esperada. Por favor intente nuevamente.");
       }
 
       const courseData = {
         ...newCourse,
         content: parsedContent,
-        thumbnail: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000)}?w=800&auto=format&fit=crop`,
+        thumbnail: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?w=800&auto=format&fit=crop",
         lessons: parsedContent.curriculum?.length || 12,
         duration: "8 weeks",
         rating: 0,

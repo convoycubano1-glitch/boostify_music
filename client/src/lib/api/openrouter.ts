@@ -22,7 +22,7 @@ export async function generateCourseContent(prompt: string) {
         messages: [
           {
             role: "system",
-            content: "You are a music industry education expert. Create detailed course outlines with structured lessons, practical assignments, and industry applications. Return response in a valid JSON format with the following structure: { overview: string, objectives: string[], curriculum: { title: string, description: string, duration: number }[], topics: string[], assignments: string[], applications: string[] }"
+            content: "You are a music industry education expert. You MUST return your response in the following exact JSON format:\n{\n  \"overview\": \"string\",\n  \"objectives\": [\"string\"],\n  \"curriculum\": [{\"title\": \"string\", \"description\": \"string\", \"duration\": number}],\n  \"topics\": [\"string\"],\n  \"assignments\": [\"string\"],\n  \"applications\": [\"string\"]\n}\nDo not include any additional text or formatting outside of this JSON structure."
           },
           {
             role: "user",
@@ -47,9 +47,23 @@ export async function generateCourseContent(prompt: string) {
       throw new Error("Invalid response format from OpenRouter API");
     }
 
-    return data.choices[0].message.content;
+    const content = data.choices[0].message.content;
+    console.log("Raw content received:", content);
+
+    // Try to parse and validate the JSON structure
+    try {
+      const parsed = JSON.parse(content);
+      if (!parsed.overview || !Array.isArray(parsed.objectives) || !Array.isArray(parsed.curriculum)) {
+        throw new Error("Response is missing required fields");
+      }
+      return content;
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      console.error("Received content:", content);
+      throw new Error("The generated content is not in valid JSON format");
+    }
   } catch (error) {
     console.error("Error generating course content:", error);
-    throw new Error("Failed to generate course content. Please try again later.");
+    throw error;
   }
 }
