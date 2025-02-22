@@ -5,30 +5,55 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { FIREBASE_CONFIG } from "./env";
 
-// Initialize Firebase only if it hasn't been initialized before
+console.log('Starting Firebase initialization...');
+
+// Initialize Firebase with error handling
 let app;
+let auth;
+let db;
+let storage;
+let analytics = null;
+
 try {
   app = initializeApp(FIREBASE_CONFIG);
-  console.log('Firebase initialized successfully');
-} catch (error) {
-  console.error('Error initializing Firebase:', error);
-  throw error;
-}
+  console.log('Firebase app initialized successfully');
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-
-// Only initialize analytics in production and when available
-let analytics = null;
-if (import.meta.env.PROD && typeof window !== 'undefined') {
   try {
-    analytics = getAnalytics(app);
-    console.log('Analytics initialized successfully');
-  } catch (error) {
-    console.warn('Analytics initialization failed:', error);
+    auth = getAuth(app);
+    console.log('Firebase Auth initialized');
+  } catch (authError) {
+    console.error('Error initializing Firebase Auth:', authError);
   }
+
+  try {
+    db = getFirestore(app);
+    console.log('Firestore initialized');
+  } catch (dbError) {
+    console.error('Error initializing Firestore:', dbError);
+  }
+
+  try {
+    storage = getStorage(app);
+    console.log('Firebase Storage initialized');
+  } catch (storageError) {
+    console.error('Error initializing Firebase Storage:', storageError);
+  }
+
+  // Only initialize analytics in production and when available
+  if (import.meta.env.PROD && typeof window !== 'undefined') {
+    try {
+      analytics = getAnalytics(app);
+      console.log('Firebase Analytics initialized');
+    } catch (analyticsError) {
+      console.warn('Analytics initialization skipped:', analyticsError);
+    }
+  }
+} catch (error) {
+  console.error('Critical error initializing Firebase:', error);
 }
+
+// Export initialized services
+export { app, auth as firebaseAuth, db as firebaseDb, storage as firebaseStorage, analytics as firebaseAnalytics };
 
 // Contract related functions
 export interface Contract {
@@ -42,7 +67,7 @@ export interface Contract {
 }
 
 export async function getAuthToken(): Promise<string | null> {
-  const currentUser = auth.currentUser;
+  const currentUser = auth?.currentUser;
   if (!currentUser) return null;
 
   try {
@@ -60,7 +85,7 @@ export async function saveContract(contractData: {
   content: string;
   status: string;
 }): Promise<Contract> {
-  const currentUser = auth.currentUser;
+  const currentUser = auth?.currentUser;
   if (!currentUser) {
     throw new Error('User not authenticated');
   }
@@ -93,7 +118,7 @@ export async function saveContract(contractData: {
 }
 
 export async function getUserContracts(): Promise<Contract[]> {
-  const currentUser = auth.currentUser;
+  const currentUser = auth?.currentUser;
   if (!currentUser) {
     throw new Error('User not authenticated');
   }
@@ -120,7 +145,7 @@ export async function getUserContracts(): Promise<Contract[]> {
 }
 
 export async function deleteContract(contractId: string): Promise<void> {
-  const currentUser = auth.currentUser;
+  const currentUser = auth?.currentUser;
   if (!currentUser) {
     throw new Error('User not authenticated');
   }
@@ -134,7 +159,7 @@ export async function deleteContract(contractId: string): Promise<void> {
 }
 
 export async function updateContract(contractId: string, updates: Partial<Contract>): Promise<void> {
-  const currentUser = auth.currentUser;
+  const currentUser = auth?.currentUser;
   if (!currentUser) {
     throw new Error('User not authenticated');
   }
@@ -149,6 +174,3 @@ export async function updateContract(contractId: string, updates: Partial<Contra
     throw new Error(error.message || 'Error updating contract');
   }
 }
-
-export { analytics };
-export default app;

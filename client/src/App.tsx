@@ -92,60 +92,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-interface AssetLoadingHandlerProps {
-  children: ReactNode;
-}
-
-function AssetLoadingHandler({ children }: AssetLoadingHandlerProps): JSX.Element {
-  const { toast } = useToast();
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
-
-  useEffect(() => {
-    const checkAssets = () => {
-      const scripts = document.querySelectorAll('script[src*="index-"]');
-      const styles = document.querySelectorAll('link[href*="index-"]');
-
-      const allLoaded = Array.from(scripts).every((script: Element) => {
-        const htmlScript = script as HTMLScriptElement;
-        return htmlScript.complete && !htmlScript.getAttribute('loading');
-      }) &&
-      Array.from(styles).every((style: Element) => {
-        const htmlLink = style as HTMLLinkElement;
-        return htmlLink.sheet !== null;
-      });
-
-      if (!allLoaded) {
-        toast({
-          title: "Error loading assets",
-          description: "Please check your internet connection and try again",
-          variant: "destructive"
-        });
-      }
-
-      setAssetsLoaded(allLoaded);
-    };
-
-    window.addEventListener('load', checkAssets);
-    // Check after a timeout as fallback
-    setTimeout(checkAssets, 5000);
-
-    return () => window.removeEventListener('load', checkAssets);
-  }, [toast]);
-
-  if (!assetsLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading application assets...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
-
 const Router = () => {
   return (
     <Switch>
@@ -192,14 +138,42 @@ const Router = () => {
 };
 
 const App = () => {
+  const [initError, setInitError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    // Verificar estado de la aplicación después de un tiempo razonable
+    const timer = setTimeout(() => {
+      if (!document.querySelector('script[src*="index-"]')) {
+        console.warn('Critical assets may not have loaded properly');
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (initError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="max-w-md p-8 rounded-lg bg-card border text-center">
+          <h2 className="text-2xl font-bold text-destructive mb-4">Initialization Error</h2>
+          <p className="text-muted-foreground mb-4">{initError.message}</p>
+          <button
+            className="bg-primary text-primary-foreground px-4 py-2 rounded"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <AssetLoadingHandler>
-            <Router />
-            <Toaster />
-          </AssetLoadingHandler>
+          <Router />
+          <Toaster />
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
