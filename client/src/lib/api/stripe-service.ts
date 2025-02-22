@@ -51,13 +51,13 @@ export async function createPaymentSession(booking: {
       throw new Error('Stripe not initialized');
     }
 
-    const { error } = await stripe.redirectToCheckout({
+    const result = await stripe.redirectToCheckout({
       sessionId: data.sessionId
     });
 
-    if (error) {
-      console.error('Stripe redirect error:', error);
-      throw error;
+    if (result.error) {
+      console.error('Stripe redirect error:', result.error);
+      throw result.error;
     }
   } catch (error) {
     console.error('Error creating payment session:', error);
@@ -70,7 +70,7 @@ export async function createCourseEnrollmentSession(course: {
   title: string;
   price: number;
   thumbnail?: string;
-}) {
+}): Promise<string> {
   try {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -115,14 +115,16 @@ export async function createCourseEnrollmentSession(course: {
       throw new Error('Stripe not initialized');
     }
 
-    const { error } = await stripe.redirectToCheckout({
+    const result = await stripe.redirectToCheckout({
       sessionId: data.sessionId
     });
 
-    if (error) {
-      console.error('Stripe redirect error:', error);
-      throw error;
+    if (result.error) {
+      console.error('Stripe redirect error:', result.error);
+      throw result.error;
     }
+
+    return data.sessionId;
   } catch (error) {
     console.error('Error creating enrollment session:', error);
     throw error;

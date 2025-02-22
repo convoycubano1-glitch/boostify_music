@@ -298,14 +298,16 @@ export default function EducationPage() {
     if (!isAuthenticated) {
       toast({
         title: "Error",
-        description: "You must be logged in to enroll in a course",
+        description: "Debes iniciar sesión para inscribirte en un curso",
         variant: "destructive"
       });
       return;
     }
 
     try {
+      setIsLoading(true);
       console.log('Enrolling in course:', course);
+
       await createCourseEnrollmentSession({
         courseId: course.id,
         title: course.title,
@@ -320,9 +322,11 @@ export default function EducationPage() {
       console.error('Error enrolling in course:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to enroll in course. Please try again.",
+        description: error.message || "Error al inscribirse en el curso. Por favor intenta de nuevo.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
