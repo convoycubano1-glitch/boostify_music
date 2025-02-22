@@ -201,7 +201,6 @@ export function registerRoutes(app: Express): Server {
   });
 
 
-
   // Create checkout session
   app.post("/api/create-checkout-session", async (req, res) => {
     console.log('Received checkout session request:', {
@@ -256,6 +255,61 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
+      return res.status(500).json({
+        error: error.message || "Error creating checkout session"
+      });
+    }
+  });
+
+  // Add the new course checkout route here
+  app.post("/api/create-course-checkout", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      const { courseId, title, price, thumbnail } = req.body;
+
+      if (!courseId || !title || !price) {
+        return res.status(400).json({
+          error: "Missing required fields: courseId, title, or price"
+        });
+      }
+
+      console.log('Creating course checkout session for:', { courseId, title, price });
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: title,
+                description: `Enrollment for course: ${title}`,
+                images: thumbnail ? [thumbnail] : undefined,
+              },
+              unit_amount: Math.round(price * 100), // Convert to cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/course/${courseId}?session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/education?canceled=true`,
+        metadata: {
+          courseId,
+          userId: req.user!.id,
+        },
+      });
+
+      console.log('Created session:', session.id);
+
+      return res.json({
+        sessionId: session.id
+      });
+    } catch (error: any) {
+      console.error('Error creating course checkout session:', error);
       return res.status(500).json({
         error: error.message || "Error creating checkout session"
       });

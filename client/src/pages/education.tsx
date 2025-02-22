@@ -14,6 +14,7 @@ import { auth, db } from "@/firebase";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
+import { createCourseEnrollmentSession } from "@/lib/api/stripe-service";
 
 interface CourseFormData {
   title: string;
@@ -97,7 +98,7 @@ export default function EducationPage() {
 
   const generateRandomCourseData = () => {
     return {
-      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), // Convert to number explicitly
+      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)),
       totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50,
       enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
     };
@@ -290,6 +291,33 @@ export default function EducationPage() {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleEnrollCourse = async (course: Course) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to enroll in a course",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createCourseEnrollmentSession({
+        id: course.id,
+        title: course.title,
+        price: course.price,
+        thumbnail: course.thumbnail
+      });
+    } catch (error: any) {
+      console.error('Error enrolling in course:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to enroll in course. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -500,7 +528,7 @@ export default function EducationPage() {
                     </Link>
                     <Button
                       className="bg-orange-500 hover:bg-orange-600"
-                      onClick={() => window.location.href = `/course/${course.id}`}
+                      onClick={() => handleEnrollCourse(course)}
                     >
                       <span>Enroll Now</span>
                       <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
