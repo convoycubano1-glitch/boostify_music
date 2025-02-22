@@ -9,9 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent } from "@/lib/api/openrouter";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/firebase"; // Updated import
 import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface CourseFormData {
   title: string;
