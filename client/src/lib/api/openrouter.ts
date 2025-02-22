@@ -10,7 +10,7 @@ export async function generateCourseContent(prompt: string) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
         "HTTP-Referer": window.location.origin,
         "X-Title": "Boostify Music Education",
         "Content-Type": "application/json"
