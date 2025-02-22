@@ -10,6 +10,10 @@ import { auth, db } from "@/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { getRelevantImage } from "@/lib/unsplash-service";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { generateLessonContent, type LessonContent } from "@/lib/course-content-generator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface CourseProgress {
   completedLessons: string[];
@@ -19,6 +23,7 @@ interface CourseProgress {
   timeSpent: number;
   startedAt: Date;
   lastCompletedAt?: Date;
+  lessonContents: Record<string, LessonContent>;
 }
 
 interface Course {
@@ -45,11 +50,14 @@ export default function CourseDetailPage() {
     currentLesson: 0,
     generatedImages: {},
     timeSpent: 0,
-    startedAt: new Date()
+    startedAt: new Date(),
+    lessonContents: {}
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<LessonContent | null>(null);
 
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
@@ -91,7 +99,8 @@ export default function CourseDetailPage() {
               ...progressData,
               lastAccessedAt: new Date(progressData.lastAccessedAt),
               startedAt: new Date(progressData.startedAt),
-              lastCompletedAt: progressData.lastCompletedAt ? new Date(progressData.lastCompletedAt) : undefined
+              lastCompletedAt: progressData.lastCompletedAt ? new Date(progressData.lastCompletedAt) : undefined,
+              lessonContents: progressData.lessonContents
             });
           } else {
             // Initialize progress document if it doesn't exist
@@ -101,7 +110,8 @@ export default function CourseDetailPage() {
               currentLesson: 0,
               generatedImages: {},
               timeSpent: 0,
-              startedAt: new Date()
+              startedAt: new Date(),
+              lessonContents: {}
             };
             await setDoc(progressRef, initialProgress);
             setProgress(initialProgress);
@@ -160,6 +170,47 @@ export default function CourseDetailPage() {
       });
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const generateLessonContent = async (lessonTitle: string, lessonDescription: string) => {
+    if (progress.lessonContents[lessonTitle]) {
+      setSelectedLesson(progress.lessonContents[lessonTitle]);
+      return;
+    }
+
+    setIsGeneratingContent(true);
+    try {
+      const content = await generateLessonContent(lessonTitle, lessonDescription);
+
+      // Update progress with new content
+      const newProgress = {
+        ...progress,
+        lessonContents: {
+          ...progress.lessonContents,
+          [lessonTitle]: content
+        }
+      };
+
+      // Save to Firestore
+      if (auth.currentUser) {
+        const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
+        await updateDoc(progressRef, {
+          lessonContents: newProgress.lessonContents
+        });
+      }
+
+      setProgress(newProgress);
+      setSelectedLesson(content);
+    } catch (error) {
+      console.error('Error generating lesson content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate lesson content",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingContent(false);
     }
   };
 
@@ -268,6 +319,7 @@ export default function CourseDetailPage() {
             const isCompleted = progress.completedLessons.includes(lesson.title);
             const isLocked = index > progress.currentLesson;
             const hasImage = progress.generatedImages[lesson.title];
+            const hasContent = progress.lessonContents[lesson.title];
 
             return (
               <motion.div
@@ -296,6 +348,68 @@ export default function CourseDetailPage() {
                     ) : null}
                   </div>
 
+                  {hasContent && (
+                    <Accordion type="single" collapsible className="mb-4">
+                      <AccordionItem value="content">
+                        <AccordionTrigger>View Lesson Content</AccordionTrigger>
+                        <AccordionContent>
+                          <ScrollArea className="h-[400px] rounded-md border p-4">
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-500">Introduction</h4>
+                                <p className="text-gray-300">{progress.lessonContents[lesson.title].content.introduction}</p>
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-500">Key Points</h4>
+                                <ul className="list-disc list-inside space-y-2">
+                                  {progress.lessonContents[lesson.title].content.keyPoints.map((point, i) => (
+                                    <li key={i} className="text-gray-300">{point}</li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-500">Content</h4>
+                                {progress.lessonContents[lesson.title].content.mainContent.map((section, i) => (
+                                  <div key={i} className="mt-3">
+                                    <h5 className="font-medium text-white">{section.subtitle}</h5>
+                                    {section.paragraphs.map((paragraph, j) => (
+                                      <p key={j} className="text-gray-300 mt-2">{paragraph}</p>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-500">Practical Exercises</h4>
+                                <ul className="list-decimal list-inside space-y-2">
+                                  {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
+                                    <li key={i} className="text-gray-300">{exercise}</li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-500">Additional Resources</h4>
+                                <ul className="list-disc list-inside space-y-2">
+                                  {progress.lessonContents[lesson.title].content.additionalResources.map((resource, i) => (
+                                    <li key={i} className="text-gray-300">{resource}</li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-500">Summary</h4>
+                                <p className="text-gray-300">{progress.lessonContents[lesson.title].content.summary}</p>
+                              </div>
+                            </div>
+                          </ScrollArea>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  )}
+
                   {hasImage && (
                     <div className="mb-4">
                       <img
@@ -307,21 +421,21 @@ export default function CourseDetailPage() {
                   )}
 
                   <div className="flex gap-4">
-                    {!isLocked && !hasImage && (
+                    {!isLocked && !hasContent && (
                       <Button
-                        onClick={() => generateLessonImage(lesson.title, lesson.description)}
-                        disabled={isGeneratingImage}
+                        onClick={() => generateLessonContent(lesson.title, lesson.description)}
+                        disabled={isGeneratingContent}
                         variant="outline"
                       >
-                        {isGeneratingImage ? (
+                        {isGeneratingContent ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
+                            Generating Content...
                           </>
                         ) : (
                           <>
-                            <ImageIcon className="mr-2 h-4 w-4" />
-                            Get Illustration
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Generate Lesson Content
                           </>
                         )}
                       </Button>
