@@ -5,13 +5,13 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCEiY4InxiGpJrKJm1b0kl2YS-3-2IgIWI",
+  apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
   authDomain: "artist-boost.firebaseapp.com",
   projectId: "artist-boost",
-  storageBucket: "artist-boost.appspot.com",
-  messagingSenderId: "114213694920",
-  appId: "1:114213694920:web:3b6b9b4b9b9b4b9b9b9b4b",
-  measurementId: "G-XXXXXXXXXX"
+  storageBucket: "artist-boost.firebasestorage.app",
+  messagingSenderId: "502955771825",
+  appId: "1:502955771825:web:d6746677d851f9b1449f90",
+  measurementId: "G-ERCSSWTXCJ"
 };
 
 // Initialize Firebase only if it hasn't been initialized before
