@@ -117,7 +117,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
             - Minimum 3 practical exercises
             - Minimum 3 additional resources
             - Minimum 3 exam questions
-            - All icons should be valid Lucide icon names
+            - All icons should be valid Lucide icon names (e.g., Music, Star, Book, etc.)
             - Image prompts should be detailed enough for image generation
             - Content should be practical and immediately applicable`
         }
