@@ -18,24 +18,21 @@ const lessonContentSchema = z.object({
 export type LessonContent = z.infer<typeof lessonContentSchema>;
 
 export async function generateLessonContent(lessonTitle: string, lessonDescription: string): Promise<LessonContent> {
-  const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-
   try {
     if (!import.meta.env.VITE_OPENROUTER_API_KEY) {
       throw new Error('OpenRouter API key is not configured');
     }
 
-    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    const response = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': window.location.origin,
-        'OpenRouter-Override': 'true'
+        'X-Title': 'Artist Boost - Course Content Generation',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4',
-        response_format: { type: "json_object" },
+        model: 'anthropic/claude-2',
         messages: [
           {
             role: 'system',
@@ -64,14 +61,18 @@ Generate detailed, practical content with real-world examples in JSON format wit
             content: `Generate comprehensive lesson content for: "${lessonTitle}"
 Topic Description: ${lessonDescription}
 Focus on practical knowledge, real-world examples, and current industry practices.
-Include specific tools, techniques, and strategies used in the modern music industry.`
+Include specific tools, techniques, and strategies used in the modern music industry.
+IMPORTANT: Respond only with the JSON structure, no additional text.`
           }
-        ]
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" }
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate lesson content: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to generate lesson content: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
