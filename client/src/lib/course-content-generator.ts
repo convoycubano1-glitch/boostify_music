@@ -35,11 +35,11 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
+          'HTTP-Referer': `${window.location.origin}`,
           'X-Title': 'Artist Boost - Course Content Generation',
         },
         body: JSON.stringify({
-          model: 'anthropic/claude-2',
+          model: 'google/gemini-pro',
           messages: [
             {
               role: 'system',
@@ -73,10 +73,9 @@ IMPORTANT: Respond only with the JSON structure, no additional text.`
             }
           ],
           temperature: 0.7,
-          response_format: { type: "json_object" }
+          stream: false
         }),
         signal: controller.signal,
-        credentials: 'omit' // Explicitly disable credentials
       });
 
       clearTimeout(timeoutId);
@@ -94,7 +93,10 @@ IMPORTANT: Respond only with the JSON structure, no additional text.`
 
       let content;
       try {
-        content = JSON.parse(data.choices[0].message.content);
+        // If the content is already a JSON object, use it directly
+        content = typeof data.choices[0].message.content === 'string' 
+          ? JSON.parse(data.choices[0].message.content)
+          : data.choices[0].message.content;
       } catch (parseError) {
         console.error('Error parsing API response:', parseError);
         throw new Error('Failed to parse lesson content');
