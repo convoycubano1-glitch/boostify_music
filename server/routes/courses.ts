@@ -12,7 +12,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Get all courses
+// Get all courses - removed authentication requirement
 router.get('/api/courses', async (req, res) => {
   try {
     const allCourses = await db
@@ -27,14 +27,18 @@ router.get('/api/courses', async (req, res) => {
   }
 });
 
-// Create a new course
+// Create a new course - keep authentication for course creation
 router.post('/api/courses', authenticate, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     // Check if the user is an instructor
     const [instructor] = await db
       .select()
       .from(courseInstructors)
-      .where(eq(courseInstructors.userId, req.user!.id))
+      .where(eq(courseInstructors.userId, req.user.id))
       .limit(1);
 
     if (!instructor) {
@@ -42,13 +46,13 @@ router.post('/api/courses', authenticate, async (req, res) => {
       const [newInstructor] = await db
         .insert(courseInstructors)
         .values({
-          userId: req.user!.id,
+          userId: req.user.id,
           specialization: 'Music Industry Professional',
           yearsOfExperience: 1,
         })
         .returning();
-      
-      instructor = newInstructor;
+
+      const instructor = newInstructor;
     }
 
     // Create the course
