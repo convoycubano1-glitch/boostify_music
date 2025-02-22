@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
 import cors from 'cors';
+import fs from 'fs';
 
 const app = express();
 
@@ -19,7 +20,19 @@ if (process.env.NODE_ENV === "production") {
   // Serve static files from the dist directory
   const distPath = path.join(process.cwd(), 'dist');
   log(`Serving static files from: ${distPath}`);
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    );
+  }
+
   app.use(express.static(distPath));
+
+  // fall through to index.html if the file doesn't exist
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
 } else {
   log('Running in development mode');
   // Serve static files from the public folder in development
@@ -56,24 +69,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
     // Setup Vite or static file serving based on environment
     if (process.env.NODE_ENV === "production") {
-      // In production, serve the built client files
-      app.get('*', (req, res, next) => {
-        // Don't handle API routes here
-        if (req.path.startsWith('/api')) {
-          log(`Skipping client-side routing for API path: ${req.path}`);
-          return next();
-        }
-
-        // Send index.html for all other routes to support client-side routing
-        const indexPath = path.join(process.cwd(), 'dist', 'index.html');
-        log(`Serving index.html for path: ${req.path} from: ${indexPath}`);
-        res.sendFile(indexPath, (err) => {
-          if (err) {
-            log(`Error serving index.html: ${err.message}`);
-            next(err);
-          }
-        });
-      });
+      // Already handled above
     } else {
       await setupVite(app, server);
     }
