@@ -12,10 +12,20 @@ const envSchema = z.object({
 });
 
 function getEnvVar(key: string): string {
-  const value = import.meta.env[key] || process.env[key];
+  const value = import.meta.env[key];
   if (!value) {
-    console.error(`Environment variable ${key} is not set`);
-    return '';
+    // Fallback values for Firebase configuration
+    const fallbackValues: Record<string, string> = {
+      VITE_FIREBASE_API_KEY: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
+      VITE_FIREBASE_AUTH_DOMAIN: "artist-boost.firebaseapp.com",
+      VITE_FIREBASE_PROJECT_ID: "artist-boost",
+      VITE_FIREBASE_STORAGE_BUCKET: "artist-boost.firebasestorage.app",
+      VITE_FIREBASE_MESSAGING_SENDER_ID: "502955771825",
+      VITE_FIREBASE_APP_ID: "1:502955771825:web:d6746677d851f9b1449f90",
+      VITE_FIREBASE_MEASUREMENT_ID: "G-ERCSSWTXCJ"
+    };
+
+    return fallbackValues[key] || '';
   }
   return value;
 }
