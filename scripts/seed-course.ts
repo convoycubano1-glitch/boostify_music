@@ -1,143 +1,151 @@
 import { db } from "./firebase-admin";
 
-async function seedCourse() {
-  const courseData = {
-    title: "Music Industry Professional: Complete Artist Development Program",
-    description: "A comprehensive course designed to transform aspiring musicians into industry professionals. Learn everything from music production to business management, marketing, and career development.",
-    createdBy: "system",
-    createdAt: new Date(),
-    content: {
-      curriculum: [
-        {
-          title: "Understanding the Modern Music Industry",
-          description: "Overview of today's music industry landscape, key players, and revenue streams",
-          estimatedMinutes: 45
-        },
-        {
-          title: "Building Your Artist Identity",
-          description: "Developing your unique brand, visual aesthetics, and artistic vision",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Music Production Fundamentals",
-          description: "Essential knowledge about recording, mixing, and mastering your music",
-          estimatedMinutes: 90
-        },
-        {
-          title: "Digital Distribution Strategies",
-          description: "Understanding streaming platforms, distribution services, and release strategies",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Social Media Marketing for Musicians",
-          description: "Creating engaging content and building a strong social media presence",
-          estimatedMinutes: 75
-        },
-        {
-          title: "Music Copyright and Royalties",
-          description: "Understanding music rights, licensing, and revenue collection",
-          estimatedMinutes: 90
-        },
-        {
-          title: "Building Your Team",
-          description: "Working with managers, agents, lawyers, and other industry professionals",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Concert and Tour Planning",
-          description: "Planning and executing successful live performances and tours",
-          estimatedMinutes: 90
-        },
-        {
-          title: "Fan Engagement Strategies",
-          description: "Building and maintaining a loyal fan base through various channels",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Music Video Production",
-          description: "Creating professional music videos and visual content",
-          estimatedMinutes: 75
-        },
-        {
-          title: "Streaming Platform Optimization",
-          description: "Maximizing your presence on Spotify, Apple Music, and other platforms",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Professional Networking",
-          description: "Building industry relationships and networking effectively",
-          estimatedMinutes: 45
-        },
-        {
-          title: "Revenue Diversification",
-          description: "Exploring multiple income streams in the music industry",
-          estimatedMinutes: 90
-        },
-        {
-          title: "Music Publishing",
-          description: "Understanding and maximizing publishing rights and opportunities",
-          estimatedMinutes: 75
-        },
-        {
-          title: "Digital Marketing Campaigns",
-          description: "Planning and executing successful marketing campaigns",
-          estimatedMinutes: 90
-        },
-        {
-          title: "Brand Partnerships",
-          description: "Securing and managing brand collaborations and sponsorships",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Music Press and PR",
-          description: "Working with media outlets and managing public relations",
-          estimatedMinutes: 75
-        },
-        {
-          title: "Concert Production",
-          description: "Technical aspects of live performance and stage production",
-          estimatedMinutes: 90
-        },
-        {
-          title: "Music Business Finance",
-          description: "Managing finances, budgeting, and investment in your career",
-          estimatedMinutes: 90
-        },
-        {
-          title: "International Market Entry",
-          description: "Strategies for expanding into international markets",
-          estimatedMinutes: 75
-        },
-        {
-          title: "Music Merchandise",
-          description: "Creating and selling merchandise effectively",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Radio Promotion",
-          description: "Getting your music played on radio and promotional strategies",
-          estimatedMinutes: 75
-        },
-        {
-          title: "Artist Website Development",
-          description: "Creating and maintaining a professional artist website",
-          estimatedMinutes: 60
-        },
-        {
-          title: "Career Sustainability",
-          description: "Long-term career planning and sustainable success strategies",
-          estimatedMinutes: 90
-        }
-      ]
+async function seedCourses() {
+  const coursesData = [
+    {
+      title: "Music Marketing Mastery: Digital Promotion Strategies",
+      description: "Master the art of digital music marketing and promotion. Learn how to build a strong online presence, engage with fans, and promote your music effectively across various digital platforms.",
+      createdBy: "system",
+      createdAt: new Date(),
+      content: {
+        curriculum: [
+          {
+            title: "Digital Marketing Fundamentals for Musicians",
+            description: "Understanding the basics of digital marketing in the music industry",
+            estimatedMinutes: 45
+          },
+          {
+            title: "Building Your Social Media Strategy",
+            description: "Creating and managing effective social media presence for musicians",
+            estimatedMinutes: 60
+          },
+          {
+            title: "Content Creation for Musicians",
+            description: "Creating engaging content for various social platforms",
+            estimatedMinutes: 75
+          },
+          {
+            title: "Email Marketing for Artists",
+            description: "Building and managing an effective email marketing campaign",
+            estimatedMinutes: 45
+          },
+          {
+            title: "Music Release Strategy",
+            description: "Planning and executing successful music releases",
+            estimatedMinutes: 90
+          },
+          {
+            title: "Spotify Playlist Pitching",
+            description: "Techniques for getting your music on popular playlists",
+            estimatedMinutes: 60
+          },
+          {
+            title: "YouTube Channel Optimization",
+            description: "Growing your presence on YouTube",
+            estimatedMinutes: 75
+          },
+          {
+            title: "Instagram Marketing for Musicians",
+            description: "Maximizing your Instagram presence",
+            estimatedMinutes: 60
+          },
+          {
+            title: "TikTok Strategy for Artists",
+            description: "Creating viral content on TikTok",
+            estimatedMinutes: 45
+          },
+          {
+            title: "Digital Advertising for Musicians",
+            description: "Running effective ad campaigns on social media",
+            estimatedMinutes: 90
+          }
+        ]
+      }
+    },
+    {
+      title: "Music Business Essentials: Legal and Financial Management",
+      description: "Essential knowledge about music business, legal aspects, and financial management for music industry professionals. Learn about contracts, royalties, publishing, and business planning.",
+      createdBy: "system",
+      createdAt: new Date(),
+      content: {
+        curriculum: [
+          {
+            title: "Music Industry Structure",
+            description: "Understanding the key players and relationships in the music industry",
+            estimatedMinutes: 60
+          },
+          {
+            title: "Music Copyright Basics",
+            description: "Understanding music copyright and intellectual property",
+            estimatedMinutes: 90
+          },
+          {
+            title: "Publishing Rights and Royalties",
+            description: "Managing music publishing and collecting royalties",
+            estimatedMinutes: 75
+          },
+          {
+            title: "Record Label Contracts",
+            description: "Understanding and negotiating record deals",
+            estimatedMinutes: 90
+          },
+          {
+            title: "Music Distribution Agreements",
+            description: "Digital distribution and streaming platform agreements",
+            estimatedMinutes: 60
+          },
+          {
+            title: "Financial Planning for Musicians",
+            description: "Budgeting, accounting, and financial management",
+            estimatedMinutes: 75
+          },
+          {
+            title: "Music Business Revenue Streams",
+            description: "Understanding different income sources in music",
+            estimatedMinutes: 60
+          },
+          {
+            title: "Music Licensing and Sync",
+            description: "Licensing music for TV, film, and advertising",
+            estimatedMinutes: 90
+          },
+          {
+            title: "Building Your Music Business Plan",
+            description: "Creating a comprehensive business plan for your music career",
+            estimatedMinutes: 75
+          },
+          {
+            title: "Legal Requirements and Business Structure",
+            description: "Setting up your music business legally",
+            estimatedMinutes: 60
+          }
+        ]
+      }
     }
-  };
+  ];
 
   try {
-    await db.collection('courses').add(courseData);
-    console.log('Course seeded successfully');
+    // Borrar cursos existentes
+    const coursesRef = db.collection('courses');
+    const snapshot = await coursesRef.get();
+    const batch = db.batch();
+
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    console.log('Existing courses deleted successfully');
+
+    // Crear nuevos cursos
+    for (const courseData of coursesData) {
+      await db.collection('courses').add(courseData);
+    }
+
+    console.log('New courses seeded successfully');
   } catch (error) {
-    console.error('Error seeding course:', error);
+    console.error('Error seeding courses:', error);
   }
 }
 
-seedCourse();
+seedCourses();
