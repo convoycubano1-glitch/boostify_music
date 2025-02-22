@@ -66,10 +66,10 @@ export async function createPaymentSession(booking: {
 }
 
 export async function createCourseEnrollmentSession(course: {
-  id: string;
+  courseId: string;
   title: string;
   price: number;
-  thumbnail: string;
+  thumbnail?: string;
 }) {
   try {
     const currentUser = auth.currentUser;
@@ -89,7 +89,7 @@ export async function createCourseEnrollmentSession(course: {
       },
       credentials: 'include',
       body: JSON.stringify({
-        courseId: course.id,
+        courseId: course.courseId,
         title: course.title,
         price: course.price,
         thumbnail: course.thumbnail

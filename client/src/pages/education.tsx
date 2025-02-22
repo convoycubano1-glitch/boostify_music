@@ -305,11 +305,16 @@ export default function EducationPage() {
     }
 
     try {
+      console.log('Enrolling in course:', course);
       await createCourseEnrollmentSession({
-        id: course.id,
+        courseId: course.id,
         title: course.title,
         price: course.price,
         thumbnail: course.thumbnail
+      });
+      toast({
+        title: "Success",
+        description: `Successfully enrolled in ${course.title}`
       });
     } catch (error: any) {
       console.error('Error enrolling in course:', error);
@@ -509,7 +514,7 @@ export default function EducationPage() {
                       <span className="font-medium text-white">
                         {typeof course.rating === 'number'
                           ? course.rating.toFixed(1)
-                          : Number(course.rating).toFixed(1)}
+                          : parseFloat(String(course.rating)).toFixed(1)}
                       </span>
                       <span className="text-gray-400">({course.totalReviews} reviews)</span>
                     </div>
