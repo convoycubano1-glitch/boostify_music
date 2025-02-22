@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { getRelevantImage } from "@/lib/unsplash-service";
 
 interface CourseFormData {
   title: string;
@@ -34,6 +35,7 @@ interface Course {
   totalReviews: number;
   duration: string;
   lessons: number;
+  enrolledStudents: number;
   content?: any;
   createdAt: Date;
   createdBy: string;
@@ -93,6 +95,15 @@ export default function EducationPage() {
     fetchCourses();
   }, [toast]);
 
+  const generateRandomCourseData = () => {
+    return {
+      price: Math.floor(Math.random() * (299 - 49 + 1)) + 49, // Random price between $49-$299
+      rating: (Math.random() * (5 - 3.5) + 3.5).toFixed(1), // Random rating between 3.5-5.0
+      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50, // Random reviews between 50-1000
+      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100, // Random students between 100-5000
+    };
+  };
+
   const handleCreateCourse = async () => {
     if (!isAuthenticated) {
       toast({
@@ -103,7 +114,7 @@ export default function EducationPage() {
       return;
     }
 
-    if (!newCourse.title || !newCourse.description || !newCourse.price || !newCourse.category || !newCourse.level) {
+    if (!newCourse.title || !newCourse.description || !newCourse.category || !newCourse.level) {
       toast({
         title: "Error",
         description: "Please complete all required fields",
@@ -114,6 +125,11 @@ export default function EducationPage() {
 
     try {
       setIsGenerating(true);
+
+      // Generate course thumbnail
+      const imagePrompt = `professional education ${newCourse.title} ${newCourse.category} course cover`;
+      const thumbnailUrl = await getRelevantImage(imagePrompt);
+
       const prompt = `Generate a professional music course with these characteristics:
         - Title: "${newCourse.title}"
         - Description: "${newCourse.description}"
@@ -123,15 +139,15 @@ export default function EducationPage() {
         The course should be detailed and practical, focused on the current music industry.`;
 
       const courseContent = await generateCourseContent(prompt);
+      const randomData = generateRandomCourseData();
 
       const courseData = {
         ...newCourse,
         content: courseContent,
-        thumbnail: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&auto=format&fit=crop",
+        thumbnail: thumbnailUrl,
         lessons: courseContent.curriculum.length,
         duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
-        rating: 0,
-        totalReviews: 0,
+        ...randomData,
         createdAt: Timestamp.now(),
         createdBy: auth.currentUser?.uid || ""
       };
@@ -355,7 +371,7 @@ export default function EducationPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-gray-400">{course.totalReviews} enrolled</span>
+                      <span className="text-sm text-gray-400">{course.enrolledStudents} enrolled</span>
                     </div>
                   </div>
 
@@ -378,7 +394,10 @@ export default function EducationPage() {
                         <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                       </Button>
                     </Link>
-                    <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => window.location.href = `/course/${course.id}`}>
+                    <Button 
+                      className="bg-orange-500 hover:bg-orange-600" 
+                      onClick={() => window.location.href = `/course/${course.id}`}
+                    >
                       <span>Enroll Now</span>
                       <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
