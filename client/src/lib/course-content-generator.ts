@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import OpenAI from 'openai';
 
 const lessonContentSchema = z.object({
   title: z.string(),
@@ -67,55 +68,42 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       return generateFallbackContent(lessonTitle, lessonDescription);
     }
 
-    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const openai = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: import.meta.env.VITE_OPENROUTER_API_KEY,
+      defaultHeaders: {
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Artist Boost',
+      },
+      dangerouslyAllowBrowser: true // Necesario para usar en el navegador
+    });
 
     try {
-      const response = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': `${window.location.origin}/`,
-          'X-Title': 'Artist Boost'
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-          messages: [
-            {
-              role: 'system',
-              content: `Generate a lesson about ${lessonTitle}. Include introduction, key points, main content with subtitles and paragraphs, practical exercises, additional resources, and summary.`
-            },
-            {
-              role: 'user',
-              content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}`
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 1000
-        }),
-        signal: controller.signal
+      const completion = await openai.chat.completions.create({
+        model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+        messages: [
+          {
+            role: 'system',
+            content: `Generate a lesson about ${lessonTitle}. Include introduction, key points, main content with subtitles and paragraphs, practical exercises, additional resources, and summary. Respond in JSON format.`
+          },
+          {
+            role: 'user',
+            content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}`
+          }
+        ],
+        temperature: 0.3,
+        response_format: { type: "json_object" }
       });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        console.warn('API request failed, using fallback content');
-        return generateFallbackContent(lessonTitle, lessonDescription);
-      }
-
-      const data = await response.json();
-
-      if (!data.choices?.[0]?.message?.content) {
+      if (!completion.choices[0]?.message?.content) {
         console.warn('Invalid API response format, using fallback content');
         return generateFallbackContent(lessonTitle, lessonDescription);
       }
 
       try {
-        const parsedContent = typeof data.choices[0].message.content === 'string'
-          ? JSON.parse(data.choices[0].message.content)
-          : data.choices[0].message.content;
+        const parsedContent = typeof completion.choices[0].message.content === 'string'
+          ? JSON.parse(completion.choices[0].message.content)
+          : completion.choices[0].message.content;
 
         return lessonContentSchema.parse(parsedContent);
       } catch (parseError) {
