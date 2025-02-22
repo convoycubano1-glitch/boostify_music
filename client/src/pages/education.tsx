@@ -10,8 +10,8 @@ import { generateCourseContent } from "@/lib/api/openrouter";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 interface CourseFormData {
   title: string;
@@ -35,7 +35,7 @@ interface Course {
   lessons: number;
   content?: any;
   createdAt: Date;
-  createdBy: string; // Added createdBy field
+  createdBy: string;
 }
 
 export default function EducationPage() {
@@ -44,6 +44,7 @@ export default function EducationPage() {
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [newCourse, setNewCourse] = useState<CourseFormData>({
     title: "",
     description: "",
@@ -54,6 +55,15 @@ export default function EducationPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [hoveredCourse, setHoveredCourse] = useState<string | null>(null);
 
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
   // Fetch courses from Firestore
   useEffect(() => {
     const fetchCourses = async () => {
@@ -61,10 +71,14 @@ export default function EducationPage() {
         const coursesRef = collection(db, 'courses');
         const q = query(coursesRef, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
-        const coursesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Course[];
+        const coursesData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate() || new Date()
+          };
+        }) as Course[];
         setCourses(coursesData);
       } catch (error) {
         console.error('Error fetching courses:', error);
@@ -82,7 +96,7 @@ export default function EducationPage() {
   }, [toast]);
 
   const handleCreateCourse = async () => {
-    if (!auth.currentUser) {
+    if (!isAuthenticated) {
       toast({
         title: "Error",
         description: "You must be logged in to create a course",
@@ -120,8 +134,8 @@ export default function EducationPage() {
         duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
         rating: 0,
         totalReviews: 0,
-        createdAt: new Date(),
-        createdBy: auth.currentUser.uid
+        createdAt: Timestamp.now(),
+        createdBy: auth.currentUser?.uid || "" // Handle potential null user
       };
 
       const courseRef = await addDoc(collection(db, 'courses'), courseData);
@@ -129,7 +143,8 @@ export default function EducationPage() {
       // Add the new course to the local state
       setCourses(prev => [{
         id: courseRef.id,
-        ...courseData
+        ...courseData,
+        createdAt: new Date()
       } as Course, ...prev]);
 
       toast({
