@@ -3,7 +3,18 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-import { FIREBASE_CONFIG } from "./env";
+import { collection, addDoc, getDoc, query, where, getDocs, doc, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
+  authDomain: "artist-boost.firebaseapp.com",
+  projectId: "artist-boost",
+  storageBucket: "artist-boost.firebasestorage.app",
+  messagingSenderId: "502955771825",
+  appId: "1:502955771825:web:d6746677d851f9b1449f90",
+  measurementId: "G-ERCSSWTXCJ"
+};
 
 console.log('Starting Firebase initialization...');
 
@@ -15,7 +26,7 @@ let storage;
 let analytics = null;
 
 try {
-  app = initializeApp(FIREBASE_CONFIG);
+  app = initializeApp(firebaseConfig);
   console.log('Firebase app initialized successfully');
 
   try {
@@ -40,7 +51,7 @@ try {
   }
 
   // Only initialize analytics in production and when available
-  if (import.meta.env.PROD && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     try {
       analytics = getAnalytics(app);
       console.log('Firebase Analytics initialized');

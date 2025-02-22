@@ -37,7 +37,7 @@ import { motion } from "framer-motion";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -963,67 +963,52 @@ export default function ManagerToolsPage() {
                     </Card>
 
                     {/* Event Dialog */}
-                    <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Add New Event</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="title">Event Title</Label>
-                            <Input
-                              id="title"
-                              value={newEvent.title}
-                              onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="startTime">Start Time</Label>
+                    {showEventDialog && (
+                      <Dialog open={showEventDialog} onOpenChange={() => setShowEventDialog(false)}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Crear Nuevo Evento</DialogTitle>
+                            <DialogDescription>
+                              Ingresa los detalles del nuevo evento en el calendario.
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="title" className="text-right">Título</Label>
                               <Input
-                                id="startTime"
-                                type="datetime-local"
-                                value={newEvent.startTime}
-                                onChange={(e) => setNewEvent(prev => ({ ...prev, startTime: e.target.value }))}
+                                id="title"
+                                className="col-span-3"
+                                value={newEvent.title}
+                                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="endTime">End Time</Label>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="description" className="text-right">Descripción</Label>
+                              <Textarea
+                                id="description"
+                                className="col-span-3"
+                                value={newEvent.description}
+                                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="location" className="text-right">Ubicación</Label>
                               <Input
-                                id="endTime"
-                                type="datetime-local"
-                                value={newEvent.endTime}
-                                onChange={(e) => setNewEvent(prev => ({ ...prev, endTime: e.target.value }))}
+                                id="location"
+                                className="col-span-3"
+                                value={newEvent.location}
+                                onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
-                            <Input
-                              id="location"
-                              value={newEvent.location}
-                              onChange={(e) => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                              id="description"
-                              value={newEvent.description}
-                              onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex justify-end gap-4">
-                          <Button variant="outline" onClick={() => setShowEventDialog(false)}>
-                            Cancel
-                          </Button>
-                          <Button className="bg-orange-500 hover:bg-orange-600" onClick={handleCreateScheduleEvent}>
-                            Add Event
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+
+                          <DialogFooter>
+                            <Button onClick={handleCreateScheduleEvent}>Crear Evento</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </TabsContent>
               </div>
             </Tabs>
