@@ -287,7 +287,7 @@ export default function CourseDetailPage() {
     setIsSavingProgress(true);
     try {
       const lessonTitle = course.content.curriculum[lessonIndex].title;
-      const now = new Date();
+      const now = new Date().toISOString();
       const newProgress = {
         ...progress,
         completedLessons: [...progress.completedLessons, lessonTitle],
@@ -298,8 +298,20 @@ export default function CourseDetailPage() {
       };
 
       const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
-      await updateDoc(progressRef, newProgress);
-      setProgress(newProgress);
+      await updateDoc(progressRef, {
+        completedLessons: newProgress.completedLessons,
+        currentLesson: newProgress.currentLesson,
+        lastAccessedAt: now,
+        lastCompletedAt: now,
+        timeSpent: newProgress.timeSpent
+      });
+
+      setProgress({
+        ...progress,
+        ...newProgress,
+        lastAccessedAt: new Date(now),
+        lastCompletedAt: new Date(now)
+      });
 
       toast({
         title: "Success",
