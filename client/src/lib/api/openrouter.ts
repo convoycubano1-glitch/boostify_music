@@ -30,7 +30,7 @@ export async function generateCourseContent(prompt: string) {
     {
       "title": "lesson title",
       "description": "lesson description",
-      "duration": 60
+      "estimatedMinutes": 60
     }
   ],
   "topics": ["topic1", "topic2", "topic3"],
@@ -52,7 +52,7 @@ export async function generateCourseContent(prompt: string) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error("OpenRouter API error:", errorData);
-      throw new Error(`Error al generar el contenido del curso: ${response.statusText}`);
+      throw new Error(`Error generating course content: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -60,7 +60,7 @@ export async function generateCourseContent(prompt: string) {
 
     if (!data.choices?.[0]?.message?.content) {
       console.error("Invalid API response structure:", data);
-      throw new Error("Formato de respuesta inválido de la API");
+      throw new Error("Invalid API response format");
     }
 
     const content = data.choices[0].message.content;
@@ -69,30 +69,30 @@ export async function generateCourseContent(prompt: string) {
     try {
       const parsed = JSON.parse(content);
 
-      // Validación estricta de la estructura
+      // Strict validation of the structure
       if (typeof parsed.overview !== 'string') {
-        throw new Error("El campo 'overview' debe ser un texto");
+        throw new Error("'overview' field must be a string");
       }
       if (!Array.isArray(parsed.objectives) || parsed.objectives.length === 0) {
-        throw new Error("El campo 'objectives' debe ser un array no vacío");
+        throw new Error("'objectives' field must be a non-empty array");
       }
       if (!Array.isArray(parsed.curriculum) || parsed.curriculum.length === 0) {
-        throw new Error("El campo 'curriculum' debe ser un array no vacío");
+        throw new Error("'curriculum' field must be a non-empty array");
       }
       if (!Array.isArray(parsed.topics) || parsed.topics.length === 0) {
-        throw new Error("El campo 'topics' debe ser un array no vacío");
+        throw new Error("'topics' field must be a non-empty array");
       }
       if (!Array.isArray(parsed.assignments) || parsed.assignments.length === 0) {
-        throw new Error("El campo 'assignments' debe ser un array no vacío");
+        throw new Error("'assignments' field must be a non-empty array");
       }
       if (!Array.isArray(parsed.applications) || parsed.applications.length === 0) {
-        throw new Error("El campo 'applications' debe ser un array no vacío");
+        throw new Error("'applications' field must be a non-empty array");
       }
 
-      // Validar cada lección en el curriculum
+      // Validate each lesson in the curriculum
       for (const lesson of parsed.curriculum) {
-        if (!lesson.title || !lesson.description || typeof lesson.duration !== 'number') {
-          throw new Error("Cada lección debe tener título, descripción y duración");
+        if (!lesson.title || !lesson.description || typeof lesson.estimatedMinutes !== 'number') {
+          throw new Error("Each lesson must have title, description and estimatedMinutes");
         }
       }
 
@@ -100,7 +100,7 @@ export async function generateCourseContent(prompt: string) {
     } catch (parseError) {
       console.error("JSON parsing/validation error:", parseError);
       console.error("Content that failed validation:", content);
-      throw new Error(`Error de validación: ${parseError.message}`);
+      throw new Error(`Validation error: ${(parseError as Error).message}`);
     }
   } catch (error) {
     console.error("Course generation error:", error);
