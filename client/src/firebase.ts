@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
@@ -53,7 +53,7 @@ try {
 }
 
 // Export initialized services
-export { app, auth as firebaseAuth, db as firebaseDb, storage as firebaseStorage, analytics as firebaseAnalytics };
+export { app, auth, db, storage, analytics };
 
 // Contract related functions
 export interface Contract {

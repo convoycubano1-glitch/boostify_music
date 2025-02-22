@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
-import { firebaseAuth } from "../firebase";
+import { auth } from "../firebase";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -21,13 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let unsubscribe: (() => void) | undefined;
 
     try {
-      if (!firebaseAuth) {
+      if (!auth) {
         console.warn('Firebase Auth not initialized');
         setLoading(false);
         return;
       }
 
-      unsubscribe = firebaseAuth.onAuthStateChanged(
+      unsubscribe = auth.onAuthStateChanged(
         (user) => {
           setUser(user);
           setLoading(false);
