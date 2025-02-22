@@ -85,6 +85,33 @@ export default function CourseDetailPage() {
   const [currentExamLesson, setCurrentExamLesson] = useState<string | null>(null);
   const [courseCoverImage, setCourseCoverImage] = useState<string | null>(null);
 
+  const generateCoverImage = async () => {
+    if (!course?.title) return;
+
+    try {
+      setIsGeneratingImage(true);
+      const imagePrompt = `professional education ${course.title} music industry course cover`;
+      const imageUrl = await getRelevantImage(imagePrompt);
+      setCourseCoverImage(imageUrl);
+    } catch (error) {
+      console.error('Error generating course cover image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate course cover image",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  useEffect(() => {
+    if (course?.title && !courseCoverImage) {
+      generateCoverImage();
+    }
+  }, [course?.title]);
+
+
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
       try {
@@ -176,21 +203,6 @@ export default function CourseDetailPage() {
 
     fetchCourseAndProgress();
   }, [courseId, toast]);
-
-  const fetchCourseCoverImage = async () => {
-    if (course?.title) {
-      try {
-        const imageUrl = await getRelevantImage(`professional education ${course.title} music industry course cover`);
-        setCourseCoverImage(imageUrl);
-      } catch (error) {
-        console.error('Error fetching course cover image:', error);
-      }
-    }
-  };
-
-  useEffect(() => {
-    fetchCourseCoverImage();
-  }, [course?.title]);
 
 
   const generateLessonContentForUser = async (lessonTitle: string, lessonDescription: string) => {
@@ -508,14 +520,29 @@ export default function CourseDetailPage() {
 
       {/* Hero Section with Course Cover */}
       <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
-        {courseCoverImage && (
+        {isGeneratingImage ? (
+          <div className="absolute inset-0 bg-black flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          </div>
+        ) : courseCoverImage ? (
           <div className="absolute inset-0">
             <img
               src={courseCoverImage}
-              alt="Course Cover"
+              alt={`${course?.title} Cover`}
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-black flex items-center justify-center">
+            <Button 
+              variant="outline"
+              onClick={generateCoverImage}
+              className="bg-black/50 hover:bg-black/70"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Generate Cover Image
+            </Button>
           </div>
         )}
         <div className="container mx-auto px-4 h-full flex items-center relative z-10">
@@ -695,9 +722,9 @@ export default function CourseDetailPage() {
                                       {progress.lessonContents[lesson.title]?.content?.practicalExercises?.map((exercise, i) => (
                                         <div key={i} className="bg-black/30 rounded-lg p-4">
                                           <div className="flex items-center gap-2 mb-2">
-                                            <DynamicIcon 
-                                              name={exercise?.icon || 'Pencil'} 
-                                              className="h-4 w-4 text-orange-500" 
+                                            <DynamicIcon
+                                              name={exercise?.icon || 'Pencil'}
+                                              className="h-4 w-4 text-orange-500"
                                             />
                                             <h5 className="font-medium text-white">{exercise?.title || 'Exercise'}</h5>
                                           </div>
@@ -887,8 +914,8 @@ export default function CourseDetailPage() {
                 className="bg-orange-500 hover:bg-orange-600"
               >
                 {selectedExamQuestion < (progress.lessonContents[currentExamLesson]?.content.exam.length || 0) - 1
-                                    ? 'Next Question'
-                    : 'Finish Exam'}
+                  ? 'Next Question'
+                  : 'Finish Exam'}
               </Button>
             )}
           </DialogFooter>
