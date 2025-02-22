@@ -20,7 +20,7 @@ const lessonContentSchema = z.object({
     practicalExercises: z.array(z.string()),
     additionalResources: z.array(z.string()),
     summary: z.string(),
-    exam: z.array(examQuestionSchema)
+    exam: z.array(examQuestionSchema).min(1) // Aseguramos que haya al menos una pregunta
   })
 });
 
@@ -77,6 +77,17 @@ function generateFallbackContent(lessonTitle: string, lessonDescription: string)
           ],
           correctAnswer: 1,
           explanation: `This lesson focuses on ${lessonTitle} and its practical applications in the music industry.`
+        },
+        {
+          question: "What is one of the key objectives of this lesson?",
+          options: [
+            "Learning industry best practices",
+            "Playing musical instruments",
+            "Writing song lyrics",
+            "Recording vocals"
+          ],
+          correctAnswer: 0,
+          explanation: "This lesson emphasizes learning and applying industry best practices in your music career."
         }
       ]
     }
@@ -97,7 +108,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
         'HTTP-Referer': window.location.origin,
         'X-Title': 'Artist Boost',
       },
-      dangerouslyAllowBrowser: true // Necesario para usar en el navegador
+      dangerouslyAllowBrowser: true
     });
 
     try {
@@ -106,7 +117,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
         messages: [
           {
             role: 'system',
-            content: `You are an expert music industry educator. Create a detailed lesson in this exact JSON format:
+            content: `You are an expert music industry educator. Create a detailed lesson with multiple-choice exam questions in this exact JSON format:
 {
   "title": "${lessonTitle}",
   "content": {
@@ -127,6 +138,12 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
         "options": ["4 possible answers as array"],
         "correctAnswer": 0,
         "explanation": "Detailed explanation of why this is the correct answer"
+      },
+      {
+        "question": "Another specific question about the content",
+        "options": ["4 possible answers as array"],
+        "correctAnswer": 1,
+        "explanation": "Detailed explanation for this answer"
       }
     ]
   }
@@ -134,7 +151,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
           },
           {
             role: 'user',
-            content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}`
+            content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}. Include at least 2 exam questions.`
           }
         ],
         temperature: 0.3,
