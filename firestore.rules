@@ -10,6 +10,11 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Allow read access to all authenticated users for public collections
+    match /{document=**} {
+      allow read: if isAuthenticated();
+    }
+
     // Course progress rules
     match /course_progress/{progressId} {
       allow read: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*');
@@ -35,8 +40,33 @@ service cloud.firestore {
         request.auth.uid == resource.data.createdBy;
     }
 
+    // User metrics
     match /users/{userId}/metrics/{metricId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Videos collection
+    match /videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Songs collection
+    match /songs/{songId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Activities collection
+    match /activities/{activityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Strategies collection
+    match /strategies/{strategyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
   }
 }

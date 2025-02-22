@@ -97,10 +97,9 @@ export default function EducationPage() {
 
   const generateRandomCourseData = () => {
     return {
-      price: Math.floor(Math.random() * (299 - 49 + 1)) + 49, // Random price between $49-$299
-      rating: (Math.random() * (5 - 3.5) + 3.5).toFixed(1), // Random rating between 3.5-5.0
-      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50, // Random reviews between 50-1000
-      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100, // Random students between 100-5000
+      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), 
+      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50, 
+      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100, 
     };
   };
 
@@ -126,7 +125,6 @@ export default function EducationPage() {
     try {
       setIsGenerating(true);
 
-      // Generate course thumbnail
       const imagePrompt = `professional education ${newCourse.title} ${newCourse.category} course cover`;
       const thumbnailUrl = await getRelevantImage(imagePrompt);
 
@@ -238,7 +236,6 @@ export default function EducationPage() {
 
     try {
       for (const course of sampleCourses) {
-        // Generate course thumbnail
         const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
         const thumbnailUrl = await getRelevantImage(imagePrompt);
 
@@ -274,7 +271,6 @@ export default function EducationPage() {
 
         createdCount++;
 
-        // Notify progress
         toast({
           title: "Progress",
           description: `Created course ${createdCount}/5: ${course.title}`
@@ -322,7 +318,7 @@ export default function EducationPage() {
             </p>
           </div>
 
-          <Dialog open={isCreatingCourse} onOpenChange={setIsCreatingCourse}>
+          <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="mr-2 h-4 w-4" />
@@ -347,9 +343,7 @@ export default function EducationPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label htmlFor="description" className="text-sm font-medium">
-                    Description
-                  </label>
+                  <label htmlFor="description" className="text-sm font-medium">Description</label>
                   <Textarea
                     id="description"
                     value={newCourse.description}
@@ -358,9 +352,7 @@ export default function EducationPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label htmlFor="price" className="text-sm font-medium">
-                    Price (USD)
-                  </label>
+                  <label htmlFor="price" className="text-sm font-medium">Price (USD)</label>
                   <Input
                     id="price"
                     type="number"
@@ -370,9 +362,7 @@ export default function EducationPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label htmlFor="category" className="text-sm font-medium">
-                    Category
-                  </label>
+                  <label htmlFor="category" className="text-sm font-medium">Category</label>
                   <Input
                     id="category"
                     value={newCourse.category}
@@ -381,9 +371,7 @@ export default function EducationPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label htmlFor="level" className="text-sm font-medium">
-                    Level
-                  </label>
+                  <label htmlFor="level" className="text-sm font-medium">Level</label>
                   <select
                     id="level"
                     value={newCourse.level}
@@ -405,23 +393,6 @@ export default function EducationPage() {
                     </>
                   ) : (
                     "Create Course"
-                  )}
-                </Button>
-                <Button
-                  className="bg-orange-500 hover:bg-orange-600"
-                  onClick={createSampleCourses}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Courses...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create 5 Sample Courses
-                    </>
                   )}
                 </Button>
               </DialogFooter>
@@ -507,12 +478,12 @@ export default function EducationPage() {
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      <span className="font-medium text-white">{Number(course.rating).toFixed(1)}</span>
+                      <span className="font-medium text-white">{course.rating.toFixed(1)}</span>
                       <span className="text-gray-400">({course.totalReviews} reviews)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium text-white">${Number(course.price).toFixed(2)}</span>
+                      <span className="font-medium text-white">${course.price.toFixed(2)}</span>
                     </div>
                   </div>
 
