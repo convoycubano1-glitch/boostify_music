@@ -692,18 +692,23 @@ export default function CourseDetailPage() {
                                       Practical Exercises
                                     </h4>
                                     <div className="space-y-4 mt-2">
-                                      {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
+                                      {progress.lessonContents[lesson.title]?.content?.practicalExercises?.map((exercise, i) => (
                                         <div key={i} className="bg-black/30 rounded-lg p-4">
                                           <div className="flex items-center gap-2 mb-2">
-                                            <DynamicIcon name={exercise.icon} className="h-4 w-4 text-orange-500" />
-                                            <h5 className="font-medium text-white">{exercise.title}</h5>
+                                            <DynamicIcon 
+                                              name={exercise?.icon || 'Pencil'} 
+                                              className="h-4 w-4 text-orange-500" 
+                                            />
+                                            <h5 className="font-medium text-white">{exercise?.title || 'Exercise'}</h5>
                                           </div>
-                                          <p className="text-gray-300 mb-2">{exercise.description}</p>
-                                          <ol className="list-decimal list-inside space-y-1">
-                                            {exercise.steps.map((step, j) => (
-                                              <li key={j} className="text-gray-300">{step}</li>
-                                            ))}
-                                          </ol>
+                                          <p className="text-gray-300 mb-2">{exercise?.description}</p>
+                                          {exercise?.steps && Array.isArray(exercise.steps) && (
+                                            <ol className="list-decimal list-inside space-y-1">
+                                              {exercise.steps.map((step, j) => (
+                                                <li key={j} className="text-gray-300">{step}</li>
+                                              ))}
+                                            </ol>
+                                          )}
                                         </div>
                                       ))}
                                     </div>
