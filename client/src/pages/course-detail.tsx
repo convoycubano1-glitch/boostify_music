@@ -51,7 +51,7 @@ export default function CourseDetailPage() {
     generatedImages: {},
     timeSpent: 0,
     startedAt: new Date(),
-    lessonContents: {}
+    lessonContents: {} // Ensure this is initialized as an empty object
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -173,7 +173,11 @@ export default function CourseDetailPage() {
     }
   };
 
-  const generateLessonContent = async (lessonTitle: string, lessonDescription: string) => {
+  const generateLessonContentForUser = async (lessonTitle: string, lessonDescription: string) => {
+    if (!progress.lessonContents) {
+      setProgress(prev => ({ ...prev, lessonContents: {} }));
+    }
+
     if (progress.lessonContents[lessonTitle]) {
       setSelectedLesson(progress.lessonContents[lessonTitle]);
       return;
@@ -183,7 +187,10 @@ export default function CourseDetailPage() {
     try {
       const content = await generateLessonContent(lessonTitle, lessonDescription);
 
-      // Update progress with new content
+      if (!content) {
+        throw new Error('Failed to generate lesson content');
+      }
+
       const newProgress = {
         ...progress,
         lessonContents: {
@@ -193,7 +200,7 @@ export default function CourseDetailPage() {
       };
 
       // Save to Firestore
-      if (auth.currentUser) {
+      if (auth.currentUser && courseId) {
         const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
         await updateDoc(progressRef, {
           lessonContents: newProgress.lessonContents
@@ -318,8 +325,8 @@ export default function CourseDetailPage() {
           {course.content.curriculum.map((lesson, index) => {
             const isCompleted = progress.completedLessons.includes(lesson.title);
             const isLocked = index > progress.currentLesson;
-            const hasImage = progress.generatedImages[lesson.title];
-            const hasContent = progress.lessonContents[lesson.title];
+            const hasImage = progress.generatedImages?.[lesson.title];
+            const hasContent = progress.lessonContents?.[lesson.title];
 
             return (
               <motion.div
@@ -423,7 +430,7 @@ export default function CourseDetailPage() {
                   <div className="flex gap-4">
                     {!isLocked && !hasContent && (
                       <Button
-                        onClick={() => generateLessonContent(lesson.title, lesson.description)}
+                        onClick={() => generateLessonContentForUser(lesson.title, lesson.description)}
                         disabled={isGeneratingContent}
                         variant="outline"
                       >
