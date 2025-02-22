@@ -18,7 +18,7 @@ export async function generateCourseContent(prompt: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "deepseek/deepseek-r1-distill-llama-70b:free",
+        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
         messages: [
           {
             role: "system",

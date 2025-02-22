@@ -52,91 +52,88 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
     }
 
     const openai = new OpenAI({
-      baseURL: 'https://openrouter.ai/api/v1',
       apiKey: import.meta.env.VITE_OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultQuery: { transforms: ["middle-out"] },
       defaultHeaders: {
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'Artist Boost',
+        'X-Title': 'Artist Boost - Music Education Platform',
       },
       dangerouslyAllowBrowser: true
     });
 
-    // Define the lesson structure template
     const lessonTemplate = {
       title: lessonTitle,
       content: {
-        introduction: "Write a detailed introduction to the topic (2-3 paragraphs)",
-        coverImagePrompt: "Describe a professional image that represents this lesson",
+        introduction: "Write a detailed introduction about the topic",
+        coverImagePrompt: "Describe a professional image for this lesson",
         keyPoints: [
           {
-            point: "Key point 1",
+            point: "Important learning point",
             icon: "Music"
-          },
-          {
-            point: "Key point 2",
-            icon: "Star"
-          },
-          {
-            point: "Key point 3",
-            icon: "Book"
           }
         ],
         mainContent: [
           {
-            subtitle: "First Section",
+            subtitle: "Main topic section",
             icon: "Lightbulb",
-            paragraphs: ["Detailed content paragraph"],
-            imagePrompt: "Description for section image"
+            paragraphs: ["Detailed explanation"],
+            imagePrompt: "Visual representation description"
           }
         ],
         practicalExercises: [
           {
-            title: "Exercise 1",
-            description: "Exercise description",
-            steps: ["Step 1", "Step 2", "Step 3"],
+            title: "Hands-on Exercise",
+            description: "What the student will learn",
+            steps: ["Step-by-step instructions"],
             icon: "Pencil"
           }
         ],
         additionalResources: [
           {
-            title: "Resource 1",
+            title: "Further Learning",
             url: "https://example.com",
-            description: "Resource description",
+            description: "What this resource offers",
             icon: "Link"
           }
         ],
-        summary: "Comprehensive summary of the lesson",
+        summary: "Key takeaways from the lesson",
         exam: [
           {
-            question: "Sample question",
-            options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+            question: "Test knowledge question",
+            options: ["Option A", "Option B", "Option C", "Option D"],
             correctAnswer: 0,
-            explanation: "Explanation for the correct answer"
+            explanation: "Why this is the correct answer"
           }
         ]
       }
     };
+
+    console.log('Making API request to OpenRouter...');
 
     const completion = await openai.chat.completions.create({
       model: 'anthropic/claude-3-opus:beta',
       messages: [
         {
           role: 'system',
-          content: `You are an expert music industry educator creating comprehensive educational content. Generate detailed lesson content following the exact JSON structure provided. Include relevant Lucide icon names from this list: Music, Star, Book, Lightbulb, FileText, Link, Pencil, Trophy, Clock, Users, Award, ChevronRight. Create detailed, practical content that is immediately applicable to music industry professionals.`
+          content: `You are an expert music industry educator. Create detailed lesson content following the exact structure provided. Use only these Lucide icons: Music, Star, Book, Lightbulb, FileText, Link, Pencil, Trophy, Clock, Users, Award, ChevronRight.`
         },
         {
           role: 'user',
-          content: `Create a comprehensive lesson about "${lessonTitle}" with this description: "${lessonDescription}". 
-            Return valid JSON matching this structure exactly: ${JSON.stringify(lessonTemplate, null, 2)}
+          content: `Generate a comprehensive lesson about "${lessonTitle}" based on this description: "${lessonDescription}".
 
-            Requirements:
-            - Must have at least 3 key points
-            - Must have at least 3 main content sections
-            - Must have at least 3 practical exercises
-            - Must have at least 3 additional resources
-            - Must have at least 3 exam questions
-            - Only use icon names from the provided list
-            - Content should be practical and immediately applicable`
+Return the content in this exact JSON structure:
+${JSON.stringify(lessonTemplate, null, 2)}
+
+Requirements:
+- At least 3 key points with valid icons
+- At least 3 content sections with relevant icons
+- At least 3 practical exercises with clear steps
+- At least 3 additional resources with valid URLs
+- At least 3 exam questions with detailed explanations
+- All icons must be from the provided list
+- Content should be practical and immediately applicable
+- Each section should be detailed and thorough`
         }
       ],
       temperature: 0.7,
@@ -144,21 +141,24 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
     });
 
     if (!completion.choices[0]?.message?.content) {
-      console.error('Invalid API response format:', completion);
+      console.error('Invalid API response:', completion);
       throw new Error('Invalid API response format');
     }
 
     const content = completion.choices[0].message.content.trim();
-    console.log('Generated content:', content);
+    console.log('Raw API response:', content);
 
     try {
       const parsedContent = JSON.parse(content);
       console.log('Parsed content:', parsedContent);
-      return lessonContentSchema.parse(parsedContent);
+
+      const validatedContent = lessonContentSchema.parse(parsedContent);
+      console.log('Validated content:', validatedContent);
+
+      return validatedContent;
     } catch (parseError) {
-      console.error('Error parsing content:', parseError);
-      console.error('Raw content:', content);
-      throw new Error('Failed to parse lesson content: Invalid JSON format');
+      console.error('Error parsing/validating content:', parseError);
+      throw new Error('Failed to parse or validate lesson content');
     }
 
   } catch (error) {
