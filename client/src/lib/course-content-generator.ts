@@ -84,7 +84,23 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
         messages: [
           {
             role: 'system',
-            content: `Generate a lesson about ${lessonTitle}. Include introduction, key points, main content with subtitles and paragraphs, practical exercises, additional resources, and summary. Respond in JSON format.`
+            content: `You are an expert music industry educator. Create a detailed lesson in this exact JSON format:
+{
+  "title": "${lessonTitle}",
+  "content": {
+    "introduction": "2-3 paragraphs introducing the topic",
+    "keyPoints": ["4-6 key points as string array"],
+    "mainContent": [
+      {
+        "subtitle": "section heading",
+        "paragraphs": ["detailed explanation paragraph", "another paragraph"]
+      }
+    ],
+    "practicalExercises": ["3-5 exercises as string array"],
+    "additionalResources": ["3-5 resources as string array"],
+    "summary": "one paragraph summary"
+  }
+}`
           },
           {
             role: 'user',
@@ -105,7 +121,9 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
           ? JSON.parse(completion.choices[0].message.content)
           : completion.choices[0].message.content;
 
-        return lessonContentSchema.parse(parsedContent);
+        // Intentar validar con el esquema
+        const validatedContent = lessonContentSchema.parse(parsedContent);
+        return validatedContent;
       } catch (parseError) {
         console.error('Failed to parse API response:', parseError);
         return generateFallbackContent(lessonTitle, lessonDescription);
