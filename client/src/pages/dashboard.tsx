@@ -4,22 +4,25 @@ import { PlaylistManager } from "@/components/spotify/playlist-manager";
 import { InstagramConnect } from "@/components/instagram/instagram-connect";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { 
-  Music2, 
-  TrendingUp, 
-  Activity, 
-  Users, 
-  Calendar, 
-  Globe, 
-  Youtube, 
-  FileText, 
-  Megaphone, 
-  Building2, 
+import {
+  Music2,
+  TrendingUp,
+  Activity,
+  Users,
+  Calendar,
+  Globe,
+  Youtube,
+  FileText,
+  Megaphone,
+  Building2,
   Store,
   Video,
   Bot,
   Phone,
-  Palette
+  Palette,
+  GraduationCap,
+  ShoppingBag,
+  Sparkles
 } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import { useEffect, useState } from "react";
@@ -46,7 +49,10 @@ export default function Dashboard() {
     musicVideos: 0,
     aiVideos: 0,
     contacts: 0,
-    styleRecommendations: 0
+    styleRecommendations: 0,
+    coursesEnrolled: 0,
+    merchandiseSold: 0,
+    aiAgentsUsed: 0
   });
 
   useEffect(() => {
@@ -69,6 +75,9 @@ export default function Dashboard() {
             aiVideos: 0,
             contacts: 0,
             styleRecommendations: 0,
+            coursesEnrolled: 0,
+            merchandiseSold: 0,
+            aiAgentsUsed: 0,
             updatedAt: new Date()
           };
 
@@ -86,7 +95,10 @@ export default function Dashboard() {
             musicVideos: data.musicVideos || 0,
             aiVideos: data.aiVideos || 0,
             contacts: data.contacts || 0,
-            styleRecommendations: data.styleRecommendations || 0
+            styleRecommendations: data.styleRecommendations || 0,
+            coursesEnrolled: data.coursesEnrolled || 0,
+            merchandiseSold: data.merchandiseSold || 0,
+            aiAgentsUsed: data.aiAgentsUsed || 0
           });
         }
       } catch (error) {
@@ -104,32 +116,32 @@ export default function Dashboard() {
 
   const services = [
     {
-      name: "Music Videos",
-      description: "Create and manage music videos",
-      icon: Video,
-      route: "/music-video-creator",
-      stats: metrics.musicVideos,
-      statsLabel: "Videos",
+      name: "AI Agents",
+      description: "Smart AI assistants",
+      icon: Bot,
+      route: "/ai-agents",
+      stats: metrics.aiAgentsUsed,
+      statsLabel: "Active Agents",
       color: "text-purple-500",
       highlight: true
     },
     {
-      name: "AI Video Creation",
-      description: "Generate videos with AI",
-      icon: Bot,
-      route: "/music-video-creator", 
-      stats: metrics.aiVideos,
-      statsLabel: "AI Videos",
-      color: "text-cyan-500",
+      name: "Education Hub",
+      description: "Learn music industry skills",
+      icon: GraduationCap,
+      route: "/education",
+      stats: metrics.coursesEnrolled,
+      statsLabel: "Courses",
+      color: "text-blue-500",
       highlight: true
     },
     {
-      name: "Contacts",
-      description: "Manage your network",
-      icon: Phone,
-      route: "/contacts",
-      stats: metrics.contacts,
-      statsLabel: "Contacts",
+      name: "Merchandise Store",
+      description: "Create custom merchandise",
+      icon: ShoppingBag,
+      route: "/merchandise",
+      stats: metrics.merchandiseSold,
+      statsLabel: "Products",
       color: "text-green-500",
       highlight: true
     },
@@ -144,12 +156,12 @@ export default function Dashboard() {
       highlight: true
     },
     {
-      name: "Spotify Growth",
-      description: "Boost your Spotify presence",
-      icon: SiSpotify,
-      route: "/spotify",
-      stats: metrics.spotifyFollowers,
-      statsLabel: "Followers",
+      name: "Music Videos",
+      description: "Create and manage music videos",
+      icon: Video,
+      route: "/music-video-creator",
+      stats: metrics.musicVideos,
+      statsLabel: "Videos",
       color: "text-orange-500"
     },
     {
@@ -162,12 +174,12 @@ export default function Dashboard() {
       color: "text-orange-500"
     },
     {
-      name: "Merchandise Store",
-      description: "Create custom merchandise",
-      icon: Store,
-      route: "/merchandise",
-      stats: metrics.totalEngagement,
-      statsLabel: "Products",
+      name: "Contacts",
+      description: "Manage your network",
+      icon: Phone,
+      route: "/contacts",
+      stats: metrics.contacts,
+      statsLabel: "Contacts",
       color: "text-orange-500"
     },
     {
@@ -206,7 +218,7 @@ export default function Dashboard() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Featured Services</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {services.slice(0, 4).map((service) => (
+                {services.filter(s => s.highlight).map((service) => (
                   <Link key={service.name} href={service.route}>
                     <motion.div
                       whileHover={{ scale: 1.02 }}
@@ -243,7 +255,7 @@ export default function Dashboard() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Other Services</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {services.slice(4).map((service) => (
+                {services.filter(s => !s.highlight).map((service) => (
                   <Link key={service.name} href={service.route}>
                     <Card className="p-6 cursor-pointer hover:bg-orange-500/5 transition-colors border-orange-500/10 hover:border-orange-500/30">
                       <div className="flex items-center gap-3">
