@@ -30,7 +30,6 @@ export type LessonContent = z.infer<typeof lessonContentSchema>;
 export async function generateLessonContent(lessonTitle: string, lessonDescription: string): Promise<LessonContent> {
   try {
     if (!import.meta.env.VITE_OPENROUTER_API_KEY) {
-      console.warn('OpenRouter API key not configured');
       throw new Error('OpenRouter API key not configured');
     }
 
@@ -49,33 +48,29 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       messages: [
         {
           role: 'system',
-          content: `You are an expert music industry educator. Create a detailed lesson with exam questions in JSON format. Include at least 2 exam questions.`
+          content: `You are an expert music industry educator. Create a detailed lesson with exam questions in pure JSON format without any markdown code blocks or additional formatting.`
         },
         {
           role: 'user',
-          content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}. The response must be in this exact JSON format:
+          content: `Create a comprehensive lesson about: "${lessonTitle}" with this description: ${lessonDescription}. Return a JSON object with this structure:
 {
-  "title": "${lessonTitle}",
+  "title": string,
   "content": {
-    "introduction": "2-3 paragraphs introducing the topic",
-    "keyPoints": ["4-6 key points"],
-    "mainContent": [
-      {
-        "subtitle": "section heading",
-        "paragraphs": ["detailed explanation", "more details"]
-      }
-    ],
-    "practicalExercises": ["3-5 exercises"],
-    "additionalResources": ["3-5 resources"],
-    "summary": "one paragraph summary",
-    "exam": [
-      {
-        "question": "specific question about the content",
-        "options": ["four possible answers"],
-        "correctAnswer": 0,
-        "explanation": "why this is correct"
-      }
-    ]
+    "introduction": string (2-3 paragraphs),
+    "keyPoints": string[] (4-6 items),
+    "mainContent": Array<{
+      "subtitle": string,
+      "paragraphs": string[]
+    }>,
+    "practicalExercises": string[] (3-5 items),
+    "additionalResources": string[] (3-5 items),
+    "summary": string,
+    "exam": Array<{
+      "question": string,
+      "options": string[],
+      "correctAnswer": number,
+      "explanation": string
+    }> (minimum 2 questions)
   }
 }`
         }
@@ -88,7 +83,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       throw new Error('Invalid API response format');
     }
 
-    const parsedContent = JSON.parse(completion.choices[0].message.content);
+    const parsedContent = JSON.parse(completion.choices[0].message.content.trim());
     return lessonContentSchema.parse(parsedContent);
 
   } catch (error) {
