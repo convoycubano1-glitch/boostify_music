@@ -17,8 +17,8 @@ app.use(express.urlencoded({ extended: false }));
 // Setup static file serving based on environment
 if (process.env.NODE_ENV === "production") {
   log('Running in production mode');
-  // Serve static files from the dist directory
-  const distPath = path.join(process.cwd(), 'dist');
+  // Serve static files from the dist/public directory
+  const distPath = path.join(process.cwd(), 'dist', 'public');
   log(`Serving static files from: ${distPath}`);
 
   if (!fs.existsSync(distPath)) {
