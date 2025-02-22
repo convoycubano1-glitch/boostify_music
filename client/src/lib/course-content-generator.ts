@@ -23,20 +23,27 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       throw new Error('OpenRouter API key is not configured');
     }
 
-    const response = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Artist Boost - Course Content Generation',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-2',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert music industry educator creating comprehensive lesson content for professional music industry courses. 
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    try {
+      const response = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Artist Boost - Course Content Generation',
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-2',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert music industry educator creating comprehensive lesson content for professional music industry courses. 
 Generate detailed, practical content with real-world examples in JSON format with the following structure:
 
 {
@@ -55,41 +62,53 @@ Generate detailed, practical content with real-world examples in JSON format wit
     "summary": "Concise summary of main concepts"
   }
 }`
-          },
-          {
-            role: 'user',
-            content: `Generate comprehensive lesson content for: "${lessonTitle}"
+            },
+            {
+              role: 'user',
+              content: `Generate comprehensive lesson content for: "${lessonTitle}"
 Topic Description: ${lessonDescription}
 Focus on practical knowledge, real-world examples, and current industry practices.
 Include specific tools, techniques, and strategies used in the modern music industry.
 IMPORTANT: Respond only with the JSON structure, no additional text.`
-          }
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" }
-      })
-    });
+            }
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" }
+        }),
+        signal: controller.signal,
+        credentials: 'omit' // Explicitly disable credentials
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to generate lesson content: ${response.status} - ${errorText}`);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to generate lesson content: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from OpenRouter API');
+      }
+
+      let content;
+      try {
+        content = JSON.parse(data.choices[0].message.content);
+      } catch (parseError) {
+        console.error('Error parsing API response:', parseError);
+        throw new Error('Failed to parse lesson content');
+      }
+
+      // Validate the response against our schema
+      return lessonContentSchema.parse(content);
+
+    } catch (fetchError) {
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Request timed out after 30 seconds');
+      }
+      throw fetchError;
     }
-
-    const data = await response.json();
-
-    if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from OpenRouter API');
-    }
-
-    let content;
-    try {
-      content = JSON.parse(data.choices[0].message.content);
-    } catch (parseError) {
-      console.error('Error parsing API response:', parseError);
-      throw new Error('Failed to parse lesson content');
-    }
-
-    return lessonContentSchema.parse(content);
 
   } catch (error) {
     console.error('Error generating lesson content:', error);
