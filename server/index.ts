@@ -28,46 +28,64 @@ app.use((req, res, next) => {
 // Setup static file serving based on environment
 if (process.env.NODE_ENV === "production") {
   log('Running in production mode');
-  // Serve static files from the dist/public directory
+
+  // Determine the correct dist path
   const distPath = path.join(process.cwd(), 'dist', 'public');
   log(`Serving static files from: ${distPath}`);
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+  // Log directory contents for debugging
+  try {
+    const files = fs.readdirSync(distPath);
+    log(`Found files in ${distPath}:`, files);
+
+    const assetsPath = path.join(distPath, 'assets');
+    if (fs.existsSync(assetsPath)) {
+      const assetFiles = fs.readdirSync(assetsPath);
+      log(`Found assets in ${assetsPath}:`, assetFiles);
+    }
+  } catch (error) {
+    log(`Error reading dist directory: ${error}`);
+    throw new Error(`Could not access the build directory: ${distPath}`);
   }
 
-  // Serve static files with detailed error logging
-  app.use('/', express.static(distPath, {
-    index: false, // Don't serve index.html for every route
-    fallthrough: true
-  }));
-
-  // Serve static assets with proper cache headers
+  // Serve static assets with cache headers
   app.use('/assets', express.static(path.join(distPath, 'assets'), {
     maxAge: '1y',
     etag: false
   }));
 
-  // SPA middleware - send index.html for all non-asset and non-api routes
+  // Serve other static files except index.html
+  app.use(express.static(distPath, {
+    index: false
+  }));
+
+  // Handle SPA routes - serve index.html for all non-asset requests
   app.get('*', (req, res, next) => {
+    // Skip API routes and asset routes
     if (req.path.startsWith('/api') || req.path.startsWith('/assets')) {
       return next();
     }
 
     const indexPath = path.join(distPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      log(`Serving index.html for path: ${req.path}`);
-      res.sendFile(indexPath);
-    } else {
-      next(new Error(`index.html not found at ${indexPath}`));
+    log(`Serving index.html for path: ${req.path}`);
+
+    try {
+      if (fs.existsSync(indexPath)) {
+        const indexContent = fs.readFileSync(indexPath, 'utf-8');
+        log(`index.html found and has content length: ${indexContent.length}`);
+        res.sendFile(indexPath);
+      } else {
+        log(`Error: index.html not found at ${indexPath}`);
+        next(new Error(`index.html not found at ${indexPath}`));
+      }
+    } catch (error) {
+      log(`Error accessing index.html: ${error}`);
+      next(error);
     }
   });
 
 } else {
   log('Running in development mode');
-  // Serve static files from the public folder in development
   app.use(express.static(path.join(process.cwd(), 'client/public')));
 }
 
@@ -106,8 +124,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
       await setupVite(app, server);
     }
 
-    // Start server on port 5000
-    const PORT = 5000;
+    // Use dynamic port from environment or fallback to 3000
+    const PORT = parseInt(process.env.PORT || "3000");
     server.listen(PORT, "0.0.0.0", () => {
       log(`Server running on port ${PORT} in ${app.get("env")} mode`);
       log(`Static files will be served from: ${process.env.NODE_ENV === "production" ? 
