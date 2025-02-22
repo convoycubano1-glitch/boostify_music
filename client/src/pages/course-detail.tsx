@@ -43,6 +43,7 @@ export default function CourseDetailPage() {
   const [location] = useLocation();
   const courseId = location.split('/').pop() || '';
   const { toast } = useToast();
+
   const [course, setCourse] = useState<Course | null>(null);
   const [progress, setProgress] = useState<CourseProgress>({
     completedLessons: [],
@@ -53,13 +54,14 @@ export default function CourseDetailPage() {
     startedAt: new Date(),
     lessonContents: {},
   });
+
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<LessonContent | null>(null);
 
-useEffect(() => {
+  useEffect(() => {
     const fetchCourseAndProgress = async () => {
       try {
         if (!courseId) {
@@ -84,8 +86,11 @@ useEffect(() => {
           return;
         }
 
-        const courseData = courseSnap.data() as Course;
-        courseData.id = courseSnap.id;
+        const courseData = {
+          id: courseSnap.id,
+          ...courseSnap.data()
+        } as Course;
+
         setCourse(courseData);
 
         // Fetch user's progress if authenticated
@@ -135,6 +140,61 @@ useEffect(() => {
     fetchCourseAndProgress();
   }, [courseId, toast]);
 
+  const generateLessonContentForUser = async (lessonTitle: string, lessonDescription: string) => {
+    if (!lessonTitle || !lessonDescription) {
+      toast({
+        title: "Error",
+        description: "Missing lesson information",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const currentLessonContents = progress.lessonContents || {};
+
+    if (currentLessonContents[lessonTitle]) {
+      setSelectedLesson(currentLessonContents[lessonTitle]);
+      return;
+    }
+
+    setIsGeneratingContent(true);
+    try {
+      const content = await generateLessonContent(lessonTitle, lessonDescription);
+
+      const newProgress = {
+        ...progress,
+        lessonContents: {
+          ...currentLessonContents,
+          [lessonTitle]: content
+        }
+      };
+
+      if (auth.currentUser && courseId) {
+        const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
+        await updateDoc(progressRef, {
+          lessonContents: newProgress.lessonContents
+        });
+      }
+
+      setProgress(newProgress);
+      setSelectedLesson(content);
+
+      toast({
+        title: "Success",
+        description: "Lesson content generated successfully"
+      });
+    } catch (error) {
+      console.error('Error generating lesson content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate lesson content. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingContent(false);
+    }
+  };
+
   const generateLessonImage = async (lessonTitle: string, lessonDescription: string) => {
     if (progress.generatedImages[lessonTitle]) return;
 
@@ -173,62 +233,6 @@ useEffect(() => {
       });
     } finally {
       setIsGeneratingImage(false);
-    }
-  };
-
-  const generateLessonContentForUser = async (lessonTitle: string, lessonDescription: string) => {
-    if (!lessonTitle || !lessonDescription) {
-      console.error('Missing lesson title or description');
-      return;
-    }
-
-    const currentLessonContents = progress.lessonContents || {};
-
-    if (currentLessonContents[lessonTitle]) {
-      setSelectedLesson(currentLessonContents[lessonTitle]);
-      return;
-    }
-
-    setIsGeneratingContent(true);
-    try {
-      const content = await generateLessonContent(lessonTitle, lessonDescription);
-
-      if (!content) {
-        throw new Error('Failed to generate lesson content');
-      }
-
-      const newProgress = {
-        ...progress,
-        lessonContents: {
-          ...currentLessonContents,
-          [lessonTitle]: content
-        }
-      };
-
-      // Save to Firestore
-      if (auth.currentUser && courseId) {
-        const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
-        await updateDoc(progressRef, {
-          lessonContents: newProgress.lessonContents
-        });
-      }
-
-      setProgress(newProgress);
-      setSelectedLesson(content);
-
-      toast({
-        title: "Success",
-        description: "Lesson content generated successfully"
-      });
-    } catch (error) {
-      console.error('Error generating lesson content:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate lesson content",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGeneratingContent(false);
     }
   };
 
