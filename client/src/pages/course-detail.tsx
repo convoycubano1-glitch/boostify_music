@@ -14,16 +14,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateLessonContent, type LessonContent } from "@/lib/course-content-generator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
 
 interface CourseProgress {
   completedLessons: string[];
+  completedExams: string[];
   lastAccessedAt: Date;
   currentLesson: number;
   generatedImages: Record<string, string>;
+  lessonImages: Record<string, string>;
   timeSpent: number;
   startedAt: Date;
   lastCompletedAt?: Date;
   lessonContents: Record<string, LessonContent>;
+  examScores: Record<string, number>;
 }
 
 interface Course {
@@ -47,12 +54,15 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [progress, setProgress] = useState<CourseProgress>({
     completedLessons: [],
+    completedExams: [],
     lastAccessedAt: new Date(),
     currentLesson: 0,
     generatedImages: {},
+    lessonImages: {},
     timeSpent: 0,
     startedAt: new Date(),
     lessonContents: {},
+    examScores: {}
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +70,14 @@ export default function CourseDetailPage() {
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<LessonContent | null>(null);
+  const [showExam, setShowExam] = useState(false);
+  const [selectedExamQuestion, setSelectedExamQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [examResult, setExamResult] = useState<{
+    correct: boolean;
+    explanation: string;
+  } | null>(null);
+  const [currentExamLesson, setCurrentExamLesson] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
@@ -73,7 +91,6 @@ export default function CourseDetailPage() {
           return;
         }
 
-        // Fetch course details
         const courseRef = doc(db, 'courses', courseId);
         const courseSnap = await getDoc(courseRef);
 
@@ -93,7 +110,6 @@ export default function CourseDetailPage() {
 
         setCourse(courseData);
 
-        // Fetch user's progress if authenticated
         if (auth.currentUser) {
           const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
           const progressSnap = await getDoc(progressRef);
@@ -102,27 +118,42 @@ export default function CourseDetailPage() {
             const progressData = progressSnap.data();
             setProgress({
               completedLessons: progressData.completedLessons || [],
+              completedExams: progressData.completedExams || [],
               lastAccessedAt: new Date(progressData.lastAccessedAt),
               currentLesson: progressData.currentLesson || 0,
               generatedImages: progressData.generatedImages || {},
+              lessonImages: progressData.lessonImages || {},
               timeSpent: progressData.timeSpent || 0,
               startedAt: new Date(progressData.startedAt),
               lastCompletedAt: progressData.lastCompletedAt ? new Date(progressData.lastCompletedAt) : undefined,
-              lessonContents: progressData.lessonContents || {}
+              lessonContents: progressData.lessonContents || {},
+              examScores: progressData.examScores || {}
             });
           } else {
-            // Initialize progress document if it doesn't exist
-            const initialProgress: CourseProgress = {
+            await setDoc(progressRef, {
               completedLessons: [],
+              completedExams: [],
               lastAccessedAt: new Date(),
               currentLesson: 0,
               generatedImages: {},
+              lessonImages: {},
               timeSpent: 0,
               startedAt: new Date(),
-              lessonContents: {}
-            };
-            await setDoc(progressRef, initialProgress);
-            setProgress(initialProgress);
+              lessonContents: {} ,
+              examScores: {}
+            });
+            setProgress({
+              completedLessons: [],
+              completedExams: [],
+              lastAccessedAt: new Date(),
+              currentLesson: 0,
+              generatedImages: {},
+              lessonImages: {},
+              timeSpent: 0,
+              startedAt: new Date(),
+              lessonContents: {},
+              examScores: {}
+            });
           }
         }
       } catch (error) {
@@ -202,7 +233,6 @@ export default function CourseDetailPage() {
     try {
       const imageUrl = await getRelevantImage(`educational illustration ${lessonTitle} ${lessonDescription}`);
 
-      // Update progress with new image
       const newProgress = {
         ...progress,
         generatedImages: {
@@ -211,7 +241,6 @@ export default function CourseDetailPage() {
         }
       };
 
-      // Save to Firestore
       if (auth.currentUser) {
         const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
         await updateDoc(progressRef, {
@@ -269,6 +298,73 @@ export default function CourseDetailPage() {
       });
     } finally {
       setIsSavingProgress(false);
+    }
+  };
+
+  const startExam = async (lessonTitle: string) => {
+    if (!progress.lessonContents[lessonTitle]) {
+      toast({
+        title: "Error",
+        description: "Please generate lesson content first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setCurrentExamLesson(lessonTitle);
+    setSelectedExamQuestion(0);
+    setSelectedAnswer(null);
+    setExamResult(null);
+    setShowExam(true);
+  };
+
+  const checkAnswer = async () => {
+    if (!currentExamLesson || selectedAnswer === null) return;
+
+    const currentLesson = progress.lessonContents[currentExamLesson];
+    const currentQuestion = currentLesson.content.exam[selectedExamQuestion];
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+
+    setExamResult({
+      correct: isCorrect,
+      explanation: currentQuestion.explanation
+    });
+
+    if (isCorrect && selectedExamQuestion === currentLesson.content.exam.length - 1) {
+      const newProgress = {
+        ...progress,
+        completedExams: [...(progress.completedExams || []), currentExamLesson],
+        examScores: {
+          ...(progress.examScores || {}),
+          [currentExamLesson]: 100 
+        }
+      };
+
+      if (auth.currentUser) {
+        const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
+        await updateDoc(progressRef, {
+          completedExams: newProgress.completedExams,
+          examScores: newProgress.examScores
+        });
+      }
+
+      setProgress(newProgress);
+      toast({
+        title: "Congratulations!",
+        description: "You've completed the exam successfully!"
+      });
+    }
+  };
+
+  const nextQuestion = () => {
+    if (!currentExamLesson) return;
+    const currentLesson = progress.lessonContents[currentExamLesson];
+    if (selectedExamQuestion < currentLesson.content.exam.length - 1) {
+      setSelectedExamQuestion(prev => prev + 1);
+      setSelectedAnswer(null);
+      setExamResult(null);
+    } else {
+      setShowExam(false);
+      setCurrentExamLesson(null);
     }
   };
 
@@ -339,6 +435,7 @@ export default function CourseDetailPage() {
         <div className="grid gap-6">
           {course.content.curriculum.map((lesson, index) => {
             const isCompleted = progress.completedLessons.includes(lesson.title);
+            const isExamCompleted = progress.completedExams?.includes(lesson.title);
             const isLocked = index > progress.currentLesson;
             const hasImage = progress.generatedImages?.[lesson.title];
             const hasContent = progress.lessonContents?.[lesson.title];
@@ -371,65 +468,84 @@ export default function CourseDetailPage() {
                   </div>
 
                   {hasContent && (
-                    <Accordion type="single" collapsible className="mb-4">
-                      <AccordionItem value="content">
-                        <AccordionTrigger>View Lesson Content</AccordionTrigger>
-                        <AccordionContent>
-                          <ScrollArea className="h-[400px] rounded-md border p-4">
-                            <div className="space-y-4">
-                              <div>
-                                <h4 className="font-semibold text-lg text-orange-500">Introduction</h4>
-                                <p className="text-gray-300">{progress.lessonContents[lesson.title].content.introduction}</p>
-                              </div>
+                    <div className="mt-4 space-y-4">
+                      <Accordion type="single" collapsible className="mb-4">
+                        <AccordionItem value="content">
+                          <AccordionTrigger>View Lesson Content</AccordionTrigger>
+                          <AccordionContent>
+                            <ScrollArea className="h-[400px] rounded-md border p-4">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-semibold text-lg text-orange-500">Introduction</h4>
+                                  <p className="text-gray-300">{progress.lessonContents[lesson.title].content.introduction}</p>
+                                </div>
 
-                              <div>
-                                <h4 className="font-semibold text-lg text-orange-500">Key Points</h4>
-                                <ul className="list-disc list-inside space-y-2">
-                                  {progress.lessonContents[lesson.title].content.keyPoints.map((point, i) => (
-                                    <li key={i} className="text-gray-300">{point}</li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              <div>
-                                <h4 className="font-semibold text-lg text-orange-500">Content</h4>
-                                {progress.lessonContents[lesson.title].content.mainContent.map((section, i) => (
-                                  <div key={i} className="mt-3">
-                                    <h5 className="font-medium text-white">{section.subtitle}</h5>
-                                    {section.paragraphs.map((paragraph, j) => (
-                                      <p key={j} className="text-gray-300 mt-2">{paragraph}</p>
+                                <div>
+                                  <h4 className="font-semibold text-lg text-orange-500">Key Points</h4>
+                                  <ul className="list-disc list-inside space-y-2">
+                                    {progress.lessonContents[lesson.title].content.keyPoints.map((point, i) => (
+                                      <li key={i} className="text-gray-300">{point}</li>
                                     ))}
-                                  </div>
-                                ))}
-                              </div>
+                                  </ul>
+                                </div>
 
-                              <div>
-                                <h4 className="font-semibold text-lg text-orange-500">Practical Exercises</h4>
-                                <ul className="list-decimal list-inside space-y-2">
-                                  {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
-                                    <li key={i} className="text-gray-300">{exercise}</li>
+                                <div>
+                                  <h4 className="font-semibold text-lg text-orange-500">Content</h4>
+                                  {progress.lessonContents[lesson.title].content.mainContent.map((section, i) => (
+                                    <div key={i} className="mt-3">
+                                      <h5 className="font-medium text-white">{section.subtitle}</h5>
+                                      {section.paragraphs.map((paragraph, j) => (
+                                        <p key={j} className="text-gray-300 mt-2">{paragraph}</p>
+                                      ))}
+                                    </div>
                                   ))}
-                                </ul>
-                              </div>
+                                </div>
 
-                              <div>
-                                <h4 className="font-semibold text-lg text-orange-500">Additional Resources</h4>
-                                <ul className="list-disc list-inside space-y-2">
-                                  {progress.lessonContents[lesson.title].content.additionalResources.map((resource, i) => (
-                                    <li key={i} className="text-gray-300">{resource}</li>
-                                  ))}
-                                </ul>
-                              </div>
+                                <div>
+                                  <h4 className="font-semibold text-lg text-orange-500">Practical Exercises</h4>
+                                  <ul className="list-decimal list-inside space-y-2">
+                                    {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
+                                      <li key={i} className="text-gray-300">{exercise}</li>
+                                    ))}
+                                  </ul>
+                                </div>
 
-                              <div>
-                                <h4 className="font-semibold text-lg text-orange-500">Summary</h4>
-                                <p className="text-gray-300">{progress.lessonContents[lesson.title].content.summary}</p>
+                                <div>
+                                  <h4 className="font-semibold text-lg text-orange-500">Additional Resources</h4>
+                                  <ul className="list-disc list-inside space-y-2">
+                                    {progress.lessonContents[lesson.title].content.additionalResources.map((resource, i) => (
+                                      <li key={i} className="text-gray-300">{resource}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-semibold text-lg text-orange-500">Summary</h4>
+                                  <p className="text-gray-300">{progress.lessonContents[lesson.title].content.summary}</p>
+                                </div>
                               </div>
-                            </div>
-                          </ScrollArea>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                            </ScrollArea>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+
+                      {!isLocked && !isExamCompleted && (
+                        <Button
+                          onClick={() => startExam(lesson.title)}
+                          className="bg-orange-500 hover:bg-orange-600"
+                          disabled={!hasContent}
+                        >
+                          Take Lesson Exam
+                        </Button>
+                      )}
+
+                      {isExamCompleted && (
+                        <div className="flex items-center gap-2 text-green-500">
+                          <CheckCircle2 className="h-5 w-5" />
+                          <span>Exam completed with score: {progress.examScores?.[lesson.title]}%</span>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {hasImage && (
@@ -486,6 +602,57 @@ export default function CourseDetailPage() {
           })}
         </div>
       </main>
+
+      <AlertDialog open={showExam} onOpenChange={setShowExam}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {currentExamLesson && progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.question}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <RadioGroup
+                value={selectedAnswer?.toString()}
+                onValueChange={(value) => setSelectedAnswer(parseInt(value))}
+                className="space-y-4 mt-4"
+              >
+                {currentExamLesson &&
+                  progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.options.map(
+                    (option, idx) => (
+                      <div key={idx} className="flex items-center space-x-2">
+                        <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
+                        <Label htmlFor={`option-${idx}`}>{option}</Label>
+                      </div>
+                    )
+                  )}
+              </RadioGroup>
+
+              {examResult && (
+                <div className={`mt-4 p-4 rounded-lg ${examResult.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                  <p className="font-semibold">{examResult.correct ? 'Correct!' : 'Incorrect'}</p>
+                  <p className="mt-2">{examResult.explanation}</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowExam(false)}>Cancel</AlertDialogCancel>
+            {!examResult ? (
+              <AlertDialogAction
+                onClick={checkAnswer}
+                disabled={selectedAnswer === null}
+              >
+                Check Answer
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction onClick={nextQuestion}>
+                {selectedExamQuestion < (currentExamLesson && progress.lessonContents[currentExamLesson]?.content.exam.length - 1)
+                  ? 'Next Question'
+                  : 'Finish Exam'}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

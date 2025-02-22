@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import OpenAI from 'openai';
 
+const examQuestionSchema = z.object({
+  question: z.string(),
+  options: z.array(z.string()),
+  correctAnswer: z.number(),
+  explanation: z.string()
+});
+
 const lessonContentSchema = z.object({
   title: z.string(),
   content: z.object({
@@ -12,10 +19,12 @@ const lessonContentSchema = z.object({
     })),
     practicalExercises: z.array(z.string()),
     additionalResources: z.array(z.string()),
-    summary: z.string()
+    summary: z.string(),
+    exam: z.array(examQuestionSchema)
   })
 });
 
+export type ExamQuestion = z.infer<typeof examQuestionSchema>;
 export type LessonContent = z.infer<typeof lessonContentSchema>;
 
 // Fallback content generator
@@ -56,7 +65,20 @@ function generateFallbackContent(lessonTitle: string, lessonDescription: string)
         "Recommended reading materials",
         "Online tutorials and workshops"
       ],
-      summary: `This lesson covered ${lessonTitle}. Continue practicing and applying these concepts to advance your music industry career.`
+      summary: `This lesson covered ${lessonTitle}. Continue practicing and applying these concepts to advance your music industry career.`,
+      exam: [
+        {
+          question: "What is the main focus of this lesson?",
+          options: [
+            "Basic music theory",
+            `Understanding ${lessonTitle}`,
+            "Advanced composition",
+            "Music history"
+          ],
+          correctAnswer: 1,
+          explanation: `This lesson focuses on ${lessonTitle} and its practical applications in the music industry.`
+        }
+      ]
     }
   };
 }
@@ -98,7 +120,15 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
     ],
     "practicalExercises": ["3-5 exercises as string array"],
     "additionalResources": ["3-5 resources as string array"],
-    "summary": "one paragraph summary"
+    "summary": "one paragraph summary",
+    "exam": [
+      {
+        "question": "Clear, specific question about the lesson content",
+        "options": ["4 possible answers as array"],
+        "correctAnswer": 0,
+        "explanation": "Detailed explanation of why this is the correct answer"
+      }
+    ]
   }
 }`
           },

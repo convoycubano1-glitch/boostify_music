@@ -18,9 +18,10 @@ service cloud.firestore {
         (
           // Allow updating specific fields
           request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['completedLessons', 'currentLesson', 'lastAccessedAt', 
-                     'generatedImages', 'timeSpent', 'lastCompletedAt',
-                     'lessonContents']) ||
+            .hasOnly(['completedLessons', 'completedExams', 'currentLesson', 
+                     'lastAccessedAt', 'generatedImages', 'lessonImages',
+                     'timeSpent', 'lastCompletedAt', 'lessonContents',
+                     'examScores']) ||
           // Or allow creating all fields if document doesn't exist
           !exists(/databases/$(database)/documents/course_progress/$(progressId))
         );
