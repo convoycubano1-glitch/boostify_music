@@ -51,10 +51,10 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       throw new Error('OpenRouter API key not configured');
     }
 
+    console.log('Initializing OpenRouter API client...');
     const openai = new OpenAI({
       apiKey: import.meta.env.VITE_OPENROUTER_API_KEY,
       baseURL: 'https://openrouter.ai/api/v1',
-      defaultQuery: { transforms: ["middle-out"] },
       defaultHeaders: {
         'HTTP-Referer': window.location.origin,
         'X-Title': 'Artist Boost - Music Education Platform',
@@ -62,102 +62,88 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       dangerouslyAllowBrowser: true
     });
 
-    const lessonTemplate = {
-      title: lessonTitle,
-      content: {
-        introduction: "Write a detailed introduction about the topic",
-        coverImagePrompt: "Describe a professional image for this lesson",
-        keyPoints: [
-          {
-            point: "Important learning point",
-            icon: "Music"
-          }
-        ],
-        mainContent: [
-          {
-            subtitle: "Main topic section",
-            icon: "Lightbulb",
-            paragraphs: ["Detailed explanation"],
-            imagePrompt: "Visual representation description"
-          }
-        ],
-        practicalExercises: [
-          {
-            title: "Hands-on Exercise",
-            description: "What the student will learn",
-            steps: ["Step-by-step instructions"],
-            icon: "Pencil"
-          }
-        ],
-        additionalResources: [
-          {
-            title: "Further Learning",
-            url: "https://example.com",
-            description: "What this resource offers",
-            icon: "Link"
-          }
-        ],
-        summary: "Key takeaways from the lesson",
-        exam: [
-          {
-            question: "Test knowledge question",
-            options: ["Option A", "Option B", "Option C", "Option D"],
-            correctAnswer: 0,
-            explanation: "Why this is the correct answer"
-          }
-        ]
+    const systemPrompt = `You are an expert music industry educator. Create a detailed lesson following this format:
+    - A thorough introduction explaining the topic
+    - At least 3 key learning points with icons
+    - At least 3 detailed content sections
+    - At least 3 practical exercises with clear steps
+    - At least 3 relevant external resources
+    - A comprehensive summary
+    - At least 3 exam questions to test understanding
+
+    Use only these Lucide icons: Music, Star, Book, Lightbulb, FileText, Link, Pencil, Trophy, Clock, Users, Award, ChevronRight.
+
+    Ensure all content is practical and immediately applicable to music industry professionals.`;
+
+    const userPrompt = `Create a comprehensive lesson about "${lessonTitle}" based on this description: "${lessonDescription}".
+
+    The response must be a valid JSON object with this exact structure:
+    {
+      "title": "string",
+      "content": {
+        "introduction": "string",
+        "coverImagePrompt": "string",
+        "keyPoints": [{"point": "string", "icon": "string"}],
+        "mainContent": [{
+          "subtitle": "string",
+          "icon": "string",
+          "paragraphs": ["string"],
+          "imagePrompt": "string"
+        }],
+        "practicalExercises": [{
+          "title": "string",
+          "description": "string",
+          "steps": ["string"],
+          "icon": "string"
+        }],
+        "additionalResources": [{
+          "title": "string",
+          "url": "string",
+          "description": "string",
+          "icon": "string"
+        }],
+        "summary": "string",
+        "exam": [{
+          "question": "string",
+          "options": ["string"],
+          "correctAnswer": 0,
+          "explanation": "string"
+        }]
       }
-    };
+    }`;
 
     console.log('Making API request to OpenRouter...');
-
     const completion = await openai.chat.completions.create({
       model: 'anthropic/claude-3-opus:beta',
       messages: [
-        {
-          role: 'system',
-          content: `You are an expert music industry educator. Create detailed lesson content following the exact structure provided. Use only these Lucide icons: Music, Star, Book, Lightbulb, FileText, Link, Pencil, Trophy, Clock, Users, Award, ChevronRight.`
-        },
-        {
-          role: 'user',
-          content: `Generate a comprehensive lesson about "${lessonTitle}" based on this description: "${lessonDescription}".
-
-Return the content in this exact JSON structure:
-${JSON.stringify(lessonTemplate, null, 2)}
-
-Requirements:
-- At least 3 key points with valid icons
-- At least 3 content sections with relevant icons
-- At least 3 practical exercises with clear steps
-- At least 3 additional resources with valid URLs
-- At least 3 exam questions with detailed explanations
-- All icons must be from the provided list
-- Content should be practical and immediately applicable
-- Each section should be detailed and thorough`
-        }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
       ],
       temperature: 0.7,
       response_format: { type: "json_object" }
     });
 
-    if (!completion.choices[0]?.message?.content) {
-      console.error('Invalid API response:', completion);
-      throw new Error('Invalid API response format');
+    console.log('Received API response:', completion);
+
+    if (!completion.choices?.[0]?.message?.content) {
+      console.error('Invalid API response structure:', completion);
+      throw new Error('Invalid API response structure');
     }
 
     const content = completion.choices[0].message.content.trim();
-    console.log('Raw API response:', content);
+    console.log('Raw content:', content);
 
     try {
       const parsedContent = JSON.parse(content);
-      console.log('Parsed content:', parsedContent);
+      console.log('Successfully parsed JSON content');
 
       const validatedContent = lessonContentSchema.parse(parsedContent);
-      console.log('Validated content:', validatedContent);
+      console.log('Successfully validated content schema');
 
       return validatedContent;
     } catch (parseError) {
       console.error('Error parsing/validating content:', parseError);
+      console.error('Raw content that failed:', content);
       throw new Error('Failed to parse or validate lesson content');
     }
 
