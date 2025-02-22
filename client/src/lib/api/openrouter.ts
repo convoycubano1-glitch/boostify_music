@@ -22,29 +22,30 @@ export async function generateCourseContent(prompt: string) {
         messages: [
           {
             role: "system",
-            content: "You are a music industry education expert. You MUST return your response in the following exact JSON format:\n{\n  \"overview\": \"string\",\n  \"objectives\": [\"string\"],\n  \"curriculum\": [{\"title\": \"string\", \"description\": \"string\", \"duration\": number}],\n  \"topics\": [\"string\"],\n  \"assignments\": [\"string\"],\n  \"applications\": [\"string\"]\n}\nDo not include any additional text or formatting outside of this JSON structure."
+            content: "You are a music industry education expert. You must ONLY return a valid JSON object with EXACTLY this structure, no additional text or formatting:\n{\n  \"overview\": \"string describing the course overview\",\n  \"objectives\": [\"list of 3-5 learning objectives\"],\n  \"curriculum\": [{\"title\": \"lesson title\", \"description\": \"lesson description\", \"duration\": 60}],\n  \"topics\": [\"list of 5-7 key topics\"],\n  \"assignments\": [\"list of 3-4 practical assignments\"],\n  \"applications\": [\"list of 2-3 industry applications\"]\n}"
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 2000
+        temperature: 0.1,
+        max_tokens: 2000,
+        response_format: { type: "json_object" }
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error("OpenRouter API error:", errorData);
-      throw new Error(`Failed to generate course content: ${response.statusText}`);
+      throw new Error(`Error al generar el contenido del curso: ${response.statusText}`);
     }
 
     const data = await response.json();
     console.log("Course content generated successfully:", data);
 
     if (!data.choices?.[0]?.message?.content) {
-      throw new Error("Invalid response format from OpenRouter API");
+      throw new Error("Formato de respuesta inválido de la API de OpenRouter");
     }
 
     const content = data.choices[0].message.content;
@@ -54,13 +55,14 @@ export async function generateCourseContent(prompt: string) {
     try {
       const parsed = JSON.parse(content);
       if (!parsed.overview || !Array.isArray(parsed.objectives) || !Array.isArray(parsed.curriculum)) {
-        throw new Error("Response is missing required fields");
+        console.error("Invalid content structure:", parsed);
+        throw new Error("La respuesta no tiene los campos requeridos");
       }
-      return content;
+      return parsed;
     } catch (parseError) {
       console.error("JSON parsing error:", parseError);
       console.error("Received content:", content);
-      throw new Error("The generated content is not in valid JSON format");
+      throw new Error("El contenido generado no es un JSON válido. Por favor intente nuevamente.");
     }
   } catch (error) {
     console.error("Error generating course content:", error);

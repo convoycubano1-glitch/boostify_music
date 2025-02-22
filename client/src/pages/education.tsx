@@ -125,37 +125,17 @@ export default function EducationPage() {
       setIsGenerating(true);
       console.log("Iniciando generación de curso:", newCourse);
 
-      const prompt = `Create a detailed course outline for a music industry course titled "${newCourse.title}" with the following description: "${newCourse.description}". The response must include:
-      1. A brief overview of the course
-      2. 3-5 learning objectives
-      3. A curriculum with 10-12 lessons (each with title, description, and duration in minutes)
-      4. 5-7 key topics
-      5. 3-4 practical assignments
-      6. 2-3 industry applications`;
+      const prompt = `Crea un curso detallado de la industria musical titulado "${newCourse.title}" con la siguiente descripción: "${newCourse.description}". El curso debe ser del nivel ${newCourse.level} y estar en la categoría ${newCourse.category}.`;
 
       console.log("Enviando prompt a OpenRouter:", prompt);
       const courseContent = await generateCourseContent(prompt);
       console.log("Contenido del curso generado:", courseContent);
 
-      let parsedContent;
-      try {
-        parsedContent = JSON.parse(courseContent);
-      } catch (parseError) {
-        console.error("Error al parsear el contenido del curso:", parseError);
-        throw new Error("El contenido generado no tiene el formato JSON esperado. Por favor intente nuevamente.");
-      }
-
-      // Validate the parsed content structure
-      if (!parsedContent.overview || !Array.isArray(parsedContent.curriculum)) {
-        console.error("Contenido inválido:", parsedContent);
-        throw new Error("El contenido generado no tiene la estructura esperada. Por favor intente nuevamente.");
-      }
-
       const courseData = {
         ...newCourse,
-        content: parsedContent,
+        content: courseContent,
         thumbnail: "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?w=800&auto=format&fit=crop",
-        lessons: parsedContent.curriculum?.length || 12,
+        lessons: courseContent.curriculum?.length || 12,
         duration: "8 weeks",
         rating: 0,
         totalReviews: 0
