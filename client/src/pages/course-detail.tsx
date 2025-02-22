@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
-import { Loader2, CheckCircle2, Lock, ImageIcon, BookOpen, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, Lock, ImageIcon, BookOpen, Clock, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { auth, db } from "@/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
@@ -17,7 +17,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-
 
 interface CourseProgress {
   completedLessons: string[];
@@ -78,6 +77,7 @@ export default function CourseDetailPage() {
     explanation: string;
   } | null>(null);
   const [currentExamLesson, setCurrentExamLesson] = useState<string | null>(null);
+  const [courseCoverImage, setCourseCoverImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
@@ -170,6 +170,22 @@ export default function CourseDetailPage() {
 
     fetchCourseAndProgress();
   }, [courseId, toast]);
+
+  const fetchCourseCoverImage = async () => {
+    if (course?.title) {
+      try {
+        const imageUrl = await getRelevantImage(`professional education ${course.title} music industry course cover`);
+        setCourseCoverImage(imageUrl);
+      } catch (error) {
+        console.error('Error fetching course cover image:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchCourseCoverImage();
+  }, [course?.title]);
+
 
   const generateLessonContentForUser = async (lessonTitle: string, lessonDescription: string) => {
     if (!lessonTitle || !lessonDescription) {
@@ -390,50 +406,63 @@ export default function CourseDetailPage() {
     );
   }
 
-  const progressPercentage = (progress.completedLessons.length / course.content.curriculum.length) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-orange-950/20">
       <Header />
-      <main className="container mx-auto px-4 py-8 pt-20">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">{course.title}</h1>
-          <p className="text-gray-400 mb-4">{course.description}</p>
 
-          <div className="bg-black/40 rounded-lg p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="flex items-center gap-2">
+      {/* Hero Section with Course Cover */}
+      <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
+        {courseCoverImage && (
+          <div className="absolute inset-0">
+            <img
+              src={courseCoverImage}
+              alt="Course Cover"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black" />
+          </div>
+        )}
+        <div className="container mx-auto px-4 h-full flex items-center relative z-10">
+          <div className="max-w-3xl">
+            <h1 className="text-5xl font-bold text-white mb-4">{course?.title}</h1>
+            <p className="text-xl text-gray-200 mb-6">{course?.description}</p>
+            <div className="flex gap-4 items-center">
+              <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg">
                 <BookOpen className="text-orange-500" />
-                <div>
-                  <p className="text-sm text-gray-400">Lessons</p>
-                  <p className="text-lg font-semibold text-white">{course.content.curriculum.length}</p>
-                </div>
+                <span className="text-white">{course?.content.curriculum.length} Lessons</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-orange-500" />
-                <div>
-                  <p className="text-sm text-gray-400">Completed</p>
-                  <p className="text-lg font-semibold text-white">{progress.completedLessons.length}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg">
                 <Clock className="text-orange-500" />
-                <div>
-                  <p className="text-sm text-gray-400">Time Spent</p>
-                  <p className="text-lg font-semibold text-white">{progress.timeSpent} minutes</p>
-                </div>
+                <span className="text-white">{progress.timeSpent} Minutes Spent</span>
               </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Progress value={progressPercentage} className="w-full" />
-              <span className="text-white font-medium">{Math.round(progressPercentage)}%</span>
+              <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg">
+                <Trophy className="text-orange-500" />
+                <span className="text-white">{progress.completedLessons.length} Completed</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
+      <main className="container mx-auto px-4 py-8 -mt-16 relative z-20">
+        {/* Progress Section */}
+        <Card className="bg-black/40 backdrop-blur-sm border-orange-500/10 p-6 mb-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-white font-medium">Course Progress</span>
+              <span className="text-white font-medium">{Math.round((progress.completedLessons.length / (course?.content.curriculum.length || 1)) * 100)}%</span>
+            </div>
+            <Progress 
+              value={(progress.completedLessons.length / (course?.content.curriculum.length || 1)) * 100} 
+              className="h-2"
+            />
+          </div>
+        </Card>
+
+        {/* Lessons Grid */}
         <div className="grid gap-6">
-          {course.content.curriculum.map((lesson, index) => {
+          {course?.content.curriculum.map((lesson, index) => {
             const isCompleted = progress.completedLessons.includes(lesson.title);
             const isExamCompleted = progress.completedExams?.includes(lesson.title);
             const isLocked = index > progress.currentLesson;
@@ -447,154 +476,161 @@ export default function CourseDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`p-6 backdrop-blur-sm border-orange-500/10 ${
+                <Card className={`overflow-hidden backdrop-blur-sm border-orange-500/10 ${
                   isLocked ? 'bg-black/30' : isCompleted ? 'bg-black/50 border-green-500/20' : 'bg-black/50'
                 }`}>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-white mb-2">
-                        {index + 1}. {lesson.title}
-                      </h3>
-                      <p className="text-gray-400">{lesson.description}</p>
-                      <p className="text-sm text-orange-500 mt-2">
-                        Estimated time: {lesson.estimatedMinutes} minutes
-                      </p>
-                    </div>
-                    {isCompleted ? (
-                      <CheckCircle2 className="h-6 w-6 text-green-500" />
-                    ) : isLocked ? (
-                      <Lock className="h-6 w-6 text-gray-500" />
-                    ) : null}
-                  </div>
-
-                  {hasContent && (
-                    <div className="mt-4 space-y-4">
-                      <Accordion type="single" collapsible className="mb-4">
-                        <AccordionItem value="content">
-                          <AccordionTrigger>View Lesson Content</AccordionTrigger>
-                          <AccordionContent>
-                            <ScrollArea className="h-[400px] rounded-md border p-4">
-                              <div className="space-y-4">
-                                <div>
-                                  <h4 className="font-semibold text-lg text-orange-500">Introduction</h4>
-                                  <p className="text-gray-300">{progress.lessonContents[lesson.title].content.introduction}</p>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-lg text-orange-500">Key Points</h4>
-                                  <ul className="list-disc list-inside space-y-2">
-                                    {progress.lessonContents[lesson.title].content.keyPoints.map((point, i) => (
-                                      <li key={i} className="text-gray-300">{point}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-lg text-orange-500">Content</h4>
-                                  {progress.lessonContents[lesson.title].content.mainContent.map((section, i) => (
-                                    <div key={i} className="mt-3">
-                                      <h5 className="font-medium text-white">{section.subtitle}</h5>
-                                      {section.paragraphs.map((paragraph, j) => (
-                                        <p key={j} className="text-gray-300 mt-2">{paragraph}</p>
-                                      ))}
-                                    </div>
-                                  ))}
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-lg text-orange-500">Practical Exercises</h4>
-                                  <ul className="list-decimal list-inside space-y-2">
-                                    {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
-                                      <li key={i} className="text-gray-300">{exercise}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-lg text-orange-500">Additional Resources</h4>
-                                  <ul className="list-disc list-inside space-y-2">
-                                    {progress.lessonContents[lesson.title].content.additionalResources.map((resource, i) => (
-                                      <li key={i} className="text-gray-300">{resource}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-lg text-orange-500">Summary</h4>
-                                  <p className="text-gray-300">{progress.lessonContents[lesson.title].content.summary}</p>
-                                </div>
-                              </div>
-                            </ScrollArea>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-
-                      {!isLocked && !isExamCompleted && (
-                        <Button
-                          onClick={() => startExam(lesson.title)}
-                          className="bg-orange-500 hover:bg-orange-600"
-                          disabled={!hasContent}
-                        >
-                          Take Lesson Exam
-                        </Button>
-                      )}
-
-                      {isExamCompleted && (
-                        <div className="flex items-center gap-2 text-green-500">
-                          <CheckCircle2 className="h-5 w-5" />
-                          <span>Exam completed with score: {progress.examScores?.[lesson.title]}%</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {hasImage && (
-                    <div className="mb-4">
+                    <div className="w-full h-48">
                       <img
                         src={progress.generatedImages[lesson.title]}
                         alt={`Illustration for ${lesson.title}`}
-                        className="w-full h-48 object-cover rounded-lg"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}
 
-                  <div className="flex gap-4">
-                    {!isLocked && !hasContent && (
-                      <Button
-                        onClick={() => generateLessonContentForUser(lesson.title, lesson.description)}
-                        disabled={isGeneratingContent}
-                        variant="outline"
-                      >
-                        {isGeneratingContent ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating Content...
-                          </>
-                        ) : (
-                          <>
-                            <BookOpen className="mr-2 h-4 w-4" />
-                            Generate Lesson Content
-                          </>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white mb-2">
+                          {index + 1}. {lesson.title}
+                        </h3>
+                        <div className="text-gray-400">{lesson.description}</div>
+                        <div className="flex items-center gap-2 mt-2 text-sm text-orange-500">
+                          <Clock className="h-4 w-4" />
+                          <span>{lesson.estimatedMinutes} minutes</span>
+                        </div>
+                      </div>
+                      {isCompleted ? (
+                        <CheckCircle2 className="h-6 w-6 text-green-500" />
+                      ) : isLocked ? (
+                        <Lock className="h-6 w-6 text-gray-500" />
+                      ) : null}
+                    </div>
+
+                    {hasContent && (
+                      <div className="space-y-4">
+                        <Accordion type="single" collapsible>
+                          <AccordionItem value="content">
+                            <AccordionTrigger className="text-white">View Lesson Content</AccordionTrigger>
+                            <AccordionContent>
+                              <ScrollArea className="h-[400px] rounded-md border border-orange-500/10 p-4">
+                                <div className="space-y-6">
+                                  <div>
+                                    <h4 className="font-semibold text-lg text-orange-500">Introduction</h4>
+                                    <div className="text-gray-300 mt-2">{progress.lessonContents[lesson.title].content.introduction}</div>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-lg text-orange-500">Key Points</h4>
+                                    <ul className="list-disc list-inside space-y-2 mt-2">
+                                      {progress.lessonContents[lesson.title].content.keyPoints.map((point, i) => (
+                                        <li key={i} className="text-gray-300">{point}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+
+                                  {progress.lessonContents[lesson.title].content.mainContent.map((section, i) => (
+                                    <div key={i}>
+                                      <h4 className="font-semibold text-lg text-orange-500">{section.subtitle}</h4>
+                                      <div className="space-y-2 mt-2">
+                                        {section.paragraphs.map((paragraph, j) => (
+                                          <div key={j} className="text-gray-300">{paragraph}</div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+
+                                  <div>
+                                    <h4 className="font-semibold text-lg text-orange-500">Practical Exercises</h4>
+                                    <ul className="list-decimal list-inside space-y-2 mt-2">
+                                      {progress.lessonContents[lesson.title].content.practicalExercises.map((exercise, i) => (
+                                        <li key={i} className="text-gray-300">{exercise}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-lg text-orange-500">Additional Resources</h4>
+                                    <ul className="list-disc list-inside space-y-2 mt-2">
+                                      {progress.lessonContents[lesson.title].content.additionalResources.map((resource, i) => (
+                                        <li key={i} className="text-gray-300">{resource}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-lg text-orange-500">Summary</h4>
+                                    <div className="text-gray-300 mt-2">{progress.lessonContents[lesson.title].content.summary}</div>
+                                  </div>
+                                </div>
+                              </ScrollArea>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+
+                        {!isLocked && !isExamCompleted && (
+                          <Button
+                            onClick={() => startExam(lesson.title)}
+                            className="w-full bg-orange-500 hover:bg-orange-600"
+                            disabled={!hasContent}
+                          >
+                            <Trophy className="mr-2 h-4 w-4" />
+                            Take Lesson Exam
+                          </Button>
                         )}
-                      </Button>
+
+                        {isExamCompleted && (
+                          <div className="flex items-center gap-2 text-green-500 bg-green-500/10 p-3 rounded-lg">
+                            <Trophy className="h-5 w-5" />
+                            <span>Exam completed with score: {progress.examScores?.[lesson.title]}%</span>
+                          </div>
+                        )}
+                      </div>
                     )}
 
-                    {!isLocked && !isCompleted && (
-                      <Button
-                        onClick={() => markLessonComplete(index)}
-                        className="bg-orange-500 hover:bg-orange-600"
-                        disabled={isSavingProgress}
-                      >
-                        {isSavingProgress ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          'Complete Lesson'
-                        )}
-                      </Button>
-                    )}
+                    <div className="flex gap-4 mt-4">
+                      {!isLocked && !hasContent && (
+                        <Button
+                          onClick={() => generateLessonContentForUser(lesson.title, lesson.description)}
+                          disabled={isGeneratingContent}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          {isGeneratingContent ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating Content...
+                            </>
+                          ) : (
+                            <>
+                              <BookOpen className="mr-2 h-4 w-4" />
+                              Generate Lesson Content
+                            </>
+                          )}
+                        </Button>
+                      )}
+
+                      {!isLocked && !isCompleted && (
+                        <Button
+                          onClick={() => markLessonComplete(index)}
+                          className="flex-1 bg-orange-500 hover:bg-orange-600"
+                          disabled={isSavingProgress}
+                        >
+                          {isSavingProgress ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Complete Lesson
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </Card>
               </motion.div>
@@ -606,36 +642,38 @@ export default function CourseDetailPage() {
       <AlertDialog open={showExam} onOpenChange={setShowExam}>
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-xl">
               {currentExamLesson && 
                progress.lessonContents[currentExamLesson]?.content.exam && 
                progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion] && 
                progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion].question}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              <RadioGroup
-                value={selectedAnswer?.toString()}
-                onValueChange={(value) => setSelectedAnswer(parseInt(value))}
-                className="space-y-4 mt-4"
-              >
-                {currentExamLesson &&
-                 progress.lessonContents[currentExamLesson]?.content.exam && 
-                 progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.options.map(
-                    (option, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
-                        <Label htmlFor={`option-${idx}`}>{option}</Label>
-                      </div>
-                    )
-                  )}
-              </RadioGroup>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <RadioGroup
+                  value={selectedAnswer?.toString()}
+                  onValueChange={(value) => setSelectedAnswer(parseInt(value))}
+                  className="space-y-4 mt-4"
+                >
+                  {currentExamLesson &&
+                   progress.lessonContents[currentExamLesson]?.content.exam && 
+                   progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.options.map(
+                      (option, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
+                          <Label htmlFor={`option-${idx}`}>{option}</Label>
+                        </div>
+                      )
+                    )}
+                </RadioGroup>
 
-              {examResult && (
-                <div className={`mt-4 p-4 rounded-lg ${examResult.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                  <p className="font-semibold">{examResult.correct ? 'Correct!' : 'Incorrect'}</p>
-                  <p className="mt-2">{examResult.explanation}</p>
-                </div>
-              )}
+                {examResult && (
+                  <div className={`mt-4 p-4 rounded-lg ${examResult.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                    <div className="font-semibold">{examResult.correct ? 'Correct!' : 'Incorrect'}</div>
+                    <div className="mt-2">{examResult.explanation}</div>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -644,11 +682,12 @@ export default function CourseDetailPage() {
               <AlertDialogAction
                 onClick={checkAnswer}
                 disabled={selectedAnswer === null}
+                className="bg-orange-500 hover:bg-orange-600"
               >
                 Check Answer
               </AlertDialogAction>
             ) : (
-              <AlertDialogAction onClick={nextQuestion}>
+              <AlertDialogAction onClick={nextQuestion} className="bg-orange-500 hover:bg-orange-600">
                 {currentExamLesson && 
                  progress.lessonContents[currentExamLesson]?.content.exam && 
                  selectedExamQuestion < progress.lessonContents[currentExamLesson].content.exam.length - 1
