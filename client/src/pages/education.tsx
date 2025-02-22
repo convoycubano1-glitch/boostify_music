@@ -30,7 +30,7 @@ const predefinedCourses = [
     price: 199.99,
     category: "Business",
     level: "Beginner",
-    thumbnail: "https://images.unsplash.com/photo-1598488035139-bdaa7543d5d4?w=800&auto=format&fit=crop",
+    thumbnail: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop",
     rating: 4.8,
     totalReviews: 245,
     duration: "8 weeks",
@@ -112,10 +112,10 @@ export default function EducationPage() {
   });
 
   const handleCreateCourse = async () => {
-    if (!newCourse.title || !newCourse.description || !newCourse.price) {
+    if (!newCourse.title || !newCourse.description || !newCourse.price || !newCourse.category || !newCourse.level) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Por favor complete todos los campos requeridos",
         variant: "destructive"
       });
       return;
@@ -123,6 +123,8 @@ export default function EducationPage() {
 
     try {
       setIsGenerating(true);
+      console.log("Iniciando generación de curso:", newCourse);
+
       const prompt = `Create a detailed course outline for a music industry course titled "${newCourse.title}" with the following description: "${newCourse.description}". Include:
       1. Course Overview
       2. Learning Objectives
@@ -140,23 +142,54 @@ export default function EducationPage() {
         "applications": ["string"]
       }`;
 
+      console.log("Enviando prompt a OpenRouter:", prompt);
       const courseContent = await generateCourseContent(prompt);
-      const parsedContent = JSON.parse(courseContent);
+      console.log("Contenido del curso generado:", courseContent);
 
-      await createCourseMutation.mutateAsync({
+      let parsedContent;
+      try {
+        parsedContent = JSON.parse(courseContent);
+      } catch (parseError) {
+        console.error("Error al parsear el contenido del curso:", parseError);
+        throw new Error("El contenido generado no tiene el formato JSON esperado");
+      }
+
+      // Validate the parsed content
+      if (!parsedContent.overview || !Array.isArray(parsedContent.curriculum)) {
+        throw new Error("El contenido generado no tiene la estructura esperada");
+      }
+
+      const courseData = {
         ...newCourse,
         content: parsedContent,
-        thumbnail: `/assets/courses/${newCourse.category.toLowerCase()}-${Math.floor(Math.random() * 5) + 1}.jpg`,
+        thumbnail: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000)}?w=800&auto=format&fit=crop`,
         lessons: parsedContent.curriculum?.length || 12,
         duration: "8 weeks",
         rating: 0,
         totalReviews: 0
+      };
+
+      console.log("Creando nuevo curso con datos:", courseData);
+      await createCourseMutation.mutateAsync(courseData);
+
+      toast({
+        title: "¡Éxito!",
+        description: "Curso creado correctamente"
+      });
+
+      setIsCreatingCourse(false);
+      setNewCourse({
+        title: "",
+        description: "",
+        price: 0,
+        category: "",
+        level: "Beginner"
       });
     } catch (error: any) {
-      console.error('Error creating course:', error);
+      console.error('Error al crear el curso:', error);
       toast({
         title: "Error",
-        description: "Failed to create course. Please try again.",
+        description: error.message || "Error al crear el curso. Por favor intente nuevamente.",
         variant: "destructive"
       });
     } finally {
