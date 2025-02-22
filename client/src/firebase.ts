@@ -5,13 +5,13 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyCEiY4InxiGpJrKJm1b0kl2YS-3-2IgIWI",
+  authDomain: "artist-boost.firebaseapp.com",
+  projectId: "artist-boost",
+  storageBucket: "artist-boost.appspot.com",
+  messagingSenderId: "114213694920",
+  appId: "1:114213694920:web:3b6b9b4b9b9b4b9b9b9b4b",
+  measurementId: "G-XXXXXXXXXX"
 };
 
 // Initialize Firebase only if it hasn't been initialized before
