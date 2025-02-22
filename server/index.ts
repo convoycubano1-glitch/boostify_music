@@ -33,30 +33,45 @@ if (process.env.NODE_ENV === "production") {
   const distPath = path.join(process.cwd(), 'dist', 'public');
   log(`Serving static files from: ${distPath}`);
 
-  // Log directory contents for debugging
+  // Verify dist directory structure and critical files
   try {
+    if (!fs.existsSync(distPath)) {
+      log(`Creating dist directory: ${distPath}`);
+      fs.mkdirSync(distPath, { recursive: true });
+    }
+
     const files = fs.readdirSync(distPath);
-    log(`Found files in ${distPath}:`, files);
+    log(`Found files in ${distPath}: ${files.join(', ')}`);
+
+    const indexPath = path.join(distPath, 'index.html');
+    if (!fs.existsSync(indexPath)) {
+      throw new Error(`Critical file missing: ${indexPath}`);
+    }
 
     const assetsPath = path.join(distPath, 'assets');
     if (fs.existsSync(assetsPath)) {
       const assetFiles = fs.readdirSync(assetsPath);
-      log(`Found assets in ${assetsPath}:`, assetFiles);
+      log(`Found assets in ${assetsPath}: ${assetFiles.join(', ')}`);
+    } else {
+      log('Warning: assets directory not found');
     }
   } catch (error) {
-    log(`Error reading dist directory: ${error}`);
-    throw new Error(`Could not access the build directory: ${distPath}`);
+    log(`Error during static file setup: ${error}`);
+    throw new Error(`Static file setup failed: ${error.message}`);
   }
 
-  // Serve static assets with cache headers
+  // Serve static assets with aggressive caching
   app.use('/assets', express.static(path.join(distPath, 'assets'), {
     maxAge: '1y',
-    etag: false
+    etag: true,
+    lastModified: true
   }));
 
   // Serve other static files except index.html
   app.use(express.static(distPath, {
-    index: false
+    index: false,
+    etag: true,
+    lastModified: true
   }));
 
   // Handle SPA routes - serve index.html for all non-asset requests
@@ -72,7 +87,9 @@ if (process.env.NODE_ENV === "production") {
     try {
       if (fs.existsSync(indexPath)) {
         const indexContent = fs.readFileSync(indexPath, 'utf-8');
-        log(`index.html found and has content length: ${indexContent.length}`);
+        log(`Successfully read index.html (${indexContent.length} bytes)`);
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Content-Type', 'text/html');
         res.sendFile(indexPath);
       } else {
         log(`Error: index.html not found at ${indexPath}`);
@@ -96,6 +113,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 (async () => {
   try {
+    log('Starting server setup...');
     const server = registerRoutes(app);
 
     // Global error handler with detailed logging
@@ -104,7 +122,6 @@ if (!process.env.STRIPE_SECRET_KEY) {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
 
-      // Log detailed error information
       log(`Error handling request ${req.method} ${req.path}: ${err.message}`);
       if (err.stack) {
         log(`Stack trace: ${err.stack}`);
@@ -119,16 +136,20 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
     // Setup Vite or static file serving based on environment
     if (process.env.NODE_ENV === "production") {
-      // Already handled above
+      log('Using production static file serving');
     } else {
+      log('Setting up Vite development server');
       await setupVite(app, server);
     }
 
-    // Use dynamic port from environment or fallback to 3000
-    const PORT = parseInt(process.env.PORT || "3000");
+    // ALWAYS use port 5000 as required by Replit
+    const PORT = 5000;
+
+    log('Attempting to start server...');
     server.listen(PORT, "0.0.0.0", () => {
-      log(`Server running on port ${PORT} in ${app.get("env")} mode`);
-      log(`Static files will be served from: ${process.env.NODE_ENV === "production" ? 
+      log(`Server started successfully on port ${PORT}`);
+      log(`Environment: ${app.get("env")}`);
+      log(`Static files path: ${process.env.NODE_ENV === "production" ? 
         path.join(process.cwd(), 'dist', 'public') : 
         path.join(process.cwd(), 'client/public')}`);
     });
