@@ -3,29 +3,31 @@ import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, 
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
-  authDomain: "artist-boost.firebaseapp.com",
-  projectId: "artist-boost",
-  storageBucket: "artist-boost.firebasestorage.app",
-  messagingSenderId: "502955771825",
-  appId: "1:502955771825:web:d6746677d851f9b1449f90",
-  measurementId: "G-ERCSSWTXCJ"
-};
+import { FIREBASE_CONFIG } from "./env";
 
 // Initialize Firebase only if it hasn't been initialized before
-const app = initializeApp(firebaseConfig);
+let app;
+try {
+  app = initializeApp(FIREBASE_CONFIG);
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+  throw error;
+}
+
 export const auth = getAuth(app);
-
-// Initialize Firestore with default configuration
 export const db = getFirestore(app);
-
 export const storage = getStorage(app);
 
+// Only initialize analytics in production and when available
 let analytics = null;
-if (import.meta.env.PROD) {
-  analytics = getAnalytics(app);
+if (import.meta.env.PROD && typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app);
+    console.log('Analytics initialized successfully');
+  } catch (error) {
+    console.warn('Analytics initialization failed:', error);
+  }
 }
 
 // Contract related functions
