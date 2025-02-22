@@ -45,6 +45,10 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.createdBy;
     }
+    match /course_progress/{progressId} {
+      allow read: if request.auth != null && progressId.matches(request.auth.uid + '_.*');
+      allow write: if request.auth != null && progressId.matches(request.auth.uid + '_.*');
+    }
   }
 }
 `;
