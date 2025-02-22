@@ -7,8 +7,8 @@ import { Header } from "@/components/layout/header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent } from "@/lib/api/openrouter";
-import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award } from "lucide-react";
-import { motion } from "framer-motion";
+import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { SelectCourse } from "@db/schema";
@@ -33,6 +33,7 @@ export default function EducationPage() {
     level: "Beginner"
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [hoveredCourse, setHoveredCourse] = useState<number | null>(null);
 
   const { data: courses = [], isLoading } = useQuery<SelectCourse[]>({
     queryKey: ["/api/courses"],
@@ -228,18 +229,51 @@ export default function EducationPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
+              onHoverStart={() => setHoveredCourse(course.id)}
+              onHoverEnd={() => setHoveredCourse(null)}
             >
-              <Card className="overflow-hidden bg-black/50 backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all">
+              <Card className="overflow-hidden bg-black/50 backdrop-blur-sm border-orange-500/10 hover:border-orange-500/30 transition-all group">
                 <div className="aspect-video relative">
                   <img
                     src={course.thumbnail}
                     alt={course.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 rounded-full">
                     <span className="text-sm font-medium text-white">{course.level}</span>
                   </div>
+
+                  {/* Interactive Preview Overlay */}
+                  <AnimatePresence>
+                    {hoveredCourse === course.id && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/75 flex flex-col justify-center items-center p-4 space-y-3"
+                      >
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className="rounded-full bg-orange-500 p-3 cursor-pointer hover:bg-orange-600 transition-colors"
+                        >
+                          <Play className="h-8 w-8 text-white" />
+                        </motion.div>
+                        <motion.div
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: 20, opacity: 0 }}
+                          className="text-center"
+                        >
+                          <p className="text-white font-medium mb-2">Preview Course</p>
+                          <p className="text-gray-300 text-sm">Watch introduction video</p>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
                 <div className="p-6">
                   <div className="flex items-center gap-2 text-orange-500 text-sm mb-2">
                     <Clock className="h-4 w-4" />
@@ -248,7 +282,9 @@ export default function EducationPage() {
                     <BookOpen className="h-4 w-4" />
                     <span>{course.lessons} lessons</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">{course.title}</h3>
+                  <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-orange-500 transition-colors">
+                    {course.title}
+                  </h3>
                   <p className="text-gray-400 mb-4 line-clamp-2">{course.description}</p>
 
                   <div className="flex items-center justify-between mb-4">
@@ -274,8 +310,9 @@ export default function EducationPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Enroll Now
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600 group">
+                    <span>Enroll Now</span>
+                    <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>
               </Card>
