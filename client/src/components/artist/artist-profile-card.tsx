@@ -729,27 +729,28 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
       {/* Message Dialog */}
       <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-        <DialogContent className="sm:max-w-[425px]"><DialogHeader>
-          <DialogTitle>Send Message to {mockArtist.name}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <textarea
-              className="col-span-4 h-32 p-2 rounded-md border"
-              placeholder="Write your message here..."
-            />
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Send Message to {mockArtist.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <textarea
+                className="col-span-4 h-32 p-2 rounded-md border"
+                placeholder="Write your message here..."
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex justify-end gap-4">
-          <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
-            Cancel
-          </Button>
-          <Button className="bg-orange-500 hover:bg-orange-600">
-            Send Message
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  </motion.div>
-);
+          <div className="flex justify-end gap-4">
+            <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-orange-500 hover:bg-orange-600">
+              Send Message
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
+  );
 }
