@@ -4,18 +4,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/header";
-import { Loader2, CheckCircle2, Lock, ImageIcon } from "lucide-react";
+import { Loader2, CheckCircle2, Lock, ImageIcon, BookOpen, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { auth, db } from "@/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import * as fal from "@fal-ai/serverless-client";
+import { getRelevantImage } from "@/lib/unsplash-service";
 
 interface CourseProgress {
   completedLessons: string[];
   lastAccessedAt: Date;
   currentLesson: number;
   generatedImages: Record<string, string>;
+  timeSpent: number;
+  startedAt: Date;
+  lastCompletedAt?: Date;
 }
 
 interface Course {
@@ -26,6 +29,7 @@ interface Course {
     curriculum: Array<{
       title: string;
       description: string;
+      estimatedMinutes: number;
     }>;
   };
 }
@@ -39,10 +43,13 @@ export default function CourseDetailPage() {
     completedLessons: [],
     lastAccessedAt: new Date(),
     currentLesson: 0,
-    generatedImages: {}
+    generatedImages: {},
+    timeSpent: 0,
+    startedAt: new Date()
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
 
   useEffect(() => {
     const fetchCourseAndProgress = async () => {
@@ -82,8 +89,22 @@ export default function CourseDetailPage() {
             const progressData = progressSnap.data() as CourseProgress;
             setProgress({
               ...progressData,
-              lastAccessedAt: new Date(progressData.lastAccessedAt)
+              lastAccessedAt: new Date(progressData.lastAccessedAt),
+              startedAt: new Date(progressData.startedAt),
+              lastCompletedAt: progressData.lastCompletedAt ? new Date(progressData.lastCompletedAt) : undefined
             });
+          } else {
+            // Initialize progress document if it doesn't exist
+            const initialProgress: CourseProgress = {
+              completedLessons: [],
+              lastAccessedAt: new Date(),
+              currentLesson: 0,
+              generatedImages: {},
+              timeSpent: 0,
+              startedAt: new Date()
+            };
+            await setDoc(progressRef, initialProgress);
+            setProgress(initialProgress);
           }
         }
       } catch (error) {
@@ -106,45 +127,35 @@ export default function CourseDetailPage() {
 
     setIsGeneratingImage(true);
     try {
-      const result = await fal.subscribe("fal-ai/flux-pro", {
-        input: {
-          prompt: `Professional educational illustration for music industry lesson about ${lessonTitle}: ${lessonDescription}`,
-          model_id: "flux-pro",
-          width: 768,
-          height: 512,
-          scheduler: "dpmpp",
-          num_inference_steps: 40,
-          guidance_scale: 7.5,
-        },
-      });
+      const imageUrl = await getRelevantImage(`educational illustration ${lessonTitle} ${lessonDescription}`);
 
-      if (result && 'images' in result && result.images && result.images[0] && result.images[0].url) {
-        const imageUrl = result.images[0].url;
-
-        // Update progress with new image
-        const newProgress = {
-          ...progress,
-          generatedImages: {
-            ...progress.generatedImages,
-            [lessonTitle]: imageUrl
-          }
-        };
-
-        // Save to Firestore
-        if (auth.currentUser) {
-          const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
-          await updateDoc(progressRef, {
-            generatedImages: newProgress.generatedImages
-          });
+      // Update progress with new image
+      const newProgress = {
+        ...progress,
+        generatedImages: {
+          ...progress.generatedImages,
+          [lessonTitle]: imageUrl
         }
+      };
 
-        setProgress(newProgress);
+      // Save to Firestore
+      if (auth.currentUser) {
+        const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
+        await updateDoc(progressRef, {
+          generatedImages: newProgress.generatedImages
+        });
       }
+
+      setProgress(newProgress);
+      toast({
+        title: "Success",
+        description: "Lesson illustration generated successfully"
+      });
     } catch (error) {
       console.error('Error generating image:', error);
       toast({
         title: "Error",
-        description: "Failed to generate image",
+        description: "Failed to generate lesson illustration",
         variant: "destructive"
       });
     } finally {
@@ -155,30 +166,36 @@ export default function CourseDetailPage() {
   const markLessonComplete = async (lessonIndex: number) => {
     if (!auth.currentUser || !course) return;
 
-    const lessonTitle = course.content.curriculum[lessonIndex].title;
-    const newProgress = {
-      ...progress,
-      completedLessons: [...progress.completedLessons, lessonTitle],
-      currentLesson: Math.max(progress.currentLesson, lessonIndex + 1),
-      lastAccessedAt: new Date()
-    };
-
+    setIsSavingProgress(true);
     try {
+      const lessonTitle = course.content.curriculum[lessonIndex].title;
+      const now = new Date();
+      const newProgress = {
+        ...progress,
+        completedLessons: [...progress.completedLessons, lessonTitle],
+        currentLesson: Math.max(progress.currentLesson, lessonIndex + 1),
+        lastAccessedAt: now,
+        lastCompletedAt: now,
+        timeSpent: progress.timeSpent + course.content.curriculum[lessonIndex].estimatedMinutes
+      };
+
       const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
       await updateDoc(progressRef, newProgress);
       setProgress(newProgress);
 
       toast({
         title: "Success",
-        description: "Lesson marked as complete"
+        description: "Lesson completed successfully! Keep going!"
       });
     } catch (error) {
       console.error('Error updating progress:', error);
       toast({
         title: "Error",
-        description: "Failed to update progress",
+        description: "Failed to update lesson progress",
         variant: "destructive"
       });
+    } finally {
+      setIsSavingProgress(false);
     }
   };
 
@@ -213,9 +230,36 @@ export default function CourseDetailPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">{course.title}</h1>
           <p className="text-gray-400 mb-4">{course.description}</p>
-          <div className="flex items-center gap-4 mb-6">
-            <Progress value={progressPercentage} className="w-full" />
-            <span className="text-white">{Math.round(progressPercentage)}%</span>
+
+          <div className="bg-black/40 rounded-lg p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="text-orange-500" />
+                <div>
+                  <p className="text-sm text-gray-400">Lessons</p>
+                  <p className="text-lg font-semibold text-white">{course.content.curriculum.length}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="text-orange-500" />
+                <div>
+                  <p className="text-sm text-gray-400">Completed</p>
+                  <p className="text-lg font-semibold text-white">{progress.completedLessons.length}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="text-orange-500" />
+                <div>
+                  <p className="text-sm text-gray-400">Time Spent</p>
+                  <p className="text-lg font-semibold text-white">{progress.timeSpent} minutes</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Progress value={progressPercentage} className="w-full" />
+              <span className="text-white font-medium">{Math.round(progressPercentage)}%</span>
+            </div>
           </div>
         </div>
 
@@ -232,13 +276,18 @@ export default function CourseDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10">
+                <Card className={`p-6 backdrop-blur-sm border-orange-500/10 ${
+                  isLocked ? 'bg-black/30' : isCompleted ? 'bg-black/50 border-green-500/20' : 'bg-black/50'
+                }`}>
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-semibold text-white mb-2">
                         {index + 1}. {lesson.title}
                       </h3>
                       <p className="text-gray-400">{lesson.description}</p>
+                      <p className="text-sm text-orange-500 mt-2">
+                        Estimated time: {lesson.estimatedMinutes} minutes
+                      </p>
                     </div>
                     {isCompleted ? (
                       <CheckCircle2 className="h-6 w-6 text-green-500" />
@@ -272,7 +321,7 @@ export default function CourseDetailPage() {
                         ) : (
                           <>
                             <ImageIcon className="mr-2 h-4 w-4" />
-                            Generate Illustration
+                            Get Illustration
                           </>
                         )}
                       </Button>
@@ -282,8 +331,16 @@ export default function CourseDetailPage() {
                       <Button
                         onClick={() => markLessonComplete(index)}
                         className="bg-orange-500 hover:bg-orange-600"
+                        disabled={isSavingProgress}
                       >
-                        Complete Lesson
+                        {isSavingProgress ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Complete Lesson'
+                        )}
                       </Button>
                     )}
                   </div>
