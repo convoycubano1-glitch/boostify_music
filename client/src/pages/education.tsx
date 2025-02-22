@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +55,6 @@ export default function EducationPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [hoveredCourse, setHoveredCourse] = useState<string | null>(null);
 
-  // Check authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
@@ -63,7 +63,6 @@ export default function EducationPage() {
     return () => unsubscribe();
   }, []);
 
-  // Fetch courses from Firestore
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -139,7 +138,6 @@ export default function EducationPage() {
 
       const courseRef = await addDoc(collection(db, 'courses'), courseData);
 
-      // Add the new course to the local state
       setCourses(prev => [{
         id: courseRef.id,
         ...courseData,
@@ -378,10 +376,18 @@ export default function EducationPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600 group">
-                    <span>Enroll Now</span>
-                    <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                  </Button>
+                  <div className="flex gap-4">
+                    <Link href={`/course/${course.id}`}>
+                      <Button className="flex-1 bg-orange-500 hover:bg-orange-600 group">
+                        <span>View Course</span>
+                        <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                    </Link>
+                    <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => window.location.href = `/course/${course.id}`}>
+                      <span>Enroll Now</span>
+                      <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </motion.div>
