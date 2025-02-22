@@ -185,6 +185,107 @@ export default function EducationPage() {
     }
   };
 
+  const createSampleCourses = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create courses",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const sampleCourses = [
+      {
+        title: "Music Marketing Mastery",
+        description: "Learn advanced digital marketing strategies specifically tailored for musicians and music industry professionals. From social media optimization to email campaigns.",
+        category: "Marketing",
+        level: "Intermediate"
+      },
+      {
+        title: "Professional Music Production",
+        description: "Master the art of music production with industry-standard tools and techniques. Learn mixing, mastering, and professional studio workflow.",
+        category: "Production",
+        level: "Advanced"
+      },
+      {
+        title: "Music Business Fundamentals",
+        description: "Essential knowledge for anyone wanting to succeed in the music industry. Cover contracts, royalties, licensing, and revenue streams.",
+        category: "Business",
+        level: "Beginner"
+      },
+      {
+        title: "Artist Brand Development",
+        description: "Create and develop your unique artist brand. Learn about image creation, brand storytelling, and maintaining consistent brand identity.",
+        category: "Branding",
+        level: "Intermediate"
+      },
+      {
+        title: "Digital Music Distribution",
+        description: "Navigate the modern music distribution landscape. Learn about streaming platforms, release strategies, and maximizing your digital presence.",
+        category: "Distribution",
+        level: "Beginner"
+      }
+    ];
+
+    setIsGenerating(true);
+    let createdCount = 0;
+
+    try {
+      for (const course of sampleCourses) {
+        // Generate course thumbnail
+        const imagePrompt = `professional education ${course.title} ${course.category} course cover`;
+        const thumbnailUrl = await getRelevantImage(imagePrompt);
+
+        const prompt = `Generate a professional music course with these characteristics:
+          - Title: "${course.title}"
+          - Description: "${course.description}"
+          - Level: ${course.level}
+          - Category: ${course.category}
+
+          The course should be detailed and practical, focused on the current music industry.`;
+
+        const courseContent = await generateCourseContent(prompt);
+        const randomData = generateRandomCourseData();
+
+        const courseData = {
+          ...course,
+          content: courseContent,
+          thumbnail: thumbnailUrl,
+          lessons: courseContent.curriculum.length,
+          duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
+          ...randomData,
+          createdAt: Timestamp.now(),
+          createdBy: auth.currentUser?.uid || ""
+        };
+
+        const courseRef = await addDoc(collection(db, 'courses'), courseData);
+
+        setCourses(prev => [{
+          id: courseRef.id,
+          ...courseData,
+          createdAt: new Date()
+        } as Course, ...prev]);
+
+        createdCount++;
+      }
+
+      toast({
+        title: "Success",
+        description: `Created ${createdCount} sample courses successfully`
+      });
+    } catch (error: any) {
+      console.error('Error creating sample courses:', error);
+      toast({
+        title: "Error creating courses",
+        description: error.message || "Failed to create sample courses. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black">
@@ -293,6 +394,23 @@ export default function EducationPage() {
                     </>
                   ) : (
                     "Create Course"
+                  )}
+                </Button>
+                <Button 
+                  className="bg-orange-500 hover:bg-orange-600"
+                  onClick={createSampleCourses}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Courses...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create 5 Sample Courses
+                    </>
                   )}
                 </Button>
               </DialogFooter>
