@@ -102,7 +102,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
 
     try {
       const completion = await openai.chat.completions.create({
-        model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+        model: 'deepseek/deepseek-r1:free',
         messages: [
           {
             role: 'system',

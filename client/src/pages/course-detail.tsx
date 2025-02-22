@@ -326,6 +326,18 @@ export default function CourseDetailPage() {
       });
       return;
     }
+
+    // Validate that exam content exists before starting
+    const examContent = progress.lessonContents[lessonTitle]?.content.exam;
+    if (!examContent || examContent.length === 0) {
+      toast({
+        title: "Error",
+        description: "No exam questions available",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setCurrentExamLesson(lessonTitle);
     setSelectedExamQuestion(0);
     setSelectedAnswer(null);
@@ -337,6 +349,15 @@ export default function CourseDetailPage() {
     if (!currentExamLesson || selectedAnswer === null) return;
 
     const currentLesson = progress.lessonContents[currentExamLesson];
+    if (!currentLesson?.content.exam || !currentLesson.content.exam[selectedExamQuestion]) {
+      toast({
+        title: "Error",
+        description: "Invalid exam question",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const currentQuestion = currentLesson.content.exam[selectedExamQuestion];
     const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
 
@@ -346,28 +367,37 @@ export default function CourseDetailPage() {
     });
 
     if (isCorrect && selectedExamQuestion === currentLesson.content.exam.length - 1) {
-      const newProgress = {
-        ...progress,
-        completedExams: [...(progress.completedExams || []), currentExamLesson],
-        examScores: {
-          ...(progress.examScores || {}),
-          [currentExamLesson]: 100
-        }
-      };
+      try {
+        const newProgress = {
+          ...progress,
+          completedExams: [...(progress.completedExams || []), currentExamLesson],
+          examScores: {
+            ...(progress.examScores || {}),
+            [currentExamLesson]: 100
+          }
+        };
 
-      if (auth.currentUser) {
-        const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
-        await updateDoc(progressRef, {
-          completedExams: newProgress.completedExams,
-          examScores: newProgress.examScores
+        if (auth.currentUser) {
+          const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
+          await updateDoc(progressRef, {
+            completedExams: newProgress.completedExams,
+            examScores: newProgress.examScores
+          });
+        }
+
+        setProgress(newProgress);
+        toast({
+          title: "Congratulations!",
+          description: "You've completed the exam successfully!"
+        });
+      } catch (error) {
+        console.error('Error updating progress:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save exam progress",
+          variant: "destructive"
         });
       }
-
-      setProgress(newProgress);
-      toast({
-        title: "Congratulations!",
-        description: "You've completed the exam successfully!"
-      });
     }
   };
 
@@ -453,8 +483,8 @@ export default function CourseDetailPage() {
               <span className="text-white font-medium">Course Progress</span>
               <span className="text-white font-medium">{Math.round((progress.completedLessons.length / (course?.content.curriculum.length || 1)) * 100)}%</span>
             </div>
-            <Progress 
-              value={(progress.completedLessons.length / (course?.content.curriculum.length || 1)) * 100} 
+            <Progress
+              value={(progress.completedLessons.length / (course?.content.curriculum.length || 1)) * 100}
               className="h-2"
             />
           </div>
@@ -639,65 +669,72 @@ export default function CourseDetailPage() {
         </div>
       </main>
 
-      <AlertDialog open={showExam} onOpenChange={setShowExam}>
-        <AlertDialogContent className="max-w-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl">
-              {currentExamLesson && 
-               progress.lessonContents[currentExamLesson]?.content.exam && 
-               progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion] && 
-               progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion].question}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                <RadioGroup
-                  value={selectedAnswer?.toString()}
-                  onValueChange={(value) => setSelectedAnswer(parseInt(value))}
-                  className="space-y-4 mt-4"
-                >
-                  {currentExamLesson &&
-                   progress.lessonContents[currentExamLesson]?.content.exam && 
-                   progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion]?.options.map(
-                      (option, idx) => (
-                        <div key={idx} className="flex items-center space-x-2">
-                          <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
-                          <Label htmlFor={`option-${idx}`}>{option}</Label>
-                        </div>
-                      )
-                    )}
-                </RadioGroup>
+      <Dialog open={showExam} onOpenChange={setShowExam}>
+        <DialogContent className="max-w-2xl">
+          <DialogTitle className="text-xl font-bold">
+            Course Exam
+          </DialogTitle>
+          <div className="mt-4">
+            {currentExamLesson &&
+              progress.lessonContents[currentExamLesson]?.content.exam &&
+              progress.lessonContents[currentExamLesson]?.content.exam[selectedExamQuestion] && (
+                <>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Question {selectedExamQuestion + 1}: {progress.lessonContents[currentExamLesson].content.exam[selectedExamQuestion].question}
+                  </h3>
+                  <div className="space-y-4">
+                    <RadioGroup
+                      value={selectedAnswer?.toString()}
+                      onValueChange={(value) => setSelectedAnswer(parseInt(value))}
+                      className="space-y-4"
+                    >
+                      {progress.lessonContents[currentExamLesson].content.exam[selectedExamQuestion].options.map(
+                        (option, idx) => (
+                          <div key={idx} className="flex items-center space-x-2">
+                            <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
+                            <Label htmlFor={`option-${idx}`}>{option}</Label>
+                          </div>
+                        )
+                      )}
+                    </RadioGroup>
 
-                {examResult && (
-                  <div className={`mt-4 p-4 rounded-lg ${examResult.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                    <div className="font-semibold">{examResult.correct ? 'Correct!' : 'Incorrect'}</div>
-                    <div className="mt-2">{examResult.explanation}</div>
+                    {examResult && (
+                      <div className={`mt-4 p-4 rounded-lg ${examResult.correct ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                        <div className="font-semibold">{examResult.correct ? 'Correct!' : 'Incorrect'}</div>
+                        <div className="mt-2">{examResult.explanation}</div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowExam(false)}>Cancel</AlertDialogCancel>
+                </>
+              )}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowExam(false)}>
+              Cancel
+            </Button>
             {!examResult ? (
-              <AlertDialogAction
+              <Button
                 onClick={checkAnswer}
                 disabled={selectedAnswer === null}
                 className="bg-orange-500 hover:bg-orange-600"
               >
                 Check Answer
-              </AlertDialogAction>
+              </Button>
             ) : (
-              <AlertDialogAction onClick={nextQuestion} className="bg-orange-500 hover:bg-orange-600">
-                {currentExamLesson && 
-                 progress.lessonContents[currentExamLesson]?.content.exam && 
-                 selectedExamQuestion < progress.lessonContents[currentExamLesson].content.exam.length - 1
+              <Button
+                onClick={nextQuestion}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {currentExamLesson &&
+                  progress.lessonContents[currentExamLesson]?.content.exam &&
+                  selectedExamQuestion < progress.lessonContents[currentExamLesson].content.exam.length - 1
                   ? 'Next Question'
                   : 'Finish Exam'}
-              </AlertDialogAction>
+              </Button>
             )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
