@@ -114,7 +114,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
 
     console.log('Making API request to OpenRouter...');
     const completion = await openai.chat.completions.create({
-      model: 'anthropic/claude-3-opus:beta',
+      model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
