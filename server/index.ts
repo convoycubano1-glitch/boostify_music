@@ -39,40 +39,32 @@ if (process.env.NODE_ENV === "production") {
   }
 
   // Serve static files with detailed error logging
-  app.use(express.static(distPath, {
-    fallthrough: true,
-    setHeaders: (res, path) => {
-      // Set caching headers
-      if (path.endsWith('.js') || path.endsWith('.css')) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000');
-      }
-    }
+  app.use('/', express.static(distPath, {
+    index: false, // Don't serve index.html for every route
+    fallthrough: true
   }));
 
-  // Log static file requests
-  app.use((req, res, next) => {
-    if (!req.path.startsWith('/api')) {
-      log(`Static file request: ${req.path}`);
-      // Check if file exists
-      const filePath = path.join(distPath, req.path);
-      if (fs.existsSync(filePath)) {
-        log(`File exists: ${filePath}`);
-      } else {
-        log(`File not found: ${filePath}, serving index.html`);
-      }
-    }
-    next();
-  });
+  // Serve static assets with proper cache headers
+  app.use('/assets', express.static(path.join(distPath, 'assets'), {
+    maxAge: '1y',
+    etag: false
+  }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (req, res, next) => {
-    const indexPath = path.join(distPath, "index.html");
+  // SPA middleware - send index.html for all non-asset and non-api routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/assets')) {
+      return next();
+    }
+
+    const indexPath = path.join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
+      log(`Serving index.html for path: ${req.path}`);
       res.sendFile(indexPath);
     } else {
       next(new Error(`index.html not found at ${indexPath}`));
     }
   });
+
 } else {
   log('Running in development mode');
   // Serve static files from the public folder in development
