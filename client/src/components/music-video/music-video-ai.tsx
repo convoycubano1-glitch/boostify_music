@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "@/components/ui/slider";
 import Editor from "@monaco-editor/react";
+import { env } from "@/env";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw
@@ -16,7 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
-import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
@@ -29,16 +29,53 @@ import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
 
-// OpenAI configuration
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
 
 // Fal.ai configuration
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
 });
+
+async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  try {
+    const base64Audio = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.readAsDataURL(audioBlob);
+    });
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Boostify Music Video Creator",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        messages: [{
+          role: "user",
+          content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${base64Audio}`
+        }],
+        temperature: 0.2,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error in transcription: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error("Transcription error:", error);
+    throw error;
+  }
+}
 
 const videoStyles = {
   moods: [
@@ -159,7 +196,6 @@ interface TimelineItem {
   firebaseUrl?: string;
 }
 
-// Añadir tipos de grupos para mejor organización del timeline
 const groups = [
   { id: 1, title: "Video", stackItems: true },
   { id: 2, title: "Transiciones", stackItems: false },
@@ -168,7 +204,6 @@ const groups = [
 
 const fallbackImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
 
-// Add interface for Director
 interface Director {
   id: string;
   name: string;
@@ -248,7 +283,6 @@ export function MusicVideoAI() {
       setCurrentTime(0);
       setIsPlaying(false);
 
-      // Procesar el archivo de audio
       const reader = new FileReader();
       reader.onload = async (e) => {
         if (e.target?.result instanceof ArrayBuffer) {
@@ -257,73 +291,26 @@ export function MusicVideoAI() {
           }
           const buffer = await audioContext.current.decodeAudioData(e.target.result);
           setAudioBuffer(buffer);
-          // Iniciar transcripción automáticamente
-          transcribeAudio(file);
+          transcribeAudio(file).then(setTranscription).then(()=>setCurrentStep(2)).catch(err => {
+            console.error("Error transcribing audio:", err);
+            toast({
+              title: "Error",
+              description: "Error al transcribir el audio. Por favor intenta de nuevo.",
+              variant: "destructive",
+            });
+          }).finally(()=>setIsTranscribing(false));
         }
       };
       reader.readAsArrayBuffer(file);
     }
   }, [toast]);
 
-  const transcribeAudio = async (file: File) => {
-    setIsTranscribing(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('model', 'whisper-1');
-
-      const transcription = await openai.audio.transcriptions.create({
-        file: file,
-        model: "whisper-1",
-      });
-
-      if (transcription.text) {
-        const formattedResponse = await openai.chat.completions.create({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "system",
-              content: "Format the given text as song lyrics, identifying verses, chorus, and bridges. Keep the original words but add structure."
-            },
-            {
-              role: "user",
-              content: transcription.text
-            }
-          ]
-        });
-
-        const formattedLyrics = formattedResponse.choices[0].message.content;
-        setTranscription(formattedLyrics || transcription.text);
-        setCurrentStep(2);
-
-        toast({
-          title: "Éxito",
-          description: "Letra transcrita correctamente",
-        });
-      }
-
-    } catch (error) {
-      console.error("Error en la transcripción:", error);
-      toast({
-        title: "Error",
-        description: "Error al transcribir el audio. Por favor intenta de nuevo.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
-
-  // Función para sincronizar beats y crear cortes
   const syncAudioWithTimeline = async () => {
     if (!audioBuffer) return;
 
     setIsGeneratingShots(true);
     try {
-      console.log("Iniciando detección de beats...");
       const segments = await detectBeatsAndCreateSegments();
-      console.log("Segmentos detectados:", segments);
-
       if (segments && segments.length > 0) {
         setTimelineItems(segments);
         setCurrentStep(3);
@@ -347,7 +334,6 @@ export function MusicVideoAI() {
     }
   };
 
-  // Modificar la función generateVideoScript para manejar mejor los errores
   const generateVideoScript = async () => {
     if (!transcription || timelineItems.length === 0) return;
 
@@ -380,40 +366,48 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   ]
 }`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: "Eres un director de videos musicales experto. IMPORTANTE: Responde SOLAMENTE con el objeto JSON solicitado, sin ningún texto adicional o explicaciones."
-          },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Boostify Music Video Creator",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+          messages: [
+            {
+              role: "system",
+              content: "Eres un director de videos musicales experto. IMPORTANTE: Responde SOLAMENTE con el objeto JSON solicitado, sin ningún texto adicional o explicaciones."
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          response_format: { type: "json_object" }
+        })
       });
 
-      if (!response.choices[0].message.content) {
-        throw new Error("No se recibió respuesta del modelo");
+      if (!response.ok) {
+        throw new Error(`Error generating script: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("OpenRouter raw response:", data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error("Invalid response format from OpenRouter API");
       }
 
       try {
-        // Intentar encontrar y parsear el JSON incluso si hay texto adicional
-        const content = response.choices[0].message.content;
-        console.log("Respuesta completa del modelo:", content);
-
-        // Limpiar la respuesta de cualquier texto adicional
-        const jsonContent = content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
-        console.log("JSON extraído:", jsonContent);
-
+        const jsonContent = data.choices[0].message.content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
         const scriptResult = JSON.parse(jsonContent);
-        console.log("JSON parseado:", scriptResult);
 
         if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
-          throw new Error("El formato del guion no es válido");
+          throw new Error("Invalid script format");
         }
 
-        // Actualizar los items existentes con los nuevos prompts y descripciones
         const updatedItems = timelineItems.map(item => {
           const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
           if (scriptSegment) {
@@ -438,15 +432,11 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
       } catch (parseError) {
         console.error("Error parsing response:", parseError);
-        toast({
-          title: "Error",
-          description: "Error al procesar la respuesta. Por favor intenta de nuevo.",
-          variant: "destructive",
-        });
+        throw new Error("Error al procesar la respuesta del API");
       }
 
     } catch (error) {
-      console.error("Error generando el guion:", error);
+      console.error("Error generating script:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al generar el guion del video",
@@ -579,7 +569,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
-  // Función para guardar imágenes en Firebase Storage
   const saveToFirebase = async (item: TimelineItem) => {
     if (!item.generatedImage) return null;
 
@@ -598,7 +587,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
-  // Función mejorada para generar imágenes
   const generateShotImages = async () => {
     setIsGeneratingShots(true);
     try {
@@ -620,7 +608,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             });
 
             if (result?.images?.[0]?.url) {
-              // Guardar en Firebase
               const firebaseUrl = await saveToFirebase({
                 ...item,
                 generatedImage: result.images[0].url
@@ -716,14 +703,12 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
         selectedShot?.id === item.id ? "ring-2 ring-blue-500" : "",
         "hover:scale-[1.02] hover:z-10"
       )}>
-        {/* Miniatura de la imagen */}
         <div className="absolute inset-0">
           <img
             src={item.generatedImage || item.firebaseUrl || fallbackImage}
             alt={item.description}
             className="w-full h-full object-cover"
           />
-          {/* Overlay con información */}
           <div className="absolute inset-0 bg-black/40 p-2 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity">
             <div>
               <p className="text-xs font-medium text-white truncate">
@@ -740,7 +725,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           </div>
         </div>
 
-        {/* Indicador de transición */}
         {item.transition && item.transition !== "cut" && (
           <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500/20 rounded-full z-10">
             <div className="absolute inset-1 bg-orange-500 rounded-full" />
@@ -750,7 +734,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     </div>
   ), [currentTime, selectedShot]);
 
-  // Convertir timelineItems a formato de clips para el nuevo editor
   const clips: TimelineClip[] = timelineItems.map(item => ({
     id: item.id,
     start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
@@ -762,16 +745,13 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     imagePrompt: item.imagePrompt
   }));
 
-  // Calcular duración total
   const totalDuration = clips.reduce((acc, clip) => Math.max(acc, clip.start + clip.duration), 0);
 
-  // Función para actualizar el tiempo actual
   const handleTimeUpdate = (time: number) => {
     const baseTime = timelineItems[0]?.start_time || 0;
     setCurrentTime(baseTime + time * 1000);
   };
 
-  // Función para actualizar clips
   const handleClipUpdate = (clipId: number, updates: Partial<TimelineClip>) => {
     const updatedItems = timelineItems.map(item => {
       if (item.id === clipId) {
@@ -787,14 +767,12 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   };
 
   const detectBeatsAndCreateSegments = async () => {
-    if (!audioBuffer) return;
+    if (!audioBuffer) return [];
 
     const channelData = audioBuffer.getChannelData(0);
     const sampleRate = audioBuffer.sampleRate;
-    const segments: TimelineItem[] = [];
     const totalDuration = audioBuffer.duration;
 
-    // Configuración mejorada para detección de beats
     const editingStyle = editingStyles.find(style => style.id === selectedEditingStyle)!;
     const windowSize = Math.floor(sampleRate * (selectedEditingStyle === "rhythmic" ? 0.025 : 0.05));
     const threshold = selectedEditingStyle === "dynamic" ? 0.15 : 0.12;
@@ -803,7 +781,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     let lastBeatTime = 0;
     let energyHistory: number[] = [];
     const historySize = 43;
-    // Tipos de planos disponibles con sus descripciones
+    const segments: TimelineItem[] = [];
     const shotTypes = [
       {
         type: "wide shot",
@@ -832,10 +810,8 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       }
     ];
 
-    // Tipos de transiciones
     const transitions = ["cut", "fade", "dissolve", "crossfade"];
 
-    // Normalizar y detectar beats
     for (let i = 0; i < channelData.length; i += windowSize) {
       let sum = 0;
       for (let j = 0; j < windowSize; j++) {
@@ -856,19 +832,15 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             currentTime - lastBeatTime >= minSegmentDuration &&
             currentTime - lastBeatTime <= maxSegmentDuration) {
 
-          // Seleccionar tipo de plano y transición aleatoriamente
           const shotType = shotTypes[Math.floor(Math.random() * shotTypes.length)];
           const transition = transitions[Math.floor(Math.random() * transitions.length)];
 
-          // Crear segmento
           let segmentDuration = currentTime - lastBeatTime;
 
           if (selectedEditingStyle === "dynamic") {
-            // Hacer los cortes más cortos en momentos de alta energía
             segmentDuration = Math.max(minSegmentDuration,
               maxSegmentDuration * (1 - energy / (averageEnergy * 2)));
           } else if (selectedEditingStyle === "minimalist") {
-            // Favorecer duraciones más largas
             segmentDuration = Math.max(segmentDuration, minSegmentDuration);
           }
 
@@ -891,7 +863,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       }
     }
 
-    // Asegurarse de que cubrimos toda la duración de la canción
     if (segments.length > 0) {
       const lastSegment = segments[segments.length - 1];
       if (lastSegment.end_time / 1000 < totalDuration) {
@@ -914,7 +885,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     return segments;
   };
 
-  // Función para generar el guion basado en los segmentos
   const generatePromptForSegment = async (segment: TimelineItem) => {
     try {
       let basePrompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
@@ -927,41 +897,53 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     - Paleta de colores: ${videoStyle.colorPalette}
     - Duración del segmento: ${segment.duration / 1000} segundos`;
 
-    // Add director's style if selected
-    if (videoStyle.selectedDirector) {
-      basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
+      if (videoStyle.selectedDirector) {
+        basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
     - Especialidad: ${videoStyle.selectedDirector.specialty}`;
-    }
+      }
 
-    // Añadir descripción del estilo de referencia si existe
-    if (videoStyle.styleDescription) {
-      basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
-    }
+      if (videoStyle.styleDescription) {
+        basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
+      }
 
-    basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
+      basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales."
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Boostify Music Video Creator",
+          "Content-Type": "application/json"
         },
-        { role: "user", content: basePrompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 200
-    });
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+          messages: [
+            {
+              role: "system",
+              content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales."
+            },
+            { role: "user", content: basePrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 200
+        })
+      });
 
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error("Error generando prompt:", error);
-    return segment.imagePrompt || "Error generando prompt";
-  }
-};
+      if (!response.ok) {
+        throw new Error(`Error generating prompt: ${response.statusText}`);
+      }
 
-  // Función separada para generar prompts
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "Error generating prompt";
+
+    } catch (error) {
+      console.error("Error generating prompt:", error);
+      return segment.imagePrompt || "Error generating prompt";
+    }
+  };
+
   const generatePromptsForSegments = async () => {
     if (timelineItems.length === 0) {
       toast({
@@ -983,7 +965,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
     setIsGeneratingScript(true);
     try {
-      console.log("Generando prompts para los segmentos...");
       const segmentsWithPrompts = [...timelineItems];
 
       for (let i = 0; i < segmentsWithPrompts.length; i++) {
@@ -992,7 +973,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           ...segmentsWithPrompts[i],
           imagePrompt: prompt
         };
-        console.log(`Prompt generado para segmento ${i + 1}:`, prompt);
       }
 
       setTimelineItems(segmentsWithPrompts);
@@ -1014,7 +994,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
-  //Simulación de la generación de video
   const generateVideo = async () => {
     if (!timelineItems.length || !audioBuffer) {
       toast({
@@ -1027,8 +1006,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
     setIsGeneratingVideo(true);
     try {
-      // Aquí se implementará la lógica de Kling para generar el video
-      // Por ahora es un placeholder
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       toast({
@@ -1047,49 +1024,61 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
-  // Añadir función para analizar imagen de referencia
   const analyzeReferenceImage = async (image: string) => {
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4-vision-preview",
-        messages: [
-          {
-            role: "system",
-            content: "Analiza esta imagen y describe su estilo visual, paleta de colores, y elementos cinematográficos destacados. Proporciona una descripción que pueda ser utilizada para generar prompts similares."
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: image
-              }
-            ]
-          }
-        ]
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Boostify Music Video Creator",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+          messages: [
+            {
+              role: "system",
+              content: "Analyze the provided image and extract its visual style characteristics."
+            },
+            {
+              role: "user",
+              content: `Analyze this reference image and describe its visual style, including color palette, mood, and composition: ${image}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
       });
 
-      const styleDescription = response.choices[0].message.content;
-      setVideoStyle(prev => ({
-        ...prev,
-        styleDescription
-      }));
+      if (!response.ok) {
+        throw new Error("Failed to analyze reference image");
+      }
 
-      toast({
-        title: "Análisis completado",
-        description: "Se ha analizado la imagen de referencia exitosamente",
-      });
+      const data = await response.json();
+      const analysis = data.choices[0]?.message?.content;
+
+      if (analysis) {
+        setVideoStyle(prev => ({
+          ...prev,
+          styleDescription: analysis
+        }));
+
+        toast({
+          title: "Análisis completado",
+          description: "Estilo de referencia actualizado"
+        });
+      }
     } catch (error) {
-      console.error("Error analizando imagen:", error);
+      console.error("Error analyzing reference image:", error);
       toast({
         title: "Error",
         description: "No se pudo analizar la imagen de referencia",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
 
-  // Actualizar la interfaz para reflejar los pasos separados
   useEffect(() => {
     const loadDirectors = async () => {
       try {
@@ -1114,10 +1103,8 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Barra de Progreso */}
       <ProgressSteps currentStep={currentStep} />
 
-      {/* Resto del contenido existente */}
       <div className="container py-6 space-y-8">
         <Card className="p-6">
           <div className="flex items-center gap-4 mb-6">
@@ -1132,11 +1119,8 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
             </div>
           </div>
 
-          {/* Layout Principal */}
           <div className="grid lg:grid-cols-2 gap-6">
-            {/* Columna Izquierda - Controles */}
             <div className="space-y-6 order-2 lg:order-1">
-              {/* Paso 1: Subida de Audio */}
               <div className="border rounded-lg p-4">
                 <Label className="text-lg font-semibold mb-4">1. Subir Audio</Label>
                 <div className="space-y-4">
@@ -1161,9 +1145,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                 </div>
               </div>
 
-              {/* Resto de los pasos con clases responsive */}
               <div className="space-y-6">
-                {/* Paso 2: Transcripción */}
                 <div className="border rounded-lg p-4">
                   <Label className="text-lg font-semibold mb-4">2. Transcripción</Label>
                   <div className="space-y-4">
@@ -1173,11 +1155,9 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   </div>
                 </div>
 
-                {/* Paso 3: Estilo Visual */}
                 <div className="border rounded-lg p-4">
                   <Label className="text-lg font-semibold mb-4">3. Estilo Visual</Label>
                   <div className="grid gap-4">
-                    {/* Formato de Cámara */}
                     <div className="space-y-2">
                       <Label>Formato de Cámara</Label>
                       <Select
@@ -1200,7 +1180,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                       </Select>
                     </div>
 
-                    {/* Mood y Paleta de Colores (existentes) */}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Mood</Label>
@@ -1241,7 +1220,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                       </div>
                     </div>
 
-                    {/* Estilo de Personajes e Intensidad Visual */}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Estilo de Personajes</Label>
@@ -1273,7 +1251,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                       </div>
                     </div>
 
-                    {/* Intensidad Narrativa */}
                     <div className="space-y-2">
                       <Label>Intensidad Narrativa ({videoStyle.narrativeIntensity}%)</Label>
                       <p className="text-sm text-muted-foreground">
@@ -1287,7 +1264,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                       />
                     </div>
 
-                    {/* Referencia de Estilo */}
                     <div className="space-y-2">
                       <Label>Imagen de Referencia</Label>
                       <div className="grid gap-4">
@@ -1327,7 +1303,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                       </div>
                     </div>
 
-                    {/* Director del Video */}
                     <div className="space-y-2">
                       <Label>Director del Video</Label>
                       {directors.length > 0 ? (
@@ -1398,7 +1373,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   </div>
                 </div>
 
-                {/* Paso 4: Sincronizar Beats */}
                 <div className="border rounded-lg p-4">
                   <Label className="text-lg font-semibold mb-4">4. Sincronizar Beats</Label>
                   <Button
@@ -1443,7 +1417,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   </RadioGroup>
                 </div>
 
-                {/* Paso 5: Generar Prompts */}
                 <div className="border rounded-lg p-4">
                   <Label className="text-lg font-semibold mb-4">5. Generar Prompts</Label>
                   <Button
@@ -1472,7 +1445,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   </Button>
                 </div>
 
-                {/* Paso 6: Generar Imágenes */}
                 <div className="border rounded-lg p-4">
                   <Label className="text-lg font-semibold mb-4">6. Generar Imágenes</Label>
                   <Button
@@ -1498,7 +1470,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   </Button>
                 </div>
 
-                {/* Paso 7: Generación de Video */}
                 <div className="mt-6">
                   <VideoGenerator
                     clips={timelineItems}
@@ -1508,27 +1479,23 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                   />
                 </div>
 
-                {/* Paso 7: Personalización de Artista */}
                 <ArtistCustomization
                   clips={clips}
                   onUpdateClip={handleClipUpdate}
                 />
 
-                {/* Paso 8: Integración de Músicos */}
                 <MusicianIntegration
                   clips={clips}
                   audioBuffer={audioBuffer}
                   onUpdateClip={handleClipUpdate}
                 />
 
-                {/* Paso 9: Integración de Movimientos */}
                 <MovementIntegration
                   clips={clips}
                   audioBuffer={audioBuffer}
                   onUpdateClip={handleClipUpdate}
                 />
 
-                {/* Paso 10: Sincronización de Labios */}
                 <LipSyncIntegration
                   clips={clips}
                   transcription={transcription}
@@ -1539,7 +1506,6 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               </div>
             </div>
 
-            {/* Columna Derecha - Timeline y Preview */}
             <div className="lg:order-2 order-1">
               <div className="sticky top-4 space-y-4">
                 <div className="space-y-4">
