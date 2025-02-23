@@ -5,7 +5,6 @@ interface Message {
   content: string;
 }
 
-// Estructura base para un prompt de video musical
 interface VideoPromptParams {
   shotType: string;
   cameraFormat: string;
@@ -20,7 +19,6 @@ interface VideoPromptParams {
   styleReference?: string;
 }
 
-// Cache para prompts exitosos
 const promptCache = new Map<string, string>();
 
 const generateVideoPrompt = ({
@@ -41,211 +39,142 @@ const generateVideoPrompt = ({
     return promptCache.get(cacheKey)!;
   }
 
-  let prompt = `Create a cinematic ${shotType} shot using ${cameraFormat} camera.
-Description: Professional shot that captures a ${mood} atmosphere with ${colorPalette} tones.
-Style: ${visualStyle} with ${visualIntensity}% visual intensity
-Camera Movement: Smooth and professional with ${narrativeIntensity}% narrative focus
-Duration: ${duration} seconds
-Technical Specs: 4K resolution, cinematic lighting, professional grade`;
+  // Simplified and more specific prompt format
+  let prompt = `Generate a detailed cinematic prompt for a ${duration} second shot:
+
+Key Requirements:
+1. Shot Type: ${shotType}
+2. Camera Format: ${cameraFormat}
+3. Mood: ${mood}
+4. Visual Style: ${visualStyle} at ${visualIntensity}% intensity
+5. Color Scheme: ${colorPalette}
+6. Narrative Focus: ${narrativeIntensity}%
+
+Technical Requirements:
+- Professional cinematic lighting
+- High production value
+- Clear composition guidelines`;
 
   if (directorStyle) {
-    prompt += `\nDirector's Vision: ${directorStyle}`;
+    prompt += `\n\nDirector's Style: ${directorStyle}`;
   }
 
   if (specialty) {
-    prompt += `\nSpecial Focus: ${specialty}`;
+    prompt += `\n\nSpecialty Focus: ${specialty}`;
   }
 
   if (styleReference) {
-    prompt += `\nStyle Reference: ${styleReference}`;
+    prompt += `\n\nVisual Reference: ${styleReference}`;
   }
+
+  prompt += "\n\nProvide a detailed and specific description for generating this shot.";
 
   promptCache.set(cacheKey, prompt);
   return prompt;
 };
 
-// Implementación de backoff exponencial mejorado
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const backoff = async (retryCount: number) => {
-  const baseDelay = 3000; // 3 segundos base
-  const maxDelay = 60000; // 60 segundos máximo
+  const baseDelay = 3000;
+  const maxDelay = 60000;
   const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
   console.log(`Waiting ${delay/1000} seconds before retry ${retryCount + 1}`);
   await wait(delay);
 };
 
-// Cola de procesamiento para prompts
-const promptQueue: (() => Promise<void>)[] = [];
-let isProcessing = false;
-
-const processQueue = async () => {
-  if (isProcessing || promptQueue.length === 0) return;
-
-  isProcessing = true;
-  while (promptQueue.length > 0) {
-    const task = promptQueue.shift()!;
-    try {
-      await task();
-      // Esperar 3 segundos entre tareas
-      await wait(3000);
-    } catch (error) {
-      console.error("Error processing prompt task:", error);
-    }
-  }
-  isProcessing = false;
-};
-
-// Función mejorada para generar prompts de video
 export async function generateVideoPromptWithRetry(params: VideoPromptParams): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const task = async () => {
-      const maxRetries = 5;
-      let retryCount = 0;
+  const maxRetries = 5;
+  let retryCount = 0;
 
-      while (retryCount < maxRetries) {
-        try {
-          console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video prompt`);
+  while (retryCount < maxRetries) {
+    try {
+      console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video prompt`);
 
-          const promptText = generateVideoPrompt(params);
-          console.log("Generated prompt text:", promptText);
+      const promptText = generateVideoPrompt(params);
+      console.log("Generated prompt text:", promptText);
 
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-              "HTTP-Referer": window.location.origin,
-              "X-Title": "Music Video Creator",
-              "Content-Type": "application/json"
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Music Video Creator",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "mistralai/mixtral-8x7b-instruct",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional cinematographer. Generate clear and specific prompts for video scenes. Focus on visual elements and practical details. Respond only with the scene description, no additional text."
             },
-            body: JSON.stringify({
-              model: "anthropic/claude-3-sonnet", // Using a more reliable model
-              messages: [
-                {
-                  role: "system",
-                  content: "You are a professional cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise. Focus on visual elements and composition."
-                },
-                {
-                  role: "user",
-                  content: promptText
-                }
-              ],
-              temperature: 0.3, // Lower temperature for more consistent outputs
-              max_tokens: 150
-            })
-          });
-
-          const data = await response.json();
-          console.log("API Response:", data);
-
-          if (!response.ok) {
-            const errorMessage = data.error?.message || response.statusText;
-            console.error("API Error:", errorMessage);
-
-            if (response.status === 429) {
-              console.log("Rate limit hit, implementing backoff...");
-              await backoff(retryCount);
-              retryCount++;
-              continue;
+            {
+              role: "user",
+              content: promptText
             }
+          ],
+          temperature: 0.3,
+          max_tokens: 300,
+          top_p: 0.9
+        })
+      });
 
-            if (response.status === 402) {
-              // Si el modelo no está disponible, intentar con un modelo alternativo
-              console.log("Switching to alternative model...");
-              throw new Error("Model not available, trying alternative");
-            }
+      const data = await response.json();
+      console.log("API Response:", data);
 
-            throw new Error(`API error: ${response.status} ${errorMessage}`);
-          }
+      if (!response.ok) {
+        const errorMessage = data.error?.message || response.statusText;
+        console.error("API Error:", errorMessage);
 
-          if (!data.choices?.[0]?.message?.content) {
-            console.error("Invalid response structure:", data);
-            throw new Error("Invalid API response format");
-          }
-
-          const generatedPrompt = data.choices[0].message.content.trim();
-          if (!generatedPrompt) {
-            throw new Error("Empty prompt generated");
-          }
-
-          // Guardar en cache si fue exitoso
-          const cacheKey = JSON.stringify(params);
-          promptCache.set(cacheKey, generatedPrompt);
-
-          resolve(generatedPrompt);
-          return;
-
-        } catch (error) {
-          console.error(`Error in attempt ${retryCount + 1}:`, error);
-
-          if (error.message === "Model not available, trying alternative") {
-            // Intentar con un modelo alternativo
-            try {
-              const alternativeResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                  "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-                  "HTTP-Referer": window.location.origin,
-                  "X-Title": "Music Video Creator",
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  model: "mistralai/mixtral-8x7b-instruct",
-                  messages: [
-                    {
-                      role: "system",
-                      content: "You are a professional cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise. Focus on visual elements and composition."
-                    },
-                    {
-                      role: "user",
-                      content: promptText
-                    }
-                  ],
-                  temperature: 0.3,
-                  max_tokens: 150
-                })
-              });
-
-              const alternativeData = await alternativeResponse.json();
-              if (alternativeResponse.ok && alternativeData.choices?.[0]?.message?.content) {
-                resolve(alternativeData.choices[0].message.content.trim());
-                return;
-              }
-            } catch (alternativeError) {
-              console.error("Error with alternative model:", alternativeError);
-            }
-          }
-
-          if (retryCount === maxRetries - 1) {
-            // En el último intento, intentar usar el cache o el prompt base
-            const cacheKey = JSON.stringify(params);
-            const cachedPrompt = promptCache.get(cacheKey);
-            if (cachedPrompt) {
-              console.log("Using cached prompt as fallback");
-              resolve(cachedPrompt);
-              return;
-            }
-
-            // Si no hay cache, usar el prompt base
-            const basePrompt = generateVideoPrompt(params);
-            resolve(basePrompt);
-            return;
-          }
-
+        if (response.status === 429) {
+          console.log("Rate limit hit, implementing backoff...");
           await backoff(retryCount);
           retryCount++;
+          continue;
         }
-      }
-    };
 
-    promptQueue.push(task);
-    processQueue().catch(error => {
-      console.error("Error in queue processing:", error);
-      reject(error);
-    });
-  });
+        throw new Error(`API error: ${response.status} ${errorMessage}`);
+      }
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error("Invalid response structure:", data);
+        throw new Error("Invalid API response format");
+      }
+
+      const generatedPrompt = data.choices[0].message.content.trim();
+      if (!generatedPrompt) {
+        throw new Error("Empty prompt generated");
+      }
+
+      promptCache.set(JSON.stringify(params), generatedPrompt);
+      return generatedPrompt;
+
+    } catch (error) {
+      console.error(`Error in attempt ${retryCount + 1}:`, error);
+
+      if (retryCount === maxRetries - 1) {
+        // En el último intento, intentar usar el cache o el prompt base
+        const cacheKey = JSON.stringify(params);
+        const cachedPrompt = promptCache.get(cacheKey);
+        if (cachedPrompt) {
+          console.log("Using cached prompt as fallback");
+          return cachedPrompt;
+        }
+
+        // Generar un prompt base como último recurso
+        return generateVideoPrompt(params);
+      }
+
+      await backoff(retryCount);
+      retryCount++;
+    }
+  }
+
+  throw new Error("Failed to generate prompt after all retries");
 }
 
+// Resto de las funciones se mantienen igual que en la versión anterior
 export async function generateCourseContent(prompt: string) {
   try {
     console.log("Starting course content generation with OpenRouter...");
@@ -264,7 +193,7 @@ export async function generateCourseContent(prompt: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-sonnet",
+        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [
           {
             role: "system",
@@ -356,7 +285,7 @@ export async function generateCourseContent(prompt: string) {
   }
 }
 
-export async function generateVideoScript(prompt: string) {
+export async function chatWithAI(messages: Message[]) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -367,29 +296,82 @@ export async function generateVideoScript(prompt: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-sonnet",
-        messages: [
-          {
-            role: "system",
-            content: "You are a professional video director. Return only the requested JSON object without any additional text."
-          },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-        response_format: { type: "json_object" }
+        model: "deepseek/deepseek-r1-distill-llama-8b",
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Error generating script: ${response.statusText}`);
+      throw new Error(`Error in AI chat: ${response.statusText}`);
     }
 
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error("Script generation error:", error);
+    console.error('Error in AI chat:', error);
     throw error;
+  }
+}
+
+export async function generateVideoScript(prompt: string, maxRetries = 3) {
+  let retryCount = 0;
+
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Music Video Creator",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional video director. Generate a detailed video script in JSON format."
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.log("Rate limit hit, implementing backoff...");
+          await backoff(retryCount);
+          retryCount++;
+          continue;
+        }
+        throw new Error(`Error generating script: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Script generation response:", data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error("Invalid API response format");
+      }
+
+      return data.choices[0].message.content;
+
+    } catch (error) {
+      console.error(`Error in attempt ${retryCount + 1}:`, error);
+
+      if (retryCount === maxRetries - 1) {
+        throw error;
+      }
+
+      await backoff(retryCount);
+      retryCount++;
+    }
   }
 }
 
@@ -404,7 +386,7 @@ export async function analyzeImage(imageUrl: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-sonnet",
+        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [
           {
             role: "system",
@@ -432,36 +414,6 @@ export async function analyzeImage(imageUrl: string) {
   }
 }
 
-export async function chatWithAI(messages: Message[]) {
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Music Video Creator",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "anthropic/claude-3-sonnet",
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error in AI chat: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Error in AI chat:', error);
-    throw error;
-  }
-}
-
 export async function transcribeWithAI(audioBase64: string) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -473,7 +425,7 @@ export async function transcribeWithAI(audioBase64: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-sonnet",
+        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [{
           role: "user",
           content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${audioBase64}`
