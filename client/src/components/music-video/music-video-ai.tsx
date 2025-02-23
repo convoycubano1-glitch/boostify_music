@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "@/components/ui/slider";
+import { Card } from "@/components/ui/card";
 import Editor from "@monaco-editor/react";
 // import { env } from "@/env"; // Replaced with import.meta.env below
 import {
@@ -878,8 +879,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     - Mood: ${videoStyle.mood}
     - Estilo visual: ${videoStyle.characterStyle}
     - Intensidad visual: ${videoStyle.visualIntensity}%
-    - Intensidad narrativa: ${videoStyle.narrativeIntensity}%
-    - Paleta de colores: ${videoStyle.colorPalette}
+    - Intensidad narrativa: ${videoStyle.narrativeIntensity}%- Paleta de colores: ${videoStyle.colorPalette}
     - Duración del segmento: ${segment.duration / 10000} segundos`;
 
       if (videoStyle.selectedDirector) {
