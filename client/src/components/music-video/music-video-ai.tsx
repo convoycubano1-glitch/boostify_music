@@ -341,36 +341,53 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado que capture la esencia de esta canción.
-Analiza cuidadosamente:
+      const prompt = `Como experto en dirección de videos musicales y análisis musical, necesito que analices esta canción y crees un guion detallado.
 
-LETRA DE LA CANCIÓN:
+LETRA DE LA CANCIÓN A ANALIZAR:
 ${transcription}
 
 DURACIÓN TOTAL: ${audioBuffer?.duration.toFixed(2)} segundos
 
-INSTRUCCIONES:
-1. Analiza detalladamente la letra y su significado
-2. Identifica los instrumentos y elementos musicales presentes
-3. Crea un guion visual que complemente la narrativa de la letra
-4. Define el ambiente y la atmósfera visual para cada segmento
-5. Limita la respuesta a máximo 10 segmentos para mantener la calidad
+INSTRUCCIONES ESPECÍFICAS:
+1. ANÁLISIS MUSICAL:
+   - Identifica los instrumentos principales y elementos musicales
+   - Describe los cambios en la instrumentación
+   - Señala momentos de intensidad musical
 
-La respuesta debe ser un objeto JSON con esta estructura exacta:
+2. ANÁLISIS DE LA LETRA:
+   - Divide la letra en segmentos narrativos coherentes
+   - Identifica el tema principal y subtemas
+   - Analiza el tono emocional de cada parte
+
+3. CREACIÓN DE GUION VISUAL:
+   - Cada segmento debe corresponder directamente con una parte específica de la letra
+   - Las escenas deben reflejar tanto la letra como los elementos musicales
+   - Incluye detalles específicos de cómo la música influye en cada toma
+
+ESTRUCTURA REQUERIDA (JSON):
 {
   "segments": [
     {
-      "id": número_de_segmento,
-      "lyrics": "parte de la letra correspondiente a este segmento",
-      "musical_elements": "descripción de instrumentos y elementos musicales en este segmento",
-      "description": "descripción detallada de la escena basada en la letra y música",
-      "imagePrompt": "prompt detallado para generar la imagen que capture la escena",
-      "shotType": "tipo de plano (wide shot, medium shot, close-up, etc)",
-      "mood": "estado de ánimo y atmósfera de la escena",
-      "transition": "tipo de transición entre escenas"
+      "id": número,
+      "lyrics": "parte específica de la letra para este segmento",
+      "musical_elements": "descripción detallada de instrumentos y elementos musicales",
+      "description": "descripción detallada de la escena que conecta con la letra y música",
+      "imagePrompt": "prompt detallado para generar imagen que capture la escena",
+      "shotType": "tipo de plano específico",
+      "mood": "estado de ánimo basado en la letra y música",
+      "transition": "tipo de transición que conecte con el siguiente segmento"
     }
   ]
-}`;
+}
+
+IMPORTANTE:
+- Cada segmento debe tener una conexión clara con la letra y la música
+- Los prompts de imagen deben reflejar específicamente el contenido de la letra
+- La descripción debe explicar cómo la escena se relaciona con la letra
+- Máximo 10 segmentos para mantener la coherencia
+
+LETRA ORIGINAL:
+${transcription}`;
 
       const jsonContent = await generateVideoScript(prompt);
 
@@ -381,7 +398,6 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
           throw new Error("Invalid script format");
         }
 
-        // Limitar a 10 segmentos
         const limitedSegments = scriptResult.segments.slice(0, 10);
 
         const updatedItems = timelineItems.slice(0, 10).map((item, index) => {
@@ -389,8 +405,8 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
           if (scriptSegment) {
             return {
               ...item,
-              description: `${scriptSegment.description}\nMúsica: ${scriptSegment.musical_elements}\nLetra: "${scriptSegment.lyrics}"`,
-              imagePrompt: scriptSegment.imagePrompt,
+              description: `Letra: "${scriptSegment.lyrics}"\n\nMúsica: ${scriptSegment.musical_elements}\n\nEscena: ${scriptSegment.description}`,
+              imagePrompt: `${scriptSegment.imagePrompt} La escena debe representar estas letras específicas: "${scriptSegment.lyrics}" con estos elementos musicales: ${scriptSegment.musical_elements}`,
               shotType: scriptSegment.shotType,
               transition: scriptSegment.transition,
               mood: scriptSegment.mood
@@ -404,7 +420,7 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
 
         toast({
           title: "Éxito",
-          description: "Guion generado correctamente considerando letra y música",
+          description: "Guion generado basado en el análisis de la letra y música",
         });
 
       } catch (parseError) {
