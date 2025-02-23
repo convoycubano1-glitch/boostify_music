@@ -7,7 +7,12 @@ interface Message {
 
 export async function generateCourseContent(prompt: string) {
   try {
-    console.log("Starting course content generation with new implementation...");
+    console.log("Starting course content generation with OpenRouter...");
+
+    if (!env.VITE_OPENROUTER_API_KEY) {
+      console.error("OpenRouter API key is missing");
+      throw new Error('OpenRouter API key not configured');
+    }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -49,10 +54,12 @@ export async function generateCourseContent(prompt: string) {
       })
     });
 
+    console.log("OpenRouter API response status:", response.status);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error("OpenRouter API error:", errorData);
-      throw new Error(`Error generating course content: ${response.statusText}`);
+      throw new Error(`Error generating course content: ${response.statusText}. Status: ${response.status}`);
     }
 
     const data = await response.json();

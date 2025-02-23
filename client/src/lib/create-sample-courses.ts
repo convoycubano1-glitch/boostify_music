@@ -43,51 +43,87 @@ const sampleCourses = [
 
 const generateRandomCourseData = () => {
   return {
-    rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), // Random rating between 3.5-5.0
-    totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50, // Random reviews between 50-1000
-    enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100, // Random students between 100-5000
+    rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)),
+    totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50,
+    enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
   };
 };
 
 export async function createSampleCourses(userId: string) {
   let createdCount = 0;
+  const errors: Array<{course: string, error: string}> = [];
 
   try {
+    if (!db) {
+      throw new Error("Firebase database not initialized");
+    }
+
+    console.log("Starting sample course creation...");
+
     for (const course of sampleCourses) {
-      // Generate course thumbnail
-      const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
-      const thumbnailUrl = await getRelevantImage(imagePrompt);
+      try {
+        console.log(`Creating course ${createdCount + 1}/5: ${course.title}`);
 
-      const prompt = `Generate a professional music course with these characteristics:
-        - Title: "${course.title}"
-        - Description: "${course.description}"
-        - Level: ${course.level}
-        - Category: ${course.category}
+        // Generate course thumbnail
+        let thumbnailUrl: string;
+        try {
+          const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
+          thumbnailUrl = await getRelevantImage(imagePrompt);
+          console.log("Generated thumbnail URL:", thumbnailUrl);
+        } catch (imageError) {
+          console.error(`Error generating thumbnail for ${course.title}:`, imageError);
+          thumbnailUrl = "https://images.unsplash.com/photo-1511379938547-c1f69419868d"; // Fallback image
+        }
 
-        The course should be detailed and practical, focused on the current music industry. Include specific actionable steps and real-world examples.`;
+        const prompt = `Generate a professional music course with these characteristics:
+          - Title: "${course.title}"
+          - Description: "${course.description}"
+          - Level: ${course.level}
+          - Category: ${course.category}
 
-      const courseContent = await generateCourseContent(prompt);
-      const randomData = generateRandomCourseData();
+          The course should be detailed and practical, focused on the current music industry. Include specific actionable steps and real-world examples.`;
 
-      const courseData = {
-        ...course,
-        content: courseContent,
-        thumbnail: thumbnailUrl,
-        lessons: courseContent.curriculum.length,
-        duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
-        ...randomData,
-        createdAt: Timestamp.now(),
-        createdBy: userId
-      };
+        console.log(`Generating course content for: ${course.title}`);
+        const courseContent = await generateCourseContent(prompt);
+        console.log("Course content generated successfully");
 
-      await addDoc(collection(db, 'courses'), courseData);
-      createdCount++;
-      console.log(`Created course ${createdCount}/5: ${course.title}`);
+        const randomData = generateRandomCourseData();
+
+        const courseData = {
+          ...course,
+          content: courseContent,
+          thumbnail: thumbnailUrl,
+          lessons: courseContent.curriculum.length,
+          duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
+          ...randomData,
+          createdAt: Timestamp.now(),
+          createdBy: userId
+        };
+
+        await addDoc(collection(db, 'courses'), courseData);
+        createdCount++;
+        console.log(`Successfully created course: ${course.title}`);
+      } catch (courseError) {
+        console.error(`Error creating course ${course.title}:`, courseError);
+        errors.push({
+          course: course.title,
+          error: courseError instanceof Error ? courseError.message : 'Unknown error'
+        });
+        continue; // Continue with next course even if one fails
+      }
+    }
+
+    if (errors.length > 0) {
+      console.warn(`Completed with ${errors.length} errors:`, errors);
+      if (createdCount === 0) {
+        throw new Error(`Failed to create any courses. Errors: ${JSON.stringify(errors)}`);
+      }
     }
 
     console.log(`Successfully created ${createdCount} courses`);
+    return { createdCount, errors };
   } catch (error) {
-    console.error('Error creating sample courses:', error);
+    console.error('Error in createSampleCourses:', error);
     throw error;
   }
 }
