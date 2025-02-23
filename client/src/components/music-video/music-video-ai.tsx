@@ -28,6 +28,7 @@ import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
+import { transcribeWithAI, generateVideoScript, analyzeImage } from "@/lib/api/openrouter";
 
 
 // Fal.ai configuration
@@ -46,31 +47,7 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
       reader.readAsDataURL(audioBlob);
     });
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Video Creator",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-        messages: [{
-          role: "user",
-          content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${base64Audio}`
-        }],
-        temperature: 0.2,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error in transcription: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
+    return await transcribeWithAI(base64Audio);
   } catch (error) {
     console.error("Transcription error:", error);
     throw error;
@@ -255,7 +232,6 @@ export function MusicVideoAI() {
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [directors, setDirectors] = useState<Director[]>([]);
 
-
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -366,42 +342,9 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   ]
 }`;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Boostify Music Video Creator",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-          messages: [
-            {
-              role: "system",
-              content: "Eres un director de videos musicales experto. IMPORTANTE: Responde SOLAMENTE con el objeto JSON solicitado, sin ningún texto adicional o explicaciones."
-            },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-          response_format: { type: "json_object" }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error generating script: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("OpenRouter raw response:", data);
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error("Invalid response format from OpenRouter API");
-      }
+      const jsonContent = await generateVideoScript(prompt);
 
       try {
-        const jsonContent = data.choices[0].message.content.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
         const scriptResult = JSON.parse(jsonContent);
 
         if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
@@ -1026,49 +969,17 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
   const analyzeReferenceImage = async (image: string) => {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Boostify Music Video Creator",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-          messages: [
-            {
-              role: "system",
-              content: "Analyze the provided image and extract its visual style characteristics."
-            },
-            {
-              role: "user",
-              content: `Analyze this reference image and describe its visual style, including color palette, mood, and composition: ${image}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
+      const analysis = await analyzeImage(image);
+
+      setVideoStyle(prev => ({
+        ...prev,
+        styleDescription: analysis
+      }));
+
+      toast({
+        title: "Análisis completado",
+        description: "Estilo de referencia actualizado"
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to analyze reference image");
-      }
-
-      const data = await response.json();
-      const analysis = data.choices[0]?.message?.content;
-
-      if (analysis) {
-        setVideoStyle(prev => ({
-          ...prev,
-          styleDescription: analysis
-        }));
-
-        toast({
-          title: "Análisis completado",
-          description: "Estilo de referencia actualizado"
-        });
-      }
     } catch (error) {
       console.error("Error analyzing reference image:", error);
       toast({
