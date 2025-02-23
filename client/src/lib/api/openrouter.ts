@@ -5,6 +5,66 @@ interface Message {
   content: string;
 }
 
+// Estructura base para un prompt de video musical
+interface VideoPromptParams {
+  shotType: string;
+  cameraFormat: string;
+  mood: string;
+  visualStyle: string;
+  visualIntensity: number;
+  narrativeIntensity: number;
+  colorPalette: string;
+  duration: number;
+  directorStyle?: string;
+  specialty?: string;
+  styleReference?: string;
+}
+
+const generateVideoPrompt = ({
+  shotType,
+  cameraFormat,
+  mood,
+  visualStyle,
+  visualIntensity,
+  narrativeIntensity,
+  colorPalette,
+  duration,
+  directorStyle,
+  specialty,
+  styleReference
+}: VideoPromptParams): string => {
+  let prompt = `Create a cinematic ${shotType} with ${cameraFormat} format. 
+The scene should evoke a ${mood} mood using ${colorPalette} colors.
+Visual style: ${visualStyle} at ${visualIntensity}% intensity
+Composition: Professional cinematography with ${narrativeIntensity}% narrative focus
+Shot Duration: ${duration} seconds
+Technical Requirements: High resolution, cinematic quality, professional lighting`;
+
+  if (directorStyle) {
+    prompt += `\nDirector's Style: ${directorStyle}`;
+  }
+
+  if (specialty) {
+    prompt += `\nSpecialty Focus: ${specialty}`;
+  }
+
+  if (styleReference) {
+    prompt += `\nStyle Reference: ${styleReference}`;
+  }
+
+  return prompt;
+};
+
+// Implementación de backoff exponencial
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const backoff = async (retryCount: number) => {
+  const baseDelay = 1000; // 1 segundo
+  const maxDelay = 32000; // 32 segundos
+  const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+  await wait(delay);
+};
+
 export async function generateCourseContent(prompt: string) {
   try {
     console.log("Starting course content generation with OpenRouter...");
@@ -115,6 +175,80 @@ export async function generateCourseContent(prompt: string) {
   }
 }
 
+// Función mejorada para generar prompts de video con reintentos y backoff
+export async function generateVideoPromptWithRetry(params: VideoPromptParams, maxRetries = 3): Promise<string> {
+  let retryCount = 0;
+
+  while (retryCount < maxRetries) {
+    try {
+      console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video prompt`);
+
+      const promptText = generateVideoPrompt(params);
+      console.log("Generated prompt text:", promptText);
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Boostify Music Video Creator",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise."
+            },
+            {
+              role: "user",
+              content: promptText
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 200
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error:", errorData);
+
+        if (response.status === 429) { // Rate limit error
+          console.log("Rate limit hit, implementing backoff...");
+          await backoff(retryCount);
+          retryCount++;
+          continue;
+        }
+
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("API Response:", data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error("Invalid API response format");
+      }
+
+      return data.choices[0].message.content.trim();
+
+    } catch (error) {
+      console.error(`Error in attempt ${retryCount + 1}:`, error);
+
+      if (retryCount === maxRetries - 1) {
+        throw new Error(`Failed to generate prompt after ${maxRetries} attempts`);
+      }
+
+      await backoff(retryCount);
+      retryCount++;
+    }
+  }
+
+  throw new Error("Should not reach here");
+}
+
 export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'system'; content: string }[]) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -179,45 +313,67 @@ export async function transcribeWithAI(audioBase64: string) {
   }
 }
 
-// Nueva función para generar scripts de video
-export async function generateVideoScript(prompt: string) {
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Video Creator",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-        messages: [
-          {
-            role: "system",
-            content: "You are a professional video director. Return only the requested JSON object without any additional text."
-          },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        response_format: { type: "json_object" }
-      })
-    });
+// Nueva función para generar scripts de video con mejor manejo de errores
+export async function generateVideoScript(prompt: string, maxRetries = 3) {
+  let retryCount = 0;
 
-    if (!response.ok) {
-      throw new Error(`Error generating script: ${response.statusText}`);
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Boostify Music Video Creator",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional video director. Return only the requested JSON object without any additional text."
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.log("Rate limit hit, implementing backoff...");
+          await backoff(retryCount);
+          retryCount++;
+          continue;
+        }
+        throw new Error(`Error generating script: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error("Invalid API response format");
+      }
+
+      return data.choices[0].message.content;
+
+    } catch (error) {
+      console.error(`Error in attempt ${retryCount + 1}:`, error);
+
+      if (retryCount === maxRetries - 1) {
+        throw error;
+      }
+
+      await backoff(retryCount);
+      retryCount++;
     }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error("Script generation error:", error);
-    throw error;
   }
 }
 
-// Nueva función para analizar imágenes de referencia
+// Nueva función para analizar imágenes de referencia con mejor manejo de errores
 export async function analyzeImage(imageUrl: string) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {

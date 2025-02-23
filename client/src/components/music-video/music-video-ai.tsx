@@ -28,7 +28,7 @@ import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
-import { generateVideoScript, analyzeImage } from "@/lib/api/openrouter";
+import { generateVideoScript, analyzeImage, generateVideoPromptWithRetry } from "@/lib/api/openrouter";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({
@@ -452,7 +452,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
   };
 
-  const generateTimelineItems = useCallback((shots: any[]) => {
+  const generateTimelineItems = useCallback((shots: { duration?: string; shotType: string; description: string; imagePrompt?: string; transition?: string }[]) => {
     const baseTime = Date.now();
     let currentTime = baseTime;
 
@@ -870,90 +870,33 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     return segments;
   };
 
-  async function generatePromptForSegment(segment: TimelineItem) {
-    const maxRetries = 3;
-    let retryCount = 0;
+  const generatePromptForSegment = async (segment: TimelineItem) => {
+    try {
+      const promptParams = {
+        shotType: segment.shotType,
+        cameraFormat: videoStyle.cameraFormat,
+        mood: videoStyle.mood,
+        visualStyle: videoStyle.characterStyle,
+        visualIntensity: videoStyle.visualIntensity,
+        narrativeIntensity: videoStyle.narrativeIntensity,
+        colorPalette: videoStyle.colorPalette,
+        duration: segment.duration / 1000,
+        directorStyle: videoStyle.selectedDirector?.style,
+        specialty: videoStyle.selectedDirector?.specialty,
+        styleReference: videoStyle.styleDescription
+      };
 
-    while (retryCount < maxRetries) {
-      try {
-        let basePrompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
-    - Tipo de plano: ${segment.shotType}
-    - Formato de cámara: ${videoStyle.cameraFormat}
-    - Mood: ${videoStyle.mood}
-    - Estilo visual: ${videoStyle.characterStyle}
-    - Intensidad visual: ${videoStyle.visualIntensity}%
-    - Intensidad narrativa: ${videoStyle.narrativeIntensity}%
-    - Paleta de colores: ${videoStyle.colorPalette}
-    - Duración del segmento: ${segment.duration / 1000} segundos`;
-
-        if (videoStyle.selectedDirector) {
-          basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
-    - Especialidad: ${videoStyle.selectedDirector.specialty}`;
-        }
-
-        if (videoStyle.styleDescription) {
-          basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
-        }
-
-        basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
-    Responde SOLO con el prompt, sin explicaciones adicionales.`;
-
-        console.log("Sending prompt request:", basePrompt);
-
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-            "HTTP-Referer": window.location.origin,
-            "X-Title": "Boostify Music Video Creator",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-            messages: [
-              {
-                role: "system",
-                content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales. Responde solo con el prompt solicitado, sin explicaciones adicionales."
-              },
-              { role: "user", content: basePrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 200
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("API Response:", data);
-
-        if (!data.choices?.[0]?.message?.content) {
-          throw new Error("Formato de respuesta inválido");
-        }
-
-        const promptContent = data.choices[0].message.content.trim();
-        if (!promptContent) {
-          throw new Error("Prompt generado está vacío");
-        }
-
-        return promptContent;
-
-      } catch (error) {
-        console.error(`Error en intento ${retryCount + 1}/${maxRetries}:`, error);
-        retryCount++;
-
-        if (retryCount === maxRetries) {
-          console.error("Se alcanzó el número máximo de intentos");
-          return segment.imagePrompt || "Error generating prompt";
-        }
-
-        // Esperar antes de reintentar
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-      }
+      return await generateVideoPromptWithRetry(promptParams);
+    } catch (error) {
+      console.error("Error generating prompt:", error);
+      toast({
+        title: "Error",
+        description: "Error al generar el prompt. Reintentando...",
+        variant: "destructive",
+      });
+      return segment.imagePrompt || "Error generating prompt";
     }
-  }
+  };
 
   const generatePromptsForSegments = async () => {
     if (timelineItems.length === 0) {
@@ -976,28 +919,57 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
     setIsGeneratingScript(true);
     try {
-      const segmentsWithPrompts = [...timelineItems];
+      const updatedItems = [...timelineItems];
+      let hasError = false;
 
-      for (let i = 0; i < segmentsWithPrompts.length; i++) {
-        const prompt = await generatePromptForSegment(segmentsWithPrompts[i]);
-        segmentsWithPrompts[i] = {
-          ...segmentsWithPrompts[i],
-          imagePrompt: prompt
-        };
+      for (let i = 0; i < updatedItems.length; i++) {
+        try {
+          const segment = updatedItems[i];
+          const newPrompt = await generatePromptForSegment(segment);
+
+          if (newPrompt && newPrompt !== "Error generating prompt") {
+            updatedItems[i] = {
+              ...segment,
+              imagePrompt: newPrompt
+            };
+
+            toast({
+              title: "Progreso",
+              description: `Prompt ${i + 1} de ${updatedItems.length} generado exitosamente`,
+            });
+
+            // Actualizar el estado después de cada prompt exitoso
+            setTimelineItems([...updatedItems]);
+          } else {
+            hasError = true;
+          }
+
+          // Esperar un momento entre generaciones
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error(`Error generando prompt para segmento ${i + 1}:`, error);
+          hasError = true;
+        }
       }
 
-      setTimelineItems(segmentsWithPrompts);
-      setCurrentStep(4);
-
-      toast({
-        title: "Éxito",
-        description: "Prompts generados correctamente",
-      });
+      if (!hasError) {
+        toast({
+          title: "Éxito",
+          description: "Todos los prompts han sido generados",
+        });
+        setCurrentStep(5);
+      } else {
+        toast({
+          title: "Completado con errores",
+          description: "Algunos prompts no pudieron ser generados",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error("Error generando prompts:", error);
+      console.error("Error en la generación de prompts:", error);
       toast({
         title: "Error",
-        description: "Error al generar los prompts para los segmentos",
+        description: "Error al generar los prompts",
         variant: "destructive",
       });
     } finally {
