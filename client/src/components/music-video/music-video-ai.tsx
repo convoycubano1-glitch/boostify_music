@@ -563,22 +563,16 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
     setIsGeneratingShots(true);
     try {
       const updatedItems = [...timelineItems].slice(0, 10); // Limitar a 10 imágenes
-      let hasError = false;
       let successCount = 0;
 
       for (let i = 0; i < updatedItems.length; i++) {
         const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
           try {
-            const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style. Visual intensity: ${videoStyle.visualIntensity}%`;
-
             console.log(`Generando imagen ${i + 1} de ${updatedItems.length}`);
-            console.log('Prompt:', prompt);
 
-            toast({
-              title: "Progreso",
-              description: `Generando imagen ${i + 1} de ${updatedItems.length}...`,
-            });
+            const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style. Visual intensity: ${videoStyle.visualIntensity}%`;
+            console.log('Prompt:', prompt);
 
             const result = await fal.subscribe("fal-ai/flux-pro", {
               input: {
@@ -590,67 +584,66 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
             });
 
             if (result?.images?.[0]?.url) {
+              // Actualizar inmediatamente el item actual con la imagen generada
+              const updatedItem = {
+                ...item,
+                generatedImage: result.images[0].url
+              };
+
+              // Actualizar el timeline inmediatamente con la nueva imagen
+              const newItems = [...timelineItems];
+              newItems[i] = updatedItem;
+              setTimelineItems(newItems);
+
+              // Intentar guardar en Firebase
               try {
-                const firebaseUrl = await saveToFirebase({
-                  ...item,
-                  generatedImage: result.images[0].url
-                });
-
-                updatedItems[i] = {
-                  ...item,
-                  generatedImage: result.images[0].url,
-                  firebaseUrl
-                };
-
-                // Actualizar el estado después de cada imagen generada
-                setTimelineItems([...updatedItems]);
-                successCount++;
-
-                toast({
-                  title: "Éxito",
-                  description: `Imagen ${i + 1} de ${updatedItems.length} generada y guardada`,
-                });
-
-                // Esperar 3 segundos entre generaciones para evitar rate limits
-                if (i < updatedItems.length - 1) {
-                  console.log('Esperando 3 segundos antes de la siguiente generación...');
-                  await new Promise(resolve => setTimeout(resolve, 3000));
+                const firebaseUrl = await saveToFirebase(updatedItem);
+                if (firebaseUrl) {
+                  updatedItem.firebaseUrl = firebaseUrl;
+                  newItems[i] = updatedItem;
+                  setTimelineItems([...newItems]);
                 }
               } catch (saveError) {
                 console.error(`Error guardando imagen ${i + 1} en Firebase:`, saveError);
-                hasError = true;
               }
+
+              successCount++;
+              toast({
+                title: "Imagen generada",
+                description: `Imagen ${i + 1} de ${updatedItems.length} completada`,
+              });
             } else {
-              console.error(`No se recibió URL de imagen para el segmento ${i + 1}`);
-              hasError = true;
+              throw new Error("No se recibió URL de imagen");
             }
-          } catch (error) {
-            console.error(`Error generando imagen ${i + 1}:`, error);
-            hasError = true;
-            toast({
-              title: "Error",
-              description: `Error generando imagen ${i + 1}, continuando con la siguiente...`,
-              variant: "destructive",
-            });
-            // Esperar antes de intentar la siguiente imagen incluso si hubo error
+
+            // Esperar antes de la siguiente generación
             if (i < updatedItems.length - 1) {
+              console.log('Esperando antes de generar la siguiente imagen...');
               await new Promise(resolve => setTimeout(resolve, 3000));
             }
+
+          } catch (error) {
+            console.error(`Error generando imagen ${i + 1}:`, error);
+            toast({
+              title: "Error",
+              description: `Error en imagen ${i + 1}, continuando con la siguiente...`,
+              variant: "destructive",
+            });
           }
         }
       }
 
-      if (successCount === updatedItems.length) {
+      if (successCount > 0) {
         toast({
-          title: "Completado",
-          description: "Todas las imágenes han sido generadas exitosamente",
+          title: "Proceso completado",
+          description: `Se generaron ${successCount} de ${updatedItems.length} imágenes`,
         });
         setCurrentStep(prevStep => prevStep + 1);
       } else {
         toast({
-          title: hasError ? "Completado con errores" : "Completado parcialmente",
-          description: `Se generaron ${successCount} de ${updatedItems.length} imágenes exitosamente`,
-          variant: hasError ? "destructive" : "default",
+          title: "Error",
+          description: "No se pudo generar ninguna imagen",
+          variant: "destructive",
         });
       }
     } catch (error) {
