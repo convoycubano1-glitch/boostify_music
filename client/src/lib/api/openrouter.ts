@@ -332,23 +332,32 @@ export async function generateVideoScript(prompt: string) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "mistralai/mixtral-8x7b-instruct",
+          model: "anthropic/claude-3-sonnet",
           messages: [
             {
               role: "system",
-              content: `You are a professional music video director. Create structured video scripts in JSON format.
+              content: `You are a professional music video director specializing in narrative storytelling.
 Your task is to:
-1. Analyze the song lyrics
-2. Create a coherent narrative
-3. Design visual scenes that match the music
-4. Return ONLY a valid JSON object with segments array
-5. Each segment must have: id, description, imagePrompt, shotType, and transition
-6. Limit response to maximum 10 segments
-7. Make each imagePrompt detailed and specific for image generation`
+1. Carefully analyze the provided song lyrics to understand the story and emotions
+2. Create a coherent visual narrative that matches the song's meaning and mood
+3. Design specific and filmable scenes that enhance the lyrics
+4. Structure the video into distinct segments (maximum 10) that flow naturally
+5. Return ONLY a valid JSON object with this exact structure:
+{
+  "segments": [
+    {
+      "id": number,
+      "description": "detailed scene description that matches this part of the lyrics",
+      "imagePrompt": "detailed visual prompt for AI image generation",
+      "shotType": "specific camera shot type (close-up, medium, wide, etc)",
+      "transition": "transition type between scenes"
+    }
+  ]
+}`
             },
             { role: "user", content: prompt }
           ],
-          temperature: 0.3,
+          temperature: 0.7,
           max_tokens: 2000,
           response_format: { type: "json_object" }
         })
@@ -377,26 +386,24 @@ Your task is to:
 
       const content = data.choices[0].message.content;
 
-      // Validate JSON structure
       try {
         const parsed = JSON.parse(content);
         if (!parsed.segments || !Array.isArray(parsed.segments)) {
           throw new Error("Invalid script format - missing segments array");
         }
 
-        // Validate each segment
         parsed.segments.forEach((segment: any, index: number) => {
           if (!segment.id || !segment.description || !segment.imagePrompt || !segment.shotType || !segment.transition) {
             throw new Error(`Invalid segment format at index ${index}`);
           }
         });
 
+        return content;
+
       } catch (parseError) {
         console.error("JSON parsing/validation error:", parseError);
         throw new Error("Invalid script format");
       }
-
-      return content;
 
     } catch (error) {
       console.error(`Error in attempt ${retryCount + 1}:`, error);
