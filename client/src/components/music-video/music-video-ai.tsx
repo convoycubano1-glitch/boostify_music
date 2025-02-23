@@ -871,31 +871,55 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   };
 
   const generatePromptForSegment = async (segment: TimelineItem) => {
-    try {
-      const promptParams = {
-        shotType: segment.shotType,
-        cameraFormat: videoStyle.cameraFormat,
-        mood: videoStyle.mood,
-        visualStyle: videoStyle.characterStyle,
-        visualIntensity: videoStyle.visualIntensity,
-        narrativeIntensity: videoStyle.narrativeIntensity,
-        colorPalette: videoStyle.colorPalette,
-        duration: segment.duration / 1000,
-        directorStyle: videoStyle.selectedDirector?.style,
-        specialty: videoStyle.selectedDirector?.specialty,
-        styleReference: videoStyle.styleDescription
-      };
+    const maxAttempts = 3;
+    let attempt = 0;
 
-      return await generateVideoPromptWithRetry(promptParams);
-    } catch (error) {
-      console.error("Error generating prompt:", error);
-      toast({
-        title: "Error",
-        description: "Error al generar el prompt. Reintentando...",
-        variant: "destructive",
-      });
-      return segment.imagePrompt || "Error generating prompt";
+    while (attempt < maxAttempts) {
+      try {
+        console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
+
+        const promptParams = {
+          shotType: segment.shotType,
+          cameraFormat: videoStyle.cameraFormat,
+          mood: videoStyle.mood,
+          visualStyle: videoStyle.characterStyle,
+          visualIntensity: videoStyle.visualIntensity,
+          narrativeIntensity: videoStyle.narrativeIntensity,
+          colorPalette: videoStyle.colorPalette,
+          duration: segment.duration / 1000,
+          directorStyle: videoStyle.selectedDirector?.style,
+          specialty: videoStyle.selectedDirector?.specialty,
+          styleReference: videoStyle.styleDescription
+        };
+
+        const prompt = await generateVideoPromptWithRetry(promptParams);
+
+        if (prompt && prompt !== "Error generating prompt") {
+          return prompt;
+        }
+
+        console.log(`Attempt ${attempt + 1} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+        attempt++;
+
+      } catch (error) {
+        console.error(`Error in attempt ${attempt + 1}:`, error);
+
+        if (attempt === maxAttempts - 1) {
+          toast({
+            title: "Error",
+            description: "No se pudo generar el prompt después de varios intentos",
+            variant: "destructive",
+          });
+          return segment.imagePrompt || "Error generating prompt";
+        }
+
+        attempt++;
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      }
     }
+
+    return segment.imagePrompt || "Error generating prompt";
   };
 
   const generatePromptsForSegments = async () => {
@@ -918,41 +942,62 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     }
 
     setIsGeneratingScript(true);
+
     try {
       const updatedItems = [...timelineItems];
       let hasError = false;
+      let successCount = 0;
 
-      for (let i = 0; i < updatedItems.length; i++) {
+      // Procesar los segmentos en grupos de 3 para evitar sobrecargar la API
+      for (let i = 0; i < updatedItems.length; i += 3) {
+        const batch = updatedItems.slice(i, i + 3);
+
         try {
-          const segment = updatedItems[i];
-          const newPrompt = await generatePromptForSegment(segment);
+          const results = await Promise.all(
+            batch.map(async (segment) => {
+              const newPrompt = await generatePromptForSegment(segment);
+              return {
+                segment,
+                prompt: newPrompt
+              };
+            })
+          );
 
-          if (newPrompt && newPrompt !== "Error generating prompt") {
-            updatedItems[i] = {
-              ...segment,
-              imagePrompt: newPrompt
-            };
+          results.forEach(({ segment, prompt }) => {
+            if (prompt && prompt !== "Error generating prompt") {
+              const index = updatedItems.findIndex(item => item.id === segment.id);
+              if (index !== -1) {
+                updatedItems[index] = {
+                  ...updatedItems[index],
+                  imagePrompt: prompt
+                };
+                successCount++;
+              }
+            } else {
+              hasError = true;
+            }
+          });
 
-            toast({
-              title: "Progreso",
-              description: `Prompt ${i + 1} de ${updatedItems.length} generado exitosamente`,
-            });
+          // Actualizar el estado después de cada batch
+          setTimelineItems([...updatedItems]);
 
-            // Actualizar el estado después de cada prompt exitoso
-            setTimelineItems([...updatedItems]);
-          } else {
-            hasError = true;
+          toast({
+            title: "Progreso",
+            description: `Generados ${successCount} de ${updatedItems.length} prompts`,
+          });
+
+          // Esperar entre batches para evitar rate limits
+          if (i + 3 < updatedItems.length) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
           }
 
-          // Esperar un momento entre generaciones
-          await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
-          console.error(`Error generando prompt para segmento ${i + 1}:`, error);
+          console.error(`Error procesando batch ${i/3 + 1}:`, error);
           hasError = true;
         }
       }
 
-      if (!hasError) {
+      if (successCount === updatedItems.length) {
         toast({
           title: "Éxito",
           description: "Todos los prompts han sido generados",
@@ -960,11 +1005,12 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
         setCurrentStep(5);
       } else {
         toast({
-          title: "Completado con errores",
-          description: "Algunos prompts no pudieron ser generados",
-          variant: "destructive",
+          title: "Completado con advertencias",
+          description: `${successCount} de ${updatedItems.length} prompts generados exitosamente`,
+          variant: hasError ? "destructive" : "default",
         });
       }
+
     } catch (error) {
       console.error("Error en la generación de prompts:", error);
       toast({

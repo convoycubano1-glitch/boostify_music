@@ -20,6 +20,9 @@ interface VideoPromptParams {
   styleReference?: string;
 }
 
+// Cache para prompts exitosos
+const promptCache = new Map<string, string>();
+
 const generateVideoPrompt = ({
   shotType,
   cameraFormat,
@@ -33,7 +36,12 @@ const generateVideoPrompt = ({
   specialty,
   styleReference
 }: VideoPromptParams): string => {
-  let prompt = `Create a cinematic ${shotType} with ${cameraFormat} format. 
+  const cacheKey = JSON.stringify({ shotType, cameraFormat, mood, visualStyle });
+  if (promptCache.has(cacheKey)) {
+    return promptCache.get(cacheKey)!;
+  }
+
+  let prompt = `Create a cinematic ${shotType} shot with ${cameraFormat} format. 
 The scene should evoke a ${mood} mood using ${colorPalette} colors.
 Visual style: ${visualStyle} at ${visualIntensity}% intensity
 Composition: Professional cinematography with ${narrativeIntensity}% narrative focus
@@ -52,18 +60,137 @@ Technical Requirements: High resolution, cinematic quality, professional lightin
     prompt += `\nStyle Reference: ${styleReference}`;
   }
 
+  promptCache.set(cacheKey, prompt);
   return prompt;
 };
 
-// Implementación de backoff exponencial
+// Implementación de backoff exponencial mejorado
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const backoff = async (retryCount: number) => {
-  const baseDelay = 1000; // 1 segundo
-  const maxDelay = 32000; // 32 segundos
+  const baseDelay = 2000; // 2 segundos base
+  const maxDelay = 60000; // 60 segundos máximo
   const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+  console.log(`Waiting ${delay/1000} seconds before retry ${retryCount + 1}`);
   await wait(delay);
 };
+
+// Cola de procesamiento para prompts
+const promptQueue: (() => Promise<void>)[] = [];
+let isProcessing = false;
+
+const processQueue = async () => {
+  if (isProcessing || promptQueue.length === 0) return;
+
+  isProcessing = true;
+  while (promptQueue.length > 0) {
+    const task = promptQueue.shift()!;
+    try {
+      await task();
+      // Esperar 2 segundos entre tareas
+      await wait(2000);
+    } catch (error) {
+      console.error("Error processing prompt task:", error);
+    }
+  }
+  isProcessing = false;
+};
+
+// Función mejorada para generar prompts de video
+export async function generateVideoPromptWithRetry(params: VideoPromptParams): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const task = async () => {
+      const maxRetries = 5; // Aumentado de 3 a 5
+      let retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        try {
+          console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video prompt`);
+
+          const promptText = generateVideoPrompt(params);
+          console.log("Generated prompt text:", promptText);
+
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+              "HTTP-Referer": window.location.origin,
+              "X-Title": "Boostify Music Video Creator",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an expert cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise."
+                },
+                {
+                  role: "user",
+                  content: promptText
+                }
+              ],
+              temperature: 0.7,
+              max_tokens: 200
+            })
+          });
+
+          const data = await response.json();
+          console.log("API Response:", data);
+
+          if (!response.ok) {
+            if (response.status === 429) {
+              console.log("Rate limit hit, implementing backoff...");
+              await backoff(retryCount);
+              retryCount++;
+              continue;
+            }
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+          }
+
+          if (!data.choices?.[0]?.message?.content) {
+            throw new Error("Invalid API response format");
+          }
+
+          const generatedPrompt = data.choices[0].message.content.trim();
+          if (!generatedPrompt) {
+            throw new Error("Empty prompt generated");
+          }
+
+          // Guardar en cache si fue exitoso
+          const cacheKey = JSON.stringify(params);
+          promptCache.set(cacheKey, generatedPrompt);
+
+          resolve(generatedPrompt);
+          return;
+
+        } catch (error) {
+          console.error(`Error in attempt ${retryCount + 1}:`, error);
+          if (retryCount === maxRetries - 1) {
+            // En el último intento, intentar usar el cache o el prompt base
+            const cacheKey = JSON.stringify(params);
+            const cachedPrompt = promptCache.get(cacheKey);
+            if (cachedPrompt) {
+              console.log("Using cached prompt as fallback");
+              resolve(cachedPrompt);
+              return;
+            }
+            reject(new Error(`Failed to generate prompt after ${maxRetries} attempts`));
+            return;
+          }
+          await backoff(retryCount);
+          retryCount++;
+        }
+      }
+    };
+
+    promptQueue.push(task);
+    processQueue().catch(error => {
+      console.error("Error in queue processing:", error);
+      reject(error);
+    });
+  });
+}
 
 export async function generateCourseContent(prompt: string) {
   try {
@@ -176,78 +303,9 @@ export async function generateCourseContent(prompt: string) {
 }
 
 // Función mejorada para generar prompts de video con reintentos y backoff
-export async function generateVideoPromptWithRetry(params: VideoPromptParams, maxRetries = 3): Promise<string> {
-  let retryCount = 0;
 
-  while (retryCount < maxRetries) {
-    try {
-      console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video prompt`);
+//Implementacion de la función generateVideoPromptWithRetry ya incluida arriba
 
-      const promptText = generateVideoPrompt(params);
-      console.log("Generated prompt text:", promptText);
-
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Boostify Music Video Creator",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise."
-            },
-            {
-              role: "user",
-              content: promptText
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 200
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("API Error:", errorData);
-
-        if (response.status === 429) { // Rate limit error
-          console.log("Rate limit hit, implementing backoff...");
-          await backoff(retryCount);
-          retryCount++;
-          continue;
-        }
-
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("API Response:", data);
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error("Invalid API response format");
-      }
-
-      return data.choices[0].message.content.trim();
-
-    } catch (error) {
-      console.error(`Error in attempt ${retryCount + 1}:`, error);
-
-      if (retryCount === maxRetries - 1) {
-        throw new Error(`Failed to generate prompt after ${maxRetries} attempts`);
-      }
-
-      await backoff(retryCount);
-      retryCount++;
-    }
-  }
-
-  throw new Error("Should not reach here");
-}
 
 export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'system'; content: string }[]) {
   try {
