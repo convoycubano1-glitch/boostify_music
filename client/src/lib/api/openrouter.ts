@@ -315,11 +315,14 @@ export async function chatWithAI(messages: Message[]) {
   }
 }
 
-export async function generateVideoScript(prompt: string, maxRetries = 3) {
+export async function generateVideoScript(prompt: string) {
+  const maxRetries = 3;
   let retryCount = 0;
 
   while (retryCount < maxRetries) {
     try {
+      console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video script`);
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -329,11 +332,19 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+          model: "mistralai/mixtral-8x7b-instruct",
           messages: [
             {
               role: "system",
-              content: "You are a professional video director. Generate a detailed video script in JSON format."
+              content: `You are a professional music video director. Create structured video scripts in JSON format.
+Your task is to:
+1. Analyze the song lyrics
+2. Create a coherent narrative
+3. Design visual scenes that match the music
+4. Return ONLY a valid JSON object with segments array
+5. Each segment must have: id, description, imagePrompt, shotType, and transition
+6. Limit response to maximum 10 segments
+7. Make each imagePrompt detailed and specific for image generation`
             },
             { role: "user", content: prompt }
           ],
@@ -344,12 +355,16 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Script generation API Error:", errorData);
+
         if (response.status === 429) {
           console.log("Rate limit hit, implementing backoff...");
           await backoff(retryCount);
           retryCount++;
           continue;
         }
+
         throw new Error(`Error generating script: ${response.statusText}`);
       }
 
@@ -360,7 +375,28 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
         throw new Error("Invalid API response format");
       }
 
-      return data.choices[0].message.content;
+      const content = data.choices[0].message.content;
+
+      // Validate JSON structure
+      try {
+        const parsed = JSON.parse(content);
+        if (!parsed.segments || !Array.isArray(parsed.segments)) {
+          throw new Error("Invalid script format - missing segments array");
+        }
+
+        // Validate each segment
+        parsed.segments.forEach((segment: any, index: number) => {
+          if (!segment.id || !segment.description || !segment.imagePrompt || !segment.shotType || !segment.transition) {
+            throw new Error(`Invalid segment format at index ${index}`);
+          }
+        });
+
+      } catch (parseError) {
+        console.error("JSON parsing/validation error:", parseError);
+        throw new Error("Invalid script format");
+      }
+
+      return content;
 
     } catch (error) {
       console.error(`Error in attempt ${retryCount + 1}:`, error);
@@ -373,6 +409,8 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
       retryCount++;
     }
   }
+
+  throw new Error(`Failed to generate script after ${maxRetries} attempts`);
 }
 
 export async function analyzeImage(imageUrl: string) {

@@ -340,29 +340,30 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción y coincida con los ${timelineItems.length} cortes detectados.
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción.
+Limita la respuesta a máximo 10 segmentos para mantener la calidad y coherencia.
 
 Letra de la canción:
 ${transcription}
 
-Número de segmentos: ${timelineItems.length}
 Duración total: ${audioBuffer?.duration.toFixed(2)} segundos
 
 Genera un prompt específico para cada segmento, considerando:
 - El momento de la canción
 - La letra correspondiente a ese momento
-- El tipo de plano asignado
+- El tipo de plano sugerido
 - La duración del segmento
+- La transición entre segmentos
 
-Responde SOLO con el objeto JSON solicitado, sin texto adicional:
+La respuesta debe ser un objeto JSON con esta estructura exacta:
 {
   "segments": [
     {
-      "id": (número que coincide con el id del segmento existente),
-      "description": "descripción de la escena",
-      "imagePrompt": "prompt detallado para generar la imagen",
-      "shotType": "tipo de plano",
-      "transition": "tipo de transición"
+      "id": número_de_segmento,
+      "description": "descripción detallada de la escena basada en la letra",
+      "imagePrompt": "prompt detallado para generar la imagen que capture la esencia de la escena",
+      "shotType": "tipo de plano (wide shot, medium shot, close-up, etc)",
+      "transition": "tipo de transición entre escenas"
     }
   ]
 }`;
@@ -376,8 +377,11 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
           throw new Error("Invalid script format");
         }
 
-        const updatedItems = timelineItems.map(item => {
-          const scriptSegment = scriptResult.segments.find(seg => seg.id === item.id);
+        // Limitar a 10 segmentos
+        const limitedSegments = scriptResult.segments.slice(0, 10);
+
+        const updatedItems = timelineItems.slice(0, 10).map((item, index) => {
+          const scriptSegment = limitedSegments[index];
           if (scriptSegment) {
             return {
               ...item,
@@ -395,7 +399,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
         toast({
           title: "Éxito",
-          description: "Guion generado correctamente",
+          description: "Guion generado correctamente (limitado a 10 segmentos para pruebas)",
         });
 
       } catch (parseError) {
@@ -558,7 +562,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
   const generateShotImages = async () => {
     setIsGeneratingShots(true);
     try {
-      const updatedItems = [...timelineItems];
+      const updatedItems = [...timelineItems].slice(0, 10); // Limitar a 10 imágenes
       let hasError = false;
 
       for (let i = 0; i < updatedItems.length; i++) {
@@ -599,6 +603,9 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
                 title: "Éxito",
                 description: `Imagen ${i + 1} de ${updatedItems.length} generada y guardada`,
               });
+
+              // Esperar 3 segundos entre generaciones para evitar rate limits
+              await new Promise(resolve => setTimeout(resolve, 3000));
             }
           } catch (error) {
             console.error(`Error generando imagen ${i + 1}:`, error);
@@ -608,11 +615,8 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               description: `Error generando imagen ${i + 1}, continuando con la siguiente...`,
               variant: "destructive",
             });
-            continue; // Continuar con la siguiente imagen en caso de error
+            continue;
           }
-
-          // Esperar un breve momento entre generaciones para evitar límites de rate
-          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
 
@@ -876,7 +880,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
 
     while (attempt < maxAttempts) {
       try {
-        console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
+        console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt+ 1}/${maxAttempts}`);
 
         const promptParams = {
           shotType: segment.shotType,
@@ -944,7 +948,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     setIsGeneratingScript(true);
 
     try {
-      const updatedItems = [...timelineItems];
+      const updatedItems = [...timelineItems].slice(0, 10); // Limitar a 10 segmentos
       let hasError = false;
       let successCount = 0;
 
