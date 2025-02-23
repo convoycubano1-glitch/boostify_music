@@ -336,20 +336,24 @@ export async function generateVideoScript(prompt: string) {
           messages: [
             {
               role: "system",
-              content: `You are a professional music video director specializing in narrative storytelling.
+              content: `You are a professional music video director specializing in narrative storytelling and musical analysis.
 Your task is to:
 1. Carefully analyze the provided song lyrics to understand the story and emotions
-2. Create a coherent visual narrative that matches the song's meaning and mood
-3. Design specific and filmable scenes that enhance the lyrics
-4. Structure the video into distinct segments (maximum 10) that flow naturally
-5. Return ONLY a valid JSON object with this exact structure:
+2. Identify and describe the musical elements and instrumentation
+3. Create a coherent visual narrative that matches both lyrics and music
+4. Design specific and filmable scenes that enhance the song
+5. Structure the video into distinct segments (maximum 10) that flow naturally
+6. Return ONLY a valid JSON object with this exact structure:
 {
   "segments": [
     {
       "id": number,
-      "description": "detailed scene description that matches this part of the lyrics",
+      "lyrics": "specific lyrics for this segment",
+      "musical_elements": "detailed description of instruments and musical elements",
+      "description": "detailed scene description matching lyrics and music",
       "imagePrompt": "detailed visual prompt for AI image generation",
       "shotType": "specific camera shot type (close-up, medium, wide, etc)",
+      "mood": "emotional atmosphere of the scene",
       "transition": "transition type between scenes"
     }
   ]
@@ -393,7 +397,9 @@ Your task is to:
         }
 
         parsed.segments.forEach((segment: any, index: number) => {
-          if (!segment.id || !segment.description || !segment.imagePrompt || !segment.shotType || !segment.transition) {
+          if (!segment.id || !segment.lyrics || !segment.musical_elements || 
+              !segment.description || !segment.imagePrompt || !segment.shotType || 
+              !segment.mood || !segment.transition) {
             throw new Error(`Invalid segment format at index ${index}`);
           }
         });

@@ -182,6 +182,7 @@ interface TimelineItem {
   generatedImage?: string;
   duration: number;
   transition?: string;
+  mood?: string;
   firebaseUrl?: string;
 }
 
@@ -340,29 +341,32 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado para un video musical que capture la esencia de la canción.
-Limita la respuesta a máximo 10 segmentos para mantener la calidad y coherencia.
+      const prompt = `Como director creativo de videos musicales profesionales, crea un guion detallado que capture la esencia de esta canción.
+Analiza cuidadosamente:
 
-Letra de la canción:
+LETRA DE LA CANCIÓN:
 ${transcription}
 
-Duración total: ${audioBuffer?.duration.toFixed(2)} segundos
+DURACIÓN TOTAL: ${audioBuffer?.duration.toFixed(2)} segundos
 
-Genera un prompt específico para cada segmento, considerando:
-- El momento de la canción
-- La letra correspondiente a ese momento
-- El tipo de plano sugerido
-- La duración del segmento
-- La transición entre segmentos
+INSTRUCCIONES:
+1. Analiza detalladamente la letra y su significado
+2. Identifica los instrumentos y elementos musicales presentes
+3. Crea un guion visual que complemente la narrativa de la letra
+4. Define el ambiente y la atmósfera visual para cada segmento
+5. Limita la respuesta a máximo 10 segmentos para mantener la calidad
 
 La respuesta debe ser un objeto JSON con esta estructura exacta:
 {
   "segments": [
     {
       "id": número_de_segmento,
-      "description": "descripción detallada de la escena basada en la letra",
-      "imagePrompt": "prompt detallado para generar la imagen que capture la esencia de la escena",
+      "lyrics": "parte de la letra correspondiente a este segmento",
+      "musical_elements": "descripción de instrumentos y elementos musicales en este segmento",
+      "description": "descripción detallada de la escena basada en la letra y música",
+      "imagePrompt": "prompt detallado para generar la imagen que capture la escena",
       "shotType": "tipo de plano (wide shot, medium shot, close-up, etc)",
+      "mood": "estado de ánimo y atmósfera de la escena",
       "transition": "tipo de transición entre escenas"
     }
   ]
@@ -385,10 +389,11 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
           if (scriptSegment) {
             return {
               ...item,
-              description: scriptSegment.description,
+              description: `${scriptSegment.description}\nMúsica: ${scriptSegment.musical_elements}\nLetra: "${scriptSegment.lyrics}"`,
               imagePrompt: scriptSegment.imagePrompt,
               shotType: scriptSegment.shotType,
-              transition: scriptSegment.transition
+              transition: scriptSegment.transition,
+              mood: scriptSegment.mood
             };
           }
           return item;
@@ -399,7 +404,7 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
 
         toast({
           title: "Éxito",
-          description: "Guion generado correctamente (limitado a 10 segmentos para pruebas)",
+          description: "Guion generado correctamente considerando letra y música",
         });
 
       } catch (parseError) {
