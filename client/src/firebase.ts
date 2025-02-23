@@ -1,10 +1,9 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getAuth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { Firestore, getFirestore } from "firebase/firestore";
+import { FirebaseStorage, getStorage } from "firebase/storage";
+import { Auth, getAuth } from "firebase/auth";
+import { Analytics, getAnalytics } from "firebase/analytics";
 import { collection, addDoc, getDoc, query, where, getDocs, doc, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
@@ -19,11 +18,11 @@ const firebaseConfig = {
 console.log('Starting Firebase initialization...');
 
 // Initialize Firebase with error handling
-let app;
-let auth;
-let db;
-let storage;
-let analytics = null;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
+let analytics: Analytics | null = null;
 
 try {
   app = initializeApp(firebaseConfig);
@@ -34,6 +33,7 @@ try {
     console.log('Firebase Auth initialized');
   } catch (authError) {
     console.error('Error initializing Firebase Auth:', authError);
+    throw new Error('Failed to initialize Firebase Auth');
   }
 
   try {
@@ -41,6 +41,7 @@ try {
     console.log('Firestore initialized');
   } catch (dbError) {
     console.error('Error initializing Firestore:', dbError);
+    throw new Error('Failed to initialize Firestore');
   }
 
   try {
@@ -48,6 +49,7 @@ try {
     console.log('Firebase Storage initialized');
   } catch (storageError) {
     console.error('Error initializing Firebase Storage:', storageError);
+    throw new Error('Failed to initialize Firebase Storage');
   }
 
   // Only initialize analytics in production and when available
@@ -61,6 +63,7 @@ try {
   }
 } catch (error) {
   console.error('Critical error initializing Firebase:', error);
+  throw new Error('Failed to initialize Firebase');
 }
 
 // Export initialized services
@@ -78,10 +81,10 @@ export interface Contract {
 }
 
 export async function getAuthToken(): Promise<string | null> {
-  const currentUser = auth?.currentUser;
-  if (!currentUser) return null;
-
   try {
+    const currentUser = auth?.currentUser;
+    if (!currentUser) return null;
+
     const token = await currentUser.getIdToken();
     return token;
   } catch (error) {

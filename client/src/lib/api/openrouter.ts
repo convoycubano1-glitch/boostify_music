@@ -63,52 +63,6 @@ export async function generateCourseContent(prompt: string) {
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error("Course generation error:", error);
-    throw error;
-  }
-}
-
-export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'system'; content: string }[]) {
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Education",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error in AI chat: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('Error in AI chat:', error);
-    throw error;
-  }
-}
-
-    console.log("OpenRouter API response status:", response.status);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("OpenRouter API error:", errorData);
-      throw new Error(`Error generating course content: ${response.statusText}. Status: ${response.status}`);
-    }
-
-    const data = await response.json();
     console.log("OpenRouter raw response:", data);
 
     if (!data.choices?.[0]?.message?.content) {
@@ -157,6 +111,36 @@ export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'syste
     }
   } catch (error) {
     console.error("Course generation error:", error);
+    throw error;
+  }
+}
+
+export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'system'; content: string }[]) {
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Boostify Music Education",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error in AI chat: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error in AI chat:', error);
     throw error;
   }
 }

@@ -95,10 +95,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 const Router = () => {
   return (
     <Switch>
+      {/* Public routes */}
       <Route path="/" component={HomePage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/cookies" component={CookiesPage} />
+
+      {/* Protected routes */}
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
@@ -132,6 +135,8 @@ const Router = () => {
       <ProtectedRoute path="/education" component={EducationPage} />
       <ProtectedRoute path="/achievements" component={AchievementsPage} />
       <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
+
+      {/* Catch all not found route */}
       <Route component={NotFound} />
     </Switch>
   );
@@ -141,7 +146,6 @@ const App = () => {
   const [initError, setInitError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Verificar estado de la aplicación después de un tiempo razonable
     const timer = setTimeout(() => {
       if (!document.querySelector('script[src*="index-"]')) {
         console.warn('Critical assets may not have loaded properly');
