@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "@/components/ui/slider";
 import Editor from "@monaco-editor/react";
-import { env } from "@/env";
+// import { env } from "@/env"; // Replaced with import.meta.env below
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw
@@ -32,9 +32,16 @@ import { generateVideoScript, analyzeImage } from "@/lib/api/openrouter";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY,
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
+
+// Add check for debugging
+console.log("OpenAI API Key available:", !!import.meta.env.VITE_OPENAI_API_KEY);
+
+if (!import.meta.env.VITE_OPENAI_API_KEY) {
+  console.error('OpenAI API key is not configured');
+}
 
 // Fal.ai configuration
 fal.config({
@@ -42,6 +49,10 @@ fal.config({
 });
 
 async function transcribeAudio(file: File) {
+  if (!import.meta.env.VITE_OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured');
+  }
+
   try {
     const transcription = await openai.audio.transcriptions.create({
       file: file,
@@ -869,7 +880,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     - Intensidad visual: ${videoStyle.visualIntensity}%
     - Intensidad narrativa: ${videoStyle.narrativeIntensity}%
     - Paleta de colores: ${videoStyle.colorPalette}
-    - Duración del segmento: ${segment.duration / 1000} segundos`;
+    - Duración del segmento: ${segment.duration / 10000} segundos`;
 
       if (videoStyle.selectedDirector) {
         basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
@@ -883,10 +894,10 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions",{
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+          "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
           "HTTP-Referer": window.location.origin,
           "X-Title": "Boostify Music Video Creator",
           "Content-Type": "application/json"
