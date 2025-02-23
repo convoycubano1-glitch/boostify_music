@@ -41,24 +41,23 @@ const generateVideoPrompt = ({
     return promptCache.get(cacheKey)!;
   }
 
-  // Simplified prompt structure
-  let prompt = `Generate a detailed video scene description:
-- Shot: ${shotType} using ${cameraFormat}
-- Style: ${visualStyle} (${visualIntensity}% intensity)
-- Mood: ${mood} with ${colorPalette} colors
-- Duration: ${duration} seconds
-- Camera: Professional cinematography focusing on composition (${narrativeIntensity}% narrative)`;
+  let prompt = `Create a cinematic ${shotType} shot using ${cameraFormat} camera.
+Description: Professional shot that captures a ${mood} atmosphere with ${colorPalette} tones.
+Style: ${visualStyle} with ${visualIntensity}% visual intensity
+Camera Movement: Smooth and professional with ${narrativeIntensity}% narrative focus
+Duration: ${duration} seconds
+Technical Specs: 4K resolution, cinematic lighting, professional grade`;
 
   if (directorStyle) {
-    prompt += `\n- Director Style: ${directorStyle}`;
+    prompt += `\nDirector's Vision: ${directorStyle}`;
   }
 
   if (specialty) {
-    prompt += `\n- Special Focus: ${specialty}`;
+    prompt += `\nSpecial Focus: ${specialty}`;
   }
 
   if (styleReference) {
-    prompt += `\n- Reference: ${styleReference}`;
+    prompt += `\nStyle Reference: ${styleReference}`;
   }
 
   promptCache.set(cacheKey, prompt);
@@ -120,11 +119,11 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              model: "mistralai/mixtral-8x7b-instruct", // Using a more stable model
+              model: "anthropic/claude-3-sonnet", // Using a more reliable model
               messages: [
                 {
                   role: "system",
-                  content: "You are a professional cinematographer. Create detailed prompts for video scenes."
+                  content: "You are a professional cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise. Focus on visual elements and composition."
                 },
                 {
                   role: "user",
@@ -149,6 +148,13 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
               retryCount++;
               continue;
             }
+
+            if (response.status === 402) {
+              // Si el modelo no está disponible, intentar con un modelo alternativo
+              console.log("Switching to alternative model...");
+              throw new Error("Model not available, trying alternative");
+            }
+
             throw new Error(`API error: ${response.status} ${errorMessage}`);
           }
 
@@ -171,6 +177,44 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
 
         } catch (error) {
           console.error(`Error in attempt ${retryCount + 1}:`, error);
+
+          if (error.message === "Model not available, trying alternative") {
+            // Intentar con un modelo alternativo
+            try {
+              const alternativeResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+                  "HTTP-Referer": window.location.origin,
+                  "X-Title": "Music Video Creator",
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  model: "mistralai/mixtral-8x7b-instruct",
+                  messages: [
+                    {
+                      role: "system",
+                      content: "You are a professional cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise. Focus on visual elements and composition."
+                    },
+                    {
+                      role: "user",
+                      content: promptText
+                    }
+                  ],
+                  temperature: 0.3,
+                  max_tokens: 150
+                })
+              });
+
+              const alternativeData = await alternativeResponse.json();
+              if (alternativeResponse.ok && alternativeData.choices?.[0]?.message?.content) {
+                resolve(alternativeData.choices[0].message.content.trim());
+                return;
+              }
+            } catch (alternativeError) {
+              console.error("Error with alternative model:", alternativeError);
+            }
+          }
 
           if (retryCount === maxRetries - 1) {
             // En el último intento, intentar usar el cache o el prompt base
@@ -220,7 +264,7 @@ export async function generateCourseContent(prompt: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistralai/mixtral-8x7b-instruct",
+        model: "anthropic/claude-3-sonnet",
         messages: [
           {
             role: "system",
@@ -312,7 +356,7 @@ export async function generateCourseContent(prompt: string) {
   }
 }
 
-export async function chatWithAI(messages: Message[]) {
+export async function generateVideoScript(prompt: string) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -323,83 +367,29 @@ export async function chatWithAI(messages: Message[]) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistralai/mixtral-8x7b-instruct",
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000
+        model: "anthropic/claude-3-sonnet",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional video director. Return only the requested JSON object without any additional text."
+          },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+        response_format: { type: "json_object" }
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Error in AI chat: ${response.statusText}`);
+      throw new Error(`Error generating script: ${response.statusText}`);
     }
 
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error('Error in AI chat:', error);
+    console.error("Script generation error:", error);
     throw error;
-  }
-}
-
-// También actualizamos las otras funciones para usar el mismo modelo
-export async function generateVideoScript(prompt: string, maxRetries = 3) {
-  let retryCount = 0;
-
-  while (retryCount < maxRetries) {
-    try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Music Video Creator",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "mistralai/mixtral-8x7b-instruct",
-          messages: [
-            {
-              role: "system",
-              content: "You are a professional video director. Generate a detailed video script in JSON format."
-            },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.3,
-          max_tokens: 2000,
-          response_format: { type: "json_object" }
-        })
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.log("Rate limit hit, implementing backoff...");
-          await backoff(retryCount);
-          retryCount++;
-          continue;
-        }
-        throw new Error(`Error generating script: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("Script generation response:", data);
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error("Invalid API response format");
-      }
-
-      return data.choices[0].message.content;
-
-    } catch (error) {
-      console.error(`Error in attempt ${retryCount + 1}:`, error);
-
-      if (retryCount === maxRetries - 1) {
-        throw error;
-      }
-
-      await backoff(retryCount);
-      retryCount++;
-    }
   }
 }
 
@@ -414,7 +404,7 @@ export async function analyzeImage(imageUrl: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistralai/mixtral-8x7b-instruct",
+        model: "anthropic/claude-3-sonnet",
         messages: [
           {
             role: "system",
@@ -442,6 +432,36 @@ export async function analyzeImage(imageUrl: string) {
   }
 }
 
+export async function chatWithAI(messages: Message[]) {
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Music Video Creator",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "anthropic/claude-3-sonnet",
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error in AI chat: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error in AI chat:', error);
+    throw error;
+  }
+}
+
 export async function transcribeWithAI(audioBase64: string) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -453,7 +473,7 @@ export async function transcribeWithAI(audioBase64: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mistralai/mixtral-8x7b-instruct",
+        model: "anthropic/claude-3-sonnet",
         messages: [{
           role: "user",
           content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${audioBase64}`
