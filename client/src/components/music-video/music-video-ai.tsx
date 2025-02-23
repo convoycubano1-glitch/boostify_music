@@ -8,7 +8,6 @@ import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
 import Editor from "@monaco-editor/react";
-// import { env } from "@/env"; // Replaced with import.meta.env below
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw
@@ -871,63 +870,90 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     return segments;
   };
 
-  const generatePromptForSegment = async (segment: TimelineItem) => {
-    try {
-      let basePrompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
+  async function generatePromptForSegment(segment: TimelineItem) {
+    const maxRetries = 3;
+    let retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        let basePrompt = `Genera un prompt detallado para una imagen de video musical que mantenga consistencia visual con estas características:
     - Tipo de plano: ${segment.shotType}
     - Formato de cámara: ${videoStyle.cameraFormat}
     - Mood: ${videoStyle.mood}
     - Estilo visual: ${videoStyle.characterStyle}
     - Intensidad visual: ${videoStyle.visualIntensity}%
-    - Intensidad narrativa: ${videoStyle.narrativeIntensity}%- Paleta de colores: ${videoStyle.colorPalette}
-    - Duración del segmento: ${segment.duration / 10000} segundos`;
+    - Intensidad narrativa: ${videoStyle.narrativeIntensity}%
+    - Paleta de colores: ${videoStyle.colorPalette}
+    - Duración del segmento: ${segment.duration / 1000} segundos`;
 
-      if (videoStyle.selectedDirector) {
-        basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
+        if (videoStyle.selectedDirector) {
+          basePrompt += `\n    - Estilo del director: ${videoStyle.selectedDirector.style}
     - Especialidad: ${videoStyle.selectedDirector.specialty}`;
-      }
+        }
 
-      if (videoStyle.styleDescription) {
-        basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
-      }
+        if (videoStyle.styleDescription) {
+          basePrompt += `\n    - Referencia de estilo: ${videoStyle.styleDescription}`;
+        }
 
-      basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
+        basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Boostify Music Video Creator",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-          messages: [
-            {
-              role: "system",
-              content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales."
-            },
-            { role: "user", content: basePrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 200
-        })
-      });
+        console.log("Sending prompt request:", basePrompt);
 
-      if (!response.ok) {
-        throw new Error(`Error generating prompt: ${response.statusText}`);
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "Boostify Music Video Creator",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+            messages: [
+              {
+                role: "system",
+                content: "Eres un director de fotografía experto en crear prompts para generar imágenes de videos musicales. Responde solo con el prompt solicitado, sin explicaciones adicionales."
+              },
+              { role: "user", content: basePrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 200
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("API Response:", data);
+
+        if (!data.choices?.[0]?.message?.content) {
+          throw new Error("Formato de respuesta inválido");
+        }
+
+        const promptContent = data.choices[0].message.content.trim();
+        if (!promptContent) {
+          throw new Error("Prompt generado está vacío");
+        }
+
+        return promptContent;
+
+      } catch (error) {
+        console.error(`Error en intento ${retryCount + 1}/${maxRetries}:`, error);
+        retryCount++;
+
+        if (retryCount === maxRetries) {
+          console.error("Se alcanzó el número máximo de intentos");
+          return segment.imagePrompt || "Error generating prompt";
+        }
+
+        // Esperar antes de reintentar
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
       }
-
-      const data = await response.json();
-      return data.choices[0]?.message?.content || "Error generating prompt";
-
-    } catch (error) {
-      console.error("Error generating prompt:", error);
-      return segment.imagePrompt || "Error generating prompt";
     }
-  };
+  }
 
   const generatePromptsForSegments = async () => {
     if (timelineItems.length === 0) {
