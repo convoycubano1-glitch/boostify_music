@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
+import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
@@ -28,26 +28,27 @@ import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
-import { transcribeWithAI, generateVideoScript, analyzeImage } from "@/lib/api/openrouter";
+import { generateVideoScript, analyzeImage } from "@/lib/api/openrouter";
 
+// OpenAI configuration for audio transcription only
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
 
 // Fal.ai configuration
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
 });
 
-async function transcribeAudio(audioBlob: Blob): Promise<string> {
+async function transcribeAudio(file: File) {
   try {
-    const base64Audio = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        resolve(base64);
-      };
-      reader.readAsDataURL(audioBlob);
+    const transcription = await openai.audio.transcriptions.create({
+      file: file,
+      model: "whisper-1",
     });
 
-    return await transcribeWithAI(base64Audio);
+    return transcription.text;
   } catch (error) {
     console.error("Transcription error:", error);
     throw error;
@@ -267,14 +268,27 @@ export function MusicVideoAI() {
           }
           const buffer = await audioContext.current.decodeAudioData(e.target.result);
           setAudioBuffer(buffer);
-          transcribeAudio(file).then(setTranscription).then(()=>setCurrentStep(2)).catch(err => {
+
+          // Usar OpenAI para la transcripción
+          setIsTranscribing(true);
+          try {
+            const transcriptionText = await transcribeAudio(file);
+            setTranscription(transcriptionText);
+            setCurrentStep(2);
+            toast({
+              title: "Éxito",
+              description: "Audio transcrito correctamente",
+            });
+          } catch (err) {
             console.error("Error transcribing audio:", err);
             toast({
               title: "Error",
               description: "Error al transcribir el audio. Por favor intenta de nuevo.",
               variant: "destructive",
             });
-          }).finally(()=>setIsTranscribing(false));
+          } finally {
+            setIsTranscribing(false);
+          }
         }
       };
       reader.readAsArrayBuffer(file);
@@ -869,7 +883,7 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
       basePrompt += `\n\nEl prompt debe ser específico y detallado para generar una imagen coherente con el estilo del video.
     Responde SOLO con el prompt, sin explicaciones adicionales.`;
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions",{
         method: "POST",
         headers: {
           "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
