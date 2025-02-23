@@ -564,12 +564,16 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
     try {
       const updatedItems = [...timelineItems].slice(0, 10); // Limitar a 10 imágenes
       let hasError = false;
+      let successCount = 0;
 
       for (let i = 0; i < updatedItems.length; i++) {
         const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
           try {
             const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style. Visual intensity: ${videoStyle.visualIntensity}%`;
+
+            console.log(`Generando imagen ${i + 1} de ${updatedItems.length}`);
+            console.log('Prompt:', prompt);
 
             toast({
               title: "Progreso",
@@ -586,26 +590,39 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
             });
 
             if (result?.images?.[0]?.url) {
-              const firebaseUrl = await saveToFirebase({
-                ...item,
-                generatedImage: result.images[0].url
-              });
+              try {
+                const firebaseUrl = await saveToFirebase({
+                  ...item,
+                  generatedImage: result.images[0].url
+                });
 
-              updatedItems[i] = {
-                ...item,
-                generatedImage: result.images[0].url,
-                firebaseUrl
-              };
+                updatedItems[i] = {
+                  ...item,
+                  generatedImage: result.images[0].url,
+                  firebaseUrl
+                };
 
-              setTimelineItems([...updatedItems]);
+                // Actualizar el estado después de cada imagen generada
+                setTimelineItems([...updatedItems]);
+                successCount++;
 
-              toast({
-                title: "Éxito",
-                description: `Imagen ${i + 1} de ${updatedItems.length} generada y guardada`,
-              });
+                toast({
+                  title: "Éxito",
+                  description: `Imagen ${i + 1} de ${updatedItems.length} generada y guardada`,
+                });
 
-              // Esperar 3 segundos entre generaciones para evitar rate limits
-              await new Promise(resolve => setTimeout(resolve, 3000));
+                // Esperar 3 segundos entre generaciones para evitar rate limits
+                if (i < updatedItems.length - 1) {
+                  console.log('Esperando 3 segundos antes de la siguiente generación...');
+                  await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+              } catch (saveError) {
+                console.error(`Error guardando imagen ${i + 1} en Firebase:`, saveError);
+                hasError = true;
+              }
+            } else {
+              console.error(`No se recibió URL de imagen para el segmento ${i + 1}`);
+              hasError = true;
             }
           } catch (error) {
             console.error(`Error generando imagen ${i + 1}:`, error);
@@ -615,21 +632,25 @@ La respuesta debe ser un objeto JSON con esta estructura exacta:
               description: `Error generando imagen ${i + 1}, continuando con la siguiente...`,
               variant: "destructive",
             });
-            continue;
+            // Esperar antes de intentar la siguiente imagen incluso si hubo error
+            if (i < updatedItems.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            }
           }
         }
       }
 
-      if (!hasError) {
+      if (successCount === updatedItems.length) {
         toast({
           title: "Completado",
           description: "Todas las imágenes han sido generadas exitosamente",
         });
+        setCurrentStep(prevStep => prevStep + 1);
       } else {
         toast({
-          title: "Completado con errores",
-          description: "Algunas imágenes no pudieron ser generadas",
-          variant: "destructive",
+          title: hasError ? "Completado con errores" : "Completado parcialmente",
+          description: `Se generaron ${successCount} de ${updatedItems.length} imágenes exitosamente`,
+          variant: hasError ? "destructive" : "default",
         });
       }
     } catch (error) {
