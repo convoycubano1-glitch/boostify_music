@@ -534,13 +534,19 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
     setIsGeneratingShots(true);
     try {
       const updatedItems = [...timelineItems];
+      let hasError = false;
 
       for (let i = 0; i < updatedItems.length; i++) {
         const item = updatedItems[i];
         if (!item.generatedImage && item.imagePrompt) {
-          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style. Visual intensity: ${videoStyle.visualIntensity}%`;
-
           try {
+            const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style. Visual intensity: ${videoStyle.visualIntensity}%`;
+
+            toast({
+              title: "Progreso",
+              description: `Generando imagen ${i + 1} de ${updatedItems.length}...`,
+            });
+
             const result = await fal.subscribe("fal-ai/flux-pro", {
               input: {
                 prompt,
@@ -565,32 +571,43 @@ Responde SOLO con el objeto JSON solicitado, sin texto adicional:
               setTimelineItems([...updatedItems]);
 
               toast({
-                title: "Progreso",
-                description: `Imagen ${i + 1} generada y guardada`,
+                title: "Éxito",
+                description: `Imagen ${i + 1} de ${updatedItems.length} generada y guardada`,
               });
             }
           } catch (error) {
-            console.error(`Error en toma ${i + 1}:`, error);
+            console.error(`Error generando imagen ${i + 1}:`, error);
+            hasError = true;
             toast({
               title: "Error",
-              description: `Error generando imagen ${i + 1}`,
+              description: `Error generando imagen ${i + 1}, continuando con la siguiente...`,
               variant: "destructive",
             });
+            continue; // Continuar con la siguiente imagen en caso de error
           }
 
+          // Esperar un breve momento entre generaciones para evitar límites de rate
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
 
-      toast({
-        title: "Completado",
-        description: "Todas las imágenes han sido generadas y guardadas",
-      });
+      if (!hasError) {
+        toast({
+          title: "Completado",
+          description: "Todas las imágenes han sido generadas exitosamente",
+        });
+      } else {
+        toast({
+          title: "Completado con errores",
+          description: "Algunas imágenes no pudieron ser generadas",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error("Error generando imágenes:", error);
+      console.error("Error en el proceso de generación:", error);
       toast({
         title: "Error",
-        description: "Error al generar las imágenes",
+        description: "Error en el proceso de generación de imágenes",
         variant: "destructive",
       });
     } finally {
