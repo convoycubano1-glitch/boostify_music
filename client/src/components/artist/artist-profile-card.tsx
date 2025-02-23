@@ -39,11 +39,12 @@ import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
 import { ArtistProgressTracker } from "@/components/progress/artist-progress-tracker";
 
-interface ArtistProfileProps {
+export interface ArtistProfileProps {
   artistId: string;
 }
 
-const mockArtist = {
+// Export mockArtist to be used in other components
+export const mockArtist = {
   name: "Redwine",
   biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
   genre: "Blues Latin Fusion",
@@ -717,7 +718,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </div>
           <Link href="/auth">
             <Button
-              size="lg"
+                            size="lg"
               className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <DollarSign className="mr-2 h-5 w-5" />

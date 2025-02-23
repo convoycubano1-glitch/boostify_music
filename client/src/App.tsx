@@ -44,6 +44,8 @@ import RealTimeTranslator from "@/pages/real-time-translator";
 import EducationPage from "@/pages/education";
 import AchievementsPage from "@/pages/achievements-page";
 import CourseDetailPage from "@/pages/course-detail";
+import SmartCardsPage from "@/pages/smart-cards"; // Add import
+
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -135,6 +137,7 @@ const Router = () => {
       <ProtectedRoute path="/education" component={EducationPage} />
       <ProtectedRoute path="/achievements" component={AchievementsPage} />
       <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
+      <ProtectedRoute path="/smart-cards" component={SmartCardsPage} />
 
       {/* Catch all not found route */}
       <Route component={NotFound} />
