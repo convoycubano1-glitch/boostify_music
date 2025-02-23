@@ -41,23 +41,24 @@ const generateVideoPrompt = ({
     return promptCache.get(cacheKey)!;
   }
 
-  let prompt = `Create a cinematic ${shotType} shot with ${cameraFormat} format. 
-The scene should evoke a ${mood} mood using ${colorPalette} colors.
-Visual style: ${visualStyle} at ${visualIntensity}% intensity
-Composition: Professional cinematography with ${narrativeIntensity}% narrative focus
-Shot Duration: ${duration} seconds
-Technical Requirements: High resolution, cinematic quality, professional lighting`;
+  // Simplified prompt structure
+  let prompt = `Generate a detailed video scene description:
+- Shot: ${shotType} using ${cameraFormat}
+- Style: ${visualStyle} (${visualIntensity}% intensity)
+- Mood: ${mood} with ${colorPalette} colors
+- Duration: ${duration} seconds
+- Camera: Professional cinematography focusing on composition (${narrativeIntensity}% narrative)`;
 
   if (directorStyle) {
-    prompt += `\nDirector's Style: ${directorStyle}`;
+    prompt += `\n- Director Style: ${directorStyle}`;
   }
 
   if (specialty) {
-    prompt += `\nSpecialty Focus: ${specialty}`;
+    prompt += `\n- Special Focus: ${specialty}`;
   }
 
   if (styleReference) {
-    prompt += `\nStyle Reference: ${styleReference}`;
+    prompt += `\n- Reference: ${styleReference}`;
   }
 
   promptCache.set(cacheKey, prompt);
@@ -68,7 +69,7 @@ Technical Requirements: High resolution, cinematic quality, professional lightin
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const backoff = async (retryCount: number) => {
-  const baseDelay = 2000; // 2 segundos base
+  const baseDelay = 3000; // 3 segundos base
   const maxDelay = 60000; // 60 segundos máximo
   const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
   console.log(`Waiting ${delay/1000} seconds before retry ${retryCount + 1}`);
@@ -87,8 +88,8 @@ const processQueue = async () => {
     const task = promptQueue.shift()!;
     try {
       await task();
-      // Esperar 2 segundos entre tareas
-      await wait(2000);
+      // Esperar 3 segundos entre tareas
+      await wait(3000);
     } catch (error) {
       console.error("Error processing prompt task:", error);
     }
@@ -100,7 +101,7 @@ const processQueue = async () => {
 export async function generateVideoPromptWithRetry(params: VideoPromptParams): Promise<string> {
   return new Promise((resolve, reject) => {
     const task = async () => {
-      const maxRetries = 5; // Aumentado de 3 a 5
+      const maxRetries = 5;
       let retryCount = 0;
 
       while (retryCount < maxRetries) {
@@ -115,23 +116,23 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
             headers: {
               "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
               "HTTP-Referer": window.location.origin,
-              "X-Title": "Boostify Music Video Creator",
+              "X-Title": "Music Video Creator",
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+              model: "mistralai/mixtral-8x7b-instruct", // Using a more stable model
               messages: [
                 {
                   role: "system",
-                  content: "You are an expert cinematographer. Generate a detailed, focused prompt for creating a professional video scene. Be specific and concise."
+                  content: "You are a professional cinematographer. Create detailed prompts for video scenes."
                 },
                 {
                   role: "user",
                   content: promptText
                 }
               ],
-              temperature: 0.7,
-              max_tokens: 200
+              temperature: 0.3, // Lower temperature for more consistent outputs
+              max_tokens: 150
             })
           });
 
@@ -139,16 +140,20 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
           console.log("API Response:", data);
 
           if (!response.ok) {
+            const errorMessage = data.error?.message || response.statusText;
+            console.error("API Error:", errorMessage);
+
             if (response.status === 429) {
               console.log("Rate limit hit, implementing backoff...");
               await backoff(retryCount);
               retryCount++;
               continue;
             }
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
+            throw new Error(`API error: ${response.status} ${errorMessage}`);
           }
 
           if (!data.choices?.[0]?.message?.content) {
+            console.error("Invalid response structure:", data);
             throw new Error("Invalid API response format");
           }
 
@@ -166,6 +171,7 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
 
         } catch (error) {
           console.error(`Error in attempt ${retryCount + 1}:`, error);
+
           if (retryCount === maxRetries - 1) {
             // En el último intento, intentar usar el cache o el prompt base
             const cacheKey = JSON.stringify(params);
@@ -175,9 +181,13 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
               resolve(cachedPrompt);
               return;
             }
-            reject(new Error(`Failed to generate prompt after ${maxRetries} attempts`));
+
+            // Si no hay cache, usar el prompt base
+            const basePrompt = generateVideoPrompt(params);
+            resolve(basePrompt);
             return;
           }
+
           await backoff(retryCount);
           retryCount++;
         }
@@ -210,7 +220,7 @@ export async function generateCourseContent(prompt: string) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        model: "mistralai/mixtral-8x7b-instruct",
         messages: [
           {
             role: "system",
@@ -302,23 +312,18 @@ export async function generateCourseContent(prompt: string) {
   }
 }
 
-// Función mejorada para generar prompts de video con reintentos y backoff
-
-//Implementacion de la función generateVideoPromptWithRetry ya incluida arriba
-
-
-export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'system'; content: string }[]) {
+export async function chatWithAI(messages: Message[]) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
         "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Education",
+        "X-Title": "Music Video Creator",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        model: "mistralai/mixtral-8x7b-instruct",
         messages,
         temperature: 0.7,
         max_tokens: 2000
@@ -337,41 +342,7 @@ export async function chatWithAI(messages: { role: 'user' | 'assistant' | 'syste
   }
 }
 
-// Nueva función para transcribir audio
-export async function transcribeWithAI(audioBase64: string) {
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Video Creator",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
-        messages: [{
-          role: "user",
-          content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${audioBase64}`
-        }],
-        temperature: 0.2,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error in transcription: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error("Transcription error:", error);
-    throw error;
-  }
-}
-
-// Nueva función para generar scripts de video con mejor manejo de errores
+// También actualizamos las otras funciones para usar el mismo modelo
 export async function generateVideoScript(prompt: string, maxRetries = 3) {
   let retryCount = 0;
 
@@ -382,19 +353,19 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
         headers: {
           "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
           "HTTP-Referer": window.location.origin,
-          "X-Title": "Boostify Music Video Creator",
+          "X-Title": "Music Video Creator",
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+          model: "mistralai/mixtral-8x7b-instruct",
           messages: [
             {
               role: "system",
-              content: "You are a professional video director. Return only the requested JSON object without any additional text."
+              content: "You are a professional video director. Generate a detailed video script in JSON format."
             },
             { role: "user", content: prompt }
           ],
-          temperature: 0.7,
+          temperature: 0.3,
           max_tokens: 2000,
           response_format: { type: "json_object" }
         })
@@ -411,6 +382,7 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
       }
 
       const data = await response.json();
+      console.log("Script generation response:", data);
 
       if (!data.choices?.[0]?.message?.content) {
         throw new Error("Invalid API response format");
@@ -431,7 +403,6 @@ export async function generateVideoScript(prompt: string, maxRetries = 3) {
   }
 }
 
-// Nueva función para analizar imágenes de referencia con mejor manejo de errores
 export async function analyzeImage(imageUrl: string) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -439,11 +410,11 @@ export async function analyzeImage(imageUrl: string) {
       headers: {
         "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
         "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Video Creator",
+        "X-Title": "Music Video Creator",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        model: "mistralai/mixtral-8x7b-instruct",
         messages: [
           {
             role: "system",
@@ -454,7 +425,7 @@ export async function analyzeImage(imageUrl: string) {
             content: `Analyze this reference image and describe its visual style, including color palette, mood, and composition: ${imageUrl}`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 500
       })
     });
@@ -467,6 +438,39 @@ export async function analyzeImage(imageUrl: string) {
     return data.choices[0]?.message?.content || "Failed to analyze image";
   } catch (error) {
     console.error("Image analysis error:", error);
+    throw error;
+  }
+}
+
+export async function transcribeWithAI(audioBase64: string) {
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Music Video Creator",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "mistralai/mixtral-8x7b-instruct",
+        messages: [{
+          role: "user",
+          content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${audioBase64}`
+        }],
+        temperature: 0.2,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error in transcription: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error("Transcription error:", error);
     throw error;
   }
 }
