@@ -30,16 +30,6 @@ export function ComposerAgent() {
     progress: 0,
     steps: []
   });
-  const [analyzeState, setAnalyzeState] = useState<ActionState>({
-    isThinking: false,
-    progress: 0,
-    steps: []
-  });
-  const [arrangementState, setArrangementState] = useState<ActionState>({
-    isThinking: false,
-    progress: 0,
-    steps: []
-  });
 
   const theme: AgentTheme = {
     gradient: "from-purple-600 to-blue-600",
@@ -77,11 +67,6 @@ export function ComposerAgent() {
       }));
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-
-    setActionState(prev => ({
-      ...prev,
-      isThinking: false
-    }));
   };
 
   const actions: AgentAction[] = [
@@ -170,26 +155,35 @@ export function ComposerAgent() {
           setGeneratedMusicUrl(null);
           setGeneratedLyrics(null);
 
+          // Primero generamos la letra
+          const lyricsPrompt = `Write lyrics for a ${params.mood} ${params.genre} song about ${params.theme} in ${params.language} with a ${params.structure} structure.`;
+
+          let lyrics = null;
+          try {
+            const lyricsResponse = await openRouterService.chatWithAgent(
+              lyricsPrompt,
+              'composer',
+              user.uid,
+              "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
+            );
+            lyrics = lyricsResponse.response;
+          } catch (error) {
+            console.error('Error generating lyrics:', error);
+            // Continuamos con la generación de música incluso si fallan las letras
+          }
+
+          if (lyrics) {
+            setGeneratedLyrics(lyrics);
+          }
+
+          // Luego generamos la música
           await simulateThinking(setGenerateState, [
-            "Generating lyrics based on theme...",
             "Analyzing musical parameters...",
             "Creating melody and harmony...",
             "Applying instrumentation...",
             "Finalizing composition..."
           ]);
 
-          // Primero generamos la letra
-          const lyricsPrompt = `Write lyrics for a ${params.mood} ${params.genre} song about ${params.theme} in ${params.language} with a ${params.structure} structure.`;
-          const lyricsResponse = await openRouterService.chatWithAgent(
-            lyricsPrompt,
-            'composer',
-            user.uid,
-            "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
-          );
-
-          setGeneratedLyrics(lyricsResponse.response);
-
-          // Luego generamos la música
           const response = await sunoService.generateMusic(
             {
               genre: params.genre,
@@ -201,14 +195,17 @@ export function ComposerAgent() {
           );
 
           console.log('Música generada:', response);
-          setGeneratedMusicUrl(response.musicUrl);
 
-          toast({
-            title: "Music Generated",
-            description: "Your musical composition and lyrics have been created successfully.",
-          });
+          if (response.musicUrl) {
+            setGeneratedMusicUrl(response.musicUrl);
+            toast({
+              title: "Music Generated",
+              description: "Your musical composition has been created successfully.",
+            });
+          } else {
+            throw new Error('No se recibió URL de música en la respuesta');
+          }
 
-          return response;
         } catch (error) {
           console.error("Error generating music:", error);
           let errorMessage = "Failed to generate music. Please try again.";

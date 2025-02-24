@@ -97,16 +97,17 @@ export const sunoService = {
         }
       };
 
-      // Guardar en Firestore
+      // Intentar guardar en Firestore, pero no bloquear si falla
       try {
         const agentResponsesRef = collection(db, 'agentResponses');
         await addDoc(agentResponsesRef, {
           ...sunoResponse,
           timestamp: serverTimestamp()
         });
+        console.log('Respuesta guardada en Firestore exitosamente');
       } catch (error) {
         console.error('Error guardando en Firestore:', error);
-        // No lanzamos el error aquí para que no afecte la respuesta principal
+        // No propagamos el error para que no afecte la funcionalidad principal
       }
 
       return sunoResponse;
