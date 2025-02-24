@@ -35,6 +35,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query } from "firebase/firestore";
@@ -50,7 +52,7 @@ interface Song {
   name: string;
   duration?: string;
   audioUrl: string;
-  uid: string; // Cambiado de userId a uid
+  uid: string;
   createdAt?: any;
 }
 
@@ -59,7 +61,7 @@ interface Video {
   title: string;
   thumbnailUrl?: string;
   url: string;
-  uid: string; // Cambiado de userId a uid
+  uid: string;
   createdAt?: any;
 }
 
@@ -119,7 +121,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const videoData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           console.log("Raw video data:", data);
-          const videoId = data.url?.split('v=')?.[1];
+          const videoId = data.url?.split('v=')[1];
           return {
             id: doc.id,
             title: data.title || "Untitled",
@@ -231,7 +233,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <span className="font-medium">{song.name}</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {song.duration || "N/A"} {/* Handle missing duration */}
+                  {song.duration || "N/A"}
                 </span>
               </div>
             ))
@@ -262,7 +264,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             transition={{ duration: 0.2 }}
           >
             <img
-              src={video.thumbnailUrl || "https://via.placeholder.com/150"}  {/* Handle missing thumbnail */}
+              src={video.thumbnailUrl || "https://via.placeholder.com/150"}
               alt={video.title}
               className="w-full h-full object-cover"
             />
@@ -282,7 +284,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       )}
     </div>
   );
-
 
   return (
     <motion.div
@@ -393,38 +394,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </motion.div>
       </div>
 
-      <Card className="p-8 mb-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
-        <motion.div variants={itemVariants} className="flex items-center gap-8">
-          <div className="relative group">
-            <img
-              src={mockArtist.newRelease.coverArt}
-              alt={mockArtist.newRelease.title}
-              className="w-48 h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-              <div className="absolute bottom-4 left-4">
-                <Play className="h-8 w-8 text-white" />
-              </div>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
-              {mockArtist.newRelease.title}
-            </h3>
-            <p className="text-lg text-muted-foreground mb-4">
-              Coming {new Date(mockArtist.newRelease.releaseDate).toLocaleDateString()}
-            </p>
-            <Button className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
-              <Music2 className="mr-2 h-5 w-5" />
-              Pre-order Now
-            </Button>
-          </div>
-        </motion.div>
-      </Card>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <ArtistProgressTracker artistId={artistId} />
           <MusicSection />
           <Card className="p-6">
             <motion.div variants={itemVariants}>
@@ -533,58 +504,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
-                <ChartBar className="w-6 h-6 mr-2 text-orange-500" />
-                Statistics
-              </h3>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="w-24 h-24 mx-auto">
-                  <CircularProgressbar
-                    value={75}
-                    text={`${mockArtist.stats.monthlyListeners}k`}
-                    styles={buildStyles({
-                      pathColor: "#f97316",
-                      textColor: "#f97316",
-                      trailColor: "#fed7aa",
-                    })}
-                  />
-                  <p className="text-center mt-2 text-sm text-muted-foreground">
-                    Monthly Listeners
-                  </p>
-                </div>
-                <div className="w-24 h-24 mx-auto">
-                  <CircularProgressbar
-                    value={85}
-                    text={`${mockArtist.stats.followers}k`}
-                    styles={buildStyles({
-                      pathColor: "#f97316",
-                      textColor: "#f97316",
-                      trailColor: "#fed7aa",
-                    })}
-                  />
-                  <p className="text-center mt-2 text-sm text-muted-foreground">
-                    Followers
-                  </p>
-                </div>
-                <div className="w-24 h-24 mx-auto">
-                  <CircularProgressbar
-                    value={60}
-                    text={`${mockArtist.stats.views}M`}
-                    styles={buildStyles({
-                      pathColor: "#f97316",
-                      textColor: "#f97316",
-                      trailColor: "#fed7aa",
-                    })}
-                  />
-                  <p className="text-center mt-2 text-sm text-muted-foreground">
-                    Video Views
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </Card>
-          <Card className="p-6">
-            <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center">
                 <Share2 className="w-6 h-6 mr-2 text-orange-500" />
                 Connect & Follow
               </h3>
@@ -648,82 +567,40 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-          <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Send Message to {mockArtist.name}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <textarea
-                    className="col-span-4 h-32 p-2 rounded-md border"
-                    placeholder="Write your message here..."
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-4">
-                <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
-                  Cancel
-                </Button>
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Send Message
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
           <VideosSection />
         </div>
       </div>
 
-      <Card className="p-8 mt-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
-        <motion.div variants={itemVariants} className="text-center">
-          <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
-            Become a Boostify Affiliate
-          </h2>
-          <p className="text-xl text-muted-foreground mb-6">
-            Promote artists and earn money with Boostify's affiliate program
-          </p>
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="p-6 rounded-lg bg-black/5 backdrop-blur-sm">
-              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
-                <Users className="h-6 w-6 text-orange-500" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Refer Artists</h3>
-              <p className="text-muted-foreground">Share your unique referral link with other artists</p>
-            </div>
-            <div className="p-6 rounded-lg bg-black/5 backdrop-blur-sm">
-              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
-                <DollarSign className="h-6 w-6 text-orange-500" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Earn Commission</h3>
-              <p className="text-muted-foreground">Get paid for every successful referral</p>
-            </div>
-            <div className="p-6 rounded-lg bg-black/5 backdrop-blur-sm">
-              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
-                <ChartBar className="h-6 w-6 text-orange-500" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Track Performance</h3>
-              <p className="text-muted-foreground">Monitor your earnings and referrals in real-time</p>
+      <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Send Message to {mockArtist.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <textarea
+                className="col-span-4 h-32 p-2 rounded-md border"
+                placeholder="Write your message here..."
+              />
             </div>
           </div>
-          <Link href="/auth">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r fromorange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <DollarSign className="mr-2 h-5 w5 w-5" />
-              Join Affiliate Program
+          <div className="flex justify-end gap-4">
+            <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
+              Cancel
             </Button>
-          </Link>
-        </motion.div>
-      </Card>
+            <Button className="bg-orange-500 hover:bg-orange-600">
+              Send Message
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
 
 export const mockArtist = {
   name: "Redwine",
-  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical deMiami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
+  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
   genre: "Blues Latin Fusion",
   location: "Miami, FL",
   email: "booking@redwinemusic.com",
@@ -734,7 +611,7 @@ export const mockArtist = {
     twitter: "https://twitter.com/redwinemusic",
     youtube: "https://youtube.com/redwinemusic",
   },
-stats: {
+  stats: {
     monthlyListeners: 180,
     followers: 12,
     views: 2,
