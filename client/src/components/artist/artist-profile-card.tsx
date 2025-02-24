@@ -223,56 +223,39 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             songs.map((song, index) => (
               <div
                 key={song.id}
-                className={`space-y-4 p-4 rounded-lg transition-all duration-300 ${
-                  currentTrack === index
-                    ? "bg-orange-500/20 scale-102"
+                className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 ${
+                  currentTrack === index 
+                    ? "bg-orange-500/20 scale-102" 
                     : "hover:bg-orange-500/10 hover:scale-101"
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => togglePlay(song, index)}
-                      className={`rounded-full transition-transform duration-300 ${
-                        currentTrack === index && isPlaying
-                          ? "bg-orange-500 text-white hover:bg-orange-600 scale-110"
-                          : "hover:bg-orange-500/10"
-                      }`}
-                    >
-                      {currentTrack === index && isPlaying ? (
-                        <Pause className="h-5 w-5" />
-                      ) : (
-                        <Play className="h-5 w-5" />
-                      )}
-                    </Button>
-                    <div>
-                      <span className="font-medium">{song.name}</span>
-                      <span className="text-sm text-muted-foreground block">
-                        {new Date(song.createdAt?.seconds * 1000).toLocaleDateString()}
-                      </span>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => togglePlay(song, index)}
+                    className={`rounded-full transition-transform duration-300 ${
+                      currentTrack === index && isPlaying
+                        ? "bg-orange-500 text-white hover:bg-orange-600 scale-110"
+                        : "hover:bg-orange-500/10"
+                    }`}
+                  >
+                    {currentTrack === index && isPlaying ? (
+                      <Pause className="h-5 w-5" />
+                    ) : (
+                      <Play className="h-5 w-5" />
+                    )}
+                  </Button>
+                  <div>
+                    <span className="font-medium">{song.name}</span>
+                    <span className="text-sm text-muted-foreground block">
+                      {new Date(song.createdAt?.seconds * 1000).toLocaleDateString()}
+                    </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {song.duration || "3:45"}
-                  </span>
                 </div>
-                {currentTrack === index && (
-                  <div className="w-full">
-                    <audio
-                      className="w-full"
-                      controls
-                      src={song.audioUrl}
-                      onEnded={() => {
-                        setIsPlaying(false);
-                        setCurrentTrack(-1);
-                      }}
-                    >
-                      Tu navegador no soporta el elemento de audio.
-                    </audio>
-                  </div>
-                )}
+                <span className="text-sm text-muted-foreground">
+                  {song.duration || "3:45"}
+                </span>
               </div>
             ))
           )}
@@ -290,30 +273,37 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       ) : videos.length === 0 ? (
         <p className="col-span-full text-center text-muted-foreground">No videos available</p>
       ) : (
-        videos.map((video) => (
-          <motion.div
-            key={video.id}
-            className="aspect-video relative group rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105"
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="w-full h-full">
-              <iframe
-                className="w-full h-full rounded-lg"
-                src={`https://www.youtube.com/embed/${video.url.split('v=')[1]}`}
-                title={video.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/30 to-transparent">
-              <h4 className="text-white font-medium truncate mb-2">{video.title}</h4>
-              <p className="text-sm text-white/70">
-                {new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}
-              </p>
-            </div>
-          </motion.div>
-        ))
+        videos.map((video) => {
+          // Extraer el ID del video correctamente de diferentes formatos de URL
+          const videoId = video.url?.split('v=')?.[1]?.split('&')?.[0] || 
+                         video.url?.split('/')?.[3]?.split('?')?.[0] ||
+                         video.url?.split('youtu.be/')?.[1]?.split('?')?.[0];
+
+          return (
+            <motion.div
+              key={video.id}
+              className="aspect-video relative group rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="w-full h-full">
+                <iframe
+                  className="w-full h-full rounded-lg"
+                  src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+                  title={video.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/30 to-transparent">
+                <h4 className="text-white font-medium truncate mb-2">{video.title}</h4>
+                <p className="text-sm text-white/70">
+                  {new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}
+                </p>
+              </div>
+            </motion.div>
+          );
+        })
       )}
     </div>
   );
@@ -326,12 +316,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       className="w-full max-w-7xl mx-auto"
     >
       <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
-        <iframe
-          className="absolute inset-0 w-full h-full object-cover"
-          src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&loop=1&playlist=O90iHkU3cPU&controls=0&showinfo=0&rel=0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
+        {/* Removed unnecessary large iframe */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
