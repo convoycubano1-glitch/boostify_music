@@ -14,6 +14,8 @@ import {
   Brain,
   Calendar as CalendarIcon,
   ChevronRight,
+  Play,
+  ArrowRight
 } from "lucide-react";
 import {
   Tabs,
@@ -40,69 +42,66 @@ import { CalendarSection } from "@/components/manager/calendar";
 
 export default function ManagerToolsPage() {
   const [selectedTab, setSelectedTab] = useState("technical");
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">
-        <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
-          <div className="container mx-auto px-4 py-6">
-            {/* Hero Section with Video Background */}
+        <ScrollArea className="h-[calc(100vh-4rem)]">
+          <div className="container mx-auto px-4 py-8">
+            {/* Hero Section */}
             <section className="relative rounded-xl overflow-hidden mb-12">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover"
-                src="/assets/Standard_Mode_Generated_Video (9).mp4"
-              />
-              <div className="absolute inset-0 bg-black/60" />
-              <div className="relative p-8 md:p-16">
-                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 md:mb-6">
-                  Manager Tools
-                </h1>
-                <p className="text-lg md:text-xl text-white/90 max-w-2xl mb-6 md:mb-8">
-                  Professional tools for comprehensive artist and production management
-                </p>
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-purple-500/20" />
+              <div className="relative p-8 md:p-12">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <h1 className="text-3xl md:text-5xl font-bold mb-4">
+                    Manager Tools
+                  </h1>
+                  <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-6">
+                    Professional tools powered by AI for comprehensive artist and production management
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
+                      Get Started
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                    <Button size="lg" variant="outline">
+                      Watch Demo
+                      <Play className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </motion.div>
               </div>
             </section>
 
-            <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid grid-cols-3 md:grid-cols-3 lg:grid-cols-7 gap-2 md:gap-4 p-2">
-                <TabsTrigger value="technical" className="data-[state=active]:bg-orange-500">
-                  <FileText className="w-4 h-4" />
-                  <span>Technical</span>
-                </TabsTrigger>
-                <TabsTrigger value="requirements" className="data-[state=active]:bg-orange-500">
-                  <Utensils className="w-4 h-4" />
-                  <span>Requirements</span>
-                </TabsTrigger>
-                <TabsTrigger value="budget" className="data-[state=active]:bg-orange-500">
-                  <DollarSign className="w-4 h-4" />
-                  <span>Budget</span>
-                </TabsTrigger>
-                <TabsTrigger value="logistics" className="data-[state=active]:bg-orange-500">
-                  <Truck className="w-4 h-4" />
-                  <span>Logistics</span>
-                </TabsTrigger>
-                <TabsTrigger value="hiring" className="data-[state=active]:bg-orange-500">
-                  <Users2 className="w-4 h-4" />
-                  <span>Hiring</span>
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="data-[state=active]:bg-orange-500">
-                  <Brain className="w-4 h-4" />
-                  <span>AI</span>
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="data-[state=active]:bg-orange-500">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span>Calendar</span>
-                </TabsTrigger>
+            {/* Main Content */}
+            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+              <TabsList className="w-full flex-wrap justify-start gap-2 bg-transparent h-auto p-0 mb-8">
+                {[
+                  { value: "technical", icon: FileText, label: "Technical" },
+                  { value: "requirements", icon: Utensils, label: "Requirements" },
+                  { value: "budget", icon: DollarSign, label: "Budget" },
+                  { value: "logistics", icon: Truck, label: "Logistics" },
+                  { value: "hiring", icon: Users2, label: "Hiring" },
+                  { value: "ai", icon: Brain, label: "AI Assistant" },
+                  { value: "calendar", icon: CalendarIcon, label: "Calendar" }
+                ].map(({ value, icon: Icon, label }) => (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-orange-500"
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </TabsTrigger>
+                ))}
               </TabsList>
 
-              <div className="mt-6">
+              <div className="space-y-8">
                 <TabsContent value="technical">
                   <TechnicalRiderSection />
                 </TabsContent>

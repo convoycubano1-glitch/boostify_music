@@ -1,9 +1,12 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import { env } from "@/env";
 import OpenAI from 'openai';
+import { env } from "@/env";
 
-const OPENROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
+const openai = new OpenAI({
+  apiKey: env.OPENAI_API_KEY || '',
+  baseURL: 'https://api.openai.com/v1',
+});
 
 interface ManagerToolData {
   type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
@@ -15,44 +18,31 @@ interface ManagerToolData {
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
-    if (!OPENROUTER_API_KEY) {
-      console.error('OpenRouter API key is not configured');
-      throw new Error('OpenRouter API key is not configured');
+    if (!env.OPENAI_API_KEY) {
+      console.error('OpenAI API key is not configured');
+      throw new Error('OpenAI API key is not configured');
     }
 
     try {
       console.log('Making request with prompt:', prompt);
 
-      const openai = new OpenAI({
-        apiKey: OPENROUTER_API_KEY || '',
-        baseURL: 'https://openrouter.ai/api/v1',
-        dangerouslyAllowBrowser: true,
-        defaultQuery: { 
-          "temperature": 0.7,
-          "max_tokens": 2000
-        },
-        defaultHeaders: {
-          'HTTP-Referer': window.location.origin, 
-          'X-Title': 'Boostify Music Manager',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`
-        },
-      });
-
       const completion = await openai.chat.completions.create({
-        model: "anthropic/claude-3-sonnet",
+        model: "gpt-4",
         messages: [
           {
             role: 'system',
-            content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
+            content: `You are an expert AI assistant specialized in ${type} management for music artists and events. Provide detailed, well-structured responses.`
           },
           {
             role: 'user',
             content: prompt
           }
-        ]
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
       });
 
-      console.log('OpenRouter response:', completion);
+      console.log('OpenAI response:', completion);
 
       if (!completion.choices?.[0]?.message?.content) {
         console.error('Invalid response format:', completion);
@@ -63,8 +53,8 @@ export const managerToolsService = {
 
     } catch (error: any) {
       console.error('Error in generateWithAI:', error);
-      if (error.status === 401 || error.message.includes('No auth credentials found')) {
-        throw new Error('Authentication failed. Please check your OpenRouter API key configuration.');
+      if (error.status === 401) {
+        throw new Error('Authentication failed. Please check your OpenAI API key configuration.');
       } else if (error.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
       }
@@ -104,106 +94,40 @@ export const managerToolsService = {
     }
   },
 
-  technical: {
-    async generateTechnicalRider(requirements: string, userId: string) {
-      try {
-        console.log('Generating technical rider for requirements:', requirements);
-        const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
-
-        const content = await managerToolsService.generateWithAI(prompt, 'technical');
-
-        return managerToolsService.saveToFirestore({
-          type: 'technical',
-          content,
-          userId,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      } catch (error) {
-        console.error('Error generating rider:', error);
-        throw error;
+  async generateContentByType(type: string, details: string, userId: string) {
+    try {
+      let prompt = '';
+      switch (type) {
+        case 'technical':
+          prompt = `Generate a detailed technical rider based on these requirements: ${details}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
+          break;
+        case 'requirements':
+          prompt = `Create a comprehensive requirements list for this event/artist: ${details}. Include all necessary technical, logistical, and personnel requirements.`;
+          break;
+        case 'budget':
+          prompt = `Create a detailed budget breakdown for this project: ${details}. Include all expected costs, contingencies, and potential revenue streams.`;
+          break;
+        case 'logistics':
+          prompt = `Create a detailed logistics plan for this event/tour: ${details}. Include transportation, accommodation, equipment handling, and timeline.`;
+          break;
+        case 'hiring':
+          prompt = `Create detailed job descriptions and requirements for these positions: ${details}. Include responsibilities, qualifications, and experience needed.`;
+          break;
+        default:
+          prompt = `Provide expert recommendations and insights for: ${details}`;
       }
-    }
-  },
-  requirements: {
-    async generateRequirements(artistInfo: string, userId: string) {
-      const prompt = `Create a comprehensive requirements list for this artist: ${artistInfo}`;
-      const content = await managerToolsService.generateWithAI(prompt, 'requirements');
-      return managerToolsService.saveToFirestore({
-        type: 'requirements',
+
+      const content = await this.generateWithAI(prompt, type);
+      return this.saveToFirestore({
+        type,
         content,
         userId,
         createdAt: new Date(),
         updatedAt: new Date()
       });
-    }
-  },
-
-  budget: {
-    async generateBudget(eventDetails: string, userId: string) {
-      const prompt = `Create a detailed budget breakdown for this event: ${eventDetails}`;
-      const content = await managerToolsService.generateWithAI(prompt, 'budget');
-      return managerToolsService.saveToFirestore({
-        type: 'budget',
-        content,
-        userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-  },
-
-  logistics: {
-    async generateLogisticsPlan(eventInfo: string, userId: string) {
-      const prompt = `Create a logistics plan for this event: ${eventInfo}`;
-      const content = await managerToolsService.generateWithAI(prompt, 'logistics');
-      return managerToolsService.saveToFirestore({
-        type: 'logistics',
-        content,
-        userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-  },
-
-  hiring: {
-    async generateJobDescriptions(positions: string[], userId: string) {
-      const prompt = `Create job descriptions for these positions: ${positions.join(', ')}`;
-      const content = await managerToolsService.generateWithAI(prompt, 'hiring');
-      return managerToolsService.saveToFirestore({
-        type: 'hiring',
-        content,
-        userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-  },
-
-  ai: {
-    async generateRecommendations(context: string, userId: string) {
-      const prompt = `Provide AI-powered recommendations for: ${context}`;
-      const content = await managerToolsService.generateWithAI(prompt, 'ai');
-      return managerToolsService.saveToFirestore({
-        type: 'ai',
-        content,
-        userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-  },
-
-  calendar: {
-    async scheduleEvent(eventDetails: any, userId: string) {
-      return managerToolsService.saveToFirestore({
-        type: 'calendar',
-        content: eventDetails,
-        userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+    } catch (error) {
+      console.error(`Error generating ${type} content:`, error);
+      throw error;
     }
   }
 };

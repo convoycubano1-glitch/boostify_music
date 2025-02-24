@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { FileText, Upload, Download, Building2, Loader2, ChevronRight } from "lucide-react";
 import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 
 interface TechnicalRider {
   id: string;
@@ -24,7 +25,6 @@ export function TechnicalRiderSection() {
   const [requirements, setRequirements] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Query para obtener los technical riders existentes
   const { data: technicalRiders = [], isLoading } = useQuery({
     queryKey: ['technical-riders', user?.uid],
     queryFn: async () => {
@@ -35,11 +35,10 @@ export function TechnicalRiderSection() {
     enabled: !!user
   });
 
-  // Mutation para generar nuevo technical rider
   const generateRiderMutation = useMutation({
     mutationFn: async (requirements: string) => {
       if (!user?.uid) throw new Error("User not authenticated");
-      return managerToolsService.technical.generateTechnicalRider(requirements, user.uid);
+      return managerToolsService.generateContentByType('technical', requirements, user.uid);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technical-riders', user?.uid] });
@@ -81,11 +80,8 @@ export function TechnicalRiderSection() {
 
   const handleDownload = async (rider: TechnicalRider) => {
     try {
-      // Create a Blob with the rider content
       const blob = new Blob([rider.content], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
-
-      // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = url;
       link.download = `technical-rider-${new Date(rider.createdAt.toDate()).toISOString().split('T')[0]}.txt`;
@@ -109,44 +105,42 @@ export function TechnicalRiderSection() {
   };
 
   return (
-    <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+    <div className="grid gap-8 md:grid-cols-2">
       {/* Generate Technical Rider Card */}
-      <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
+      <Card className="p-6 hover:shadow-lg transition-all">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-            <FileText className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+          <div className="p-4 bg-orange-500/10 rounded-xl">
+            <FileText className="h-8 w-8 text-orange-500" />
           </div>
           <div>
-            <h3 className="text-xl md:text-2xl font-semibold">Generate Technical Rider</h3>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
-              Create and manage technical specifications
+            <h3 className="text-2xl font-semibold">Technical Rider</h3>
+            <p className="text-muted-foreground">
+              Generate professional technical specifications
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-          <div className="flex items-center gap-3">
-            <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
-            <span className="text-base md:text-lg">Stage plot and dimensions</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
-            <span className="text-base md:text-lg">Equipment specifications</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <ChevronRight className="h-5 w-5 text-orange-500 flex-shrink-0" />
-            <span className="text-base md:text-lg">Audio requirements</span>
-          </div>
+        <div className="space-y-4 mb-6">
+          {[
+            'Stage plot and dimensions',
+            'Equipment specifications',
+            'Audio requirements'
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-3">
+              <ChevronRight className="h-5 w-5 text-orange-500" />
+              <span>{item}</span>
+            </div>
+          ))}
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="lg" className="bg-orange-500 hover:bg-orange-600 h-auto py-3">
-              <Upload className="mr-2 h-5 w-5 flex-shrink-0" />
-              Create New
+            <Button className="w-full bg-orange-500 hover:bg-orange-600">
+              <Upload className="mr-2 h-5 w-5" />
+              Create New Rider
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Generate Technical Rider</DialogTitle>
               <DialogDescription>
@@ -164,7 +158,9 @@ export function TechnicalRiderSection() {
                   className="min-h-[200px]"
                 />
               </div>
-              <Button 
+            </div>
+            <DialogFooter>
+              <Button
                 onClick={handleGenerateRider}
                 disabled={isGenerating || !requirements.trim()}
                 className="w-full"
@@ -178,50 +174,52 @@ export function TechnicalRiderSection() {
                   "Generate Technical Rider"
                 )}
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </Card>
 
       {/* Generated Riders Card */}
-      <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
+      <Card className="p-6 hover:shadow-lg transition-all">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-            <Building2 className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
+          <div className="p-4 bg-orange-500/10 rounded-xl">
+            <Building2 className="h-8 w-8 text-orange-500" />
           </div>
           <div>
-            <h3 className="text-xl md:text-2xl font-semibold">Generated Riders</h3>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
+            <h3 className="text-2xl font-semibold">Generated Riders</h3>
+            <p className="text-muted-foreground">
               View and download your technical riders
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-4">
           {isLoading ? (
-            <div className="flex items-center justify-center py-4">
+            <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : technicalRiders.length > 0 ? (
             technicalRiders.map((rider: TechnicalRider) => (
-              <div key={rider.id} className="p-4 rounded-lg bg-orange-500/5">
-                <div className="flex items-center justify-between">
+              <div key={rider.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
+                <div className="flex items-center justify-between mb-2">
                   <div>
                     <p className="font-medium">Technical Rider</p>
                     <p className="text-sm text-muted-foreground">
                       {new Date(rider.createdAt.toDate()).toLocaleDateString()}
                     </p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleDownload(rider)}
+                    className="hover:bg-orange-500/10"
                   >
                     <Download className="h-4 w-4" />
+                    <VisuallyHidden>Download Technical Rider</VisuallyHidden>
                   </Button>
                 </div>
                 <div className="mt-2">
-                  <p className="text-sm line-clamp-2">{rider.content}</p>
+                  <p className="text-sm line-clamp-3">{rider.content}</p>
                 </div>
               </div>
             ))
