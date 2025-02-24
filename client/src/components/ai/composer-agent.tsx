@@ -43,57 +43,55 @@ export function ComposerAgent() {
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
-      setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
+      setSteps(prev => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     setIsThinking(false);
   };
 
-  const createPrompt = (params: any) => {
-    return `## ${params.theme}
-In ${params.mood} ${params.genre} style,
-Tempo set to ${params.tempo} beats per minute,
-Following a ${params.structure} structure.
+  const generateLyrics = async (params: any): Promise<string> => {
+    await simulateThinking([
+      "Understanding theme and mood...",
+      "Crafting lyrical structure...",
+      "Generating verses...",
+      "Adding chorus...",
+      "Finalizing lyrics..."
+    ]);
 
-Written in ${params.language}, expressing our theme:
-Let the music flow and create our dream.
-##`;
+    const lyricsPrompt = `Write lyrics for a song with the following parameters:
+    - Genre: ${params.genre}
+    - Mood: ${params.mood}
+    - Theme: ${params.theme}
+    - Language: ${params.language}
+    - Structure: ${params.structure}
+
+    Please write emotive and meaningful lyrics that capture the essence of the theme.
+    Structure the output with clear verse and chorus sections.`;
+
+    const response = await openRouterService.chatWithAgent(
+      lyricsPrompt,
+      'composer',
+      user.uid,
+      "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
+    );
+
+    return response;
   };
 
-  const generateLyrics = async (params: any) => {
-    try {
-      await simulateThinking([
-        "Analyzing theme and mood...",
-        "Crafting lyrical structure...",
-        "Generating verses...",
-        "Adding chorus...",
-        "Finalizing lyrics..."
-      ]);
+  const createMusicPrompt = (params: any, lyrics: string) => {
+    return `## Musical Composition
+Lyrics:
+${lyrics}
 
-      const lyricsPrompt = `Write lyrics for a song with the following parameters:
-      - Genre: ${params.genre}
-      - Mood: ${params.mood}
-      - Theme: ${params.theme}
-      - Language: ${params.language}
-      - Structure: ${params.structure}
+Style: ${params.genre}
+Mood: ${params.mood}
+Tempo: ${params.tempo} BPM
+Structure: ${params.structure}
 
-      Please write emotive and meaningful lyrics that capture the essence of the theme.
-      Structure the output with clear verse and chorus sections.`;
-
-      const response = await openRouterService.chatWithAgent(
-        lyricsPrompt,
-        'composer',
-        user.uid,
-        "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
-      );
-
-      return response;
-    } catch (error) {
-      console.error("Error generating lyrics:", error);
-      throw error;
-    }
+Create a musical composition that perfectly matches these lyrics and parameters.
+##`;
   };
 
   const actions: AgentAction[] = [
@@ -188,24 +186,20 @@ Let the music flow and create our dream.
           }
 
           // Primero generamos la letra
-          try {
-            const lyrics = await generateLyrics(params);
-            setGeneratedLyrics(lyrics);
-          } catch (error) {
-            console.error('Error generating lyrics:', error);
-            // Continuamos con la música incluso si fallan las letras
-          }
+          console.log('Generando letras...');
+          const lyrics = await generateLyrics(params);
+          setGeneratedLyrics(lyrics);
 
-          // Luego generamos la música
+          // Luego generamos la música basada en la letra
           await simulateThinking([
-            "Creating musical concept...",
-            "Generating melody and harmony...",
-            "Applying AI composition...",
+            "Analyzing generated lyrics...",
+            "Composing melody to match lyrics...",
+            "Adding harmonies and arrangement...",
             "Processing final audio..."
           ]);
 
-          const prompt = createPrompt(params);
-          console.log('Prompt generado:', prompt);
+          const musicPrompt = createMusicPrompt(params, lyrics);
+          console.log('Prompt para música:', musicPrompt);
 
           const response = await falService.generateMusic(
             {
@@ -217,7 +211,7 @@ Let the music flow and create our dream.
               structure: params.structure
             },
             user.uid,
-            prompt
+            musicPrompt
           );
 
           console.log('Respuesta de FAL.AI:', response);
@@ -226,17 +220,17 @@ Let the music flow and create our dream.
             setGeneratedMusicUrl(response.musicUrl);
             toast({
               title: "Content Generated",
-              description: "Your musical composition and lyrics have been created successfully.",
+              description: "Your lyrics and musical composition have been created successfully.",
             });
           } else {
             throw new Error('No music URL received in response');
           }
 
         } catch (error) {
-          console.error("Error generating music:", error);
+          console.error("Error in composition process:", error);
           toast({
             title: "Error",
-            description: "Failed to generate music. Please try again.",
+            description: "Failed to complete the composition process. Please try again.",
             variant: "destructive"
           });
 
