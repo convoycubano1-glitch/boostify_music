@@ -1,3 +1,7 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
@@ -10,13 +14,17 @@ import {
   Badge, MapPin, Calendar, ChartBar, Users, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { recordLabelService } from "@/lib/services/record-label-service";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
 
   const { data: services = [] } = useQuery({
     queryKey: ['record-label-services', user?.uid],

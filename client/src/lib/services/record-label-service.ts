@@ -18,25 +18,17 @@ const openai = new OpenAI({
   }
 });
 
-interface RecordLabelService {
-  type: 'remix' | 'mastering' | 'video' | 'publishing';
-  content: any;
-  userId: string;
-  createdAt: Date;
-  status: 'pending' | 'completed' | 'failed';
-}
-
 export const recordLabelService = {
-  async generateRemix(originalTrack: string, style: string, userId: string) {
+  async generateRemix(track: string, style: string, userId: string) {
     try {
-      const prompt = `Generate a modern remix of this track in the style of ${style}. Original track: ${originalTrack}`;
-      
+      const prompt = `Generate a modern remix style guide for the track "${track}" in the style of ${style}. Include detailed instructions for tempo, key changes, arrangement modifications, and suggested modern elements to incorporate.`;
+
       const completion = await openai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
           {
             role: 'system',
-            content: 'You are an expert music producer specializing in remix generation.'
+            content: 'You are an expert music producer and remixer.'
           },
           {
             role: 'user',
@@ -52,7 +44,7 @@ export const recordLabelService = {
       return this.saveToFirestore({
         type: 'remix',
         content: {
-          originalTrack,
+          track,
           style,
           remixInstructions
         },
@@ -69,8 +61,8 @@ export const recordLabelService = {
 
   async generateMaster(track: string, reference: string, userId: string) {
     try {
-      const prompt = `Create professional mastering instructions for this track using ${reference} as reference.`;
-      
+      const prompt = `Create professional mastering instructions for the track "${track}" using "${reference}" as reference. Include specific recommendations for EQ, compression, limiting, and other mastering techniques.`;
+
       const completion = await openai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
@@ -109,8 +101,8 @@ export const recordLabelService = {
 
   async generateMusicVideo(track: string, style: string, userId: string) {
     try {
-      const prompt = `Generate a music video concept for this track in the style of ${style}.`;
-      
+      const prompt = `Create a detailed music video concept for "${track}" in the style of ${style}. Include scene descriptions, visual themes, transitions, and special effects recommendations.`;
+
       const completion = await openai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
@@ -182,5 +174,13 @@ export const recordLabelService = {
     }
   }
 };
+
+interface RecordLabelService {
+  type: 'remix' | 'mastering' | 'video' | 'publishing';
+  content: any;
+  userId: string;
+  createdAt: Date;
+  status: 'pending' | 'completed' | 'failed';
+}
 
 export default recordLabelService;
