@@ -5,6 +5,7 @@ import { env } from "@/env";
 
 if (!env.VITE_OPENROUTER_API_KEY) {
   console.error('OpenRouter API key is not configured');
+  throw new Error('OpenRouter API key is not configured');
 }
 
 const openai = new OpenAI({
@@ -27,13 +28,8 @@ interface ManagerToolData {
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
-    if (!env.VITE_OPENROUTER_API_KEY) {
-      console.error('OpenRouter API key is not configured');
-      throw new Error('OpenRouter API key is not configured');
-    }
-
     try {
-      console.log('Making request with prompt:', prompt);
+      console.log('Making request to OpenRouter with prompt:', prompt);
 
       const completion = await openai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
