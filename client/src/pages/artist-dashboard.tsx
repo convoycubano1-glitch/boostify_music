@@ -1,88 +1,793 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Music2, Plus, X, Loader2, BarChart2, CheckCircle2, ChevronRight, Calendar, Download, Users, DollarSign, Share2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { MusicManager } from "@/components/music/music-manager";
+import { motion } from "framer-motion";
+import {
+  Video,
+  Music2,
+  BarChart2,
+  DollarSign,
+  Users,
+  Plus,
+  PlayCircle,
+  Mic2,
+  Upload,
+  Loader2,
+  X,
+  Grid,
+  Info,
+  ChevronRight,
+  Trash2,
+  CheckCircle2,
+} from "lucide-react";
+import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { db, auth, storage } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  deleteDoc,
+  doc,
+  orderBy,
+} from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { StrategyDialog } from "@/components/strategy/strategy-dialog";
 import { ActivityFeed } from "@/components/activity/activity-feed";
 import { RightsManagementCard } from "@/components/rights/rights-management-card";
 import { DistributionCard } from "@/components/distribution/distribution-card";
-import { StrategyDialog } from "@/components/strategy/strategy-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { PieChart as RePieChart, Pie, Cell } from "recharts";
 
-// Define animation variants
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+interface VideoData {
+  id: string;
+  url: string;
+  title: string;
+  createdAt: Date;
+  thumbnailUrl?: string;
+  videoId?: string;
+}
 
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 }
-};
+interface Song {
+  id: string;
+  name: string;
+  audioUrl: string;
+  storageRef: string;
+  createdAt: Date;
+  userId: string;
+}
+
+interface Strategy {
+  id: string;
+  focus: string[];
+  phases: Phase[];
+  targetAudience: string;
+  priority: string;
+  timeline: string;
+  status: string;
+  createdAt: Date;
+  userId: string;
+}
+
+interface Phase {
+  id: string;
+  name: string;
+  description: string;
+  completed: boolean;
+}
+
+function getYouTubeVideoId(url: string) {
+  const regExp =
+    /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[7].length === 11 ? match[7] : null;
+}
+
+function getYouTubeThumbnailUrl(videoId: string) {
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+}
 
 export default function ArtistDashboard() {
-  const [isStrategyGalleryOpen, setIsStrategyGalleryOpen] = useState(false);
+  const { toast } = useToast();
+
+  // State de diálogos y formularios
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isSongDialogOpen, setIsSongDialogOpen] = useState(false);
+  const [isVideoGalleryOpen, setIsVideoGalleryOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [isSubmittingVideo, setIsSubmittingVideo] = useState(false);
+  const [isSubmittingSong, setIsSubmittingSong] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isStrategyDialogOpen, setIsStrategyDialogOpen] = useState(false);
-  const [selectedStrategy, setSelectedStrategy] = useState({});
-  const [selectedPeriod, setSelectedPeriod] = useState("30d");
-  const strategies = []; // Replace with your actual strategies data
-  const currentStrategy = []; // Replace with your actual current strategy data
-  const musicMetrics = {
-    totalStreams: 12345,
-    monthlyListeners: 6789,
-    revenueGrowth: 10,
-    topCountries: [
-      { name: "USA", value: 40 },
-      { name: "Canada", value: 25 },
-      { name: "UK", value: 15 }
-      // Add more countries as needed
-    ]
-  };
-  const generateTimeData = (days:number) => {
-    const data = [];
-    for(let i = 0; i < days; i++) {
-      data.push({
-        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
-        streams: Math.random() * 1000
-      })
+  const [isStrategyGalleryOpen, setIsStrategyGalleryOpen] = useState(false);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
+
+  // Query de canciones
+  const {
+    data: songs = [],
+    isLoading: isLoadingSongs,
+    refetch: refetchSongs,
+  } = useQuery({
+    queryKey: ["songs", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+      try {
+        const songsRef = collection(db, "songs");
+        const q = query(songsRef, where("userId", "==", auth.currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        })) as Song[];
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+        toast({
+          title: "Error",
+          description: "Could not load songs. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
+  // Query de videos
+  const {
+    data: videos = [],
+    isLoading: isLoadingVideos,
+    refetch: refetchVideos,
+  } = useQuery({
+    queryKey: ["videos", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+      try {
+        const videosRef = collection(db, "videos");
+        const q = query(videosRef, where("userId", "==", auth.currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          const videoId = getYouTubeVideoId(data.url);
+          return {
+            id: doc.id,
+            ...data,
+            videoId,
+            thumbnailUrl: videoId ? getYouTubeThumbnailUrl(videoId) : undefined,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          };
+        }) as VideoData[];
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+        toast({
+          title: "Error",
+          description: "Could not load videos. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
+  // Query de estrategia actual
+  const {
+    data: currentStrategy = [],
+    isLoading: isLoadingStrategy,
+    refetch: refetchStrategy,
+  } = useQuery({
+    queryKey: ["strategies", auth.currentUser?.uid],
+    queryFn: async () => {
+      if (!auth.currentUser?.uid) return [];
+      try {
+        const strategiesRef = collection(db, "strategies");
+        const q = query(strategiesRef, where("userId", "==", auth.currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return [];
+        const strategies = querySnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }));
+        strategies.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        const latestStrategy = strategies[0];
+        return latestStrategy?.focus || [];
+      } catch (error) {
+        console.error("Error fetching strategy:", error);
+        toast({
+          title: "Error",
+          description: "Could not load strategy. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !!auth.currentUser?.uid,
+  });
+
+  // Función para traer todas las estrategias (para la galería)
+  const fetchStrategies = async () => {
+    if (!auth.currentUser?.uid) return;
+    try {
+      const strategiesRef = collection(db, "strategies");
+      const q = query(strategiesRef, where("userId", "==", auth.currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      const fetchedStrategies = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          focus: data.focus || [],
+          phases: data.phases || [],
+          targetAudience: data.targetAudience || "",
+          priority: data.priority || "",
+          timeline: data.timeline || "",
+          status: data.status || "active",
+          createdAt: data.createdAt?.toDate() || new Date(),
+          userId: data.userId,
+        } as Strategy;
+      });
+      fetchedStrategies.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
+      setStrategies(fetchedStrategies);
+    } catch (error) {
+      console.error("Error fetching strategies:", error);
+      toast({
+        title: "Error",
+        description: "Could not load strategies. Please try again.",
+        variant: "destructive",
+      });
     }
-    return data
-  }
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
-
-  const handleVideoSubmit = () => {
-    // Your video submission logic here
   };
 
-  const fetchStrategies = () => {
-    // Your fetch strategies logic here
+  useEffect(() => {
+    if (auth.currentUser?.uid) {
+      fetchStrategies();
+    }
+  }, [auth.currentUser?.uid]);
+
+  // Manejo de audio y subida de canción
+  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        toast({
+          title: "Error",
+          description: "File size must be less than 50MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type specifically for MP3 and WAV
+      if (!file.type.match(/^audio\/(mpeg|wav|x-wav)$/)) {
+        toast({
+          title: "Error",
+          description: "Please upload a valid MP3 or WAV file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        setSelectedFile(file);
+        const audio = new Audio(URL.createObjectURL(file));
+        setCurrentAudio(audio);
+        setIsPlaying(false);
+      } catch (error) {
+        console.error("Error reading file:", error);
+        toast({
+          title: "Error",
+          description: "Failed to read audio file. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSongUpload = async () => {
+    if (!auth.currentUser?.uid || !selectedFile) return;
+    try {
+      setIsSubmittingSong(true);
+      setUploadProgress(0);
+
+      // Create a reference in Firebase Storage
+      const storageRefPath = `artist_music/${auth.currentUser.uid}/${Date.now()}_${selectedFile.name}`;
+      const storageRefObj = ref(storage, storageRefPath);
+
+      // Start upload with progress monitoring
+      const uploadTask = uploadBytesResumable(storageRefObj, selectedFile);
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          toast({
+            title: "Error",
+            description: "Failed to upload song. Please try again.",
+            variant: "destructive",
+          });
+          setIsSubmittingSong(false);
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+            // Save song data to Firestore
+            const songData = {
+              name: selectedFile.name,
+              audioUrl: downloadURL,
+              storageRef: storageRefObj.fullPath,
+              userId: auth.currentUser.uid,
+              createdAt: serverTimestamp(),
+            };
+
+            await addDoc(collection(db, "songs"), songData);
+
+            // Log activity
+            await addDoc(collection(db, "activities"), {
+              type: "song",
+              action: "Uploaded new song",
+              title: selectedFile.name,
+              userId: auth.currentUser.uid,
+              createdAt: serverTimestamp(),
+            });
+
+            toast({
+              title: "Success",
+              description: "Song added successfully",
+            });
+
+            // Clean up and reset state
+            setIsSongDialogOpen(false);
+            if (currentAudio) {
+              currentAudio.pause();
+              URL.revokeObjectURL(currentAudio.src);
+              setCurrentAudio(null);
+            }
+            setSelectedFile(null);
+            setIsPlaying(false);
+            setUploadProgress(0);
+            refetchSongs();
+
+          } catch (error) {
+            console.error("Error saving song data:", error);
+            toast({
+              title: "Error",
+              description: "Failed to save song data. Please try again.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsSubmittingSong(false);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error initiating upload:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start upload. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmittingSong(false);
+    }
+  };
+
+  const handleVideoSubmit = async () => {
+    if (!auth.currentUser?.uid || !videoUrl) return;
+    try {
+      setIsSubmittingVideo(true);
+      const videoId = getYouTubeVideoId(videoUrl);
+      if (!videoId) {
+        toast({
+          title: "Error",
+          description:
+            "Invalid YouTube URL. Please check the URL and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const videoData = {
+        url: videoUrl,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp(),
+        title: "YouTube Video",
+        thumbnailUrl: getYouTubeThumbnailUrl(videoId),
+      };
+      await addDoc(collection(db, "videos"), videoData);
+      await addDoc(collection(db, "activities"), {
+        type: "video",
+        action: "Added new video",
+        title: videoUrl,
+        userId: auth.currentUser.uid,
+        createdAt: serverTimestamp(),
+      });
+      toast({
+        title: "Success",
+        description: "Video added successfully",
+      });
+      setIsVideoDialogOpen(false);
+      setVideoUrl("");
+      refetchVideos();
+    } catch (error) {
+      console.error("Error adding video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingVideo(false);
+    }
+  };
+
+  const togglePlay = (audioUrl?: string) => {
+    if (audioUrl && (!currentAudio || currentAudio.src !== audioUrl)) {
+      if (currentAudio) currentAudio.pause();
+      const audio = new Audio(audioUrl);
+      setCurrentAudio(audio);
+      audio.play();
+      setIsPlaying(true);
+    } else if (currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause();
+      } else {
+        currentAudio.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleDeleteSong = async (songId: string, storageRefPath: string) => {
+    if (!auth.currentUser?.uid) return;
+    try {
+      await deleteObject(ref(storage, storageRefPath));
+      await deleteDoc(doc(db, "songs", songId));
+      toast({
+        title: "Success",
+        description: "Song deleted successfully",
+      });
+      refetchSongs();
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete song. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!auth.currentUser?.uid) return;
+    try {
+      await deleteDoc(doc(db, "videos", videoId));
+      toast({
+        title: "Success",
+        description: "Video deleted successfully",
+      });
+      refetchVideos();
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete video. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background text-gray-100">
       <Header />
+      <main className="flex-1">
+        {/* Sección Hero con video de fondo y overlay */}
+        <div className="relative w-full h-[80vh] md:h-[90vh] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source
+              src="/assets/Standard_Mode_Generated_Video (7).mp4"
+              type="video/mp4"
+            />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-background" />
+          <div className="relative z-10 container mx-auto h-full flex flex-col justify-end items-center md:items-start px-4 md:px-8 py-8">
+            <div className="text-center md:text-left mb-12">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70 drop-shadow-lg"
+              >
+                Welcome to Your Creative Hub
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-2 text-base sm:text-lg md:text-xl text-muted-foreground"
+              >
+                Manage and enhance your musical presence from one place
+              </motion.p>
+            </div>
 
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <motion.div variants={item}>
-                <Card className="relative overflow-hidden">
-                  <div className="p-6">
+            {/* Estadísticas en tarjetas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Published Videos
+                    </p>
+                    <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                    <Video className="h-6 w-6 text-orange-500" />
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Uploaded Songs
+                    </p>
+                    <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                    <Music2 className="h-6 w-6 text-orange-500" />
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Active Strategies
+                    </p>
+                    <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                    <BarChart2 className="h-6 w-6 text-orange-500" />
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Contenido principal con ScrollArea */}
+        <ScrollArea className="flex-1">
+          <div className="container mx-auto px-4 py-8 space-y-8">
+            {/* Sección de Tips */}
+            <div className="bg-orange-500/5 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Info className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Tips to Optimize Your Dashboard
+                  </h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <ChevronRight className="h-4 w-4 text-orange-500" />
+                      Keep your content fresh by regularly uploading videos and music
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <ChevronRight className="h-4 w-4 text-orange-500" />
+                      Review and update your strategy monthly to maintain focus
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <ChevronRight className="h-4 w-4 text-orange-500" />
+                      Use our AI tools to generate ideas and optimize your content
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Sección de Videos */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Card className="p-6 h-full shadow-md rounded-lg">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                          <Video className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold">My Videos</h2>
+                          <p className="text-sm text-muted-foreground">
+                            Manage your video content
+                          </p>
+                        </div>
+                      </div>
+                      {videos.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsVideoGalleryOpen(true)}
+                        >
+                          <Grid className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      {isLoadingVideos ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                        </div>
+                      ) : videos.length > 0 ? (
+                        <div className="space-y-3">
+                          {videos.map((video) => (
+                            <div
+                              key={video.id}
+                              className="flex justify-between items-center p-3 bg-muted/50 rounded-lg transition-all hover:shadow-lg"
+                            >
+                              <div className="flex items-center gap-3">
+                                {video.thumbnailUrl ? (
+                                  <img
+                                    src={video.thumbnailUrl}
+                                    alt={video.title}
+                                    className="w-16 h-12 object-cover rounded"
+                                  />
+                                ) : (
+                                  <PlayCircle className="h-5 w-5 text-orange-500" />
+                                )}
+                                <div>
+                                  <p className="font-medium">{video.title}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(video.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    window.open(video.url, "_blank")
+                                  }
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteVideo(video.id)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          No videos added yet
+                        </div>
+                      )}
+
+                      {/* Add New Video Dialog */}
+                      <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="w-full gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add New Video
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Video</DialogTitle>
+                            <DialogDescription>
+                              Add your YouTube video link below
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="video-url">YouTube URL</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="video-url"
+                                  placeholder="https://youtube.com/watch?v=..."
+                                  value={videoUrl}
+                                  onChange={(e) => setVideoUrl(e.target.value)}
+                                  className="flex-1"
+                                />
+                              </div>
+                            </div>
+                            {videoUrl && (
+                              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                                <iframe
+                                  width="100%"
+                                  height="100%"
+                                  src={`https://www.youtube.com/embed/${getYouTubeVideoId(videoUrl) || ""}`}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  title="YouTube Preview"
+                                ></iframe>
+                              </div>
+                            )}
+                            <div className="flex justify-end gap-4">
+                              <Button
+                                variant="outline"
+                                onClick={() => setIsVideoDialogOpen(false)}
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={handleVideoSubmit}
+                                disabled={isSubmittingVideo || !videoUrl}
+                              >
+                                {isSubmittingVideo ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Adding...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Video
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                {/* Sección de Música */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card className="p-6 h-full shadow-md rounded-lg">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
                         <Music2 className="h-6 w-6 text-orange-500" />
@@ -94,296 +799,396 @@ export default function ArtistDashboard() {
                         </p>
                       </div>
                     </div>
-                    <MusicManager />
-                  </div>
-                </Card>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="p-6 h-full shadow-md rounded-lg">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <BarChart2 className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold">My Strategy</h2>
-                      <p className="text-sm text-muted-foreground">
-                        Plan your growth and success
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsStrategyGalleryOpen(true)}
-                      className="hidden sm:flex"
-                    >
-                      View All Strategies
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => setIsStrategyDialogOpen(true)}
-                    >
-                      Create Strategy
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {currentStrategy.length > 0 ? (
-                    <div className="space-y-3">
-                      <div className="p-4 rounded-lg bg-orange-500/5">
-                        <h3 className="font-medium mb-2">Current Focus</h3>
-                        <ul className="space-y-2">
-                          {currentStrategy.slice(0, 3).map((item, index) => (
-                            <li
-                              key={index}
-                              className="flex items-start gap-2 text-sm"
+                    <div className="space-y-4">
+                      {isLoadingSongs ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+                        </div>
+                      ) : songs.length > 0 ? (
+                        <div className="space-y-3">
+                          {songs.map((song) => (
+                            <div
+                              key={song.id}
+                              className="flex justify-between items-center p-3 bg-muted/50 rounded-lg transition-all hover:shadow-lg"
                             >
-                              <CheckCircle2 className="h-4 w-4 text-orange-500 mt-0.5" />
-                              <span>{item}</span>
-                            </li>
+                              <div className="flex items-center gap-3">
+                                <Mic2 className="h-5 w-5 text-orange-500" />
+                                <div>
+                                  <p className="font-medium">{song.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(song.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => togglePlay(song.audioUrl)}
+                                >
+                                  {currentAudio?.src === song.audioUrl && isPlaying
+                                    ? "Pause"
+                                    : "Play"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDeleteSong(song.id, song.storageRef)
+                                  }
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
                           ))}
-                        </ul>
-                        {currentStrategy.length > 3 && (
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          No songs added yet
+                        </div>
+                      )}
+                      {/* Add New Song Dialog */}
+                      <Dialog
+                        open={isSongDialogOpen}
+                        onOpenChange={setIsSongDialogOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button className="w-full gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add New Song
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Song</DialogTitle>
+                            <DialogDescription>
+                              Upload your MP3 or WAV file (max 50MB)
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="song-file">
+                                Audio File (MP3/WAV)
+                              </Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="song-file"
+                                  type="file"
+                                  accept=".mp3,.wav"
+                                  onChange={handleAudioUpload}
+                                  className="flex-1"
+                                  disabled={isSubmittingSong}
+                                />
+                              </div>
+                            </div>
+                            {currentAudio && (
+                              <div className="p-4 bg-muted rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => togglePlay()}
+                                      className="h-8 w-8 p-0"
+                                      disabled={isSubmittingSong}
+                                    >
+                                      {isPlaying ? (
+                                        <span className="sr-only">Pause</span>
+                                      ) : (
+                                        <span className="sr-only">Play</span>
+                                      )}
+                                      {isPlaying ? "⏸️" : "▶️"}
+                                    </Button>
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-medium">
+                                        {selectedFile?.name}
+                                      </p>
+                                      {uploadProgress > 0 &&                                        uploadProgress < 100 && (
+                                          <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                                            <div
+                                              className="h-full bg-orange-500 transition-all duration-300"
+                                              style={{
+                                                width: `${uploadProgress}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.currentTime = Math.max(
+                                            0,
+                                            currentAudio.currentTime - 10
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      -10s
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.currentTime = Math.min(
+                                            currentAudio.duration,
+                                            currentAudio.currentTime + 10
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      +10s
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (currentAudio) {
+                                          currentAudio.pause();
+                                          currentAudio.currentTime = 0;
+                                          setIsPlaying(false);
+                                        }
+                                      }}
+                                    >
+                                      Reset
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex justify-end gap-4">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setIsSongDialogOpen(false);
+                                  if (currentAudio) {
+                                    currentAudio.pause();
+                                    URL.revokeObjectURL(currentAudio.src);
+                                    setCurrentAudio(null);
+                                  }
+                                  setSelectedFile(null);
+                                  setIsPlaying(false);
+                                  setUploadProgress(0);
+                                }}
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={handleSongUpload}
+                                disabled={isSubmittingSong || !selectedFile}
+                              >
+                                {isSubmittingSong ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload Song
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </Card>
+                </motion.div>
+              </div>
+
+              <div className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <ActivityFeed />
+                </motion.div>
+
+                {/* Sección de Estrategia */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Card className="p-6 h-full shadow-md rounded-lg">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                          <BarChart2 className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold">My Strategy</h2>
+                          <p className="text-sm text-muted-foreground">
+                            Plan your growth and success
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsStrategyGalleryOpen(true)}
+                          className="hidden sm:flex"
+                        >
+                          View All Strategies
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setIsStrategyDialogOpen(true)}
+                        >
+                          Create Strategy
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Dialog
+                      open={isStrategyGalleryOpen}
+                      onOpenChange={setIsStrategyGalleryOpen}
+                    >
+                      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+                        <DialogHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <DialogTitle>Strategy Gallery</DialogTitle>
+                              <DialogDescription>
+                                View and manage all your growth strategies
+                              </DialogDescription>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setIsStrategyGalleryOpen(false)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </DialogHeader>
+                        <ScrollArea className="flex-grow pr-4">
+                          <div className="space-y-4 py-4">
+                            {strategies.map((strategy) => (
+                              <motion.div
+                                key={strategy.id}
+                                className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors cursor-pointer"
+                                whileHover={{ scale: 1.01 }}
+                                onClick={() => {
+                                  setSelectedStrategy(strategy);
+                                  setIsStrategyDialogOpen(true);
+                                }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium">
+                                      {strategy.targetAudience} - {strategy.timeline}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Created on{" "}
+                                      {strategy.createdAt.toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="px-2 py-1 rounded-full text-xs bg-orange-500/10 text-orange-500">
+                                      {strategy.priority} Priority
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                </div>
+                                <div className="mt-2">
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {strategy.focus[0]}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
+
+                    <div className="space-y-4">
+                      {currentStrategy.length > 0 ? (
+                        <div className="space-y-3">
+                          <div className="p-4 rounded-lg bg-orange-500/5">
+                            <h3 className="font-medium mb-2">Current Focus</h3>
+                            <ul className="space-y-2">
+                              {currentStrategy.slice(0, 3).map((item, index) => (
+                                <li
+                                  key={index}
+                                  className="flex items-start gap-2 text-sm"
+                                >
+                                  <CheckCircle2 className="h-4 w-4 text-orange-500 mt-0.5" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            {currentStrategy.length > 3 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => setIsStrategyDialogOpen(true)}
+                              >
+                                View More
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p>No active strategy</p>
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             className="mt-2"
                             onClick={() => setIsStrategyDialogOpen(true)}
                           >
-                            View More
+                            Create Your First Strategy
                           </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No active strategy</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => setIsStrategyDialogOpen(true)}
-                      >
-                        Create Your First Strategy
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <RightsManagementCard />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <DistributionCard />
-            </motion.div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Card className="p-6 backdrop-blur-sm border-orange-500/10">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                        <BarChart2 className="h-6 w-6 text-orange-500" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">Performance Analytics</h2>
-                        <p className="text-sm text-muted-foreground">
-                          Track your music performance metrics
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("7d")}>
-                        <Calendar className="h-4 w-4" />
-                        7 días
-                      </Button>
-                      <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("30d")}>
-                        <Calendar className="h-4 w-4" />
-                        30 días
-                      </Button>
-                      <Button variant="outline" className="gap-2" onClick={() => setSelectedPeriod("12m")}>
-                        <Calendar className="h-4 w-4" />
-                        12 meses
-                      </Button>
-                      <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
-                        <Download className="h-4 w-4" />
-                        Export Report
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <Card className="p-4 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Music2 className="h-4 w-4 text-orange-500" />
-                          <h3 className="text-sm font-medium">Total Streams</h3>
                         </div>
-                        <p className="text-2xl font-bold">{musicMetrics.totalStreams.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <span className="text-green-500">↑ 12.5%</span> vs last period
-                        </p>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-orange-500" />
-                          <h3 className="text-sm font-medium">Monthly Listeners</h3>
-                        </div>
-                        <p className="text-2xl font-bold">{musicMetrics.monthlyListeners.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <span className="text-green-500">↑ 8.3%</span> vs last month
-                        </p>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-2">
-                          <DollarSign className="h-4 w-4 text-orange-500" />
-                          <h3 className="text-sm font-medium">Revenue Growth</h3>
-                        </div>
-                        <p className="text-2xl font-bold">+{musicMetrics.revenueGrowth}%</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Monthly growth
-                        </p>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Share2 className="h-4 w-4 text-orange-500" />
-                          <h3 className="text-sm font-medium">Social Engagement</h3>
-                        </div>
-                        <p className="text-2xl font-bold">87.2%</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <span className="text-green-500">↑ 5.2%</span> engagement rate
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Performance Overview</h3>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={generateTimeData(30)}>
-                            <defs>
-                              <linearGradient id="colorPerformance" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                                <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis dataKey="date" className="text-xs" />
-                            <YAxis className="text-xs" />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '8px'
-                              }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="streams"
-                              name="Streams"
-                              stroke="hsl(24, 95%, 53%)"
-                              fillOpacity={1}
-                              fill="url(#colorPerformance)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
+                      )}
                     </div>
+                  </Card>
+                </motion.div>
 
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Geographic Distribution</h3>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RePieChart>
-                            <Pie
-                              data={musicMetrics.topCountries}
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              {musicMetrics.topCountries.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '8px'
-                              }}
-                            />
-                          </RePieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-4">
-                        {musicMetrics.topCountries.map((country, index) => (
-                          <div key={country.name} className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                            />
-                            <span className="text-sm">{country.name}</span>
-                            <span className="text-sm text-muted-foreground ml-auto">
-                              {country.value}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
+                {/* Otros módulos de gestión */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <RightsManagementCard />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <DistributionCard />
+                </motion.div>
+              </div>
             </div>
           </div>
-          <StrategyDialog
-            open={isStrategyDialogOpen}
-            onOpenChange={setIsStrategyDialogOpen}
-            selectedStrategy={selectedStrategy}
-            onStrategyUpdate={fetchStrategies}
-          />
-        </div>
+        </ScrollArea>
+
+        <StrategyDialog
+          open={isStrategyDialogOpen}
+          onOpenChange={setIsStrategyDialogOpen}
+          selectedStrategy={selectedStrategy}
+          onStrategyUpdate={fetchStrategies}
+        />
       </main>
     </div>
   );
