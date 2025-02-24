@@ -17,22 +17,26 @@ export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     if (!OPENROUTER_API_KEY) {
       console.error('OpenRouter API key is not configured');
-      throw new Error('No auth credentials found');
+      throw new Error('OpenRouter API key is not configured');
     }
 
     try {
       console.log('Making request to OpenRouter with prompt:', prompt);
 
+      const headers = {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Music Manager Tools',
+        'Content-Type': 'application/json'
+      };
+
+      console.log('Using headers:', { ...headers, Authorization: '[REDACTED]' });
+
       const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Music Manager Tools',
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
-          model: 'cognitivecomputations/dolphin3.0-r1-mistral-24b:free',
+          model: 'anthropic/claude-3-sonnet',
           messages: [
             {
               role: 'system',
@@ -55,7 +59,7 @@ export const managerToolsService = {
       }
 
       const data = await response.json();
-      console.log('OpenRouter raw response:', data);
+      console.log('OpenRouter response:', data);
 
       if (!data.choices?.[0]?.message?.content) {
         console.error('Invalid response format:', data);
