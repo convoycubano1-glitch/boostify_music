@@ -1,10 +1,10 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import axios from 'axios';
+import { env } from "@/env";
 
 // Obtener la API key de las variables de entorno
-const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const API_URL = "https://api.openrouter.ai/api/v1/chat/completions";
+const API_KEY = env.VITE_OPENROUTER_API_KEY;
+const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 interface ManagerToolData {
   type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
@@ -14,43 +14,88 @@ interface ManagerToolData {
   updatedAt: Date;
 }
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const backoff = async (retryCount: number) => {
+  const baseDelay = 3000;
+  const maxDelay = 60000;
+  const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+  console.log(`Waiting ${delay/1000} seconds before retry ${retryCount + 1}`);
+  await wait(delay);
+};
+
 export const managerToolsService = {
   // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
-    try {
-      console.log('Generating content with prompt:', prompt);
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      const axiosInstance = axios.create({
-        baseURL: 'https://api.openrouter.ai/api/v1',
-        headers: {
-          'Authorization': `Bearer ${API_KEY.trim()}`,
-          'Content-Type': 'application/json'
-        }
-      });
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate content`);
 
-      const response = await axiosInstance.post('/chat/completions', {
-        model: "openai/gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
+        const response = await fetch(BASE_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "Music Manager Tools",
+            "Content-Type": "application/json"
           },
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-      });
+          body: JSON.stringify({
+            model: "mistralai/mixtral-8x7b-instruct",
+            messages: [
+              {
+                role: "system",
+                content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 2000
+          })
+        });
 
-      console.log('OpenRouter response:', response.data);
-      return response.data.choices[0].message.content;
-    } catch (error) {
-      console.error('OpenRouter API Error:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Error response:', error.response?.data);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("OpenRouter API error:", errorData);
+
+          if (response.status === 429) {
+            console.log("Rate limit hit, implementing backoff...");
+            await backoff(retryCount);
+            retryCount++;
+            continue;
+          }
+
+          throw new Error(`Error generating content: ${response.statusText}. Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("OpenRouter raw response:", data);
+
+        if (!data.choices?.[0]?.message?.content) {
+          console.error("Invalid API response structure:", data);
+          throw new Error("Invalid API response format");
+        }
+
+        return data.choices[0].message.content;
+
+      } catch (error) {
+        console.error(`Error in attempt ${retryCount + 1}:`, error);
+
+        if (retryCount === maxRetries - 1) {
+          throw error;
+        }
+
+        await backoff(retryCount);
+        retryCount++;
       }
-      throw error;
     }
+
+    throw new Error(`Failed to generate content after ${maxRetries} attempts`);
   },
 
   // Función para guardar datos en Firestore
@@ -87,12 +132,12 @@ export const managerToolsService = {
     }
   },
 
-  // Funciones específicas para cada tipo de herramienta
   technical: {
     async generateTechnicalRider(requirements: string, userId: string) {
       try {
         console.log('Generating technical rider for requirements:', requirements);
         const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
+
         const content = await managerToolsService.generateWithAI(prompt, 'technical');
 
         return managerToolsService.saveToFirestore({
@@ -108,7 +153,6 @@ export const managerToolsService = {
       }
     }
   },
-
   requirements: {
     async generateRequirements(artistInfo: string, userId: string) {
       const prompt = `Create a comprehensive requirements list for this artist: ${artistInfo}`;
