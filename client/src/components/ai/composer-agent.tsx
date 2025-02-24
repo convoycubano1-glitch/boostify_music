@@ -200,6 +200,7 @@ export function ComposerAgent() {
             user.uid
           );
 
+          console.log('Música generada:', response);
           setGeneratedMusicUrl(response.musicUrl);
 
           toast({
