@@ -68,8 +68,7 @@ export class OpenRouterService {
         // Guardar en la colección específica para cada tipo de agente
         if (agentType === 'videoDirector') {
           const videoDirectorRef = collection(db, 'Video_Director_AI');
-          const docRef = doc(videoDirectorRef, `script_${Date.now()}`);
-          await setDoc(docRef, {
+          await addDoc(videoDirectorRef, {
             userId,
             prompt,
             script: result,
@@ -93,8 +92,7 @@ export class OpenRouterService {
           console.log('Script saved to Video_Director_AI collection');
         } else if (agentType === 'marketing') {
           const marketingRef = collection(db, 'Strategic_Marketing_AI');
-          const docRef = doc(marketingRef, `strategy_${Date.now()}`);
-          await setDoc(docRef, {
+          await addDoc(marketingRef, {
             userId,
             prompt,
             strategy: result,
@@ -118,8 +116,7 @@ export class OpenRouterService {
           console.log('Strategy saved to Strategic_Marketing_AI collection');
         } else if (agentType === 'socialMedia') {
           const socialMediaRef = collection(db, 'Social_Media_AI');
-          const docRef = doc(socialMediaRef, `content_${Date.now()}`);
-          await setDoc(docRef, {
+          await addDoc(socialMediaRef, {
             userId,
             prompt,
             content: result,
@@ -141,6 +138,31 @@ export class OpenRouterService {
             }
           });
           console.log('Content saved to Social_Media_AI collection');
+        } else if (agentType === 'merchandiseDesigner') {
+          const merchandiseRef = collection(db, 'Merchandise_Designer_AI');
+          await addDoc(merchandiseRef, {
+            userId,
+            prompt,
+            design: result,
+            timestamp: serverTimestamp(),
+            metadata: {
+              model: 'anthropic/claude-3-sonnet',
+              temperature: 0.7,
+              systemInstruction
+            },
+            format: {
+              sections: [
+                'Design Concept',
+                'Product Type',
+                'Color Scheme',
+                'Typography',
+                'Visual Elements',
+                'Placement Details'
+              ],
+              version: '1.0'
+            }
+          });
+          console.log('Design saved to Merchandise_Designer_AI collection');
         }
       } catch (error) {
         console.error('Error saving to Firestore:', error);
