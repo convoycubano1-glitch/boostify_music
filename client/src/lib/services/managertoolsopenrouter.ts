@@ -20,12 +20,11 @@ export const managerToolsService = {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${API_KEY}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Boostify Manager Tools',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          model: "openai/gpt-4",
+          model: "openai/gpt-4o",
           messages: [
             {
               role: "system",
@@ -39,13 +38,13 @@ export const managerToolsService = {
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('OpenRouter API Error:', errorData);
-        throw new Error(errorData.error?.message || 'Failed to generate content with AI');
+        console.error('OpenRouter API Error:', data);
+        throw new Error(data.error?.message || 'Failed to generate content with AI');
       }
 
-      const data = await response.json();
       return data.choices[0].message.content;
     } catch (error) {
       console.error('Error generating content:', error);
