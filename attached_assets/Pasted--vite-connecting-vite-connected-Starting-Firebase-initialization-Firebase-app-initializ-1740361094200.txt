@@ -1,0 +1,38 @@
+[vite] connecting...
+[vite] connected.
+Starting Firebase initialization...
+Firebase app initialized successfully
+Firebase Auth initialized
+Firestore initialized
+Firebase Storage initialized
+Firebase Analytics initialized
+The fal credentials are exposed in the browser's environment. That's not recommended for production use cases.
+Firebase config loaded: 
+Object {apiKey: "[HIDDEN]", authDomain: "artist-boost.firebaseapp.com", projectId: "artist-boost", storageBucket: "artist-boost.appspot.com", messagingSenderId: "114213694920", …}
+OpenAI API Key available: true
+The fal credentials are exposed in the browser's environment. That's not recommended for production use cases.
+`DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Critical assets may not have loaded properly
+Initializing Google Translate
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Initializing Google Translate
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Initializing Google Translate
+Error generating music: 
+Error {}
+message: "Suno API key is not configured. Please check your environment variables."
+stack: "Error: Suno API key is not configured. Please check your environment variables.↵ at Object.generateMusic (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/suno-service.ts:21:13)↵ at Object.action (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ai/composer-agent.tsx:123:46)↵ at async handleAction (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ai/base-agent.tsx:70:7)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   VITE_OPENROUTER_API_KEY: z.string().optional(),
+  VITE_SUNO_API_KEY: z.string().min(1, "Suno API Key is required"),
   VITE_FIREBASE_API_KEY: z.string().min(1, "Firebase API Key is required"),
   VITE_FIREBASE_AUTH_DOMAIN: z.string().min(1, "Firebase Auth Domain is required"),
   VITE_FIREBASE_PROJECT_ID: z.string().min(1, "Firebase Project ID is required"),
@@ -25,6 +26,10 @@ function getEnvVar(key: string): string {
       VITE_FIREBASE_MEASUREMENT_ID: "G-ERCSSWTXCJ"
     };
 
+    if (key === 'VITE_SUNO_API_KEY') {
+      console.warn('Suno API Key is missing from environment variables');
+    }
+
     return fallbackValues[key] || '';
   }
   return value;
@@ -33,6 +38,7 @@ function getEnvVar(key: string): string {
 // Parse environment variables with fallback values
 export const env = envSchema.parse({
   VITE_OPENROUTER_API_KEY: getEnvVar('VITE_OPENROUTER_API_KEY'),
+  VITE_SUNO_API_KEY: getEnvVar('VITE_SUNO_API_KEY'),
   VITE_FIREBASE_API_KEY: getEnvVar('VITE_FIREBASE_API_KEY'),
   VITE_FIREBASE_AUTH_DOMAIN: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN'),
   VITE_FIREBASE_PROJECT_ID: getEnvVar('VITE_FIREBASE_PROJECT_ID'),
@@ -40,6 +46,16 @@ export const env = envSchema.parse({
   VITE_FIREBASE_MESSAGING_SENDER_ID: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID'),
   VITE_FIREBASE_APP_ID: getEnvVar('VITE_FIREBASE_APP_ID'),
   VITE_FIREBASE_MEASUREMENT_ID: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID'),
+});
+
+// Log available environment variables for debugging
+console.log('Environment variables loaded:', {
+  OPENAI_API_KEY: !!getEnvVar('VITE_OPENAI_API_KEY'),
+  SUNO_API_KEY: !!getEnvVar('VITE_SUNO_API_KEY'),
+  // Log Firebase config without sensitive values
+  FIREBASE_CONFIG: {
+    apiKey: '[HIDDEN]'
+  }
 });
 
 // Export Firebase configuration
@@ -52,9 +68,3 @@ export const FIREBASE_CONFIG = {
   appId: env.VITE_FIREBASE_APP_ID,
   ...(env.VITE_FIREBASE_MEASUREMENT_ID && { measurementId: env.VITE_FIREBASE_MEASUREMENT_ID }),
 };
-
-// Log config for debugging (hiding sensitive values)
-console.log('Firebase config loaded:', {
-  ...FIREBASE_CONFIG,
-  apiKey: '[HIDDEN]'
-});

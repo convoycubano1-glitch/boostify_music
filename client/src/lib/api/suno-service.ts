@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { env } from '@/env';
 
 // Definición de tipos para las respuestas de Suno
 export const SunoResponseSchema = z.object({
@@ -19,7 +20,7 @@ export const SunoResponseSchema = z.object({
 export type SunoResponse = z.infer<typeof SunoResponseSchema>;
 
 // Configuración de Suno
-const SUNO_API_KEY = import.meta.env.VITE_SUNO_API_KEY;
+const SUNO_API_KEY = env.VITE_SUNO_API_KEY;
 const BASE_URL = 'https://api.lumaapi.com/v1';
 
 export const sunoService = {
@@ -31,12 +32,23 @@ export const sunoService = {
     },
     userId: string
   ): Promise<SunoResponse> => {
+    // Verificar y loggear el estado de la API key
+    console.log('Estado de la API key de Suno:', {
+      exists: !!SUNO_API_KEY,
+      length: SUNO_API_KEY?.length,
+      envVar: import.meta.env.VITE_SUNO_API_KEY ? 'presente' : 'ausente'
+    });
+
     if (!SUNO_API_KEY) {
       throw new Error('Suno API key is not configured. Please check your environment variables.');
     }
 
     try {
-      console.log('Iniciando generación de música con Suno AI:', { ...params, userId });
+      console.log('Iniciando generación de música con Suno AI:', {
+        ...params,
+        userId,
+        apiKeyConfigured: !!SUNO_API_KEY
+      });
 
       const response = await fetch(`${BASE_URL}/music/generate`, {
         method: 'POST',
