@@ -7,7 +7,7 @@ import {
   Play,
   Pause,
   Music2,
-  Video,
+  Video as VideoIcon,
   FileText,
   ChartBar,
   User,
@@ -25,7 +25,8 @@ import {
   Calendar,
   HeartPulse,
   Users,
-  DollarSign
+  DollarSign,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -34,138 +35,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
 import { ArtistProgressTracker } from "@/components/progress/artist-progress-tracker";
+import { useQuery } from "@tanstack/react-query";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export interface ArtistProfileProps {
   artistId: string;
 }
 
-// Export mockArtist to be used in other components
-export const mockArtist = {
-  name: "Redwine",
-  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
-  genre: "Blues Latin Fusion",
-  location: "Miami, FL",
-  email: "booking@redwinemusic.com",
-  phone: "+1 (305) 555-0123",
-  website: "https://redwinemusic.com",
-  socialMedia: {
-    instagram: "https://instagram.com/redwinemusic",
-    twitter: "https://twitter.com/redwinemusic",
-    youtube: "https://youtube.com/redwinemusic"
-  },
-  stats: {
-    monthlyListeners: 180,
-    followers: 12,
-    views: 2
-  },
-  upcomingShows: [
-    {
-      id: 1,
-      date: "2024-03-15",
-      venue: "Blue Martini Lounge",
-      city: "Miami, FL",
-      ticketUrl: "#"
-    },
-    {
-      id: 2,
-      date: "2024-04-01",
-      venue: "Ball & Chain",
-      city: "Little Havana, Miami",
-      ticketUrl: "#"
-    }
-  ],
-  merchandise: [
-    {
-      id: 1,
-      name: "Miami Blues Vinyl Edition",
-      price: 29.99,
-      image: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
-      description: "Edición especial en vinilo con arte exclusivo y notas firmadas",
-      inStock: true,
-      category: "Music",
-      url: "#"
-    },
-    {
-      id: 2,
-      name: "Latin Blues Tour 2024",
-      price: 24.99,
-      image: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
-      description: "Camiseta oficial del tour en algodón premium con diseño exclusivo",
-      inStock: true,
-      category: "Apparel",
-      sizes: ["S", "M", "L", "XL"],
-      url: "#"
-    },
-    {
-      id: 3,
-      name: "Colección Arte Latino Blues",
-      price: 19.99,
-      image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
-      description: "Set de 3 prints artísticos firmados inspirados en la fusión del Blues y la cultura latina",
-      inStock: true,
-      category: "Art",
-      url: "#"
-    }
-  ],
-  newRelease: {
-    title: "Havana Blues - Nuevo Single",
-    releaseDate: "2024-03-01",
-    coverArt: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60",
-    preOrderUrl: "#"
-  },
-  technicalRider: {
-    stage: "Tarima mínima: 24x16 pies\nTarima para percusión: 8x8 pies, altura 1 pie\nTarima para teclados: 6x8 pies, altura 1 pie",
-    sound: "Sistema PA profesional con subwoofers\n4 monitores\nConsola digital de 32 canales\nSistema de micrófono inalámbrico",
-    lighting: "Sistema completo de iluminación con control DMX\nLuces LED wash\nSpots móviles\nMáquina de humo",
-    backline: "Batería completa (DW o Pearl)\nDos amplificadores de guitarra (Fender Twin Reverb)\nAmplificador de bajo (Ampeg)\nSoporte para teclado\nTodos los micrófonos y cajas DI necesarios\nSet de percusión latina completo"
-  }
-};
+interface Song {
+  id: string;
+  name: string;
+  duration: string;
+  audioUrl: string;
+}
 
-const mockSongs = [
-  {
-    id: "1",
-    name: "Havana Blues",
-    duration: "4:15",
-    audioUrl: "/assets/sample-track-1.mp3"
-  },
-  {
-    id: "2",
-    name: "Calle Ocho Nights",
-    duration: "5:32",
-    audioUrl: "/assets/sample-track-2.mp3"
-  },
-  {
-    id: "3",
-    name: "Latin Guitar Soul",
-    duration: "4:48",
-    audioUrl: "/assets/sample-track-3.mp3"
-  }
-];
+interface Video {
+  id: string;
+  title: string;
+  thumbnail: string;
+  url: string;
+}
 
-const mockVideos = [
-  {
-    id: "1",
-    title: "Live at Ball & Chain",
-    thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
-    url: "https://www.youtube.com/watch?v=O90iHkU3cPU"
-  },
-  {
-    id: "2",
-    title: "Miami Blues Sessions",
-    thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
-    url: "https://www.youtube.com/watch?v=O90iHkU3cPU"
-  },
-  {
-    id: "3",
-    title: "Behind the Fusion",
-    thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
-    url: "https://www.youtube.com/watch?v=O90iHkU3cPU"
-  }
-];
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -174,8 +69,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [showTechnicalRider, setShowTechnicalRider] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
 
-  // Handle audio playback
-  const togglePlay = (song: typeof mockSongs[0], index: number) => {
+  const togglePlay = (song: Song, index: number) => {
     if (currentAudio) {
       currentAudio.pause();
       setCurrentAudio(null);
@@ -191,6 +85,32 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
   };
 
+  const { data: songs = [], isLoading: isLoadingSongs } = useQuery({
+    queryKey: ["songs", artistId],
+    queryFn: async () => {
+      const songsRef = collection(db, "songs");
+      const q = query(songsRef, where("artistId", "==", artistId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Song[];
+    },
+  });
+
+  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
+    queryKey: ["videos", artistId],
+    queryFn: async () => {
+      const videosRef = collection(db, "videos");
+      const q = query(videosRef, where("artistId", "==", artistId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Video[];
+    },
+  });
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -198,9 +118,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       y: 0,
       transition: {
         duration: 0.6,
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
@@ -208,9 +128,96 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     visible: {
       opacity: 1,
       x: 0,
-      transition: { duration: 0.3 }
-    }
+      transition: { duration: 0.3 },
+    },
   };
+
+  const MusicSection = () => (
+    <Card className="p-6">
+      <motion.div variants={itemVariants}>
+        <h3 className="text-2xl font-semibold mb-6 flex items-center">
+          <Music2 className="w-6 h-6 mr-2 text-orange-500" />
+          Latest Tracks
+        </h3>
+        <div className="space-y-4">
+          {isLoadingSongs ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+            </div>
+          ) : songs.length === 0 ? (
+            <p className="text-center text-muted-foreground">No tracks available</p>
+          ) : (
+            songs.map((song, index) => (
+              <div
+                key={song.id}
+                className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                  currentTrack === index ? "bg-orange-500/10" : "hover:bg-muted/50"
+                }`}
+              >
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => togglePlay(song, index)}
+                    className="mr-2"
+                  >
+                    {currentTrack === index && isPlaying ? (
+                      <Pause className="h-5 w-5" />
+                    ) : (
+                      <Play className="h-5 w-5" />
+                    )}
+                  </Button>
+                  <span className="font-medium">{song.name}</span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {song.duration}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </motion.div>
+    </Card>
+  );
+
+  const VideosSection = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {isLoadingVideos ? (
+        <div className="col-span-full flex items-center justify-center p-4">
+          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        </div>
+      ) : videos.length === 0 ? (
+        <p className="col-span-full text-center text-muted-foreground">No videos available</p>
+      ) : (
+        videos.map((video) => (
+          <motion.div
+            key={video.id}
+            className="aspect-video relative group rounded-lg overflow-hidden"
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
+          >
+            <img
+              src={video.thumbnail}
+              alt={video.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <h4 className="text-white font-medium truncate">{video.title}</h4>
+                <Button
+                  onClick={() => window.open(video.url, "_blank")}
+                  className="mt-2 w-full bg-orange-500 hover:bg-orange-600"
+                >
+                  Watch Now
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        ))
+      )}
+    </div>
+  );
+
 
   return (
     <motion.div
@@ -219,7 +226,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       animate="visible"
       className="w-full max-w-7xl mx-auto"
     >
-      {/* Promotional CTA Button */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -236,7 +242,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </Link>
       </motion.div>
 
-      {/* Featured Video Section */}
       <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
         <iframe
           className="absolute inset-0 w-full h-full object-cover"
@@ -244,17 +249,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         ></iframe>
-        {/* Multiple gradient layers for depth */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
 
-        {/* Artist Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-12">
-          <motion.div
-            variants={itemVariants}
-            className="max-w-4xl mx-auto"
-          >
+          <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
             <motion.h1
               className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
               variants={itemVariants}
@@ -268,7 +268,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               {mockArtist.genre}
             </motion.p>
             <div className="prose prose-invert max-w-2xl mb-8">
-              {mockArtist.biography.split('\n').map((paragraph, index) => (
+              {mockArtist.biography.split("\n").map((paragraph, index) => (
                 <motion.p
                   key={index}
                   className="text-lg text-white/90 leading-relaxed"
@@ -278,10 +278,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </motion.p>
               ))}
             </div>
-            <motion.div
-              className="flex flex-wrap gap-4"
-              variants={itemVariants}
-            >
+            <motion.div className="flex flex-wrap gap-4" variants={itemVariants}>
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
@@ -302,7 +299,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </motion.div>
         </div>
 
-        {/* Floating Stats */}
         <motion.div
           className="absolute top-8 right-8 flex gap-6"
           variants={containerVariants}
@@ -332,7 +328,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </motion.div>
       </div>
 
-      {/* New Release Promo with enhanced styling */}
       <Card className="p-8 mb-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
         <motion.div variants={itemVariants} className="flex items-center gap-8">
           <div className="relative group">
@@ -362,53 +357,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </motion.div>
       </Card>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Progress Tracker */}
           <ArtistProgressTracker artistId={artistId} />
-
-          {/* Music Player */}
-          <Card className="p-6">
-            <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center">
-                <Music2 className="w-6 h-6 mr-2 text-orange-500" />
-                Latest Tracks
-              </h3>
-              <div className="space-y-4">
-                {mockSongs.map((song, index) => (
-                  <div
-                    key={song.id}
-                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                      currentTrack === index ? 'bg-orange-500/10' : 'hover:bg-muted/50'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => togglePlay(song, index)}
-                        className="mr-2"
-                      >
-                        {currentTrack === index && isPlaying ? (
-                          <Pause className="h-5 w-5" />
-                        ) : (
-                          <Play className="h-5 w-5" />
-                        )}
-                      </Button>
-                      <span className="font-medium">{song.name}</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {song.duration}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </Card>
-
-          {/* Upcoming Shows */}
+          <MusicSection />
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
@@ -430,7 +382,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     </div>
                     <Button
                       className="bg-orange-500 hover:bg-orange-600"
-                      onClick={() => window.open(show.ticketUrl, '_blank')}
+                      onClick={() => window.open(show.ticketUrl, "_blank")}
                     >
                       <Ticket className="mr-2 h-4 w-4" />
                       Get Tickets
@@ -440,8 +392,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-
-          {/* Merchandise */}
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
@@ -480,7 +430,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             <div className="flex items-center gap-2 pt-2">
                               <Button
                                 className="flex-1 bg-orange-500 hover:bg-orange-600"
-                                onClick={() => window.open(item.url, '_blank')}
+                                onClick={() => window.open(item.url, "_blank")}
                               >
                                 Buy Now
                               </Button>
@@ -514,10 +464,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             </motion.div>
           </Card>
         </div>
-
-        {/* Right Column */}
         <div className="space-y-8">
-          {/* Statistics */}
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
@@ -530,9 +477,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     value={75}
                     text={`${mockArtist.stats.monthlyListeners}k`}
                     styles={buildStyles({
-                      pathColor: '#f97316',
-                      textColor: '#f97316',
-                      trailColor: '#fed7aa'
+                      pathColor: "#f97316",
+                      textColor: "#f97316",
+                      trailColor: "#fed7aa",
                     })}
                   />
                   <p className="text-center mt-2 text-sm text-muted-foreground">
@@ -544,9 +491,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     value={85}
                     text={`${mockArtist.stats.followers}k`}
                     styles={buildStyles({
-                      pathColor: '#f97316',
-                      textColor: '#f97316',
-                      trailColor: '#fed7aa'
+                      pathColor: "#f97316",
+                      textColor: "#f97316",
+                      trailColor: "#fed7aa",
                     })}
                   />
                   <p className="text-center mt-2 text-sm text-muted-foreground">
@@ -558,9 +505,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     value={60}
                     text={`${mockArtist.stats.views}M`}
                     styles={buildStyles({
-                      pathColor: '#f97316',
-                      textColor: '#f97316',
-                      trailColor: '#fed7aa'
+                      pathColor: "#f97316",
+                      textColor: "#f97316",
+                      trailColor: "#fed7aa",
                     })}
                   />
                   <p className="text-center mt-2 text-sm text-muted-foreground">
@@ -570,8 +517,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-
-          {/* Social Media */}
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
@@ -581,21 +526,21 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   className="w-full bg-[#E1306C] hover:bg-[#C13584]"
-                  onClick={() => window.open(mockArtist.socialMedia.instagram, '_blank')}
+                  onClick={() => window.open(mockArtist.socialMedia.instagram, "_blank")}
                 >
                   <Instagram className="mr-2 h-5 w-5" />
                   Instagram
                 </Button>
                 <Button
                   className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA]"
-                  onClick={() => window.open(mockArtist.socialMedia.twitter, '_blank')}
+                  onClick={() => window.open(mockArtist.socialMedia.twitter, "_blank")}
                 >
                   <Twitter className="mr-2 h-5 w-5" />
                   Twitter
                 </Button>
                 <Button
                   className="w-full bg-[#FF0000] hover:bg-[#CC0000]"
-                  onClick={() => window.open(mockArtist.socialMedia.youtube, '_blank')}
+                  onClick={() => window.open(mockArtist.socialMedia.youtube, "_blank")}
                 >
                   <Youtube className="mr-2 h-5 w-5" />
                   YouTube
@@ -610,8 +555,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-
-          {/* Contact Information */}
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
@@ -640,7 +583,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-          {/* Technical Rider */}
           <Dialog>
             <DialogTrigger asChild>
               <Card className="p-6 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -681,10 +623,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </ScrollArea>
             </DialogContent>
           </Dialog>
+          <VideosSection />
         </div>
       </div>
 
-      {/* Add Affiliate Program Section at the bottom */}
       <Card className="p-8 mt-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
         <motion.div variants={itemVariants} className="text-center">
           <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
@@ -712,13 +654,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
                 <ChartBar className="h-6 w-6 text-orange-500" />
               </div>
-              <h3 className="text-lg fontsemibold mb-2">Track Performance</h3>
+              <h3 className="text-lg font-semibold mb-2">Track Performance</h3>
               <p className="text-muted-foreground">Monitor your earnings and referrals in real-time</p>
             </div>
           </div>
           <Link href="/auth">
             <Button
-                            size="lg"
+              size="lg"
               className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <DollarSign className="mr-2 h-5 w-5" />
@@ -728,7 +670,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </motion.div>
       </Card>
 
-      {/* Message Dialog */}
       <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -755,3 +696,84 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     </motion.div>
   );
 }
+
+export const mockArtist = {
+  name: "Redwine",
+  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
+  genre: "Blues Latin Fusion",
+  location: "Miami, FL",
+  email: "booking@redwinemusic.com",
+  phone: "+1 (305) 555-0123",
+  website: "https://redwinemusic.com",
+  socialMedia: {
+    instagram: "https://instagram.com/redwinemusic",
+    twitter: "https://twitter.com/redwinemusic",
+    youtube: "https://youtube.com/redwinemusic",
+  },
+  stats: {
+    monthlyListeners: 180,
+    followers: 12,
+    views: 2,
+  },
+  upcomingShows: [
+    {
+      id: 1,
+      date: "2024-03-15",
+      venue: "Blue Martini Lounge",
+      city: "Miami, FL",
+      ticketUrl: "#",
+    },
+    {
+      id: 2,
+      date: "2024-04-01",
+      venue: "Ball & Chain",
+      city: "Little Havana, Miami",
+      ticketUrl: "#",
+    },
+  ],
+  merchandise: [
+    {
+      id: 1,
+      name: "Miami Blues Vinyl Edition",
+      price: 29.99,
+      image: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
+      description: "Edición especial en vinilo con arte exclusivo y notas firmadas",
+      inStock: true,
+      category: "Music",
+      url: "#",
+    },
+    {
+      id: 2,
+      name: "Latin Blues Tour 2024",
+      price: 24.99,
+      image: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
+      description: "Camiseta oficial del tour en algodón premium con diseño exclusivo",
+      inStock: true,
+      category: "Apparel",
+      sizes: ["S", "M", "L", "XL"],
+      url: "#",
+    },
+    {
+      id: 3,
+      name: "Colección Arte Latino Blues",
+      price: 19.99,
+      image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
+      description: "Set de 3 prints artísticos firmados inspirados en la fusión del Blues y la cultura latina",
+      inStock: true,
+      category: "Art",
+      url: "#",
+    },
+  ],
+  newRelease: {
+    title: "Havana Blues - Nuevo Single",
+    releaseDate: "2024-03-01",
+    coverArt: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60",
+    preOrderUrl: "#",
+  },
+  technicalRider: {
+    stage: "Tarima mínima: 24x16 pies\nTarima para percusión: 8x8 pies, altura 1 pie\nTarima para teclados: 6x8 pies, altura 1 pie",
+    sound: "Sistema PA profesional con subwoofers\n4 monitores\nConsola digital de 32 canales\nSistema de micrófono inalámbrico",
+    lighting: "Sistema completo de iluminación con control DMX\nLuces LED wash\nSpots móviles\nMáquina de humo",
+    backline: "Batería completa (DW o Pearl)\nDos amplificadores de guitarra (Fender Twin Reverb)\nAmplificador de bajo (Ampeg)\nSoporte para teclado\nTodos los micrófonos y cajas DI necesarios\nSet de percusión latina completo",
+  },
+};

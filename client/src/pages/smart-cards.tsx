@@ -6,15 +6,17 @@ import {
   CreditCard,
   Package,
   Truck,
-  QrCode as LucideQrCode, // Renamed to avoid conflict
+  QrCode as LucideQrCode,
   BadgeCheck,
-  Share2
+  Share2,
+  User
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { mockArtist } from "@/components/artist/artist-profile-card";
+import { useLocation } from "wouter";
 
 const cardPackages = [
   {
@@ -66,8 +68,9 @@ export default function SmartCardsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
 
-  // TODO: Replace with actual artist data query
+
   const { data: artistData, isLoading } = useQuery({
     queryKey: ["/api/artist-profile", user?.id],
     queryFn: () => mockArtist
@@ -75,7 +78,6 @@ export default function SmartCardsPage() {
 
   const handlePackageSelect = (packageId: string) => {
     setSelectedPackage(packageId);
-    // TODO: Implement Stripe checkout
     toast({
       title: "Coming Soon",
       description: "Payment processing will be available soon!",
@@ -87,7 +89,6 @@ export default function SmartCardsPage() {
   return (
     <div className="min-h-screen bg-black text-white py-12">
       <div className="container mx-auto px-4">
-        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -101,7 +102,6 @@ export default function SmartCardsPage() {
           </p>
         </motion.div>
 
-        {/* Benefits Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,7 +131,6 @@ export default function SmartCardsPage() {
           </Card>
         </motion.div>
 
-        {/* Card Preview */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -189,7 +188,6 @@ export default function SmartCardsPage() {
           </Card>
         </motion.div>
 
-        {/* Pricing Packages */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {cardPackages.map((pkg) => (
             <motion.div
@@ -206,10 +204,10 @@ export default function SmartCardsPage() {
                   </span>
                 </div>
               )}
-              <Card 
+              <Card
                 className={`p-6 bg-black/50 backdrop-blur-sm ${
-                  pkg.popular 
-                    ? "border-orange-500" 
+                  pkg.popular
+                    ? "border-orange-500"
                     : "border-orange-500/20"
                 } hover:border-orange-500 transition-all duration-300`}
               >
@@ -229,22 +227,31 @@ export default function SmartCardsPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className={`w-full ${
-                    pkg.popular
-                      ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                      : "bg-black/50 hover:bg-black/70"
-                  } transition-all duration-300`}
-                  onClick={() => handlePackageSelect(pkg.id)}
-                >
-                  Order Now
-                </Button>
+                <div className="space-y-4">
+                  <Button
+                    className={`w-full ${
+                      pkg.popular
+                        ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                        : "bg-black/50 hover:bg-black/70"
+                    } transition-all duration-300`}
+                    onClick={() => handlePackageSelect(pkg.id)}
+                  >
+                    Order Now
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full border-orange-500/20 hover:bg-orange-500/10 text-orange-500"
+                    onClick={() => setLocation("/profile")}
+                  >
+                    <User className="mr-2 h-5 w-5" />
+                    View Your Profile
+                  </Button>
+                </div>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        {/* Shipping Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
