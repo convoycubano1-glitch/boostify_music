@@ -1,3 +1,6 @@
+import { ScoreCreator } from "@/components/manager/score-creator";
+import { SoundDesigner } from "@/components/manager/sound-designer";
+import { TimelineEditor } from "@/components/manager/timeline-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -351,30 +354,27 @@ export default function RecordLabelServices() {
             {/* Creator Tools Tab Content */}
             <TabsContent value="creator">
               <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-3">
-                {
-                  [
-                    { icon: Music4, title: "Score Creator", description: "Create and edit movie scores", buttonText: "Launch Score Creator" },
-                    { icon: Volume2, title: "Sound Design", description: "Create custom sound effects", buttonText: "Open Sound Designer" },
-                    { icon: Clock, title: "Timeline Editor", description: "Sync music to video timeline", buttonText: "Open Timeline Editor" }
-                  ].map((tool, index) => (
-                    <motion.div
-                      key={tool.title}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
-                        <tool.icon className="h-8 w-8 text-orange-500 mb-4" />
-                        <h3 className="text-lg sm:text-xl font-semibold mb-2">{tool.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
-                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                          {tool.buttonText}
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Card>
-                    </motion.div>
-                  ))
-                }
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <ScoreCreator />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  <SoundDesigner />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <TimelineEditor />
+                </motion.div>
               </div>
             </TabsContent>
 
@@ -639,8 +639,7 @@ export default function RecordLabelServices() {
         </div>
 
         {/* Manager Tools Section */}
-        <div className="container mx-auto px-4 py-12 md:py-16">
-          <div className="text-center mb-8 md:mb-12">
+        <div className="container mx-auto px-4 py-12 md:py-16"><div className="text-center mb-8 md:mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text texttransparent bg-gradient-to-r from-orange-500 to-purple-600">
               Manager Tools
             </h2>
