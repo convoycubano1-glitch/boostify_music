@@ -12,24 +12,14 @@ interface Step {
   timestamp: Date;
 }
 
-interface ActionState {
-  isThinking: boolean;
-  progress: number;
-  steps: Step[];
-}
-
 export function ComposerAgent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
   const [generatedLyrics, setGeneratedLyrics] = useState<string | null>(null);
-
-  // Estado independiente para cada acción
-  const [generateState, setGenerateState] = useState<ActionState>({
-    isThinking: false,
-    progress: 0,
-    steps: []
-  });
+  const [isThinking, setIsThinking] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [steps, setSteps] = useState<Step[]>([]);
 
   const theme: AgentTheme = {
     gradient: "from-purple-600 to-blue-600",
@@ -38,17 +28,12 @@ export function ComposerAgent() {
     personality: "🎵 Creative Maestro"
   };
 
-  const simulateThinking = async (
-    setActionState: (state: ActionState) => void,
-    customSteps?: string[]
-  ) => {
-    setActionState({
-      isThinking: true,
-      progress: 0,
-      steps: []
-    });
+  const simulateThinking = async (customSteps?: string[]) => {
+    setIsThinking(true);
+    setProgress(0);
+    setSteps([]);
 
-    const steps = customSteps || [
+    const simulatedSteps = customSteps || [
       "Analyzing musical parameters...",
       "Generating composition structure...",
       "Applying musical theory...",
@@ -56,17 +41,16 @@ export function ComposerAgent() {
       "Preparing response..."
     ];
 
-    for (let i = 0; i < steps.length; i++) {
-      setActionState(prev => ({
-        ...prev,
-        steps: [...prev.steps, {
-          message: steps[i],
-          timestamp: new Date()
-        }],
-        progress: ((i + 1) / steps.length) * 100
-      }));
+    for (let i = 0; i < simulatedSteps.length; i++) {
+      setSteps(prev => [...prev, {
+        message: simulatedSteps[i],
+        timestamp: new Date()
+      }]);
+      setProgress((i + 1) * 20);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
+
+    setIsThinking(false);
   };
 
   const actions: AgentAction[] = [
@@ -155,55 +139,44 @@ export function ComposerAgent() {
           setGeneratedMusicUrl(null);
           setGeneratedLyrics(null);
 
-          // Primero generamos la letra
-          const lyricsPrompt = `Write lyrics for a ${params.mood} ${params.genre} song about ${params.theme} in ${params.language} with a ${params.structure} structure.`;
+          // Verificar parámetros
+          console.log('Parámetros recibidos:', params);
 
-          let lyrics = null;
-          try {
-            const lyricsResponse = await openRouterService.chatWithAgent(
-              lyricsPrompt,
-              'composer',
-              user.uid,
-              "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
-            );
-            lyrics = lyricsResponse.response;
-          } catch (error) {
-            console.error('Error generating lyrics:', error);
-            // Continuamos con la generación de música incluso si fallan las letras
+          if (!params.genre || !params.tempo || !params.mood || !params.theme || !params.language || !params.structure) {
+            throw new Error('Missing required parameters');
           }
 
-          if (lyrics) {
-            setGeneratedLyrics(lyrics);
-          }
-
-          // Luego generamos la música
-          await simulateThinking(setGenerateState, [
+          await simulateThinking([
             "Analyzing musical parameters...",
             "Creating melody and harmony...",
             "Applying instrumentation...",
             "Finalizing composition..."
           ]);
 
+          const musicParams = {
+            genre: params.genre,
+            tempo: parseInt(params.tempo.toString()),
+            mood: params.mood,
+            structure: params.structure
+          };
+
+          console.log('Enviando parámetros a Suno:', musicParams);
+
           const response = await sunoService.generateMusic(
-            {
-              genre: params.genre,
-              tempo: parseInt(params.tempo),
-              mood: params.mood,
-              structure: params.structure
-            },
+            musicParams,
             user.uid
           );
 
-          console.log('Música generada:', response);
+          console.log('Respuesta de Suno:', response);
 
-          if (response.musicUrl) {
+          if (response?.musicUrl) {
             setGeneratedMusicUrl(response.musicUrl);
             toast({
               title: "Music Generated",
               description: "Your musical composition has been created successfully.",
             });
           } else {
-            throw new Error('No se recibió URL de música en la respuesta');
+            throw new Error('No music URL received in response');
           }
 
         } catch (error) {
@@ -220,11 +193,9 @@ export function ComposerAgent() {
             variant: "destructive"
           });
 
-          setGenerateState({
-            isThinking: false,
-            progress: 0,
-            steps: []
-          });
+          setIsThinking(false);
+          setProgress(0);
+          setSteps([]);
         }
       }
     },
@@ -249,7 +220,7 @@ export function ComposerAgent() {
           return;
         }
         try {
-          await simulateThinking(setAnalyzeState);
+          await simulateThinking();
           const response = await openRouterService.chatWithAgent(
             `Analyze the musical structure of the audio file at ${params.audioFile}`,
             'composer',
@@ -296,7 +267,7 @@ export function ComposerAgent() {
           return;
         }
         try {
-          await simulateThinking(setArrangementState);
+          await simulateThinking();
           const response = await openRouterService.chatWithAgent(
             `Suggest arrangements for a composition in the style of ${params.style}`,
             'composer',
@@ -326,19 +297,13 @@ export function ComposerAgent() {
       theme={theme}
       helpText="I'm your Creative Maestro. With years of experience in composition and arrangements, I'll help bring your musical ideas to life using my advanced artificial intelligence. Together, we'll create masterpieces!"
     >
-      {(generateState.isThinking || generateState.steps.length > 0) && (
+      {(isThinking || steps.length > 0) && (
         <ProgressIndicator
-          steps={generateState.steps}
-          progress={generateState.progress}
-          isThinking={generateState.isThinking}
-          isComplete={generateState.progress === 100}
+          steps={steps}
+          progress={progress}
+          isThinking={isThinking}
+          isComplete={progress === 100}
         />
-      )}
-      {generatedLyrics && (
-        <div className="mt-4 p-4 bg-black/20 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">Generated Lyrics</h3>
-          <pre className="whitespace-pre-wrap text-sm">{generatedLyrics}</pre>
-        </div>
       )}
       {generatedMusicUrl && (
         <div className="mt-4">

@@ -30,7 +30,6 @@ export const sunoService = {
       genre: string;
       tempo: number;
       mood: string;
-      structure?: string;
     },
     userId: string
   ): Promise<AgentResponse> => {
@@ -58,7 +57,7 @@ export const sunoService = {
           genre: params.genre,
           tempo: parseInt(params.tempo.toString()),
           mood: params.mood,
-          structure: params.structure || 'verse-chorus'
+          structure: params.structure || 'verse-chorus' // Added handling for optional structure
         }
       };
 
