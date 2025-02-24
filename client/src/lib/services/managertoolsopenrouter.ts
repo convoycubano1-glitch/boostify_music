@@ -24,14 +24,19 @@ export const managerToolsService = {
     try {
       console.log('Making request to OpenRouter with prompt:', prompt);
 
+      const headers = {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'HTTP-Referer': `${window.location.origin}/`,
+        'OpenAI-Organization': 'boostify-manager-tools'
+      };
+
+      console.log('Request headers:', headers);
+
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'HTTP-Referer': `${window.location.origin}/`,
-        },
+        headers,
         body: JSON.stringify({
           model: "openai/gpt-4",
           messages: [
