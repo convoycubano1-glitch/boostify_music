@@ -10,42 +10,56 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+interface TechnicalRider {
+  id: string;
+  content: string;
+  createdAt: any;
+}
+
 export function TechnicalRiderSection() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [requirements, setRequirements] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Query para obtener los technical riders existentes
   const { data: technicalRiders = [], isLoading } = useQuery({
     queryKey: ['technical-riders', user?.uid],
-    queryFn: () => managerToolsService.getFromFirestore(user?.uid || '', 'technical'),
+    queryFn: async () => {
+      if (!user?.uid) return [];
+      const data = await managerToolsService.getFromFirestore(user.uid, 'technical');
+      return data as TechnicalRider[];
+    },
     enabled: !!user
   });
 
   // Mutation para generar nuevo technical rider
   const generateRiderMutation = useMutation({
-    mutationFn: (requirements: string) => 
-      managerToolsService.technical.generateTechnicalRider(requirements, user?.uid || ''),
+    mutationFn: async (requirements: string) => {
+      if (!user?.uid) throw new Error("User not authenticated");
+      return managerToolsService.technical.generateTechnicalRider(requirements, user.uid);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technical-riders'] });
+      queryClient.invalidateQueries({ queryKey: ['technical-riders', user?.uid] });
       toast({
         title: "Success",
         description: "Technical rider generated successfully"
       });
+      setIsDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to generate technical rider",
+        description: error.message || "Failed to generate technical rider",
         variant: "destructive"
       });
     }
   });
 
   const handleGenerateRider = async () => {
-    if (!requirements) {
+    if (!requirements.trim()) {
       toast({
         title: "Error",
         description: "Please enter your technical requirements",
@@ -62,6 +76,35 @@ export function TechnicalRiderSection() {
       console.error("Error generating rider:", error);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = async (rider: TechnicalRider) => {
+    try {
+      // Create a Blob with the rider content
+      const blob = new Blob([rider.content], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `technical-rider-${new Date(rider.createdAt.toDate()).toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Technical rider downloaded successfully"
+      });
+    } catch (error) {
+      console.error("Error downloading rider:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download technical rider",
+        variant: "destructive"
+      });
     }
   };
 
@@ -95,7 +138,7 @@ export function TechnicalRiderSection() {
           </div>
         </div>
 
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button size="lg" className="bg-orange-500 hover:bg-orange-600 h-auto py-3">
               <Upload className="mr-2 h-5 w-5 flex-shrink-0" />
@@ -122,7 +165,7 @@ export function TechnicalRiderSection() {
               </div>
               <Button 
                 onClick={handleGenerateRider}
-                disabled={isGenerating}
+                disabled={isGenerating || !requirements.trim()}
                 className="w-full"
               >
                 {isGenerating ? (
@@ -137,10 +180,6 @@ export function TechnicalRiderSection() {
             </div>
           </DialogContent>
         </Dialog>
-        <Button size="lg" variant="outline" className="h-auto py-3 whitespace-nowrap mt-4">
-          <Download className="mr-2 h-5 w-5 flex-shrink-0" />
-          Download
-        </Button>
       </Card>
 
       <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
@@ -156,13 +195,13 @@ export function TechnicalRiderSection() {
           </div>
         </div>
 
-        <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
+        <div className="space-y-4 md:space-y-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : technicalRiders.length > 0 ? (
-            technicalRiders.map((rider: any) => (
+            technicalRiders.map((rider: TechnicalRider) => (
               <div key={rider.id} className="p-4 rounded-lg bg-orange-500/5">
                 <div className="flex items-center justify-between">
                   <div>
@@ -171,7 +210,11 @@ export function TechnicalRiderSection() {
                       {new Date(rider.createdAt.toDate()).toLocaleDateString()}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => {}}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDownload(rider)}
+                  >
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -181,7 +224,7 @@ export function TechnicalRiderSection() {
               </div>
             ))
           ) : (
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-muted-foreground py-8">
               No technical riders generated yet
             </div>
           )}
