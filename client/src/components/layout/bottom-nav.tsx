@@ -49,18 +49,23 @@ export function BottomNav() {
         <div className="flex items-center justify-between py-2">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
-              <a className="flex flex-col items-center gap-1 p-2 min-w-[4rem] rounded-lg transition-colors hover:bg-orange-500/10">
-                <item.icon
-                  className={cn(
-                    "w-5 h-5 transition-all duration-300",
-                    location === item.href 
-                      ? "text-orange-500 scale-110" 
-                      : "text-muted-foreground"
+              <a className="flex flex-col items-center gap-1 p-2 min-w-[4rem] rounded-lg transition-all duration-300 hover:bg-orange-500/10">
+                <div className="relative flex items-center justify-center">
+                  <item.icon
+                    className={cn(
+                      "w-5 h-5 transition-all duration-300",
+                      location === item.href 
+                        ? "text-orange-500 scale-125" 
+                        : "text-muted-foreground"
+                    )}
+                  />
+                  {location === item.href && (
+                    <div className="absolute -inset-1 bg-orange-500/20 rounded-full blur animate-pulse" />
                   )}
-                />
+                </div>
                 <span
                   className={cn(
-                    "text-xs transition-colors duration-300",
+                    "text-[10px] transition-colors duration-300 whitespace-nowrap",
                     location === item.href 
                       ? "text-orange-500 font-medium" 
                       : "text-muted-foreground"
