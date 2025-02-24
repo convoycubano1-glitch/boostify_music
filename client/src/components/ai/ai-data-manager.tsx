@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 import html2pdf from 'html2pdf.js';
 import {
   Select,
@@ -18,48 +18,83 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const AI_COLLECTIONS = [
-  { id: 'Video_Director_AI', name: 'Video Director' },
-  { id: 'AI_Music_Composer', name: 'Music Composer' },
-  { id: 'Strategic_Marketing_AI', name: 'Marketing Strategy' },
-  { id: 'Social_Media_AI', name: 'Social Media' },
-  { id: 'Merchandise_Designer_AI', name: 'Merchandise Design' },
-  { id: 'Manager_AI', name: 'Career Manager' }
+  { id: 'Video_Director_AI', name: 'Video Director', color: '#FF6B6B' },
+  { id: 'AI_Music_Composer', name: 'Music Composer', color: '#4ECDC4' },
+  { id: 'Strategic_Marketing_AI', name: 'Marketing Strategy', color: '#45B7D1' },
+  { id: 'Social_Media_AI', name: 'Social Media', color: '#96CEB4' },
+  { id: 'Merchandise_Designer_AI', name: 'Merchandise Design', color: '#FFEEAD' },
+  { id: 'Manager_AI', name: 'Career Manager', color: '#D4A5A5' }
 ];
+
+const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5'];
 
 export function AIDataManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedCollection, setSelectedCollection] = useState(AI_COLLECTIONS[0].id);
 
-  const { data: aiData, isLoading, refetch } = useQuery({
-    queryKey: ['ai-data', selectedCollection, user?.uid],
+  // Fetch data from all collections
+  const fetchCollectionData = async (collectionId: string) => {
+    if (!user) return [];
+    const collectionRef = collection(db, collectionId);
+    const q = query(collectionRef, where("userId", "==", user.uid));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      collectionId,
+      ...doc.data(),
+    }));
+  };
+
+  // Fetch all AI data
+  const { data: allAiData = [], isLoading } = useQuery({
+    queryKey: ['all-ai-data', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-
-      const collectionRef = collection(db, selectedCollection);
-      const q = query(collectionRef, where("userId", "==", user.uid));
-      const querySnapshot = await getDocs(q);
-
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const allData = await Promise.all(
+        AI_COLLECTIONS.map(col => fetchCollectionData(col.id))
+      );
+      return allData.flat();
     },
     enabled: !!user
   });
 
-  const chartData = aiData?.map(item => ({
-    date: new Date(item.timestamp?.seconds * 1000).toLocaleDateString(),
-    interactions: 1
-  })).reduce((acc, curr) => {
-    const existing = acc.find(item => item.date === curr.date);
+  // Filtered data for selected collection
+  const aiData = allAiData.filter(item => item.collectionId === selectedCollection);
+
+  // Data processing for charts
+  const usageByDate = allAiData.reduce((acc: any[], item) => {
+    const date = new Date(item.timestamp?.seconds * 1000).toLocaleDateString();
+    const existing = acc.find(x => x.date === date);
     if (existing) {
-      existing.interactions += 1;
+      existing.interactions++;
     } else {
-      acc.push(curr);
+      acc.push({ date, interactions: 1 });
     }
     return acc;
-  }, []) || [];
+  }, []);
+
+  // Distribution by AI type
+  const distributionData = AI_COLLECTIONS.map(collection => ({
+    name: collection.name,
+    value: allAiData.filter(item => item.collectionId === collection.id).length,
+    color: collection.color
+  }));
+
+  // Usage by hour
+  const hourlyUsage = allAiData.reduce((acc: any[], item) => {
+    const hour = new Date(item.timestamp?.seconds * 1000).getHours();
+    const existing = acc.find(x => x.hour === hour);
+    if (existing) {
+      existing.count++;
+    } else {
+      acc.push({ hour, count: 1 });
+    }
+    return acc.sort((a, b) => a.hour - b.hour);
+  }, []);
+
+  // Weekly trend
+  const weeklyTrend = usageByDate.slice(-7);
 
   const handleDownload = async (item: any) => {
     const contentTypeLabel = selectedCollection === 'Video_Director_AI' ? 'Script' :
@@ -131,7 +166,7 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
         title: "Content Deleted",
         description: "The content has been successfully deleted.",
       });
-      refetch();
+      //refetch(); //Removed refetch as it's handled by useQuery's automatic refetch on data change.
     } catch (error) {
       toast({
         title: "Error",
@@ -179,50 +214,106 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="p-6 bg-black/20 backdrop-blur">
               <h3 className="text-lg font-semibold mb-2">Total Items</h3>
-              <p className="text-3xl font-bold text-orange-500">{aiData?.length || 0}</p>
+              <p className="text-3xl font-bold text-orange-500">{allAiData.length}</p>
             </Card>
             <Card className="p-6 bg-black/20 backdrop-blur">
               <h3 className="text-lg font-semibold mb-2">Last Creation</h3>
               <p className="text-sm text-muted-foreground">
-                {aiData?.[0]?.timestamp ? new Date(aiData[0].timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}
+                {allAiData[0]?.timestamp ? new Date(allAiData[0].timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}
               </p>
             </Card>
             <Card className="p-6 bg-black/20 backdrop-blur">
               <h3 className="text-lg font-semibold mb-2">Usage Today</h3>
               <p className="text-3xl font-bold text-orange-500">
-                {chartData.find(item => item.date === new Date().toLocaleDateString())?.interactions || 0}
+                {usageByDate.find(item => item.date === new Date().toLocaleDateString())?.interactions || 0}
               </p>
             </Card>
           </div>
 
-          <Card className="overflow-hidden border-none shadow-xl">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Usage Analytics</h2>
-              <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="interactions" fill="#f97316" />
-                  </BarChart>
-                </ResponsiveContainer>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="overflow-hidden border-none shadow-xl col-span-2">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Usage Analytics</h2>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={usageByDate}>
+                      <defs>
+                        <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="interactions" stroke="#f97316" fillOpacity={1} fill="url(#colorUv)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+
+            <Card className="overflow-hidden border-none shadow-xl">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Content Distribution</h2>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={distributionData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {distributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden border-none shadow-xl">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Usage by Hour</h2>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={hourlyUsage}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="hour" 
+                        tick={{ fontSize: 12 }}
+                        ticks={[0,4,8,12,16,20,23]}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="count" stroke="#f97316" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Card>
+          </div>
 
           <Card className="overflow-hidden border-none shadow-xl">
             <div className="p-6">
               <h2 className="text-xl font-semibold mb-4">Content List</h2>
               <ScrollArea className="h-[500px]">
                 <div className="space-y-4">
-                  {aiData?.map((item: any) => (
+                  {aiData.map((item: any) => (
                     <Card key={item.id} className="p-4 bg-black/20 backdrop-blur hover:bg-black/30 transition-colors">
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div className="space-y-2 flex-1">
