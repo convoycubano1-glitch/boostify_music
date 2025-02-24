@@ -105,6 +105,8 @@ export function ComposerAgent() {
         }
 
         try {
+          setGeneratedMusicUrl(null); // Reset previous music URL
+
           await simulateThinking([
             "Initializing Suno AI...",
             "Processing musical parameters...",
@@ -126,17 +128,27 @@ export function ComposerAgent() {
 
           toast({
             title: "Music Generated",
-            description: "Your musical composition has been created successfully.",
+            description: "Your musical composition has been created successfully. You can now play it below.",
           });
 
           return response;
         } catch (error) {
           console.error("Error generating music:", error);
+          let errorMessage = "Failed to generate music. Please try again.";
+
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+
           toast({
             title: "Error",
-            description: "Failed to generate music. Please try again.",
+            description: errorMessage,
             variant: "destructive"
           });
+
+          setIsThinking(false);
+          setProgress(0);
+          setSteps([]);
         }
       }
     },

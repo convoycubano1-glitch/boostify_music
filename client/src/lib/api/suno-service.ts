@@ -30,10 +30,12 @@ export const sunoService = {
     userId: string
   ): Promise<SunoResponse> => {
     if (!SUNO_API_KEY) {
-      throw new Error('Suno API key is not configured');
+      throw new Error('Suno API key is not configured. Please check your environment variables.');
     }
 
     try {
+      console.log('Iniciando generación de música con Suno AI:', { ...params, userId });
+
       const response = await fetch(`${BASE_URL}/generate`, {
         method: 'POST',
         headers: {
@@ -52,12 +54,15 @@ export const sunoService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Suno API error: ${response.statusText}`);
+        const errorData = await response.json().catch(() => null);
+        console.error('Error en la respuesta de Suno API:', errorData);
+        throw new Error(`Error en Suno API: ${response.statusText}. ${errorData ? JSON.stringify(errorData) : ''}`);
       }
 
       const data = await response.json();
+      console.log('Respuesta exitosa de Suno API:', data);
 
-      return {
+      const sunoResponse: SunoResponse = {
         id: crypto.randomUUID(),
         userId,
         musicUrl: data.audio_url,
@@ -68,8 +73,10 @@ export const sunoService = {
           generationId: data.generation_id
         }
       };
+
+      return sunoResponse;
     } catch (error) {
-      console.error('Error in generateMusic:', error);
+      console.error('Error en generateMusic:', error);
       throw error;
     }
   }
