@@ -1,15 +1,53 @@
 import { Megaphone } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
+import { useState } from "react";
+import { ProgressIndicator } from "./progress-indicator";
+import { openRouterService } from "@/lib/api/openrouter-service";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
+interface Step {
+  message: string;
+  timestamp: Date;
+}
+
 export function MarketingAgent() {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [isThinking, setIsThinking] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [steps, setSteps] = useState<Step[]>([]);
 
   const theme: AgentTheme = {
     gradient: "from-green-500 to-emerald-700",
     iconColor: "text-white",
     accentColor: "#10B981",
     personality: "💼 Digital Strategist"
+  };
+
+  const simulateThinking = async () => {
+    setIsThinking(true);
+    setProgress(0);
+    setSteps([]);
+
+    const simulatedSteps = [
+      "Analyzing target audience...",
+      "Evaluating market trends...",
+      "Developing strategy...",
+      "Optimizing campaign parameters...",
+      "Finalizing recommendations..."
+    ];
+
+    for (let i = 0; i < simulatedSteps.length; i++) {
+      setSteps(prev => [...prev, {
+        message: simulatedSteps[i],
+        timestamp: new Date()
+      }]);
+      setProgress((i + 1) * 20);
+      await new Promise(resolve => setTimeout(resolve, 1300));
+    }
+
+    setIsThinking(false);
   };
 
   const actions: AgentAction[] = [
@@ -50,53 +88,52 @@ export function MarketingAgent() {
             { value: "all", label: "All platforms" },
           ],
           defaultValue: "instagram"
-        },
-        {
-          name: "duration",
-          type: "select",
-          label: "Campaign Duration",
-          description: "Planned duration of the campaign",
-          options: [
-            { value: "1month", label: "1 month" },
-            { value: "3months", label: "3 months" },
-            { value: "6months", label: "6 months" },
-            { value: "12months", label: "12 months" },
-          ],
-          defaultValue: "3months"
         }
       ],
       action: async (params) => {
-        try {
-          const response = await fetch('/api/ai/campaign-suggestion', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: "Music Marketing Campaign",
-              description: `Target: ${params.target}, Platform: ${params.platform}, Duration: ${params.duration}`,
-              platform: params.platform,
-              budget: params.budget
-            }),
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Marketing AI.",
+            variant: "destructive"
           });
+          return;
+        }
 
-          if (!response.ok) {
-            throw new Error('Failed to generate marketing plan');
-          }
+        try {
+          await simulateThinking();
 
-          const data = await response.json();
+          const prompt = `Create a comprehensive marketing plan with the following parameters:
+          Target Audience: ${params.target}
+          Budget: $${params.budget}
+          Main Platform: ${params.platform}
+
+          Please provide:
+          1. Campaign strategy
+          2. Content calendar
+          3. Budget allocation
+          4. KPIs and metrics
+          5. Growth projections`;
+
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            'marketing',
+            user.uid,
+            "You are an experienced digital marketing strategist specializing in music industry promotion and audience growth."
+          );
+
           toast({
             title: "Marketing Plan Generated",
-            description: "Check your dashboard for the detailed strategy.",
+            description: "Your marketing strategy has been created successfully.",
           });
 
-          return data;
+          return response;
         } catch (error) {
           console.error("Error generating marketing plan:", error);
           toast({
             title: "Error",
             description: "Failed to generate marketing plan. Please try again.",
-            variant: "destructive",
+            variant: "destructive"
           });
         }
       }
@@ -223,6 +260,15 @@ export function MarketingAgent() {
       actions={actions}
       theme={theme}
       helpText="As your Digital Strategist, I specialize in creating and executing effective marketing strategies to maximize your online presence and reach your ideal audience. I'll use advanced data and analytics to optimize every campaign."
-    />
+    >
+      {(isThinking || steps.length > 0) && (
+        <ProgressIndicator
+          steps={steps}
+          progress={progress}
+          isThinking={isThinking}
+          isComplete={progress === 100}
+        />
+      )}
+    </BaseAgent>
   );
 }

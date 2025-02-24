@@ -2,11 +2,21 @@ import { UserCog } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
+import { openRouterService } from "@/lib/api/openrouter-service";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+
+interface Step {
+  message: string;
+  timestamp: Date;
+}
 
 export function ManagerAgent() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [steps, setSteps] = useState([]);
+  const [steps, setSteps] = useState<Step[]>([]);
 
   const theme: AgentTheme = {
     gradient: "from-red-500 to-orange-600",
@@ -72,8 +82,49 @@ export function ManagerAgent() {
         }
       ],
       action: async (params) => {
-        await simulateThinking();
-        console.log("Analyzing performance:", params);
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Manager AI.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        try {
+          await simulateThinking();
+
+          const prompt = `Analyze artist performance with the following parameters:
+          Metrics Type: ${params.metrics}
+          Time Period: ${params.timeframe}
+
+          Please provide:
+          1. Performance analysis
+          2. Key metrics evaluation
+          3. Trend identification
+          4. Strategic recommendations`;
+
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            'manager',
+            user.uid,
+            "You are an experienced music industry executive with expertise in artist management and business strategy."
+          );
+
+          toast({
+            title: "Analysis Complete",
+            description: "Your performance analysis is ready.",
+          });
+
+          return response;
+        } catch (error) {
+          console.error("Error analyzing performance:", error);
+          toast({
+            title: "Error",
+            description: "Failed to complete analysis. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     },
     {
@@ -95,8 +146,28 @@ export function ManagerAgent() {
         }
       ],
       action: async (params) => {
-        await simulateThinking();
-        console.log("Planning strategy:", params);
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Manager AI.",
+            variant: "destructive"
+          });
+          return;
+        }
+        try {
+          await simulateThinking();
+          const prompt = `Develop a career strategic plan focusing on ${params.focus}.  Please provide a detailed plan including actionable steps and timelines.`;
+          const response = await openRouterService.chatWithAgent(prompt, 'manager', user.uid, "You are an experienced music industry executive with expertise in artist management and business strategy.");
+          toast({ title: "Plan Complete", description: "Your strategic plan is ready." });
+          return response;
+        } catch (error) {
+          console.error("Error planning strategy:", error);
+          toast({
+            title: "Error",
+            description: "Failed to complete plan. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     },
     {
@@ -118,8 +189,28 @@ export function ManagerAgent() {
         }
       ],
       action: async (params) => {
-        await simulateThinking();
-        console.log("Coordinating activities:", params);
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Manager AI.",
+            variant: "destructive"
+          });
+          return;
+        }
+        try {
+          await simulateThinking();
+          const prompt = `Suggest and coordinate promotional activities of type ${params.activityType}. Please provide a detailed plan including specific activities, timelines, and potential collaborators.`;
+          const response = await openRouterService.chatWithAgent(prompt, 'manager', user.uid, "You are an experienced music industry executive with expertise in artist management and business strategy.");
+          toast({ title: "Coordination Complete", description: "Your activity plan is ready." });
+          return response;
+        } catch (error) {
+          console.error("Error coordinating activities:", error);
+          toast({
+            title: "Error",
+            description: "Failed to coordinate activities. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     }
   ];
