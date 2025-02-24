@@ -18,9 +18,6 @@ import {
   Instagram,
   Twitter,
   Youtube,
-  ShoppingBag,
-  Ticket,
-  MessageCircle,
   Share2,
   Calendar,
   HeartPulse,
@@ -35,8 +32,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query } from "firebase/firestore";
@@ -52,8 +47,9 @@ interface Song {
   name: string;
   duration?: string;
   audioUrl: string;
-  uid: string;
+  userId: string; // Cambiado de uid a userId
   createdAt?: any;
+  storageRef?: string;
 }
 
 interface Video {
@@ -61,7 +57,7 @@ interface Video {
   title: string;
   thumbnailUrl?: string;
   url: string;
-  uid: string;
+  userId: string; // Cambiado de uid a userId
   createdAt?: any;
 }
 
@@ -87,19 +83,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           return {
             id: doc.id,
             name: data.name || "Untitled",
-            duration: data.duration || "3:45",
+            duration: "3:45", // Duración por defecto
             audioUrl: data.audioUrl || "",
-            uid: data.uid || "",
-            createdAt: data.createdAt
+            userId: data.userId || "",
+            createdAt: data.createdAt,
+            storageRef: data.storageRef
           };
         });
 
-        // Filtramos por uid
+        // Filtramos por userId
         const filteredSongs = songData.filter(song => {
-          console.log(`Comparing song.uid: ${song.uid} with artistId: ${artistId}`);
-          return song.uid === artistId;
+          console.log(`Comparing song.userId: ${song.userId} with artistId: ${artistId}`);
+          return song.userId === artistId;
         });
-
         console.log("Filtered songs:", filteredSongs);
         return filteredSongs;
       } catch (error) {
@@ -121,23 +117,22 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const videoData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           console.log("Raw video data:", data);
-          const videoId = data.url?.split('v=')[1];
+          const videoId = data.url?.split('v=')?.[1] || data.url?.split('/')?.[3]?.split('?')?.[0];
           return {
             id: doc.id,
             title: data.title || "Untitled",
             url: data.url || "",
-            uid: data.uid || "",
+            userId: data.userId || "",
             thumbnailUrl: videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined,
             createdAt: data.createdAt
           };
         });
 
-        // Filtramos por uid
+        // Filtramos por userId
         const filteredVideos = videoData.filter(video => {
-          console.log(`Comparing video.uid: ${video.uid} with artistId: ${artistId}`);
-          return video.uid === artistId;
+          console.log(`Comparing video.userId: ${video.userId} with artistId: ${artistId}`);
+          return video.userId === artistId;
         });
-
         console.log("Filtered videos:", filteredVideos);
         return filteredVideos;
       } catch (error) {
@@ -233,7 +228,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <span className="font-medium">{song.name}</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {song.duration || "N/A"}
+                  {song.duration || "3:45"}
                 </span>
               </div>
             ))
@@ -290,215 +285,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-7xl mx-auto"
+      className="container mx-auto px-4 py-8"
     >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fixed top-4 right-4 z-50"
-      >
-        <Link href="/">
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            <User className="mr-2 h-5 w-5" />
-            Create Your Artist Profile
-          </Button>
-        </Link>
-      </motion.div>
-
-      <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
-        <iframe
-          className="absolute inset-0 w-full h-full object-cover"
-          src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&loop=1&playlist=O90iHkU3cPU&controls=0&showinfo=0&rel=0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
-
-        <div className="absolute bottom-0 left-0 right-0 p-12">
-          <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
-            <motion.h1
-              className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
-              variants={itemVariants}
-            >
-              {mockArtist.name}
-            </motion.h1>
-            <motion.p
-              className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-400"
-              variants={itemVariants}
-            >
-              {mockArtist.genre}
-            </motion.p>
-            <div className="prose prose-invert max-w-2xl mb-8">
-              {mockArtist.biography.split("\n").map((paragraph, index) => (
-                <motion.p
-                  key={index}
-                  className="text-lg text-white/90 leading-relaxed"
-                  variants={itemVariants}
-                >
-                  {paragraph}
-                </motion.p>
-              ))}
-            </div>
-            <motion.div className="flex flex-wrap gap-4" variants={itemVariants}>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={() => setShowMessageDialog(true)}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Contact Me
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-300"
-              >
-                <Share2 className="mr-2 h-5 w-5" />
-                Share Profile
-              </Button>
-            </motion.div>
-          </motion.div>
-        </div>
-
-        <motion.div
-          className="absolute top-8 right-8 flex gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div
-            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
-            variants={itemVariants}
-          >
-            <HeartPulse className="h-6 w-6 text-orange-500" />
-            <div>
-              <p className="text-sm text-white/70">Monthly Listeners</p>
-              <p className="text-xl font-bold text-white">{mockArtist.stats.monthlyListeners}k</p>
-            </div>
-          </motion.div>
-          <motion.div
-            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
-            variants={itemVariants}
-          >
-            <Users className="h-6 w-6 text-orange-500" />
-            <div>
-              <p className="text-sm text-white/70">Followers</p>
-              <p className="text-xl font-bold text-white">{mockArtist.stats.followers}k</p>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <MusicSection />
-          <Card className="p-6">
-            <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center">
-                <Calendar className="w-6 h-6 mr-2 text-orange-500" />
-                Upcoming Shows
-              </h3>
-              <div className="space-y-4">
-                {mockArtist.upcomingShows.map((show) => (
-                  <div
-                    key={show.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium">{show.venue}</p>
-                      <p className="text-sm text-muted-foreground">{show.city}</p>
-                      <p className="text-sm text-orange-500">
-                        {new Date(show.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Button
-                      className="bg-orange-500 hover:bg-orange-600"
-                      onClick={() => window.open(show.ticketUrl, "_blank")}
-                    >
-                      <Ticket className="mr-2 h-4 w-4" />
-                      Get Tickets
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </Card>
-          <Card className="p-6">
-            <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center">
-                <ShoppingBag className="w-6 h-6 mr-2 text-orange-500" />
-                Official Merchandise
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {mockArtist.merchandise.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    className="group relative rounded-lg overflow-hidden bg-gradient-to-br from-orange-500/5 to-transparent"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="aspect-square overflow-hidden relative">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                          <div className="space-y-2">
-                            <p className="text-white font-medium text-lg">{item.name}</p>
-                            <p className="text-orange-400 font-bold text-xl">${item.price.toFixed(2)}</p>
-                            <p className="text-white/80 text-sm line-clamp-2">{item.description}</p>
-                            {item.sizes && (
-                              <div className="flex gap-2 mt-2">
-                                {item.sizes.map((size) => (
-                                  <span key={size} className="px-2 py-1 text-xs bg-white/10 rounded-md text-white/90">
-                                    {size}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 pt-2">
-                              <Button
-                                className="flex-1 bg-orange-500 hover:bg-orange-600"
-                                onClick={() => window.open(item.url, "_blank")}
-                              >
-                                Buy Now
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="border-orange-500/50 hover:bg-orange-500/20"
-                              >
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-orange-500">{item.category}</span>
-                        {item.inStock ? (
-                          <span className="text-xs px-2 py-1 bg-green-500/10 text-green-500 rounded-full">In Stock</span>
-                        ) : (
-                          <span className="text-xs px-2 py-1 bg-red-500/10 text-red-500 rounded-full">Out of Stock</span>
-                        )}
-                      </div>
-                      <h4 className="font-semibold truncate">{item.name}</h4>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{item.description}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </Card>
+          <VideosSection />
         </div>
         <div className="space-y-8">
           <Card className="p-6">
@@ -533,12 +325,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
                   onClick={() => setShowMessageDialog(true)}
                 >
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  Message
+                  <Share2 className="mr-2 h-5 w-5" />
+                  Share
                 </Button>
               </div>
             </motion.div>
           </Card>
+
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center">
@@ -560,14 +353,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
                 <div className="flex items-center">
                   <Globe className="w-5 h-5 text-orange-500 mr-3" />
-                  <a href={mockArtist.website} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500">
+                  <a
+                    href={mockArtist.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-orange-500"
+                  >
                     {mockArtist.website}
                   </a>
                 </div>
               </div>
             </motion.div>
           </Card>
-          <VideosSection />
         </div>
       </div>
 
@@ -600,8 +397,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
 export const mockArtist = {
   name: "Redwine",
-  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
-  genre: "Blues Latin Fusion",
   location: "Miami, FL",
   email: "booking@redwinemusic.com",
   phone: "+1 (305) 555-0123",
@@ -610,71 +405,5 @@ export const mockArtist = {
     instagram: "https://instagram.com/redwinemusic",
     twitter: "https://twitter.com/redwinemusic",
     youtube: "https://youtube.com/redwinemusic",
-  },
-  stats: {
-    monthlyListeners: 180,
-    followers: 12,
-    views: 2,
-  },
-  upcomingShows: [
-    {
-      id: 1,
-      date: "2024-03-15",
-      venue: "Blue Martini Lounge",
-      city: "Miami, FL",
-      ticketUrl: "#",
-    },
-    {
-      id: 2,
-      date: "2024-04-01",
-      venue: "Ball & Chain",
-      city: "Little Havana, Miami",
-      ticketUrl: "#",
-    },
-  ],
-  merchandise: [
-    {
-      id: 1,
-      name: "Miami Blues Vinyl Edition",
-      price: 29.99,
-      image: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
-      description: "Edición especial en vinilo con arte exclusivo y notas firmadas",
-      inStock: true,
-      category: "Music",
-      url: "#",
-    },
-    {
-      id: 2,
-      name: "Latin Blues Tour 2024",
-      price: 24.99,
-      image: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
-      description: "Camiseta oficial del tour en algodón premium con diseño exclusivo",
-      inStock: true,
-      category: "Apparel",
-      sizes: ["S", "M", "L", "XL"],
-      url: "#",
-    },
-    {
-      id: 3,
-      name: "Colección Arte Latino Blues",
-      price: 19.99,
-      image: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
-      description: "Set de 3 prints artísticos firmados inspirados en la fusión del Blues y la cultura latina",
-      inStock: true,
-      category: "Art",
-      url: "#",
-    },
-  ],
-  newRelease: {
-    title: "Havana Blues - Nuevo Single",
-    releaseDate: "2024-03-01",
-    coverArt: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60",
-    preOrderUrl: "#",
-  },
-  technicalRider: {
-    stage: "Tarima mínima: 24x16 pies\nTarima para percusión: 8x8 pies, altura 1 pie\nTarima para teclados: 6x8 pies, altura 1 pie",
-    sound: "Sistema PA profesional con subwoofers\n4 monitores\nConsola digital de 32 canales\nSistema de micrófono inalámbrico",
-    lighting: "Sistema completo de iluminación con control DMX\nLuces LED wash\nSpots móviles\nMáquina de humo",
-    backline: "Batería completa (DW o Pearl)\nDos amplificadores de guitarra (Fender Twin Reverb)\nAmplificador de bajo (Ampeg)\nSoporte para teclado\nTodos los micrófonos y cajas DI necesarios\nSet de percusión latina completo",
   },
 };
