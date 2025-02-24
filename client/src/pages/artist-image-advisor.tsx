@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Sparkles, Camera, Palette, Music2, TrendingUp, Image as ImageIcon, Star } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -25,6 +26,11 @@ const itemVariants = {
 
 export default function ArtistImageAdvisorPage() {
   const [activeTab, setActiveTab] = useState("upload");
+  const { toast } = useToast();
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,7 +135,7 @@ export default function ArtistImageAdvisorPage() {
 
         {/* Main Interface */}
         <Card className="p-4 md:p-8 border-orange-500/20">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
             <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b grid w-full grid-cols-2 md:grid-cols-4 gap-2 lg:max-w-[600px] mx-auto p-2">
               <TabsTrigger 
                 value="upload" 
@@ -172,7 +178,7 @@ export default function ArtistImageAdvisorPage() {
                 </motion.div>
               </TabsContent>
 
-              {/* Other TabsContent components will be implemented later */}
+              {/* Other tab content will be implemented as needed */}
             </div>
           </Tabs>
         </Card>
