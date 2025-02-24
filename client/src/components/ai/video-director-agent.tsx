@@ -1,5 +1,3 @@
-// src/components/ai/video-director-agent.tsx
-
 import { Video } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
@@ -7,6 +5,7 @@ import { ProgressIndicator } from "./progress-indicator";
 import { openRouterService } from "@/lib/api/openrouteraiagents";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import html2pdf from 'html2pdf.js';
 
 interface Step {
   message: string;
@@ -28,6 +27,23 @@ export function VideoDirectorAgent() {
     personality: "🎬 Visionary Director",
   };
 
+  const exportToPDF = () => {
+    if (!result) return;
+
+    const content = document.getElementById('video-script-content');
+    if (!content) return;
+
+    const opt = {
+      margin: 1,
+      filename: 'video_script.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(content).save();
+  };
+
   const simulateThinking = async () => {
     setIsThinking(true);
     setProgress(0);
@@ -45,6 +61,58 @@ export function VideoDirectorAgent() {
       setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
       await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
+  };
+
+  const generateScript = async (params: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to use the Video Director AI.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await simulateThinking();
+
+      const prompt = `Create a detailed music video script with the following parameters:
+      Lyrics: ${params.lyrics}
+      Visual Style: ${params.style}
+      Mood: ${params.mood}
+
+      Please provide:
+      1. Scene-by-scene breakdown
+      2. Visual direction
+      3. Camera movements
+      4. Special effects suggestions
+      5. Narrative elements`;
+
+      const response = await openRouterService.chatWithAgent(
+        prompt,
+        "videoDirector",
+        user.uid,
+        "You are an experienced music video director with expertise in visual storytelling and cinematography."
+      );
+
+      setResult(response);
+      toast({
+        title: "Script Generated",
+        description: "Your music video script has been created successfully.",
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Error generating script:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate script. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsThinking(false);
     }
   };
 
@@ -88,206 +156,7 @@ export function VideoDirectorAgent() {
           defaultValue: "dramatic",
         },
       ],
-      action: async (params) => {
-        if (!user) {
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to use the Video Director AI.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        try {
-          await simulateThinking();
-
-          const prompt = `Create a detailed music video script with the following parameters:
-          Lyrics: ${params.lyrics}
-          Visual Style: ${params.style}
-          Mood: ${params.mood}
-
-          Please provide:
-          1. Scene-by-scene breakdown
-          2. Visual direction
-          3. Camera movements
-          4. Special effects suggestions
-          5. Narrative elements`;
-
-          console.log("Generating script with prompt:", prompt);
-
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "videoDirector",
-            user.uid,
-            "You are an experienced music video director with expertise in visual storytelling and cinematography."
-          );
-
-          setResult(response);
-          toast({
-            title: "Script Generated",
-            description: "Your music video script has been created successfully.",
-          });
-
-          return response;
-        } catch (error) {
-          console.error("Detailed error generating script:", {
-            message: error.message,
-            stack: error.stack,
-          });
-          toast({
-            title: "Error",
-            description: error.message || "Failed to generate script. Please try again.",
-            variant: "destructive",
-          });
-          throw error;
-        } finally {
-          setIsThinking(false);
-        }
-      },
-    },
-    {
-      name: "Plan sequences",
-      description: "Create storyboard and scene planning",
-      parameters: [
-        {
-          name: "duration",
-          type: "number",
-          label: "Duration (seconds)",
-          description: "Total video duration in seconds",
-          defaultValue: "240",
-        },
-        {
-          name: "locations",
-          type: "select",
-          label: "Location Type",
-          description: "Main environment for scenes",
-          options: [
-            { value: "urban", label: "Urban" },
-            { value: "nature", label: "Nature" },
-            { value: "studio", label: "Studio" },
-            { value: "mixed", label: "Mixed" },
-          ],
-          defaultValue: "urban",
-        },
-      ],
-      action: async (params) => {
-        if (!user) {
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to use the Video Director AI.",
-            variant: "destructive",
-          });
-          return;
-        }
-        try {
-          await simulateThinking();
-          const prompt = `Plan sequences for a music video with the following parameters:
-          Duration: ${params.duration} seconds
-          Location Type: ${params.locations}
-
-          Please provide a detailed storyboard and scene breakdown.`;
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "videoDirector",
-            user.uid,
-            "You are an experienced music video director with expertise in visual storytelling and cinematography."
-          );
-          setResult(response);
-          toast({
-            title: "Sequences Planned",
-            description: "Your music video sequences have been planned successfully.",
-          });
-          return response;
-        } catch (error) {
-          console.error("Detailed error planning sequences:", {
-            message: error.message,
-            stack: error.stack,
-          });
-          toast({
-            title: "Error",
-            description: error.message || "Failed to plan sequences. Please try again.",
-            variant: "destructive",
-          });
-          throw error;
-        } finally {
-          setIsThinking(false);
-        }
-      },
-    },
-    {
-      name: "Suggest visual effects",
-      description: "Recommend visual effects and transitions",
-      parameters: [
-        {
-          name: "complexity",
-          type: "select",
-          label: "Complexity",
-          description: "Level of effects complexity",
-          options: [
-            { value: "simple", label: "Simple" },
-            { value: "moderate", label: "Moderate" },
-            { value: "complex", label: "Complex" },
-            { value: "experimental", label: "Experimental" },
-          ],
-          defaultValue: "moderate",
-        },
-        {
-          name: "style",
-          type: "select",
-          label: "Effects Style",
-          description: "Main style of visual effects",
-          options: [
-            { value: "cinematic", label: "Cinematic" },
-            { value: "glitch", label: "Glitch" },
-            { value: "retro", label: "Retro" },
-            { value: "minimal", label: "Minimalist" },
-          ],
-          defaultValue: "cinematic",
-        },
-      ],
-      action: async (params) => {
-        if (!user) {
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to use the Video Director AI.",
-            variant: "destructive",
-          });
-          return;
-        }
-        try {
-          await simulateThinking();
-          const prompt = `Suggest visual effects and transitions for a music video with the following parameters:
-          Complexity: ${params.complexity}
-          Style: ${params.style}
-
-          Please provide a list of suitable effects and transitions.`;
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "videoDirector",
-            user.uid,
-            "You are an experienced music video director with expertise in visual storytelling and cinematography."
-          );
-          setResult(response);
-          toast({
-            title: "Effects Suggested",
-            description: "Visual effects suggestions have been generated successfully.",
-          });
-          return response;
-        } catch (error) {
-          console.error("Detailed error suggesting effects:", {
-            message: error.message,
-            stack: error.stack,
-          });
-          toast({
-            title: "Error",
-            description: error.message || "Failed to suggest effects. Please try again.",
-            variant: "destructive",
-          });
-          throw error;
-        } finally {
-          setIsThinking(false);
-        }
-      },
+      action: generateScript,
     },
   ];
 
@@ -298,7 +167,7 @@ export function VideoDirectorAgent() {
       icon={Video}
       actions={actions}
       theme={theme}
-      helpText="As your Visionary Director, I'll help you create compelling scripts, plan dynamic sequences, and select stunning visual effects for your music videos. Let's bring your visual storytelling to life with cutting-edge creativity!"
+      helpText="As your Visionary Director, I'll help you create compelling scripts, plan dynamic sequences, and select stunning visual effects for your music videos. Let's bring your visual storytelling to life!"
     >
       {(isThinking || steps.length > 0) && (
         <ProgressIndicator
@@ -309,9 +178,22 @@ export function VideoDirectorAgent() {
         />
       )}
       {result && (
-        <div className="mt-4 p-4 bg-muted rounded-lg">
-          <h3 className="font-semibold mb-2">Generated Result:</h3>
-          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        <div className="mt-4 space-y-4">
+          <div id="video-script-content" className="p-6 bg-black/20 backdrop-blur rounded-lg border border-blue-500/20">
+            <h3 className="text-xl font-semibold mb-4 text-blue-400">Music Video Script</h3>
+            <div className="prose prose-invert max-w-none">
+              <pre className="whitespace-pre-wrap text-sm font-mono bg-transparent">{result}</pre>
+            </div>
+          </div>
+          <button
+            onClick={exportToPDF}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download PDF
+          </button>
         </div>
       )}
     </BaseAgent>

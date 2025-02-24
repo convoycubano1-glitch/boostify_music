@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
 const OPEN_ROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
@@ -65,17 +65,36 @@ export class OpenRouterService {
       console.log(`OpenRouter response for ${agentType}:`, result);
 
       try {
-        const responseId = `${agentType}_${Date.now()}`;
-        const docRef = doc(db, `users/${userId}/agent_responses`, responseId);
-        await setDoc(docRef, {
-          agentType,
-          prompt,
-          response: result,
-          timestamp: serverTimestamp()
-        });
+        // Guardar en la colección específica para Video Director AI
+        if (agentType === 'videoDirector') {
+          const videoDirectorRef = collection(db, 'Video_Director_AI');
+          const docRef = doc(videoDirectorRef, `script_${Date.now()}`);
+          await setDoc(docRef, {
+            userId,
+            prompt,
+            script: result,
+            timestamp: serverTimestamp(),
+            metadata: {
+              model: 'anthropic/claude-3-sonnet',
+              temperature: 0.7,
+              systemInstruction
+            },
+            format: {
+              sections: [
+                'Scene Breakdown',
+                'Visual Direction',
+                'Camera Movements',
+                'Special Effects',
+                'Narrative Elements'
+              ],
+              version: '1.0'
+            }
+          });
+          console.log('Script saved to Video_Director_AI collection');
+        }
       } catch (error) {
-        // Log pero no propagues el error de Firestore
         console.error('Error saving to Firestore:', error);
+        // No propagamos el error para que no afecte la funcionalidad principal
       }
 
       return result;
