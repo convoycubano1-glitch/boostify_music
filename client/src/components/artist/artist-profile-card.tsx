@@ -46,6 +46,7 @@ import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { CreditCard } from "lucide-react";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -224,8 +225,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div
                 key={song.id}
                 className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 ${
-                  currentTrack === index 
-                    ? "bg-orange-500/20 scale-102" 
+                  currentTrack === index
+                    ? "bg-orange-500/20 scale-102"
                     : "hover:bg-orange-500/10 hover:scale-101"
                 }`}
               >
@@ -275,9 +276,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       ) : (
         videos.map((video) => {
           // Extraer el ID del video correctamente de diferentes formatos de URL
-          const videoId = video.url?.split('v=')?.[1]?.split('&')?.[0] || 
-                         video.url?.split('/')?.[3]?.split('?')?.[0] ||
-                         video.url?.split('youtu.be/')?.[1]?.split('?')?.[0];
+          const videoId = video.url?.split('v=')?.[1]?.split('&')?.[0] ||
+            video.url?.split('/')?.[3]?.split('?')?.[0] ||
+            video.url?.split('youtu.be/')?.[1]?.split('?')?.[0];
 
           return (
             <motion.div
@@ -628,21 +629,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-                <DollarSign className="w-6 h-6 mr-2 text-orange-500" />
-                Affiliate Program
-              </h3>
-              <p className="text-lg text-muted-foreground">
-                Join our affiliate program and earn commission on every sale!
-              </p>
-              <Button className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
-                Learn More
-              </Button>
-            </motion.div>
-          </Card>
-
-          <Card className="p-6">
-            <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 <Share2 className="w-6 h-6 mr-2 text-orange-500" />
                 Connect & Follow
               </h3>
@@ -682,6 +668,29 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                <DollarSign className="w-6 h-6 mr-2 text-orange-500" />
+                Affiliate Program
+              </h3>
+              <p className="text-lg text-muted-foreground mb-4">
+                Join our affiliate program and earn commission on every sale!
+              </p>
+              <div className="flex gap-4">
+                <Button className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                  Learn More
+                </Button>
+                <Link href="/smart-cards">
+                  <Button className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Get Smart Cards
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </Card>
+
+          <Card className="p-6">
+            <motion.div variants={itemVariants}>
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 <User className="w-6 h-6 mr-2 text-orange-500" />
                 Contact
               </h3>
@@ -703,8 +712,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <a
                     href={mockArtist.website}
                     target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-orange-500"
+                    rel="noopener noreferrer"                    className="hover:text-orange-500"
                   >
                     {mockArtist.website}
                   </a>
