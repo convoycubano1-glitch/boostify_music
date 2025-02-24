@@ -2,10 +2,7 @@ import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ServiceDialog } from "@/components/record-label/service-dialog";
 import {
   Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote,
   Radio, Tv, Film, FileText, Brain, Play, Volume2, Pen, Clock,
@@ -13,15 +10,27 @@ import {
   Badge, MapPin, Calendar, ChartBar, Users, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { recordLabelService } from "@/lib/services/record-label-service";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
+  const { user } = useAuth();
+
+  const { data: services = [] } = useQuery({
+    queryKey: ['record-label-services', user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return [];
+      return recordLabelService.getServices(user.uid);
+    },
+    enabled: !!user
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-16"> {/* Adjusted pt-16 to fix header overlap */}
+      <main className="flex-1 pt-16">
         {/* Hero Section with Enhanced Video Background */}
         <div className="relative w-full min-h-[60vh] sm:min-h-[70vh] overflow-hidden">
           <video
@@ -563,17 +572,26 @@ export default function RecordLabelServices() {
               {
                 icon: Music2,
                 title: "AI Music Generation",
-                description: "Create modern remixes while preserving the original essence"
+                description: "Create modern remixes while preserving the original essence",
+                type: "remix" as const,
+                dialogTitle: "Generate AI Remix",
+                dialogDescription: "Create a modern remix of your track using AI"
               },
               {
                 icon: Wand2,
                 title: "Professional Mastering",
-                description: "State-of-the-art AI mastering for perfect sound"
+                description: "State-of-the-art AI mastering for perfect sound",
+                type: "mastering" as const,
+                dialogTitle: "AI Mastering",
+                dialogDescription: "Master your track using AI technology"
               },
               {
                 icon: Video,
                 title: "Video Generation",
-                description: "Create compelling music videos with AI"
+                description: "Create compelling music videos with AI",
+                type: "video" as const,
+                dialogTitle: "Generate Music Video",
+                dialogDescription: "Create an AI-generated music video concept"
               }
             ].map((feature, index) => (
               <motion.div
@@ -588,10 +606,16 @@ export default function RecordLabelServices() {
                   <p className="text-sm text-muted-foreground mb-4">
                     {feature.description}
                   </p>
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Try Now
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  <ServiceDialog
+                    type={feature.type}
+                    title={feature.dialogTitle}
+                    description={feature.dialogDescription}
+                  >
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                      Try Now
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </ServiceDialog>
                 </Card>
               </motion.div>
             ))}
@@ -601,7 +625,7 @@ export default function RecordLabelServices() {
         {/* Manager Tools Section */}
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text texttransparent bg-gradient-to-r from-orange-500 to-purple-600">
               Manager Tools
             </h2>
             <p className="text-sm md:text-base text-muted-foreground">
