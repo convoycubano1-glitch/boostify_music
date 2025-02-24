@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { RadioNetworksDialog } from "@/components/record-label/radio-networks-dialog";
 import { TVNetworksDialog } from "@/components/record-label/tv-networks-dialog";
+import { MovieNetworksDialog } from "@/components/record-label/movie-networks-dialog";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
@@ -273,7 +274,7 @@ export default function RecordLabelServices() {
 
             {/* Movies Tab Content */}
             <TabsContent value="movies">
-              <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -300,9 +301,11 @@ export default function RecordLabelServices() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{category}</span>
-                            <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
-                              Browse <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            <MovieNetworksDialog>
+                              <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                                Browse <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                            </MovieNetworksDialog>
                           </div>
                         </motion.div>
                       ))}
