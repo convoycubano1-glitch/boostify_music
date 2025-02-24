@@ -28,7 +28,7 @@ import {
   Ticket,
   MessageCircle,
   Shirt,
-  Paintbrush, // Corregido de PaintBrush a Paintbrush
+  Paintbrush,
   Check,
   X,
 } from "lucide-react";
@@ -217,49 +217,62 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
-          ) : isSongsError ? (
-            <div className="text-center text-red-500">
-              Error al cargar las canciones
-            </div>
           ) : songs.length === 0 ? (
             <p className="text-center text-muted-foreground">No tracks available</p>
           ) : (
             songs.map((song, index) => (
               <div
                 key={song.id}
-                className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 ${
+                className={`space-y-4 p-4 rounded-lg transition-all duration-300 ${
                   currentTrack === index
                     ? "bg-orange-500/20 scale-102"
                     : "hover:bg-orange-500/10 hover:scale-101"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => togglePlay(song, index)}
-                    className={`rounded-full transition-transform duration-300 ${
-                      currentTrack === index && isPlaying
-                        ? "bg-orange-500 text-white hover:bg-orange-600 scale-110"
-                        : "hover:bg-orange-500/10"
-                    }`}
-                  >
-                    {currentTrack === index && isPlaying ? (
-                      <Pause className="h-5 w-5" />
-                    ) : (
-                      <Play className="h-5 w-5" />
-                    )}
-                  </Button>
-                  <div>
-                    <span className="font-medium">{song.name}</span>
-                    <span className="text-sm text-muted-foreground block">
-                      {new Date(song.createdAt?.seconds * 1000).toLocaleDateString()}
-                    </span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => togglePlay(song, index)}
+                      className={`rounded-full transition-transform duration-300 ${
+                        currentTrack === index && isPlaying
+                          ? "bg-orange-500 text-white hover:bg-orange-600 scale-110"
+                          : "hover:bg-orange-500/10"
+                      }`}
+                    >
+                      {currentTrack === index && isPlaying ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5" />
+                      )}
+                    </Button>
+                    <div>
+                      <span className="font-medium">{song.name}</span>
+                      <span className="text-sm text-muted-foreground block">
+                        {new Date(song.createdAt?.seconds * 1000).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
+                  <span className="text-sm text-muted-foreground">
+                    {song.duration || "3:45"}
+                  </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {song.duration || "3:45"}
-                </span>
+                {currentTrack === index && (
+                  <div className="w-full">
+                    <audio
+                      className="w-full"
+                      controls
+                      src={song.audioUrl}
+                      onEnded={() => {
+                        setIsPlaying(false);
+                        setCurrentTrack(-1);
+                      }}
+                    >
+                      Tu navegador no soporta el elemento de audio.
+                    </audio>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -274,10 +287,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <div className="col-span-full flex items-center justify-center p-4">
           <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
         </div>
-      ) : isVideosError ? (
-        <div className="col-span-full text-center text-red-500">
-          Error al cargar los videos
-        </div>
       ) : videos.length === 0 ? (
         <p className="col-span-full text-center text-muted-foreground">No videos available</p>
       ) : (
@@ -288,24 +297,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.2 }}
           >
-            <img
-              src={video.thumbnailUrl || "https://via.placeholder.com/150"}
-              alt={video.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h4 className="text-white font-medium truncate mb-2">{video.title}</h4>
-                <p className="text-sm text-white/70 mb-3">
-                  {new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}
-                </p>
-                <Button
-                  onClick={() => window.open(video.url, "_blank")}
-                  className="w-full bg-orange-500 hover:bg-orange-600 transform transition-all duration-300 hover:scale-105"
-                >
-                  Watch Now
-                </Button>
-              </div>
+            <div className="w-full h-full">
+              <iframe
+                className="w-full h-full rounded-lg"
+                src={`https://www.youtube.com/embed/${video.url.split('v=')[1]}`}
+                title={video.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/30 to-transparent">
+              <h4 className="text-white font-medium truncate mb-2">{video.title}</h4>
+              <p className="text-sm text-white/70">
+                {new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}
+              </p>
             </div>
           </motion.div>
         ))
@@ -536,7 +541,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                                 ) : item.category === "Apparel" ? (
                                   <Shirt className="mr-2 h-4 w-4" />
                                 ) : (
-                                  <Paintbrush className="mr-2 h-4 w-4" /> // Corrected here
+                                  <Paintbrush className="mr-2 h-4 w-4" />
                                 )}
                                 Buy Now
                               </Button>
@@ -560,7 +565,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           ) : item.category === "Apparel" ? (
                             <Shirt className="mr-1 h-4 w-4" />
                           ) : (
-                            <Paintbrush className="mr-1 h-4 w-4" /> // Corrected here
+                            <Paintbrush className="mr-1 h-4 w-4" />
                           )}
                           {item.category}
                         </span>
@@ -712,7 +717,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <Globe className="w-5 h-5 text-orange-500 mr-3" />
                   <a
                     href={mockArtist.website}
-                    target="_blank" rel="noopener noreferrer"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="hover:text-orange-500"
                   >
                     {mockArtist.website}
@@ -753,7 +759,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
 export const mockArtist = {
   name: "Redwine",
-  genre: "Blues Latin Fusion", // Added genre
+  genre: "Blues Latin Fusion",
   location: "Miami, FL",
   email: "booking@redwinemusic.com",
   phone: "+1 (305) 555-0123",
@@ -765,7 +771,8 @@ export const mockArtist = {
   },
   newRelease: {
     title: "New Release Title",
-    coverArt: "/path/to/cover/art.jpg",    releaseDate: new Date().toISOString(),
+    coverArt: "/path/to/cover/art.jpg",
+    releaseDate: new Date().toISOString(),
   },
   upcomingShows: [
     {
