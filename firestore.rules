@@ -50,6 +50,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // Manager AI collection rules
+    match /Manager_AI/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // Course rules
     match /courses/{courseId} {
       allow read: if isAuthenticated();
@@ -77,6 +85,7 @@ service cloud.firestore {
           !exists(/databases/$(database)/documents/course_progress/$(progressId))
         );
     }
+
     // Allow read access to all authenticated users for public collections
     match /{document=**} {
       allow read: if isAuthenticated();

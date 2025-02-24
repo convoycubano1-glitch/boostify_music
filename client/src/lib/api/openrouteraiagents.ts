@@ -163,6 +163,30 @@ export class OpenRouterService {
             }
           });
           console.log('Design saved to Merchandise_Designer_AI collection');
+        } else if (agentType === 'manager') {
+          const managerRef = collection(db, 'Manager_AI');
+          await addDoc(managerRef, {
+            userId,
+            prompt,
+            advice: result,
+            timestamp: serverTimestamp(),
+            metadata: {
+              model: 'anthropic/claude-3-sonnet',
+              temperature: 0.7,
+              systemInstruction
+            },
+            format: {
+              sections: [
+                'Career Analysis',
+                'Industry Insights',
+                'Professional Development',
+                'Networking Strategy',
+                'Action Items'
+              ],
+              version: '1.0'
+            }
+          });
+          console.log('Advice saved to Manager_AI collection');
         }
       } catch (error) {
         console.error('Error saving to Firestore:', error);
