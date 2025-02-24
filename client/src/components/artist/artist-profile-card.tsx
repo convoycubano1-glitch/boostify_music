@@ -78,15 +78,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       try {
         console.log("Fetching songs for artistId:", artistId); // Debug log
         const songsRef = collection(db, "songs");
-        const q = query(songsRef, where("artistId", "==", artistId));
+        const q = query(songsRef);  // Removemos el filtro para ver todas las canciones primero
         const querySnapshot = await getDocs(q);
         const songData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Song[];
-        console.log("Songs fetched:", songData); // Debug log
+        console.log("All songs in collection:", songData); // Debug log
 
-        if (songData.length === 0) {
+        // Ahora filtramos por artistId
+        const filteredSongs = songData.filter(song => song.artistId === artistId);
+        console.log("Filtered songs for artist:", filteredSongs); // Debug log
+
+        if (filteredSongs.length === 0) {
           // Si no hay canciones, agregamos una canción de prueba
           return [{
             id: "test-song-1",
@@ -97,7 +101,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           }];
         }
 
-        return songData;
+        return filteredSongs;
       } catch (error) {
         console.error("Error fetching songs:", error);
         toast({
@@ -117,15 +121,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       try {
         console.log("Fetching videos for artistId:", artistId); // Debug log
         const videosRef = collection(db, "videos");
-        const q = query(videosRef, where("artistId", "==", artistId));
+        const q = query(videosRef); // Removemos el filtro para ver todos los videos primero
         const querySnapshot = await getDocs(q);
         const videoData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Video[];
-        console.log("Videos fetched:", videoData); // Debug log
+        console.log("All videos in collection:", videoData); // Debug log
 
-        if (videoData.length === 0) {
+        // Ahora filtramos por artistId
+        const filteredVideos = videoData.filter(video => video.artistId === artistId);
+        console.log("Filtered videos for artist:", filteredVideos); // Debug log
+
+        if (filteredVideos.length === 0) {
           // Si no hay videos, agregamos un video de prueba
           return [{
             id: "test-video-1",
@@ -136,7 +144,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           }];
         }
 
-        return videoData;
+        return filteredVideos;
       } catch (error) {
         console.error("Error fetching videos:", error);
         toast({
