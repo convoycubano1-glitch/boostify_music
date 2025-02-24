@@ -1,8 +1,10 @@
+// src/components/ai/video-director-agent.tsx
+
 import { Video } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "@/lib/api/openrouter-service";
+import { openRouterService } from "@/lib/api/openrouteraiagents";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,12 +19,13 @@ export function VideoDirectorAgent() {
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
+  const [result, setResult] = useState<string | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-blue-500 to-indigo-600",
     iconColor: "text-white",
     accentColor: "#3B82F6",
-    personality: "🎬 Visionary Director"
+    personality: "🎬 Visionary Director",
   };
 
   const simulateThinking = async () => {
@@ -35,19 +38,14 @@ export function VideoDirectorAgent() {
       "Developing visual concepts...",
       "Planning shot sequences...",
       "Designing visual effects...",
-      "Finalizing creative direction..."
+      "Finalizing creative direction...",
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
-      setSteps(prev => [...prev, {
-        message: simulatedSteps[i],
-        timestamp: new Date()
-      }]);
+      setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
-
-    setIsThinking(false);
   };
 
   const actions: AgentAction[] = [
@@ -73,7 +71,7 @@ export function VideoDirectorAgent() {
             { value: "experimental", label: "Experimental" },
             { value: "animation", label: "Animation" },
           ],
-          defaultValue: "narrative"
+          defaultValue: "narrative",
         },
         {
           name: "mood",
@@ -87,15 +85,15 @@ export function VideoDirectorAgent() {
             { value: "energetic", label: "Energetic" },
             { value: "mysterious", label: "Mysterious" },
           ],
-          defaultValue: "dramatic"
-        }
+          defaultValue: "dramatic",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Video Director AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
@@ -115,13 +113,16 @@ export function VideoDirectorAgent() {
           4. Special effects suggestions
           5. Narrative elements`;
 
+          console.log("Generating script with prompt:", prompt);
+
           const response = await openRouterService.chatWithAgent(
             prompt,
-            'videoDirector',
+            "videoDirector",
             user.uid,
             "You are an experienced music video director with expertise in visual storytelling and cinematography."
           );
 
+          setResult(response);
           toast({
             title: "Script Generated",
             description: "Your music video script has been created successfully.",
@@ -129,14 +130,20 @@ export function VideoDirectorAgent() {
 
           return response;
         } catch (error) {
-          console.error("Error generating script:", error);
+          console.error("Detailed error generating script:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to generate script. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to generate script. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
+      },
     },
     {
       name: "Plan sequences",
@@ -147,7 +154,7 @@ export function VideoDirectorAgent() {
           type: "number",
           label: "Duration (seconds)",
           description: "Total video duration in seconds",
-          defaultValue: "240"
+          defaultValue: "240",
         },
         {
           name: "locations",
@@ -160,15 +167,15 @@ export function VideoDirectorAgent() {
             { value: "studio", label: "Studio" },
             { value: "mixed", label: "Mixed" },
           ],
-          defaultValue: "urban"
-        }
+          defaultValue: "urban",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Video Director AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
@@ -181,24 +188,31 @@ export function VideoDirectorAgent() {
           Please provide a detailed storyboard and scene breakdown.`;
           const response = await openRouterService.chatWithAgent(
             prompt,
-            'videoDirector',
+            "videoDirector",
             user.uid,
             "You are an experienced music video director with expertise in visual storytelling and cinematography."
           );
+          setResult(response);
           toast({
             title: "Sequences Planned",
             description: "Your music video sequences have been planned successfully.",
           });
           return response;
         } catch (error) {
-          console.error("Error planning sequences:", error);
+          console.error("Detailed error planning sequences:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to plan sequences. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to plan sequences. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
+      },
     },
     {
       name: "Suggest visual effects",
@@ -215,7 +229,7 @@ export function VideoDirectorAgent() {
             { value: "complex", label: "Complex" },
             { value: "experimental", label: "Experimental" },
           ],
-          defaultValue: "moderate"
+          defaultValue: "moderate",
         },
         {
           name: "style",
@@ -228,15 +242,15 @@ export function VideoDirectorAgent() {
             { value: "retro", label: "Retro" },
             { value: "minimal", label: "Minimalist" },
           ],
-          defaultValue: "cinematic"
-        }
+          defaultValue: "cinematic",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Video Director AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
@@ -249,25 +263,32 @@ export function VideoDirectorAgent() {
           Please provide a list of suitable effects and transitions.`;
           const response = await openRouterService.chatWithAgent(
             prompt,
-            'videoDirector',
+            "videoDirector",
             user.uid,
             "You are an experienced music video director with expertise in visual storytelling and cinematography."
           );
+          setResult(response);
           toast({
             title: "Effects Suggested",
             description: "Visual effects suggestions have been generated successfully.",
           });
           return response;
         } catch (error) {
-          console.error("Error suggesting effects:", error);
+          console.error("Detailed error suggesting effects:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to suggest effects. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to suggest effects. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -286,6 +307,12 @@ export function VideoDirectorAgent() {
           isThinking={isThinking}
           isComplete={progress === 100}
         />
+      )}
+      {result && (
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Generated Result:</h3>
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        </div>
       )}
     </BaseAgent>
   );

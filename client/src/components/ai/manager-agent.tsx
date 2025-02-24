@@ -1,8 +1,10 @@
+// src/components/ai/manager-agent.tsx
+
 import { UserCog } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "@/lib/api/openrouter-service";
+import { openRouterService } from "@/lib/api/openrouteraiagents";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,12 +19,13 @@ export function ManagerAgent() {
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
+  const [result, setResult] = useState<string | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-red-500 to-orange-600",
     iconColor: "text-white",
     accentColor: "#EF4444",
-    personality: "👔 Executive Manager"
+    personality: "👔 Executive Manager",
   };
 
   const simulateThinking = async () => {
@@ -35,19 +38,14 @@ export function ManagerAgent() {
       "Loading historical data...",
       "Processing market trends...",
       "Generating strategic insights...",
-      "Optimizing recommendations..."
+      "Optimizing recommendations...",
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
-      setSteps(prev => [...prev, {
-        message: simulatedSteps[i],
-        timestamp: new Date()
-      }]);
+      setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
-
-    setIsThinking(false);
   };
 
   const actions: AgentAction[] = [
@@ -66,7 +64,7 @@ export function ManagerAgent() {
             { value: "live", label: "Live Events" },
             { value: "all", label: "All metrics" },
           ],
-          defaultValue: "all"
+          defaultValue: "all",
         },
         {
           name: "timeframe",
@@ -78,15 +76,15 @@ export function ManagerAgent() {
             { value: "quarter", label: "Last quarter" },
             { value: "year", label: "Last year" },
           ],
-          defaultValue: "quarter"
-        }
+          defaultValue: "quarter",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Manager AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
@@ -106,11 +104,12 @@ export function ManagerAgent() {
 
           const response = await openRouterService.chatWithAgent(
             prompt,
-            'manager',
+            "manager",
             user.uid,
             "You are an experienced music industry executive with expertise in artist management and business strategy."
           );
 
+          setResult(response);
           toast({
             title: "Analysis Complete",
             description: "Your performance analysis is ready.",
@@ -118,14 +117,20 @@ export function ManagerAgent() {
 
           return response;
         } catch (error) {
-          console.error("Error analyzing performance:", error);
+          console.error("Detailed error analyzing performance:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to complete analysis. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to complete analysis. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
+      },
     },
     {
       name: "Plan strategy",
@@ -142,33 +147,49 @@ export function ManagerAgent() {
             { value: "branding", label: "Brand Development" },
             { value: "touring", label: "Tours and Events" },
           ],
-          defaultValue: "growth"
-        }
+          defaultValue: "growth",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Manager AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
         try {
           await simulateThinking();
-          const prompt = `Develop a career strategic plan focusing on ${params.focus}.  Please provide a detailed plan including actionable steps and timelines.`;
-          const response = await openRouterService.chatWithAgent(prompt, 'manager', user.uid, "You are an experienced music industry executive with expertise in artist management and business strategy.");
-          toast({ title: "Plan Complete", description: "Your strategic plan is ready." });
+          const prompt = `Develop a career strategic plan focusing on ${params.focus}.
+          Please provide a detailed plan including actionable steps and timelines.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "manager",
+            user.uid,
+            "You are an experienced music industry executive with expertise in artist management and business strategy."
+          );
+          setResult(response);
+          toast({
+            title: "Plan Complete",
+            description: "Your strategic plan is ready.",
+          });
           return response;
         } catch (error) {
-          console.error("Error planning strategy:", error);
+          console.error("Detailed error planning strategy:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to complete plan. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to complete plan. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
+      },
     },
     {
       name: "Coordinate activities",
@@ -185,34 +206,50 @@ export function ManagerAgent() {
             { value: "collabs", label: "Collaborations" },
             { value: "digital", label: "Digital Campaigns" },
           ],
-          defaultValue: "press"
-        }
+          defaultValue: "press",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Manager AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
         try {
           await simulateThinking();
-          const prompt = `Suggest and coordinate promotional activities of type ${params.activityType}. Please provide a detailed plan including specific activities, timelines, and potential collaborators.`;
-          const response = await openRouterService.chatWithAgent(prompt, 'manager', user.uid, "You are an experienced music industry executive with expertise in artist management and business strategy.");
-          toast({ title: "Coordination Complete", description: "Your activity plan is ready." });
+          const prompt = `Suggest and coordinate promotional activities of type ${params.activityType}.
+          Please provide a detailed plan including specific activities, timelines, and potential collaborators.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "manager",
+            user.uid,
+            "You are an experienced music industry executive with expertise in artist management and business strategy."
+          );
+          setResult(response);
+          toast({
+            title: "Coordination Complete",
+            description: "Your activity plan is ready.",
+          });
           return response;
         } catch (error) {
-          console.error("Error coordinating activities:", error);
+          console.error("Detailed error coordinating activities:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to coordinate activities. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to coordinate activities. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -231,6 +268,12 @@ export function ManagerAgent() {
           isThinking={isThinking}
           isComplete={progress === 100}
         />
+      )}
+      {result && (
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Generated Result:</h3>
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        </div>
       )}
     </BaseAgent>
   );

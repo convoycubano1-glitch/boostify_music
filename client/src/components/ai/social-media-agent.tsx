@@ -1,12 +1,22 @@
+// src/components/ai/social-media-agent.tsx
+
 import { Share2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
+import { useState } from "react";
+import { openRouterService } from "@/lib/api/openrouteraiagents";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function SocialMediaAgent() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [result, setResult] = useState<string | null>(null);
+
   const theme: AgentTheme = {
     gradient: "from-pink-500 to-rose-600",
     iconColor: "text-white",
     accentColor: "#EC4899",
-    personality: "📱 Digital Influencer"
+    personality: "📱 Digital Influencer",
   };
 
   const actions: AgentAction[] = [
@@ -25,7 +35,7 @@ export function SocialMediaAgent() {
             { value: "youtube", label: "YouTube" },
             { value: "all", label: "All platforms" },
           ],
-          defaultValue: "all"
+          defaultValue: "all",
         },
         {
           name: "frequency",
@@ -38,13 +48,49 @@ export function SocialMediaAgent() {
             { value: "biweekly", label: "Bi-weekly" },
             { value: "monthly", label: "Monthly" },
           ],
-          defaultValue: "weekly"
-        }
+          defaultValue: "weekly",
+        },
       ],
       action: async (params) => {
-        console.log("Planning content:", params);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Social Media AI.",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          const prompt = `Create a social media content calendar with the following parameters:
+          Platforms: ${params.platforms}
+          Frequency: ${params.frequency}
+
+          Please provide a detailed schedule with content ideas.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "socialMedia",
+            user.uid,
+            "You are a social media expert specializing in content planning and engagement."
+          );
+          setResult(response);
+          toast({
+            title: "Content Planned",
+            description: "Your social media calendar has been created successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error planning content:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to plan content. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+      },
     },
     {
       name: "Analyze engagement",
@@ -61,13 +107,46 @@ export function SocialMediaAgent() {
             { value: "quarter", label: "Last quarter" },
             { value: "year", label: "Last year" },
           ],
-          defaultValue: "month"
-        }
+          defaultValue: "month",
+        },
       ],
       action: async (params) => {
-        console.log("Analyzing engagement:", params);
-        await new Promise(resolve => setTimeout(resolve, 2500));
-      }
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Social Media AI.",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          const prompt = `Analyze engagement metrics for the following period: ${params.period}.
+          Provide insights and suggestions for improvement.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "socialMedia",
+            user.uid,
+            "You are a social media analyst with expertise in engagement metrics."
+          );
+          setResult(response);
+          toast({
+            title: "Engagement Analyzed",
+            description: "Engagement analysis completed successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error analyzing engagement:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to analyze engagement. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+      },
     },
     {
       name: "Generate hashtags",
@@ -85,14 +164,47 @@ export function SocialMediaAgent() {
             { value: "electronic", label: "Electronic" },
             { value: "latin", label: "Latin" },
           ],
-          defaultValue: "pop"
-        }
+          defaultValue: "pop",
+        },
       ],
       action: async (params) => {
-        console.log("Generating hashtags:", params);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Social Media AI.",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          const prompt = `Generate relevant hashtags for a music project in the ${params.genre} genre.
+          Provide a list of 10-15 hashtags optimized for reach.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "socialMedia",
+            user.uid,
+            "You are a social media strategist specializing in hashtag optimization."
+          );
+          setResult(response);
+          toast({
+            title: "Hashtags Generated",
+            description: "Your hashtags have been generated successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error generating hashtags:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to generate hashtags. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+      },
+    },
   ];
 
   return (
@@ -103,6 +215,13 @@ export function SocialMediaAgent() {
       actions={actions}
       theme={theme}
       helpText="Hey! I'm your Digital Influencer. I specialize in keeping your social media active and engaging, creating content that resonates with your audience and increases your visibility in the digital world. Let's make your music go viral! 🚀"
-    />
+    >
+      {result && (
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Generated Result:</h3>
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        </div>
+      )}
+    </BaseAgent>
   );
 }

@@ -1,12 +1,22 @@
+// src/components/ai/merchandise-agent.tsx
+
 import { ShoppingBag } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
+import { useState } from "react";
+import { openRouterService } from "@/lib/api/openrouteraiagents";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function MerchandiseAgent() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [result, setResult] = useState<string | null>(null);
+
   const theme: AgentTheme = {
     gradient: "from-amber-500 to-yellow-600",
     iconColor: "text-white",
     accentColor: "#F59E0B",
-    personality: "🛍️ Creative Designer"
+    personality: "🛍️ Creative Designer",
   };
 
   const actions: AgentAction[] = [
@@ -25,7 +35,7 @@ export function MerchandiseAgent() {
             { value: "accessories", label: "Accessories" },
             { value: "prints", label: "Prints/Posters" },
           ],
-          defaultValue: "tshirt"
+          defaultValue: "tshirt",
         },
         {
           name: "style",
@@ -38,13 +48,49 @@ export function MerchandiseAgent() {
             { value: "urban", label: "Urban" },
             { value: "vintage", label: "Vintage" },
           ],
-          defaultValue: "minimal"
-        }
+          defaultValue: "minimal",
+        },
       ],
       action: async (params) => {
-        console.log("Designing products:", params);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Merchandise Designer AI.",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          const prompt = `Generate merchandise designs with the following parameters:
+          Product Type: ${params.productType}
+          Design Style: ${params.style}
+
+          Provide detailed design descriptions and concepts.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "merchandise",
+            user.uid,
+            "You are a creative designer specializing in music merchandise."
+          );
+          setResult(response);
+          toast({
+            title: "Products Designed",
+            description: "Your merchandise designs have been generated successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error designing products:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to design products. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+      },
     },
     {
       name: "Analyze trends",
@@ -60,13 +106,46 @@ export function MerchandiseAgent() {
             { value: "local", label: "Local" },
             { value: "regional", label: "Regional" },
           ],
-          defaultValue: "global"
-        }
+          defaultValue: "global",
+        },
       ],
       action: async (params) => {
-        console.log("Analyzing trends:", params);
-        await new Promise(resolve => setTimeout(resolve, 2500));
-      }
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Merchandise Designer AI.",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          const prompt = `Analyze current trends in music merchandise for the ${params.market} market.
+          Provide insights and recommendations.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "merchandise",
+            user.uid,
+            "You are a market analyst specializing in music merchandise trends."
+          );
+          setResult(response);
+          toast({
+            title: "Trends Analyzed",
+            description: "Merchandise trend analysis completed successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error analyzing trends:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to analyze trends. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+      },
     },
     {
       name: "Optimize pricing",
@@ -82,14 +161,47 @@ export function MerchandiseAgent() {
             { value: "mid", label: "Mid-range" },
             { value: "premium", label: "Premium" },
           ],
-          defaultValue: "mid"
-        }
+          defaultValue: "mid",
+        },
       ],
       action: async (params) => {
-        console.log("Optimizing prices:", params);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to use the Merchandise Designer AI.",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          const prompt = `Suggest competitive pricing strategies for music merchandise in the ${params.priceRange} range.
+          Provide a detailed pricing plan.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "merchandise",
+            user.uid,
+            "You are a pricing strategist specializing in music merchandise."
+          );
+          setResult(response);
+          toast({
+            title: "Pricing Optimized",
+            description: "Pricing strategies have been generated successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error optimizing prices:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to optimize prices. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+      },
+    },
   ];
 
   return (
@@ -100,6 +212,13 @@ export function MerchandiseAgent() {
       actions={actions}
       theme={theme}
       helpText="Hey there! I'm your Creative Designer for merchandise. I specialize in creating unique products that connect with your fans and reflect your artistic identity. Together, we'll create merch your followers will love! 🎨"
-    />
+    >
+      {result && (
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Generated Result:</h3>
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        </div>
+      )}
+    </BaseAgent>
   );
 }

@@ -1,8 +1,10 @@
+// src/components/ai/marketing-agent.tsx
+
 import { Megaphone } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "@/lib/api/openrouter-service";
+import { openRouterService } from "@/lib/api/openrouteraiagents";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,12 +19,13 @@ export function MarketingAgent() {
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
+  const [result, setResult] = useState<string | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-green-500 to-emerald-700",
     iconColor: "text-white",
     accentColor: "#10B981",
-    personality: "💼 Digital Strategist"
+    personality: "💼 Digital Strategist",
   };
 
   const simulateThinking = async () => {
@@ -35,19 +38,14 @@ export function MarketingAgent() {
       "Evaluating market trends...",
       "Developing strategy...",
       "Optimizing campaign parameters...",
-      "Finalizing recommendations..."
+      "Finalizing recommendations...",
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
-      setSteps(prev => [...prev, {
-        message: simulatedSteps[i],
-        timestamp: new Date()
-      }]);
+      setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
-      await new Promise(resolve => setTimeout(resolve, 1300));
+      await new Promise((resolve) => setTimeout(resolve, 1300));
     }
-
-    setIsThinking(false);
   };
 
   const actions: AgentAction[] = [
@@ -66,14 +64,14 @@ export function MarketingAgent() {
             { value: "gen-x", label: "Generation X (41-55)" },
             { value: "broad", label: "General Audience" },
           ],
-          defaultValue: "millennials"
+          defaultValue: "millennials",
         },
         {
           name: "budget",
           type: "number",
           label: "Budget ($)",
           description: "Monthly budget for the marketing campaign",
-          defaultValue: "1000"
+          defaultValue: "1000",
         },
         {
           name: "platform",
@@ -87,15 +85,15 @@ export function MarketingAgent() {
             { value: "spotify", label: "Spotify" },
             { value: "all", label: "All platforms" },
           ],
-          defaultValue: "instagram"
-        }
+          defaultValue: "instagram",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the Marketing AI.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
@@ -117,11 +115,12 @@ export function MarketingAgent() {
 
           const response = await openRouterService.chatWithAgent(
             prompt,
-            'marketing',
+            "marketing",
             user.uid,
             "You are an experienced digital marketing strategist specializing in music industry promotion and audience growth."
           );
 
+          setResult(response);
           toast({
             title: "Marketing Plan Generated",
             description: "Your marketing strategy has been created successfully.",
@@ -129,14 +128,20 @@ export function MarketingAgent() {
 
           return response;
         } catch (error) {
-          console.error("Error generating marketing plan:", error);
+          console.error("Detailed error generating marketing plan:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to generate marketing plan. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to generate marketing plan. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
+      },
     },
     {
       name: "Schedule content",
@@ -153,7 +158,7 @@ export function MarketingAgent() {
             { value: "reels", label: "Reels/Short Videos" },
             { value: "mixed", label: "Mixed Content" },
           ],
-          defaultValue: "mixed"
+          defaultValue: "mixed",
         },
         {
           name: "frequency",
@@ -166,39 +171,52 @@ export function MarketingAgent() {
             { value: "weekly", label: "Weekly" },
             { value: "custom", label: "Custom" },
           ],
-          defaultValue: "3times"
-        }
+          defaultValue: "3times",
+        },
       ],
       action: async (params) => {
-        try {
-          const response = await fetch('/api/generate-strategy', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(params),
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to generate content schedule');
-          }
-
-          const data = await response.json();
+        if (!user) {
           toast({
-            title: "Content Schedule Created",
-            description: "Your content calendar has been updated.",
-          });
-
-          return data;
-        } catch (error) {
-          console.error("Error scheduling content:", error);
-          toast({
-            title: "Error",
-            description: "Failed to create content schedule. Please try again.",
+            title: "Authentication Required",
+            description: "Please log in to use the Marketing AI.",
             variant: "destructive",
           });
+          return;
         }
-      }
+        try {
+          await simulateThinking();
+          const prompt = `Plan and schedule social media content with the following parameters:
+          Content Type: ${params.contentType}
+          Frequency: ${params.frequency}
+
+          Provide a detailed content schedule.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "marketing",
+            user.uid,
+            "You are a digital marketing expert specializing in content scheduling."
+          );
+          setResult(response);
+          toast({
+            title: "Content Scheduled",
+            description: "Your content calendar has been updated successfully.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error scheduling content:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to schedule content. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        } finally {
+          setIsThinking(false);
+        }
+      },
     },
     {
       name: "Analyze results",
@@ -215,7 +233,7 @@ export function MarketingAgent() {
             { value: "conversion", label: "Conversion" },
             { value: "all", label: "All metrics" },
           ],
-          defaultValue: "all"
+          defaultValue: "all",
         },
         {
           name: "timeframe",
@@ -228,28 +246,53 @@ export function MarketingAgent() {
             { value: "90days", label: "Last 90 days" },
             { value: "custom", label: "Custom" },
           ],
-          defaultValue: "30days"
-        }
+          defaultValue: "30days",
+        },
       ],
       action: async (params) => {
-        try {
-          // Here we would integrate with actual analytics APIs
-          // For now, we'll simulate the analysis
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!user) {
           toast({
-            title: "Analysis Complete",
-            description: "Your performance report is ready to view.",
-          });
-        } catch (error) {
-          console.error("Error analyzing results:", error);
-          toast({
-            title: "Error",
-            description: "Failed to generate analysis. Please try again.",
+            title: "Authentication Required",
+            description: "Please log in to use the Marketing AI.",
             variant: "destructive",
           });
+          return;
         }
-      }
-    }
+        try {
+          await simulateThinking();
+          const prompt = `Analyze marketing results with the following parameters:
+          Key Metrics: ${params.metrics}
+          Timeframe: ${params.timeframe}
+
+          Provide a detailed performance report.`;
+          const response = await openRouterService.chatWithAgent(
+            prompt,
+            "marketing",
+            user.uid,
+            "You are a marketing analyst specializing in performance metrics."
+          );
+          setResult(response);
+          toast({
+            title: "Analysis Complete",
+            description: "Your performance report is ready.",
+          });
+          return response;
+        } catch (error) {
+          console.error("Detailed error analyzing results:", {
+            message: error.message,
+            stack: error.stack,
+          });
+          toast({
+            title: "Error",
+            description: error.message || "Failed to analyze results. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        } finally {
+          setIsThinking(false);
+        }
+      },
+    },
   ];
 
   return (
@@ -268,6 +311,12 @@ export function MarketingAgent() {
           isThinking={isThinking}
           isComplete={progress === 100}
         />
+      )}
+      {result && (
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Generated Result:</h3>
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        </div>
       )}
     </BaseAgent>
   );

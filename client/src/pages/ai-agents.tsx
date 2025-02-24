@@ -1,3 +1,5 @@
+// src/pages/ai-agents.tsx
+
 import { Header } from "@/components/layout/header";
 import { motion } from "framer-motion";
 import { Brain } from "lucide-react";
@@ -10,12 +12,7 @@ import { ManagerAgent } from "@/components/ai/manager-agent";
 
 const container = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2
-    }
-  }
+  show: { opacity: 1, transition: { staggerChildren: 0.2 } }
 };
 
 const item = {
@@ -44,7 +41,7 @@ export default function AIAgentsPage() {
               </h1>
             </div>
             <p className="text-xl text-muted-foreground mt-2 max-w-2xl mx-auto">
-              Power up your music with our team of specialized agents powered by artificial intelligence
+              Power up your music with our team of specialized AI agents
             </p>
           </motion.div>
 
@@ -54,24 +51,12 @@ export default function AIAgentsPage() {
             animate="show"
             className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto"
           >
-            <motion.div variants={item}>
-              <ComposerAgent />
-            </motion.div>
-            <motion.div variants={item}>
-              <VideoDirectorAgent />
-            </motion.div>
-            <motion.div variants={item}>
-              <MarketingAgent />
-            </motion.div>
-            <motion.div variants={item}>
-              <SocialMediaAgent />
-            </motion.div>
-            <motion.div variants={item}>
-              <MerchandiseAgent />
-            </motion.div>
-            <motion.div variants={item}>
-              <ManagerAgent />
-            </motion.div>
+            <motion.div variants={item}><ComposerAgent /></motion.div>
+            <motion.div variants={item}><VideoDirectorAgent /></motion.div>
+            <motion.div variants={item}><MarketingAgent /></motion.div>
+            <motion.div variants={item}><SocialMediaAgent /></motion.div>
+            <motion.div variants={item}><MerchandiseAgent /></motion.div>
+            <motion.div variants={item}><ManagerAgent /></motion.div>
           </motion.div>
         </div>
       </main>

@@ -1,3 +1,5 @@
+// src/components/ai/composer-agent.tsx
+
 import { Music2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { falService } from "@/lib/api/fal-service";
@@ -5,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
+import { openRouterService } from "@/lib/api/openrouteraiagents";
 
 interface Step {
   message: string;
@@ -18,12 +21,13 @@ export function ComposerAgent() {
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
+  const [result, setResult] = useState<string | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-purple-600 to-blue-600",
     iconColor: "text-white",
     accentColor: "#7C3AED",
-    personality: "🎵 Creative Maestro"
+    personality: "🎵 Creative Maestro",
   };
 
   const simulateThinking = async (customSteps?: string[]) => {
@@ -36,19 +40,14 @@ export function ComposerAgent() {
       "Generating composition structure...",
       "Applying musical theory...",
       "Finalizing arrangement...",
-      "Preparing response..."
+      "Preparing response...",
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
-      setSteps(prev => [...prev, {
-        message: simulatedSteps[i],
-        timestamp: new Date()
-      }]);
+      setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-
-    setIsThinking(false);
   };
 
   const createPrompt = (params: any) => {
@@ -80,14 +79,14 @@ Let the music flow and create our dream.
             { value: "classical", label: "Classical" },
             { value: "jazz", label: "Jazz" },
           ],
-          defaultValue: "pop"
+          defaultValue: "pop",
         },
         {
           name: "tempo",
           type: "number",
           label: "Tempo (BPM)",
           description: "Speed of the composition in beats per minute",
-          defaultValue: "120"
+          defaultValue: "120",
         },
         {
           name: "mood",
@@ -101,14 +100,14 @@ Let the music flow and create our dream.
             { value: "calm", label: "Calm" },
             { value: "dark", label: "Dark" },
           ],
-          defaultValue: "energetic"
+          defaultValue: "energetic",
         },
         {
           name: "theme",
           type: "text",
           label: "Theme/Topic",
           description: "Main theme or topic for the lyrics",
-          defaultValue: "love"
+          defaultValue: "love",
         },
         {
           name: "language",
@@ -119,7 +118,7 @@ Let the music flow and create our dream.
             { value: "english", label: "English" },
             { value: "spanish", label: "Spanish" },
           ],
-          defaultValue: "english"
+          defaultValue: "english",
         },
         {
           name: "structure",
@@ -131,15 +130,15 @@ Let the music flow and create our dream.
             { value: "aaba", label: "AABA" },
             { value: "through-composed", label: "Through-composed" },
           ],
-          defaultValue: "verse-chorus"
-        }
+          defaultValue: "verse-chorus",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the AI Composer.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
@@ -147,22 +146,19 @@ Let the music flow and create our dream.
         try {
           setGeneratedMusicUrl(null);
 
-          // Verificar parámetros
-          console.log('Parámetros recibidos:', params);
-
           if (!params.genre || !params.tempo || !params.mood || !params.theme || !params.language || !params.structure) {
-            throw new Error('Missing required parameters');
+            throw new Error("Missing required parameters");
           }
 
           await simulateThinking([
             "Creating musical concept...",
             "Generating melody and harmony...",
             "Applying AI composition...",
-            "Processing final audio..."
+            "Processing final audio...",
           ]);
 
           const prompt = createPrompt(params);
-          console.log('Prompt generado:', prompt);
+          console.log("Generating music with prompt:", prompt);
 
           const response = await falService.generateMusic(
             {
@@ -171,13 +167,13 @@ Let the music flow and create our dream.
               mood: params.mood,
               theme: params.theme,
               language: params.language,
-              structure: params.structure
+              structure: params.structure,
             },
             user.uid,
             prompt
           );
 
-          console.log('Respuesta de FAL.AI:', response);
+          console.log("FAL.AI response:", response);
 
           if (response?.musicUrl) {
             setGeneratedMusicUrl(response.musicUrl);
@@ -186,22 +182,23 @@ Let the music flow and create our dream.
               description: "Your musical composition has been created successfully.",
             });
           } else {
-            throw new Error('No music URL received in response');
+            throw new Error("No music URL received in response");
           }
-
         } catch (error) {
-          console.error("Error generating music:", error);
+          console.error("Detailed error generating music:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to generate music. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to generate music. Please try again.",
+            variant: "destructive",
           });
-
+          throw error;
+        } finally {
           setIsThinking(false);
-          setProgress(0);
-          setSteps([]);
         }
-      }
+      },
     },
     {
       name: "Analyze musical structure",
@@ -212,36 +209,48 @@ Let the music flow and create our dream.
           type: "text",
           label: "Audio URL",
           description: "URL of the audio file to analyze",
-        }
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the AI Composer.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
         try {
           await simulateThinking();
+          const prompt = `Analyze the musical structure of the audio file at ${params.audioFile}.
+          Provide a detailed breakdown of its elements and structure.`;
           const response = await openRouterService.chatWithAgent(
-            `Analyze the musical structure of the audio file at ${params.audioFile}`,
-            'composer',
+            prompt,
+            "composer",
             user.uid,
             "You are an expert music composer with deep knowledge of musical theory and composition techniques."
           );
-          toast({ title: "Analysis Complete", description: "Musical structure analysis is complete." });
+          setResult(response);
+          toast({
+            title: "Analysis Complete",
+            description: "Musical structure analysis is complete.",
+          });
           return response;
         } catch (error) {
-          console.error("Error analyzing audio:", error);
+          console.error("Detailed error analyzing audio:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to analyze audio. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to analyze audio. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
+      },
     },
     {
       name: "Suggest arrangements",
@@ -258,38 +267,50 @@ Let the music flow and create our dream.
             { value: "electronic", label: "Electronic" },
             { value: "acoustic", label: "Acoustic" },
           ],
-          defaultValue: "minimal"
-        }
+          defaultValue: "minimal",
+        },
       ],
       action: async (params) => {
         if (!user) {
           toast({
             title: "Authentication Required",
             description: "Please log in to use the AI Composer.",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
         try {
           await simulateThinking();
+          const prompt = `Suggest arrangements for a composition in the style of ${params.style}.
+          Provide detailed arrangement suggestions and variations.`;
           const response = await openRouterService.chatWithAgent(
-            `Suggest arrangements for a composition in the style of ${params.style}`,
-            'composer',
+            prompt,
+            "composer",
             user.uid,
             "You are an expert music composer with deep knowledge of musical theory and composition techniques."
           );
-          toast({ title: "Suggestions Generated", description: "Arrangement suggestions have been generated." });
+          setResult(response);
+          toast({
+            title: "Suggestions Generated",
+            description: "Arrangement suggestions have been generated.",
+          });
           return response;
         } catch (error) {
-          console.error("Error generating suggestions:", error);
+          console.error("Detailed error generating suggestions:", {
+            message: error.message,
+            stack: error.stack,
+          });
           toast({
             title: "Error",
-            description: "Failed to generate suggestions. Please try again.",
-            variant: "destructive"
+            description: error.message || "Failed to generate suggestions. Please try again.",
+            variant: "destructive",
           });
+          throw error;
+        } finally {
+          setIsThinking(false);
         }
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -315,13 +336,19 @@ Let the music flow and create our dream.
           <audio controls src={generatedMusicUrl} className="w-full mb-2">
             Your browser does not support the audio element.
           </audio>
-          <a 
+          <a
             href={generatedMusicUrl}
             download="generated_music.mp3"
             className="inline-block px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
           >
             Download Music
           </a>
+        </div>
+      )}
+      {result && (
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Generated Result:</h3>
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
         </div>
       )}
     </BaseAgent>
