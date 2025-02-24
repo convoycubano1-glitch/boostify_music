@@ -1,5 +1,5 @@
 import { db } from "@/lib/firebase";
-import { collection, addDoc, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import axios from 'axios';
 
 // Obtener la API key de las variables de entorno
@@ -17,22 +17,18 @@ interface ManagerToolData {
 export const managerToolsService = {
   // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
-    if (!API_KEY) {
-      console.error('No OpenRouter API key found in environment variables');
-      throw new Error('No auth credentials found');
-    }
-
     try {
       console.log('Generating content with prompt:', prompt);
 
-      const headers = {
-        'Authorization': `Bearer${API_KEY.trim()}`,
-        'Content-Type': 'application/json'
-      };
+      const axiosInstance = axios.create({
+        baseURL: 'https://api.openrouter.ai/api/v1',
+        headers: {
+          'Authorization': `Bearer ${API_KEY.trim()}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      console.log('Request headers:', headers);
-
-      const response = await axios.post(API_URL, {
+      const response = await axiosInstance.post('/chat/completions', {
         model: "openai/gpt-4",
         messages: [
           {
@@ -44,31 +40,14 @@ export const managerToolsService = {
             content: prompt
           }
         ]
-      }, { 
-        headers,
-        timeout: 30000 // 30 segundos de timeout
       });
 
       console.log('OpenRouter response:', response.data);
-
-      if (!response.data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format:', response.data);
-        throw new Error('Invalid response format from OpenRouter API');
-      }
-
       return response.data.choices[0].message.content;
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('OpenRouter API Error:', error);
       if (axios.isAxiosError(error)) {
-        if (error.response) {
-          // La petición se hizo y el servidor respondió con un código de estado
-          console.error('Response error data:', error.response.data);
-          throw new Error(error.response.data?.error?.message || 'API request failed');
-        } else if (error.request) {
-          // La petición se hizo pero no se recibió respuesta
-          console.error('No response received:', error.request);
-          throw new Error('No response received from API');
-        }
+        console.error('Error response:', error.response?.data);
       }
       throw error;
     }
@@ -115,7 +94,6 @@ export const managerToolsService = {
         console.log('Generating technical rider for requirements:', requirements);
         const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
         const content = await managerToolsService.generateWithAI(prompt, 'technical');
-        console.log('Generated content:', content);
 
         return managerToolsService.saveToFirestore({
           type: 'technical',
