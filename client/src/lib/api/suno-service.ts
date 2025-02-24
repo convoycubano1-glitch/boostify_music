@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
 // Definición de tipos para las respuestas de Suno
@@ -60,8 +60,8 @@ export const sunoService = {
           model: 'chirp-v3-5',
           input: {
             genre: params.genre,
-            tempo: params.tempo,
-            mood: params.mood,
+            tempo: parseInt(params.tempo.toString()),
+            mood: params.mood
           }
         })
       });
