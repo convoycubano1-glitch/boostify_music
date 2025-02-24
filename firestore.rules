@@ -32,6 +32,14 @@ service cloud.firestore {
         );
     }
 
+    // Video Director AI collection rules
+    match /Video_Director_AI/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // Course rules
     match /courses/{courseId} {
       allow read: if isAuthenticated();
