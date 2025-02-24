@@ -3,13 +3,18 @@ import { collection, addDoc, query, where, getDocs, serverTimestamp } from "fire
 import OpenAI from 'openai';
 import { env } from "@/env";
 
-if (!env.OPENAI_API_KEY) {
-  console.error('OpenAI API key is not configured');
+if (!env.VITE_OPENROUTER_API_KEY) {
+  console.error('OpenRouter API key is not configured');
 }
 
 const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY || '',
-  dangerouslyAllowBrowser: true
+  apiKey: env.VITE_OPENROUTER_API_KEY || '',
+  baseURL: 'https://openrouter.ai/api/v1',
+  dangerouslyAllowBrowser: true,
+  defaultHeaders: {
+    'HTTP-Referer': window.location.origin,
+    'X-Title': 'Boostify Music Manager',
+  }
 });
 
 interface ManagerToolData {
@@ -22,16 +27,16 @@ interface ManagerToolData {
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
-    if (!env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not configured');
-      throw new Error('OpenAI API key is not configured');
+    if (!env.VITE_OPENROUTER_API_KEY) {
+      console.error('OpenRouter API key is not configured');
+      throw new Error('OpenRouter API key is not configured');
     }
 
     try {
       console.log('Making request with prompt:', prompt);
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "anthropic/claude-3-sonnet",
         messages: [
           {
             role: 'system',
@@ -46,7 +51,7 @@ export const managerToolsService = {
         max_tokens: 2000
       });
 
-      console.log('OpenAI response:', completion);
+      console.log('OpenRouter response:', completion);
 
       if (!completion.choices?.[0]?.message?.content) {
         console.error('Invalid response format:', completion);
@@ -58,7 +63,7 @@ export const managerToolsService = {
     } catch (error: any) {
       console.error('Error in generateWithAI:', error);
       if (error.status === 401) {
-        throw new Error('Authentication failed. Please check your OpenAI API key configuration.');
+        throw new Error('Authentication failed. Please check your OpenRouter API key configuration.');
       } else if (error.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
       }
