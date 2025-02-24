@@ -2,9 +2,8 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { env } from "@/env";
 
-// Obtener la API key de las variables de entorno
-const API_KEY = env.VITE_OPENROUTER_API_KEY;
-const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
+const BASE_URL = 'https://openrouter.ai/api/v1';
 
 interface ManagerToolData {
   type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
@@ -15,32 +14,30 @@ interface ManagerToolData {
 }
 
 export const managerToolsService = {
-  // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
+    if (!OPENROUTER_API_KEY) {
+      throw new Error('OpenRouter API key is not configured');
+    }
+
     try {
-      if (!API_KEY) {
-        throw new Error('OpenRouter API key is not configured');
-      }
+      console.log("Making request to OpenRouter with prompt:", prompt);
 
-      console.log("Starting content generation with OpenRouter...");
-
-      const response = await fetch(BASE_URL, {
-        method: "POST",
+      const response = await fetch(`${BASE_URL}/chat/completions`, {
+        method: 'POST',
         headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Music Manager Tools",
-          "Content-Type": "application/json"
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin
         },
         body: JSON.stringify({
-          model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+          model: 'openai/gpt-4-turbo-preview',
           messages: [
             {
-              role: "system",
+              role: 'system',
               content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
             },
             {
-              role: "user",
+              role: 'user',
               content: prompt
             }
           ],
@@ -49,30 +46,20 @@ export const managerToolsService = {
         })
       });
 
-      console.log("OpenRouter API response status:", response.status);
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("OpenRouter API error:", errorData);
-        throw new Error(`Error generating content: ${response.statusText}. Status: ${response.status}`);
+        throw new Error(`OpenRouter API error: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log("OpenRouter raw response:", data);
-
-      if (!data.choices?.[0]?.message?.content) {
-        console.error("Invalid API response structure:", data);
-        throw new Error("Invalid API response format");
-      }
+      console.log("OpenRouter response:", data);
 
       return data.choices[0].message.content;
     } catch (error) {
-      console.error("Content generation error:", error);
+      console.error('Error in generateWithAI:', error);
       throw error;
     }
   },
 
-  // Función para guardar datos en Firestore
   async saveToFirestore(data: ManagerToolData) {
     try {
       const docRef = await addDoc(collection(db, 'manager_tools'), {
@@ -87,7 +74,6 @@ export const managerToolsService = {
     }
   },
 
-  // Función para obtener datos de Firestore
   async getFromFirestore(userId: string, type: string) {
     try {
       const q = query(
@@ -110,7 +96,6 @@ export const managerToolsService = {
     async generateTechnicalRider(requirements: string, userId: string) {
       try {
         console.log('Generating technical rider for requirements:', requirements);
-
         const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
 
         const content = await managerToolsService.generateWithAI(prompt, 'technical');
@@ -209,3 +194,5 @@ export const managerToolsService = {
     }
   }
 };
+
+export default managerToolsService;
