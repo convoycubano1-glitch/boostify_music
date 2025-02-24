@@ -1,5 +1,7 @@
 import { fal } from "@fal-ai/client";
 import { z } from "zod";
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
 // Schema validation for FAL.AI responses
@@ -84,6 +86,26 @@ export const falService = {
           fileSize: result.data.audio.file_size
         }
       };
+
+      // Guardar en la colección AI_Music_Composer
+      try {
+        const musicComposerRef = collection(db, 'AI_Music_Composer');
+        await addDoc(musicComposerRef, {
+          ...response,
+          originalParameters: params,
+          timestamp: serverTimestamp(),
+          lyrics: prompt.split('##')[1], // Extraer las letras del prompt
+          format: {
+            version: '1.0',
+            sections: ['Lyrics', 'Music'],
+            audioFormat: result.data.audio.content_type
+          }
+        });
+        console.log('Composición guardada en AI_Music_Composer collection');
+      } catch (error) {
+        console.error('Error guardando en Firestore:', error);
+        // No propagamos el error para que no afecte la funcionalidad principal
+      }
 
       return response;
     } catch (error) {
