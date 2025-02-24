@@ -47,7 +47,7 @@ interface Song {
   name: string;
   duration?: string;
   audioUrl: string;
-  userId: string; // Cambiado de uid a userId
+  userId: string;
   createdAt?: any;
   storageRef?: string;
 }
@@ -57,7 +57,7 @@ interface Video {
   title: string;
   thumbnailUrl?: string;
   url: string;
-  userId: string; // Cambiado de uid a userId
+  userId: string;
   createdAt?: any;
 }
 
@@ -100,7 +100,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         return filteredSongs;
       } catch (error) {
         console.error("Error fetching songs:", error);
-        throw error;
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las canciones",
+          variant: "destructive",
+        });
+        return [];
       }
     },
   });
@@ -137,7 +142,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         return filteredVideos;
       } catch (error) {
         console.error("Error fetching videos:", error);
-        throw error;
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los videos",
+          variant: "destructive",
+        });
+        return [];
       }
     },
   });
@@ -187,9 +197,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   };
 
   const MusicSection = () => (
-    <Card className="p-6">
+    <Card className="p-6 bg-black/30 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
       <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold mb-6 flex items-center">
+        <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
           <Music2 className="w-6 h-6 mr-2 text-orange-500" />
           Latest Tracks
         </h3>
@@ -208,16 +218,22 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             songs.map((song, index) => (
               <div
                 key={song.id}
-                className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                  currentTrack === index ? "bg-orange-500/10" : "hover:bg-muted/50"
+                className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 ${
+                  currentTrack === index 
+                    ? "bg-orange-500/20 scale-102" 
+                    : "hover:bg-orange-500/10 hover:scale-101"
                 }`}
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => togglePlay(song, index)}
-                    className="mr-2"
+                    className={`rounded-full transition-transform duration-300 ${
+                      currentTrack === index && isPlaying
+                        ? "bg-orange-500 text-white hover:bg-orange-600 scale-110"
+                        : "hover:bg-orange-500/10"
+                    }`}
                   >
                     {currentTrack === index && isPlaying ? (
                       <Pause className="h-5 w-5" />
@@ -225,7 +241,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       <Play className="h-5 w-5" />
                     )}
                   </Button>
-                  <span className="font-medium">{song.name}</span>
+                  <div>
+                    <span className="font-medium">{song.name}</span>
+                    <span className="text-sm text-muted-foreground block">
+                      {new Date(song.createdAt?.seconds * 1000).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {song.duration || "3:45"}
@@ -254,7 +275,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         videos.map((video) => (
           <motion.div
             key={video.id}
-            className="aspect-video relative group rounded-lg overflow-hidden"
+            className="aspect-video relative group rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105"
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.2 }}
           >
@@ -265,10 +286,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h4 className="text-white font-medium truncate">{video.title}</h4>
+                <h4 className="text-white font-medium truncate mb-2">{video.title}</h4>
+                <p className="text-sm text-white/70 mb-3">
+                  {new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}
+                </p>
                 <Button
                   onClick={() => window.open(video.url, "_blank")}
-                  className="mt-2 w-full bg-orange-500 hover:bg-orange-600"
+                  className="w-full bg-orange-500 hover:bg-orange-600 transform transition-all duration-300 hover:scale-105"
                 >
                   Watch Now
                 </Button>
@@ -285,7 +309,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="container mx-auto px-4 py-8"
+      className="w-full max-w-7xl mx-auto"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
@@ -295,34 +319,34 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <div className="space-y-8">
           <Card className="p-6">
             <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center">
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 <Share2 className="w-6 h-6 mr-2 text-orange-500" />
                 Connect & Follow
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <Button
-                  className="w-full bg-[#E1306C] hover:bg-[#C13584]"
+                  className="w-full bg-[#E1306C] hover:bg-[#C13584] transition-all duration-300 hover:scale-105"
                   onClick={() => window.open(mockArtist.socialMedia.instagram, "_blank")}
                 >
                   <Instagram className="mr-2 h-5 w-5" />
                   Instagram
                 </Button>
                 <Button
-                  className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA]"
+                  className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA] transition-all duration-300 hover:scale-105"
                   onClick={() => window.open(mockArtist.socialMedia.twitter, "_blank")}
                 >
                   <Twitter className="mr-2 h-5 w-5" />
                   Twitter
                 </Button>
                 <Button
-                  className="w-full bg-[#FF0000] hover:bg-[#CC0000]"
+                  className="w-full bg-[#FF0000] hover:bg-[#CC0000] transition-all duration-300 hover:scale-105"
                   onClick={() => window.open(mockArtist.socialMedia.youtube, "_blank")}
                 >
                   <Youtube className="mr-2 h-5 w-5" />
                   YouTube
                 </Button>
                 <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
+                  className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 transition-all duration-300 hover:scale-105"
                   onClick={() => setShowMessageDialog(true)}
                 >
                   <Share2 className="mr-2 h-5 w-5" />
@@ -334,7 +358,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
           <Card className="p-6">
             <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center">
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 <User className="w-6 h-6 mr-2 text-orange-500" />
                 Contact
               </h3>
@@ -385,7 +409,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
               Cancel
             </Button>
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button className="bg-orange-500 hover:bg-orange-600 transition-all duration-300 hover:scale-105">
               Send Message
             </Button>
           </div>
