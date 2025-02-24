@@ -42,6 +42,7 @@ import { ArtistProgressTracker } from "@/components/progress/artist-progress-tra
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -61,13 +62,64 @@ interface Video {
   url: string;
 }
 
-
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const [showTechnicalRider, setShowTechnicalRider] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const { toast } = useToast();
+
+  // Query para obtener canciones
+  const { data: songs = [], isLoading: isLoadingSongs, isError: isSongsError } = useQuery({
+    queryKey: ["songs", artistId],
+    queryFn: async () => {
+      try {
+        const songsRef = collection(db, "songs");
+        const q = query(songsRef, where("artistId", "==", artistId));
+        const querySnapshot = await getDocs(q);
+        const songData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Song[];
+        console.log("Songs fetched:", songData); // Debug log
+        return songData;
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las canciones",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+  });
+
+  // Query para obtener videos
+  const { data: videos = [], isLoading: isLoadingVideos, isError: isVideosError } = useQuery({
+    queryKey: ["videos", artistId],
+    queryFn: async () => {
+      try {
+        const videosRef = collection(db, "videos");
+        const q = query(videosRef, where("artistId", "==", artistId));
+        const querySnapshot = await getDocs(q);
+        const videoData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Video[];
+        console.log("Videos fetched:", videoData); // Debug log
+        return videoData;
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los videos",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+  });
 
   const togglePlay = (song: Song, index: number) => {
     if (currentAudio) {
@@ -78,38 +130,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
     if (song.audioUrl) {
       const audio = new Audio(song.audioUrl);
-      audio.play();
+      audio.play().catch((error) => {
+        console.error("Error playing audio:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo reproducir el audio",
+          variant: "destructive",
+        });
+      });
       setCurrentAudio(audio);
       setCurrentTrack(index);
       setIsPlaying(true);
     }
   };
-
-  const { data: songs = [], isLoading: isLoadingSongs } = useQuery({
-    queryKey: ["songs", artistId],
-    queryFn: async () => {
-      const songsRef = collection(db, "songs");
-      const q = query(songsRef, where("artistId", "==", artistId));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Song[];
-    },
-  });
-
-  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
-    queryKey: ["videos", artistId],
-    queryFn: async () => {
-      const videosRef = collection(db, "videos");
-      const q = query(videosRef, where("artistId", "==", artistId));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Video[];
-    },
-  });
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -143,6 +176,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           {isLoadingSongs ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+            </div>
+          ) : isSongsError ? (
+            <div className="text-center text-red-500">
+              Error al cargar las canciones
             </div>
           ) : songs.length === 0 ? (
             <p className="text-center text-muted-foreground">No tracks available</p>
@@ -185,6 +222,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       {isLoadingVideos ? (
         <div className="col-span-full flex items-center justify-center p-4">
           <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        </div>
+      ) : isVideosError ? (
+        <div className="col-span-full text-center text-red-500">
+          Error al cargar los videos
         </div>
       ) : videos.length === 0 ? (
         <p className="col-span-full text-center text-muted-foreground">No videos available</p>
@@ -699,7 +740,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
 export const mockArtist = {
   name: "Redwine",
-  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
+  biography: "Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical deMiami.\n\nCon más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.",
   genre: "Blues Latin Fusion",
   location: "Miami, FL",
   email: "booking@redwinemusic.com",
