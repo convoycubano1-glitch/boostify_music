@@ -26,7 +26,11 @@ import {
   Loader2,
   ShoppingBag,
   Ticket,
-  MessageCircle
+  MessageCircle,
+  Shirt,
+  Paintbrush, // Corregido de PaintBrush a Paintbrush
+  Check,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -401,30 +405,52 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {/* New Release Section */}
           <Card className="p-8 mb-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
             <motion.div variants={itemVariants} className="flex items-center gap-8">
               <div className="relative group">
-                <img
-                  src={mockArtist.newRelease.coverArt}
-                  alt={mockArtist.newRelease.title}
-                  className="w-48 h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                  <div className="absolute bottom-4 left-4">
-                    <Play className="h-8 w-8 text-white" />
+                {songs && songs[0] ? (
+                  <>
+                    <div className="w-48 h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300 bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center overflow-hidden">
+                      <Music2 className="w-16 h-16 text-orange-500/50" />
+                      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-xl" />
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                      <div className="absolute bottom-4 left-4">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => togglePlay(songs[0], 0)}
+                          className="rounded-full bg-orange-500 text-white hover:bg-orange-600 hover:scale-110 transition-all duration-300"
+                        >
+                          {currentTrack === 0 && isPlaying ? (
+                            <Pause className="h-8 w-8" />
+                          ) : (
+                            <Play className="h-8 w-8" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-48 h-48 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
                   </div>
-                </div>
+                )}
               </div>
               <div>
                 <h3 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
-                  {mockArtist.newRelease.title}
+                  {songs && songs[0] ? songs[0].name : "Loading..."}
                 </h3>
                 <p className="text-lg text-muted-foreground mb-4">
-                  Coming {new Date(mockArtist.newRelease.releaseDate).toLocaleDateString()}
+                  Added {songs && songs[0] ? new Date(songs[0].createdAt?.seconds * 1000).toLocaleDateString() : "..."}
                 </p>
-                <Button className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={() => songs && songs[0] && togglePlay(songs[0], 0)}
+                >
                   <Music2 className="mr-2 h-5 w-5" />
-                  Pre-order Now
+                  Play Now
                 </Button>
               </div>
             </motion.div>
@@ -479,22 +505,86 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     whileHover={{ scale: 1.02 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-48 object-cover transition-transform group-hover:scale-105 duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                      <div className="absolute bottom-4 left-4">
-                        <h4 className="text-white font-medium">{item.name}</h4>
-                        <p className="text-sm text-white/70">{item.price}</p>
+                    <div className="aspect-square overflow-hidden relative">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                          <div className="space-y-2">
+                            <p className="text-white font-medium text-lg">{item.name}</p>
+                            <p className="text-orange-400 font-bold text-xl">{item.price}</p>
+                            <p className="text-white/80 text-sm line-clamp-2">{item.description}</p>
+                            {item.sizes && (
+                              <div className="flex gap-2 mt-2">
+                                {item.sizes.map((size) => (
+                                  <span key={size} className="px-2 py-1 text-xs bg-white/10 rounded-md text-white/90">
+                                    {size}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 pt-2">
+                              <Button
+                                className="flex-1 bg-orange-500 hover:bg-orange-600 transition-all duration-300"
+                                onClick={() => window.open(item.url, "_blank")}
+                              >
+                                {item.category === "Music" ? (
+                                  <Music2 className="mr-2 h-4 w-4" />
+                                ) : item.category === "Apparel" ? (
+                                  <Shirt className="mr-2 h-4 w-4" />
+                                ) : (
+                                  <Paintbrush className="mr-2 h-4 w-4" /> // Corrected here
+                                )}
+                                Buy Now
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="border-orange-500/50 hover:bg-orange-500/20"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+                    <div className="p-4 bg-black/40 backdrop-blur-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="flex items-center text-sm font-medium text-orange-500">
+                          {item.category === "Music" ? (
+                            <Music2 className="mr-1 h-4 w-4" />
+                          ) : item.category === "Apparel" ? (
+                            <Shirt className="mr-1 h-4 w-4" />
+                          ) : (
+                            <Paintbrush className="mr-1 h-4 w-4" /> // Corrected here
+                          )}
+                          {item.category}
+                        </span>
+                        {item.inStock ? (
+                          <span className="text-xs px-2 py-1 bg-green-500/10 text-green-500 rounded-full flex items-center">
+                            <Check className="mr-1 h-3 w-3" />
+                            In Stock
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 bg-red-500/10 text-red-500 rounded-full flex items-center">
+                            <X className="mr-1 h-3 w-3" />
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-semibold truncate">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{item.description}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
             </motion.div>
           </Card>
+
         </div>
 
         <div className="space-y-8">
@@ -622,8 +712,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <Globe className="w-5 h-5 text-orange-500 mr-3" />
                   <a
                     href={mockArtist.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target="_blank" rel="noopener noreferrer"
                     className="hover:text-orange-500"
                   >
                     {mockArtist.website}
@@ -652,7 +741,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
               Cancel
             </Button>
-            <Button className="bg-orange-500 hover:bg-orange-600 transition-all duration-300 hover:scale-105">
+            <Button className="bg-orange-500 hover:bg-orange-600 hover:bg-orange-600 transition-all duration-300 hover:scale-105">
               Send Message
             </Button>
           </div>
@@ -676,8 +765,7 @@ export const mockArtist = {
   },
   newRelease: {
     title: "New Release Title",
-    coverArt: "/path/to/cover/art.jpg",
-    releaseDate: new Date().toISOString(),
+    coverArt: "/path/to/cover/art.jpg",    releaseDate: new Date().toISOString(),
   },
   upcomingShows: [
     {
@@ -691,17 +779,35 @@ export const mockArtist = {
   merchandise: [
     {
       id: "1",
-      name: "T-Shirt",
-      imageUrl: "/path/to/tshirt.jpg",
-      price: "$25",
+      name: "Miami Blues Vinyl Edition",
+      price: "$29.99",
+      imageUrl: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
+      description: "Edición especial en vinilo con arte exclusivo y notas firmadas",
+      inStock: true,
+      category: "Music",
+      url: "#",
     },
     {
       id: "2",
-      name: "Hoodie",
-      imageUrl: "/path/to/hoodie.jpg",
-      price: "$40",
+      name: "Latin Blues Tour 2024",
+      price: "$24.99",
+      imageUrl: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
+      description: "Camiseta oficial del tour en algodón premium con diseño exclusivo",
+      inStock: true,
+      category: "Apparel",
+      sizes: ["S", "M", "L", "XL"],
+      url: "#",
     },
-
+    {
+      id: "3",
+      name: "Colección Arte Latino Blues",
+      price: "$19.99",
+      imageUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
+      description: "Set de 3 prints artísticos firmados inspirados en la fusión del Blues y la cultura latina",
+      inStock: true,
+      category: "Art",
+      url: "#",
+    },
   ],
   statistics: {
     monthlyListeners: 75,
