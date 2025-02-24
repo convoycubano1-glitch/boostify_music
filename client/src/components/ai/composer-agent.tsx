@@ -1,17 +1,24 @@
-import { Music2, Wand2 } from "lucide-react";
+import { Music2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { openRouterService } from "@/lib/api/openrouter-service";
+import { sunoService } from "@/lib/api/suno-service";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
+
+interface Step {
+  message: string;
+  timestamp: Date;
+}
 
 export function ComposerAgent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [steps, setSteps] = useState([]);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-purple-600 to-blue-600",
@@ -20,12 +27,12 @@ export function ComposerAgent() {
     personality: "🎵 Creative Maestro"
   };
 
-  const simulateThinking = async () => {
+  const simulateThinking = async (customSteps?: string[]) => {
     setIsThinking(true);
     setProgress(0);
     setSteps([]);
 
-    const simulatedSteps = [
+    const simulatedSteps = customSteps || [
       "Analyzing musical parameters...",
       "Generating composition structure...",
       "Applying musical theory...",
@@ -38,7 +45,7 @@ export function ComposerAgent() {
         message: simulatedSteps[i],
         timestamp: new Date()
       }]);
-      setProgress((i + 1) * 20);
+      setProgress((i + 1) * (100 / simulatedSteps.length));
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
@@ -48,7 +55,7 @@ export function ComposerAgent() {
   const actions: AgentAction[] = [
     {
       name: "Generate musical composition",
-      description: "Create a new composition based on specific parameters",
+      description: "Create a new composition using Suno AI",
       parameters: [
         {
           name: "genre",
@@ -98,37 +105,36 @@ export function ComposerAgent() {
         }
 
         try {
-          await simulateThinking();
+          await simulateThinking([
+            "Initializing Suno AI...",
+            "Processing musical parameters...",
+            "Generating composition...",
+            "Applying audio effects...",
+            "Finalizing music generation..."
+          ]);
 
-          const prompt = `Create a detailed musical composition with the following parameters:
-          Genre: ${params.genre}
-          Tempo: ${params.tempo} BPM
-          Mood: ${params.mood}
-
-          Please provide:
-          1. Composition structure
-          2. Key musical elements
-          3. Arrangement suggestions
-          4. Production recommendations`;
-
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            'composer',
-            user.uid,
-            "You are an expert music composer with deep knowledge of musical theory and composition techniques."
+          const response = await sunoService.generateMusic(
+            {
+              genre: params.genre,
+              tempo: parseInt(params.tempo),
+              mood: params.mood
+            },
+            user.uid
           );
 
+          setGeneratedMusicUrl(response.musicUrl);
+
           toast({
-            title: "Composition Generated",
+            title: "Music Generated",
             description: "Your musical composition has been created successfully.",
           });
 
           return response;
         } catch (error) {
-          console.error("Error generating composition:", error);
+          console.error("Error generating music:", error);
           toast({
             title: "Error",
-            description: "Failed to generate composition. Please try again.",
+            description: "Failed to generate music. Please try again.",
             variant: "destructive"
           });
         }
@@ -239,6 +245,14 @@ export function ComposerAgent() {
           isThinking={isThinking}
           isComplete={progress === 100}
         />
+      )}
+      {generatedMusicUrl && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold mb-2">Generated Music</h3>
+          <audio controls src={generatedMusicUrl} className="w-full">
+            Your browser does not support the audio element.
+          </audio>
+        </div>
       )}
     </BaseAgent>
   );
