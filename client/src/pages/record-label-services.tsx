@@ -18,13 +18,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { recordLabelService } from "@/lib/services/record-label-service";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { RadioNetworksDialog } from "@/components/record-label/radio-networks-dialog";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
 
   const { data: services = [] } = useQuery({
     queryKey: ['record-label-services', user?.uid],
@@ -217,9 +217,11 @@ export default function RecordLabelServices() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{network}</span>
-                            <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
-                              Explore <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            <RadioNetworksDialog>
+                              <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                                Explore <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                            </RadioNetworksDialog>
                           </div>
                         </motion.div>
                       ))}
