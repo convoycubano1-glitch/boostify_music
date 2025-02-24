@@ -3,7 +3,7 @@ import { db } from '../firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
-// Definición de tipos para las respuestas de Suno
+// Definición de tipos para las respuestas de agentes
 export const SunoResponseSchema = z.object({
   id: z.string(),
   userId: z.string(),
@@ -50,20 +50,25 @@ export const sunoService = {
         apiKeyConfigured: !!SUNO_API_KEY
       });
 
+      const requestBody = {
+        model: 'chirp-v3-5',
+        input: {
+          genre: params.genre,
+          tempo: parseInt(params.tempo.toString()),
+          mood: params.mood
+        }
+      };
+
+      console.log('Request body:', requestBody);
+
       const response = await fetch(`${BASE_URL}/music/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${SUNO_API_KEY}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          model: 'chirp-v3-5',
-          input: {
-            genre: params.genre,
-            tempo: parseInt(params.tempo.toString()),
-            mood: params.mood
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
