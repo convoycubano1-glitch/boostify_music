@@ -24,8 +24,9 @@ export const managerToolsService = {
       console.log('Making request with prompt:', prompt);
 
       const openai = new OpenAI({
-        baseURL: 'https://openrouter.ai/api/v1',
         apiKey: OPENROUTER_API_KEY,
+        baseURL: 'https://openrouter.ai/api/v1',
+        dangerouslyAllowBrowser: true,
         defaultHeaders: {
           'HTTP-Referer': window.location.origin,
           'X-Title': 'Boostify Music Manager',
@@ -59,6 +60,12 @@ export const managerToolsService = {
 
     } catch (error) {
       console.error('Error in generateWithAI:', error);
+      // Improve error handling with more descriptive messages
+      if (error.response?.status === 401) {
+        throw new Error('Invalid API key. Please check your OpenRouter API key configuration.');
+      } else if (error.response?.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
       throw error;
     }
   },
