@@ -24,12 +24,17 @@ export const managerToolsService = {
       console.log('Making request with prompt:', prompt);
 
       const openai = new OpenAI({
-        apiKey: OPENROUTER_API_KEY,
+        apiKey: OPENROUTER_API_KEY || '',
         baseURL: 'https://openrouter.ai/api/v1',
         dangerouslyAllowBrowser: true,
+        defaultQuery: { 
+          "temperature": 0.7,
+          "max_tokens": 2000
+        },
         defaultHeaders: {
-          'HTTP-Referer': window.location.origin,
+          'HTTP-Referer': window.location.origin, 
           'X-Title': 'Boostify Music Manager',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`
         },
       });
 
@@ -44,9 +49,7 @@ export const managerToolsService = {
             role: 'user',
             content: prompt
           }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
+        ]
       });
 
       console.log('OpenRouter response:', completion);
@@ -58,15 +61,14 @@ export const managerToolsService = {
 
       return completion.choices[0].message.content;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in generateWithAI:', error);
-      // Improve error handling with more descriptive messages
-      if (error.response?.status === 401) {
-        throw new Error('Invalid API key. Please check your OpenRouter API key configuration.');
-      } else if (error.response?.status === 429) {
+      if (error.status === 401 || error.message.includes('No auth credentials found')) {
+        throw new Error('Authentication failed. Please check your OpenRouter API key configuration.');
+      } else if (error.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
       }
-      throw error;
+      throw new Error(error.message || 'Failed to generate content');
     }
   },
 
