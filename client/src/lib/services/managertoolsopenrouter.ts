@@ -6,6 +6,7 @@ import { env } from "@/env";
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY || '',
   baseURL: 'https://api.openai.com/v1',
+  dangerouslyAllowBrowser: true
 });
 
 interface ManagerToolData {
