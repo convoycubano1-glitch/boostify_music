@@ -1,9 +1,10 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import axios from 'axios';
 
 // Obtener la API key de las variables de entorno
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const API_URL = "https://api.openrouter.ai/api/v1/chat/completions";
 
 interface ManagerToolData {
   type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
@@ -22,7 +23,7 @@ export const managerToolsService = {
     }
 
     try {
-      console.log('Making request to OpenRouter with prompt:', prompt);
+      console.log('Generating content with prompt:', prompt);
 
       const headers = {
         'Authorization': `Bearer ${API_KEY}`,
@@ -34,38 +35,28 @@ export const managerToolsService = {
 
       console.log('Request headers:', headers);
 
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          model: "openai/gpt-4",
-          messages: [
-            {
-              role: "system",
-              content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ]
-        })
-      });
+      const response = await axios.post(API_URL, {
+        model: "openai/gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      }, { headers });
 
-      const data = await response.json();
-      console.log('OpenRouter response:', data);
+      console.log('OpenRouter response:', response.data);
 
-      if (!response.ok) {
-        console.error('OpenRouter API Error:', data);
-        throw new Error(data.error?.message || 'Failed to generate content with AI');
-      }
-
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format:', data);
+      if (!response.data.choices?.[0]?.message?.content) {
+        console.error('Invalid response format:', response.data);
         throw new Error('Invalid response format from OpenRouter API');
       }
 
-      return data.choices[0].message.content;
+      return response.data.choices[0].message.content;
     } catch (error) {
       console.error('Error generating content:', error);
       throw error;
