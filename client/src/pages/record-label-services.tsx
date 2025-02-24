@@ -19,6 +19,7 @@ import { recordLabelService } from "@/lib/services/record-label-service";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { RadioNetworksDialog } from "@/components/record-label/radio-networks-dialog";
+import { TVNetworksDialog } from "@/components/record-label/tv-networks-dialog";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
@@ -256,9 +257,11 @@ export default function RecordLabelServices() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{type}</span>
-                            <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
-                              View Details <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            <TVNetworksDialog>
+                              <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                                View Details <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                            </TVNetworksDialog>
                           </div>
                         </motion.div>
                       ))}
