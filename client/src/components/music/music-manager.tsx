@@ -29,7 +29,6 @@ export function MusicManager() {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Load songs on component mount
   useEffect(() => {
     loadSongs();
   }, [user]);
@@ -69,17 +68,18 @@ export function MusicManager() {
     const fileName = file.name;
     const fileFormat = file.type;
 
-    // Validate file type and size
-    if (!fileFormat.startsWith('audio/')) {
+    // Validate file type
+    if (!fileFormat.match(/^audio\/(mpeg|wav|x-wav)$/)) {
       toast({
         title: "Invalid File Type",
-        description: "Please upload an audio file (MP3, WAV, OGG, etc.)",
+        description: "Please upload an MP3 or WAV file",
         variant: "destructive",
       });
       return;
     }
 
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Validate file size (50MB max)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       toast({
         title: "File Too Large",
@@ -97,18 +97,12 @@ export function MusicManager() {
       const storageRef = ref(storage, `artist_music/${user.uid}/${fileName}`);
       const uploadTask = uploadBytes(storageRef, file);
 
-      uploadTask.on('state_changed',
+      // Monitor upload progress
+      uploadTask.on(
+        'state_changed',
         (snapshot: UploadTaskSnapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
-          switch (snapshot.state) {
-            case 'paused':
-              console.log('Upload is paused');
-              break;
-            case 'running':
-              console.log('Upload is running');
-              break;
-          }
         },
         (error) => {
           console.error('Error uploading file:', error);
@@ -118,29 +112,28 @@ export function MusicManager() {
             variant: "destructive",
           });
         },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then(async (downloadUrl) => {
-            // Save metadata to Firestore
-            const songData = {
-              title: fileName.replace(/\.[^/.]+$/, ""), // Remove file extension
-              artistId: user.uid,
-              fileName,
-              fileUrl: downloadUrl,
-              uploadedAt: new Date(),
-              format: fileFormat,
-            };
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
-            await addDoc(collection(db, 'artist_music'), songData);
-            await loadSongs();
+          // Save metadata to Firestore
+          const songData = {
+            title: fileName.replace(/\.[^/.]+$/, ""), // Remove file extension
+            artistId: user.uid,
+            fileName,
+            fileUrl: downloadUrl,
+            uploadedAt: new Date(),
+            format: fileFormat,
+          };
 
-            toast({
-              title: "Success",
-              description: "Your song has been uploaded successfully.",
-            });
+          await addDoc(collection(db, 'artist_music'), songData);
+          await loadSongs();
+
+          toast({
+            title: "Success",
+            description: "Your song has been uploaded successfully.",
           });
         }
       );
-
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
@@ -228,69 +221,66 @@ export function MusicManager() {
   }
 
   return (
-    <Card className="p-6 bg-black/20 backdrop-blur">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold">My Music</h2>
-          <div className="flex items-center gap-4">
-            <Input
-              type="file"
-              accept="audio/*"
-              onChange={handleFileUpload}
-              disabled={isUploading}
-              className="max-w-xs"
-            />
-            {isUploading && (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">
-                  Uploading... {Math.round(uploadProgress)}%
-                </span>
-              </div>
-            )}
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <Input
+            type="file"
+            accept="audio/mpeg,audio/wav"
+            onChange={handleFileUpload}
+            disabled={isUploading}
+            className="max-w-xs"
+          />
+          {isUploading && (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm text-muted-foreground">
+                Uploading... {Math.round(uploadProgress)}%
+              </span>
+            </div>
+          )}
         </div>
-
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-4">
-            {songs.map((song) => (
-              <Card
-                key={song.id}
-                className="p-4 bg-black/10 hover:bg-black/20 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => togglePlay(song)}
-                    >
-                      {currentlyPlaying === song.id ? (
-                        <Pause className="h-4 w-4" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <div>
-                      <p className="font-medium">{song.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(song.uploadedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDelete(song)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </ScrollArea>
       </div>
-    </Card>
+
+      <ScrollArea className="h-[400px]">
+        <div className="space-y-4">
+          {songs.map((song) => (
+            <Card
+              key={song.id}
+              className="p-4 bg-black/10 hover:bg-black/20 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => togglePlay(song)}
+                  >
+                    {currentlyPlaying === song.id ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <div>
+                    <p className="font-medium">{song.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(song.uploadedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleDelete(song)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
