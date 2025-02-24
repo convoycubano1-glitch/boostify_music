@@ -48,6 +48,7 @@ export function TechnicalRiderSection() {
         description: "Technical rider generated successfully"
       });
       setIsDialogOpen(false);
+      setRequirements("");
     },
     onError: (error: any) => {
       toast({
@@ -71,7 +72,6 @@ export function TechnicalRiderSection() {
     try {
       setIsGenerating(true);
       await generateRiderMutation.mutateAsync(requirements);
-      setRequirements("");
     } catch (error) {
       console.error("Error generating rider:", error);
     } finally {
@@ -110,6 +110,7 @@ export function TechnicalRiderSection() {
 
   return (
     <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+      {/* Generate Technical Rider Card */}
       <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
@@ -182,6 +183,7 @@ export function TechnicalRiderSection() {
         </Dialog>
       </Card>
 
+      {/* Generated Riders Card */}
       <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">

@@ -1,9 +1,8 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { env } from "@/env";
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-// the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
 const OPENROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
 
 interface ManagerToolData {
@@ -24,33 +23,39 @@ export const managerToolsService = {
     try {
       console.log('Making request with prompt:', prompt);
 
-      const anthropic = new Anthropic({
+      const openai = new OpenAI({
+        baseURL: 'https://openrouter.ai/api/v1',
         apiKey: OPENROUTER_API_KEY,
+        defaultHeaders: {
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Boostify Music Manager',
+        },
       });
 
-      const response = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 2000,
+      const completion = await openai.chat.completions.create({
+        model: "anthropic/claude-3-sonnet",
         messages: [
           {
-            role: "system",
+            role: 'system',
             content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
           },
           {
-            role: "user",
+            role: 'user',
             content: prompt
           }
         ],
+        temperature: 0.7,
+        max_tokens: 2000
       });
 
-      console.log('Anthropic response:', response);
+      console.log('OpenRouter response:', completion);
 
-      if (!response.content || !response.content[0].text) {
-        console.error('Invalid response format:', response);
+      if (!completion.choices?.[0]?.message?.content) {
+        console.error('Invalid response format:', completion);
         throw new Error('Invalid API response format');
       }
 
-      return response.content[0].text;
+      return completion.choices[0].message.content;
 
     } catch (error) {
       console.error('Error in generateWithAI:', error);
