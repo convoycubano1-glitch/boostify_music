@@ -1,6 +1,7 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 
+// Obtener la API key de las variables de entorno
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -16,6 +17,7 @@ export const managerToolsService = {
   // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
     if (!API_KEY) {
+      console.error('No OpenRouter API key found in environment variables');
       throw new Error('No auth credentials found');
     }
 
@@ -28,7 +30,7 @@ export const managerToolsService = {
           'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'HTTP-Referer': `${window.location.origin}`,
+          'HTTP-Referer': `${window.location.origin}/`,
         },
         body: JSON.stringify({
           model: "openai/gpt-4",
@@ -54,6 +56,7 @@ export const managerToolsService = {
       }
 
       if (!data.choices?.[0]?.message?.content) {
+        console.error('Invalid response format:', data);
         throw new Error('Invalid response format from OpenRouter API');
       }
 
