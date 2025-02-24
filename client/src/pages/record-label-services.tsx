@@ -24,6 +24,10 @@ import { useToast } from "@/hooks/use-toast";
 import { RadioNetworksDialog } from "@/components/record-label/radio-networks-dialog";
 import { TVNetworksDialog } from "@/components/record-label/tv-networks-dialog";
 import { MovieNetworksDialog } from "@/components/record-label/movie-networks-dialog";
+import { VenuesCatalog } from "@/components/manager/venues-catalog";
+import { VenuesBooking } from "@/components/manager/venues-booking";
+import { VenuesReports } from "@/components/manager/venues-reports";
+import { ArtistRoster } from "@/components/manager/artist-roster";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
@@ -639,47 +643,45 @@ export default function RecordLabelServices() {
         </div>
 
         {/* Manager Tools Section */}
-        <div className="container mx-auto px-4 py-12 md:py-16"><div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text texttransparent bg-gradient-to-r from-orange-500 to-purple-600">
+        <div className="container mx-auto px-4 py-12 md:py-16">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
               Manager Tools
             </h2>
             <p className="text-sm md:text-base text-muted-foreground">
               Essential tools for managing your artists and venues
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {/* Manager Tools Cards */}
-            {
-              [
-                { icon: MapPin, title: "Venues Catalog", text: "Find perfect venues for your events", buttonText: "Find Venues" },
-                { icon: Calendar, title: "Venues Booking", text: "Scheduleand manage bookings", buttonText: "Book Now" },
-                { icon: ChartBar, title: "Venues Reports", text: "Analytics and performance data", buttonText: "View Reports" },
-                { icon: Users, title: "Your Artists", text: "Manage your artist roster", buttonText: "View Artists" }
-              ].map((tool, index) => (
-                <motion.div
-                  key={tool.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-background to-orange-500/5">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                        <tool.icon className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg md:text-xl font-semibold">{tool.title}</h3>
-                        <p className="text-sm text-muted-foreground">{tool.text}</p>
-                      </div>
-                    </div>
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      {tool.buttonText}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Card>
-                </motion.div>
-              ))
-            }
+
+          <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <VenuesCatalog />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <VenuesBooking />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <VenuesReports />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <ArtistRoster />
+            </motion.div>
           </div>
         </div>
 
