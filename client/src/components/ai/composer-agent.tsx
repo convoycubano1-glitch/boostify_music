@@ -12,13 +12,34 @@ interface Step {
   timestamp: Date;
 }
 
+interface ActionState {
+  isThinking: boolean;
+  progress: number;
+  steps: Step[];
+}
+
 export function ComposerAgent() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isThinking, setIsThinking] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [steps, setSteps] = useState<Step[]>([]);
   const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
+  const [generatedLyrics, setGeneratedLyrics] = useState<string | null>(null);
+
+  // Estado independiente para cada acción
+  const [generateState, setGenerateState] = useState<ActionState>({
+    isThinking: false,
+    progress: 0,
+    steps: []
+  });
+  const [analyzeState, setAnalyzeState] = useState<ActionState>({
+    isThinking: false,
+    progress: 0,
+    steps: []
+  });
+  const [arrangementState, setArrangementState] = useState<ActionState>({
+    isThinking: false,
+    progress: 0,
+    steps: []
+  });
 
   const theme: AgentTheme = {
     gradient: "from-purple-600 to-blue-600",
@@ -27,12 +48,17 @@ export function ComposerAgent() {
     personality: "🎵 Creative Maestro"
   };
 
-  const simulateThinking = async (customSteps?: string[]) => {
-    setIsThinking(true);
-    setProgress(0);
-    setSteps([]);
+  const simulateThinking = async (
+    setActionState: (state: ActionState) => void,
+    customSteps?: string[]
+  ) => {
+    setActionState({
+      isThinking: true,
+      progress: 0,
+      steps: []
+    });
 
-    const simulatedSteps = customSteps || [
+    const steps = customSteps || [
       "Analyzing musical parameters...",
       "Generating composition structure...",
       "Applying musical theory...",
@@ -40,16 +66,22 @@ export function ComposerAgent() {
       "Preparing response..."
     ];
 
-    for (let i = 0; i < simulatedSteps.length; i++) {
-      setSteps(prev => [...prev, {
-        message: simulatedSteps[i],
-        timestamp: new Date()
-      }]);
-      setProgress((i + 1) * (100 / simulatedSteps.length));
+    for (let i = 0; i < steps.length; i++) {
+      setActionState(prev => ({
+        ...prev,
+        steps: [...prev.steps, {
+          message: steps[i],
+          timestamp: new Date()
+        }],
+        progress: ((i + 1) / steps.length) * 100
+      }));
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    setIsThinking(false);
+    setActionState(prev => ({
+      ...prev,
+      isThinking: false
+    }));
   };
 
   const actions: AgentAction[] = [
@@ -92,6 +124,36 @@ export function ComposerAgent() {
             { value: "dark", label: "Dark" },
           ],
           defaultValue: "energetic"
+        },
+        {
+          name: "theme",
+          type: "text",
+          label: "Theme/Topic",
+          description: "Main theme or topic for the lyrics",
+          defaultValue: "love"
+        },
+        {
+          name: "language",
+          type: "select",
+          label: "Language",
+          description: "Language for the lyrics",
+          options: [
+            { value: "english", label: "English" },
+            { value: "spanish", label: "Spanish" },
+          ],
+          defaultValue: "english"
+        },
+        {
+          name: "structure",
+          type: "select",
+          label: "Song Structure",
+          description: "Structure of the composition",
+          options: [
+            { value: "verse-chorus", label: "Verse-Chorus" },
+            { value: "aaba", label: "AABA" },
+            { value: "through-composed", label: "Through-composed" },
+          ],
+          defaultValue: "verse-chorus"
         }
       ],
       action: async (params) => {
@@ -105,21 +167,35 @@ export function ComposerAgent() {
         }
 
         try {
-          setGeneratedMusicUrl(null); // Reset previous music URL
+          setGeneratedMusicUrl(null);
+          setGeneratedLyrics(null);
 
-          await simulateThinking([
-            "Initializing Suno AI...",
-            "Processing musical parameters...",
-            "Generating composition...",
-            "Applying audio effects...",
-            "Finalizing music generation..."
+          await simulateThinking(setGenerateState, [
+            "Generating lyrics based on theme...",
+            "Analyzing musical parameters...",
+            "Creating melody and harmony...",
+            "Applying instrumentation...",
+            "Finalizing composition..."
           ]);
 
+          // Primero generamos la letra
+          const lyricsPrompt = `Write lyrics for a ${params.mood} ${params.genre} song about ${params.theme} in ${params.language} with a ${params.structure} structure.`;
+          const lyricsResponse = await openRouterService.chatWithAgent(
+            lyricsPrompt,
+            'composer',
+            user.uid,
+            "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
+          );
+
+          setGeneratedLyrics(lyricsResponse.response);
+
+          // Luego generamos la música
           const response = await sunoService.generateMusic(
             {
               genre: params.genre,
               tempo: parseInt(params.tempo),
-              mood: params.mood
+              mood: params.mood,
+              structure: params.structure
             },
             user.uid
           );
@@ -128,7 +204,7 @@ export function ComposerAgent() {
 
           toast({
             title: "Music Generated",
-            description: "Your musical composition has been created successfully. You can now play it below.",
+            description: "Your musical composition and lyrics have been created successfully.",
           });
 
           return response;
@@ -146,9 +222,11 @@ export function ComposerAgent() {
             variant: "destructive"
           });
 
-          setIsThinking(false);
-          setProgress(0);
-          setSteps([]);
+          setGenerateState({
+            isThinking: false,
+            progress: 0,
+            steps: []
+          });
         }
       }
     },
@@ -173,7 +251,7 @@ export function ComposerAgent() {
           return;
         }
         try {
-          await simulateThinking();
+          await simulateThinking(setAnalyzeState);
           const response = await openRouterService.chatWithAgent(
             `Analyze the musical structure of the audio file at ${params.audioFile}`,
             'composer',
@@ -220,7 +298,7 @@ export function ComposerAgent() {
           return;
         }
         try {
-          await simulateThinking();
+          await simulateThinking(setArrangementState);
           const response = await openRouterService.chatWithAgent(
             `Suggest arrangements for a composition in the style of ${params.style}`,
             'composer',
@@ -250,20 +328,33 @@ export function ComposerAgent() {
       theme={theme}
       helpText="I'm your Creative Maestro. With years of experience in composition and arrangements, I'll help bring your musical ideas to life using my advanced artificial intelligence. Together, we'll create masterpieces!"
     >
-      {(isThinking || steps.length > 0) && (
+      {(generateState.isThinking || generateState.steps.length > 0) && (
         <ProgressIndicator
-          steps={steps}
-          progress={progress}
-          isThinking={isThinking}
-          isComplete={progress === 100}
+          steps={generateState.steps}
+          progress={generateState.progress}
+          isThinking={generateState.isThinking}
+          isComplete={generateState.progress === 100}
         />
+      )}
+      {generatedLyrics && (
+        <div className="mt-4 p-4 bg-black/20 rounded-lg">
+          <h3 className="text-lg font-semibold mb-2">Generated Lyrics</h3>
+          <pre className="whitespace-pre-wrap text-sm">{generatedLyrics}</pre>
+        </div>
       )}
       {generatedMusicUrl && (
         <div className="mt-4">
           <h3 className="text-lg font-semibold mb-2">Generated Music</h3>
-          <audio controls src={generatedMusicUrl} className="w-full">
+          <audio controls src={generatedMusicUrl} className="w-full mb-2">
             Your browser does not support the audio element.
           </audio>
+          <a 
+            href={generatedMusicUrl}
+            download="generated_music.mp3"
+            className="inline-block px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+          >
+            Download Music
+          </a>
         </div>
       )}
     </BaseAgent>

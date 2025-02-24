@@ -11,13 +11,14 @@ export const AgentResponseSchema = z.object({
   parameters: z.object({
     genre: z.string(),
     tempo: z.number(),
-    mood: z.string()
+    mood: z.string(),
+    structure: z.string().optional()
   }),
   timestamp: z.date(),
   metadata: z.record(z.any()).optional()
 });
 
-export type SunoResponse = z.infer<typeof AgentResponseSchema>;
+export type AgentResponse = z.infer<typeof AgentResponseSchema>;
 
 // Configuración de Suno
 const SUNO_API_KEY = env.VITE_SUNO_API_KEY;
@@ -29,9 +30,10 @@ export const sunoService = {
       genre: string;
       tempo: number;
       mood: string;
+      structure?: string;
     },
     userId: string
-  ): Promise<SunoResponse> => {
+  ): Promise<AgentResponse> => {
     // Verificar y loggear el estado de la API key
     console.log('Estado de la API key de Suno:', {
       exists: !!SUNO_API_KEY,
@@ -55,7 +57,8 @@ export const sunoService = {
         input: {
           genre: params.genre,
           tempo: parseInt(params.tempo.toString()),
-          mood: params.mood
+          mood: params.mood,
+          structure: params.structure || 'verse-chorus'
         }
       };
 
@@ -82,7 +85,7 @@ export const sunoService = {
       const data = await response.json();
       console.log('Respuesta exitosa de Suno API:', data);
 
-      const sunoResponse: SunoResponse = {
+      const sunoResponse: AgentResponse = {
         id: crypto.randomUUID(),
         userId,
         musicUrl: data.output.audio_url, 
