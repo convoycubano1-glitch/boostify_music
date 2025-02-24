@@ -48,6 +48,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // Strategic Marketing AI collection rules
+    match /Strategic_Marketing_AI/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // Course rules
     match /courses/{courseId} {
       allow read: if isAuthenticated();

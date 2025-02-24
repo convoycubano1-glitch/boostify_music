@@ -65,7 +65,7 @@ export class OpenRouterService {
       console.log(`OpenRouter response for ${agentType}:`, result);
 
       try {
-        // Guardar en la colección específica para Video Director AI
+        // Guardar en la colección específica para cada tipo de agente
         if (agentType === 'videoDirector') {
           const videoDirectorRef = collection(db, 'Video_Director_AI');
           const docRef = doc(videoDirectorRef, `script_${Date.now()}`);
@@ -91,6 +91,31 @@ export class OpenRouterService {
             }
           });
           console.log('Script saved to Video_Director_AI collection');
+        } else if (agentType === 'marketing') {
+          const marketingRef = collection(db, 'Strategic_Marketing_AI');
+          const docRef = doc(marketingRef, `strategy_${Date.now()}`);
+          await setDoc(docRef, {
+            userId,
+            prompt,
+            strategy: result,
+            timestamp: serverTimestamp(),
+            metadata: {
+              model: 'anthropic/claude-3-sonnet',
+              temperature: 0.7,
+              systemInstruction
+            },
+            format: {
+              sections: [
+                'Campaign Strategy',
+                'Content Calendar',
+                'Budget Allocation',
+                'KPIs and Metrics',
+                'Growth Projections'
+              ],
+              version: '1.0'
+            }
+          });
+          console.log('Strategy saved to Strategic_Marketing_AI collection');
         }
       } catch (error) {
         console.error('Error saving to Firestore:', error);
