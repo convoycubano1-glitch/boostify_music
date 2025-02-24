@@ -81,16 +81,14 @@ export function ComposerAgent() {
   };
 
   const createMusicPrompt = (params: any, lyrics: string) => {
-    return `## Musical Composition
-Lyrics:
-${lyrics}
+    // Extraer solo la primera estrofa y el coro para mantener el prompt corto
+    const firstVerseAndChorus = lyrics.split('\n\n').slice(0, 2).join('\n\n');
 
-Style: ${params.genre}
+    return `##
+Genre: ${params.genre}
 Mood: ${params.mood}
-Tempo: ${params.tempo} BPM
-Structure: ${params.structure}
-
-Create a musical composition that perfectly matches these lyrics and parameters.
+Tempo: ${params.tempo}
+${firstVerseAndChorus}
 ##`;
   };
 

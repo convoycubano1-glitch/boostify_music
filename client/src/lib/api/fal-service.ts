@@ -42,10 +42,16 @@ export const falService = {
         prompt
       });
 
+      // Truncar y formatear el prompt para cumplir con el límite de 600 caracteres
+      const truncatedPrompt = prompt.length > 590 ? 
+        prompt.substring(0, 590) + '##' : 
+        prompt;
+
+      console.log('Prompt truncado:', truncatedPrompt);
+
       const result = await fal.subscribe("fal-ai/minimax-music", {
         input: {
-          prompt,
-          // Usar una referencia de audio por defecto
+          prompt: truncatedPrompt,
           reference_audio_url: "https://fal.media/files/lion/OOTBTSlxKMH_E8H6hoSlb.mpga"
         },
         logs: true,
@@ -67,7 +73,7 @@ export const falService = {
         userId,
         musicUrl: result.data.audio.url,
         parameters: {
-          prompt,
+          prompt: truncatedPrompt,
           reference_audio_url: "https://fal.media/files/lion/OOTBTSlxKMH_E8H6hoSlb.mpga"
         },
         timestamp: new Date(),
