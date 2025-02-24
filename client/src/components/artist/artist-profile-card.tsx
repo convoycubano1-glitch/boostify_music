@@ -316,6 +316,89 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       animate="visible"
       className="w-full max-w-7xl mx-auto"
     >
+      <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
+        <iframe
+          className="absolute inset-0 w-full h-full object-cover"
+          src="https://www.youtube.com/embed/O90iHkU3cPU?autoplay=1&mute=1&loop=1&playlist=O90iHkU3cPU&controls=0&showinfo=0&rel=0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
+
+        <div className="absolute bottom-0 left-0 right-0 p-12">
+          <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
+            <motion.h1
+              className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
+              variants={itemVariants}
+            >
+              {mockArtist.name}
+            </motion.h1>
+            <motion.p
+              className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-400"
+              variants={itemVariants}
+            >
+              {mockArtist.genre}
+            </motion.p>
+            <div className="prose prose-invert max-w-2xl mb-8">
+              <motion.p
+                className="text-lg text-white/90 leading-relaxed"
+                variants={itemVariants}
+              >
+                Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami. Con más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.
+              </motion.p>
+            </div>
+            <motion.div className="flex flex-wrap gap-4" variants={itemVariants}>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => setShowMessageDialog(true)}
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                Contact Me
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-300"
+              >
+                <Share2 className="mr-2 h-5 w-5" />
+                Share Profile
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        <motion.div
+          className="absolute top-8 right-8 flex gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div
+            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+            variants={itemVariants}
+          >
+            <HeartPulse className="h-6 w-6 text-orange-500" />
+            <div>
+              <p className="text-sm text-white/70">Monthly Listeners</p>
+              <p className="text-xl font-bold text-white">{mockArtist.statistics.monthlyListeners}k</p>
+            </div>
+          </motion.div>
+          <motion.div
+            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+            variants={itemVariants}
+          >
+            <Users className="h-6 w-6 text-orange-500" />
+            <div>
+              <p className="text-sm text-white/70">Followers</p>
+              <p className="text-xl font-bold text-white">{mockArtist.statistics.followers}k</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <Card className="p-8 mb-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
@@ -581,6 +664,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
 export const mockArtist = {
   name: "Redwine",
+  genre: "Blues Latin Fusion", // Added genre
   location: "Miami, FL",
   email: "booking@redwinemusic.com",
   phone: "+1 (305) 555-0123",
