@@ -26,11 +26,8 @@ export const managerToolsService = {
       console.log('Generating content with prompt:', prompt);
 
       const headers = {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'HTTP-Referer': `${window.location.origin}/`,
-        'OpenAI-Organization': 'boostify-manager-tools'
+        'Authorization': `Bearer${API_KEY.trim()}`,
+        'Content-Type': 'application/json'
       };
 
       console.log('Request headers:', headers);
@@ -47,7 +44,10 @@ export const managerToolsService = {
             content: prompt
           }
         ]
-      }, { headers });
+      }, { 
+        headers,
+        timeout: 30000 // 30 segundos de timeout
+      });
 
       console.log('OpenRouter response:', response.data);
 
@@ -59,6 +59,17 @@ export const managerToolsService = {
       return response.data.choices[0].message.content;
     } catch (error) {
       console.error('Error generating content:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // La petición se hizo y el servidor respondió con un código de estado
+          console.error('Response error data:', error.response.data);
+          throw new Error(error.response.data?.error?.message || 'API request failed');
+        } else if (error.request) {
+          // La petición se hizo pero no se recibió respuesta
+          console.error('No response received:', error.request);
+          throw new Error('No response received from API');
+        }
+      }
       throw error;
     }
   },
