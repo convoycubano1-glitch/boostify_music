@@ -51,6 +51,17 @@ export function ComposerAgent() {
     setIsThinking(false);
   };
 
+  const createPrompt = (params: any) => {
+    return `## ${params.theme}
+In ${params.mood} ${params.genre} style,
+Tempo set to ${params.tempo} beats per minute,
+Following a ${params.structure} structure.
+
+Written in ${params.language}, expressing our theme:
+Let the music flow and create our dream.
+##`;
+  };
+
   const actions: AgentAction[] = [
     {
       name: "Generate musical composition",
@@ -150,6 +161,9 @@ export function ComposerAgent() {
             "Processing final audio..."
           ]);
 
+          const prompt = createPrompt(params);
+          console.log('Prompt generado:', prompt);
+
           const response = await falService.generateMusic(
             {
               genre: params.genre,
@@ -159,7 +173,8 @@ export function ComposerAgent() {
               language: params.language,
               structure: params.structure
             },
-            user.uid
+            user.uid,
+            prompt
           );
 
           console.log('Respuesta de FAL.AI:', response);

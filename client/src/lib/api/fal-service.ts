@@ -32,19 +32,10 @@ export const falService = {
       language: string;
       structure: string;
     },
-    userId: string
+    userId: string,
+    prompt: string
   ): Promise<FalResponse> => {
     try {
-      // Construir el prompt basado en los parámetros
-      const prompt = `## ${params.theme}
-In ${params.mood} ${params.genre} style,
-Tempo set to ${params.tempo} beats per minute,
-Following a ${params.structure} structure.
-
-Written in ${params.language}, expressing our theme:
-Let the music flow and create our dream.
-##`;
-
       console.log('Iniciando generación de música con FAL.AI:', {
         ...params,
         userId,
@@ -54,7 +45,7 @@ Let the music flow and create our dream.
       const result = await fal.subscribe("fal-ai/minimax-music", {
         input: {
           prompt,
-          // Usar una referencia de audio por defecto si no se proporciona una
+          // Usar una referencia de audio por defecto
           reference_audio_url: "https://fal.media/files/lion/OOTBTSlxKMH_E8H6hoSlb.mpga"
         },
         logs: true,
