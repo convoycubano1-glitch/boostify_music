@@ -16,21 +16,23 @@ interface ManagerToolData {
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     if (!OPENROUTER_API_KEY) {
-      throw new Error('OpenRouter API key is not configured');
+      console.error('OpenRouter API key is not configured');
+      throw new Error('No auth credentials found');
     }
 
     try {
-      console.log("Making request to OpenRouter with prompt:", prompt);
+      console.log('Making request to OpenRouter with prompt:', prompt);
 
       const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Music Manager Tools',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'openai/gpt-4-turbo-preview',
+          model: 'cognitivecomputations/dolphin3.0-r1-mistral-24b:free',
           messages: [
             {
               role: 'system',
@@ -47,13 +49,21 @@ export const managerToolsService = {
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenRouter API error:', errorData);
+        throw new Error(`Error generating content: ${response.statusText}. Status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("OpenRouter response:", data);
+      console.log('OpenRouter raw response:', data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('Invalid response format:', data);
+        throw new Error('Invalid API response format');
+      }
 
       return data.choices[0].message.content;
+
     } catch (error) {
       console.error('Error in generateWithAI:', error);
       throw error;
