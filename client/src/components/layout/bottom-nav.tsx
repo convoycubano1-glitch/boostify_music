@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Home, Video, Music2, Bot, ShoppingBag, GraduationCap, Tv2 } from "lucide-react";
+import { Home, Video, Music2, Bot, Tv2 } from "lucide-react";
 
 export function BottomNav() {
   const [location] = useLocation();
@@ -25,16 +25,6 @@ export function BottomNav() {
       title: "AI",
       icon: Bot,
       href: "/ai-agents",
-    },
-    {
-      title: "Shop",
-      icon: ShoppingBag,
-      href: "/store",
-    },
-    {
-      title: "Learn",
-      icon: GraduationCap,
-      href: "/education",
     },
     {
       title: "TV",
