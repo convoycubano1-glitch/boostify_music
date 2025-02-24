@@ -4,7 +4,7 @@ import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimest
 import { env } from '@/env';
 
 // Definición de tipos para las respuestas de agentes
-export const SunoResponseSchema = z.object({
+export const AgentResponseSchema = z.object({
   id: z.string(),
   userId: z.string(),
   musicUrl: z.string(),
@@ -17,11 +17,11 @@ export const SunoResponseSchema = z.object({
   metadata: z.record(z.any()).optional()
 });
 
-export type SunoResponse = z.infer<typeof SunoResponseSchema>;
+export type SunoResponse = z.infer<typeof AgentResponseSchema>;
 
 // Configuración de Suno
 const SUNO_API_KEY = env.VITE_SUNO_API_KEY;
-const BASE_URL = 'https://api.lumaapi.com/v1';
+const BASE_URL = 'https://api.lumaapi.com/api/v1';
 
 export const sunoService = {
   generateMusic: async (
@@ -66,7 +66,9 @@ export const sunoService = {
         headers: {
           'Authorization': `Bearer ${SUNO_API_KEY}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Origin': window.location.origin,
+          'HTTP-Referer': window.location.origin,
         },
         body: JSON.stringify(requestBody)
       });
