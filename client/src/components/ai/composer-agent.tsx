@@ -1,7 +1,6 @@
 import { Music2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
-import { openRouterService } from "@/lib/api/openrouter-service";
-import { sunoService } from "@/lib/api/suno-service";
+import { falService } from "@/lib/api/fal-service";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -16,7 +15,6 @@ export function ComposerAgent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
-  const [generatedLyrics, setGeneratedLyrics] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
@@ -56,7 +54,7 @@ export function ComposerAgent() {
   const actions: AgentAction[] = [
     {
       name: "Generate musical composition",
-      description: "Create a new composition using Suno AI",
+      description: "Create a new composition using AI",
       parameters: [
         {
           name: "genre",
@@ -137,7 +135,6 @@ export function ComposerAgent() {
 
         try {
           setGeneratedMusicUrl(null);
-          setGeneratedLyrics(null);
 
           // Verificar parámetros
           console.log('Parámetros recibidos:', params);
@@ -147,27 +144,25 @@ export function ComposerAgent() {
           }
 
           await simulateThinking([
-            "Analyzing musical parameters...",
-            "Creating melody and harmony...",
-            "Applying instrumentation...",
-            "Finalizing composition..."
+            "Creating musical concept...",
+            "Generating melody and harmony...",
+            "Applying AI composition...",
+            "Processing final audio..."
           ]);
 
-          const musicParams = {
-            genre: params.genre,
-            tempo: parseInt(params.tempo.toString()),
-            mood: params.mood,
-            structure: params.structure
-          };
-
-          console.log('Enviando parámetros a Suno:', musicParams);
-
-          const response = await sunoService.generateMusic(
-            musicParams,
+          const response = await falService.generateMusic(
+            {
+              genre: params.genre,
+              tempo: parseInt(params.tempo.toString()),
+              mood: params.mood,
+              theme: params.theme,
+              language: params.language,
+              structure: params.structure
+            },
             user.uid
           );
 
-          console.log('Respuesta de Suno:', response);
+          console.log('Respuesta de FAL.AI:', response);
 
           if (response?.musicUrl) {
             setGeneratedMusicUrl(response.musicUrl);
@@ -181,15 +176,9 @@ export function ComposerAgent() {
 
         } catch (error) {
           console.error("Error generating music:", error);
-          let errorMessage = "Failed to generate music. Please try again.";
-
-          if (error instanceof Error) {
-            errorMessage = error.message;
-          }
-
           toast({
             title: "Error",
-            description: errorMessage,
+            description: "Failed to generate music. Please try again.",
             variant: "destructive"
           });
 
