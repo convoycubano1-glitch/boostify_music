@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { chatWithAI } from '@/lib/api/openrouter';
+import { openRouterService } from '@/lib/api/openrouter-service';
 import { BaseAgent } from './base-agent';
 import { Brain } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 type Message = {
   role: 'user' | 'assistant' | 'system';
@@ -9,6 +11,8 @@ type Message = {
 };
 
 export function SuperAgent() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([{
     role: 'system',
@@ -18,22 +22,46 @@ export function SuperAgent() {
   const [isTyping, setIsTyping] = useState(false);
 
   const handleOptionSelect = async (option: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to interact with the AI agent.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const newMessage: Message = { role: 'user', content: option };
       setMessages(prev => [...prev, newMessage]);
       setIsTyping(true);
 
-      const response = await chatWithAI([...messages, newMessage]);
+      const response = await openRouterService.chatWithAgent(
+        option,
+        'manager',
+        user.uid,
+        messages[0].content
+      );
 
-      const assistantMessage: Message = { 
+      setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: response 
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
+        content: response.response 
+      }]);
+
       setCurrentQuestion(prev => prev + 1);
+
+      toast({
+        title: "Response Generated",
+        description: "The AI has processed your request successfully."
+      });
     } catch (error) {
       console.error('Error in chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate response. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsTyping(false);
     }
   };

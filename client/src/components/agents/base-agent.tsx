@@ -8,13 +8,15 @@ interface BaseAgentProps {
   description: string;
   icon?: React.ReactNode;
   onActivate?: () => void;
+  onClose?: () => void;
 }
 
 export const BaseAgent: React.FC<BaseAgentProps> = ({
   title,
   description,
   icon = <Brain className="h-6 w-6 text-orange-500" />,
-  onActivate
+  onActivate,
+  onClose
 }) => {
   return (
     <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full">
