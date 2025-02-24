@@ -3,9 +3,12 @@ import { collection, addDoc, query, where, getDocs, serverTimestamp } from "fire
 import OpenAI from 'openai';
 import { env } from "@/env";
 
+if (!env.OPENAI_API_KEY) {
+  console.error('OpenAI API key is not configured');
+}
+
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY || '',
-  baseURL: 'https://api.openai.com/v1',
   dangerouslyAllowBrowser: true
 });
 

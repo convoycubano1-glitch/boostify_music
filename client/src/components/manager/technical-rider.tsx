@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Upload, Download, Building2, Loader2, ChevronRight } from "lucide-react";
 import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
