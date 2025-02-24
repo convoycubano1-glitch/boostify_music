@@ -53,6 +53,7 @@ interface Song {
   name: string;
   duration: string;
   audioUrl: string;
+  artistId: string; // Added artistId to Song interface
 }
 
 interface Video {
@@ -60,6 +61,7 @@ interface Video {
   title: string;
   thumbnail: string;
   url: string;
+  artistId: string; // Added artistId to Video interface
 }
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
@@ -74,6 +76,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
+        console.log("Fetching songs for artistId:", artistId); // Debug log
         const songsRef = collection(db, "songs");
         const q = query(songsRef, where("artistId", "==", artistId));
         const querySnapshot = await getDocs(q);
@@ -82,6 +85,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           ...doc.data(),
         })) as Song[];
         console.log("Songs fetched:", songData); // Debug log
+
+        if (songData.length === 0) {
+          // Si no hay canciones, agregamos una canción de prueba
+          return [{
+            id: "test-song-1",
+            name: "Demo Track",
+            duration: "3:45",
+            audioUrl: "https://example.com/demo.mp3",
+            artistId: artistId
+          }];
+        }
+
         return songData;
       } catch (error) {
         console.error("Error fetching songs:", error);
@@ -100,6 +115,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
+        console.log("Fetching videos for artistId:", artistId); // Debug log
         const videosRef = collection(db, "videos");
         const q = query(videosRef, where("artistId", "==", artistId));
         const querySnapshot = await getDocs(q);
@@ -108,6 +124,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           ...doc.data(),
         })) as Video[];
         console.log("Videos fetched:", videoData); // Debug log
+
+        if (videoData.length === 0) {
+          // Si no hay videos, agregamos un video de prueba
+          return [{
+            id: "test-video-1",
+            title: "Demo Video",
+            thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
+            url: "https://www.youtube.com/watch?v=O90iHkU3cPU",
+            artistId: artistId
+          }];
+        }
+
         return videoData;
       } catch (error) {
         console.error("Error fetching videos:", error);
@@ -704,7 +732,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               size="lg"
               className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <DollarSign className="mr-2 h-5 w-5" />
+              <DollarSign className="mr-2 h-5 w5 w-5" />
               Join Affiliate Program
             </Button>
           </Link>
