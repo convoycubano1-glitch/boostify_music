@@ -15,16 +15,23 @@ interface ManagerToolData {
 export const managerToolsService = {
   // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
+    if (!API_KEY) {
+      throw new Error('OpenRouter API key is not configured');
+    }
+
     try {
+      console.log('Making request to OpenRouter with prompt:', prompt);
+
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'HTTP-Referer': window.location.origin
         },
         body: JSON.stringify({
-          model: "openai/gpt-4o",
+          model: "openai/gpt-4",
           messages: [
             {
               role: "system",
@@ -39,10 +46,15 @@ export const managerToolsService = {
       });
 
       const data = await response.json();
+      console.log('OpenRouter response:', data);
 
       if (!response.ok) {
         console.error('OpenRouter API Error:', data);
         throw new Error(data.error?.message || 'Failed to generate content with AI');
+      }
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from OpenRouter API');
       }
 
       return data.choices[0].message.content;
@@ -89,15 +101,23 @@ export const managerToolsService = {
   // Funciones específicas para cada tipo de herramienta
   technical: {
     async generateTechnicalRider(requirements: string, userId: string) {
-      const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
-      const content = await managerToolsService.generateWithAI(prompt, 'technical');
-      return managerToolsService.saveToFirestore({
-        type: 'technical',
-        content,
-        userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      try {
+        console.log('Generating technical rider for requirements:', requirements);
+        const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
+        const content = await managerToolsService.generateWithAI(prompt, 'technical');
+        console.log('Generated content:', content);
+
+        return managerToolsService.saveToFirestore({
+          type: 'technical',
+          content,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      } catch (error) {
+        console.error('Error in generateTechnicalRider:', error);
+        throw error;
+      }
     }
   },
 
