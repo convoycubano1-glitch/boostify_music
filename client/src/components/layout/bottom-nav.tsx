@@ -12,7 +12,7 @@ export function BottomNav() {
       href: "/dashboard",
     },
     {
-      title: "Videos",
+      title: "Video",
       icon: Video,
       href: "/music-video-creator",
     },
@@ -29,7 +29,7 @@ export function BottomNav() {
     {
       title: "Profile",
       icon: User,
-      href: "/artist-dashboard",
+      href: "/profile",
     },
   ];
 

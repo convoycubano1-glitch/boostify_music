@@ -46,6 +46,7 @@ import AchievementsPage from "@/pages/achievements-page";
 import CourseDetailPage from "@/pages/course-detail";
 import SmartCardsPage from "@/pages/smart-cards";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import ProfilePage from "@/pages/profile";
 
 
 interface ErrorBoundaryState {
@@ -140,6 +141,7 @@ const Router = () => {
         <ProtectedRoute path="/achievements" component={AchievementsPage} />
         <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
         <ProtectedRoute path="/smart-cards" component={SmartCardsPage} />
+        <ProtectedRoute path="/profile" component={ProfilePage} />
 
         {/* Catch all not found route */}
         <Route component={NotFound} />
