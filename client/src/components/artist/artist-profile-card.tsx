@@ -24,6 +24,9 @@ import {
   Users,
   DollarSign,
   Loader2,
+  ShoppingBag,
+  Ticket,
+  MessageCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -32,6 +35,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query } from "firebase/firestore";
@@ -219,8 +224,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div
                 key={song.id}
                 className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 ${
-                  currentTrack === index 
-                    ? "bg-orange-500/20 scale-102" 
+                  currentTrack === index
+                    ? "bg-orange-500/20 scale-102"
                     : "hover:bg-orange-500/10 hover:scale-101"
                 }`}
               >
@@ -313,10 +318,165 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          <Card className="p-8 mb-8 bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-orange-500/20">
+            <motion.div variants={itemVariants} className="flex items-center gap-8">
+              <div className="relative group">
+                <img
+                  src={mockArtist.newRelease.coverArt}
+                  alt={mockArtist.newRelease.title}
+                  className="w-48 h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                  <div className="absolute bottom-4 left-4">
+                    <Play className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
+                  {mockArtist.newRelease.title}
+                </h3>
+                <p className="text-lg text-muted-foreground mb-4">
+                  Coming {new Date(mockArtist.newRelease.releaseDate).toLocaleDateString()}
+                </p>
+                <Button className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Music2 className="mr-2 h-5 w-5" />
+                  Pre-order Now
+                </Button>
+              </div>
+            </motion.div>
+          </Card>
+
           <MusicSection />
           <VideosSection />
+
+          <Card className="p-6">
+            <motion.div variants={itemVariants}>
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                <Calendar className="w-6 h-6 mr-2 text-orange-500" />
+                Upcoming Shows
+              </h3>
+              <div className="space-y-4">
+                {mockArtist.upcomingShows.map((show) => (
+                  <div
+                    key={show.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium">{show.venue}</p>
+                      <p className="text-sm text-muted-foreground">{show.city}</p>
+                      <p className="text-sm text-orange-500">
+                        {new Date(show.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 transition-all duration-300 hover:scale-105"
+                      onClick={() => window.open(show.ticketUrl, "_blank")}
+                    >
+                      <Ticket className="mr-2 h-4 w-4" />
+                      Get Tickets
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </Card>
+
+          <Card className="p-6">
+            <motion.div variants={itemVariants}>
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                <ShoppingBag className="w-6 h-6 mr-2 text-orange-500" />
+                Official Merchandise
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {mockArtist.merchandise.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    className="group relative rounded-lg overflow-hidden bg-gradient-to-br from-orange-500/5 to-transparent"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-48 object-cover transition-transform group-hover:scale-105 duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                      <div className="absolute bottom-4 left-4">
+                        <h4 className="text-white font-medium">{item.name}</h4>
+                        <p className="text-sm text-white/70">{item.price}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </Card>
         </div>
+
         <div className="space-y-8">
+          <Card className="p-6">
+            <motion.div variants={itemVariants}>
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                <ChartBar className="w-6 h-6 mr-2 text-orange-500" />
+                Statistics
+              </h3>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="flex flex-col items-center">
+                  <CircularProgressbar
+                    value={mockArtist.statistics.monthlyListeners}
+                    strokeWidth={10}
+                    styles={buildStyles({
+                      pathColor: "#E1306C",
+                      textColor: "#E1306C",
+                      trailColor: "#f5f5f5",
+                    })}
+                  />
+                  <p className="text-lg font-medium mt-2">Monthly Listeners</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <CircularProgressbar
+                    value={mockArtist.statistics.totalStreams}
+                    strokeWidth={10}
+                    styles={buildStyles({
+                      pathColor: "#1DA1F2",
+                      textColor: "#1DA1F2",
+                      trailColor: "#f5f5f5",
+                    })}
+                  />
+                  <p className="text-lg font-medium mt-2">Total Streams</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <CircularProgressbar
+                    value={mockArtist.statistics.followers}
+                    strokeWidth={10}
+                    styles={buildStyles({
+                      pathColor: "#FF0000",
+                      textColor: "#FF0000",
+                      trailColor: "#f5f5f5",
+                    })}
+                  />
+                  <p className="text-lg font-medium mt-2">Followers</p>
+                </div>
+              </div>
+            </motion.div>
+          </Card>
+
+          <Card className="p-6">
+            <motion.div variants={itemVariants}>
+              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                <DollarSign className="w-6 h-6 mr-2 text-orange-500" />
+                Affiliate Program
+              </h3>
+              <p className="text-lg text-muted-foreground">
+                Join our affiliate program and earn commission on every sale!
+              </p>
+              <Button className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                Learn More
+              </Button>
+            </motion.div>
+          </Card>
+
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
@@ -429,5 +589,39 @@ export const mockArtist = {
     instagram: "https://instagram.com/redwinemusic",
     twitter: "https://twitter.com/redwinemusic",
     youtube: "https://youtube.com/redwinemusic",
+  },
+  newRelease: {
+    title: "New Release Title",
+    coverArt: "/path/to/cover/art.jpg",
+    releaseDate: new Date().toISOString(),
+  },
+  upcomingShows: [
+    {
+      id: "1",
+      venue: "Venue Name",
+      city: "City, State",
+      date: new Date().toISOString(),
+      ticketUrl: "https://example.com/tickets",
+    },
+  ],
+  merchandise: [
+    {
+      id: "1",
+      name: "T-Shirt",
+      imageUrl: "/path/to/tshirt.jpg",
+      price: "$25",
+    },
+    {
+      id: "2",
+      name: "Hoodie",
+      imageUrl: "/path/to/hoodie.jpg",
+      price: "$40",
+    },
+
+  ],
+  statistics: {
+    monthlyListeners: 75,
+    totalStreams: 100000,
+    followers: 5000,
   },
 };
