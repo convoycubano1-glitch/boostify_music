@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Upload, Download, Building2, Loader2, ChevronRight } from "lucide-react";
+import { FileText, Upload, Download, Building2, Loader2, ChevronRight, Eye } from "lucide-react";
 import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -24,6 +24,8 @@ export function TechnicalRiderSection() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [requirements, setRequirements] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const { data: technicalRiders = [], isLoading } = useQuery({
     queryKey: ['technical-riders', user?.uid],
@@ -33,6 +35,25 @@ export function TechnicalRiderSection() {
       return data as TechnicalRider[];
     },
     enabled: !!user
+  });
+
+  const generatePreviewMutation = useMutation({
+    mutationFn: async (requirements: string) => {
+      if (!user?.uid) throw new Error("User not authenticated");
+      const content = await managerToolsService.previewTechnicalRider(requirements);
+      return content;
+    },
+    onSuccess: (content) => {
+      setPreviewContent(content);
+      setIsPreviewMode(true);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate preview",
+        variant: "destructive"
+      });
+    }
   });
 
   const generateRiderMutation = useMutation({
@@ -48,6 +69,8 @@ export function TechnicalRiderSection() {
       });
       setIsDialogOpen(false);
       setRequirements("");
+      setPreviewContent(null);
+      setIsPreviewMode(false);
     },
     onError: (error: any) => {
       toast({
@@ -58,7 +81,7 @@ export function TechnicalRiderSection() {
     }
   });
 
-  const handleGenerateRider = async () => {
+  const handlePreviewRider = async () => {
     if (!requirements.trim()) {
       toast({
         title: "Error",
@@ -68,6 +91,14 @@ export function TechnicalRiderSection() {
       return;
     }
 
+    try {
+      await generatePreviewMutation.mutateAsync(requirements);
+    } catch (error) {
+      console.error("Error generating preview:", error);
+    }
+  };
+
+  const handleGenerateRider = async () => {
     try {
       setIsGenerating(true);
       await generateRiderMutation.mutateAsync(requirements);
@@ -140,11 +171,11 @@ export function TechnicalRiderSection() {
               Create New Rider
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
               <DialogTitle>Generate Technical Rider</DialogTitle>
               <DialogDescription>
-                Enter your technical requirements and we'll generate a professional technical rider.
+                Enter your technical requirements and preview before generating the final technical rider.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -158,22 +189,59 @@ export function TechnicalRiderSection() {
                   className="min-h-[200px]"
                 />
               </div>
+              {isPreviewMode && previewContent && (
+                <div className="space-y-2">
+                  <Label>Preview</Label>
+                  <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line">
+                    {previewContent}
+                  </div>
+                </div>
+              )}
             </div>
-            <DialogFooter>
-              <Button
-                onClick={handleGenerateRider}
-                disabled={isGenerating || !requirements.trim()}
-                className="w-full"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  "Generate Technical Rider"
-                )}
-              </Button>
+            <DialogFooter className="flex gap-2">
+              {!isPreviewMode ? (
+                <Button
+                  onClick={handlePreviewRider}
+                  disabled={generatePreviewMutation.isPending || !requirements.trim()}
+                  className="w-full"
+                >
+                  {generatePreviewMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Preview...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsPreviewMode(false)}
+                    className="flex-1"
+                  >
+                    Edit Requirements
+                  </Button>
+                  <Button
+                    onClick={handleGenerateRider}
+                    disabled={generateRiderMutation.isPending}
+                    className="flex-1"
+                  >
+                    {generateRiderMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Final Version"
+                    )}
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

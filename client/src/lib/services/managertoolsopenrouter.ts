@@ -18,14 +18,6 @@ const openai = new OpenAI({
   }
 });
 
-interface ManagerToolData {
-  type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
-  content: any;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     try {
@@ -64,6 +56,18 @@ export const managerToolsService = {
         throw new Error('Rate limit exceeded. Please try again later.');
       }
       throw new Error(error.message || 'Failed to generate content');
+    }
+  },
+
+  async previewTechnicalRider(requirements: string) {
+    try {
+      const prompt = `Generate a preview of a technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
+
+      const content = await this.generateWithAI(prompt, 'technical');
+      return content;
+    } catch (error) {
+      console.error('Error generating technical rider preview:', error);
+      throw error;
     }
   },
 
@@ -124,7 +128,7 @@ export const managerToolsService = {
 
       const content = await this.generateWithAI(prompt, type);
       return this.saveToFirestore({
-        type,
+        type: type as ManagerToolData['type'],
         content,
         userId,
         createdAt: new Date(),
@@ -136,5 +140,13 @@ export const managerToolsService = {
     }
   }
 };
+
+interface ManagerToolData {
+  type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
+  content: any;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export default managerToolsService;
