@@ -1,9 +1,10 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { env } from "@/env";
+import Anthropic from '@anthropic-ai/sdk';
 
+// the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
 const OPENROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
-const BASE_URL = 'https://openrouter.ai/api/v1';
 
 interface ManagerToolData {
   type: 'technical' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'ai' | 'calendar';
@@ -21,52 +22,35 @@ export const managerToolsService = {
     }
 
     try {
-      console.log('Making request to OpenRouter with prompt:', prompt);
+      console.log('Making request with prompt:', prompt);
 
-      const headers = {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Music Manager Tools',
-        'Content-Type': 'application/json'
-      };
-
-      console.log('Using headers:', { ...headers, Authorization: '[REDACTED]' });
-
-      const response = await fetch(`${BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          model: 'anthropic/claude-3-sonnet',
-          messages: [
-            {
-              role: 'system',
-              content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000
-        })
+      const anthropic = new Anthropic({
+        apiKey: OPENROUTER_API_KEY,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('OpenRouter API error:', errorData);
-        throw new Error(`Error generating content: ${response.statusText}. Status: ${response.status}`);
-      }
+      const response = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 2000,
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+      });
 
-      const data = await response.json();
-      console.log('OpenRouter response:', data);
+      console.log('Anthropic response:', response);
 
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response format:', data);
+      if (!response.content || !response.content[0].text) {
+        console.error('Invalid response format:', response);
         throw new Error('Invalid API response format');
       }
 
-      return data.choices[0].message.content;
+      return response.content[0].text;
 
     } catch (error) {
       console.error('Error in generateWithAI:', error);
@@ -168,6 +152,7 @@ export const managerToolsService = {
       });
     }
   },
+
   hiring: {
     async generateJobDescriptions(positions: string[], userId: string) {
       const prompt = `Create job descriptions for these positions: ${positions.join(', ')}`;
