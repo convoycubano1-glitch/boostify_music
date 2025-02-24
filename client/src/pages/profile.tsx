@@ -5,6 +5,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
 
   console.log("Current user:", user); // Debug log
+  console.log("User UID:", user?.uid); // Debug log for UID specifically
 
   return (
     <div className="min-h-screen bg-black pt-4">

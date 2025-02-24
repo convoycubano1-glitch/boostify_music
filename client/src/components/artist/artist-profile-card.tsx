@@ -35,12 +35,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
-import { ArtistProgressTracker } from "@/components/progress/artist-progress-tracker";
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,17 +48,19 @@ export interface ArtistProfileProps {
 interface Song {
   id: string;
   name: string;
-  duration: string;
+  duration?: string;
   audioUrl: string;
-  artistId: string; // Added artistId to Song interface
+  uid: string; // Cambiado de userId a uid
+  createdAt?: any;
 }
 
 interface Video {
   id: string;
   title: string;
-  thumbnail: string;
+  thumbnailUrl?: string;
   url: string;
-  artistId: string; // Added artistId to Video interface
+  uid: string; // Cambiado de userId a uid
+  createdAt?: any;
 }
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
@@ -76,40 +75,34 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
-        console.log("Fetching songs for artistId:", artistId); // Debug log
+        console.log("Fetching songs for artistId:", artistId);
         const songsRef = collection(db, "songs");
-        const q = query(songsRef);  // Removemos el filtro para ver todas las canciones primero
+        const q = query(songsRef);
         const querySnapshot = await getDocs(q);
-        const songData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Song[];
-        console.log("All songs in collection:", songData); // Debug log
+        const songData = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log("Raw song data:", data);
+          return {
+            id: doc.id,
+            name: data.name || "Untitled",
+            duration: data.duration || "3:45",
+            audioUrl: data.audioUrl || "",
+            uid: data.uid || "",
+            createdAt: data.createdAt
+          };
+        });
 
-        // Ahora filtramos por artistId
-        const filteredSongs = songData.filter(song => song.artistId === artistId);
-        console.log("Filtered songs for artist:", filteredSongs); // Debug log
+        // Filtramos por uid
+        const filteredSongs = songData.filter(song => {
+          console.log(`Comparing song.uid: ${song.uid} with artistId: ${artistId}`);
+          return song.uid === artistId;
+        });
 
-        if (filteredSongs.length === 0) {
-          // Si no hay canciones, agregamos una canción de prueba
-          return [{
-            id: "test-song-1",
-            name: "Demo Track",
-            duration: "3:45",
-            audioUrl: "https://example.com/demo.mp3",
-            artistId: artistId
-          }];
-        }
-
+        console.log("Filtered songs:", filteredSongs);
         return filteredSongs;
       } catch (error) {
         console.error("Error fetching songs:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar las canciones",
-          variant: "destructive",
-        });
-        return [];
+        throw error;
       }
     },
   });
@@ -119,40 +112,35 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
-        console.log("Fetching videos for artistId:", artistId); // Debug log
+        console.log("Fetching videos for artistId:", artistId);
         const videosRef = collection(db, "videos");
-        const q = query(videosRef); // Removemos el filtro para ver todos los videos primero
+        const q = query(videosRef);
         const querySnapshot = await getDocs(q);
-        const videoData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Video[];
-        console.log("All videos in collection:", videoData); // Debug log
+        const videoData = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log("Raw video data:", data);
+          const videoId = data.url?.split('v=')?.[1];
+          return {
+            id: doc.id,
+            title: data.title || "Untitled",
+            url: data.url || "",
+            uid: data.uid || "",
+            thumbnailUrl: videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined,
+            createdAt: data.createdAt
+          };
+        });
 
-        // Ahora filtramos por artistId
-        const filteredVideos = videoData.filter(video => video.artistId === artistId);
-        console.log("Filtered videos for artist:", filteredVideos); // Debug log
+        // Filtramos por uid
+        const filteredVideos = videoData.filter(video => {
+          console.log(`Comparing video.uid: ${video.uid} with artistId: ${artistId}`);
+          return video.uid === artistId;
+        });
 
-        if (filteredVideos.length === 0) {
-          // Si no hay videos, agregamos un video de prueba
-          return [{
-            id: "test-video-1",
-            title: "Demo Video",
-            thumbnail: "https://i.ytimg.com/vi/O90iHkU3cPU/maxresdefault.jpg",
-            url: "https://www.youtube.com/watch?v=O90iHkU3cPU",
-            artistId: artistId
-          }];
-        }
-
+        console.log("Filtered videos:", filteredVideos);
         return filteredVideos;
       } catch (error) {
         console.error("Error fetching videos:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los videos",
-          variant: "destructive",
-        });
-        return [];
+        throw error;
       }
     },
   });
@@ -243,7 +231,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <span className="font-medium">{song.name}</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {song.duration}
+                  {song.duration || "N/A"} {/* Handle missing duration */}
                 </span>
               </div>
             ))
@@ -274,7 +262,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             transition={{ duration: 0.2 }}
           >
             <img
-              src={video.thumbnail}
+              src={video.thumbnailUrl || "https://via.placeholder.com/150"}  {/* Handle missing thumbnail */}
               alt={video.title}
               className="w-full h-full object-cover"
             />
@@ -660,44 +648,27 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Card className="p-6 cursor-pointer hover:bg-muted/50 transition-colors">
-                <motion.div variants={itemVariants}>
-                  <h3 className="text-2xl font-semibold mb-4 flex items-center">
-                    <FileText className="w-6 h-6 mr-2 text-orange-500" />
-                    Technical Rider
-                  </h3>
-                  <p className="text-muted-foreground">
-                    View complete technical specifications and requirements
-                  </p>
-                </motion.div>
-              </Card>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+          <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Technical Rider - {mockArtist.name}</DialogTitle>
+                <DialogTitle>Send Message to {mockArtist.name}</DialogTitle>
               </DialogHeader>
-              <ScrollArea className="h-[60vh] mt-4">
-                <div className="space-y-6 p-4">
-                  <div>
-                    <h4 className="text-lg font-semibold mb-2">Stage Requirements</h4>
-                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.stage}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold mb-2">Sound System</h4>
-                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.sound}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold mb-2">Lighting</h4>
-                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.lighting}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold mb-2">Backline</h4>
-                    <p className="text-muted-foreground whitespace-pre-line">{mockArtist.technicalRider.backline}</p>
-                  </div>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <textarea
+                    className="col-span-4 h-32 p-2 rounded-md border"
+                    placeholder="Write your message here..."
+                  />
                 </div>
-              </ScrollArea>
+              </div>
+              <div className="flex justify-end gap-4">
+                <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
+                  Cancel
+                </Button>
+                <Button className="bg-orange-500 hover:bg-orange-600">
+                  Send Message
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
           <VideosSection />
@@ -738,7 +709,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           <Link href="/auth">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              className="bg-gradient-to-r fromorange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <DollarSign className="mr-2 h-5 w5 w-5" />
               Join Affiliate Program
@@ -746,30 +717,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </Link>
         </motion.div>
       </Card>
-
-      <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Send Message to {mockArtist.name}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <textarea
-                className="col-span-4 h-32 p-2 rounded-md border"
-                placeholder="Write your message here..."
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-4">
-            <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
-              Cancel
-            </Button>
-            <Button className="bg-orange-500 hover:bg-orange-600">
-              Send Message
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 }
@@ -787,7 +734,7 @@ export const mockArtist = {
     twitter: "https://twitter.com/redwinemusic",
     youtube: "https://youtube.com/redwinemusic",
   },
-  stats: {
+stats: {
     monthlyListeners: 180,
     followers: 12,
     views: 2,
