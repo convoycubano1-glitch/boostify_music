@@ -28,6 +28,26 @@ const AI_COLLECTIONS = [
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5'];
 
+const CustomLabel = ({ x, y, name, value }) => {
+  return (
+    <text x={x} y={y} fill="#888" fontSize={12} textAnchor="middle">
+      {`${name}: ${value}`}
+    </text>
+  );
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background/95 backdrop-blur-sm border p-2 rounded-lg shadow-lg">
+        <p className="text-sm font-medium">{`${label}`}</p>
+        <p className="text-sm text-muted-foreground">{`Value: ${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function AIDataManager() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -185,7 +205,7 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">AI Content Manager</h1>
         <Select
@@ -211,32 +231,32 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
         </div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="p-6 bg-black/20 backdrop-blur">
-              <h3 className="text-lg font-semibold mb-2">Total Items</h3>
-              <p className="text-3xl font-bold text-orange-500">{allAiData.length}</p>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <Card className="p-4 sm:p-6 bg-black/20 backdrop-blur">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">Total Items</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-orange-500">{allAiData.length}</p>
             </Card>
-            <Card className="p-6 bg-black/20 backdrop-blur">
-              <h3 className="text-lg font-semibold mb-2">Last Creation</h3>
-              <p className="text-sm text-muted-foreground">
+            <Card className="p-4 sm:p-6 bg-black/20 backdrop-blur">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">Last Creation</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {allAiData[0]?.timestamp ? new Date(allAiData[0].timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}
               </p>
             </Card>
-            <Card className="p-6 bg-black/20 backdrop-blur">
-              <h3 className="text-lg font-semibold mb-2">Usage Today</h3>
-              <p className="text-3xl font-bold text-orange-500">
+            <Card className="p-4 sm:p-6 bg-black/20 backdrop-blur sm:col-span-2 md:col-span-1">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">Usage Today</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-orange-500">
                 {usageByDate.find(item => item.date === new Date().toLocaleDateString())?.interactions || 0}
               </p>
             </Card>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="overflow-hidden border-none shadow-xl col-span-2">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Usage Analytics</h2>
-                <div className="w-full h-[300px]">
+          <div className="grid gap-6">
+            <Card className="overflow-hidden border-none shadow-xl">
+              <div className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4">Usage Analytics</h2>
+                <div className="w-full h-[200px] sm:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={usageByDate}>
+                    <AreaChart data={usageByDate} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
@@ -246,94 +266,110 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 10 }}
                         interval="preserveStartEnd"
+                        angle={-45}
+                        textAnchor="end"
+                        height={50}
                       />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="interactions" stroke="#f97316" fillOpacity={1} fill="url(#colorUv)" />
+                      <YAxis tick={{ fontSize: 10 }} width={30} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="interactions" 
+                        stroke="#f97316" 
+                        fillOpacity={1} 
+                        fill="url(#colorUv)" 
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             </Card>
 
-            <Card className="overflow-hidden border-none shadow-xl">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Content Distribution</h2>
-                <div className="w-full h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={distributionData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {distributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Card className="overflow-hidden border-none shadow-xl">
+                <div className="p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4">Content Distribution</h2>
+                  <div className="w-full h-[200px] sm:h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <Pie
+                          data={distributionData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={({ cy }) => Math.min(cy * 0.8, 80)}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {distributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
 
-            <Card className="overflow-hidden border-none shadow-xl">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Usage by Hour</h2>
-                <div className="w-full h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={hourlyUsage}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="hour" 
-                        tick={{ fontSize: 12 }}
-                        ticks={[0,4,8,12,16,20,23]}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="count" stroke="#f97316" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
+              <Card className="overflow-hidden border-none shadow-xl">
+                <div className="p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4">Usage by Hour</h2>
+                  <div className="w-full h-[200px] sm:h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={hourlyUsage} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="hour" 
+                          tick={{ fontSize: 10 }}
+                          ticks={[0,4,8,12,16,20,23]}
+                        />
+                        <YAxis tick={{ fontSize: 10 }} width={30} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="count" 
+                          stroke="#f97316" 
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
 
           <Card className="overflow-hidden border-none shadow-xl">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Content List</h2>
-              <ScrollArea className="h-[500px]">
+            <div className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Content List</h2>
+              <ScrollArea className="h-[400px] sm:h-[500px]">
                 <div className="space-y-4">
                   {aiData.map((item: any) => (
-                    <Card key={item.id} className="p-4 bg-black/20 backdrop-blur hover:bg-black/30 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <Card key={item.id} className="p-3 sm:p-4 bg-black/20 backdrop-blur hover:bg-black/30 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-xs sm:text-sm text-muted-foreground">
                               {new Date(item.timestamp?.seconds * 1000).toLocaleString()}
                             </span>
                           </div>
                           <div className="prose prose-invert max-w-none">
-                            <pre className="whitespace-pre-wrap text-sm bg-transparent">
+                            <pre className="whitespace-pre-wrap text-xs sm:text-sm bg-transparent">
                               {item.script || item.strategy || item.content || item.design || item.advice}
                             </pre>
                           </div>
                         </div>
-                        <div className="flex gap-2 sm:flex-col">
+                        <div className="flex sm:flex-col gap-2">
                           <Button
                             onClick={() => handleDownload(item)}
                             variant="outline"
                             size="sm"
-                            className="flex-1 sm:flex-none"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm py-1 h-8"
                           >
                             Download
                           </Button>
@@ -341,7 +377,7 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
                             onClick={() => handleDelete(item.id)}
                             variant="destructive"
                             size="sm"
-                            className="flex-1 sm:flex-none"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm py-1 h-8"
                           >
                             Delete
                           </Button>
