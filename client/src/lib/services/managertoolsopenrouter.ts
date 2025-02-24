@@ -16,7 +16,7 @@ export const managerToolsService = {
   // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
     if (!API_KEY) {
-      throw new Error('OpenRouter API key is not configured');
+      throw new Error('No auth credentials found');
     }
 
     try {
@@ -28,7 +28,7 @@ export const managerToolsService = {
           'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'HTTP-Referer': window.location.origin
+          'HTTP-Referer': `${window.location.origin}`,
         },
         body: JSON.stringify({
           model: "openai/gpt-4",
@@ -115,7 +115,7 @@ export const managerToolsService = {
           updatedAt: new Date()
         });
       } catch (error) {
-        console.error('Error in generateTechnicalRider:', error);
+        console.error('Error generating rider:', error);
         throw error;
       }
     }
