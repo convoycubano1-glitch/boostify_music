@@ -14,88 +14,62 @@ interface ManagerToolData {
   updatedAt: Date;
 }
 
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const backoff = async (retryCount: number) => {
-  const baseDelay = 3000;
-  const maxDelay = 60000;
-  const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
-  console.log(`Waiting ${delay/1000} seconds before retry ${retryCount + 1}`);
-  await wait(delay);
-};
-
 export const managerToolsService = {
   // Función genérica para interactuar con OpenRouter
   async generateWithAI(prompt: string, type: string) {
-    const maxRetries = 3;
-    let retryCount = 0;
-
-    while (retryCount < maxRetries) {
-      try {
-        console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate content`);
-
-        const response = await fetch(BASE_URL, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${API_KEY}`,
-            "HTTP-Referer": window.location.origin,
-            "X-Title": "Music Manager Tools",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "mistralai/mixtral-8x7b-instruct",
-            messages: [
-              {
-                role: "system",
-                content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            temperature: 0.7,
-            max_tokens: 2000
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("OpenRouter API error:", errorData);
-
-          if (response.status === 429) {
-            console.log("Rate limit hit, implementing backoff...");
-            await backoff(retryCount);
-            retryCount++;
-            continue;
-          }
-
-          throw new Error(`Error generating content: ${response.statusText}. Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("OpenRouter raw response:", data);
-
-        if (!data.choices?.[0]?.message?.content) {
-          console.error("Invalid API response structure:", data);
-          throw new Error("Invalid API response format");
-        }
-
-        return data.choices[0].message.content;
-
-      } catch (error) {
-        console.error(`Error in attempt ${retryCount + 1}:`, error);
-
-        if (retryCount === maxRetries - 1) {
-          throw error;
-        }
-
-        await backoff(retryCount);
-        retryCount++;
+    try {
+      if (!API_KEY) {
+        throw new Error('OpenRouter API key is not configured');
       }
-    }
 
-    throw new Error(`Failed to generate content after ${maxRetries} attempts`);
+      console.log("Starting content generation with OpenRouter...");
+
+      const response = await fetch(BASE_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Music Manager Tools",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+          messages: [
+            {
+              role: "system",
+              content: `You are an expert AI assistant specialized in ${type} management for music artists and events.`
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
+        })
+      });
+
+      console.log("OpenRouter API response status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("OpenRouter API error:", errorData);
+        throw new Error(`Error generating content: ${response.statusText}. Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("OpenRouter raw response:", data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error("Invalid API response structure:", data);
+        throw new Error("Invalid API response format");
+      }
+
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error("Content generation error:", error);
+      throw error;
+    }
   },
 
   // Función para guardar datos en Firestore
@@ -136,6 +110,7 @@ export const managerToolsService = {
     async generateTechnicalRider(requirements: string, userId: string) {
       try {
         console.log('Generating technical rider for requirements:', requirements);
+
         const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
 
         const content = await managerToolsService.generateWithAI(prompt, 'technical');
@@ -194,7 +169,6 @@ export const managerToolsService = {
       });
     }
   },
-
   hiring: {
     async generateJobDescriptions(positions: string[], userId: string) {
       const prompt = `Create job descriptions for these positions: ${positions.join(', ')}`;
