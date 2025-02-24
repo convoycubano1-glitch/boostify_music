@@ -77,6 +77,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { MusicManager } from "@/components/music/music-manager";
 
 const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa'];
 
@@ -908,222 +909,24 @@ export default function ArtistDashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <Card className="p-6 h-full shadow-md rounded-lg">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                        <Music2 className="h-6 w-6 text-orange-500" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold">My Music</h2>
-                        <p className="text-sm text-muted-foreground">
-                          Manage your music portfolio
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      {isLoadingSongs ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                        </div>
-                      ) : songs.length > 0 ? (<div className="space-y-3">
-                          {songs.map((song) => (
-                            <div
-                              key={song.id}
-                              className="flex justify-between items-center p-3 bg-muted/50 rounded-lg transition-all hover:shadow-lg"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Mic2 className="h-5 w-5 text-orange-500" />
-                                <div>
-                                  <p className="font-medium">{song.name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(song.createdAt).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => togglePlay(song.audioUrl)}
-                                >
-                                  {currentAudio?.src === song.audioUrl && isPlaying
-                                    ? "Pause"
-                                    : "Play"}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDeleteSong(song.id, song.storageRef)
-                                  }
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-muted-foreground">
-                          No songs added yet
-                        </div>
-                      )}
-                      {/* Add New Song Dialog */}
-                      <Dialog
-                        open={isSongDialogOpen}
-                        onOpenChange={setIsSongDialogOpen}
-                      >
-                        <DialogTrigger asChild>
-                          <Button className="w-full gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add New Song
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Song</DialogTitle>
-                            <DialogDescription>
-                              Upload your MP3 or WAV file (max 10MB)
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="song-file">
-                                Audio File (MP3/WAV)
-                              </Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  id="song-file"
-                                  type="file"
-                                  accept=".mp3,.wav"
-                                  onChange={handleAudioUpload}
-                                  className="flex-1"
-                                  disabled={isSubmittingSong}
-                                />
-                              </div>
-                            </div>
-                            {currentAudio && (
-                              <div className="p-4 bg-muted rounded-lg">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => togglePlay()}
-                                      className="h-8 w-8 p-0"
-                                      disabled={isSubmittingSong}
-                                    >
-                                      {isPlaying ? (
-                                        <span className="sr-only">Pause</span>
-                                      ) : (
-                                        <span className="sr-only">Play</span>
-                                      )}
-                                      {isPlaying ? "⏸️" : "▶️"}
-                                    </Button>
-                                    <div className="space-y-1">
-                                      <p className="text-sm font-medium">
-                                        {selectedFile?.name}
-                                      </p>
-                                      {uploadProgress > 0 &&
-                                        uploadProgress < 100 && (
-                                          <div className="h-1 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
-                                            <div
-                                              className="h-full bg-orange-500 transition-all duration-300"
-                                              style={{
-                                                width: `${uploadProgress}%`,
-                                              }}
-                                            />
-                                          </div>
-                                        )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (currentAudio) {
-                                          currentAudio.currentTime = Math.max(
-                                            0,
-                                            currentAudio.currentTime - 10
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      -10s
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (currentAudio) {
-                                          currentAudio.currentTime = Math.min(
-                                            currentAudio.duration,
-                                            currentAudio.currentTime + 10
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      +10s
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        if (currentAudio) {
-                                          currentAudio.pause();
-                                          currentAudio.currentTime = 0;
-                                          setIsPlaying(false);
-                                        }
-                                      }}
-                                    >
-                                      Reset
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            <div className="flex justify-end gap-4">
-                              <Button
-                                variant="outline"
-                                onClick={() => {
-                                  setIsSongDialogOpen(false);
-                                  if (currentAudio) {
-                                    currentAudio.pause();
-                                    URL.revokeObjectURL(currentAudio.src);
-                                    setCurrentAudio(null);
-                                  }
-                                  setSelectedFile(null);
-                                  setIsPlaying(false);
-                                  setUploadProgress(0);
-                                }}
-                              >
-                                <X className="mr-2 h-4 w-4" />
-                                Cancel
-                              </Button>
-                              <Button
-                                onClick={handleSongUpload}
-                                disabled={isSubmittingSong || !selectedFile}
-                              >
-                                {isSubmittingSong ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Uploading...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Upload Song
-                                  </>
-                                )}
-                              </Button>
-                            </div>
+                  <motion.div variants={item}>
+                    <Card className="relative overflow-hidden">
+                      <div className="p-6">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                            <Music2 className="h-6 w-6 text-orange-500" />
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </Card>
+                          <div>
+                            <h2 className="text-xl font-semibold">My Music</h2>
+                            <p className="text-sm text-muted-foreground">
+                              Manage your music portfolio
+                            </p>
+                          </div>
+                        </div>
+                        <MusicManager />
+                      </div>
+                    </Card>
+                  </motion.div>
                 </motion.div>
               </div>
 
