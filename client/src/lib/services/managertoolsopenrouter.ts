@@ -20,6 +20,8 @@ export const managerToolsService = {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${API_KEY}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Boostify Manager Tools',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -38,7 +40,9 @@ export const managerToolsService = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate content with AI');
+        const errorData = await response.json();
+        console.error('OpenRouter API Error:', errorData);
+        throw new Error(errorData.error?.message || 'Failed to generate content with AI');
       }
 
       const data = await response.json();
@@ -86,7 +90,7 @@ export const managerToolsService = {
   // Funciones específicas para cada tipo de herramienta
   technical: {
     async generateTechnicalRider(requirements: string, userId: string) {
-      const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}`;
+      const prompt = `Generate a detailed technical rider based on these requirements: ${requirements}. Include sections for sound equipment, lighting requirements, stage setup, and any special requirements.`;
       const content = await managerToolsService.generateWithAI(prompt, 'technical');
       return managerToolsService.saveToFirestore({
         type: 'technical',

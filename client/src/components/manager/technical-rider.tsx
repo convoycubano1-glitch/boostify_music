@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Upload, Download, Building2, BadgeCheck, Settings, Calendar, ChevronRight } from "lucide-react";
+import { FileText, Upload, Download, Building2, Loader2, ChevronRight } from "lucide-react";
 import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
@@ -29,7 +29,7 @@ export function TechnicalRiderSection() {
     mutationFn: (requirements: string) => 
       managerToolsService.technical.generateTechnicalRider(requirements, user?.uid || ''),
     onSuccess: () => {
-      queryClient.invalidateQueries(['technical-riders']);
+      queryClient.invalidateQueries({ queryKey: ['technical-riders'] });
       toast({
         title: "Success",
         description: "Technical rider generated successfully"
@@ -57,6 +57,9 @@ export function TechnicalRiderSection() {
     try {
       setIsGenerating(true);
       await generateRiderMutation.mutateAsync(requirements);
+      setRequirements("");
+    } catch (error) {
+      console.error("Error generating rider:", error);
     } finally {
       setIsGenerating(false);
     }
@@ -65,7 +68,7 @@ export function TechnicalRiderSection() {
   return (
     <div className="grid gap-6 md:gap-8 md:grid-cols-2">
       <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
-        <div className="flex items-center gap-4 mb-6 md:mb-8">
+        <div className="flex items-center gap-4 mb-6">
           <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
             <FileText className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
           </div>
@@ -102,6 +105,9 @@ export function TechnicalRiderSection() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Generate Technical Rider</DialogTitle>
+              <DialogDescription>
+                Enter your technical requirements and we'll generate a professional technical rider.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -119,19 +125,26 @@ export function TechnicalRiderSection() {
                 disabled={isGenerating}
                 className="w-full"
               >
-                {isGenerating ? "Generating..." : "Generate Technical Rider"}
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  "Generate Technical Rider"
+                )}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
         <Button size="lg" variant="outline" className="h-auto py-3 whitespace-nowrap mt-4">
-            <Download className="mr-2 h-5 w-5 flex-shrink-0" />
-            Download
+          <Download className="mr-2 h-5 w-5 flex-shrink-0" />
+          Download
         </Button>
       </Card>
 
       <Card className="p-6 md:p-8 hover:bg-orange-500/5 transition-colors">
-        <div className="flex items-center gap-4 mb-6 md:mb-8">
+        <div className="flex items-center gap-4 mb-6">
           <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
             <Building2 className="h-6 md:h-8 w-6 md:w-8 text-orange-500" />
           </div>
@@ -145,7 +158,9 @@ export function TechnicalRiderSection() {
 
         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
           {isLoading ? (
-            <div>Loading...</div>
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+            </div>
           ) : technicalRiders.length > 0 ? (
             technicalRiders.map((rider: any) => (
               <div key={rider.id} className="p-4 rounded-lg bg-orange-500/5">
@@ -153,7 +168,7 @@ export function TechnicalRiderSection() {
                   <div>
                     <p className="font-medium">Technical Rider</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(rider.createdAt).toLocaleDateString()}
+                      {new Date(rider.createdAt.toDate()).toLocaleDateString()}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => {}}>
