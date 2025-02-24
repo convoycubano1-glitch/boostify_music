@@ -1,5 +1,4 @@
 // src/components/ai/composer-agent.tsx
-
 import { Music2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { falService } from "@/lib/api/fal-service";
@@ -18,10 +17,10 @@ export function ComposerAgent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
+  const [generatedLyrics, setGeneratedLyrics] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
-  const [result, setResult] = useState<string | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-purple-600 to-blue-600",
@@ -48,6 +47,8 @@ export function ComposerAgent() {
       setProgress((i + 1) * 20);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
+
+    setIsThinking(false);
   };
 
   const createPrompt = (params: any) => {
@@ -59,6 +60,40 @@ Following a ${params.structure} structure.
 Written in ${params.language}, expressing our theme:
 Let the music flow and create our dream.
 ##`;
+  };
+
+  const generateLyrics = async (params: any) => {
+    try {
+      await simulateThinking([
+        "Analyzing theme and mood...",
+        "Crafting lyrical structure...",
+        "Generating verses...",
+        "Adding chorus...",
+        "Finalizing lyrics..."
+      ]);
+
+      const lyricsPrompt = `Write lyrics for a song with the following parameters:
+      - Genre: ${params.genre}
+      - Mood: ${params.mood}
+      - Theme: ${params.theme}
+      - Language: ${params.language}
+      - Structure: ${params.structure}
+
+      Please write emotive and meaningful lyrics that capture the essence of the theme.
+      Structure the output with clear verse and chorus sections.`;
+
+      const response = await openRouterService.chatWithAgent(
+        lyricsPrompt,
+        'composer',
+        user.uid,
+        "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Error generating lyrics:", error);
+      throw error;
+    }
   };
 
   const actions: AgentAction[] = [
@@ -145,20 +180,32 @@ Let the music flow and create our dream.
 
         try {
           setGeneratedMusicUrl(null);
+          setGeneratedLyrics(null);
 
+          // Verificar parámetros
           if (!params.genre || !params.tempo || !params.mood || !params.theme || !params.language || !params.structure) {
-            throw new Error("Missing required parameters");
+            throw new Error('Missing required parameters');
           }
 
+          // Primero generamos la letra
+          try {
+            const lyrics = await generateLyrics(params);
+            setGeneratedLyrics(lyrics);
+          } catch (error) {
+            console.error('Error generating lyrics:', error);
+            // Continuamos con la música incluso si fallan las letras
+          }
+
+          // Luego generamos la música
           await simulateThinking([
             "Creating musical concept...",
             "Generating melody and harmony...",
             "Applying AI composition...",
-            "Processing final audio...",
+            "Processing final audio..."
           ]);
 
           const prompt = createPrompt(params);
-          console.log("Generating music with prompt:", prompt);
+          console.log('Prompt generado:', prompt);
 
           const response = await falService.generateMusic(
             {
@@ -167,150 +214,38 @@ Let the music flow and create our dream.
               mood: params.mood,
               theme: params.theme,
               language: params.language,
-              structure: params.structure,
+              structure: params.structure
             },
             user.uid,
             prompt
           );
 
-          console.log("FAL.AI response:", response);
+          console.log('Respuesta de FAL.AI:', response);
 
           if (response?.musicUrl) {
             setGeneratedMusicUrl(response.musicUrl);
             toast({
-              title: "Music Generated",
-              description: "Your musical composition has been created successfully.",
+              title: "Content Generated",
+              description: "Your musical composition and lyrics have been created successfully.",
             });
           } else {
-            throw new Error("No music URL received in response");
+            throw new Error('No music URL received in response');
           }
+
         } catch (error) {
-          console.error("Detailed error generating music:", {
-            message: error.message,
-            stack: error.stack,
-          });
+          console.error("Error generating music:", error);
           toast({
             title: "Error",
-            description: error.message || "Failed to generate music. Please try again.",
-            variant: "destructive",
+            description: "Failed to generate music. Please try again.",
+            variant: "destructive"
           });
-          throw error;
-        } finally {
+
           setIsThinking(false);
+          setProgress(0);
+          setSteps([]);
         }
-      },
-    },
-    {
-      name: "Analyze musical structure",
-      description: "Analyze the structure and elements of a composition",
-      parameters: [
-        {
-          name: "audioFile",
-          type: "text",
-          label: "Audio URL",
-          description: "URL of the audio file to analyze",
-        },
-      ],
-      action: async (params) => {
-        if (!user) {
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to use the AI Composer.",
-            variant: "destructive",
-          });
-          return;
-        }
-        try {
-          await simulateThinking();
-          const prompt = `Analyze the musical structure of the audio file at ${params.audioFile}.
-          Provide a detailed breakdown of its elements and structure.`;
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "composer",
-            user.uid,
-            "You are an expert music composer with deep knowledge of musical theory and composition techniques."
-          );
-          setResult(response);
-          toast({
-            title: "Analysis Complete",
-            description: "Musical structure analysis is complete.",
-          });
-          return response;
-        } catch (error) {
-          console.error("Detailed error analyzing audio:", {
-            message: error.message,
-            stack: error.stack,
-          });
-          toast({
-            title: "Error",
-            description: error.message || "Failed to analyze audio. Please try again.",
-            variant: "destructive",
-          });
-          throw error;
-        } finally {
-          setIsThinking(false);
-        }
-      },
-    },
-    {
-      name: "Suggest arrangements",
-      description: "Propose improvements and variations for a composition",
-      parameters: [
-        {
-          name: "style",
-          type: "select",
-          label: "Arrangement Style",
-          description: "Musical style for arrangement suggestions",
-          options: [
-            { value: "minimal", label: "Minimalist" },
-            { value: "orchestral", label: "Orchestral" },
-            { value: "electronic", label: "Electronic" },
-            { value: "acoustic", label: "Acoustic" },
-          ],
-          defaultValue: "minimal",
-        },
-      ],
-      action: async (params) => {
-        if (!user) {
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to use the AI Composer.",
-            variant: "destructive",
-          });
-          return;
-        }
-        try {
-          await simulateThinking();
-          const prompt = `Suggest arrangements for a composition in the style of ${params.style}.
-          Provide detailed arrangement suggestions and variations.`;
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "composer",
-            user.uid,
-            "You are an expert music composer with deep knowledge of musical theory and composition techniques."
-          );
-          setResult(response);
-          toast({
-            title: "Suggestions Generated",
-            description: "Arrangement suggestions have been generated.",
-          });
-          return response;
-        } catch (error) {
-          console.error("Detailed error generating suggestions:", {
-            message: error.message,
-            stack: error.stack,
-          });
-          toast({
-            title: "Error",
-            description: error.message || "Failed to generate suggestions. Please try again.",
-            variant: "destructive",
-          });
-          throw error;
-        } finally {
-          setIsThinking(false);
-        }
-      },
-    },
+      }
+    }
   ];
 
   return (
@@ -330,6 +265,14 @@ Let the music flow and create our dream.
           isComplete={progress === 100}
         />
       )}
+      {generatedLyrics && (
+        <div className="mt-4 p-6 bg-black/20 backdrop-blur rounded-lg border border-purple-500/20">
+          <h3 className="text-xl font-semibold mb-4 text-purple-400">Generated Lyrics</h3>
+          <div className="prose prose-invert max-w-none">
+            <pre className="whitespace-pre-wrap text-sm font-mono bg-transparent">{generatedLyrics}</pre>
+          </div>
+        </div>
+      )}
       {generatedMusicUrl && (
         <div className="mt-4">
           <h3 className="text-lg font-semibold mb-2">Generated Music</h3>
@@ -343,12 +286,6 @@ Let the music flow and create our dream.
           >
             Download Music
           </a>
-        </div>
-      )}
-      {result && (
-        <div className="mt-4 p-4 bg-muted rounded-lg">
-          <h3 className="font-semibold mb-2">Generated Result:</h3>
-          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
         </div>
       )}
     </BaseAgent>
