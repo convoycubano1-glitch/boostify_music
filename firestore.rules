@@ -10,28 +10,6 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Allow read access to all authenticated users for public collections
-    match /{document=**} {
-      allow read: if isAuthenticated();
-    }
-
-    // Course progress rules
-    match /course_progress/{progressId} {
-      allow read: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*');
-      allow create: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*');
-      allow update: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*') &&
-        (
-          // Allow updating specific fields
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['completedLessons', 'completedExams', 'currentLesson', 
-                     'lastAccessedAt', 'generatedImages', 'lessonImages',
-                     'timeSpent', 'lastCompletedAt', 'lessonContents',
-                     'examScores']) ||
-          // Or allow creating all fields if document doesn't exist
-          !exists(/databases/$(database)/documents/course_progress/$(progressId))
-        );
-    }
-
     // Video Director AI collection rules
     match /Video_Director_AI/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
@@ -56,6 +34,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // Social Media AI collection rules
+    match /Social_Media_AI/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // Course rules
     match /courses/{courseId} {
       allow read: if isAuthenticated();
@@ -67,6 +53,25 @@ service cloud.firestore {
     // User metrics
     match /users/{userId}/metrics/{metricId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Course progress rules
+    match /course_progress/{progressId} {
+      allow read: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*');
+      allow create: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*');
+      allow update: if isAuthenticated() && progressId.matches(request.auth.uid + '_.*') &&
+        (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['completedLessons', 'completedExams', 'currentLesson', 
+                     'lastAccessedAt', 'generatedImages', 'lessonImages',
+                     'timeSpent', 'lastCompletedAt', 'lessonContents',
+                     'examScores']) ||
+          !exists(/databases/$(database)/documents/course_progress/$(progressId))
+        );
+    }
+    // Allow read access to all authenticated users for public collections
+    match /{document=**} {
+      allow read: if isAuthenticated();
     }
 
     // Videos collection

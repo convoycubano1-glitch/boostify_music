@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
 const OPEN_ROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
@@ -116,6 +116,31 @@ export class OpenRouterService {
             }
           });
           console.log('Strategy saved to Strategic_Marketing_AI collection');
+        } else if (agentType === 'socialMedia') {
+          const socialMediaRef = collection(db, 'Social_Media_AI');
+          const docRef = doc(socialMediaRef, `content_${Date.now()}`);
+          await setDoc(docRef, {
+            userId,
+            prompt,
+            content: result,
+            timestamp: serverTimestamp(),
+            metadata: {
+              model: 'anthropic/claude-3-sonnet',
+              temperature: 0.7,
+              systemInstruction
+            },
+            format: {
+              sections: [
+                'Content Strategy',
+                'Post Schedule',
+                'Hashtag Strategy',
+                'Engagement Tactics',
+                'Performance Metrics'
+              ],
+              version: '1.0'
+            }
+          });
+          console.log('Content saved to Social_Media_AI collection');
         }
       } catch (error) {
         console.error('Error saving to Firestore:', error);
