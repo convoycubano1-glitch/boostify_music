@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: Luma api (Dream Machine)
+  description: |
+    <h2>Quick Start</h2>    
+    <b>How to authorize?</b> Get an account and create your api-key: <a href="https://dash.lumaapi.org/">https://dash.lumaapi.org/</a>
+    
+    <b>Code Examples</b>: <a target="_blank" href="https://www.postman.com/winter-capsule-627402/workspace/luma-api/overview">Postman Examples</a>
+    
+    <h2>Pricing</h2>
+    <table className="m-auto">
+      <thead>
+      <tr>
+        <th className="p-0 md:p-2">Supplier</th>
+        <th className="p-0 md:p-2">Model</th>
+        <th className="p-0 md:p-2">Price/Generation</th>
+        <th className="p-0 md:p-2">Credits/Generation</th>
+        <th className="p-0 md:p-2">Features</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td className="p-0 md:p-2"><del>Luma</del></td>
+        <td className="p-0 md:p-2"><del>luma_free_video</del></td>
+        <td className="p-0 md:p-2 text-center">~$0.017</td>
+        <td className="p-0 md:p-2 text-center">100</td>
+        <td className="p-0 md:p-2 text-center">Slow, With watermark</td>
+      </tr>
+      <tr>
+        <td className="p-0 md:p-2"><del>Luma</del></td>
+        <td className="p-0 md:p-2"><del>luma_vip_video</del></td>
+        <td className="p-0 md:p-2 text-center">~$0.17</td>
+        <td className="p-0 md:p-2 text-center">1000</td>
+        <td className="p-0 md:p-2 text-center">Fast, No watermark</td>
+      </tr>
+      <tr>
+        <td className="p-0 md:p-2">Suno</td>
+        <td className="p-0 md:p-2">chirp-v3-5</td>
+        <td className="p-0 md:p-2 text-center">~$0.034</td>
+        <td className="p-0 md:p-2 text-center">200</td>
+        <td className="p-0 md:p-2 text-center"></td>
+      </tr>
+      <tr>
+        <td className="p-0 md:p-2">Runway</td>
+        <td className="p-0 md:p-2">gen-3</td>
+        <td className="p-0 md:p-2 text-center">~$0.085</td>
+        <td className="p-0 md:p-2 text-center">500</td>
+        <td className="p-0 md:p-2 text-center"></td>
+      </tr>
+      </tbody>
+    </table>
+    <b>API Doc</b>: <a target="_blank" href="https://www.postman.com/winter-capsule-627402/workspace/luma-api/overview">Postman</a>
+    
+  version: 1.0.0
+servers:
+  - url: https://api.lumaapi.com
+    description: Production Server
+  - url: http://127.0.0.1:3000
+    description: Production Server

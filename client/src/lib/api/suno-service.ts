@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // Definición de tipos para las respuestas de Suno
 export const SunoResponseSchema = z.object({
@@ -18,7 +20,7 @@ export type SunoResponse = z.infer<typeof SunoResponseSchema>;
 
 // Configuración de Suno
 const SUNO_API_KEY = import.meta.env.VITE_SUNO_API_KEY;
-const BASE_URL = 'https://api.suno.ai/v1';
+const BASE_URL = 'https://api.lumaapi.com/v1';
 
 export const sunoService = {
   generateMusic: async (
@@ -36,19 +38,18 @@ export const sunoService = {
     try {
       console.log('Iniciando generación de música con Suno AI:', { ...params, userId });
 
-      const response = await fetch(`${BASE_URL}/generate`, {
+      const response = await fetch(`${BASE_URL}/music/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${SUNO_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'v2',
-          input_type: 'structured',
-          parameters: {
+          model: 'chirp-v3-5',
+          input: {
             genre: params.genre,
             tempo: params.tempo,
-            mood: params.mood
+            mood: params.mood,
           }
         })
       });
@@ -65,14 +66,21 @@ export const sunoService = {
       const sunoResponse: SunoResponse = {
         id: crypto.randomUUID(),
         userId,
-        musicUrl: data.audio_url,
+        musicUrl: data.output.audio_url, 
         parameters: params,
         timestamp: new Date(),
         metadata: {
-          model: 'suno-v2',
-          generationId: data.generation_id
+          model: 'chirp-v3-5',
+          generationId: data.id
         }
       };
+
+      // Guardar en Firestore
+      const agentResponsesRef = collection(db, 'agentResponses');
+      await addDoc(agentResponsesRef, {
+        ...sunoResponse,
+        timestamp: serverTimestamp()
+      });
 
       return sunoResponse;
     } catch (error) {
