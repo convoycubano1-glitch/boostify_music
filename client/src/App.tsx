@@ -44,7 +44,8 @@ import RealTimeTranslator from "@/pages/real-time-translator";
 import EducationPage from "@/pages/education";
 import AchievementsPage from "@/pages/achievements-page";
 import CourseDetailPage from "@/pages/course-detail";
-import SmartCardsPage from "@/pages/smart-cards"; // Add import
+import SmartCardsPage from "@/pages/smart-cards";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 
 interface ErrorBoundaryState {
@@ -96,52 +97,55 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
 const Router = () => {
   return (
-    <Switch>
-      {/* Public routes */}
-      <Route path="/" component={HomePage} />
-      <Route path="/terms" component={TermsPage} />
-      <Route path="/privacy" component={PrivacyPage} />
-      <Route path="/cookies" component={CookiesPage} />
+    <>
+      <Switch>
+        {/* Public routes */}
+        <Route path="/" component={HomePage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/cookies" component={CookiesPage} />
 
-      {/* Protected routes */}
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/admin" component={AdminPage} />
-      <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
-      <ProtectedRoute path="/spotify" component={SpotifyPage} />
-      <ProtectedRoute path="/contracts" component={ContractsPage} />
-      <ProtectedRoute path="/boostify-international" component={BoostifyInternationalPage} />
-      <ProtectedRoute path="/boostify-tv" component={BoostifyTVPage} />
-      <ProtectedRoute path="/pr" component={PRPage} />
-      <ProtectedRoute path="/news" component={NewsPage} />
-      <ProtectedRoute path="/events" component={EventsPage} />
-      <ProtectedRoute path="/analytics" component={AnalyticsPage} />
-      <ProtectedRoute path="/global" component={GlobalPage} />
-      <ProtectedRoute path="/videos" component={VideosPage} />
-      <ProtectedRoute path="/blog" component={BlogPage} />
-      <ProtectedRoute path="/promotion" component={PromotionPage} />
-      <ProtectedRoute path="/youtube-views" component={YoutubeViewsPage} />
-      <ProtectedRoute path="/instagram-boost" component={InstagramBoostPage} />
-      <ProtectedRoute path="/settings" component={SettingsPage} />
-      <ProtectedRoute path="/contacts" component={ContactsPage} />
-      <ProtectedRoute path="/messages" component={MessagesPage} />
-      <ProtectedRoute path="/manager-tools" component={ManagerToolsPage} />
-      <ProtectedRoute path="/producer-tools" component={ProducerToolsPage} />
-      <ProtectedRoute path="/music-video-creator" component={MusicVideoCreator} />
-      <ProtectedRoute path="/record-label-services" component={RecordLabelServices} />
-      <ProtectedRoute path="/ai-agents" component={AIAgentsPage} />
-      <ProtectedRoute path="/artist-image-advisor" component={ArtistImageAdvisor} />
-      <ProtectedRoute path="/merchandise" component={MerchandisePage} />
-      <ProtectedRoute path="/ecosystem" component={EcosystemPage} />
-      <ProtectedRoute path="/store" component={StorePage} />
-      <ProtectedRoute path="/translator" component={RealTimeTranslator} />
-      <ProtectedRoute path="/education" component={EducationPage} />
-      <ProtectedRoute path="/achievements" component={AchievementsPage} />
-      <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
-      <ProtectedRoute path="/smart-cards" component={SmartCardsPage} />
+        {/* Protected routes */}
+        <ProtectedRoute path="/dashboard" component={DashboardPage} />
+        <ProtectedRoute path="/admin" component={AdminPage} />
+        <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
+        <ProtectedRoute path="/spotify" component={SpotifyPage} />
+        <ProtectedRoute path="/contracts" component={ContractsPage} />
+        <ProtectedRoute path="/boostify-international" component={BoostifyInternationalPage} />
+        <ProtectedRoute path="/boostify-tv" component={BoostifyTVPage} />
+        <ProtectedRoute path="/pr" component={PRPage} />
+        <ProtectedRoute path="/news" component={NewsPage} />
+        <ProtectedRoute path="/events" component={EventsPage} />
+        <ProtectedRoute path="/analytics" component={AnalyticsPage} />
+        <ProtectedRoute path="/global" component={GlobalPage} />
+        <ProtectedRoute path="/videos" component={VideosPage} />
+        <ProtectedRoute path="/blog" component={BlogPage} />
+        <ProtectedRoute path="/promotion" component={PromotionPage} />
+        <ProtectedRoute path="/youtube-views" component={YoutubeViewsPage} />
+        <ProtectedRoute path="/instagram-boost" component={InstagramBoostPage} />
+        <ProtectedRoute path="/settings" component={SettingsPage} />
+        <ProtectedRoute path="/contacts" component={ContactsPage} />
+        <ProtectedRoute path="/messages" component={MessagesPage} />
+        <ProtectedRoute path="/manager-tools" component={ManagerToolsPage} />
+        <ProtectedRoute path="/producer-tools" component={ProducerToolsPage} />
+        <ProtectedRoute path="/music-video-creator" component={MusicVideoCreator} />
+        <ProtectedRoute path="/record-label-services" component={RecordLabelServices} />
+        <ProtectedRoute path="/ai-agents" component={AIAgentsPage} />
+        <ProtectedRoute path="/artist-image-advisor" component={ArtistImageAdvisor} />
+        <ProtectedRoute path="/merchandise" component={MerchandisePage} />
+        <ProtectedRoute path="/ecosystem" component={EcosystemPage} />
+        <ProtectedRoute path="/store" component={StorePage} />
+        <ProtectedRoute path="/translator" component={RealTimeTranslator} />
+        <ProtectedRoute path="/education" component={EducationPage} />
+        <ProtectedRoute path="/achievements" component={AchievementsPage} />
+        <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
+        <ProtectedRoute path="/smart-cards" component={SmartCardsPage} />
 
-      {/* Catch all not found route */}
-      <Route component={NotFound} />
-    </Switch>
+        {/* Catch all not found route */}
+        <Route component={NotFound} />
+      </Switch>
+      <BottomNav />
+    </>
   );
 };
 
