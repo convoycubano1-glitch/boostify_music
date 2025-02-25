@@ -4,6 +4,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   DollarSign,
   Download,
@@ -19,10 +24,19 @@ import {
   Target,
   CreditCard,
   Check, 
-  Calculator
+  Calculator,
+  UserPlus,
+  Save,
+  PenSquare
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { db } from "@/firebase";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 // Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);
@@ -502,13 +516,13 @@ export default function InvestorsDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pb-14 sm:pb-0">
       <Header />
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-14 sm:pt-16">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
-          <div className="container mx-auto px-4 py-6">
+          <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
             {/* Hero Section */}
-            <section className="relative rounded-xl overflow-hidden mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-8">
+            <section className="relative rounded-xl overflow-hidden mb-6 sm:mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-4 sm:p-8">
               <div className="relative">
                 <h1 className="text-3xl md:text-5xl font-bold mb-4">
                   Investor Dashboard
@@ -531,7 +545,7 @@ export default function InvestorsDashboard() {
 
             {/* Main Content Tabs */}
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-4 max-w-[800px] mb-8">
+              <TabsList className="grid grid-cols-4 max-w-[800px] mb-4 sm:mb-8 text-xs">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500">
                   <BarChart2 className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Overview</span>
