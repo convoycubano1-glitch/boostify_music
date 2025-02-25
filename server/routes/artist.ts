@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { db } from '@db';
-import { users, marketingMetrics, artistMedia } from '@db/schema';
+import { users, marketingMetrics } from '@db/schema';
 import { eq } from 'drizzle-orm';
-import { getStorage } from 'firebase-admin/storage';
-import { firebaseAdmin } from '../firebase';
+import { db as firestore } from '../firebase';
 
 const router = Router();
 
@@ -11,7 +10,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get user data
+    // Get user data from PostgreSQL
     const [user] = await db
       .select()
       .from(users)
@@ -22,45 +21,46 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Artist not found' });
     }
 
-    // Get marketing metrics
+    // Get marketing metrics from PostgreSQL
     const [metrics] = await db
       .select()
       .from(marketingMetrics)
       .where(eq(marketingMetrics.userId, user.id))
       .limit(1);
 
-    // Get artist media from database
-    const media = await db
-      .select()
-      .from(artistMedia)
-      .where(eq(artistMedia.userId, user.id));
+    // Get music from Firestore
+    const musicSnapshot = await firestore
+      .collection('songs')
+      .where('userId', '==', user.id)
+      .get();
 
-    // Process media files through Firebase Storage
-    const storage = getStorage(firebaseAdmin);
-    const bucket = storage.bucket();
+    const music = musicSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.name,
+        url: data.audioUrl,
+        storageRef: data.storageRef,
+        createdAt: data.createdAt?.toDate()
+      };
+    });
 
-    const processedMedia = await Promise.all(media.map(async (item) => {
-      try {
-        const file = bucket.file(item.storagePath);
-        const [url] = await file.getSignedUrl({
-          action: 'read',
-          expires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-        });
+    // Get videos from Firestore
+    const videosSnapshot = await firestore
+      .collection('videos')
+      .where('userId', '==', user.id)
+      .get();
 
-        return {
-          ...item,
-          url
-        };
-      } catch (error) {
-        console.error(`Error getting signed URL for ${item.storagePath}:`, error);
-        return null;
-      }
-    }));
-
-    // Filter out failed items and separate into music and videos
-    const validMedia = processedMedia.filter(item => item !== null);
-    const music = validMedia.filter(item => item.type === 'audio');
-    const videos = validMedia.filter(item => item.type === 'video');
+    const videos = videosSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.title,
+        url: data.url,
+        thumbnail: data.thumbnailUrl,
+        createdAt: data.createdAt?.toDate()
+      };
+    });
 
     // Combine all data
     const artistData = {
