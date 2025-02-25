@@ -482,62 +482,32 @@ export const CustomerServiceAgent: React.FC = () => {
     setIsAgentDialogOpen(true);
   };
 
+  // Estado para el modal del iframe
+  const [isElevenLabsModalOpen, setIsElevenLabsModalOpen] = useState(false);
+  
   // Handle selected agent connection
   const connectWithAgent = (agent: ElevenLabsAgent) => {
     setSelectedAgent(agent);
     setIsAgentDialogOpen(false);
     
-    // We'll use the embedded widget instead of opening a new window
-    // Show a dialog with the embedded widget
-    
-    // Add system message to indicate connection
+    // Añadir mensaje al sistema
     const systemMessage: Message = {
       id: crypto.randomUUID(),
       role: 'system',
-      content: `You are now being connected with our ${agent.name}. The conversation will appear directly in this chat window.`,
+      content: `You are now being connected with our ${agent.name}. The conversation will appear in a new window.`,
       timestamp: new Date(),
     };
     
     setMessages(prev => [...prev, systemMessage]);
     
-    // Create a script element to load the ElevenLabs widget
-    if (!document.querySelector('script[src="https://elevenlabs.io/convai-widget/index.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://elevenlabs.io/convai-widget/index.js';
-      script.async = true;
-      script.type = 'text/javascript';
-      document.body.appendChild(script);
-    }
-    
-    // Create the convai element with the agent ID
-    const embedContainer = document.createElement('div');
-    embedContainer.id = `elevenlabs-agent-container-${agent.id}`;
-    embedContainer.className = 'fixed inset-0 z-[10000] flex items-center justify-center bg-black/50';
-    embedContainer.style.padding = '2rem';
-    
-    const embedWrapper = document.createElement('div');
-    embedWrapper.className = 'relative w-full max-w-2xl h-[80vh] bg-black rounded-xl overflow-hidden';
-    embedContainer.appendChild(embedWrapper);
-    
-    // Add close button
-    const closeButton = document.createElement('button');
-    closeButton.className = 'absolute top-4 right-4 z-10 p-1 rounded-full bg-gray-800 text-white hover:bg-gray-700';
-    closeButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-    closeButton.onclick = () => {
-      document.body.removeChild(embedContainer);
-    };
-    embedWrapper.appendChild(closeButton);
-    
-    const embedElement = document.createElement('elevenlabs-convai');
-    embedElement.setAttribute('agent-id', agent.agentId);
-    embedElement.className = 'w-full h-full';
-    embedWrapper.appendChild(embedElement);
-    
-    document.body.appendChild(embedContainer);
+    // En lugar de intentar renderizar el widget como un elemento personalizado,
+    // simplemente abre una nueva ventana con la URL directa de ElevenLabs
+    const elevenLabsAgentUrl = `https://elevenlabs.io/app/talk-to?agent_id=${agent.agentId}`;
+    window.open(elevenLabsAgentUrl, '_blank');
     
     toast({
       title: `Connecting with ${agent.name}`,
-      description: "You can now speak directly with our specialist using voice or text.",
+      description: "A new window has been opened where you can continue your conversation.",
     });
   };
 
@@ -807,7 +777,7 @@ export const CustomerServiceAgent: React.FC = () => {
                   <div className="p-2">
                     <h4 className="font-medium text-sm mb-2 text-orange-500">Select an Agent to Call</h4>
                     <p className="text-xs text-gray-300 mb-3">
-                      Connect with one of our voice agents for specialized assistance. A new window will open for your conversation.
+                      Connect with one of our voice agents for specialized assistance at ElevenLabs. A new window will open for your conversation.
                     </p>
                     <div className="space-y-2">
                       {ELEVENLABS_AGENTS.map((agent) => (
@@ -881,7 +851,7 @@ export const CustomerServiceAgent: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-orange-500">Connect with an Agent</DialogTitle>
             <DialogDescription className="text-gray-300">
-              Choose a specialized agent to help with your specific needs. The conversation will appear directly in this window.
+              Choose a specialized agent to help with your specific needs. A new window will open for your conversation.
             </DialogDescription>
           </DialogHeader>
           
@@ -912,9 +882,6 @@ export const CustomerServiceAgent: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {/* Load the ElevenLabs script */}
-      <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
     </>
   );
 };
