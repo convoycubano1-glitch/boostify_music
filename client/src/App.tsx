@@ -47,6 +47,7 @@ import CourseDetailPage from "@/pages/course-detail";
 import SmartCardsPage from "@/pages/smart-cards";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
+import { BoostifyRadio } from "@/components/radio/boostify-radio";
 
 
 interface ErrorBoundaryState {
@@ -97,6 +98,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 const Router = () => {
+  const [showRadio, setShowRadio] = useState(true);
+
   return (
     <>
       <Switch>
@@ -148,6 +151,7 @@ const Router = () => {
         <Route component={NotFound} />
       </Switch>
       <BottomNav />
+      {showRadio && <BoostifyRadio onClose={() => setShowRadio(false)} />}
     </>
   );
 };
