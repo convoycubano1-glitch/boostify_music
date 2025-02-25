@@ -1,27 +1,11 @@
 import { StreamingService, StreamingTrack, StreamingError } from './streaming-service';
 
-declare global {
-  interface Window {
-    Spotify: {
-      Player: new (config: SpotifyPlayerConfig) => Spotify.Player;
-    };
-  }
-}
-
-interface SpotifyPlayerConfig {
-  name: string;
-  getOAuthToken: (cb: (token: string) => void) => void;
-}
-
 export class SpotifyStreamingService implements StreamingService {
   private accessToken: string | null = null;
-  private player: Spotify.Player | null = null;
   name = 'Spotify';
   isAuthenticated = false;
-  isPremium = false;
 
   constructor() {
-    this.loadSpotifyScript();
     // Add check for debugging
     console.log("Spotify Client ID available:", !!import.meta.env.VITE_SPOTIFY_CLIENT_ID);
 
@@ -30,66 +14,16 @@ export class SpotifyStreamingService implements StreamingService {
     }
   }
 
-  private loadSpotifyScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (window.Spotify) {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://sdk.scdn.co/spotify-player.js';
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Spotify SDK'));
-      document.body.appendChild(script);
-
-      // Add a timeout to prevent hanging
-      setTimeout(() => {
-        reject(new Error('Spotify SDK load timeout'));
-      }, 10000);
-    });
-  }
-
   async connect(): Promise<boolean> {
     try {
-      // Esperar a que el SDK se cargue con reintento
-      for (let i = 0; i < 3; i++) {
-        try {
-          await this.loadSpotifyScript();
-          break;
-        } catch (error) {
-          if (i === 2) throw error;
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
-
       const token = await this.getSpotifyToken();
       this.accessToken = token;
-
-      // Solo intentamos inicializar el player si es una cuenta Premium
-      try {
-        await this.initializePlayer(token);
-        this.isPremium = true;
-      } catch (error: any) {
-        if (error.message?.includes('premium')) {
-          console.log('User does not have Spotify Premium, falling back to preview mode');
-          this.isPremium = false;
-        } else {
-          throw error;
-        }
-      }
-
       this.isAuthenticated = true;
       return true;
     } catch (error) {
       console.error('Error connecting to Spotify:', error);
       this.isAuthenticated = false;
-      throw new StreamingError(
-        'Failed to connect to Spotify',
-        'spotify',
-        'SDK_NOT_LOADED'
-      );
+      return false;
     }
   }
 
@@ -127,61 +61,7 @@ export class SpotifyStreamingService implements StreamingService {
     }
   }
 
-  private async initializePlayer(token: string): Promise<void> {
-    if (!window.Spotify) {
-      throw new StreamingError(
-        'Spotify SDK not loaded',
-        'spotify',
-        'SDK_NOT_LOADED'
-      );
-    }
-
-    try {
-      this.player = new window.Spotify.Player({
-        name: 'Boostify Radio',
-        getOAuthToken: cb => cb(token)
-      });
-
-      // No lanzar errores en los listeners, solo registrarlos
-      this.player.addListener('initialization_error', ({ message }) => {
-        console.error('Failed to initialize:', message);
-      });
-
-      this.player.addListener('authentication_error', ({ message }) => {
-        console.error('Failed to authenticate:', message);
-      });
-
-      this.player.addListener('account_error', ({ message }) => {
-        console.error('Failed to validate Spotify account:', message);
-        // Marcar como no premium si recibimos este error
-        this.isPremium = false;
-      });
-
-      this.player.addListener('playback_error', ({ message }) => {
-        console.error('Failed to perform playback:', message);
-      });
-
-      // Connect to the player
-      const connected = await this.player.connect();
-      if (!connected) {
-        throw new Error('Failed to connect to Spotify player');
-      }
-    } catch (error) {
-      console.error('Error initializing Spotify player:', error);
-      this.player = null;
-      throw new StreamingError(
-        'Failed to initialize Spotify player',
-        'spotify',
-        'PLAYER_INIT_FAILED'
-      );
-    }
-  }
-
   async disconnect(): Promise<void> {
-    if (this.player) {
-      await this.player.disconnect();
-      this.player = null;
-    }
     this.accessToken = null;
     this.isAuthenticated = false;
   }
@@ -209,8 +89,9 @@ export class SpotifyStreamingService implements StreamingService {
         artist: track.artists[0].name,
         duration: track.duration_ms / 1000,
         streamUrl: track.preview_url,
-        source: 'spotify',
-        albumArt: track.album.images[0]?.url
+        source: 'spotify' as const,
+        albumArt: track.album.images[0]?.url,
+        externalUrl: track.external_urls.spotify
       }));
     } catch (error) {
       console.error('Error searching tracks:', error);
@@ -241,8 +122,9 @@ export class SpotifyStreamingService implements StreamingService {
         artist: track.artists[0].name,
         duration: track.duration_ms / 1000,
         streamUrl: track.preview_url,
-        source: 'spotify',
-        albumArt: track.album.images[0]?.url
+        source: 'spotify' as const,
+        albumArt: track.album.images[0]?.url,
+        externalUrl: track.external_urls.spotify
       }));
     } catch (error) {
       console.error('Error getting recommendations:', error);
@@ -250,48 +132,8 @@ export class SpotifyStreamingService implements StreamingService {
     }
   }
 
-  async play(track: StreamingTrack): Promise<void> {
-    if (!this.player && this.isPremium) {
-      throw new StreamingError(
-        'Spotify player not initialized',
-        'spotify',
-        'PLAYER_NOT_READY'
-      );
-    }
-
-    try {
-      if (this.isPremium && this.player) {
-        await this.player.resume();
-      }
-      // Si no es premium, la reproducción se manejará a través del elemento audio HTML
-      // usando el preview_url
-    } catch (error) {
-      console.error('Error playing track:', error);
-      throw new StreamingError(
-        'Failed to play track',
-        'spotify',
-        'PLAYBACK_ERROR'
-      );
-    }
-  }
-
-  async pause(): Promise<void> {
-    if (!this.player || !this.isPremium) return;
-
-    try {
-      await this.player.pause();
-    } catch (error) {
-      console.error('Error pausing playback:', error);
-    }
-  }
-
-  async resume(): Promise<void> {
-    if (!this.player || !this.isPremium) return;
-
-    try {
-      await this.player.resume();
-    } catch (error) {
-      console.error('Error resuming playback:', error);
-    }
-  }
+  // Estos métodos ahora son no-op ya que usaremos el elemento audio HTML
+  async play(_track: StreamingTrack): Promise<void> {}
+  async pause(): Promise<void> {}
+  async resume(): Promise<void> {}
 }

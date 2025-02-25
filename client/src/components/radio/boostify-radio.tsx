@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Volume2, Mic, Play, Pause, Radio, X, SkipForward, RefreshCw } from "lucide-react";
+import { Volume2, Mic, Play, Pause, Radio, X, SkipForward, RefreshCw, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
@@ -38,6 +38,8 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const [currentStreamingTrack, setCurrentStreamingTrack] = useState<StreamingTrack | null>(null);
   const [isInitializingServices, setIsInitializingServices] = useState(false);
   const [selectedSource, setSelectedSource] = useState<MusicSource>('boostify');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<StreamingTrack[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
@@ -50,29 +52,22 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
     setIsInitializingServices(true);
     try {
       const spotifyService = new SpotifyStreamingService();
-      const connected = await spotifyService.connect().catch(err => {
-        console.warn('Failed to connect to Spotify:', err);
-        return false;
-      });
+      const connected = await spotifyService.connect();
 
       if (connected) {
         toast({
           title: "Spotify conectado",
           description: "Servicio de streaming inicializado correctamente"
         });
+        setStreamingServices([spotifyService]);
       }
-
-      setStreamingServices([spotifyService]);
     } catch (error) {
       console.error('Error initializing streaming services:', error);
       toast({
         title: "Error de conexión",
-        description: "No se pudo conectar con los servicios de streaming. Reintentando...",
+        description: "No se pudo conectar con los servicios de streaming",
         variant: "destructive"
       });
-
-      // Reintento después de 5 segundos
-      setTimeout(initializeStreamingServices, 5000);
     } finally {
       setIsInitializingServices(false);
     }
@@ -107,34 +102,25 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   };
 
   const togglePlay = async () => {
-    try {
-      if (selectedSource === 'spotify' && currentStreamingTrack) {
-        // Si estamos reproduciendo desde Spotify
-        const service = streamingServices.find(s => s.name.toLowerCase() === currentStreamingTrack.source);
-        if (service) {
-          if (isPlaying) {
-            await service.pause();
-          } else {
-            await service.resume();
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          try {
+            await playPromise;
+          } catch (error) {
+            console.error('Error playing audio:', error);
+            toast({
+              title: "Error",
+              description: "Error al reproducir la música",
+              variant: "destructive"
+            });
           }
-          setIsPlaying(!isPlaying);
         }
-      } else if (audioRef.current) {
-        // Si estamos reproduciendo audio local de Boostify
-        if (isPlaying) {
-          audioRef.current.pause();
-        } else {
-          audioRef.current.play();
-        }
-        setIsPlaying(!isPlaying);
       }
-    } catch (error) {
-      console.error('Error toggling playback:', error);
-      toast({
-        title: "Error",
-        description: "Error al reproducir la música",
-        variant: "destructive"
-      });
+      setIsPlaying(!isPlaying);
     }
   };
 
@@ -146,18 +132,21 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   };
 
   const skipToNextSong = () => {
-    if (selectedSource === 'spotify') {
-      // Implementar lógica para saltar a la siguiente canción de Spotify
-      return;
-    }
-
-    if (!currentSong || playlist.length === 0) return;
-
-    const currentIndex = playlist.findIndex(song => song.id === currentSong.id);
-    const nextIndex = (currentIndex + 1) % playlist.length;
-    setCurrentSong(playlist[nextIndex]);
-    if (isPlaying && audioRef.current) {
-      audioRef.current.play();
+    if (selectedSource === 'spotify' && searchResults.length > 0) {
+      const currentIndex = searchResults.findIndex(track => track.id === currentStreamingTrack?.id);
+      const nextIndex = (currentIndex + 1) % searchResults.length;
+      setCurrentStreamingTrack(searchResults[nextIndex]);
+      if (isPlaying && audioRef.current) {
+        audioRef.current.play();
+      }
+    } else if (selectedSource === 'boostify') {
+      if (!currentSong || playlist.length === 0) return;
+      const currentIndex = playlist.findIndex(song => song.id === currentSong.id);
+      const nextIndex = (currentIndex + 1) % playlist.length;
+      setCurrentSong(playlist[nextIndex]);
+      if (isPlaying && audioRef.current) {
+        audioRef.current.play();
+      }
     }
   };
 
@@ -165,9 +154,33 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
     setSelectedSource(source);
     setIsPlaying(false);
     setCurrentStreamingTrack(null);
+    setSearchResults([]);
+    setSearchQuery('');
 
     if (source === 'boostify') {
       loadSongs();
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || selectedSource !== 'spotify') return;
+
+    const spotifyService = streamingServices.find(s => s.name === 'Spotify');
+    if (!spotifyService) return;
+
+    try {
+      const results = await spotifyService.search(searchQuery);
+      setSearchResults(results);
+      if (results.length > 0) {
+        setCurrentStreamingTrack(results[0]);
+      }
+    } catch (error) {
+      console.error('Error searching tracks:', error);
+      toast({
+        title: "Error",
+        description: "Error al buscar canciones",
+        variant: "destructive"
+      });
     }
   };
 
@@ -265,6 +278,27 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
           </Button>
         </div>
 
+        {selectedSource === 'spotify' && (
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Buscar en Spotify..."
+              className="flex-1 px-3 py-1 rounded bg-white/10 text-white placeholder-white/50 border-none focus:outline-none focus:ring-1 focus:ring-green-500"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSearch}
+              className="text-white/60 hover:text-white"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <Button
@@ -275,7 +309,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
                 isPlaying && "text-orange-500"
               )}
               onClick={togglePlay}
-              disabled={isInitializingServices}
+              disabled={(!currentSong && !currentStreamingTrack) || isInitializingServices}
             >
               {isPlaying ? (
                 <Pause className="h-6 w-6" />
@@ -312,6 +346,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
               size="icon"
               className="text-white/60 hover:text-white"
               onClick={skipToNextSong}
+              disabled={(!currentSong && !currentStreamingTrack) || isInitializingServices}
             >
               <SkipForward className="h-5 w-5" />
             </Button>
@@ -335,7 +370,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
 
         <audio
           ref={audioRef}
-          src={currentSong?.audioUrl}
+          src={selectedSource === 'spotify' ? currentStreamingTrack?.streamUrl : currentSong?.audioUrl}
           onEnded={skipToNextSong}
           onError={() => {
             console.error("Error loading audio");
