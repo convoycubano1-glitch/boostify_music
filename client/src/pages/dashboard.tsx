@@ -228,18 +228,26 @@ export default function Dashboard() {
                 {/* Text content over video */}
                 <div className="relative z-20 p-8 md:p-12 flex flex-col h-full justify-center">
                   <div className="max-w-md">
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                    <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-200 mb-3">
                       Welcome Back{user?.displayName ? `, ${user.displayName}` : ''}
                     </h1>
-                    <p className="text-white/80 text-md md:text-lg mb-6">
+                    <p className="text-white/90 text-md md:text-lg mb-6">
                       Manage your music presence and create engaging content
                     </p>
-                    <Link href="/analytics">
-                      <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
-                        <Activity className="mr-2 h-4 w-4" />
-                        View Analytics
-                      </Button>
-                    </Link>
+                    <div className="flex flex-wrap gap-3">
+                      <Link href="/analytics">
+                        <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
+                          <Activity className="mr-2 h-4 w-4" />
+                          View Analytics
+                        </Button>
+                      </Link>
+                      <Link href="/profile">
+                        <Button className="bg-purple-500 hover:bg-purple-600 w-full md:w-auto">
+                          <User className="mr-2 h-4 w-4" />
+                          My Profile
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
