@@ -7,9 +7,31 @@ export const users = pgTable("users", {
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
   role: text("role", { enum: ["artist", "admin"] }).default("artist").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  biography: text("biography"),
+  genre: text("genre"),
+  location: text("location"),
+  website: text("website"),
+  instagramHandle: text("instagram_handle"),
+  twitterHandle: text("twitter_handle"),
+  youtubeChannel: text("youtube_channel"),
+  technicalRider: json("technical_rider"),
   spotifyToken: text("spotify_token"),
   instagramToken: text("instagram_token"),
   createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const artistMedia = pgTable("artist_media", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  type: text("type", { enum: ["audio", "video"] }).notNull(),
+  storagePath: text("storage_path").notNull(),
+  duration: text("duration"),
+  thumbnail: text("thumbnail"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
 export const subscriptions = pgTable("subscriptions", {
@@ -224,8 +246,8 @@ export const achievements = pgTable("achievements", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   badgeImage: text("badge_image").notNull(),
-  type: text("type", { 
-    enum: ["course_completion", "streak", "participation", "excellence"] 
+  type: text("type", {
+    enum: ["course_completion", "streak", "participation", "excellence"]
   }).notNull(),
   requirements: json("requirements").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -259,7 +281,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
   audioDemos: many(audioDemos),
   events: many(events),
-  achievements: many(userAchievements)
+  achievements: many(userAchievements),
+  media: many(artistMedia)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -357,6 +380,12 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   })
 }));
 
+export const artistMediaRelations = relations(artistMedia, ({ one }) => ({
+  user: one(users, {
+    fields: [artistMedia.userId],
+    references: [users.id],
+  }),
+}));
 
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
@@ -397,6 +426,9 @@ export const selectAchievementSchema = createSelectSchema(achievements);
 export const insertUserAchievementSchema = createInsertSchema(userAchievements);
 export const selectUserAchievementSchema = createSelectSchema(userAchievements);
 
+export const insertArtistMediaSchema = createInsertSchema(artistMedia);
+export const selectArtistMediaSchema = createSelectSchema(artistMedia);
+
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
@@ -435,3 +467,5 @@ export type InsertAchievement = typeof achievements.$inferInsert;
 export type SelectAchievement = typeof achievements.$inferSelect;
 export type InsertUserAchievement = typeof userAchievements.$inferInsert;
 export type SelectUserAchievement = typeof userAchievements.$inferSelect;
+export type InsertArtistMedia = typeof artistMedia.$inferInsert;
+export type SelectArtistMedia = typeof artistMedia.$inferSelect;

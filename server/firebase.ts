@@ -1,6 +1,7 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -13,11 +14,13 @@ const serviceAccountPath = join(__dirname, '..', 'attached_assets', 'artist-boos
 const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
 
 const app = initializeApp({
-  credential: cert(serviceAccount)
+  credential: cert(serviceAccount),
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET
 });
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
 // Configure Firestore security rules
 const rules = `
@@ -52,3 +55,21 @@ service cloud.firestore {
   }
 }
 `;
+
+// Configure Storage security rules
+const storageRules = `
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Allow public read access to all files
+      allow read: if true;
+
+      // Only allow write access to authenticated users
+      allow write: if request.auth != null;
+    }
+  }
+}
+`;
+
+export const firebaseAdmin = app;
