@@ -210,18 +210,18 @@ export function Header() {
         </div>
 
         {/* Secondary Navigation Bar - Inspired by Freepik */}
-        <div className="border-t border-border/40 bg-[#1B1B1B]/95 backdrop-blur-sm">
-          <div className="container flex h-10 max-w-screen-2xl items-center overflow-x-auto">
-            <nav className="flex items-center space-x-2 px-4">
+        <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm">
+          <div className="container flex h-8 max-w-screen-2xl items-center">
+            <nav className="flex items-center justify-between w-full px-4">
               {[...navigation, ...secondaryNavigation].map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="group flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#2A2A2A] transition-colors"
+                  className="group flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/5 transition-colors"
                   title={item.name}
                 >
                   <item.icon 
-                    className="h-4 w-4 text-orange-500 transition-all duration-300 group-hover:text-orange-400 group-hover:drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
+                    className="h-3.5 w-3.5 text-orange-500 transition-all duration-300 group-hover:text-orange-400 group-hover:drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
                   />
                 </Link>
               ))}
@@ -230,7 +230,7 @@ export function Header() {
         </div>
       </header>
       {/* Spacer to prevent content from hiding under the fixed header */}
-      <div className="h-[104px]" />
+      <div className="h-[96px]" />
     </>
   );
 }
