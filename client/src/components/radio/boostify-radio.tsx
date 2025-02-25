@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Volume2, Mic, Play, Pause, Radio, X, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "@/firebase";
 import { StreamingService, StreamingTrack } from "@/lib/streaming/streaming-service";
 import { SpotifyStreamingService } from "@/lib/streaming/spotify-service";
+import { useToast } from "@/hooks/use-toast";
 
 interface BoostifyRadioProps {
   className?: string;
@@ -24,6 +25,7 @@ interface Song {
 }
 
 export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
+  const { toast } = useToast();
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([50]);
   const [isRecording, setIsRecording] = useState(false);
@@ -43,15 +45,26 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const initializeStreamingServices = async () => {
     try {
       const spotifyService = new SpotifyStreamingService();
-      await spotifyService.connect().catch(err => {
+      const connected = await spotifyService.connect().catch(err => {
         console.warn('Failed to connect to Spotify:', err);
-        // We'll still add the service even if connection fails,
-        // so users can connect later
+        return false;
       });
+
+      if (connected) {
+        toast({
+          title: "Spotify conectado",
+          description: "Servicio de streaming inicializado correctamente"
+        });
+      }
 
       setStreamingServices([spotifyService]);
     } catch (error) {
       console.error('Error initializing streaming services:', error);
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con los servicios de streaming",
+        variant: "destructive"
+      });
     }
   };
 
@@ -75,29 +88,43 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
       }
     } catch (error) {
       console.error("Error loading songs:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las canciones",
+        variant: "destructive"
+      });
     }
   };
 
   const togglePlay = async () => {
-    if (currentStreamingTrack) {
-      // If we're playing from a streaming service
-      const service = streamingServices.find(s => s.name.toLowerCase() === currentStreamingTrack.source);
-      if (service) {
+    try {
+      if (currentStreamingTrack) {
+        // Si estamos reproduciendo desde un servicio de streaming
+        const service = streamingServices.find(s => s.name.toLowerCase() === currentStreamingTrack.source);
+        if (service) {
+          if (isPlaying) {
+            await service.pause();
+          } else {
+            await service.resume();
+          }
+          setIsPlaying(!isPlaying);
+        }
+      } else if (audioRef.current) {
+        // Si estamos reproduciendo audio local
         if (isPlaying) {
-          await service.pause();
+          audioRef.current.pause();
         } else {
-          await service.resume();
+          audioRef.current.play();
         }
         setIsPlaying(!isPlaying);
       }
-    } else if (audioRef.current) {
-      // If we're playing local audio
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+    } catch (error) {
+      console.error('Error toggling playback:', error);
+      toast({
+        title: "Error",
+        description: "Error al reproducir la música",
+        variant: "destructive"
+      });
     }
   };
 
@@ -130,12 +157,26 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
         mediaRecorderRef.current.ondataavailable = (event) => {
           console.log("Audio data available", event.data);
         };
+
+        toast({
+          title: "Micrófono activado",
+          description: "Grabación en curso"
+        });
       } else {
         mediaRecorderRef.current?.stop();
         setIsRecording(false);
+        toast({
+          title: "Micrófono desactivado",
+          description: "Grabación finalizada"
+        });
       }
     } catch (error) {
       console.error("Error accessing microphone:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo acceder al micrófono",
+        variant: "destructive"
+      });
     }
   };
 
@@ -242,6 +283,11 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
           onError={() => {
             console.error("Error loading audio");
             skipToNextSong();
+            toast({
+              title: "Error",
+              description: "Error al cargar el audio",
+              variant: "destructive"
+            });
           }}
         />
       </Card>
