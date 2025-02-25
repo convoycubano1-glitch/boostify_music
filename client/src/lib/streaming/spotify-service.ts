@@ -74,7 +74,7 @@ export class SpotifyStreamingService implements StreamingService {
     try {
       console.log('Searching Spotify for:', query);
       const response = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50&market=ES&include_external=audio`, 
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50&market=US&include_external=audio`, 
         {
           headers: {
             'Authorization': `Bearer ${this.accessToken}`
@@ -127,7 +127,7 @@ export class SpotifyStreamingService implements StreamingService {
     }
 
     try {
-      const response = await fetch('https://api.spotify.com/v1/recommendations?limit=20&market=ES', {
+      const response = await fetch('https://api.spotify.com/v1/recommendations?limit=20&market=US', {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         }
