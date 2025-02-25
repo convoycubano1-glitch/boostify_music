@@ -105,6 +105,7 @@ const Router = () => {
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/cookies" component={CookiesPage} />
+        <Route path="/profile/:id" component={ProfilePage} />
 
         {/* Protected routes */}
         <ProtectedRoute path="/dashboard" component={DashboardPage} />

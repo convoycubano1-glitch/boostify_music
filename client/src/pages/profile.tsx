@@ -1,15 +1,15 @@
 import { ArtistProfileCard } from "@/components/artist/artist-profile-card";
-import { useAuth } from "@/hooks/use-auth";
+import { useParams } from "wouter";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { id } = useParams();
 
-  console.log("Current user:", user); // Debug log
-  console.log("User UID:", user?.uid); // Debug log for UID specifically
+  // Log for debugging
+  console.log("Profile ID from URL:", id);
 
   return (
     <div className="min-h-screen bg-black pt-4">
-      <ArtistProfileCard artistId={user?.uid || 'default'} />
+      <ArtistProfileCard artistId={id || 'default'} />
     </div>
   );
 }
