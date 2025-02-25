@@ -48,6 +48,7 @@ import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+
 import { CreditCard } from "lucide-react";
 
 export interface ArtistProfileProps {
@@ -242,6 +243,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   });
 
   const togglePlay = (song: Song, index: number) => {
+    // Si ya estamos reproduciendo esta canción, la pausamos
+    if (isPlaying && currentTrack === index && currentAudio) {
+      currentAudio.pause();
+      setIsPlaying(false);
+      return;
+    }
+    
+    // Si hay un audio reproduciéndose, lo detenemos primero
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.removeEventListener('ended', () => setIsPlaying(false));
@@ -249,6 +258,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       setIsPlaying(false);
     }
 
+    // Reproducimos la nueva canción
     if (song.audioUrl) {
       const audio = new Audio(song.audioUrl);
 
