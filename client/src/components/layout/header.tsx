@@ -60,7 +60,7 @@ export function Header() {
 
   if (!user) return null;
 
-  const isAdmin = user?.email === 'admin@example.com' || user?.email?.includes('admin');
+  const isAdmin = user?.email === 'convoycubano@gmail.com';
 
   return (
     <>
@@ -81,8 +81,8 @@ export function Header() {
               </div>
             </Link>
 
-            {/* Primary Navigation */}
-            <nav className="hidden lg:flex items-center space-x-1">
+            {/* Primary Navigation - Now always hidden */}
+            <nav className="hidden items-center space-x-1">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
@@ -99,14 +99,7 @@ export function Header() {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
-              {/* Search - To be implemented */}
-              <div className="hidden lg:flex">
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="h-9 w-[200px] rounded-md bg-[#2A2A2A] px-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                />
-              </div>
+              {/* Search - Removed */}
 
               {/* International */}
               <Link href="/boostify-international">
@@ -132,17 +125,12 @@ export function Header() {
                 </Link>
               )}
 
-              {/* Settings */}
-              <Link href="/settings">
-                <Button variant="ghost" size="icon" className="hidden lg:flex h-9 w-9 text-white hover:bg-[#2A2A2A]">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </Link>
+              {/* Settings - Now always hidden, moved to menu dropdown only */}
 
-              {/* Mobile Menu */}
+              {/* Hamburger Menu - Always visible */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9 text-white hover:bg-[#2A2A2A]">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-[#2A2A2A]">
                     <Menu className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -155,6 +143,25 @@ export function Header() {
                       </DropdownMenuItem>
                     </Link>
                   ))}
+                  
+                  {/* Settings link */}
+                  <Link href="/settings">
+                    <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </DropdownMenuItem>
+                  </Link>
+                  
+                  {/* Admin panel link - only visible to admins */}
+                  {isAdmin && (
+                    <Link href="/admin">
+                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </DropdownMenuItem>
+                    </Link>
+                  )}
+                  
                   <DropdownMenuItem 
                     onSelect={() => logout()} 
                     className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A]"
