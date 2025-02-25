@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { useAIModelsStore } from "@/store/ai-models-store";
 import { Brain, Image as ImageIcon } from "lucide-react";
 import type { TextModel, ImageModel } from "@/types/ai-models";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function AIModelsManager() {
   const {
@@ -21,46 +22,49 @@ export function AIModelsManager() {
     setDefaultImageModel,
     toggleModelStatus,
   } = useAIModelsStore();
+  
+  const isMobile = useIsMobile();
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="p-3 bg-orange-500/10 rounded-lg">
-          <Brain className="h-6 w-6 text-orange-500" />
+    <Card className="p-4 md:p-6">
+      <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+          <Brain className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold">AI Models Configuration</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-lg md:text-2xl font-semibold">AI Models Configuration</h2>
+          <p className="text-xs md:text-sm text-muted-foreground">
             Manage and configure AI models for text and image generation
           </p>
         </div>
       </div>
 
       <Tabs defaultValue="text" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="text">Text Models</TabsTrigger>
           <TabsTrigger value="image">Image Models</TabsTrigger>
         </TabsList>
 
         <TabsContent value="text">
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {textModels.map((model) => (
-              <Card key={model.id} className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
+              <Card key={model.id} className="p-3 md:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
                     <Switch
                       checked={model.enabled}
                       onCheckedChange={() => toggleModelStatus(model.id, 'text')}
                     />
                     <div>
-                      <h3 className="font-medium">{model.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-medium text-sm md:text-base">{model.name}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">
                         {model.provider.toUpperCase()} - {model.modelId}
                       </p>
                     </div>
                   </div>
                   <Button
                     variant="outline"
+                    size={isMobile ? "sm" : "default"}
                     onClick={() => setDefaultTextModel(model.id)}
                     disabled={!model.enabled}
                     className={defaultTextModel === model.id ? "bg-orange-500/10" : ""}
@@ -69,9 +73,9 @@ export function AIModelsManager() {
                   </Button>
                 </div>
 
-                <div className="grid gap-4">
+                <div className="grid gap-3 md:gap-4">
                   <div className="space-y-2">
-                    <Label>Temperature</Label>
+                    <Label className="text-xs md:text-sm">Temperature</Label>
                     <Slider
                       value={[model.temperature]}
                       min={0}
@@ -82,10 +86,13 @@ export function AIModelsManager() {
                       }
                       disabled={!model.enabled}
                     />
+                    <p className="text-xs text-right text-muted-foreground">
+                      {model.temperature.toFixed(1)}
+                    </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Max Tokens</Label>
+                    <Label className="text-xs md:text-sm">Max Tokens</Label>
                     <Input
                       type="number"
                       value={model.maxTokens}
@@ -96,11 +103,12 @@ export function AIModelsManager() {
                         })
                       }
                       disabled={!model.enabled}
+                      className="text-xs md:text-sm"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>API Key (Optional)</Label>
+                    <Label className="text-xs md:text-sm">API Key (Optional)</Label>
                     <Input
                       type="password"
                       value={model.apiKey || ""}
@@ -109,6 +117,7 @@ export function AIModelsManager() {
                       }
                       placeholder="Enter API key if different from default"
                       disabled={!model.enabled}
+                      className="text-xs md:text-sm"
                     />
                   </div>
                 </div>
@@ -118,24 +127,25 @@ export function AIModelsManager() {
         </TabsContent>
 
         <TabsContent value="image">
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {imageModels.map((model) => (
-              <Card key={model.id} className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
+              <Card key={model.id} className="p-3 md:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
                     <Switch
                       checked={model.enabled}
                       onCheckedChange={() => toggleModelStatus(model.id, 'image')}
                     />
                     <div>
-                      <h3 className="font-medium">{model.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-medium text-sm md:text-base">{model.name}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">
                         {model.provider.toUpperCase()} - {model.modelId}
                       </p>
                     </div>
                   </div>
                   <Button
                     variant="outline"
+                    size={isMobile ? "sm" : "default"}
                     onClick={() => setDefaultImageModel(model.id)}
                     disabled={!model.enabled}
                     className={defaultImageModel === model.id ? "bg-orange-500/10" : ""}
@@ -144,45 +154,53 @@ export function AIModelsManager() {
                   </Button>
                 </div>
 
-                <div className="grid gap-4">
+                <div className="grid gap-3 md:gap-4">
                   <div className="space-y-2">
-                    <Label>Max Resolution</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        type="number"
-                        value={model.maxResolution.width}
-                        onChange={(e) =>
-                          updateImageModel({
-                            ...model,
-                            maxResolution: {
-                              ...model.maxResolution,
-                              width: parseInt(e.target.value),
-                            },
-                          })
-                        }
-                        placeholder="Width"
-                        disabled={!model.enabled}
-                      />
-                      <Input
-                        type="number"
-                        value={model.maxResolution.height}
-                        onChange={(e) =>
-                          updateImageModel({
-                            ...model,
-                            maxResolution: {
-                              ...model.maxResolution,
-                              height: parseInt(e.target.value),
-                            },
-                          })
-                        }
-                        placeholder="Height"
-                        disabled={!model.enabled}
-                      />
+                    <Label className="text-xs md:text-sm">Max Resolution</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Width</Label>
+                        <Input
+                          type="number"
+                          value={model.maxResolution.width}
+                          onChange={(e) =>
+                            updateImageModel({
+                              ...model,
+                              maxResolution: {
+                                ...model.maxResolution,
+                                width: parseInt(e.target.value),
+                              },
+                            })
+                          }
+                          placeholder="Width"
+                          disabled={!model.enabled}
+                          className="text-xs md:text-sm mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Height</Label>
+                        <Input
+                          type="number"
+                          value={model.maxResolution.height}
+                          onChange={(e) =>
+                            updateImageModel({
+                              ...model,
+                              maxResolution: {
+                                ...model.maxResolution,
+                                height: parseInt(e.target.value),
+                              },
+                            })
+                          }
+                          placeholder="Height"
+                          disabled={!model.enabled}
+                          className="text-xs md:text-sm mt-1"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>API Key (Optional)</Label>
+                    <Label className="text-xs md:text-sm">API Key (Optional)</Label>
                     <Input
                       type="password"
                       value={model.apiKey || ""}
@@ -191,6 +209,7 @@ export function AIModelsManager() {
                       }
                       placeholder="Enter API key if different from default"
                       disabled={!model.enabled}
+                      className="text-xs md:text-sm"
                     />
                   </div>
                 </div>

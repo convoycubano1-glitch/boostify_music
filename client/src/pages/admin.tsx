@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AIModelsManager } from "@/components/admin/ai-models-manager";
 import {
   Users,
@@ -18,15 +19,17 @@ import {
   Wand2,
   DollarSign,
   Lock,
-  Briefcase
+  Briefcase,
+  Menu
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function AdminPage() {
   const [selectedTab, setSelectedTab] = useState("subscriptions");
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   // Mock data - replace with actual API calls
   const subscriptionData = {
@@ -41,240 +44,276 @@ export default function AdminPage() {
     totalCommissions: 2500
   };
 
+  const tabOptions = [
+    { value: "subscriptions", label: "Subscriptions", icon: <CreditCard className="w-4 h-4" /> },
+    { value: "affiliates", label: "Affiliates", icon: <Star className="w-4 h-4" /> },
+    { value: "ai-models", label: "AI Models", icon: <Brain className="w-4 h-4" /> },
+    { value: "data", label: "Data & Emails", icon: <Mail className="w-4 h-4" /> },
+    { value: "investors", label: "Investors", icon: <Briefcase className="w-4 h-4" /> },
+    { value: "permissions", label: "Permissions", icon: <Lock className="w-4 h-4" /> },
+    { value: "finances", label: "Finances", icon: <DollarSign className="w-4 h-4" /> }
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">
-        <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
-          <div className="container mx-auto px-4 py-6">
+      <main className="flex-1 pt-16 md:pt-20">
+        <ScrollArea className="flex-1 h-[calc(100vh-4rem)]">
+          <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
             {/* Hero Section */}
-            <section className="relative rounded-xl overflow-hidden mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-8">
+            <section className="relative rounded-xl overflow-hidden mb-6 md:mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-4 md:p-8">
               <div className="relative">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  Panel de Administración
+                <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4">
+                  Admin Panel
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl">
-                  Gestiona suscripciones, afiliados, modelos de IA y más desde un solo lugar
+                <p className="text-base md:text-xl text-muted-foreground max-w-2xl">
+                  Manage subscriptions, affiliates, AI models and more from one place
                 </p>
               </div>
             </section>
 
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-7 max-w-[1400px] mb-8">
-                <TabsTrigger value="subscriptions" className="data-[state=active]:bg-orange-500">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Suscripciones
-                </TabsTrigger>
-                <TabsTrigger value="affiliates" className="data-[state=active]:bg-orange-500">
-                  <Star className="w-4 h-4 mr-2" />
-                  Afiliados
-                </TabsTrigger>
-                <TabsTrigger value="ai-models" className="data-[state=active]:bg-orange-500">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Modelos IA
-                </TabsTrigger>
-                <TabsTrigger value="data" className="data-[state=active]:bg-orange-500">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Datos y Emails
-                </TabsTrigger>
-                <TabsTrigger value="investors" className="data-[state=active]:bg-orange-500">
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  Investors
-                </TabsTrigger>
-                <TabsTrigger value="permissions" className="data-[state=active]:bg-orange-500">
-                  <Lock className="w-4 h-4 mr-2" />
-                  Permisos
-                </TabsTrigger>
-                <TabsTrigger value="finances" className="data-[state=active]:bg-orange-500">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Finanzas
-                </TabsTrigger>
-              </TabsList>
+              {isMobile ? (
+                <div className="mb-6">
+                  <Select
+                    value={selectedTab}
+                    onValueChange={setSelectedTab}
+                  >
+                    <SelectTrigger className="w-full bg-orange-500/10">
+                      <div className="flex items-center">
+                        {tabOptions.find(tab => tab.value === selectedTab)?.icon}
+                        <span className="ml-2">{tabOptions.find(tab => tab.value === selectedTab)?.label}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tabOptions.map(tab => (
+                        <SelectItem key={tab.value} value={tab.value}>
+                          <div className="flex items-center">
+                            {tab.icon}
+                            <span className="ml-2">{tab.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <TabsList className="grid grid-cols-7 max-w-[1400px] mb-8">
+                  <TabsTrigger value="subscriptions" className="data-[state=active]:bg-orange-500">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Subscriptions
+                  </TabsTrigger>
+                  <TabsTrigger value="affiliates" className="data-[state=active]:bg-orange-500">
+                    <Star className="w-4 h-4 mr-2" />
+                    Affiliates
+                  </TabsTrigger>
+                  <TabsTrigger value="ai-models" className="data-[state=active]:bg-orange-500">
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI Models
+                  </TabsTrigger>
+                  <TabsTrigger value="data" className="data-[state=active]:bg-orange-500">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Data & Emails
+                  </TabsTrigger>
+                  <TabsTrigger value="investors" className="data-[state=active]:bg-orange-500">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    Investors
+                  </TabsTrigger>
+                  <TabsTrigger value="permissions" className="data-[state=active]:bg-orange-500">
+                    <Lock className="w-4 h-4 mr-2" />
+                    Permissions
+                  </TabsTrigger>
+                  <TabsTrigger value="finances" className="data-[state=active]:bg-orange-500">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Finances
+                  </TabsTrigger>
+                </TabsList>
+              )}
 
-              {/* Suscripciones Tab */}
+              {/* Subscriptions Tab */}
               <TabsContent value="subscriptions">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Users className="h-6 w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <Users className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Suscripciones Activas</p>
-                        <p className="text-2xl font-bold">{subscriptionData.activeSubscriptions}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Active Subscriptions</p>
+                        <p className="text-xl md:text-2xl font-bold">{subscriptionData.activeSubscriptions}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <CreditCard className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Ingresos Totales</p>
-                        <p className="text-2xl font-bold">${subscriptionData.totalRevenue}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Total Revenue</p>
+                        <p className="text-xl md:text-2xl font-bold">${subscriptionData.totalRevenue}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <UserX className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6 sm:col-span-2 md:col-span-1">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <UserX className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Cancelaciones Recientes</p>
-                        <p className="text-2xl font-bold">{subscriptionData.recentCancellations}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Recent Cancellations</p>
+                        <p className="text-xl md:text-2xl font-bold">{subscriptionData.recentCancellations}</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Gestión de Suscripciones</h3>
-                    <Button variant="outline" size="sm">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold">Subscription Management</h3>
+                    <Button variant="outline" size={isMobile ? "sm" : "default"}>
                       <RefreshCcw className="h-4 w-4 mr-2" />
-                      Actualizar
+                      Refresh
                     </Button>
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
                     {/* Add subscription management table/list here */}
                     <div className="text-center text-muted-foreground">
-                      Tabla de suscripciones se implementará aquí
+                      Subscription table will be implemented here
                     </div>
                   </div>
                 </Card>
               </TabsContent>
 
-              {/* Afiliados Tab */}
+              {/* Affiliates Tab */}
               <TabsContent value="affiliates">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Users className="h-6 w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <Users className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Afiliados</p>
-                        <p className="text-2xl font-bold">{affiliateData.totalAffiliates}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Total Affiliates</p>
+                        <p className="text-xl md:text-2xl font-bold">{affiliateData.totalAffiliates}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <UserCheck className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Afiliados Activos</p>
-                        <p className="text-2xl font-bold">{affiliateData.activeAffiliates}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Active Affiliates</p>
+                        <p className="text-xl md:text-2xl font-bold">{affiliateData.activeAffiliates}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <CreditCard className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6 sm:col-span-2 md:col-span-1">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Comisiones Totales</p>
-                        <p className="text-2xl font-bold">${affiliateData.totalCommissions}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Total Commissions</p>
+                        <p className="text-xl md:text-2xl font-bold">${affiliateData.totalCommissions}</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Programa de Afiliados</h3>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold">Affiliate Program</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
                         <Download className="h-4 w-4 mr-2" />
-                        Exportar
+                        Export
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
                         <Settings className="h-4 w-4 mr-2" />
-                        Configuración
+                        Settings
                       </Button>
                     </div>
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
                     {/* Add affiliate management table/list here */}
                     <div className="text-center text-muted-foreground">
-                      Tabla de afiliados se implementará aquí
+                      Affiliate table will be implemented here
                     </div>
                   </div>
                 </Card>
               </TabsContent>
 
-              {/* Nueva Tab de Modelos IA */}
+              {/* AI Models Tab */}
               <TabsContent value="ai-models">
-                <div className="grid gap-6">
-                  {/* Estadísticas de uso de IA */}
-                  <div className="grid md:grid-cols-3 gap-6 mb-8">
-                    <Card className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <Brain className="h-6 w-6 text-orange-500" />
+                <div className="grid gap-4 md:gap-6">
+                  {/* AI Usage Statistics */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-8">
+                    <Card className="p-4 md:p-6">
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                          <Brain className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Modelos Activos</p>
-                          <p className="text-2xl font-bold">8</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">Active Models</p>
+                          <p className="text-xl md:text-2xl font-bold">8</p>
                         </div>
                       </div>
                     </Card>
 
-                    <Card className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <Wand2 className="h-6 w-6 text-orange-500" />
+                    <Card className="p-4 md:p-6">
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                          <Wand2 className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Generaciones AI</p>
-                          <p className="text-2xl font-bold">2.5K</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">AI Generations</p>
+                          <p className="text-xl md:text-2xl font-bold">2.5K</p>
                         </div>
                       </div>
                     </Card>
 
-                    <Card className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <Settings className="h-6 w-6 text-orange-500" />
+                    <Card className="p-4 md:p-6 sm:col-span-2 md:col-span-1">
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                          <Settings className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Configuraciones</p>
-                          <p className="text-2xl font-bold">12</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">Configurations</p>
+                          <p className="text-xl md:text-2xl font-bold">12</p>
                         </div>
                       </div>
                     </Card>
                   </div>
 
-                  {/* Gestor de Modelos IA */}
+                  {/* AI Models Manager */}
                   <AIModelsManager />
                 </div>
               </TabsContent>
 
-              {/* Datos y Emails Tab */}
+              {/* Data & Emails Tab */}
               <TabsContent value="data">
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Gestión de Datos y Emails</h3>
-                    <Button variant="outline" size="sm">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold">Data & Email Management</h3>
+                    <Button variant="outline" size={isMobile ? "sm" : "default"}>
                       <Download className="h-4 w-4 mr-2" />
-                      Exportar Datos
+                      Export Data
                     </Button>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
                     {/* Add email and data management interface here */}
                     <div className="text-center text-muted-foreground">
-                      Interface de gestión de datos se implementará aquí
+                      Data management interface will be implemented here
                     </div>
                   </div>
                 </Card>
@@ -282,182 +321,184 @@ export default function AdminPage() {
 
               {/* Investors Tab */}
               <TabsContent value="investors">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Briefcase className="h-6 w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <Briefcase className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Investors</p>
-                        <p className="text-2xl font-bold">24</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Total Investors</p>
+                        <p className="text-xl md:text-2xl font-bold">24</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <DollarSign className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Inversión Total</p>
-                        <p className="text-2xl font-bold">$1.5M</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Total Investment</p>
+                        <p className="text-xl md:text-2xl font-bold">$1.5M</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <RefreshCcw className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6 sm:col-span-2 md:col-span-1">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <RefreshCcw className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Ronda Actual</p>
-                        <p className="text-2xl font-bold">Serie B</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Current Round</p>
+                        <p className="text-xl md:text-2xl font-bold">Series B</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Gestión de Inversores</h3>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold">Investor Management</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
                         <Download className="h-4 w-4 mr-2" />
-                        Exportar Lista
+                        Export List
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
                         <Settings className="h-4 w-4 mr-2" />
-                        Configuración
+                        Settings
                       </Button>
                     </div>
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
                     <div className="text-center text-muted-foreground">
-                      Tabla de inversores se implementará aquí
+                      Investor table will be implemented here
                     </div>
                   </div>
                 </Card>
               </TabsContent>
 
-              {/* Permisos Tab */}
+              {/* Permissions Tab */}
               <TabsContent value="permissions">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Users className="h-6 w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <Users className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Usuarios Totales</p>
-                        <p className="text-2xl font-bold">532</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Total Users</p>
+                        <p className="text-xl md:text-2xl font-bold">532</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Lock className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <Lock className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Roles Definidos</p>
-                        <p className="text-2xl font-bold">8</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Available Roles</p>
+                        <p className="text-xl md:text-2xl font-bold">5</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <UserCheck className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6 sm:col-span-2 md:col-span-1">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Administradores</p>
-                        <p className="text-2xl font-bold">5</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Administrators</p>
+                        <p className="text-xl md:text-2xl font-bold">3</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Gestión de Permisos</h3>
-                    <Button variant="outline" size="sm">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold">Permission Control</h3>
+                    <Button variant="outline" size={isMobile ? "sm" : "default"}>
                       <RefreshCcw className="h-4 w-4 mr-2" />
-                      Actualizar
+                      Refresh
                     </Button>
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
+                    {/* Add permissions management interface here */}
                     <div className="text-center text-muted-foreground">
-                      Tabla de permisos y roles se implementará aquí
+                      Permission management interface will be implemented here
                     </div>
                   </div>
                 </Card>
               </TabsContent>
 
-              {/* Finanzas Tab */}
+              {/* Finances Tab */}
               <TabsContent value="finances">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <DollarSign className="h-6 w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
-                        <p className="text-2xl font-bold">$87.5K</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Current Month Revenue</p>
+                        <p className="text-xl md:text-2xl font-bold">$42,581</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <CreditCard className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Gastos Mensuales</p>
-                        <p className="text-2xl font-bold">$62.3K</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Current Month Expenses</p>
+                        <p className="text-xl md:text-2xl font-bold">$21,302</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <RefreshCcw className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 md:p-6 sm:col-span-2 md:col-span-1">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
+                        <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Beneficio Neto</p>
-                        <p className="text-2xl font-bold">$25.2K</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Transactions</p>
+                        <p className="text-xl md:text-2xl font-bold">248</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Gestión Financiera</h3>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                <Card className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold">Financial Reports</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
                         <Download className="h-4 w-4 mr-2" />
-                        Exportar Informes
+                        Export
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
                         <Settings className="h-4 w-4 mr-2" />
-                        Configuración
+                        Settings
                       </Button>
                     </div>
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-4 md:space-y-6">
+                    {/* Add finance reports interface here */}
                     <div className="text-center text-muted-foreground">
-                      Gráficos e informes financieros se implementarán aquí
+                      Detailed financial reports will be implemented here
                     </div>
                   </div>
                 </Card>
