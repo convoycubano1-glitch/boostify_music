@@ -72,7 +72,8 @@ export class SpotifyStreamingService implements StreamingService {
     }
 
     try {
-      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track`, {
+      console.log('Searching Spotify for:', query);
+      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50`, {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         }
@@ -83,7 +84,7 @@ export class SpotifyStreamingService implements StreamingService {
       }
 
       const data = await response.json();
-      return data.tracks.items.map((track: any) => ({
+      const tracks = data.tracks.items.map((track: any) => ({
         id: track.id,
         title: track.name,
         artist: track.artists[0].name,
@@ -93,6 +94,12 @@ export class SpotifyStreamingService implements StreamingService {
         albumArt: track.album.images[0]?.url,
         externalUrl: track.external_urls.spotify
       }));
+
+      // Log search results statistics
+      const tracksWithPreviews = tracks.filter(t => t.streamUrl).length;
+      console.log(`Found ${tracks.length} tracks, ${tracksWithPreviews} with previews available`);
+
+      return tracks;
     } catch (error) {
       console.error('Error searching tracks:', error);
       return [];
