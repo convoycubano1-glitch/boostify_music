@@ -49,7 +49,6 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
 
-
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
@@ -98,7 +97,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 const Router = () => {
-  const [showRadio, setShowRadio] = useState(true);
+  const [showRadio, setShowRadio] = useState(false);
+
+  useEffect(() => {
+    const handleToggleRadio = () => setShowRadio(prev => !prev);
+    window.addEventListener('toggle-radio', handleToggleRadio);
+    return () => window.removeEventListener('toggle-radio', handleToggleRadio);
+  }, []);
 
   return (
     <>

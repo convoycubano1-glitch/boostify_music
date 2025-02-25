@@ -2,13 +2,23 @@ import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Volume2, Mic, Play, Pause, Radio, X } from "lucide-react";
+import { Volume2, Mic, Play, Pause, Radio, X, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
+import { db } from "@/firebase";
 
 interface BoostifyRadioProps {
   className?: string;
   onClose?: () => void;
+}
+
+interface Song {
+  id: string;
+  name: string;
+  audioUrl: string;
+  userId: string;
+  createdAt: Date;
 }
 
 export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
@@ -16,8 +26,37 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const [volume, setVolume] = useState([50]);
   const [isRecording, setIsRecording] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [playlist, setPlaylist] = useState<Song[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+  useEffect(() => {
+    loadSongs();
+  }, []);
+
+  const loadSongs = async () => {
+    try {
+      const songsQuery = query(
+        collection(db, "songs"),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+      const querySnapshot = await getDocs(songsQuery);
+      const songs = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate()
+      })) as Song[];
+
+      setPlaylist(songs);
+      if (songs.length > 0 && !currentSong) {
+        setCurrentSong(songs[0]);
+      }
+    } catch (error) {
+      console.error("Error loading songs:", error);
+    }
+  };
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -37,6 +76,17 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
     }
   };
 
+  const skipToNextSong = () => {
+    if (!currentSong || playlist.length === 0) return;
+
+    const currentIndex = playlist.findIndex(song => song.id === currentSong.id);
+    const nextIndex = (currentIndex + 1) % playlist.length;
+    setCurrentSong(playlist[nextIndex]);
+    if (isPlaying && audioRef.current) {
+      audioRef.current.play();
+    }
+  };
+
   const toggleMicrophone = async () => {
     try {
       if (!isRecording) {
@@ -45,9 +95,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
         mediaRecorderRef.current.start();
         setIsRecording(true);
 
-        // Aquí se puede implementar la lógica para transmitir el audio
         mediaRecorderRef.current.ondataavailable = (event) => {
-          // Implementar lógica para enviar los datos de audio al servidor
           console.log("Audio data available", event.data);
         };
       } else {
@@ -133,18 +181,34 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
             >
               <Mic className="h-5 w-5" />
             </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white/60 hover:text-white"
+              onClick={skipToNextSong}
+            >
+              <SkipForward className="h-5 w-5" />
+            </Button>
           </div>
 
           <div className="text-sm text-white/60">
-            {isPlaying ? "Now Playing: Live Stream" : "Radio Paused"}
+            {currentSong ? (
+              <p className="truncate">{currentSong.name}</p>
+            ) : (
+              "No hay canciones disponibles"
+            )}
           </div>
         </div>
 
         <audio
           ref={audioRef}
-          src="/api/radio/stream"
-          preload="none"
-          onEnded={() => setIsPlaying(false)}
+          src={currentSong?.audioUrl}
+          onEnded={skipToNextSong}
+          onError={() => {
+            console.error("Error loading audio");
+            skipToNextSong();
+          }}
         />
       </Card>
     </motion.div>
