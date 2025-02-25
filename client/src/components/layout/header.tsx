@@ -225,6 +225,19 @@ export function Header() {
                   />
                 </Link>
               ))}
+              
+              {/* Admin Icon - Only visible to admins */}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="group flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/5 transition-colors"
+                  title="Admin Panel"
+                >
+                  <Shield 
+                    className="h-3.5 w-3.5 text-orange-500 transition-all duration-300 group-hover:text-orange-400 group-hover:drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
+                  />
+                </Link>
+              )}
             </nav>
           </div>
         </div>
