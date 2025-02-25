@@ -12,61 +12,63 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Settings,
   Bell,
   User,
   Shield,
   Palette,
   Globe,
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SettingsPage() {
+  const isMobile = useIsMobile();
+
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6">
+    <div className="flex-1 space-y-4 p-4 md:p-8 md:pt-6 md:space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Configuración</h2>
-        <p className="text-muted-foreground">
-          Gestiona tus preferencias y configuración de la cuenta
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h2>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Manage your account preferences and settings
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile" className="gap-2">
+      <Tabs defaultValue="profile" className="space-y-4 md:space-y-6">
+        <TabsList className="w-full h-auto flex flex-wrap justify-start md:justify-start gap-1 md:gap-2 p-1">
+          <TabsTrigger value="profile" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <User className="h-4 w-4" />
-            Perfil
+            <span className="text-xs md:text-sm">Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
+          <TabsTrigger value="notifications" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <Bell className="h-4 w-4" />
-            Notificaciones
+            <span className="text-xs md:text-sm">Notifications</span>
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="gap-2">
+          <TabsTrigger value="appearance" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <Palette className="h-4 w-4" />
-            Apariencia
+            <span className="text-xs md:text-sm">Appearance</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
+          <TabsTrigger value="security" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <Shield className="h-4 w-4" />
-            Seguridad
+            <span className="text-xs md:text-sm">Security</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Información del Perfil</h3>
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Nombre</Label>
-                <Input id="name" placeholder="Tu nombre" />
+          <Card className="p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Profile Information</h3>
+            <div className="space-y-3 md:space-y-4">
+              <div className="grid gap-1.5 md:gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" placeholder="Your name" />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-1.5 md:gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="tu@email.com" />
+                <Input id="email" type="email" placeholder="you@example.com" />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="language">Idioma</Label>
+              <div className="grid gap-1.5 md:gap-2">
+                <Label htmlFor="language">Language</Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un idioma" />
+                    <SelectValue placeholder="Select a language" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="es">Español</SelectItem>
@@ -74,38 +76,38 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button>Guardar Cambios</Button>
+              <Button className="w-full md:w-auto">Save Changes</Button>
             </div>
           </Card>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Preferencias de Notificación</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          <Card className="p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Notification Preferences</h3>
+            <div className="space-y-3 md:space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
                 <div className="space-y-0.5">
-                  <Label>Notificaciones por Email</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recibe actualizaciones importantes por email
+                  <Label>Email Notifications</Label>
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    Receive important updates via email
                   </p>
                 </div>
                 <Switch />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
                 <div className="space-y-0.5">
-                  <Label>Notificaciones Push</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recibe notificaciones en tiempo real
+                  <Label>Push Notifications</Label>
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    Receive real-time notifications
                   </p>
                 </div>
                 <Switch />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
                 <div className="space-y-0.5">
                   <Label>Newsletter</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recibe nuestro newsletter mensual
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    Receive our monthly newsletter
                   </p>
                 </div>
                 <Switch />
@@ -115,31 +117,31 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Personalización</h3>
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label>Tema</Label>
+          <Card className="p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Customization</h3>
+            <div className="space-y-3 md:space-y-4">
+              <div className="grid gap-1.5 md:gap-2">
+                <Label>Theme</Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un tema" />
+                    <SelectValue placeholder="Select a theme" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="light">Claro</SelectItem>
-                    <SelectItem value="dark">Oscuro</SelectItem>
-                    <SelectItem value="system">Sistema</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
-                <Label>Densidad</Label>
+              <div className="grid gap-1.5 md:gap-2">
+                <Label>Density</Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona la densidad" />
+                    <SelectValue placeholder="Select density" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="compact">Compacta</SelectItem>
-                    <SelectItem value="comfortable">Cómoda</SelectItem>
+                    <SelectItem value="compact">Compact</SelectItem>
+                    <SelectItem value="comfortable">Comfortable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -148,22 +150,22 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Seguridad de la Cuenta</h3>
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="current-password">Contraseña Actual</Label>
+          <Card className="p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Account Security</h3>
+            <div className="space-y-3 md:space-y-4">
+              <div className="grid gap-1.5 md:gap-2">
+                <Label htmlFor="current-password">Current Password</Label>
                 <Input id="current-password" type="password" />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="new-password">Nueva Contraseña</Label>
+              <div className="grid gap-1.5 md:gap-2">
+                <Label htmlFor="new-password">New Password</Label>
                 <Input id="new-password" type="password" />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
+              <div className="grid gap-1.5 md:gap-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
                 <Input id="confirm-password" type="password" />
               </div>
-              <Button>Actualizar Contraseña</Button>
+              <Button className="w-full md:w-auto">Update Password</Button>
             </div>
           </Card>
         </TabsContent>
