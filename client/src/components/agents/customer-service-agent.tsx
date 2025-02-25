@@ -114,7 +114,7 @@ export const CustomerServiceAgent: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with streaming, collaboration tools, or account questions, I'm here to assist. How can I help you today?",
+      content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with Spotify integration, audio quality options, collaboration features, or managing your artist profile, I'm here to assist. How can I help you today?",
       timestamp: new Date(),
     }
   ]);
@@ -394,7 +394,7 @@ export const CustomerServiceAgent: React.FC = () => {
       {
         id: 'welcome',
         role: 'assistant',
-        content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with streaming, collaboration tools, or account questions, I'm here to assist. How can I help you today?",
+        content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with Spotify integration, audio quality options, collaboration features, or managing your artist profile, I'm here to assist. How can I help you today?",
         timestamp: new Date(),
       }
     ]);
@@ -574,22 +574,35 @@ export const CustomerServiceAgent: React.FC = () => {
                         className="min-h-10 max-h-32 resize-none bg-zinc-800 border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm"
                       />
                       <div className="flex flex-col gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`rounded-full ${
-                            audioEnabled 
-                              ? 'bg-orange-600 text-white' 
-                              : audioApiStatus === 'unavailable'
-                                ? 'bg-zinc-700 text-gray-400 opacity-50' 
-                                : 'bg-zinc-800 text-gray-400'
-                          }`}
-                          onClick={toggleAudio}
-                          disabled={audioApiStatus === 'unavailable'}
-                          title={audioApiStatus === 'unavailable' ? "Audio service unavailable" : "Toggle voice responses"}
-                        >
-                          {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`rounded-full transition-all duration-300 ${
+                                  audioEnabled 
+                                    ? 'bg-orange-600 text-white' 
+                                    : audioApiStatus === 'unavailable'
+                                      ? 'bg-zinc-700 text-gray-400 opacity-50' 
+                                      : 'bg-zinc-800 text-gray-400'
+                                }`}
+                                onClick={toggleAudio}
+                                disabled={audioApiStatus === 'unavailable'}
+                              >
+                                {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="text-xs">
+                              {audioApiStatus === 'unavailable' 
+                                ? "Voice responses unavailable" 
+                                : audioEnabled 
+                                  ? "Disable voice responses" 
+                                  : "Enable voice responses"}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
                         <Button
                           variant="ghost"
                           size="icon"
@@ -617,7 +630,7 @@ export const CustomerServiceAgent: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2, delay: 0.1 }}
-            className="fixed bottom-20 sm:bottom-6 right-[100px] sm:right-[400px] z-[9999] hidden md:block"
+            className="fixed bottom-20 sm:bottom-6 right-[390px] z-[9999] hidden md:block"
           >
             <Popover>
               <PopoverTrigger asChild>
