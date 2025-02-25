@@ -35,26 +35,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from 'framer-motion';
 
-interface ServiceLinkProps {
-  title: string;
-  description: string;
-  link: string;
-  icon: string;
-}
 
-function ServiceLink({ title, description, link, icon }: ServiceLinkProps) {
-  return (
-    <Link href={link}>
-      <a className="block h-full">
-        <div className="bg-orange-500/5 hover:bg-orange-500/10 transition-colors duration-300 p-4 rounded-lg border border-orange-500/20 h-full flex flex-col">
-          <div className="text-2xl mb-2">{icon}</div>
-          <h3 className="font-medium text-sm">{title}</h3>
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        </div>
-      </a>
-    </Link>
-  );
-}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -312,14 +293,26 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <ServiceLink title="Education" description="Learn music skills" link="/education" icon="🎓" />
-                <ServiceLink title="Store" description="Sell merchandise" link="/store" icon="🛍️" />
-                <ServiceLink title="Boostify TV" description="Watch content" link="/boostify-tv" icon="📺" />
-                <ServiceLink title="YouTube Boost" description="Grow your channel" link="/youtube-views" icon="📈" />
-                <ServiceLink title="Spotify Boost" description="Increase streams" link="/spotify" icon="🎵" />
-                <ServiceLink title="Contracts" description="Legal documents" link="/contracts" icon="📝" />
-                <ServiceLink title="Profile" description="Artist profile" link="/profile" icon="👤" />
-                <ServiceLink title="Smart Cards" description="Digital cards" link="/smart-cards" icon="💳" />
+                {[
+                  { title: "Education", description: "Learn music skills", link: "/education", icon: "🎓" },
+                  { title: "Store", description: "Sell merchandise", link: "/store", icon: "🛍️" },
+                  { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: "📺" },
+                  { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: "📈" },
+                  { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: "🎵" },
+                  { title: "Contracts", description: "Legal documents", link: "/contracts", icon: "📝" },
+                  { title: "Profile", description: "Artist profile", link: "/profile", icon: "👤" },
+                  { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: "💳" }
+                ].map((service) => (
+                  <Link key={service.title} href={service.link}>
+                    <a className="block h-full">
+                      <div className="bg-orange-500/5 hover:bg-orange-500/10 transition-colors duration-300 p-4 rounded-lg border border-orange-500/20 h-full flex flex-col">
+                        <div className="text-2xl mb-2">{service.icon}</div>
+                        <h3 className="font-medium text-sm">{service.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">{service.description}</p>
+                      </div>
+                    </a>
+                  </Link>
+                ))}
               </div>
             </Card>
           </div>
