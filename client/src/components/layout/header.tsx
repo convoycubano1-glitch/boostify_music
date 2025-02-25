@@ -224,8 +224,8 @@ export function Header() {
 
         {/* Secondary Navigation Bar - Inspired by Freepik */}
         <div 
-          className={`border-t border-border/40 bg-black/80 backdrop-blur-sm transform transition-transform duration-300 ${
-            showSubNav ? 'translate-y-0' : '-translate-y-full'
+          className={`border-t border-border/40 bg-black/80 backdrop-blur-sm transform transition-all duration-300 absolute w-full ${
+            showSubNav ? 'opacity-100 translate-y-16 visible' : 'opacity-0 -translate-y-full invisible'
           }`}
         >
           <div className="container flex h-8 max-w-screen-2xl items-center">
