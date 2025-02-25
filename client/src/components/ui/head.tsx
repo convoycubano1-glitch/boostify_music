@@ -57,15 +57,6 @@ export function Head({
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:locale" content="en_US" />
-
-      {/* Music specific metadata */}
-      {type === "profile" && (
-        <>
-          <meta property="music:creator" content={title} />
-          <meta property="og:audio" content={url} />
-          <meta property="og:audio:type" content="application/mp3" />
-        </>
-      )}
     </Helmet>
   );
 }

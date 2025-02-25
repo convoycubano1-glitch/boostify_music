@@ -38,7 +38,7 @@ export default function ProfilePage() {
     );
   }
 
-  const fullUrl = `${window.location.origin}/profile/${artistId}`;
+  const fullUrl = window.location.origin + '/profile/' + artistId;
 
   // Asegurar que la imagen sea una URL absoluta
   const getAbsoluteImageUrl = (imageUrl?: string) => {
@@ -49,32 +49,28 @@ export default function ProfilePage() {
 
   const profileImage = getAbsoluteImageUrl(artistData?.profileImage);
 
-  // Mejorar el título para SEO y compartir
+  // Valores por defecto para meta tags
   const title = artistData?.name 
     ? `${artistData.name} - Music Artist Profile | Boostify Music`
     : "Discover Amazing Musicians on Boostify Music";
 
-  // Crear una descripción más atractiva y específica
   const description = artistData?.biography 
     ? `Check out ${artistData.name}'s music profile on Boostify Music. ${artistData.biography.slice(0, 150)}${artistData.biography.length > 150 ? '...' : ''}`
-    : `Discover and connect with talented musicians on Boostify Music. Join our community of artists, producers, and music enthusiasts. Start your musical journey today!`;
-
-  // Usar el tipo correcto para perfiles de músicos
-  const type = "profile";
-
-  // Mejorar el nombre del sitio para mejor reconocimiento
-  const siteName = "Boostify Music - Your Music Marketing Platform";
+    : `Discover and connect with talented musicians on Boostify Music. Join our community of artists, producers, and music enthusiasts.`;
 
   return (
     <>
-      <Head
-        title={title}
-        description={description}
-        url={fullUrl}
-        image={profileImage}
-        type={type}
-        siteName={siteName}
-      />
+      {/* Solo renderizar Head cuando tenemos los datos necesarios */}
+      {artistData && (
+        <Head
+          title={title}
+          description={description}
+          url={fullUrl}
+          image={profileImage}
+          type="profile"
+          siteName="Boostify Music"
+        />
+      )}
       <div className="min-h-screen bg-black pt-4">
         <ArtistProfileCard artistId={artistId} />
       </div>
