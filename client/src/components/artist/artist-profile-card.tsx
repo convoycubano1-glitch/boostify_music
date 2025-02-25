@@ -428,52 +428,53 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     >
       <div className="fixed top-4 left-4 z-50">
         <Button
-          size="lg"
-          className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+          size="sm"
+          className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs md:text-sm md:size-lg"
           onClick={() => window.location.href = "/"}
         >
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Create Your Profile
+          <PlusCircle className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+          <span className="hidden xs:inline">Create Your Profile</span>
+          <span className="xs:hidden">Create</span>
         </Button>
       </div>
 
-      {/* Stats at the top */}
+      {/* Stats at the top - Responsive for mobile */}
       <motion.div
-        className="absolute top-8 right-8 z-10 flex flex-col md:flex-row gap-4"
+        className="absolute top-4 md:top-8 right-4 md:right-8 z-10 flex flex-col md:flex-row gap-2 md:gap-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         <motion.div
-          className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+          className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-4 flex items-center gap-2 md:gap-3"
           variants={itemVariants}
         >
-          <HeartPulse className="h-6 w-6 text-orange-500" />
+          <HeartPulse className="h-4 w-4 md:h-6 md:w-6 text-orange-500" />
           <div>
-            <p className="text-sm text-white/70">Monthly Listeners</p>
-            <p className="text-xl font-bold text-white">{mockArtist.statistics.monthlyListeners}k</p>
+            <p className="text-xs md:text-sm text-white/70">Monthly Listeners</p>
+            <p className="text-sm md:text-xl font-bold text-white">{mockArtist.statistics.monthlyListeners}k</p>
           </div>
         </motion.div>
         <motion.div
-          className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+          className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-4 flex items-center gap-2 md:gap-3"
           variants={itemVariants}
         >
-          <Users className="h-6 w-6 text-orange-500" />
+          <Users className="h-4 w-4 md:h-6 md:w-6 text-orange-500" />
           <div>
-            <p className="text-sm text-white/70">Followers</p>
-            <p className="text-xl font-bold text-white">{mockArtist.statistics.followers}k</p>
+            <p className="text-xs md:text-sm text-white/70">Followers</p>
+            <p className="text-sm md:text-xl font-bold text-white">{mockArtist.statistics.followers}k</p>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* Video Hero Section */}
-      <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
+      {/* Video Hero Section - Mobile optimized */}
+      <div className="relative h-[50vh] md:h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-4 md:mb-8">
         <div className="relative h-full w-full">
           {/* Video container with responsive design */}
           <div className="absolute inset-0 w-full h-full">
             {videos && videos[0] && (
               <iframe
-                className="w-full h-full md:object-cover object-contain sm:object-cover"
+                className="w-full h-full object-cover"
                 src={`https://www.youtube.com/embed/${getYoutubeVideoId(videos[0].url)}?autoplay=1&mute=1&loop=1&playlist=${getYoutubeVideoId(videos[0].url)}&controls=0&showinfo=0&rel=0`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -546,8 +547,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="relative group">
                 {songs && songs[0] ? (
                   <>
-                    <div className="w-48 h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300 bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center overflow-hidden">
-                      <Music2 className="w-16 h-16 text-orange-500/50" />
+                    <div className="w-32 h-32 md:w-48 md:h-48 rounded-lg shadow-lg transition-transform group-hover:scale-105 duration-300 bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center overflow-hidden">
+                      <Music2 className="w-10 h-10 md:w-16 md:h-16 text-orange-500/50" />
                       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-xl" />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
@@ -574,18 +575,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 )}
               </div>
               <div>
-                <h3 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
+                <h3 className="text-xl md:text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
                   {songs && songs[0] ? songs[0].name : "Loading..."}
                 </h3>
-                <p className="text-lg text-muted-foreground mb-4">
+                <p className="text-sm md:text-lg text-muted-foreground mb-2 md:mb-4">
                   Added {songs && songs[0] ? new Date(songs[0].createdAt?.seconds * 1000).toLocaleDateString() : "..."}
                 </p>
                 <Button
-                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300"
+                  size="sm"
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300 md:size-default"
                   onClick={() => songs && songs[0] && togglePlay(songs[0], 0)}
                 >
-                  <Music2 className="mr-2 h-5 w-5" />
-                  Play Now
+                  <Music2 className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+                  <span className="text-xs md:text-sm">Play Now</span>
                 </Button>
               </div>
             </motion.div>
