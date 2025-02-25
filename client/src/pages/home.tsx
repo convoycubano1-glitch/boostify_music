@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
-  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2
+  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, Play, Volume2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -214,7 +214,6 @@ export default function HomePage() {
         <video
           autoPlay
           loop
-          muted
           playsInline
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover"
@@ -460,17 +459,56 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/20 via-transparent to-red-500/20 z-10" />
 
               {/* Video */}
-              <video
-                className="w-full rounded-lg relative"
-                controls
-                autoPlay
-                loop
-                muted
-                playsInline
-              >
-                <source src="/assets/indications/Welcome to Boostify Music 1.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+              <div className="relative group">
+                <video
+                  className="w-full rounded-lg relative"
+                  controls
+                  autoPlay
+                  loop
+                  controlsList="nodownload"
+                  style={{
+                    '--webkit-media-controls-timeline-container': {
+                      display: 'none',
+                    }
+                  }}
+                >
+                  <source src="/assets/indications/Welcome to Boostify Music 1.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+                {/* Custom Controls Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+                    <div className="flex items-center justify-between">
+                      <button
+                        className="text-white hover:text-orange-500 transition-colors"
+                        onClick={(e) => {
+                          const video = e.currentTarget.parentElement?.parentElement?.parentElement?.previousElementSibling as HTMLVideoElement;
+                          if (video) {
+                            if (video.paused) {
+                              video.play();
+                            } else {
+                              video.pause();
+                            }
+                          }
+                        }}
+                      >
+                        <Play className="w-6 h-6" />
+                      </button>
+                      <button
+                        className="text-white hover:text-orange-500 transition-colors"
+                        onClick={(e) => {
+                          const video = e.currentTarget.parentElement?.parentElement?.parentElement?.previousElementSibling as HTMLVideoElement;
+                          if (video) {
+                            video.muted = !video.muted;
+                          }
+                        }}
+                      >
+                        <Volume2 className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -503,7 +541,6 @@ export default function HomePage() {
         <video
           autoPlay
           loop
-          muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
           src="/assets/Standard_Mode_Generated_Video (4).mp4"
@@ -610,7 +647,7 @@ export default function HomePage() {
             <Link href="/artist-image-advisor">
               <motion.div
                 whileHover={{ scale: 1.02 }}
-                className="relative group cursor-pointer"
+                className="relative groupcursor-pointer"
               >
                 <div className="absolute inset0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
                 <Card className="p-8 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
