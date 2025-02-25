@@ -106,6 +106,8 @@ export const CustomerServiceAgent: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiStatus, setApiStatus] = useState<'loading' | 'available' | 'unavailable'>('loading');
+  const [audioApiStatus, setAudioApiStatus] = useState<'loading' | 'available' | 'unavailable'>('loading');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -134,9 +136,86 @@ export const CustomerServiceAgent: React.FC = () => {
       }, 300);
     }
   }, [isOpen, isMinimized]);
+  
+  // Check if OpenRouter API is available when component mounts
+  useEffect(() => {
+    const checkApiAvailability = async () => {
+      try {
+        if (!import.meta.env.VITE_OPENROUTER_API_KEY) {
+          console.error('OpenRouter API key not found in environment variables');
+          setApiStatus('unavailable');
+          return;
+        }
+        
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          console.log('OpenRouter API connection successful');
+          setApiStatus('available');
+        } else {
+          console.error('OpenRouter API connection failed:', await response.text());
+          setApiStatus('unavailable');
+        }
+      } catch (error) {
+        console.error('Error checking OpenRouter API availability:', error);
+        setApiStatus('unavailable');
+      }
+    };
+    
+    const checkElevenLabsAvailability = async () => {
+      try {
+        if (!import.meta.env.VITE_ELEVENLABS_API_KEY) {
+          console.error('ElevenLabs API key not found in environment variables');
+          setAudioApiStatus('unavailable');
+          setAudioEnabled(false);
+          return;
+        }
+        
+        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+          method: 'GET',
+          headers: {
+            'xi-api-key': import.meta.env.VITE_ELEVENLABS_API_KEY,
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          console.log('ElevenLabs API connection successful');
+          setAudioApiStatus('available');
+        } else {
+          console.error('ElevenLabs API connection failed:', await response.text());
+          setAudioApiStatus('unavailable');
+          setAudioEnabled(false);
+        }
+      } catch (error) {
+        console.error('Error checking ElevenLabs API availability:', error);
+        setAudioApiStatus('unavailable');
+        setAudioEnabled(false);
+      }
+    };
+    
+    checkApiAvailability();
+    checkElevenLabsAvailability();
+  }, []);
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
+    
+    // Check if API is available
+    if (apiStatus === 'unavailable') {
+      toast({
+        title: "Service Unavailable",
+        description: "Our AI chat service is currently unavailable. Please try again later.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Create a new user message
     const userMessage: Message = {
@@ -280,6 +359,16 @@ export const CustomerServiceAgent: React.FC = () => {
   };
 
   const toggleAudio = () => {
+    // Check if ElevenLabs API is available before enabling audio
+    if (!audioEnabled && audioApiStatus === 'unavailable') {
+      toast({
+        title: "Voice Responses Unavailable",
+        description: "Audio generation service is currently unavailable. Please try again later.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setAudioEnabled(prev => !prev);
     
     if (!audioRef.current) {
@@ -384,7 +473,11 @@ export const CustomerServiceAgent: React.FC = () => {
                   {!isMinimized && (
                     <div>
                       <h3 className="font-semibold text-sm">Melody • Music Assistant</h3>
-                      <p className="text-xs opacity-80">Online • Ready to help</p>
+                      <p className="text-xs opacity-80">
+                        {apiStatus === 'loading' && "Connecting..."}
+                        {apiStatus === 'available' && "Online • Ready to help"}
+                        {apiStatus === 'unavailable' && "Offline • Service unavailable"}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -485,9 +578,15 @@ export const CustomerServiceAgent: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className={`rounded-full ${
-                            audioEnabled ? 'bg-orange-600 text-white' : 'bg-zinc-800 text-gray-400'
+                            audioEnabled 
+                              ? 'bg-orange-600 text-white' 
+                              : audioApiStatus === 'unavailable'
+                                ? 'bg-zinc-700 text-gray-400 opacity-50' 
+                                : 'bg-zinc-800 text-gray-400'
                           }`}
                           onClick={toggleAudio}
+                          disabled={audioApiStatus === 'unavailable'}
+                          title={audioApiStatus === 'unavailable' ? "Audio service unavailable" : "Toggle voice responses"}
                         >
                           {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                         </Button>
