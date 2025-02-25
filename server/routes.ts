@@ -19,6 +19,7 @@ import managerRouter from './routes/manager';
 import artistRouter from './routes/artist';
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
+import investorsRouter from './routes/investors';
 import { authenticate } from './middleware/auth'; // Fixed import path
 import { awardCourseCompletionAchievement } from './achievements';
 
@@ -65,6 +66,9 @@ export function registerRoutes(app: Express): Server {
 
   // Register achievements routes
   app.use(achievementsRouter);
+  
+  // Register investors routes
+  app.use('/api/investors', investorsRouter);
 
 
   // AI Campaign Suggestions Route
