@@ -74,7 +74,8 @@ export function Head({
           "description": truncatedDescription,
           "url": url,
           "image": absoluteImageUrl,
-        })}
+          "creator": type === "profile" ? title : undefined
+        }, null, 2)}
       </script>
     </Helmet>
   );
