@@ -578,22 +578,22 @@ export default function InvestorsDashboard() {
                   </div>
 
                   <div className="prose prose-orange dark:prose-invert max-w-none text-sm sm:text-base">
-                    <h4 className="text-base sm:text-lg font-medium">Investing in Boostify Music</h4>
-                    <p>
+                    <h4 className="text-base sm:text-lg font-medium text-white">Investing in Boostify Music</h4>
+                    <p className="text-white">
                       Boostify Music offers a unique opportunity to invest in the future of the music industry. Our AI-powered platform is revolutionizing how artists, producers, and fans interact with music.
                     </p>
                     
-                    <h4 className="text-base sm:text-lg font-medium mt-4">Investment Benefits</h4>
-                    <ul className="space-y-2">
-                      <li><strong>Monthly Returns:</strong> 4-6% based on your selected investment plan</li>
-                      <li><strong>Minimum Investment:</strong> $2,000 USD</li>
-                      <li><strong>Monthly Payments:</strong> Profit distribution on the 15th of each month</li>
-                      <li><strong>Transparent Contracts:</strong> Clear terms and comprehensive documentation</li>
-                      <li><strong>Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</li>
+                    <h4 className="text-base sm:text-lg font-medium mt-4 text-white">Investment Benefits</h4>
+                    <ul className="space-y-2 text-white">
+                      <li><strong className="text-white">Monthly Returns:</strong> 4-6% based on your selected investment plan</li>
+                      <li><strong className="text-white">Minimum Investment:</strong> $2,000 USD</li>
+                      <li><strong className="text-white">Monthly Payments:</strong> Profit distribution on the 15th of each month</li>
+                      <li><strong className="text-white">Transparent Contracts:</strong> Clear terms and comprehensive documentation</li>
+                      <li><strong className="text-white">Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</li>
                     </ul>
 
-                    <h4 className="text-base sm:text-lg font-medium mt-4">Upcoming Milestones</h4>
-                    <p>
+                    <h4 className="text-base sm:text-lg font-medium mt-4 text-white">Upcoming Milestones</h4>
+                    <p className="text-white">
                       We're rapidly expanding, with the upcoming launch of our AI-enhanced streaming platform and new creator tools. Series B funding will accelerate our international growth.
                     </p>
                     
@@ -879,56 +879,194 @@ export default function InvestorsDashboard() {
 
               {/* Roadmap Tab */}
               <TabsContent value="roadmap">
-                <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
-                  <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Boostify Music Roadmap</h3>
+                <Card className="p-4 sm:p-6 mb-6 sm:mb-8 bg-black/20 border-orange-500/20">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">Boostify Music Roadmap</h3>
                   <RoadmapTimeline />
                 </Card>
 
-                <Card className="p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Financial Projections</h3>
+                <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Financial Projections</h3>
                   
                   <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div>
-                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4">Projected User Growth</h4>
-                      <div className="h-48 sm:h-64 bg-muted rounded-lg flex items-center justify-center">
-                        <p className="text-sm text-muted-foreground">User growth chart</p>
+                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected User Growth</h4>
+                      <div className="h-48 sm:h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10"></div>
+                        <div className="relative z-10 h-full flex flex-col">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs text-white/70">Users (millions)</span>
+                            <div className="flex space-x-2">
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-200">Current</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-200">Projected</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1 flex items-end space-x-2">
+                            {/* Q1 2025 */}
+                            <div className="flex-1 flex flex-col items-center">
+                              <div className="h-[15%] w-3 bg-blue-500 rounded-t mb-1"></div>
+                              <div className="h-[25%] w-3 bg-orange-500/70 rounded-t"></div>
+                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q1</span>
+                            </div>
+                            
+                            {/* Q2 2025 */}
+                            <div className="flex-1 flex flex-col items-center">
+                              <div className="h-[22%] w-3 bg-blue-500 rounded-t mb-1"></div>
+                              <div className="h-[35%] w-3 bg-orange-500/70 rounded-t"></div>
+                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q2</span>
+                            </div>
+                            
+                            {/* Q3 2025 */}
+                            <div className="flex-1 flex flex-col items-center">
+                              <div className="h-[30%] w-3 bg-blue-500 rounded-t mb-1"></div>
+                              <div className="h-[45%] w-3 bg-orange-500/70 rounded-t"></div>
+                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q3</span>
+                            </div>
+                            
+                            {/* Q4 2025 */}
+                            <div className="flex-1 flex flex-col items-center">
+                              <div className="h-[40%] w-3 bg-blue-500 rounded-t mb-1"></div>
+                              <div className="h-[60%] w-3 bg-orange-500/70 rounded-t"></div>
+                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q4</span>
+                            </div>
+                            
+                            {/* Q1 2026 */}
+                            <div className="flex-1 flex flex-col items-center">
+                              <div className="h-[50%] w-3 bg-blue-500 rounded-t mb-1"></div>
+                              <div className="h-[80%] w-3 bg-orange-500/70 rounded-t"></div>
+                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q1 '26</span>
+                            </div>
+                            
+                            {/* Q2 2026 */}
+                            <div className="flex-1 flex flex-col items-center">
+                              <div className="h-[60%] w-3 bg-blue-500 rounded-t mb-1"></div>
+                              <div className="h-full w-3 bg-orange-500/70 rounded-t"></div>
+                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q2 '26</span>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <div className="flex justify-between">
+                              <span className="text-xs text-white/70">0.8M now</span>
+                              <span className="text-xs text-white/70">2.5M by Q2 '26</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
                     <div>
-                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4">Projected Revenue Growth</h4>
-                      <div className="h-48 sm:h-64 bg-muted rounded-lg flex items-center justify-center">
-                        <p className="text-sm text-muted-foreground">Revenue growth chart</p>
+                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected Revenue Growth</h4>
+                      <div className="h-48 sm:h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10"></div>
+                        <div className="relative z-10 h-full flex flex-col">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs text-white/70">Revenue ($ millions)</span>
+                            <div className="flex space-x-2">
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Actual</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-200">Projected</span>
+                            </div>
+                          </div>
+                          
+                          {/* Line chart */}
+                          <div className="flex-1 relative">
+                            {/* Horizontal grid lines */}
+                            <div className="absolute left-0 right-0 top-0 bottom-0">
+                              <div className="border-t border-white/10 absolute top-0 left-0 right-0"></div>
+                              <div className="border-t border-white/10 absolute top-1/4 left-0 right-0"></div>
+                              <div className="border-t border-white/10 absolute top-1/2 left-0 right-0"></div>
+                              <div className="border-t border-white/10 absolute top-3/4 left-0 right-0"></div>
+                              <div className="border-t border-white/10 absolute bottom-0 left-0 right-0"></div>
+                            </div>
+                            
+                            {/* Actual revenue line */}
+                            <svg className="absolute inset-0" viewBox="0 0 100 100" preserveAspectRatio="none">
+                              <path 
+                                d="M0,100 L10,90 L20,85 L30,75 L40,65 L50,55" 
+                                fill="none" 
+                                stroke="#22c55e" 
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              />
+                              
+                              {/* Projected revenue line (dashed) */}
+                              <path 
+                                d="M50,55 L60,45 L70,35 L80,25 L90,15 L100,5" 
+                                fill="none" 
+                                stroke="#f97316" 
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeDasharray="2 2"
+                              />
+                              
+                              {/* Dots for data points */}
+                              <circle cx="0" cy="100" r="1.5" fill="#22c55e" />
+                              <circle cx="10" cy="90" r="1.5" fill="#22c55e" />
+                              <circle cx="20" cy="85" r="1.5" fill="#22c55e" />
+                              <circle cx="30" cy="75" r="1.5" fill="#22c55e" />
+                              <circle cx="40" cy="65" r="1.5" fill="#22c55e" />
+                              <circle cx="50" cy="55" r="1.5" fill="#22c55e" />
+                              
+                              <circle cx="60" cy="45" r="1.5" fill="#f97316" />
+                              <circle cx="70" cy="35" r="1.5" fill="#f97316" />
+                              <circle cx="80" cy="25" r="1.5" fill="#f97316" />
+                              <circle cx="90" cy="15" r="1.5" fill="#f97316" />
+                              <circle cx="100" cy="5" r="1.5" fill="#f97316" />
+                            </svg>
+                          </div>
+                          
+                          <div className="grid grid-cols-6 mt-2">
+                            <div className="text-center text-[8px] sm:text-xs text-white/70">2023</div>
+                            <div className="text-center text-[8px] sm:text-xs text-white/70">2024</div>
+                            <div className="text-center text-[8px] sm:text-xs text-white/70">2025</div>
+                            <div className="text-center text-[8px] sm:text-xs text-white/70">2026</div>
+                            <div className="text-center text-[8px] sm:text-xs text-white/70">2027</div>
+                            <div className="text-center text-[8px] sm:text-xs text-white/70">2028</div>
+                          </div>
+                          
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <div className="flex justify-between">
+                              <span className="text-xs text-white/70">$4.5M now</span>
+                              <span className="text-xs text-white/70">$20M by 2028</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <Card className="p-3 sm:p-4">
+                    <Card className="p-3 sm:p-4 bg-black/30 border-orange-500/20">
                       <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
-                        <h4 className="text-sm sm:text-base font-medium">Projected Users</h4>
+                        <div className="p-1.5 rounded-full bg-blue-500/20">
+                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+                        </div>
+                        <h4 className="text-sm sm:text-base font-medium text-white">Projected Users</h4>
                       </div>
-                      <p className="text-2xl sm:text-3xl font-bold">2.5M</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">By the end of 2025</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">2.5M</p>
+                      <p className="text-xs sm:text-sm text-white/70">By the end of 2025</p>
                     </Card>
                     
-                    <Card className="p-3 sm:p-4">
+                    <Card className="p-3 sm:p-4 bg-black/30 border-orange-500/20">
                       <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <BarChart className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                        <h4 className="text-sm sm:text-base font-medium">Annual Revenue</h4>
+                        <div className="p-1.5 rounded-full bg-green-500/20">
+                          <BarChart className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
+                        </div>
+                        <h4 className="text-sm sm:text-base font-medium text-white">Annual Revenue</h4>
                       </div>
-                      <p className="text-2xl sm:text-3xl font-bold">$12M</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Projected for 2025</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">$12M</p>
+                      <p className="text-xs sm:text-sm text-white/70">Projected for 2025</p>
                     </Card>
                     
-                    <Card className="p-3 sm:p-4">
+                    <Card className="p-3 sm:p-4 bg-black/30 border-orange-500/20">
                       <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
-                        <h4 className="text-sm sm:text-base font-medium">Return on Investment</h4>
+                        <div className="p-1.5 rounded-full bg-orange-500/20">
+                          <Target className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
+                        </div>
+                        <h4 className="text-sm sm:text-base font-medium text-white">Return on Investment</h4>
                       </div>
-                      <p className="text-2xl sm:text-3xl font-bold">78%</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Projected ROI over 24 months</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">78%</p>
+                      <p className="text-xs sm:text-sm text-white/70">Projected ROI over 24 months</p>
                     </Card>
                   </div>
                 </Card>
