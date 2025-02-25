@@ -18,11 +18,12 @@ export class SpotifyStreamingService implements StreamingService {
   private player: Spotify.Player | null = null;
   name = 'Spotify';
   isAuthenticated = false;
+  isPremium = false;
 
   constructor() {
     this.loadSpotifyScript();
     // Add check for debugging
-    console.log("OpenAI API Key available:", !!import.meta.env.VITE_SPOTIFY_CLIENT_ID);
+    console.log("Spotify Client ID available:", !!import.meta.env.VITE_SPOTIFY_CLIENT_ID);
 
     if (!import.meta.env.VITE_SPOTIFY_CLIENT_ID) {
       console.error('Spotify client ID is not configured');
@@ -65,7 +66,20 @@ export class SpotifyStreamingService implements StreamingService {
 
       const token = await this.getSpotifyToken();
       this.accessToken = token;
-      await this.initializePlayer(token);
+
+      // Solo intentamos inicializar el player si es una cuenta Premium
+      try {
+        await this.initializePlayer(token);
+        this.isPremium = true;
+      } catch (error: any) {
+        if (error.message?.includes('premium')) {
+          console.log('User does not have Spotify Premium, falling back to preview mode');
+          this.isPremium = false;
+        } else {
+          throw error;
+        }
+      }
+
       this.isAuthenticated = true;
       return true;
     } catch (error) {
@@ -80,7 +94,6 @@ export class SpotifyStreamingService implements StreamingService {
   }
 
   private async getSpotifyToken(): Promise<string> {
-    // Por ahora retornamos un token temporal para pruebas
     const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
     const clientSecret = import.meta.env.VITE_SPOTIFY_SECRET;
 
@@ -129,25 +142,23 @@ export class SpotifyStreamingService implements StreamingService {
         getOAuthToken: cb => cb(token)
       });
 
-      // Agregar event listeners para el player
+      // No lanzar errores en los listeners, solo registrarlos
       this.player.addListener('initialization_error', ({ message }) => {
         console.error('Failed to initialize:', message);
-        throw new Error(message);
       });
 
       this.player.addListener('authentication_error', ({ message }) => {
         console.error('Failed to authenticate:', message);
-        throw new Error(message);
       });
 
       this.player.addListener('account_error', ({ message }) => {
         console.error('Failed to validate Spotify account:', message);
-        throw new Error(message);
+        // Marcar como no premium si recibimos este error
+        this.isPremium = false;
       });
 
       this.player.addListener('playback_error', ({ message }) => {
         console.error('Failed to perform playback:', message);
-        throw new Error(message);
       });
 
       // Connect to the player
@@ -240,7 +251,7 @@ export class SpotifyStreamingService implements StreamingService {
   }
 
   async play(track: StreamingTrack): Promise<void> {
-    if (!this.player) {
+    if (!this.player && this.isPremium) {
       throw new StreamingError(
         'Spotify player not initialized',
         'spotify',
@@ -249,7 +260,11 @@ export class SpotifyStreamingService implements StreamingService {
     }
 
     try {
-      await this.player.resume();
+      if (this.isPremium && this.player) {
+        await this.player.resume();
+      }
+      // Si no es premium, la reproducción se manejará a través del elemento audio HTML
+      // usando el preview_url
     } catch (error) {
       console.error('Error playing track:', error);
       throw new StreamingError(
@@ -261,7 +276,7 @@ export class SpotifyStreamingService implements StreamingService {
   }
 
   async pause(): Promise<void> {
-    if (!this.player) return;
+    if (!this.player || !this.isPremium) return;
 
     try {
       await this.player.pause();
@@ -271,7 +286,7 @@ export class SpotifyStreamingService implements StreamingService {
   }
 
   async resume(): Promise<void> {
-    if (!this.player) return;
+    if (!this.player || !this.isPremium) return;
 
     try {
       await this.player.resume();
