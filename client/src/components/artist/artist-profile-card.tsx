@@ -76,10 +76,12 @@ interface Video {
 
 // Add ShareDialog component
 const ShareDialog = ({ isOpen, onClose, artistName, artistUrl }: { isOpen: boolean; onClose: (value?: boolean | undefined) => void; artistName: string; artistUrl: string }) => {
+  const fullUrl = `${window.location.origin}/profile/${artistUrl}`;
+
   const shareData = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(artistUrl)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(artistUrl)}&text=Check out ${artistName}'s profile`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out ${artistName}'s profile: ${artistUrl}`)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=Check out ${artistName}'s profile`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out ${artistName}'s profile: ${fullUrl}`)}`,
     instagram: `instagram://camera`, // Instagram doesn't support direct sharing, opens the app
     tiktok: `https://www.tiktok.com/upload/`, // TikTok doesn't support direct sharing, opens upload page
   };
@@ -125,7 +127,7 @@ const ShareDialog = ({ isOpen, onClose, artistName, artistUrl }: { isOpen: boole
             className="w-full"
             variant="outline"
             onClick={() => {
-              navigator.clipboard.writeText(artistUrl);
+              navigator.clipboard.writeText(fullUrl);
               toast({
                 title: "Link copied!",
                 description: "Profile link has been copied to your clipboard.",
@@ -422,7 +424,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-7xl mx-auto pb-24" // Added padding bottom for navbar
+      className="w-full max-w-7xl mx-auto pb-24"
     >
       <div className="fixed top-4 left-4 z-50">
         <Button
@@ -739,7 +741,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   </a>
                 </div>
                 <div className="flex items-center">
-                  <Phone className="w-5 h-5 text-orange-500 mr-3" />
+                  <Phone className="w-5 h-5 text-orange-50 mr-3" />
                   <a href={`tel:${mockArtist.phone}`} className="hover:text-orange-500">
                     {mockArtist.phone}
                   </a>
@@ -827,7 +829,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         isOpen={showShareDialog}
         onClose={() => setShowShareDialog(false)}
         artistName={mockArtist.name}
-        artistUrl={`https://boostify.com/${mockArtist.name.toLowerCase()}`}
+        artistUrl={artistId}
       />
     </motion.div>
   );
