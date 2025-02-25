@@ -31,7 +31,8 @@ import {
   Paintbrush,
   Check,
   X,
-  Link as LinkIcon
+  Link as LinkIcon,
+  PlusCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -379,9 +380,49 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       animate="visible"
       className="w-full max-w-7xl mx-auto"
     >
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          size="lg"
+          className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+          onClick={() => window.location.href = "/signup"}
+        >
+          <PlusCircle className="mr-2 h-5 w-5" />
+          Create Your Profile
+        </Button>
+      </div>
+
       <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
+        {/* Stats at the top */}
+        <motion.div
+          className="absolute top-8 right-8 z-10 flex flex-col md:flex-row gap-4"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div
+            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+            variants={itemVariants}
+          >
+            <HeartPulse className="h-6 w-6 text-orange-500" />
+            <div>
+              <p className="text-sm text-white/70">Monthly Listeners</p>
+              <p className="text-xl font-bold text-white">{mockArtist.statistics.monthlyListeners}k</p>
+            </div>
+          </motion.div>
+          <motion.div
+            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
+            variants={itemVariants}
+          >
+            <Users className="h-6 w-6 text-orange-500" />
+            <div>
+              <p className="text-sm text-white/70">Followers</p>
+              <p className="text-xl font-bold text-white">{mockArtist.statistics.followers}k</p>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Video background */}
         <div className="relative h-full w-full">
-          {/* Video container with responsive design */}
           <div className="absolute inset-0 w-full h-full">
             {videos && videos[0] ? (
               <iframe
@@ -404,11 +445,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             )}
           </div>
+
           {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
           <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90" />
 
+          {/* Content */}
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
             <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
               <motion.h1
@@ -454,6 +497,88 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </div>
         </div>
       </div>
+
+      {/* Statistics section with animated charts */}
+      <Card className="p-6 mb-8">
+        <motion.div variants={itemVariants}>
+          <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+            <ChartBar className="w-6 h-6 mr-2 text-orange-500" />
+            Statistics
+          </h3>
+          <div className="grid grid-cols-3 gap-6">
+            <motion.div 
+              className="flex flex-col items-center"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.1
+              }}
+            >
+              <CircularProgressbar
+                value={mockArtist.statistics.monthlyListeners}
+                strokeWidth={10}
+                styles={buildStyles({
+                  pathColor: "#E1306C",
+                  textColor: "#E1306C",
+                  trailColor: "#f5f5f5",
+                  pathTransition: "stroke-dashoffset 0.5s ease 0s"
+                })}
+              />
+              <p className="text-lg font-medium mt-2">Monthly Listeners</p>
+            </motion.div>
+            <motion.div 
+              className="flex flex-col items-center"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.2
+              }}
+            >
+              <CircularProgressbar
+                value={mockArtist.statistics.totalStreams}
+                strokeWidth={10}
+                styles={buildStyles({
+                  pathColor: "#1DA1F2",
+                  textColor: "#1DA1F2",
+                  trailColor: "#f5f5f5",
+                  pathTransition: "stroke-dashoffset 0.5s ease 0s"
+                })}
+              />
+              <p className="text-lg font-medium mt-2">Total Streams</p>
+            </motion.div>
+            <motion.div 
+              className="flex flex-col items-center"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.3
+              }}
+            >
+              <CircularProgressbar
+                value={mockArtist.statistics.followers}
+                strokeWidth={10}
+                styles={buildStyles({
+                  pathColor: "#FF0000",
+                  textColor: "#FF0000",
+                  trailColor: "#f5f5f5",
+                  pathTransition: "stroke-dashoffset 0.5s ease 0s"
+                })}
+              />
+              <p className="text-lg font-medium mt-2">Followers</p>
+            </motion.div>
+          </div>
+        </motion.div>
+      </Card>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
@@ -606,7 +731,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     </div>
                     <div className="p-4 bg-black/40 backdrop-blur-sm">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="flex items-center text-sm font-medium text-orange-500">
+                        <span className="flex items-center text-sm font-medium text-orange-5000">
                           {item.category === "Music" ? (
                             <Music2 className="mr-1 h-4 w-4" />
                           ) : item.category === "Apparel" ? (
