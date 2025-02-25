@@ -106,26 +106,26 @@ function InvestmentCalculator() {
 
             <Button className="w-full" variant="outline">
               <Calculator className="mr-2 h-4 w-4" />
-              Recalcular
+              Recalculate
             </Button>
           </div>
         </Card>
 
         <div className="text-sm text-muted-foreground">
           <p>
-            Este calculador es una estimación basada en nuestros planes de inversión actuales. Los rendimientos reales pueden variar.
+            This calculator provides an estimate based on our current investment plans. Actual returns may vary.
           </p>
         </div>
       </div>
 
       <div>
         <Card className="p-6 overflow-hidden bg-gradient-to-br from-orange-500/10 to-background border-orange-500/20">
-          <h4 className="text-lg font-medium mb-8">Resultados de la Inversión</h4>
+          <h4 className="text-lg font-medium mb-8">Investment Results</h4>
           
           <div className="space-y-6">
             <div className="flex justify-between items-center p-4 bg-background rounded-lg border">
               <div>
-                <p className="text-sm text-muted-foreground">Retorno Mensual</p>
+                <p className="text-sm text-muted-foreground">Monthly Return</p>
                 <p className="text-2xl font-bold">${monthlyReturn.toFixed(2)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-orange-500 opacity-50" />
@@ -133,7 +133,7 @@ function InvestmentCalculator() {
             
             <div className="flex justify-between items-center p-4 bg-background rounded-lg border">
               <div>
-                <p className="text-sm text-muted-foreground">Retorno Total</p>
+                <p className="text-sm text-muted-foreground">Total Return</p>
                 <p className="text-2xl font-bold">${totalReturn.toFixed(2)}</p>
               </div>
               <BarChart2 className="h-8 w-8 text-orange-500 opacity-50" />
