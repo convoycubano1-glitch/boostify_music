@@ -149,6 +149,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
 
+  console.log("ArtistProfileCard - Using artistId:", artistId);
+
   // Query para obtener canciones
   const { data: songs = [], isLoading: isLoadingSongs } = useQuery({
     queryKey: ["songs", artistId],
@@ -158,21 +160,28 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const songsRef = collection(db, "songs");
         const q = query(songsRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          console.log("No songs found for artistId:", artistId);
+          return [];
+        }
+
         const songData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           console.log("Raw song data:", data);
           return {
             id: doc.id,
-            name: data.name || "Untitled",
-            duration: "3:45", // Duración por defecto
-            audioUrl: data.audioUrl || "",
-            userId: data.userId || "",
-            createdAt: data.createdAt,
+            name: data.name,
+            title: data.name,
+            audioUrl: data.audioUrl,
+            duration: "3:45", // Default duration
+            userId: data.userId,
+            createdAt: data.createdAt?.toDate(),
             storageRef: data.storageRef
           };
         });
 
-        console.log("Filtered songs:", songData);
+        console.log("Processed songs:", songData);
         return songData;
       } catch (error) {
         console.error("Error fetching songs:", error);
@@ -184,6 +193,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         return [];
       }
     },
+    enabled: !!artistId
   });
 
   // Query para obtener videos
@@ -195,21 +205,26 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const videosRef = collection(db, "videos");
         const q = query(videosRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          console.log("No videos found for artistId:", artistId);
+          return [];
+        }
+
         const videoData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           console.log("Raw video data:", data);
           const videoId = data.url?.split('v=')?.[1] || data.url?.split('/')?.[3]?.split('?')?.[0];
           return {
             id: doc.id,
-            title: data.title || "Untitled",
-            url: data.url || "",
-            userId: data.userId || "",
-            thumbnailUrl: videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined,
-            createdAt: data.createdAt
+            title: data.title,
+            url: data.url,
+            thumbnail: data.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined),
+            createdAt: data.createdAt?.toDate()
           };
         });
 
-        console.log("Filtered videos:", videoData);
+        console.log("Processed videos:", videoData);
         return videoData;
       } catch (error) {
         console.error("Error fetching videos:", error);
@@ -221,6 +236,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         return [];
       }
     },
+    enabled: !!artistId
   });
 
   const togglePlay = (song: Song, index: number) => {
