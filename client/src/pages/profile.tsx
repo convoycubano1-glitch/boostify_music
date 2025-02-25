@@ -42,7 +42,7 @@ export default function ProfilePage() {
 
   // Asegurar que la imagen sea una URL absoluta
   const getAbsoluteImageUrl = (imageUrl?: string) => {
-    if (!imageUrl) return `${window.location.origin}/assets/freepik__boostify_music.png`;
+    if (!imageUrl) return `${window.location.origin}/assets/freepik__boostify_music_organe_abstract_icon.png`;
     if (imageUrl.startsWith('http')) return imageUrl;
     return `${window.location.origin}${imageUrl}`;
   };
