@@ -112,11 +112,21 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
             await playPromise;
           } catch (error) {
             console.error('Error playing audio:', error);
-            toast({
-              title: "Error",
-              description: "Error al reproducir la música",
-              variant: "destructive"
-            });
+            if (selectedSource === 'spotify' && currentStreamingTrack) {
+              toast({
+                title: "Preview no disponible",
+                description: "Esta canción no tiene una previsualización disponible. Por favor, intenta con otra canción.",
+                variant: "destructive"
+              });
+              skipToNextSong();
+            } else {
+              toast({
+                title: "Error",
+                description: "Error al reproducir la música",
+                variant: "destructive"
+              });
+            }
+            return;
           }
         }
       }
@@ -134,10 +144,24 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const skipToNextSong = () => {
     if (selectedSource === 'spotify' && searchResults.length > 0) {
       const currentIndex = searchResults.findIndex(track => track.id === currentStreamingTrack?.id);
-      const nextIndex = (currentIndex + 1) % searchResults.length;
-      setCurrentStreamingTrack(searchResults[nextIndex]);
-      if (isPlaying && audioRef.current) {
-        audioRef.current.play();
+      let nextIndex = (currentIndex + 1) % searchResults.length;
+      let nextTrack = searchResults[nextIndex];
+
+      // Buscar la siguiente canción con preview disponible
+      while (!nextTrack.streamUrl && nextIndex !== currentIndex) {
+        nextIndex = (nextIndex + 1) % searchResults.length;
+        nextTrack = searchResults[nextIndex];
+      }
+
+      setCurrentStreamingTrack(nextTrack);
+      if (isPlaying && audioRef.current && nextTrack.streamUrl) {
+        audioRef.current.play().catch(() => {
+          toast({
+            title: "Error",
+            description: "No se pudo reproducir la siguiente canción",
+            variant: "destructive"
+          });
+        });
       }
     } else if (selectedSource === 'boostify') {
       if (!currentSong || playlist.length === 0) return;
@@ -170,9 +194,18 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
 
     try {
       const results = await spotifyService.search(searchQuery);
-      setSearchResults(results);
-      if (results.length > 0) {
-        setCurrentStreamingTrack(results[0]);
+      // Filtrar canciones sin preview disponible
+      const availableTracks = results.filter(track => track.streamUrl);
+      setSearchResults(results); // Guardamos todos los resultados para mostrarlos
+
+      if (availableTracks.length > 0) {
+        setCurrentStreamingTrack(availableTracks[0]);
+      } else {
+        toast({
+          title: "Sin previsualizaciones",
+          description: "No se encontraron previsualizaciones disponibles para estas canciones",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error searching tracks:', error);
@@ -359,7 +392,12 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
                 <span>Conectando servicios de streaming...</span>
               </div>
             ) : currentStreamingTrack ? (
-              <p className="truncate">{currentStreamingTrack.title} - {currentStreamingTrack.artist}</p>
+              <div>
+                <p className="truncate">{currentStreamingTrack.title} - {currentStreamingTrack.artist}</p>
+                {!currentStreamingTrack.streamUrl && (
+                  <p className="text-xs text-orange-500">Preview no disponible</p>
+                )}
+              </div>
             ) : currentSong ? (
               <p className="truncate">{currentSong.name}</p>
             ) : (
