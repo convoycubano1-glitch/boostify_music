@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "@/firebase";
+import { StreamingService, StreamingTrack } from "@/lib/streaming/streaming-service";
+import { SpotifyStreamingService } from "@/lib/streaming/spotify-service";
 
 interface BoostifyRadioProps {
   className?: string;
@@ -28,12 +30,30 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [playlist, setPlaylist] = useState<Song[]>([]);
+  const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
+  const [currentStreamingTrack, setCurrentStreamingTrack] = useState<StreamingTrack | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   useEffect(() => {
     loadSongs();
+    initializeStreamingServices();
   }, []);
+
+  const initializeStreamingServices = async () => {
+    try {
+      const spotifyService = new SpotifyStreamingService();
+      await spotifyService.connect().catch(err => {
+        console.warn('Failed to connect to Spotify:', err);
+        // We'll still add the service even if connection fails,
+        // so users can connect later
+      });
+
+      setStreamingServices([spotifyService]);
+    } catch (error) {
+      console.error('Error initializing streaming services:', error);
+    }
+  };
 
   const loadSongs = async () => {
     try {
@@ -58,8 +78,20 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
     }
   };
 
-  const togglePlay = () => {
-    if (audioRef.current) {
+  const togglePlay = async () => {
+    if (currentStreamingTrack) {
+      // If we're playing from a streaming service
+      const service = streamingServices.find(s => s.name.toLowerCase() === currentStreamingTrack.source);
+      if (service) {
+        if (isPlaying) {
+          await service.pause();
+        } else {
+          await service.resume();
+        }
+        setIsPlaying(!isPlaying);
+      }
+    } else if (audioRef.current) {
+      // If we're playing local audio
       if (isPlaying) {
         audioRef.current.pause();
       } else {
@@ -193,7 +225,9 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
           </div>
 
           <div className="text-sm text-white/60">
-            {currentSong ? (
+            {currentStreamingTrack ? (
+              <p className="truncate">{currentStreamingTrack.title} - {currentStreamingTrack.artist}</p>
+            ) : currentSong ? (
               <p className="truncate">{currentSong.name}</p>
             ) : (
               "No hay canciones disponibles"
