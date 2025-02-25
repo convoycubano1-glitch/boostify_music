@@ -15,7 +15,10 @@ import {
   Download,
   UserCheck,
   Brain,
-  Wand2
+  Wand2,
+  DollarSign,
+  Lock,
+  Briefcase
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -57,7 +60,7 @@ export default function AdminPage() {
             </section>
 
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-4 max-w-[800px] mb-8">
+              <TabsList className="grid grid-cols-7 max-w-[1400px] mb-8">
                 <TabsTrigger value="subscriptions" className="data-[state=active]:bg-orange-500">
                   <CreditCard className="w-4 h-4 mr-2" />
                   Suscripciones
@@ -73,6 +76,18 @@ export default function AdminPage() {
                 <TabsTrigger value="data" className="data-[state=active]:bg-orange-500">
                   <Mail className="w-4 h-4 mr-2" />
                   Datos y Emails
+                </TabsTrigger>
+                <TabsTrigger value="investors" className="data-[state=active]:bg-orange-500">
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Investors
+                </TabsTrigger>
+                <TabsTrigger value="permissions" className="data-[state=active]:bg-orange-500">
+                  <Lock className="w-4 h-4 mr-2" />
+                  Permisos
+                </TabsTrigger>
+                <TabsTrigger value="finances" className="data-[state=active]:bg-orange-500">
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Finanzas
                 </TabsTrigger>
               </TabsList>
 
@@ -260,6 +275,189 @@ export default function AdminPage() {
                     {/* Add email and data management interface here */}
                     <div className="text-center text-muted-foreground">
                       Interface de gestión de datos se implementará aquí
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              {/* Investors Tab */}
+              <TabsContent value="investors">
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <Briefcase className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Investors</p>
+                        <p className="text-2xl font-bold">24</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <DollarSign className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Inversión Total</p>
+                        <p className="text-2xl font-bold">$1.5M</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <RefreshCcw className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ronda Actual</p>
+                        <p className="text-2xl font-bold">Serie B</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <Card className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold">Gestión de Inversores</h3>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Lista
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configuración
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="text-center text-muted-foreground">
+                      Tabla de inversores se implementará aquí
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              {/* Permisos Tab */}
+              <TabsContent value="permissions">
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <Users className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Usuarios Totales</p>
+                        <p className="text-2xl font-bold">532</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <Lock className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Roles Definidos</p>
+                        <p className="text-2xl font-bold">8</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <UserCheck className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Administradores</p>
+                        <p className="text-2xl font-bold">5</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <Card className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold">Gestión de Permisos</h3>
+                    <Button variant="outline" size="sm">
+                      <RefreshCcw className="h-4 w-4 mr-2" />
+                      Actualizar
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="text-center text-muted-foreground">
+                      Tabla de permisos y roles se implementará aquí
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              {/* Finanzas Tab */}
+              <TabsContent value="finances">
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <DollarSign className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
+                        <p className="text-2xl font-bold">$87.5K</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <CreditCard className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Gastos Mensuales</p>
+                        <p className="text-2xl font-bold">$62.3K</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <RefreshCcw className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Beneficio Neto</p>
+                        <p className="text-2xl font-bold">$25.2K</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <Card className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold">Gestión Financiera</h3>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Informes
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configuración
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="text-center text-muted-foreground">
+                      Gráficos e informes financieros se implementarán aquí
                     </div>
                   </div>
                 </Card>
