@@ -22,7 +22,11 @@ import {
   Palette,
   GraduationCap,
   ShoppingBag,
-  Sparkles
+  Sparkles,
+  Tv,
+  Music,
+  User,
+  CreditCard
 } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import { useEffect, useState } from "react";
@@ -285,36 +289,50 @@ export default function Dashboard() {
             </div>
 
             {/* Main Services Grid */}
-            <Card className="p-6">
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2">Key Services</h3>
-                <p className="text-sm text-muted-foreground">
-                  Access your favorite tools and services
-                </p>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">Key Services</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { title: "Education", description: "Learn music skills", link: "/education", icon: "🎓" },
-                  { title: "Store", description: "Sell merchandise", link: "/store", icon: "🛍️" },
-                  { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: "📺" },
-                  { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: "📈" },
-                  { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: "🎵" },
-                  { title: "Contracts", description: "Legal documents", link: "/contracts", icon: "📝" },
-                  { title: "Profile", description: "Artist profile", link: "/profile", icon: "👤" },
-                  { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: "💳" }
+                  { title: "Education", description: "Learn music skills", link: "/education", icon: GraduationCap, statsValue: metrics.coursesEnrolled, statsLabel: "Courses" },
+                  { title: "Store", description: "Sell merchandise", link: "/store", icon: ShoppingBag, statsValue: metrics.merchandiseSold, statsLabel: "Products" },
+                  { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: Tv, statsValue: 24, statsLabel: "Videos" },
+                  { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: Video, statsValue: metrics.youtubeViews, statsLabel: "Views" },
+                  { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: Music, statsValue: metrics.spotifyFollowers, statsLabel: "Followers" },
+                  { title: "Contracts", description: "Legal documents", link: "/contracts", icon: FileText, statsValue: metrics.contractsCreated, statsLabel: "Documents" },
+                  { title: "Profile", description: "Artist profile", link: "/profile", icon: User, statsValue: 1, statsLabel: "Profile" },
+                  { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards" }
                 ].map((service) => (
                   <Link key={service.title} href={service.link}>
-                    <a className="block h-full">
-                      <div className="bg-orange-500/5 hover:bg-orange-500/10 transition-colors duration-300 p-4 rounded-lg border border-orange-500/20 h-full flex flex-col">
-                        <div className="text-2xl mb-2">{service.icon}</div>
-                        <h3 className="font-medium text-sm">{service.title}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{service.description}</p>
-                      </div>
-                    </a>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                            <service.icon className="h-6 w-6 text-orange-500" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{service.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {service.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex items-baseline">
+                          <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                            {service.statsValue.toLocaleString()}
+                          </span>
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {service.statsLabel}
+                          </span>
+                        </div>
+                      </Card>
+                    </motion.div>
                   </Link>
                 ))}
               </div>
-            </Card>
+            </div>
           </div>
         </ScrollArea>
       </main>
