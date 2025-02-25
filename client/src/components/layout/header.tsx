@@ -237,31 +237,44 @@ export function Header() {
 
         {/* Secondary Navigation Bar - Inspired by Freepik */}
         <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm">
-          <div className="container flex h-8 max-w-screen-2xl items-center">
-            <nav className="flex items-center justify-between w-full px-4">
+          <div className="container flex h-10 max-w-screen-2xl items-center overflow-hidden">
+            <nav className="flex items-center space-x-5 px-4 overflow-x-auto scrollbar-hide pb-2 w-full">
               {[...navigation, ...secondaryNavigation].map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="group flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/5 transition-colors"
-                  title={item.name}
+                  className={`flex items-center whitespace-nowrap ${
+                    item.name === "Inversores" ? "text-orange-500 font-medium" : "text-gray-300"
+                  } text-xs hover:text-orange-400 transition-colors`}
                 >
                   <item.icon 
-                    className="h-3.5 w-3.5 text-orange-500 transition-all duration-300 group-hover:text-orange-400 group-hover:drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
+                    className={`mr-2 h-3.5 w-3.5 ${
+                      item.name === "Inversores" 
+                        ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
+                        : "text-gray-400"
+                    }`} 
                   />
+                  {item.name}
                 </Link>
               ))}
+              
+              {/* Settings Link */}
+              <Link
+                href="/settings"
+                className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
+              >
+                <Settings className="mr-2 h-3.5 w-3.5 text-gray-400" />
+                Settings
+              </Link>
               
               {/* Admin Icon - Only visible to admins */}
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="group flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/5 transition-colors"
-                  title="Admin Panel"
+                  className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
                 >
-                  <Shield 
-                    className="h-3.5 w-3.5 text-orange-500 transition-all duration-300 group-hover:text-orange-400 group-hover:drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
-                  />
+                  <Shield className="mr-2 h-3.5 w-3.5 text-gray-400" />
+                  Admin
                 </Link>
               )}
             </nav>
@@ -269,7 +282,7 @@ export function Header() {
         </div>
       </header>
       {/* Spacer to prevent content from hiding under the fixed header */}
-      <div className="h-[96px]" />
+      <div className="h-[106px]" />
     </>
   );
 }
