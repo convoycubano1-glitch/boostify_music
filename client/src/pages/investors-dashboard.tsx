@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-// Componente Calculadora de Inversión
+// Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);
   const [returnRate, setReturnRate] = useState(5); // Default to 5%
@@ -47,12 +47,12 @@ function InvestmentCalculator() {
     <div className="grid md:grid-cols-2 gap-8">
       <div>
         <Card className="p-6 mb-6">
-          <h4 className="text-base font-medium mb-6">Ajustar Parámetros</h4>
+          <h4 className="text-base font-medium mb-6">Adjust Parameters</h4>
           
           <div className="space-y-8">
             <div>
               <div className="flex justify-between mb-2">
-                <label className="text-sm font-medium">Monto de Inversión</label>
+                <label className="text-sm font-medium">Investment Amount</label>
                 <span className="text-sm font-medium">${investmentAmount.toLocaleString()}</span>
               </div>
               <div className="flex items-center gap-4">
@@ -70,8 +70,8 @@ function InvestmentCalculator() {
             
             <div>
               <div className="flex justify-between mb-2">
-                <label className="text-sm font-medium">Tasa de Retorno</label>
-                <span className="text-sm font-medium">{returnRate}% mensual</span>
+                <label className="text-sm font-medium">Return Rate</label>
+                <span className="text-sm font-medium">{returnRate}% monthly</span>
               </div>
               <div className="flex items-center gap-4">
                 <BarChart2 className="h-4 w-4 text-muted-foreground" />
@@ -88,8 +88,8 @@ function InvestmentCalculator() {
             
             <div>
               <div className="flex justify-between mb-2">
-                <label className="text-sm font-medium">Duración</label>
-                <span className="text-sm font-medium">{durationMonths} meses</span>
+                <label className="text-sm font-medium">Duration</label>
+                <span className="text-sm font-medium">{durationMonths} months</span>
               </div>
               <div className="flex items-center gap-4">
                 <Calculator className="h-4 w-4 text-muted-foreground" />
