@@ -849,11 +849,13 @@ export const CustomerServiceAgent: React.FC = () => {
       
       {/* Agent Selection Dialog */}
       <Dialog open={isAgentDialogOpen} onOpenChange={setIsAgentDialogOpen}>
-        <DialogContent className="bg-black/95 border border-orange-500/20 text-white max-w-md">
+        <DialogContent className="bg-black/95 border border-orange-500/20 text-white max-w-md z-[10000] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90vw] sm:w-auto">
           <DialogHeader>
             <DialogTitle className="text-orange-500">Connect with an Agent</DialogTitle>
             <DialogDescription className="text-gray-300">
-              Choose a specialist to call directly about your specific needs. Your phone will initiate a call to the selected agent.
+              {isMobile ? 
+                "Toca un especialista para llamar directamente." : 
+                "Choose a specialist to call directly about your specific needs. Your phone will initiate a call to the selected agent."}
             </DialogDescription>
           </DialogHeader>
           
@@ -861,25 +863,29 @@ export const CustomerServiceAgent: React.FC = () => {
             {ELEVENLABS_AGENTS.map((agent) => (
               <div 
                 key={agent.id}
-                className="p-3 rounded-lg border border-gray-800 hover:border-orange-500/50 hover:bg-gray-900/50 cursor-pointer transition-all"
+                className={`${isMobile ? 'p-2' : 'p-3'} rounded-lg border border-gray-800 hover:border-orange-500/50 hover:bg-gray-900/50 cursor-pointer transition-all`}
                 onClick={() => connectWithAgent(agent)}
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-orange-600/30 text-orange-500">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className={`${isMobile ? 'p-1.5' : 'p-2'} rounded-full bg-orange-600/30 text-orange-500`}>
                     {agent.icon}
                   </div>
                   <div>
                     <h5 className="font-medium text-sm text-orange-400">{agent.name}</h5>
-                    <p className="text-xs text-gray-400">{agent.description}</p>
+                    <p className={`text-xs text-gray-400 ${isMobile ? 'line-clamp-1' : ''}`}>{agent.description}</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAgentDialogOpen(false)}>
-              Cancel
+          <DialogFooter className="flex justify-center sm:justify-end pt-2">
+            <Button 
+              variant="outline" 
+              className={`${isMobile ? 'w-full' : ''} bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/30`}
+              onClick={() => setIsAgentDialogOpen(false)}
+            >
+              {isMobile ? 'Cerrar' : 'Cancel'}
             </Button>
           </DialogFooter>
         </DialogContent>
