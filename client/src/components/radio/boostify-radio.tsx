@@ -11,6 +11,8 @@ import { StreamingService, StreamingTrack } from "@/lib/streaming/streaming-serv
 import { SpotifyStreamingService } from "@/lib/streaming/spotify-service";
 import { useToast } from "@/hooks/use-toast";
 
+type MusicSource = 'spotify' | 'boostify';
+
 interface BoostifyRadioProps {
   className?: string;
   onClose?: () => void;
@@ -35,6 +37,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [currentStreamingTrack, setCurrentStreamingTrack] = useState<StreamingTrack | null>(null);
   const [isInitializingServices, setIsInitializingServices] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<MusicSource>('boostify');
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
@@ -105,8 +108,8 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
 
   const togglePlay = async () => {
     try {
-      if (currentStreamingTrack) {
-        // Si estamos reproduciendo desde un servicio de streaming
+      if (selectedSource === 'spotify' && currentStreamingTrack) {
+        // Si estamos reproduciendo desde Spotify
         const service = streamingServices.find(s => s.name.toLowerCase() === currentStreamingTrack.source);
         if (service) {
           if (isPlaying) {
@@ -117,7 +120,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
           setIsPlaying(!isPlaying);
         }
       } else if (audioRef.current) {
-        // Si estamos reproduciendo audio local
+        // Si estamos reproduciendo audio local de Boostify
         if (isPlaying) {
           audioRef.current.pause();
         } else {
@@ -143,6 +146,11 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   };
 
   const skipToNextSong = () => {
+    if (selectedSource === 'spotify') {
+      // Implementar lógica para saltar a la siguiente canción de Spotify
+      return;
+    }
+
     if (!currentSong || playlist.length === 0) return;
 
     const currentIndex = playlist.findIndex(song => song.id === currentSong.id);
@@ -150,6 +158,16 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
     setCurrentSong(playlist[nextIndex]);
     if (isPlaying && audioRef.current) {
       audioRef.current.play();
+    }
+  };
+
+  const handleSourceChange = (source: MusicSource) => {
+    setSelectedSource(source);
+    setIsPlaying(false);
+    setCurrentStreamingTrack(null);
+
+    if (source === 'boostify') {
+      loadSongs();
     }
   };
 
@@ -219,6 +237,32 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
               <X className="h-4 w-4" />
             </Button>
           )}
+        </div>
+
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Button
+            variant={selectedSource === 'boostify' ? 'default' : 'ghost'}
+            size="sm"
+            className={cn(
+              "text-sm",
+              selectedSource === 'boostify' && "bg-orange-500 hover:bg-orange-600"
+            )}
+            onClick={() => handleSourceChange('boostify')}
+          >
+            Boostify
+          </Button>
+          <Button
+            variant={selectedSource === 'spotify' ? 'default' : 'ghost'}
+            size="sm"
+            className={cn(
+              "text-sm",
+              selectedSource === 'spotify' && "bg-green-500 hover:bg-green-600"
+            )}
+            onClick={() => handleSourceChange('spotify')}
+            disabled={isInitializingServices}
+          >
+            Spotify
+          </Button>
         </div>
 
         <div className="space-y-4">
