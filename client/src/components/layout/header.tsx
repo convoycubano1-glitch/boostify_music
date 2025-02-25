@@ -72,7 +72,7 @@ export function Header() {
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
-    { name: "Inversores", href: "/investors-dashboard", icon: DollarSign, highlight: true },
+    { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
   if (!user) return null;
@@ -238,23 +238,23 @@ export function Header() {
         {/* Secondary Navigation Bar - Inspired by Freepik */}
         <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm">
           <div className="container flex h-10 max-w-screen-2xl items-center overflow-hidden">
-            <nav className="flex items-center space-x-5 px-4 overflow-x-auto scrollbar-hide pb-2 w-full">
+            <nav className="flex items-center space-x-3 md:space-x-5 px-2 md:px-4 overflow-x-auto scrollbar-hide pb-2 w-full">
               {[...navigation, ...secondaryNavigation].map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`flex items-center whitespace-nowrap ${
-                    item.name === "Inversores" ? "text-orange-500 font-medium" : "text-gray-300"
+                    item.name === "Investors" ? "text-orange-500 font-medium" : "text-gray-300"
                   } text-xs hover:text-orange-400 transition-colors`}
                 >
                   <item.icon 
-                    className={`mr-2 h-3.5 w-3.5 ${
-                      item.name === "Inversores" 
+                    className={`h-4 w-4 md:h-3.5 md:w-3.5 ${
+                      item.name === "Investors" 
                         ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
                         : "text-gray-400"
                     }`} 
                   />
-                  {item.name}
+                  <span className="md:inline hidden md:ml-2">{item.name}</span>
                 </Link>
               ))}
               
@@ -263,8 +263,8 @@ export function Header() {
                 href="/settings"
                 className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
               >
-                <Settings className="mr-2 h-3.5 w-3.5 text-gray-400" />
-                Settings
+                <Settings className="h-4 w-4 md:h-3.5 md:w-3.5 text-gray-400" />
+                <span className="md:inline hidden md:ml-2">Settings</span>
               </Link>
               
               {/* Admin Icon - Only visible to admins */}
@@ -273,8 +273,8 @@ export function Header() {
                   href="/admin"
                   className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
                 >
-                  <Shield className="mr-2 h-3.5 w-3.5 text-gray-400" />
-                  Admin
+                  <Shield className="h-4 w-4 md:h-3.5 md:w-3.5 text-gray-400" />
+                  <span className="md:inline hidden md:ml-2">Admin</span>
                 </Link>
               )}
             </nav>
