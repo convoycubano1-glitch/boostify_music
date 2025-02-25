@@ -95,21 +95,21 @@ const ELEVENLABS_AGENTS: ElevenLabsAgent[] = [
     id: 'business-relations',
     name: 'Business Relations',
     description: 'Speak with our business relations specialist about partnerships and collaborations.',
-    agentId: '35d5WwGMFwiAxQm227eG',
+    agentId: '+1 315 784 4758',
     icon: <UserRound className="h-5 w-5" />
   },
   {
     id: 'sales-agent',
     name: 'Sales Agent',
     description: 'Get information about pricing, subscriptions, and premium features.',
-    agentId: 't3LcVskNIQ9ADwZ5AGoe',
+    agentId: '+1 941 315 9237',
     icon: <Bot className="h-5 w-5" />
   },
   {
     id: 'support-agent',
     name: 'Support Agent',
     description: 'Technical support for platform features and troubleshooting.',
-    agentId: 't3LcVskNIQ9ADwZ5AGoe',
+    agentId: '+1 470 798 3684',
     icon: <Headphones className="h-5 w-5" />
   }
 ];
@@ -496,20 +496,20 @@ export const CustomerServiceAgent: React.FC = () => {
     const systemMessage: Message = {
       id: crypto.randomUUID(),
       role: 'system',
-      content: `You are now being connected with our ${agent.name}. The conversation will appear in a new window.`,
+      content: `You are now being connected with our ${agent.name}. Your phone will initiate a call to ${agent.agentId}.`,
       timestamp: new Date(),
     };
     
     setMessages(prev => [...prev, systemMessage]);
     
-    // En lugar de intentar renderizar el widget como un elemento personalizado,
-    // simplemente abre una nueva ventana con la URL directa de ElevenLabs
-    const elevenLabsAgentUrl = `https://elevenlabs.io/app/talk-to?agent_id=${agent.agentId}`;
-    window.open(elevenLabsAgentUrl, '_blank');
+    // En lugar de abrir una página de ElevenLabs, ahora iniciamos una llamada telefónica
+    const phoneNumber = agent.agentId.replace(/\s+/g, ''); // Eliminar espacios
+    const telUrl = `tel:${phoneNumber}`;
+    window.open(telUrl);
     
     toast({
-      title: `Connecting with ${agent.name}`,
-      description: "A new window has been opened where you can continue your conversation.",
+      title: `Calling ${agent.name}`,
+      description: `Your phone is dialing ${agent.agentId} to connect with our specialist.`,
     });
   };
 
@@ -779,7 +779,7 @@ export const CustomerServiceAgent: React.FC = () => {
                   <div className="p-2">
                     <h4 className="font-medium text-sm mb-2 text-orange-500">Select an Agent to Call</h4>
                     <p className="text-xs text-gray-300 mb-3">
-                      Connect with one of our voice agents for specialized assistance at ElevenLabs. A new window will open for your conversation.
+                      Connect with one of our specialists via phone call for personalized assistance. Your phone will initiate a call to the selected agent.
                     </p>
                     <div className="space-y-2">
                       {ELEVENLABS_AGENTS.map((agent) => (
@@ -853,7 +853,7 @@ export const CustomerServiceAgent: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-orange-500">Connect with an Agent</DialogTitle>
             <DialogDescription className="text-gray-300">
-              Choose a specialized agent to help with your specific needs. A new window will open for your conversation.
+              Choose a specialist to call directly about your specific needs. Your phone will initiate a call to the selected agent.
             </DialogDescription>
           </DialogHeader>
           
