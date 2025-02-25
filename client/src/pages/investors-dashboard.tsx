@@ -481,13 +481,14 @@ function InvestorRegistrationForm() {
       
       // Use server-side API route instead of direct Firestore access
       try {
-        const response = await apiRequest<{ success: boolean, id: string }>({
-          url: '/api/investors/register',
-          method: 'POST',
-          body: investorData
-        });
+        const response = await apiRequest(
+          '/api/investors/register',
+          'POST', 
+          investorData
+        );
         
-        console.log("Investor registration successful with ID:", response.id);
+        const data = await response.json();
+        console.log("Investor registration successful with ID:", data.id);
       } catch (apiError) {
         console.error("API error:", apiError);
         throw apiError;
