@@ -483,8 +483,15 @@ function InvestorRegistrationForm() {
         status: "pending",
       };
       
-      // Add document to Firestore collection
-      const docRef = await addDoc(collection(db, "investors"), investorData);
+      // Try-catch with specific Firestore error handling
+      try {
+        // Add document to Firestore collection
+        const docRef = await addDoc(collection(db, "investors"), investorData);
+        console.log("Investor registration saved with ID:", docRef.id);
+      } catch (firestoreError) {
+        console.error("Firestore specific error:", firestoreError);
+        throw firestoreError;
+      }
       
       toast({
         title: "Registration Successful",
@@ -497,11 +504,28 @@ function InvestorRegistrationForm() {
       
     } catch (error) {
       console.error("Error submitting investor registration:", error);
-      toast({
-        title: "Registration Failed",
-        description: "There was an error registering you as an investor. Please try again.",
-        variant: "destructive",
-      });
+      // Provide more specific error messages based on error types
+      if (error instanceof Error) {
+        if (error.message.includes("permission")) {
+          toast({
+            title: "Permission Error",
+            description: "You don't have permission to register as an investor. Please check your account or contact support.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: "There was an error registering you as an investor: " + error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: "There was an unknown error registering you as an investor. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
