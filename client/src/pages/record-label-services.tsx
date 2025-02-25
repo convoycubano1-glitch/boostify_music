@@ -47,7 +47,7 @@ export default function RecordLabelServices() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-16">
+      <main className="flex-1">
         {/* Hero Section with Enhanced Video Background */}
         <div className="relative w-full min-h-[60vh] sm:min-h-[70vh] overflow-hidden">
           <video
@@ -119,7 +119,7 @@ export default function RecordLabelServices() {
         </div>
 
         {/* Mobile Stats Section */}
-        <div className="lg:hidden bg-gradient-to-b from-background to-orange-500/5 py-6 sm:py-8">
+        <div className="lg:hidden bg-gradient-to-b from-background to-orange-500/5 py-4">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {[
@@ -144,7 +144,7 @@ export default function RecordLabelServices() {
         </div>
 
         {/* Services Tabs with Modern Design */}
-        <div className="container mx-auto px-4 py-8 sm:py-16">
+        <div className="container mx-auto px-4 py-6">
           <Tabs
             defaultValue={selectedTab}
             value={selectedTab}
