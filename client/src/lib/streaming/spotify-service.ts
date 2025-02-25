@@ -42,7 +42,7 @@ export class SpotifyStreamingService implements StreamingService {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
         },
-        body: 'grant_type=client_credentials'
+        body: 'grant_type=client_credentials&scope=streaming user-read-playback-state user-modify-playback-state'
       });
 
       if (!response.ok) {
@@ -73,11 +73,14 @@ export class SpotifyStreamingService implements StreamingService {
 
     try {
       console.log('Searching Spotify for:', query);
-      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50`, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
+      const response = await fetch(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50&market=ES,US&include_external=audio`, 
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          }
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error('Failed to search tracks');
@@ -99,6 +102,16 @@ export class SpotifyStreamingService implements StreamingService {
       const tracksWithPreviews = tracks.filter(t => t.streamUrl).length;
       console.log(`Found ${tracks.length} tracks, ${tracksWithPreviews} with previews available`);
 
+      if (tracksWithPreviews === 0) {
+        console.log('First 3 tracks for debugging:', 
+          tracks.slice(0, 3).map(t => ({
+            name: t.title,
+            artist: t.artist,
+            hasPreview: !!t.streamUrl
+          }))
+        );
+      }
+
       return tracks;
     } catch (error) {
       console.error('Error searching tracks:', error);
@@ -112,7 +125,7 @@ export class SpotifyStreamingService implements StreamingService {
     }
 
     try {
-      const response = await fetch('https://api.spotify.com/v1/recommendations?limit=20', {
+      const response = await fetch('https://api.spotify.com/v1/recommendations?limit=20&market=ES,US', {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         }

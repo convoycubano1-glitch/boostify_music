@@ -203,7 +203,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
       } else {
         toast({
           title: "Sin previsualizaciones",
-          description: "No se encontraron previsualizaciones disponibles para estas canciones",
+          description: "No se encontraron previsualizaciones disponibles para estas canciones. Prueba con otra búsqueda.",
           variant: "destructive"
         });
       }
