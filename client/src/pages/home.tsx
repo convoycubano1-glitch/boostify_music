@@ -18,6 +18,7 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect } from "react";
 import { SuperAgent } from "@/components/agents/super-agent";
+import welcomeVideo from "/assets/indications/Welcome to Boostify Music.mp4";
 
 /* =============================
    VARIANTES PARA ANIMACIONES
@@ -461,7 +462,7 @@ export default function HomePage() {
                 muted
                 playsInline
               >
-                <source src={bostifyVideo} type="video/mp4" />
+                <source src="/assets/indications/Welcome to Boostify Music.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
