@@ -668,29 +668,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-                <DollarSign className="w-6 h-6 mr-2 text-orange-500" />
-                Affiliate Program
-              </h3>
-              <p className="text-lg text-muted-foreground mb-4">
-                Join our affiliate program and earn commission on every sale!
-              </p>
-              <div className="flex gap-4">
-                <Button className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
-                  Learn More
-                </Button>
-                <Link href="/smart-cards">
-                  <Button className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Get Smart Cards
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-          </Card>
-
-          <Card className="p-6">
-            <motion.div variants={itemVariants}>
-              <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 <User className="w-6 h-6 mr-2 text-orange-500" />
                 Contact
               </h3>
@@ -712,7 +689,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <a
                     href={mockArtist.website}
                     target="_blank"
-                    rel="noopener noreferrer"                    className="hover:text-orange-500"
+                    rel="noopener noreferrer"
+                    className="hover:text-orange-500"
                   >
                     {mockArtist.website}
                   </a>
@@ -754,7 +732,7 @@ export const mockArtist = {
   name: "Redwine",
   genre: "Blues Latin Fusion",
   location: "Miami, FL",
-  email: "booking@redwinemusic.com",
+email: "booking@redwinemusic.com",
   phone: "+1 (305) 555-0123",
   website: "https://redwinemusic.com",
   socialMedia: {
@@ -779,20 +757,20 @@ export const mockArtist = {
   merchandise: [
     {
       id: "1",
-      name: "Miami Blues Vinyl Edition",
+      name: "La Vida Es de los Que Saben - Vinyl Edition",
       price: "$29.99",
-      imageUrl: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=800&auto=format&fit=crop&q=60",
-      description: "Edición especial en vinilo con arte exclusivo y notas firmadas",
+      imageUrl: "/assets/Merchandise/vinil.jpeg",
+      description: "Edición especial en vinilo con portada artística y notas exclusivas firmadas por Redwine",
       inStock: true,
       category: "Music",
       url: "#",
     },
     {
       id: "2",
-      name: "Latin Blues Tour 2024",
+      name: "Latin Blues Tour 2024 - Official Merch",
       price: "$24.99",
-      imageUrl: "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=800&auto=format&fit=crop&q=60",
-      description: "Camiseta oficial del tour en algodón premium con diseño exclusivo",
+      imageUrl: "/assets/Merchandise/camiseta.jpeg",
+      description: "Camiseta oficial del tour con diseño inspirado en 'Ella o el alcohol'",
       inStock: true,
       category: "Apparel",
       sizes: ["S", "M", "L", "XL"],
@@ -802,8 +780,8 @@ export const mockArtist = {
       id: "3",
       name: "Colección Arte Latino Blues",
       price: "$19.99",
-      imageUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&auto=format&fit=crop&q=60",
-      description: "Set de 3 prints artísticos firmados inspirados en la fusión del Blues y la cultura latina",
+      imageUrl: "/assets/Merchandise/print.jpeg",
+      description: "Set de prints artísticos firmados inspirados en la fusión del Blues Latino de Redwine",
       inStock: true,
       category: "Art",
       url: "#",
