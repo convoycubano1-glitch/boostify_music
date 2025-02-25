@@ -269,10 +269,10 @@ export default function StorePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">
-        <div className="container mx-auto px-4 py-8">
+      <main className="flex-1">
+        <div className="container mx-auto px-4 py-6">
           {/* Hero Section */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -350,8 +350,8 @@ export default function StorePage() {
           </div>
 
           {/* Features Section */}
-          <div className="mt-20 text-center">
-            <h2 className="text-3xl font-bold mb-12">
+          <div className="mt-16 text-center">
+            <h2 className="text-3xl font-bold mb-10">
               Why Choose Our{" "}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">
                 Bots
