@@ -510,20 +510,20 @@ export default function InvestorsDashboard() {
             {/* Hero Section */}
             <section className="relative rounded-xl overflow-hidden mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-8">
               <div className="relative">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  Panel de Inversores
+                <h1 className="text-3xl md:text-5xl font-bold mb-4">
+                  Investor Dashboard
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mb-6">
-                  Gestiona tus inversiones, monitorea rendimientos y explora nuevas oportunidades con Boostify Music
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-6">
+                  Manage your investments, monitor returns, and explore new opportunities with Boostify Music
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Button onClick={handleInvestNow} size="lg" className="bg-orange-500 hover:bg-orange-600">
                     <DollarSign className="mr-2 h-5 w-5" />
-                    Invertir Ahora
+                    Invest Now
                   </Button>
                   <Button variant="outline" size="lg" onClick={handleDownloadContract}>
                     <Download className="mr-2 h-5 w-5" />
-                    Descargar Contrato
+                    Download Contract
                   </Button>
                 </div>
               </div>
@@ -534,19 +534,19 @@ export default function InvestorsDashboard() {
               <TabsList className="grid grid-cols-4 max-w-[800px] mb-8">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500">
                   <BarChart2 className="w-4 h-4 mr-2" />
-                  Resumen
+                  <span className="text-xs sm:text-sm">Overview</span>
                 </TabsTrigger>
                 <TabsTrigger value="calculator" className="data-[state=active]:bg-orange-500">
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Calculadora
+                  <span className="text-xs sm:text-sm">Calculator</span>
                 </TabsTrigger>
                 <TabsTrigger value="investments" className="data-[state=active]:bg-orange-500">
                   <TrendingUp className="w-4 h-4 mr-2" />
-                  Inversiones
+                  <span className="text-xs sm:text-sm">Investments</span>
                 </TabsTrigger>
                 <TabsTrigger value="roadmap" className="data-[state=active]:bg-orange-500">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Roadmap
+                  <span className="text-xs sm:text-sm">Roadmap</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -557,50 +557,50 @@ export default function InvestorsDashboard() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Rendimiento de Inversión</h3>
+                  <Card className="p-4 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-semibold mb-4">Investment Performance</h3>
                     <InvestmentPerformanceChart data={investmentData.monthlyReturns} />
                   </Card>
 
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Riesgo y Retorno</h3>
+                  <Card className="p-4 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-semibold mb-4">Risk and Return</h3>
                     <RiskReturnTable />
                   </Card>
                 </div>
 
-                <Card className="p-6 mb-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Información para Inversores</h3>
+                <Card className="p-4 sm:p-6 mb-8">
+                  <div className="flex justify-between items-center mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold">Investor Information</h3>
                     <Button variant="outline" size="sm">
                       <Download className="h-4 w-4 mr-2" />
-                      Descargar Info
+                      Download Info
                     </Button>
                   </div>
 
-                  <div className="prose prose-orange dark:prose-invert max-w-none">
-                    <h4>Invertir en Boostify Music</h4>
+                  <div className="prose prose-orange dark:prose-invert max-w-none text-sm sm:text-base">
+                    <h4 className="text-base sm:text-lg font-medium">Investing in Boostify Music</h4>
                     <p>
-                      Boostify Music ofrece una oportunidad única para invertir en el futuro de la industria musical. Nuestra plataforma impulsada por IA está revolucionando la forma en que artistas, productores y aficionados interactúan con la música.
+                      Boostify Music offers a unique opportunity to invest in the future of the music industry. Our AI-powered platform is revolutionizing how artists, producers, and fans interact with music.
                     </p>
                     
-                    <h4>Beneficios de Inversión</h4>
-                    <ul>
-                      <li><strong>Rentabilidad mensual:</strong> 4-6% según el plan de inversión seleccionado</li>
-                      <li><strong>Inversión mínima:</strong> $2,000 USD</li>
-                      <li><strong>Pagos mensuales:</strong> Distribución de beneficios el día 15 de cada mes</li>
-                      <li><strong>Contratos transparentes:</strong> Términos claros y documentación completa</li>
-                      <li><strong>Panel exclusivo:</strong> Acceso a estadísticas en tiempo real y herramientas de análisis</li>
+                    <h4 className="text-base sm:text-lg font-medium mt-4">Investment Benefits</h4>
+                    <ul className="space-y-2">
+                      <li><strong>Monthly Returns:</strong> 4-6% based on your selected investment plan</li>
+                      <li><strong>Minimum Investment:</strong> $2,000 USD</li>
+                      <li><strong>Monthly Payments:</strong> Profit distribution on the 15th of each month</li>
+                      <li><strong>Transparent Contracts:</strong> Clear terms and comprehensive documentation</li>
+                      <li><strong>Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</li>
                     </ul>
 
-                    <h4>Próximos Hitos</h4>
+                    <h4 className="text-base sm:text-lg font-medium mt-4">Upcoming Milestones</h4>
                     <p>
-                      Estamos en plena expansión, con el lanzamiento próximo de nuestra plataforma de streaming mejorada con IA y nuevas herramientas para creadores. La Serie B de financiación permitirá acelerar nuestro crecimiento internacional.
+                      We're rapidly expanding, with the upcoming launch of our AI-enhanced streaming platform and new creator tools. Series B funding will accelerate our international growth.
                     </p>
                     
                     <div className="not-prose mt-6">
-                      <Button onClick={handleInvestNow} className="bg-orange-500 hover:bg-orange-600">
+                      <Button onClick={handleInvestNow} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
                         <DollarSign className="mr-2 h-4 w-4" />
-                        Comenzar a Invertir
+                        Start Investing
                       </Button>
                     </div>
                   </div>
@@ -609,118 +609,118 @@ export default function InvestorsDashboard() {
 
               {/* Calculator Tab */}
               <TabsContent value="calculator">
-                <Card className="p-6 mb-8">
-                  <h3 className="text-xl font-semibold mb-6">Calculadora de Inversión</h3>
+                <Card className="p-4 sm:p-6 mb-8">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Investment Calculator</h3>
                   <InvestmentCalculator />
                 </Card>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Planes de Inversión</h3>
+                <Card className="p-4 sm:p-6">
+                  <div className="flex justify-between items-center mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold">Investment Plans</h3>
                     <Button variant="outline" size="sm">
                       <FileText className="h-4 w-4 mr-2" />
-                      Ver Detalles Completos
+                      View Full Details
                     </Button>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <Card className="p-6 border-2 border-muted">
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                    <Card className="p-4 sm:p-6 border-2 border-muted">
                       <div className="flex justify-between items-start mb-4">
-                        <h4 className="text-lg font-medium">Plan Estándar</h4>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Bajo Riesgo</span>
+                        <h4 className="text-base sm:text-lg font-medium">Standard Plan</h4>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Low Risk</span>
                       </div>
-                      <div className="flex items-baseline mb-6">
-                        <span className="text-4xl font-bold">4%</span>
-                        <span className="text-muted-foreground ml-1">mensual</span>
+                      <div className="flex items-baseline mb-4 sm:mb-6">
+                        <span className="text-3xl sm:text-4xl font-bold">4%</span>
+                        <span className="text-muted-foreground ml-1">monthly</span>
                       </div>
-                      <ul className="space-y-2 mb-6">
+                      <ul className="space-y-2 mb-4 sm:mb-6 text-sm sm:text-base">
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Inversión mínima: $2,000</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Minimum investment: $2,000</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Plazo mínimo: 6 meses</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Minimum term: 6 months</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Pagos mensuales</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Monthly payments</span>
                         </li>
                       </ul>
-                      <Button className="w-full" variant="outline">Seleccionar Plan</Button>
+                      <Button className="w-full" variant="outline">Select Plan</Button>
                     </Card>
 
-                    <Card className="p-6 border-2 border-orange-500 shadow-lg relative">
+                    <Card className="p-4 sm:p-6 border-2 border-orange-500 shadow-lg relative">
                       <div className="absolute -top-3 right-4 px-3 py-1 bg-orange-500 text-white text-xs rounded-full">
-                        Recomendado
+                        Recommended
                       </div>
                       <div className="flex justify-between items-start mb-4">
-                        <h4 className="text-lg font-medium">Plan Premium</h4>
-                        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">Riesgo Medio</span>
+                        <h4 className="text-base sm:text-lg font-medium">Premium Plan</h4>
+                        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">Medium Risk</span>
                       </div>
-                      <div className="flex items-baseline mb-6">
-                        <span className="text-4xl font-bold">5%</span>
-                        <span className="text-muted-foreground ml-1">mensual</span>
+                      <div className="flex items-baseline mb-4 sm:mb-6">
+                        <span className="text-3xl sm:text-4xl font-bold">5%</span>
+                        <span className="text-muted-foreground ml-1">monthly</span>
                       </div>
-                      <ul className="space-y-2 mb-6">
+                      <ul className="space-y-2 mb-4 sm:mb-6 text-sm sm:text-base">
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Inversión mínima: $5,000</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Minimum investment: $5,000</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Plazo mínimo: 12 meses</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Minimum term: 12 months</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Pagos mensuales</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Monthly payments</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Acceso a eventos exclusivos</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Access to exclusive events</span>
                         </li>
                       </ul>
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600">Seleccionar Plan</Button>
+                      <Button className="w-full bg-orange-500 hover:bg-orange-600">Select Plan</Button>
                     </Card>
 
-                    <Card className="p-6 border-2 border-muted">
+                    <Card className="p-4 sm:p-6 border-2 border-muted sm:col-span-2 md:col-span-1">
                       <div className="flex justify-between items-start mb-4">
-                        <h4 className="text-lg font-medium">Plan Elite</h4>
-                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Alto Potencial</span>
+                        <h4 className="text-base sm:text-lg font-medium">Elite Plan</h4>
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">High Potential</span>
                       </div>
-                      <div className="flex items-baseline mb-6">
-                        <span className="text-4xl font-bold">6%</span>
-                        <span className="text-muted-foreground ml-1">mensual</span>
+                      <div className="flex items-baseline mb-4 sm:mb-6">
+                        <span className="text-3xl sm:text-4xl font-bold">6%</span>
+                        <span className="text-muted-foreground ml-1">monthly</span>
                       </div>
-                      <ul className="space-y-2 mb-6">
+                      <ul className="space-y-2 mb-4 sm:mb-6 text-sm sm:text-base">
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Inversión mínima: $25,000</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Minimum investment: $25,000</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Plazo mínimo: 18 meses</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Minimum term: 18 months</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Pagos mensuales</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Monthly payments</span>
                         </li>
                         <li className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2" />
-                          <span>Participación en decisiones estratégicas</span>
+                          <ChevronRight className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                          <span>Participation in strategic decisions</span>
                         </li>
                       </ul>
-                      <Button className="w-full" variant="outline">Seleccionar Plan</Button>
+                      <Button className="w-full" variant="outline">Select Plan</Button>
                     </Card>
                   </div>
 
-                  <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg">
+                  <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg">
                     <div className="flex items-start">
-                      <AlertTriangle className="h-5 w-5 text-amber-500 mr-3 mt-0.5" />
+                      <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium text-amber-800 dark:text-amber-300">Aviso Importante</h4>
-                        <p className="text-sm text-amber-700 dark:text-amber-400">
-                          Toda inversión implica riesgos. Los rendimientos pasados no garantizan resultados futuros. Por favor lea detenidamente el contrato y consulte con un asesor financiero antes de invertir.
+                        <h4 className="font-medium text-amber-800 dark:text-amber-300 text-sm sm:text-base">Important Notice</h4>
+                        <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400">
+                          All investments involve risks. Past returns do not guarantee future results. Please read the contract carefully and consult a financial advisor before investing.
                         </p>
                       </div>
                     </div>
@@ -730,119 +730,119 @@ export default function InvestorsDashboard() {
 
               {/* Investments Tab */}
               <TabsContent value="investments">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <DollarSign className="h-6 w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  <Card className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
+                        <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Inversión Total</p>
-                        <p className="text-2xl font-bold">${investmentData.totalInvested}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total Investment</p>
+                        <p className="text-xl sm:text-2xl font-bold">${investmentData.totalInvested}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <TrendingUp className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
+                        <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Valor Actual</p>
-                        <p className="text-2xl font-bold">${investmentData.currentValue}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Current Value</p>
+                        <p className="text-xl sm:text-2xl font-bold">${investmentData.currentValue}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <Clock className="h-6 w-6 text-orange-500" />
+                  <Card className="p-4 sm:p-6 sm:col-span-1">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
+                        <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Próximo Pago</p>
-                        <p className="text-2xl font-bold">{new Date(investmentData.nextPaymentDate).toLocaleDateString()}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Next Payment</p>
+                        <p className="text-xl sm:text-2xl font-bold">{new Date(investmentData.nextPaymentDate).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-6 mb-8">
-                  <h3 className="text-lg font-semibold mb-6">Historial de Inversiones</h3>
+                <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Investment History</h3>
                   
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <table className="w-full min-w-[640px]">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-4">Fecha</th>
-                          <th className="text-left py-3 px-4">Tipo</th>
-                          <th className="text-left py-3 px-4">Cantidad</th>
-                          <th className="text-left py-3 px-4">Estado</th>
-                          <th className="text-left py-3 px-4">Retorno</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Date</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Type</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Amount</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Status</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Return</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="text-xs sm:text-sm">
                         <tr className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-4">15 Ene 2025</td>
-                          <td className="py-3 px-4">Plan Premium</td>
-                          <td className="py-3 px-4">$5,000</td>
-                          <td className="py-3 px-4"><span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Activa</span></td>
-                          <td className="py-3 px-4">$250 / mes</td>
+                          <td className="py-2 sm:py-3 px-4">Jan 15, 2025</td>
+                          <td className="py-2 sm:py-3 px-4">Premium Plan</td>
+                          <td className="py-2 sm:py-3 px-4">$5,000</td>
+                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">Active</span></td>
+                          <td className="py-2 sm:py-3 px-4">$250 / month</td>
                         </tr>
                         <tr className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-4">20 Dic 2024</td>
-                          <td className="py-3 px-4">Pago Mensual</td>
-                          <td className="py-3 px-4">$250</td>
-                          <td className="py-3 px-4"><span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Recibido</span></td>
-                          <td className="py-3 px-4">-</td>
+                          <td className="py-2 sm:py-3 px-4">Dec 20, 2024</td>
+                          <td className="py-2 sm:py-3 px-4">Monthly Payment</td>
+                          <td className="py-2 sm:py-3 px-4">$250</td>
+                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Received</span></td>
+                          <td className="py-2 sm:py-3 px-4">-</td>
                         </tr>
                         <tr className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-4">20 Nov 2024</td>
-                          <td className="py-3 px-4">Pago Mensual</td>
-                          <td className="py-3 px-4">$250</td>
-                          <td className="py-3 px-4"><span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Recibido</span></td>
-                          <td className="py-3 px-4">-</td>
+                          <td className="py-2 sm:py-3 px-4">Nov 20, 2024</td>
+                          <td className="py-2 sm:py-3 px-4">Monthly Payment</td>
+                          <td className="py-2 sm:py-3 px-4">$250</td>
+                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Received</span></td>
+                          <td className="py-2 sm:py-3 px-4">-</td>
                         </tr>
                         <tr className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-4">20 Oct 2024</td>
-                          <td className="py-3 px-4">Pago Mensual</td>
-                          <td className="py-3 px-4">$250</td>
-                          <td className="py-3 px-4"><span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Recibido</span></td>
-                          <td className="py-3 px-4">-</td>
+                          <td className="py-2 sm:py-3 px-4">Oct 20, 2024</td>
+                          <td className="py-2 sm:py-3 px-4">Monthly Payment</td>
+                          <td className="py-2 sm:py-3 px-4">$250</td>
+                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Received</span></td>
+                          <td className="py-2 sm:py-3 px-4">-</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </Card>
 
-                <Card className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Rondas de Inversión</h3>
+                <Card className="p-4 sm:p-6">
+                  <div className="flex justify-between items-center mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold">Investment Rounds</h3>
                     <Button variant="outline" size="sm">
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Invertir
+                      Invest
                     </Button>
                   </div>
                   
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <table className="w-full min-w-[640px]">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-4">Ronda</th>
-                          <th className="text-left py-3 px-4">Fecha</th>
-                          <th className="text-left py-3 px-4">Estado</th>
-                          <th className="text-left py-3 px-4">Monto</th>
-                          <th className="text-left py-3 px-4">Acciones</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Round</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Date</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Status</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Amount</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Actions</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="text-xs sm:text-sm">
                         {investmentData.investmentRounds.map((round, index) => (
                           <tr key={index} className="border-b hover:bg-muted/50">
-                            <td className="py-3 px-4">{round.name}</td>
-                            <td className="py-3 px-4">{round.date}</td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
+                            <td className="py-2 sm:py-3 px-4">{round.name}</td>
+                            <td className="py-2 sm:py-3 px-4">{round.date}</td>
+                            <td className="py-2 sm:py-3 px-4">
+                              <span className={`px-2 py-0.5 rounded-full text-xs ${
                                 round.status === 'Active' ? 'bg-green-100 text-green-800' : 
                                 round.status === 'Closed' ? 'bg-gray-100 text-gray-800' : 
                                 'bg-blue-100 text-blue-800'
@@ -850,22 +850,22 @@ export default function InvestorsDashboard() {
                                 {round.status}
                               </span>
                             </td>
-                            <td className="py-3 px-4">{round.raised || round.target}</td>
-                            <td className="py-3 px-4">
+                            <td className="py-2 sm:py-3 px-4">{round.raised || round.target}</td>
+                            <td className="py-2 sm:py-3 px-4">
                               {round.status === 'Active' && (
                                 <Button size="sm" variant="outline">
                                   <DollarSign className="h-3 w-3 mr-1" />
-                                  Invertir
+                                  Invest
                                 </Button>
                               )}
                               {round.status === 'Upcoming' && (
                                 <Button size="sm" variant="ghost" disabled>
-                                  Próximamente
+                                  Coming Soon
                                 </Button>
                               )}
                               {round.status === 'Closed' && (
                                 <Button size="sm" variant="ghost" disabled>
-                                  Cerrada
+                                  Closed
                                 </Button>
                               )}
                             </td>
@@ -879,56 +879,56 @@ export default function InvestorsDashboard() {
 
               {/* Roadmap Tab */}
               <TabsContent value="roadmap">
-                <Card className="p-6 mb-8">
-                  <h3 className="text-xl font-semibold mb-6">Roadmap de Boostify Music</h3>
+                <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Boostify Music Roadmap</h3>
                   <RoadmapTimeline />
                 </Card>
 
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-6">Proyecciones Financieras</h3>
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Financial Projections</h3>
                   
-                  <div className="grid md:grid-cols-2 gap-8">
+                  <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div>
-                      <h4 className="text-base font-medium mb-4">Crecimiento Proyectado de Usuarios</h4>
-                      <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
-                        <p className="text-muted-foreground">Gráfico de crecimiento de usuarios</p>
+                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4">Projected User Growth</h4>
+                      <div className="h-48 sm:h-64 bg-muted rounded-lg flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">User growth chart</p>
                       </div>
                     </div>
                     
                     <div>
-                      <h4 className="text-base font-medium mb-4">Crecimiento Proyectado de Ingresos</h4>
-                      <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
-                        <p className="text-muted-foreground">Gráfico de crecimiento de ingresos</p>
+                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4">Projected Revenue Growth</h4>
+                      <div className="h-48 sm:h-64 bg-muted rounded-lg flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">Revenue growth chart</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-8 grid md:grid-cols-3 gap-6">
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Users className="h-5 w-5 text-blue-500" />
-                        <h4 className="text-base font-medium">Usuarios Proyectados</h4>
+                  <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    <Card className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                        <h4 className="text-sm sm:text-base font-medium">Projected Users</h4>
                       </div>
-                      <p className="text-3xl font-bold">2.5M</p>
-                      <p className="text-sm text-muted-foreground">Para finales de 2025</p>
+                      <p className="text-2xl sm:text-3xl font-bold">2.5M</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">By the end of 2025</p>
                     </Card>
                     
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <BarChart className="h-5 w-5 text-green-500" />
-                        <h4 className="text-base font-medium">Ingresos Anuales</h4>
+                    <Card className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                        <BarChart className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                        <h4 className="text-sm sm:text-base font-medium">Annual Revenue</h4>
                       </div>
-                      <p className="text-3xl font-bold">$12M</p>
-                      <p className="text-sm text-muted-foreground">Proyectados para 2025</p>
+                      <p className="text-2xl sm:text-3xl font-bold">$12M</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Projected for 2025</p>
                     </Card>
                     
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Target className="h-5 w-5 text-red-500" />
-                        <h4 className="text-base font-medium">Retorno de Inversión</h4>
+                    <Card className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                        <h4 className="text-sm sm:text-base font-medium">Return on Investment</h4>
                       </div>
-                      <p className="text-3xl font-bold">78%</p>
-                      <p className="text-sm text-muted-foreground">ROI proyectado a 24 meses</p>
+                      <p className="text-2xl sm:text-3xl font-bold">78%</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Projected ROI over 24 months</p>
                     </Card>
                   </div>
                 </Card>
