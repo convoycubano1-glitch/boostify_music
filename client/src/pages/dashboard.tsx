@@ -196,10 +196,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">
+      <main className="flex-1">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
               <div className="text-center md:text-left">
                 <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
                   Welcome Back{user?.displayName ? `, ${user.displayName}` : ''}
