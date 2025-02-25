@@ -137,11 +137,11 @@ export const CustomerServiceAgent: React.FC = () => {
     }
   }, [isOpen, isMinimized]);
   
-  // Check if OpenRouter API is available when component mounts
+  // Check if APIs are available when component mounts
   useEffect(() => {
     const checkApiAvailability = async () => {
       try {
-        // Check for either VITE_OPENROUTER_API_KEY or OPENROUTER_API_KEY
+        // Check for OpenRouter API key in both places (import.meta.env for browser and process.env for server)
         const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
         
         if (!apiKey) {
@@ -417,7 +417,7 @@ export const CustomerServiceAgent: React.FC = () => {
       {
         id: 'welcome',
         role: 'assistant',
-        content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with Spotify integration, audio quality options, collaboration features, or managing your artist profile, I'm here to assist. How can I help you today?",
+        content: "¡Hola! Soy Melody, tu asistente de IA para todo lo relacionado con nuestra plataforma de música. Ya sea que necesites ayuda con la integración de Spotify, opciones de calidad de audio, funciones de colaboración o la gestión de tu perfil de artista, estoy aquí para ayudarte. ¿Cómo puedo asistirte hoy?",
         timestamp: new Date(),
       }
     ]);

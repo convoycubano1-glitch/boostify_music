@@ -3,8 +3,25 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
-// Use either environment variable or process.env
-const OPEN_ROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+// Función para obtener la clave API de diferentes fuentes
+function getAPIKey() {
+  if (typeof window !== 'undefined') {
+    // Verificar secretos en el navegador
+    if (import.meta.env.VITE_OPENROUTER_API_KEY) {
+      return import.meta.env.VITE_OPENROUTER_API_KEY;
+    }
+  }
+  
+  // Verificar en process.env (útil para desarrollo y entornos Node.js)
+  if (process.env.OPENROUTER_API_KEY) {
+    return process.env.OPENROUTER_API_KEY;
+  }
+  
+  return null;
+}
+
+// Obtenemos la clave API de OpenRouter
+const OPEN_ROUTER_API_KEY = getAPIKey();
 const OPEN_ROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export class OpenRouterService {
@@ -244,7 +261,33 @@ export class OpenRouterService {
         message: error.message,
         response: error.response?.data
       });
-      throw error;
+      
+      // Crear una respuesta amigable en caso de error
+      let errorMessage = "Lo siento, actualmente estoy teniendo problemas para procesar tu solicitud. ";
+      
+      if (error.response) {
+        // Error específico de la API
+        if (error.response.status === 401) {
+          errorMessage += "Parece que hay un problema con la autenticación de nuestra API. Esto ha sido registrado y nuestro equipo está trabajando en ello.";
+        } else if (error.response.status === 429) {
+          errorMessage += "Hemos alcanzado el límite de solicitudes a nuestra API. Por favor, inténtalo de nuevo en unos momentos.";
+        } else if (error.response.status >= 500) {
+          errorMessage += "Los servidores de nuestra AI están experimentando problemas. Por favor, inténtalo de nuevo más tarde.";
+        }
+      } else if (error.request) {
+        // Error de red (sin respuesta)
+        errorMessage += "No se pudo establecer conexión con nuestros servicios de IA. Por favor, verifica tu conexión a internet e inténtalo de nuevo.";
+      } else {
+        // Error general
+        errorMessage += "Ha ocurrido un error inesperado. Nuestro equipo ha sido notificado.";
+      }
+      
+      // Devolver una respuesta de error amigable en lugar de lanzar una excepción
+      return {
+        id: Date.now().toString(),
+        response: errorMessage,
+        timestamp: new Date()
+      };
     }
   }
 }
