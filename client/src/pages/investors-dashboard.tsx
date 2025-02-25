@@ -165,78 +165,172 @@ function InvestmentCalculator() {
 function RoadmapTimeline() {
   const roadmapData = [
     {
-      date: "Q1 2024",
-      title: "Lanzamiento de la Plataforma",
-      description: "Lanzamiento inicial de Boostify Music con funcionalidades básicas de streaming y herramientas de producción.",
-      status: "completed"
+      date: "1 Marzo 2025",
+      title: "Lanzamiento Oficial de Boostify",
+      description: "Lanzamiento oficial de la plataforma completa de Boostify Music con todas las funcionalidades centrales y herramientas de IA.",
+      stats: "Objetivo: 100 artistas verificados",
+      status: "upcoming",
+      isKey: true
     },
     {
-      date: "Q2 2024",
-      title: "Integración IA para Artistas",
-      description: "Lanzamiento de herramientas de IA para compositores y productores musicales.",
-      status: "completed"
-    },
-    {
-      date: "Q3 2024",
-      title: "Expansión Internacional",
-      description: "Apertura de oficinas en América Latina y Europa. Soporte para múltiples idiomas y monedas.",
-      status: "inProgress"
-    },
-    {
-      date: "Q4 2024",
-      title: "Plataforma para Creadores de Video",
-      description: "Extensión de la plataforma para incluir herramientas de producción y distribución de videos musicales.",
-      status: "inProgress"
-    },
-    {
-      date: "Q1 2025",
-      title: "Lanzamiento Marketplace NFT",
-      description: "Marketplace para que los artistas vendan experiencias exclusivas y contenido digital coleccionable.",
+      date: "15 Marzo 2025",
+      title: "Integración con Spotify y Apple Music",
+      description: "Conexión directa con las principales plataformas de streaming para sincronización de perfiles y estadísticas.",
+      stats: "Mejora de engagement: +30%",
       status: "upcoming"
     },
     {
-      date: "Q2 2025",
-      title: "Plataforma de Conciertos Virtuales",
-      description: "Experiencias inmersivas para conciertos virtuales utilizando tecnología de última generación.",
+      date: "Abril 2025",
+      title: "Lanzamiento de Herramientas para Managers",
+      description: "Suite completa de herramientas de gestión para managers musicales, incluyendo contratos automatizados y booking digital.",
+      stats: "Objetivo: 250 usuarios activos",
       status: "upcoming"
     },
     {
-      date: "Q3 2025",
-      title: "Integración con Metaverso",
-      description: "Espacios musicales dentro de los principales metaversos para artistas y oyentes.",
+      date: "Mayo 2025",
+      title: "Integración de Pasarela de Pagos",
+      description: "Implementación de sistema de pagos para monetización directa de contenido y servicios entre artistas y fans.",
+      stats: "Proyección: primeros $10k en transacciones",
       status: "upcoming"
+    },
+    {
+      date: "Junio 2025",
+      title: "Hito: 500 Usuarios Activos",
+      description: "Primera meta de crecimiento, con foco en artistas emergentes y productores independientes.",
+      stats: "500 usuarios, $25k en transacciones mensuales",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Julio 2025",
+      title: "Lanzamiento de Distribuidor Digital",
+      description: "Servicio propio de distribución digital a todas las plataformas con analíticas avanzadas y pagos transparentes.",
+      stats: "Comisión competitiva: solo 10%",
+      status: "upcoming"
+    },
+    {
+      date: "Agosto 2025",
+      title: "Marketplace para Colaboraciones",
+      description: "Plataforma para conectar artistas, productores, ingenieros y otros creativos para colaboraciones remuneradas.",
+      stats: "Proyección: 120 colaboraciones mensuales",
+      status: "upcoming"
+    },
+    {
+      date: "Septiembre 2025",
+      title: "Hito: 1,500 Usuarios Activos",
+      description: "Expansión significativa de la base de usuarios. Inicio de adquisición de sellos independientes.",
+      stats: "1,500 usuarios, $80k en transacciones",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Octubre 2025",
+      title: "Lanzamiento de Festival Virtual",
+      description: "Primer festival virtual de Boostify con artistas de la plataforma, utilizando tecnología de streaming inmersivo.",
+      stats: "Meta: 5,000 asistentes virtuales",
+      status: "upcoming"
+    },
+    {
+      date: "Noviembre 2025",
+      title: "Integración con TikTok y YouTube",
+      description: "Herramientas avanzadas para promoción y monetización en las principales plataformas de video social.",
+      stats: "Proyección: +40% de visibilidad para artistas",
+      status: "upcoming"
+    },
+    {
+      date: "Diciembre 2025",
+      title: "Hito: 10,000 Usuarios Activos",
+      description: "Meta ambiciosa de crecimiento para el cierre del año 2025, consolidando Boostify como plataforma líder.",
+      stats: "10,000 usuarios, $250k en transacciones mensuales",
+      status: "upcoming",
+      isKey: true
     }
   ];
 
   return (
-    <div className="relative">
-      <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-orange-500/20"></div>
-      <div className="space-y-12">
-        {roadmapData.map((item, index) => (
-          <div key={index} className="relative pl-16">
-            <div className={`absolute left-5 top-1 w-7 h-7 rounded-full flex items-center justify-center border-2 ${
-              item.status === 'completed' ? 'bg-orange-500 border-orange-500' : 
-              item.status === 'inProgress' ? 'bg-background border-orange-500' : 
-              'bg-background border-muted-foreground'
-            }`}>
-              {item.status === 'completed' ? (
-                <Check className="h-3.5 w-3.5 text-white" />
-              ) : item.status === 'inProgress' ? (
-                <Clock className="h-3.5 w-3.5 text-orange-500" />
-              ) : (
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              )}
-            </div>
-
-            <div className="pb-4">
-              <span className="text-sm font-medium text-orange-500 px-2 py-1 bg-orange-500/10 rounded mb-2 inline-block">
-                {item.date}
-              </span>
-              <h4 className="text-base font-medium mt-2 mb-1">{item.title}</h4>
-              <p className="text-sm text-muted-foreground">{item.description}</p>
+    <div className="space-y-6">
+      {/* Gráfica de Crecimiento Proyectado */}
+      <div className="bg-gradient-to-r from-orange-500/10 to-transparent p-6 rounded-lg mb-8">
+        <h4 className="text-lg font-semibold mb-4">Crecimiento Proyectado de Usuarios en 2025</h4>
+        <div className="h-64 relative">
+          {/* Eje Y */}
+          <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between items-end pr-2">
+            <span className="text-xs text-muted-foreground">10K</span>
+            <span className="text-xs text-muted-foreground">7.5K</span>
+            <span className="text-xs text-muted-foreground">5K</span>
+            <span className="text-xs text-muted-foreground">2.5K</span>
+            <span className="text-xs text-muted-foreground">0</span>
+          </div>
+          
+          {/* Gráfica */}
+          <div className="ml-12 h-full flex items-end">
+            <div className="flex-1 flex items-end space-x-4">
+              {[
+                { month: "Mar", users: 100, height: "1%" },
+                { month: "Abr", users: 250, height: "2.5%" },
+                { month: "May", users: 375, height: "3.75%" },
+                { month: "Jun", users: 500, height: "5%" },
+                { month: "Jul", users: 750, height: "7.5%" },
+                { month: "Ago", users: 1200, height: "12%" },
+                { month: "Sep", users: 1500, height: "15%" },
+                { month: "Oct", users: 3000, height: "30%" },
+                { month: "Nov", users: 6000, height: "60%" },
+                { month: "Dic", users: 10000, height: "100%" }
+              ].map((item, index) => (
+                <div key={index} className="flex flex-col items-center flex-1">
+                  <div 
+                    className="w-full max-w-[50px] bg-gradient-to-t from-orange-500 to-orange-400 rounded-t relative group cursor-pointer"
+                    style={{ height: item.height }}
+                  >
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {item.users.toLocaleString()} usuarios
+                    </div>
+                  </div>
+                  <span className="text-xs mt-2 text-muted-foreground">{item.month}</span>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+        </div>
+      </div>
+      
+      {/* Timeline */}
+      <div className="relative mt-8">
+        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-orange-500/20"></div>
+        <div className="space-y-8">
+          {roadmapData.map((item, index) => (
+            <div key={index} className="relative pl-16">
+              <div className={`absolute left-5 top-1 w-7 h-7 rounded-full flex items-center justify-center border-2 ${
+                item.status === 'completed' ? 'bg-orange-500 border-orange-500' : 
+                item.status === 'inProgress' ? 'bg-background border-orange-500' : 
+                item.isKey ? 'bg-background border-yellow-500' : 'bg-background border-muted-foreground'
+              }`}>
+                {item.status === 'completed' ? (
+                  <Check className="h-3.5 w-3.5 text-white" />
+                ) : item.status === 'inProgress' ? (
+                  <Clock className="h-3.5 w-3.5 text-orange-500" />
+                ) : item.isKey ? (
+                  <Calendar className="h-3.5 w-3.5 text-yellow-500" />
+                ) : (
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </div>
+
+              <div className={`pb-4 ${item.isKey ? 'bg-orange-500/5 p-4 rounded-lg border border-orange-500/20' : ''}`}>
+                <span className={`text-sm font-medium ${item.isKey ? 'text-orange-500' : 'text-muted-foreground'} px-2 py-1 ${item.isKey ? 'bg-orange-500/10' : 'bg-muted/50'} rounded mb-2 inline-block`}>
+                  {item.date}
+                </span>
+                <h4 className={`text-base font-medium mt-2 mb-1 ${item.isKey ? 'text-orange-500' : ''}`}>{item.title}</h4>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+                {item.stats && (
+                  <div className="mt-2 text-xs inline-block px-2 py-1 bg-black/20 rounded font-medium">
+                    {item.stats}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
