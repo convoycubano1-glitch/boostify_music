@@ -77,17 +77,27 @@ type Message = {
   audio?: string; // Base64 encoded audio
 };
 
-const SYSTEM_PROMPT = `You are a helpful, friendly, and knowledgeable customer service agent for an advanced AI-powered music platform. You should assist users with questions about:
-1. Music discovery and recommendation features
-2. Streaming capabilities and audio quality
-3. Artist collaboration tools and features
-4. External service integration (Spotify, Boostify Radio)
-5. Account management and subscription details
-6. Social sharing and promotional features
-7. Technical support for the platform
-8. Music rights and licensing information
+const SYSTEM_PROMPT = `You are a helpful, friendly, and knowledgeable customer service agent for an advanced AI-powered music platform. Your name is Melody, and you're specialized in helping users navigate our platform.
 
-Always be courteous, precise, and helpful. If you don't know an answer, acknowledge that and offer to connect them with a human representative if needed. Keep responses concise but complete, with a friendly and professional tone.`;
+You should assist users with questions about:
+1. Music discovery and recommendation features - how our AI suggests new artists and tracks
+2. Streaming capabilities and audio quality - details about our high-fidelity streaming options
+3. Artist collaboration tools and features - how artists can connect and work together
+4. External service integration - connecting with Spotify, Apple Music, Boostify Radio, etc.
+5. Account management and subscription details - pricing, tiers, benefits, account settings
+6. Social sharing and promotional features - how to share music and playlists on social media
+7. Technical support - troubleshooting playback issues, device compatibility, app functionality
+8. Music rights and licensing information - how we handle royalties and copyright
+
+Platform-specific features you should be familiar with:
+- Boostify Radio: Our personalized streaming radio feature
+- Artist Boost: Tools for artists to promote their music
+- AI Music Analysis: How we analyze listening patterns
+- Collaborative Playlists: How users can build playlists together
+- Music Video Creator: Our AI-powered music video tool
+- EchoMatch: Our song recommendation algorithm
+
+Always be courteous, precise, and helpful. Keep responses concise but complete, with a friendly and professional tone. If asked about something outside your knowledge scope, acknowledge that and offer to connect them with a human representative.`;
 
 export const CustomerServiceAgent: React.FC = () => {
   const { user } = useAuth();
@@ -102,7 +112,7 @@ export const CustomerServiceAgent: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello! I'm your AI assistant for all things related to our music platform. How can I help you today?",
+      content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with streaming, collaboration tools, or account questions, I'm here to assist. How can I help you today?",
       timestamp: new Date(),
     }
   ]);
@@ -143,25 +153,53 @@ export const CustomerServiceAgent: React.FC = () => {
 
     try {
       // Get AI response using OpenRouter
+      // Check if OpenRouter API key is available
+      if (!import.meta.env.VITE_OPENROUTER_API_KEY) {
+        throw new Error('OpenRouter API key is not configured');
+      }
+      
+      // Create conversation context by including previous messages
+      const conversationContext = messages
+        .filter(msg => messages.indexOf(msg) >= Math.max(0, messages.length - 5)) // Include last 5 messages for context
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+      
       const aiResponse = await openRouterService.chatWithAgent(
         input.trim(),
-        'manager', // Using manager as the agent type, though this is a customer service agent
+        'customerService', // Using proper agent type
         user?.uid || 'anonymous',
-        SYSTEM_PROMPT
+        SYSTEM_PROMPT,
+        conversationContext // Pass conversation context
       );
       
       let audioData: string | undefined;
       
-      // Generate audio if enabled
+      // Generate audio if enabled and ElevenLabs API key is configured
       if (audioEnabled) {
         try {
+          // Check if ElevenLabs API key is available
+          if (!import.meta.env.VITE_ELEVENLABS_API_KEY) {
+            throw new Error('ElevenLabs API key is not configured');
+          }
+          
           const audioResponse = await elevenLabsService.textToSpeech(aiResponse.response);
           audioData = audioResponse.audio;
         } catch (error) {
           console.error('Error generating audio:', error);
+          
+          // More specific error message based on the type of error
+          let errorMessage = "Could not generate audio response, but text is available.";
+          if (error instanceof Error && error.message.includes('API key')) {
+            errorMessage = "Audio generation is not available. API key is missing.";
+            // Disable audio for future messages
+            setAudioEnabled(false);
+          }
+          
           toast({
             title: "Audio Generation Failed",
-            description: "Could not generate audio response, but text is available.",
+            description: errorMessage,
             variant: "destructive"
           });
         }
@@ -184,9 +222,27 @@ export const CustomerServiceAgent: React.FC = () => {
       }
     } catch (error) {
       console.error('Error in chat:', error);
+      
+      // Provide more specific error messages based on the error type
+      let errorTitle = "Error";
+      let errorMessage = "Failed to generate response. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          errorTitle = "Service Unavailable";
+          errorMessage = "Our AI chat service is currently unavailable. Please try again later.";
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorTitle = "Network Error";
+          errorMessage = "Could not connect to our AI service. Please check your internet connection.";
+        } else if (error.message.includes('timeout')) {
+          errorTitle = "Request Timeout";
+          errorMessage = "The request took too long to complete. Please try again.";
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to generate response. Please try again.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -249,7 +305,7 @@ export const CustomerServiceAgent: React.FC = () => {
       {
         id: 'welcome',
         role: 'assistant',
-        content: "Hello! I'm your AI assistant for all things related to our music platform. How can I help you today?",
+        content: "Hi there! I'm Melody, your AI assistant for all things related to our music platform. Whether you need help with streaming, collaboration tools, or account questions, I'm here to assist. How can I help you today?",
         timestamp: new Date(),
       }
     ]);
@@ -281,7 +337,7 @@ export const CustomerServiceAgent: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-6 right-6 z-[9999]"
           >
             <TooltipProvider>
               <Tooltip>
@@ -316,7 +372,7 @@ export const CustomerServiceAgent: React.FC = () => {
             }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-6 right-6 z-[9999]"
           >
             <Card className="flex flex-col h-full w-full overflow-hidden rounded-xl border border-orange-500/20 bg-black/80 backdrop-blur-lg shadow-xl">
               {/* Chat header */}
@@ -327,7 +383,7 @@ export const CustomerServiceAgent: React.FC = () => {
                   </Avatar>
                   {!isMinimized && (
                     <div>
-                      <h3 className="font-semibold text-sm">Music Platform Assistant</h3>
+                      <h3 className="font-semibold text-sm">Melody • Music Assistant</h3>
                       <p className="text-xs opacity-80">Online • Ready to help</p>
                     </div>
                   )}
@@ -462,7 +518,7 @@ export const CustomerServiceAgent: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2, delay: 0.1 }}
-            className="fixed bottom-6 right-[400px] z-50"
+            className="fixed bottom-6 right-[400px] z-[9999]"
           >
             <Popover>
               <PopoverTrigger asChild>

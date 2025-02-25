@@ -11,7 +11,8 @@ export const AgentResponseSchema = z.object({
     'manager',
     'marketing',
     'videoDirector',
-    'careerDevelopment'
+    'careerDevelopment',
+    'customerService'
   ]),
   query: z.string(),
   response: z.string(),
@@ -32,13 +33,44 @@ export const openRouterService = {
     prompt: string,
     agentType: AgentResponse['agentType'],
     userId: string,
-    systemPrompt?: string
+    systemPrompt?: string,
+    conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<AgentResponse> => {
     if (!OPENROUTER_API_KEY) {
       throw new Error('OpenRouter API key is not configured');
     }
 
     try {
+      // Prepare the messages array with system prompt first
+      const messages = [
+        {
+          role: 'system',
+          content: systemPrompt || 'You are a helpful AI assistant for the music industry.'
+        }
+      ];
+      
+      // Add conversation history if provided
+      if (conversationHistory && conversationHistory.length > 0) {
+        messages.push(...conversationHistory);
+      } else {
+        // If no history, just add the prompt as a single user message
+        messages.push({
+          role: 'user',
+          content: prompt
+        });
+      }
+      
+      // If we have history but the last message isn't the current prompt, add it
+      if (conversationHistory && 
+          conversationHistory.length > 0 && 
+          conversationHistory[conversationHistory.length - 1].content !== prompt &&
+          conversationHistory[conversationHistory.length - 1].role !== 'user') {
+        messages.push({
+          role: 'user',
+          content: prompt
+        });
+      }
+      
       const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -48,16 +80,7 @@ export const openRouterService = {
         },
         body: JSON.stringify({
           model: 'openai/gpt-4-turbo-preview',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt || 'You are a helpful AI assistant for the music industry.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ]
+          messages
         })
       });
 
