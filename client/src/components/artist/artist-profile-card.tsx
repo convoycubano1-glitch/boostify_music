@@ -383,12 +383,26 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <div className="relative h-full w-full">
           {/* Video container with responsive design */}
           <div className="absolute inset-0 w-full h-full">
-            <iframe
-              className="w-full h-full object-cover"
-              src={`https://www.youtube.com/embed/${videos?.[0]?.url?.split('v=')?.[1]}?autoplay=1&mute=1&loop=1&playlist=${videos?.[0]?.url?.split('v=')?.[1]}&controls=0&showinfo=0&rel=0`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+            {videos && videos[0] ? (
+              <iframe
+                className="w-full h-full object-cover"
+                src={`https://www.youtube.com/embed/${
+                  videos[0].url?.split('v=')?.[1]?.split('&')?.[0] || 
+                  videos[0].url?.split('/')?.[3]?.split('?')?.[0] ||
+                  videos[0].url?.split('youtu.be/')?.[1]?.split('?')?.[0]
+                }?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${
+                  videos[0].url?.split('v=')?.[1]?.split('&')?.[0] ||
+                  videos[0].url?.split('/')?.[3]?.split('?')?.[0] ||
+                  videos[0].url?.split('youtu.be/')?.[1]?.split('?')?.[0]
+                }`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
+                <VideoIcon className="w-16 h-16 text-orange-500/50" />
+              </div>
+            )}
           </div>
           {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
