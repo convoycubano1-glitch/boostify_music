@@ -45,7 +45,7 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard } from "lucide-react";
@@ -97,7 +97,7 @@ const ShareDialog = ({ isOpen, onClose, artistName, artistUrl }: { isOpen: boole
             Share on Facebook
           </Button>
           <Button
-            className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA]"
+            className="w-full bg-[#1DA1F2] hover:bg-[1A91DA]"
             onClick={() => window.open(shareData.twitter, '_blank')}
           >
             Share on Twitter/X
@@ -149,13 +149,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const { toast } = useToast();
 
   // Query para obtener canciones
-  const { data: songs = [], isLoading: isLoadingSongs, isError: isSongsError } = useQuery({
+  const { data: songs = [], isLoading: isLoadingSongs } = useQuery({
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
         console.log("Fetching songs for artistId:", artistId);
         const songsRef = collection(db, "songs");
-        const q = query(songsRef);
+        const q = query(songsRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
         const songData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
@@ -171,10 +171,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           };
         });
 
-        // Filtramos por userId
-        const filteredSongs = songData.filter(song => song.userId === artistId);
-        console.log("Filtered songs:", filteredSongs);
-        return filteredSongs;
+        console.log("Filtered songs:", songData);
+        return songData;
       } catch (error) {
         console.error("Error fetching songs:", error);
         toast({
@@ -188,13 +186,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   });
 
   // Query para obtener videos
-  const { data: videos = [], isLoading: isLoadingVideos, isError: isVideosError } = useQuery({
+  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
         console.log("Fetching videos for artistId:", artistId);
         const videosRef = collection(db, "videos");
-        const q = query(videosRef);
+        const q = query(videosRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
         const videoData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
@@ -210,10 +208,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           };
         });
 
-        // Filtramos por userId
-        const filteredVideos = videoData.filter(video => video.userId === artistId);
-        console.log("Filtered videos:", filteredVideos);
-        return filteredVideos;
+        console.log("Filtered videos:", videoData);
+        return videoData;
       } catch (error) {
         console.error("Error fetching videos:", error);
         toast({
