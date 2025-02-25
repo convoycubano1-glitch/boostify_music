@@ -3,7 +3,8 @@ import { Express } from 'express';
 import fetch from 'node-fetch';
 
 // Configuración de OpenRouter
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+// Eliminamos espacios en blanco extra que puedan estar en la clave API
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY?.trim();
 const BASE_URL = 'https://openrouter.ai/api/v1';
 
 /**
@@ -12,6 +13,7 @@ const BASE_URL = 'https://openrouter.ai/api/v1';
 export function setupOpenAIRoutes(app: Express) {
   /**
    * Route for generating chat completions
+   * No requerimos autenticación aquí ya que es una API interna y la clave está en el backend
    */
   app.post('/api/chat/completions', async (req: Request, res: Response) => {
     try {
@@ -28,6 +30,14 @@ export function setupOpenAIRoutes(app: Express) {
       console.log('Making request to OpenRouter with model:', model);
       console.log('Messages length:', messages.length);
 
+      // Log complete request details for debugging
+      console.log('OpenRouter API Request:', {
+        url: `${BASE_URL}/chat/completions`,
+        model,
+        messagesCount: messages.length,
+        apiKeyPresent: !!OPENROUTER_API_KEY,
+      });
+      
       const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
