@@ -10,6 +10,11 @@ interface ArtistData {
   profileImage: string;
   genre?: string;
   location?: string;
+  socialLinks?: {
+    spotify?: string;
+    instagram?: string;
+    youtube?: string;
+  };
 }
 
 export default function ProfilePage() {
@@ -35,17 +40,30 @@ export default function ProfilePage() {
 
   const fullUrl = `${window.location.origin}/profile/${artistId}`;
 
-  // Mejorar el título y la descripción para que sean más atractivos
+  // Asegurar que la imagen sea una URL absoluta
+  const getAbsoluteImageUrl = (imageUrl?: string) => {
+    if (!imageUrl) return `${window.location.origin}/assets/freepik__boostify-music___orange.png`;
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${window.location.origin}${imageUrl}`;
+  };
+
+  const profileImage = getAbsoluteImageUrl(artistData?.profileImage);
+
+  // Mejorar el título para SEO y compartir
   const title = artistData?.name 
-    ? `${artistData.name} - Artist Profile | Boostify Music`
-    : "Discover Amazing Artists on Boostify Music";
+    ? `${artistData.name} - Music Artist Profile | Boostify Music`
+    : "Discover Amazing Musicians on Boostify Music";
 
+  // Crear una descripción más atractiva y específica
   const description = artistData?.biography 
-    ? `${artistData.biography.slice(0, 150)}${artistData.biography.length > 150 ? '...' : ''}`
-    : "Discover and connect with talented artists on Boostify Music. Join our community of musicians, producers, and music enthusiasts.";
+    ? `Check out ${artistData.name}'s music profile on Boostify Music. ${artistData.biography.slice(0, 150)}${artistData.biography.length > 150 ? '...' : ''}`
+    : `Discover and connect with talented musicians on Boostify Music. Join our community of artists, producers, and music enthusiasts. Start your musical journey today!`;
 
-  // Mejorar el tipo de OG para perfiles
+  // Usar el tipo correcto para perfiles de músicos
   const type = "profile";
+
+  // Mejorar el nombre del sitio para mejor reconocimiento
+  const siteName = "Boostify Music - Your Music Marketing Platform";
 
   return (
     <>
@@ -53,9 +71,9 @@ export default function ProfilePage() {
         title={title}
         description={description}
         url={fullUrl}
-        image={artistData?.profileImage}
+        image={profileImage}
         type={type}
-        siteName="Boostify Music - Music Marketing Platform"
+        siteName={siteName}
       />
       <div className="min-h-screen bg-black pt-4">
         <ArtistProfileCard artistId={artistId} />

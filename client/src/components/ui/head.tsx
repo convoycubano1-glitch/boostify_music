@@ -23,15 +23,22 @@ export function Head({
   const finalImage = image || defaultImage;
   const absoluteImageUrl = finalImage.startsWith('http') ? finalImage : `${window.location.origin}${finalImage}`;
 
+  // Asegurar que la descripción no sea demasiado larga
+  const truncatedDescription = description.length > 200 
+    ? `${description.slice(0, 197)}...` 
+    : description;
+
   return (
     <Helmet>
+      {/* Basic Meta Tags */}
       <title>{title}</title>
-      <meta name="description" content={description} />
+      <meta name="description" content={truncatedDescription} />
+      <link rel="canonical" href={url} />
 
       {/* OpenGraph / Facebook */}
       <meta property="og:type" content={type} />
       <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
+      <meta property="og:description" content={truncatedDescription} />
       <meta property="og:image" content={absoluteImageUrl} />
       <meta property="og:url" content={url} />
       <meta property="og:site_name" content={siteName} />
@@ -41,13 +48,34 @@ export function Head({
       <meta name="twitter:site" content={twitterUsername} />
       <meta name="twitter:creator" content={twitterUsername} />
       <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:description" content={truncatedDescription} />
       <meta name="twitter:image" content={absoluteImageUrl} />
 
-      {/* Additional metadata */}
+      {/* Additional metadata for better sharing */}
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:locale" content="en_US" />
+
+      {/* Music specific metadata */}
+      {type === "profile" && (
+        <>
+          <meta property="music:creator" content={title} />
+          <meta property="og:audio" content={url} />
+          <meta property="og:audio:type" content="application/mp3" />
+        </>
+      )}
+
+      {/* Schema.org markup for better SEO */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "http://schema.org",
+          "@type": type === "profile" ? "MusicGroup" : "WebSite",
+          "name": title,
+          "description": truncatedDescription,
+          "url": url,
+          "image": absoluteImageUrl,
+        })}
+      </script>
     </Helmet>
   );
 }
