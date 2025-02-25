@@ -213,10 +213,12 @@ export default function Dashboard() {
                   Manage your music presence and create engaging content
                 </p>
               </div>
-              <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
-                <Activity className="mr-2 h-4 w-4" />
-                View Analytics
-              </Button>
+              <Link href="/analytics">
+                <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
+                  <Activity className="mr-2 h-4 w-4" />
+                  View Analytics
+                </Button>
+              </Link>
             </div>
 
             {/* Featured Services Section */}
