@@ -337,7 +337,7 @@ export const CustomerServiceAgent: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-[9999]"
+            className="fixed bottom-20 sm:bottom-6 right-6 z-[9999]"
           >
             <TooltipProvider>
               <Tooltip>
@@ -372,7 +372,7 @@ export const CustomerServiceAgent: React.FC = () => {
             }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-[9999]"
+            className="fixed bottom-20 sm:bottom-6 right-6 z-[9999]"
           >
             <Card className="flex flex-col h-full w-full overflow-hidden rounded-xl border border-orange-500/20 bg-black/80 backdrop-blur-lg shadow-xl">
               {/* Chat header */}
@@ -518,7 +518,7 @@ export const CustomerServiceAgent: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2, delay: 0.1 }}
-            className="fixed bottom-6 right-[400px] z-[9999]"
+            className="fixed bottom-20 sm:bottom-6 right-[100px] sm:right-[400px] z-[9999] hidden md:block"
           >
             <Popover>
               <PopoverTrigger asChild>
