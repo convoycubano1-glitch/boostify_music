@@ -384,7 +384,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <Button
           size="lg"
           className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-          onClick={() => window.location.href = "/signup"}
+          onClick={() => window.location.href = "/"}
         >
           <PlusCircle className="mr-2 h-5 w-5" />
           Create Your Profile
