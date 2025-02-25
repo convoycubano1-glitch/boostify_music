@@ -91,9 +91,12 @@ export const openRouterService = {
       console.log('Using OpenRouter API key format:', 
                  `Bearer ${OPENROUTER_API_KEY.substring(0, 5)}...${OPENROUTER_API_KEY.substring(OPENROUTER_API_KEY.length - 3)}`);
       
-      const response = await fetch(`${BASE_URL}/chat/completions`, {
+      // Usar nuestra ruta de backend en lugar de llamar directamente a OpenRouter
+      const response = await fetch('/api/chat/completions', {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           model: 'anthropic/claude-3-haiku', // Using a smaller model which may be more reliable
           messages
