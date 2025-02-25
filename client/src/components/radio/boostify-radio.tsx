@@ -194,18 +194,23 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
 
     try {
       const results = await spotifyService.search(searchQuery);
-      // Filtrar canciones sin preview disponible
-      const availableTracks = results.filter(track => track.streamUrl);
-      setSearchResults(results); // Guardamos todos los resultados para mostrarlos
+      setSearchResults(results);
 
-      if (availableTracks.length > 0) {
-        setCurrentStreamingTrack(availableTracks[0]);
+      if (results.length > 0) {
+        setCurrentStreamingTrack(results[0]);
+        if (!results.some(track => track.streamUrl)) {
+          toast({
+            title: "Previsualizaciones no disponibles",
+            description: "Las previsualizaciones de Spotify no están disponibles en este momento. Puedes ver la información de las canciones pero no reproducirlas.",
+            variant: "destructive"
+          });
+        }
       } else {
         toast({
-          title: "Sin previsualizaciones",
-          description: "No se encontraron previsualizaciones disponibles para estas canciones. Prueba con otra búsqueda.",
+          title: "Sin resultados",
+          description: "No se encontraron canciones que coincidan con tu búsqueda.",
           variant: "destructive"
-        });
+        })
       }
     } catch (error) {
       console.error('Error searching tracks:', error);
@@ -312,23 +317,30 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
         </div>
 
         {selectedSource === 'spotify' && (
-          <div className="flex items-center gap-2 mb-4">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Buscar en Spotify..."
-              className="flex-1 px-3 py-1 rounded bg-white/10 text-white placeholder-white/50 border-none focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSearch}
-              className="text-white/60 hover:text-white"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+          <div className="flex flex-col gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Buscar en Spotify..."
+                className="flex-1 px-3 py-1 rounded bg-white/10 text-white placeholder-white/50 border-none focus:outline-none focus:ring-1 focus:ring-green-500"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSearch}
+                className="text-white/60 hover:text-white"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+            {searchResults.length > 0 && !searchResults.some(track => track.streamUrl) && (
+              <p className="text-xs text-orange-500">
+                Las previsualizaciones no están disponibles. Puedes ver la información de las canciones pero no reproducirlas.
+              </p>
+            )}
           </div>
         )}
 
@@ -392,11 +404,20 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
                 <span>Conectando servicios de streaming...</span>
               </div>
             ) : currentStreamingTrack ? (
-              <div>
-                <p className="truncate">{currentStreamingTrack.title} - {currentStreamingTrack.artist}</p>
+              <div className="space-y-1">
+                <p className="truncate font-medium">{currentStreamingTrack.title}</p>
+                <p className="truncate text-xs">{currentStreamingTrack.artist}</p>
                 {!currentStreamingTrack.streamUrl && (
                   <p className="text-xs text-orange-500">Preview no disponible</p>
                 )}
+                <a 
+                  href={currentStreamingTrack.externalUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-green-500 hover:underline"
+                >
+                  Abrir en Spotify
+                </a>
               </div>
             ) : currentSong ? (
               <p className="truncate">{currentSong.name}</p>
