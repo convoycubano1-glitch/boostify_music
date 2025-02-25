@@ -128,6 +128,14 @@ export function Header() {
                 </Button>
               </Link>
 
+              {/* Settings */}
+              <Link href="/settings">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Settings</span>
+                </Button>
+              </Link>
+
               {/* Google Translate */}
               <div
                 id="google_translate_element"
@@ -143,8 +151,6 @@ export function Header() {
                   </Button>
                 </Link>
               )}
-
-              {/* Settings - Now always hidden, moved to menu dropdown only */}
 
               {/* Hamburger Menu - Always visible */}
               <DropdownMenu>
