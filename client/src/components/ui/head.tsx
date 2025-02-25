@@ -19,7 +19,7 @@ export function Head({
   siteName = "Boostify Music",
   twitterUsername = "@boostifymusic"
 }: HeadProps) {
-  const defaultImage = "/assets/freepik__boostify-music___orange__una_forma_con_estilo (1).png";
+  const defaultImage = "/assets/freepik__boostify_music.png";
   const finalImage = image || defaultImage;
   const absoluteImageUrl = finalImage.startsWith('http') ? finalImage : `${window.location.origin}${finalImage}`;
 

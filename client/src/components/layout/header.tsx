@@ -67,7 +67,7 @@ export function Header() {
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 hover:opacity-90 transition-opacity">
               <img
-                src="/assets/freepik__boostify-music___orange__una_forma_con_estilo (1).png"
+                src="/assets/freepik__boostify_music.png"
                 alt="Boostify Music"
                 className="h-6 w-6"
               />
