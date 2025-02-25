@@ -167,7 +167,7 @@ export default function Dashboard() {
       route: "/music-video-creator",
       stats: metrics.musicVideos,
       statsLabel: "Videos",
-      color: "text-orange-500"
+      color: "text-purple-600"
     },
     {
       name: "Record Label Services",
@@ -176,7 +176,7 @@ export default function Dashboard() {
       route: "/record-label-services",
       stats: metrics.totalEngagement,
       statsLabel: "Engagement",
-      color: "text-orange-500"
+      color: "text-indigo-500"
     },
     {
       name: "Contacts",
@@ -185,7 +185,7 @@ export default function Dashboard() {
       route: "/contacts",
       stats: metrics.contacts,
       statsLabel: "Contacts",
-      color: "text-orange-500"
+      color: "text-emerald-500"
     },
     {
       name: "Instagram Boost",
@@ -194,7 +194,7 @@ export default function Dashboard() {
       route: "/instagram-boost",
       stats: metrics.instagramFollowers,
       statsLabel: "Followers",
-      color: "text-orange-500"
+      color: "text-pink-500"
     }
   ];
 
@@ -225,10 +225,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {services.filter(s => s.highlight).map((service) => (
                   <Link key={service.name} href={service.route}>
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
+                    <div>
                       <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
                         <div className="flex items-center gap-4">
                           <div className={`h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center`}>
@@ -250,7 +247,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                       </Card>
-                    </motion.div>
+                    </div>
                   </Link>
                 ))}
               </div>
