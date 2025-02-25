@@ -34,8 +34,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { db } from "@/firebase";
-import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 // Investment Calculator Component
 function InvestmentCalculator() {
@@ -474,23 +473,24 @@ function InvestorRegistrationForm() {
         return;
       }
       
-      // Create document with investor data
+      // Prepare investor data
       const investorData = {
         ...values,
-        userId: user.uid,
-        investmentAmount: parseFloat(values.investmentAmount),
-        createdAt: serverTimestamp(),
-        status: "pending",
+        investmentAmount: parseFloat(values.investmentAmount)
       };
       
-      // Try-catch with specific Firestore error handling
+      // Use server-side API route instead of direct Firestore access
       try {
-        // Add document to Firestore collection
-        const docRef = await addDoc(collection(db, "investors"), investorData);
-        console.log("Investor registration saved with ID:", docRef.id);
-      } catch (firestoreError) {
-        console.error("Firestore specific error:", firestoreError);
-        throw firestoreError;
+        const response = await apiRequest<{ success: boolean, id: string }>({
+          url: '/api/investors/register',
+          method: 'POST',
+          body: investorData
+        });
+        
+        console.log("Investor registration successful with ID:", response.id);
+      } catch (apiError) {
+        console.error("API error:", apiError);
+        throw apiError;
       }
       
       toast({
@@ -504,12 +504,24 @@ function InvestorRegistrationForm() {
       
     } catch (error) {
       console.error("Error submitting investor registration:", error);
-      // Provide more specific error messages based on error types
+      // Provide specific error messages based on error types
       if (error instanceof Error) {
         if (error.message.includes("permission")) {
           toast({
             title: "Permission Error",
             description: "You don't have permission to register as an investor. Please check your account or contact support.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes("401")) {
+          toast({
+            title: "Authentication Error",
+            description: "Please log in again to register as an investor.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes("validation")) {
+          toast({
+            title: "Validation Error",
+            description: "Please check your form inputs and try again.",
             variant: "destructive",
           });
         } else {

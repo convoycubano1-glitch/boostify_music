@@ -39,11 +39,11 @@ router.post('/register', async (req, res) => {
       });
     }
     
-    const investorData: InvestorData & { userId: string, status: string, createdAt: any } = {
+    const investorData = {
       ...validationResult.data,
       userId: req.user.uid,
       status: "pending",
-      createdAt: serverTimestamp()
+      createdAt: FieldValue.serverTimestamp()
     };
     
     // Use Firebase Admin SDK to add document
@@ -57,11 +57,11 @@ router.post('/register', async (req, res) => {
       id: docRef.id
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error registering investor:', error);
     return res.status(500).json({ 
       error: 'Failed to register investor',
-      details: error.message
+      details: error.message || 'Unknown error'
     });
   }
 });
