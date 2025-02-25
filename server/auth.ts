@@ -45,11 +45,19 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Apply authentication middleware to all /api routes except webhook
+  // Apply authentication middleware to all /api routes except webhook and chat completions
   app.use('/api/*', (req, res, next) => {
-    if (req.path === '/api/stripe-webhook' || req.path === '/api/webhook') {
+    // Lista de rutas públicas que no requieren autenticación
+    const publicRoutes = [
+      '/api/stripe-webhook',
+      '/api/webhook',
+      '/api/chat/completions' // Añadimos nuestra ruta de chat para permitir el acceso sin autenticación
+    ];
+    
+    if (publicRoutes.includes(req.path)) {
       return next();
     }
+    
     return isAuthenticated(req, res, next);
   });
 
