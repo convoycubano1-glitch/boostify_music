@@ -31,6 +31,7 @@ import {
   Paintbrush,
   Check,
   X,
+  Link as LinkIcon
 } from "lucide-react";
 import {
   Dialog,
@@ -71,11 +72,79 @@ interface Video {
   createdAt?: any;
 }
 
+// Add ShareDialog component
+const ShareDialog = ({ isOpen, onClose, artistName, artistUrl }: { isOpen: boolean; onClose: (value?: boolean | undefined) => void; artistName: string; artistUrl: string }) => {
+  const shareData = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(artistUrl)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(artistUrl)}&text=Check out ${artistName}'s profile`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out ${artistName}'s profile: ${artistUrl}`)}`,
+    instagram: `instagram://camera`, // Instagram doesn't support direct sharing, opens the app
+    tiktok: `https://www.tiktok.com/upload/`, // TikTok doesn't support direct sharing, opens upload page
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Share Profile</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Button
+            className="w-full bg-[#1877F2] hover:bg-[#166FE5]"
+            onClick={() => window.open(shareData.facebook, '_blank')}
+          >
+            Share on Facebook
+          </Button>
+          <Button
+            className="w-full bg-[#1DA1F2] hover:bg-[#1A91DA]"
+            onClick={() => window.open(shareData.twitter, '_blank')}
+          >
+            Share on Twitter/X
+          </Button>
+          <Button
+            className="w-full bg-[#25D366] hover:bg-[#128C7E]"
+            onClick={() => window.open(shareData.whatsapp, '_blank')}
+          >
+            Share on WhatsApp
+          </Button>
+          <Button
+            className="w-full bg-[#E4405F] hover:bg-[#D93248]"
+            onClick={() => window.open(shareData.instagram, '_blank')}
+          >
+            Share on Instagram
+          </Button>
+          <Button
+            className="w-full bg-[#000000] hover:bg-[#333333]"
+            onClick={() => window.open(shareData.tiktok, '_blank')}
+          >
+            Share on TikTok
+          </Button>
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard.writeText(artistUrl);
+              toast({
+                title: "Link copied!",
+                description: "Profile link has been copied to your clipboard.",
+              });
+            }}
+          >
+            <LinkIcon className="mr-2 h-4 w-4" />
+            Copy Link
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
 
   // Query para obtener canciones
@@ -102,10 +171,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         });
 
         // Filtramos por userId
-        const filteredSongs = songData.filter(song => {
-          console.log(`Comparing song.userId: ${song.userId} with artistId: ${artistId}`);
-          return song.userId === artistId;
-        });
+        const filteredSongs = songData.filter(song => song.userId === artistId);
         console.log("Filtered songs:", filteredSongs);
         return filteredSongs;
       } catch (error) {
@@ -144,10 +210,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         });
 
         // Filtramos por userId
-        const filteredVideos = videoData.filter(video => {
-          console.log(`Comparing video.userId: ${video.userId} with artistId: ${artistId}`);
-          return video.userId === artistId;
-        });
+        const filteredVideos = videoData.filter(video => video.userId === artistId);
         console.log("Filtered videos:", filteredVideos);
         return filteredVideos;
       } catch (error) {
@@ -317,81 +380,65 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       className="w-full max-w-7xl mx-auto"
     >
       <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
-        {/* Removed unnecessary large iframe */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
+        <div className="relative h-full w-full">
+          {/* Video container with responsive design */}
+          <div className="absolute inset-0 w-full h-full">
+            <iframe
+              className="w-full h-full object-cover"
+              src={`https://www.youtube.com/embed/${videos?.[0]?.url?.split('v=')?.[1]}?autoplay=1&mute=1&loop=1&playlist=${videos?.[0]?.url?.split('v=')?.[1]}&controls=0&showinfo=0&rel=0`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70" />
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90" />
 
-        <div className="absolute bottom-0 left-0 right-0 p-12">
-          <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
-            <motion.h1
-              className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
-              variants={itemVariants}
-            >
-              {mockArtist.name}
-            </motion.h1>
-            <motion.p
-              className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-400"
-              variants={itemVariants}
-            >
-              {mockArtist.genre}
-            </motion.p>
-            <div className="prose prose-invert max-w-2xl mb-8">
-              <motion.p
-                className="text-lg text-white/90 leading-relaxed"
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
+            <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
+              <motion.h1
+                className="text-4xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-orange-300 to-yellow-500"
                 variants={itemVariants}
               >
-                Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami. Con más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.
+                {mockArtist.name}
+              </motion.h1>
+              <motion.p
+                className="text-xl md:text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-pink-400"
+                variants={itemVariants}
+              >
+                {mockArtist.genre}
               </motion.p>
-            </div>
-            <motion.div className="flex flex-wrap gap-4" variants={itemVariants}>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={() => setShowMessageDialog(true)}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Contact Me
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-300"
-              >
-                <Share2 className="mr-2 h-5 w-5" />
-                Share Profile
-              </Button>
+              <div className="prose prose-invert max-w-2xl mb-8">
+                <motion.p
+                  className="text-base md:text-lg text-white/90 leading-relaxed"
+                  variants={itemVariants}
+                >
+                  Un virtuoso del Blues Latin fusion que ha revolucionado la escena musical de Miami. Con más de una década fusionando los ritmos ardientes del Caribe con el alma profunda del Blues, Redwine ha creado un sonido único que refleja la diversidad cultural de Miami. Sus actuaciones en vivo son una experiencia inmersiva donde la pasión latina se encuentra con la autenticidad del Blues.
+                </motion.p>
+              </div>
+              <motion.div className="flex flex-wrap gap-4" variants={itemVariants}>
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={() => setShowMessageDialog(true)}
+                >
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Contact Me
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-300"
+                  onClick={() => setShowShareDialog(true)}
+                >
+                  <Share2 className="mr-2 h-5 w-5" />
+                  Share Profile
+                </Button>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
-
-        <motion.div
-          className="absolute top-8 right-8 flex gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div
-            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
-            variants={itemVariants}
-          >
-            <HeartPulse className="h-6 w-6 text-orange-500" />
-            <div>
-              <p className="text-sm text-white/70">Monthly Listeners</p>
-              <p className="text-xl font-bold text-white">{mockArtist.statistics.monthlyListeners}k</p>
-            </div>
-          </motion.div>
-          <motion.div
-            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
-            variants={itemVariants}
-          >
-            <Users className="h-6 w-6 text-orange-500" />
-            <div>
-              <p className="text-sm text-white/70">Followers</p>
-              <p className="text-xl font-bold text-white">{mockArtist.statistics.followers}k</p>
-            </div>
-          </motion.div>
-        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -656,7 +703,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </Button>
                 <Button
                   className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 transition-all duration-300 hover:scale-105"
-                  onClick={() => setShowMessageDialog(true)}
+                  onClick={() => setShowShareDialog(true)}
                 >
                   <Share2 className="mr-2 h-5 w-5" />
                   Share
@@ -670,8 +717,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
                 <User className="w-6 h-6 mr-2 text-orange-500" />
                 Contact
-              </h3>
-              <div className="space-y-4">
+              </h3>              <div className="space-y-4">
                 <div className="flex items-center">
                   <MapPin className="w-5 h-5 text-orange-500 mr-3" />
                   <span>{mockArtist.location}</span>
@@ -724,6 +770,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </div>
         </DialogContent>
       </Dialog>
+      <ShareDialog
+        isOpen={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        artistName={mockArtist.name}
+        artistUrl={`https://boostify.com/${mockArtist.name.toLowerCase()}`}
+      />
     </motion.div>
   );
 }
@@ -732,7 +784,7 @@ export const mockArtist = {
   name: "Redwine",
   genre: "Blues Latin Fusion",
   location: "Miami, FL",
-email: "booking@redwinemusic.com",
+  email: "booking@redwinemusic.com",
   phone: "+1 (305) 555-0123",
   website: "https://redwinemusic.com",
   socialMedia: {
