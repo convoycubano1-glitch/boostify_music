@@ -45,6 +45,7 @@ import EducationPage from "@/pages/education";
 import AchievementsPage from "@/pages/achievements-page";
 import CourseDetailPage from "@/pages/course-detail";
 import SmartCardsPage from "@/pages/smart-cards";
+import InvestorsDashboard from "@/pages/investors-dashboard";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
@@ -152,6 +153,7 @@ const Router = () => {
         <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
         <ProtectedRoute path="/smart-cards" component={SmartCardsPage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
+        <ProtectedRoute path="/investors-dashboard" component={InvestorsDashboard} />
 
         {/* Catch all not found route */}
         <Route component={NotFound} />
