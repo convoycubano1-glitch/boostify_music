@@ -109,7 +109,8 @@ export class SpotifyStreamingService implements StreamingService {
           tracks.slice(0, 3).map(t => ({
             name: t.title,
             artist: t.artist,
-            hasPreview: !!t.streamUrl
+            hasPreview: !!t.streamUrl,
+            previewUrl: t.streamUrl || 'no preview available'
           }))
         );
       }
