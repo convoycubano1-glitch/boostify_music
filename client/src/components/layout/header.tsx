@@ -49,30 +49,31 @@ export function Header() {
 
     initTranslate();
   }, [detectedLanguage]);
-
+  
+  // Main navigation items
   const navigation = [
+    { name: "Home", href: "/", icon: Home },
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
-    { name: "Artist Dashboard", href: "/artist-dashboard", icon: Mic },
-    { name: "Manager Tools", href: "/manager-tools", icon: Briefcase },
-    { name: "Producer Tools", href: "/producer-tools", icon: Wrench },
-    { name: "Music Videos", href: "/music-video-creator", icon: Video },
+    { name: "Profile", href: "/profile", icon: Users },
     { name: "Education", href: "/education", icon: GraduationCap },
-    { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
-    { name: "Record Labels", href: "/record-label-services", icon: Building2 },
-    { name: "AI Agents", href: "/ai-agents", icon: Brain },
-    { name: "Store", href: "/store", icon: Store, highlight: true }
+    { name: "Analytics", href: "/analytics", icon: BarChart },
+    { name: "Courses", href: "/education", icon: GraduationCap },
   ];
-
+  
+  // Secondary navigation items
   const secondaryNavigation = [
-    { name: "Artist Image", href: "/artist-image-advisor", icon: Users },
-    { name: "Merch", href: "/merchandise", icon: Store },
+    { name: "Studio", href: "/music-video-creator", icon: Video },
+    { name: "Promotion", href: "/promotion", icon: Building2 },
+    { name: "AI Agents", href: "/ai-agents", icon: Brain },
+    { name: "Store", href: "/store", icon: Store },
+    { name: "Events", href: "/events", icon: Calendar },
     { name: "Spotify", href: "/spotify", icon: Music2 },
     { name: "Instagram", href: "/instagram-boost", icon: Instagram },
     { name: "YouTube", href: "/youtube-views", icon: Youtube },
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
-    { name: "Inversores", href: "/investors-dashboard", icon: DollarSign, highlight: true },
+    { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
   if (!user) return null;
@@ -118,8 +119,6 @@ export function Header() {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
-              {/* Search - Removed */}
-
               {/* International */}
               <Link href="/boostify-international">
                 <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] gap-2">
@@ -143,8 +142,6 @@ export function Header() {
                   </Button>
                 </Link>
               )}
-
-              {/* Settings - Now always hidden, moved to menu dropdown only */}
 
               {/* Hamburger Menu - Always visible */}
               <DropdownMenu>
@@ -235,54 +232,56 @@ export function Header() {
           </div>
         </div>
 
-        {/* Secondary Navigation Bar - Inspired by Freepik */}
+        {/* Secondary Navigation Bar - Vertical Scrolling */}
         <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm">
-          <div className="container flex h-10 max-w-screen-2xl items-center overflow-hidden">
-            <nav className="flex items-center space-x-5 px-4 overflow-x-auto scrollbar-hide pb-2 w-full">
-              {[...navigation, ...secondaryNavigation].map((item) => (
+          <div className="container flex max-w-screen-2xl overflow-hidden">
+            <nav className="flex flex-col w-full h-40 overflow-y-auto scrollbar-hide px-4 py-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                {[...navigation, ...secondaryNavigation].map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center whitespace-nowrap mb-2 ${
+                      item.name === "Investors" ? "text-orange-500 font-medium" : "text-gray-300"
+                    } text-xs hover:text-orange-400 transition-colors`}
+                  >
+                    <item.icon 
+                      className={`mr-2 h-3.5 w-3.5 ${
+                        item.name === "Investors" 
+                          ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
+                          : "text-gray-400"
+                      }`} 
+                    />
+                    {item.name}
+                  </Link>
+                ))}
+                
+                {/* Settings Link */}
                 <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center whitespace-nowrap ${
-                    item.name === "Inversores" ? "text-orange-500 font-medium" : "text-gray-300"
-                  } text-xs hover:text-orange-400 transition-colors`}
+                  href="/settings"
+                  className="flex items-center whitespace-nowrap mb-2 text-gray-300 text-xs hover:text-orange-400 transition-colors"
                 >
-                  <item.icon 
-                    className={`mr-2 h-3.5 w-3.5 ${
-                      item.name === "Inversores" 
-                        ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
-                        : "text-gray-400"
-                    }`} 
-                  />
-                  {item.name}
+                  <Settings className="mr-2 h-3.5 w-3.5 text-gray-400" />
+                  Settings
                 </Link>
-              ))}
-              
-              {/* Settings Link */}
-              <Link
-                href="/settings"
-                className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
-              >
-                <Settings className="mr-2 h-3.5 w-3.5 text-gray-400" />
-                Settings
-              </Link>
-              
-              {/* Admin Icon - Only visible to admins */}
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
-                >
-                  <Shield className="mr-2 h-3.5 w-3.5 text-gray-400" />
-                  Admin
-                </Link>
-              )}
+                
+                {/* Admin Icon - Only visible to admins */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center whitespace-nowrap mb-2 text-gray-300 text-xs hover:text-orange-400 transition-colors"
+                  >
+                    <Shield className="mr-2 h-3.5 w-3.5 text-gray-400" />
+                    Admin
+                  </Link>
+                )}
+              </div>
             </nav>
           </div>
         </div>
       </header>
       {/* Spacer to prevent content from hiding under the fixed header */}
-      <div className="h-[106px]" />
+      <div className="h-[136px]" />
     </>
   );
 }
