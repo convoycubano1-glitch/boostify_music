@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { openRouterService } from "@/lib/api/openrouter-service";
 import { elevenLabsService } from "@/lib/api/elevenlabs-service";
 import { motion, AnimatePresence } from 'framer-motion';
@@ -138,6 +139,7 @@ Always be courteous, precise, and helpful. Keep responses concise but complete, 
 export const CustomerServiceAgent: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -524,7 +526,7 @@ export const CustomerServiceAgent: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-20 sm:bottom-6 right-6 z-[9999]"
+            className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-[9999]"
           >
             <TooltipProvider>
               <Tooltip>
@@ -555,11 +557,11 @@ export const CustomerServiceAgent: React.FC = () => {
               opacity: 1, 
               y: 0,
               height: isMinimized ? 'auto' : '500px',
-              width: isMinimized ? 'auto' : '380px'
+              width: isMinimized ? 'auto' : isMobile ? '92vw' : '380px'
             }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-20 sm:bottom-6 right-6 z-[9999]"
+            className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-[9999]"
           >
             <Card className="flex flex-col h-full w-full overflow-hidden rounded-xl border border-orange-500/20 bg-black/80 backdrop-blur-lg shadow-xl">
               {/* Chat header */}
@@ -753,13 +755,13 @@ export const CustomerServiceAgent: React.FC = () => {
 
       {/* Quick action menu for frequently asked questions */}
       <AnimatePresence>
-        {isOpen && !isMinimized && (
+        {isOpen && !isMinimized && !isMobile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2, delay: 0.1 }}
-            className="fixed bottom-20 sm:bottom-6 right-[390px] z-[9999] hidden md:block"
+            className="fixed bottom-20 sm:bottom-6 right-[390px] z-[9999]"
           >
             <div className="flex flex-col gap-2">
               {/* Agent Connection Button */}
