@@ -30,11 +30,31 @@ import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Header } from "@/components/layout/header";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from 'framer-motion';
+
+interface ServiceLinkProps {
+  title: string;
+  description: string;
+  link: string;
+  icon: string;
+}
+
+function ServiceLink({ title, description, link, icon }: ServiceLinkProps) {
+  return (
+    <Link href={link}>
+      <a className="block h-full">
+        <div className="bg-orange-500/5 hover:bg-orange-500/10 transition-colors duration-300 p-4 rounded-lg border border-orange-500/20 h-full flex flex-col">
+          <div className="text-2xl mb-2">{icon}</div>
+          <h3 className="font-medium text-sm">{title}</h3>
+          <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        </div>
+      </a>
+    </Link>
+  );
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -283,64 +303,23 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Analytics Chart */}
+            {/* Main Services Grid */}
             <Card className="p-6">
               <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2">Performance Overview</h3>
+                <h3 className="text-xl font-semibold mb-2">Key Services</h3>
                 <p className="text-sm text-muted-foreground">
-                  Track your metrics across all platforms
+                  Access your favorite tools and services
                 </p>
               </div>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={Array.from({ length: 30 }, (_, i) => ({
-                    date: new Date(2024, 0, i + 1).toLocaleDateString(),
-                    spotify: Math.floor(Math.random() * 1000) + 500,
-                    youtube: Math.floor(Math.random() * 800) + 300,
-                    instagram: Math.floor(Math.random() * 600) + 200,
-                  }))}>
-                    <defs>
-                      <linearGradient id="colorSpotify" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="hsl(24, 95%, 53%)" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="spotify"
-                      name="Spotify"
-                      stroke="hsl(24, 95%, 53%)"
-                      fillOpacity={1}
-                      fill="url(#colorSpotify)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="youtube"
-                      name="YouTube"
-                      stroke="hsl(24, 95%, 53%)"
-                      fillOpacity={0.5}
-                      fill="url(#colorSpotify)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="instagram"
-                      name="Instagram"
-                      stroke="hsl(24, 95%, 53%)"
-                      fillOpacity={0.3}
-                      fill="url(#colorSpotify)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <ServiceLink title="Education" description="Learn music skills" link="/education" icon="🎓" />
+                <ServiceLink title="Store" description="Sell merchandise" link="/store" icon="🛍️" />
+                <ServiceLink title="Boostify TV" description="Watch content" link="/boostify-tv" icon="📺" />
+                <ServiceLink title="YouTube Boost" description="Grow your channel" link="/youtube-views" icon="📈" />
+                <ServiceLink title="Spotify Boost" description="Increase streams" link="/spotify" icon="🎵" />
+                <ServiceLink title="Contracts" description="Legal documents" link="/contracts" icon="📝" />
+                <ServiceLink title="Profile" description="Artist profile" link="/profile" icon="👤" />
+                <ServiceLink title="Smart Cards" description="Digital cards" link="/smart-cards" icon="💳" />
               </div>
             </Card>
           </div>
