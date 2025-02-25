@@ -52,6 +52,20 @@ service cloud.firestore {
       allow read: if request.auth != null && progressId.matches(request.auth.uid + '_.*');
       allow write: if request.auth != null && progressId.matches(request.auth.uid + '_.*');
     }
+    match /investors/{investorId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId || 
+        request.auth.token.admin == true
+      );
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.userId || 
+        request.auth.token.admin == true
+      );
+      allow delete: if request.auth != null && 
+        request.auth.token.admin == true;
+    }
   }
 }
 `;

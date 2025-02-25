@@ -418,6 +418,306 @@ function RiskReturnTable() {
   );
 }
 
+// Investor Registration Form Component
+function InvestorRegistrationForm() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Define form validation schema
+  const formSchema = z.object({
+    fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
+    email: z.string().email({ message: "Please enter a valid email address." }),
+    phone: z.string().min(10, { message: "Please enter a valid phone number." }),
+    country: z.string().min(2, { message: "Please select your country." }),
+    investmentAmount: z.string().min(1, { message: "Please enter your investment amount." }),
+    investmentGoals: z.string().min(10, { message: "Please describe your investment goals." }),
+    riskTolerance: z.enum(["low", "medium", "high"], {
+      required_error: "Please select your risk tolerance.",
+    }),
+    investorType: z.enum(["individual", "corporate", "institutional"], {
+      required_error: "Please select your investor type.",
+    }),
+    termsAccepted: z.boolean().refine((val) => val === true, {
+      message: "You must accept the terms and conditions.",
+    }),
+  });
+
+  // Create form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: "",
+      email: user?.email || "",
+      phone: "",
+      country: "",
+      investmentAmount: "",
+      investmentGoals: "",
+      riskTolerance: "medium",
+      investorType: "individual",
+      termsAccepted: false,
+    },
+  });
+
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to register as an investor.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Create document with investor data
+      const investorData = {
+        ...values,
+        userId: user.uid,
+        investmentAmount: parseFloat(values.investmentAmount),
+        createdAt: serverTimestamp(),
+        status: "pending",
+      };
+      
+      // Add document to Firestore collection
+      const docRef = await addDoc(collection(db, "investors"), investorData);
+      
+      toast({
+        title: "Registration Successful",
+        description: "Your investor registration has been submitted successfully.",
+        variant: "default",
+      });
+      
+      // Reset form
+      form.reset();
+      
+    } catch (error) {
+      console.error("Error submitting investor registration:", error);
+      toast({
+        title: "Registration Failed",
+        description: "There was an error registering you as an investor. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="p-3 bg-orange-500/10 rounded-full">
+          <UserPlus className="h-6 w-6 text-orange-500" />
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold">Investor Registration</h3>
+          <p className="text-sm text-muted-foreground">
+            Register to become an investor in Boostify Music
+          </p>
+        </div>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="john@example.com" type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+1 (123) 456-7890" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input placeholder="United States" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="investmentAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Investment Amount (USD)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="5000" type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="investorType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Investor Type</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select investor type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="individual">Individual</SelectItem>
+                      <SelectItem value="corporate">Corporate</SelectItem>
+                      <SelectItem value="institutional">Institutional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="riskTolerance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Risk Tolerance</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select risk tolerance" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="md:col-span-2">
+              <FormField
+                control={form.control}
+                name="investmentGoals"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Investment Goals</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe your investment goals and expectations..." 
+                        className="min-h-[120px]" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <FormField
+                control={form.control}
+                name="termsAccepted"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 bg-muted/50">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 mt-1"
+                        checked={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        I accept the terms and conditions of investment
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        By checking this box, you agree to our investment terms, privacy policy, and acknowledge the risks involved.
+                      </p>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full md:w-auto bg-orange-500 hover:bg-orange-600"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="mr-2">Submitting</span>
+                <Clock className="h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Register as Investor
+              </>
+            )}
+          </Button>
+        </form>
+      </Form>
+    </Card>
+  );
+}
+
 // Componente Estadísticas del Inversor 
 function InvestorStats() {
   const stats = [
@@ -545,7 +845,7 @@ export default function InvestorsDashboard() {
 
             {/* Main Content Tabs */}
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-4 max-w-[800px] mb-4 sm:mb-8 text-xs">
+              <TabsList className="grid grid-cols-5 max-w-[1000px] mb-4 sm:mb-8 text-xs">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500">
                   <BarChart2 className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Overview</span>
@@ -561,6 +861,10 @@ export default function InvestorsDashboard() {
                 <TabsTrigger value="roadmap" className="data-[state=active]:bg-orange-500">
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Roadmap</span>
+                </TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-orange-500">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Register</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -1084,6 +1388,62 @@ export default function InvestorsDashboard() {
                     </Card>
                   </div>
                 </Card>
+              </TabsContent>
+              
+              {/* Register Tab */}
+              <TabsContent value="register">
+                <div className="max-w-4xl mx-auto">
+                  <div className="mb-6 sm:mb-8">
+                    <h3 className="text-xl sm:text-2xl font-bold mb-2">Investor Registration</h3>
+                    <p className="text-muted-foreground">
+                      Complete the form below to register as an investor in Boostify Music. 
+                      All information will be kept confidential and secure.
+                    </p>
+                  </div>
+                  
+                  <InvestorRegistrationForm />
+                  
+                  <div className="mt-8 bg-muted p-4 sm:p-6 rounded-lg">
+                    <h4 className="text-lg font-medium mb-4">After Registration</h4>
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <div className="bg-orange-500/10 p-2 rounded h-min">
+                          <Check className="h-5 w-5 text-orange-500" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium">Verification Process</h5>
+                          <p className="text-sm text-muted-foreground">
+                            Our team will review your application and contact you within 48 hours.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="bg-orange-500/10 p-2 rounded h-min">
+                          <Check className="h-5 w-5 text-orange-500" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium">Investment Options</h5>
+                          <p className="text-sm text-muted-foreground">
+                            You'll receive personalized investment plans based on your profile and preferences.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="bg-orange-500/10 p-2 rounded h-min">
+                          <Check className="h-5 w-5 text-orange-500" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium">Contract Signing</h5>
+                          <p className="text-sm text-muted-foreground">
+                            Once approved, you'll receive a digital contract to sign securely online.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
