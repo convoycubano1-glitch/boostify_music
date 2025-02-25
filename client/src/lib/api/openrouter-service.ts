@@ -23,9 +23,13 @@ export const AgentResponseSchema = z.object({
 export type AgentResponse = z.infer<typeof AgentResponseSchema>;
 
 // Configuración de OpenRouter
-// Try to get the API key from either import.meta.env or process.env
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+// En el navegador, necesitamos acceder a la variable de entorno a través de import.meta.env
+// No podemos usar process.env en el cliente ya que eso es para Node.js
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || import.meta.env.OPENROUTER_API_KEY;
 const BASE_URL = 'https://openrouter.ai/api/v1';
+
+// Debug para identificar problemas con la clave API
+console.log("OpenRouter API key availability check:", !!OPENROUTER_API_KEY);
 
 // Funciones de utilidad para los agentes
 export const openRouterService = {
@@ -75,14 +79,21 @@ export const openRouterService = {
       // Log what we're doing to help debug
       console.log('Making request to OpenRouter with prompt:', prompt.slice(0, 50) + '...');
       
+      // Log the full headers information for debugging
+      const headers = {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Boostify Music Assistant',
+        'X-Auth-Key': OPENROUTER_API_KEY // Algunas APIs usan este formato también
+      };
+      
+      console.log('Using OpenRouter API key format:', 
+                 `Bearer ${OPENROUTER_API_KEY.substring(0, 5)}...${OPENROUTER_API_KEY.substring(OPENROUTER_API_KEY.length - 3)}`);
+      
       const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Boostify Music Assistant' // Add a title
-        },
+        headers,
         body: JSON.stringify({
           model: 'anthropic/claude-3-haiku', // Using a smaller model which may be more reliable
           messages
@@ -121,8 +132,13 @@ export const openRouterService = {
         }
       };
 
-      // Guardar en Firestore
-      await saveAgentResponse(agentResponse);
+      // Intentar guardar en Firestore, pero aún continuar si falla
+      try {
+        await saveAgentResponse(agentResponse);
+      } catch (firestoreError) {
+        console.warn('Could not save response to Firestore, but continuing:', firestoreError);
+        // No hacemos throw aquí para que el chat siga funcionando
+      }
 
       return agentResponse;
     } catch (error) {
@@ -200,6 +216,12 @@ export const openRouterService = {
 // Función auxiliar para guardar respuestas en Firestore
 async function saveAgentResponse(response: AgentResponse): Promise<void> {
   try {
+    console.log('Firestore saving is temporarily disabled for testing');
+    // NOTA: Hemos deshabilitado temporalmente el guardado en Firestore 
+    // hasta que se resuelvan los problemas de permisos
+    return;
+    
+    /*
     // Verificar que tenemos una conexión a Firestore antes de intentar guardar
     if (!db) {
       console.warn('Firestore not initialized, skipping save operation');
@@ -220,6 +242,7 @@ async function saveAgentResponse(response: AgentResponse): Promise<void> {
     const agentResponsesRef = collection(db, 'agentResponses');
     await addDoc(agentResponsesRef, sanitizedResponse);
     console.log('Agent response saved to Firestore successfully');
+    */
   } catch (error) {
     console.error('Error saving agent response:', error);
     // No rethrow para que esto no rompa la experiencia del usuario
