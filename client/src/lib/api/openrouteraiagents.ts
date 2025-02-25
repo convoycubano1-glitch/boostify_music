@@ -3,7 +3,8 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
-const OPEN_ROUTER_API_KEY = env.VITE_OPENROUTER_API_KEY;
+// Use either environment variable or process.env
+const OPEN_ROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
 const OPEN_ROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export class OpenRouterService {
@@ -24,8 +25,9 @@ export class OpenRouterService {
     prompt: string,
     agentType: string,
     userId: string,
-    systemInstruction: string
-  ): Promise<string> {
+    systemInstruction: string,
+    conversationContext?: { role: string; content: string }[]
+  ): Promise<{ id: string; response: string; timestamp: Date }> {
     if (!OPEN_ROUTER_API_KEY) {
       throw new Error('OpenRouter API key is not configured correctly');
     }
@@ -42,12 +44,29 @@ export class OpenRouterService {
         }
       };
 
+      // Build messages array with conversation context if available
+      const messages = [
+        { role: 'system', content: systemInstruction }
+      ];
+      
+      // Add conversation context messages if provided
+      if (conversationContext && conversationContext.length > 0) {
+        messages.push(...conversationContext);
+      } else {
+        // If no context, just add the current prompt
+        messages.push({ role: 'user', content: prompt });
+      }
+      
+      // Ensure the latest user message is included if not already
+      if (!conversationContext || 
+          conversationContext.length === 0 || 
+          conversationContext[conversationContext.length - 1].content !== prompt) {
+        messages.push({ role: 'user', content: prompt });
+      }
+      
       const requestBody = {
         model: 'anthropic/claude-3-sonnet',
-        messages: [
-          { role: 'system', content: systemInstruction },
-          { role: 'user', content: prompt }
-        ],
+        messages: messages,
         temperature: 0.7,
         max_tokens: 2000
       };
@@ -193,7 +212,33 @@ export class OpenRouterService {
         // No propagamos el error para que no afecte la funcionalidad principal
       }
 
-      return result;
+      // Store conversation in Customer Service collection if agent type is customerService
+      if (agentType === 'customerService') {
+        try {
+          const customerServiceRef = collection(db, 'Customer_Service_AI');
+          await addDoc(customerServiceRef, {
+            userId,
+            prompt,
+            response: result,
+            timestamp: serverTimestamp(),
+            metadata: {
+              model: 'anthropic/claude-3-sonnet',
+              temperature: 0.7,
+              systemInstruction
+            }
+          });
+          console.log('Conversation saved to Customer_Service_AI collection');
+        } catch (error) {
+          console.error('Error saving customer service conversation to Firestore:', error);
+        }
+      }
+      
+      // Return formatted response with id and timestamp
+      return {
+        id: Date.now().toString(),
+        response: result,
+        timestamp: new Date()
+      };
     } catch (error: any) {
       console.error(`Error in OpenRouter chat for ${agentType}:`, {
         message: error.message,
