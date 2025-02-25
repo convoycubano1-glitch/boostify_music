@@ -34,7 +34,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
+import { db } from "@/firebase";
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 // Investment Calculator Component
 function InvestmentCalculator() {
@@ -473,69 +474,56 @@ function InvestorRegistrationForm() {
         return;
       }
       
-      // Prepare investor data
+      // Create document with investor data
       const investorData = {
         ...values,
-        investmentAmount: parseFloat(values.investmentAmount)
+        userId: user.uid,
+        investmentAmount: parseFloat(values.investmentAmount),
+        createdAt: serverTimestamp(),
+        status: "pending"
       };
       
-      // Use server-side API route instead of direct Firestore access
+      // Direct Firestore access (with updated security rules)
       try {
-        const response = await apiRequest(
-          '/api/investors/register',
-          'POST', 
-          investorData
-        );
+        // Add document to Firestore collection
+        const docRef = await addDoc(collection(db, "investors"), investorData);
+        console.log("Investor registration saved with ID:", docRef.id);
         
-        const data = await response.json();
-        console.log("Investor registration successful with ID:", data.id);
-      } catch (apiError) {
-        console.error("API error:", apiError);
-        throw apiError;
-      }
-      
-      toast({
-        title: "Registration Successful",
-        description: "Your investor registration has been submitted successfully.",
-        variant: "default",
-      });
-      
-      // Reset form
-      form.reset();
-      
-    } catch (error) {
-      console.error("Error submitting investor registration:", error);
-      // Provide specific error messages based on error types
-      if (error instanceof Error) {
-        if (error.message.includes("permission")) {
+        toast({
+          title: "Registration Successful",
+          description: "Your investor registration has been submitted successfully.",
+          variant: "default",
+        });
+        
+        // Reset form
+        form.reset();
+      } catch (firestoreError) {
+        console.error("Firestore error:", firestoreError);
+        
+        if (firestoreError instanceof Error && firestoreError.message.includes("permission-denied")) {
           toast({
             title: "Permission Error",
             description: "You don't have permission to register as an investor. Please check your account or contact support.",
             variant: "destructive",
           });
-        } else if (error.message.includes("401")) {
-          toast({
-            title: "Authentication Error",
-            description: "Please log in again to register as an investor.",
-            variant: "destructive",
-          });
-        } else if (error.message.includes("validation")) {
-          toast({
-            title: "Validation Error",
-            description: "Please check your form inputs and try again.",
-            variant: "destructive",
-          });
         } else {
           toast({
             title: "Registration Failed",
-            description: "There was an error registering you as an investor: " + error.message,
+            description: "There was an error registering your investor information. Please try again.",
             variant: "destructive",
           });
         }
-      } else {
+        
+        throw firestoreError;
+      }
+      
+    } catch (error) {
+      console.error("Error submitting investor registration:", error);
+      
+      if (!(error instanceof Error) || !error.message.includes("permission-denied")) {
         toast({
           title: "Registration Failed",
-          description: "There was an unknown error registering you as an investor. Please try again.",
+          description: "There was an unexpected error. Please try again or contact support.",
           variant: "destructive",
         });
       }
