@@ -9,13 +9,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLanguageDetection } from "@/hooks/use-language-detection";
 
 export function Header() {
   const { user } = useAuth();
   const { logout } = useFirebaseAuth();
   const { detectedLanguage } = useLanguageDetection();
+  const [showSubNav, setShowSubNav] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setShowSubNav(currentScrollY <= lastScrollY || currentScrollY < 100);
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   useEffect(() => {
     const initTranslate = () => {
@@ -210,7 +223,11 @@ export function Header() {
         </div>
 
         {/* Secondary Navigation Bar - Inspired by Freepik */}
-        <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm">
+        <div 
+          className={`border-t border-border/40 bg-black/80 backdrop-blur-sm transform transition-transform duration-300 ${
+            showSubNav ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        >
           <div className="container flex h-8 max-w-screen-2xl items-center">
             <nav className="flex items-center justify-between w-full px-4">
               {[...navigation, ...secondaryNavigation].map((item) => (
@@ -230,7 +247,7 @@ export function Header() {
         </div>
       </header>
       {/* Spacer to prevent content from hiding under the fixed header */}
-      <div className="h-[96px]" />
+      <div className={`transition-all duration-300 ${showSubNav ? 'h-[96px]' : 'h-[64px]'}`} />
     </>
   );
 }
