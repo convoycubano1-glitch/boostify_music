@@ -229,12 +229,30 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const togglePlay = (song: Song, index: number) => {
     if (currentAudio) {
       currentAudio.pause();
+      currentAudio.removeEventListener('ended', () => setIsPlaying(false));
       setCurrentAudio(null);
       setIsPlaying(false);
     }
 
     if (song.audioUrl) {
       const audio = new Audio(song.audioUrl);
+
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setCurrentAudio(null);
+      });
+
+      audio.addEventListener('error', (error) => {
+        console.error("Error playing audio:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo reproducir el audio. Por favor, intente nuevamente.",
+          variant: "destructive",
+        });
+        setIsPlaying(false);
+        setCurrentAudio(null);
+      });
+
       audio.play().catch((error) => {
         console.error("Error playing audio:", error);
         toast({
@@ -247,6 +265,23 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       setCurrentTrack(index);
       setIsPlaying(true);
     }
+  };
+
+  // Función auxiliar para obtener el ID del video de YouTube
+  const getYoutubeVideoId = (url: string): string => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu.be\/|youtube.com\/embed\/)([^&\n?#]+)/,
+      /^[a-zA-Z0-9_-]{11}$/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    return '';
   };
 
   const containerVariants = {
@@ -339,11 +374,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <p className="col-span-full text-center text-muted-foreground">No videos available</p>
       ) : (
         videos.map((video) => {
-          // Extraer el ID del video correctamente de diferentes formatos de URL
-          const videoId = video.url?.split('v=')?.[1]?.split('&')?.[0] ||
-            video.url?.split('/')?.[3]?.split('?')?.[0] ||
-            video.url?.split('youtu.be/')?.[1]?.split('?')?.[0];
-
           return (
             <motion.div
               key={video.id}
@@ -354,7 +384,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="w-full h-full">
                 <iframe
                   className="w-full h-full rounded-lg"
-                  src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+                  src={`https://www.youtube.com/embed/${getYoutubeVideoId(video.url)}?rel=0`}
                   title={video.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -425,22 +455,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <div className="relative h-full w-full">
           {/* Video container with responsive design */}
           <div className="absolute inset-0 w-full h-full">
-            {videos && videos[0] ? (
+            {videos && videos[0] && (
               <iframe
                 className="w-full h-full md:object-cover object-contain sm:object-cover"
-                src={`https://www.youtube.com/embed/${
-                  videos[0].url?.split('v=')?.[1]?.split('&')?.[0] || 
-                  videos[0].url?.split('/')?.[3]?.split('?')?.[0] ||
-                  videos[0].url?.split('youtu.be/')?.[1]?.split('?')?.[0]
-                }?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${
-                  videos[0].url?.split('v=')?.[1]?.split('&')?.[0] ||
-                  videos[0].url?.split('/')?.[3]?.split('?')?.[0] ||
-                  videos[0].url?.split('youtu.be/')?.[1]?.split('?')?.[0]
-                }`}
+                src={`https://www.youtube.com/embed/${getYoutubeVideoId(videos[0].url)}?autoplay=1&mute=1&loop=1&playlist=${getYoutubeVideoId(videos[0].url)}&controls=0&showinfo=0&rel=0`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
-            ) : (
+            ) || (
               <div className="w-full h-full bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
                 <VideoIcon className="w-16 h-16 text-orange-500/50" />
               </div>
@@ -722,7 +744,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </motion.div>
           </Card>
-
           <Card className="p-6">
             <motion.div variants={itemVariants}>
               <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
@@ -751,13 +772,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <Youtube className="mr-2 h-5 w-5" />
                   YouTube
                 </Button>
-                <Button
-                  className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 transition-all duration-300 hover:scale-105"
-                  onClick={() => setShowShareDialog(true)}
-                >
-                  <Share2 className="mr-2 h-5 w-5" />
-                  Share
-                </Button>
+                <Link href="/smart-cards">
+                  <Button
+                    className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 transition-all duration-300 hover:scale-105"
+                  >
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Get Smart Cards
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           </Card>
