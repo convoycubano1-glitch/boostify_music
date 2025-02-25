@@ -378,7 +378,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-7xl mx-auto"
+      className="w-full max-w-7xl mx-auto pb-24" // Added padding bottom for navbar
     >
       <div className="fixed top-4 left-4 z-50">
         <Button
@@ -391,42 +391,143 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </Button>
       </div>
 
-      <div className="relative h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
-        {/* Stats at the top */}
-        <motion.div
-          className="absolute top-8 right-8 z-10 flex flex-col md:flex-row gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+      {/* Statistics section with animated charts */}
+      <Card className="p-6 mb-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 animate-pulse" />
+        <motion.div 
+          variants={itemVariants}
+          className="relative z-10"
         >
-          <motion.div
-            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
-            variants={itemVariants}
-          >
-            <HeartPulse className="h-6 w-6 text-orange-500" />
-            <div>
-              <p className="text-sm text-white/70">Monthly Listeners</p>
-              <p className="text-xl font-bold text-white">{mockArtist.statistics.monthlyListeners}k</p>
-            </div>
-          </motion.div>
-          <motion.div
-            className="bg-black/40 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3"
-            variants={itemVariants}
-          >
-            <Users className="h-6 w-6 text-orange-500" />
-            <div>
-              <p className="text-sm text-white/70">Followers</p>
-              <p className="text-xl font-bold text-white">{mockArtist.statistics.followers}k</p>
-            </div>
-          </motion.div>
-        </motion.div>
+          <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+            <ChartBar className="w-6 h-6 mr-2 text-orange-500" />
+            Statistics
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Monthly Listeners Chart */}
+            <motion.div 
+              className="flex flex-col items-center group"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+            >
+              <div className="relative">
+                <div className="absolute -inset-2 bg-orange-500/20 rounded-full blur-lg group-hover:bg-orange-500/30 transition-all duration-500" />
+                <CircularProgressbar
+                  value={mockArtist.statistics.monthlyListeners}
+                  text={`${mockArtist.statistics.monthlyListeners}k`}
+                  strokeWidth={12}
+                  styles={buildStyles({
+                    pathColor: "#E1306C",
+                    textColor: "#E1306C",
+                    trailColor: "rgba(255,255,255,0.1)",
+                    pathTransition: "stroke-dashoffset 1.5s ease-in-out",
+                    textSize: '22px',
+                    rotation: 0.25,
+                  })}
+                />
+              </div>
+              <motion.div
+                className="mt-4 text-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <p className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                  Monthly Listeners
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Growing steadily
+                </p>
+              </motion.div>
+            </motion.div>
 
-        {/* Video background */}
+            {/* Total Streams Chart */}
+            <motion.div 
+              className="flex flex-col items-center group"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+            >
+              <div className="relative">
+                <div className="absolute -inset-2 bg-blue-500/20 rounded-full blur-lg group-hover:bg-blue-500/30 transition-all duration-500" />
+                <CircularProgressbar
+                  value={mockArtist.statistics.totalStreams}
+                  text={`${mockArtist.statistics.totalStreams}k`}
+                  strokeWidth={12}
+                  styles={buildStyles({
+                    pathColor: "#1DA1F2",
+                    textColor: "#1DA1F2",
+                    trailColor: "rgba(255,255,255,0.1)",
+                    pathTransition: "stroke-dashoffset 1.5s ease-in-out",
+                    textSize: '22px',
+                    rotation: 0.25,
+                  })}
+                />
+              </div>
+              <motion.div
+                className="mt-4 text-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <p className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">
+                  Total Streams
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Across all platforms
+                </p>
+              </motion.div>
+            </motion.div>
+
+            {/* Followers Chart */}
+            <motion.div 
+              className="flex flex-col items-center group"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.3 }}
+            >
+              <div className="relative">
+                <div className="absolute -inset-2 bg-red-500/20 rounded-full blur-lg group-hover:bg-red-500/30 transition-all duration-500" />
+                <CircularProgressbar
+                  value={mockArtist.statistics.followers}
+                  text={`${mockArtist.statistics.followers}k`}
+                  strokeWidth={12}
+                  styles={buildStyles({
+                    pathColor: "#FF0000",
+                    textColor: "#FF0000",
+                    trailColor: "rgba(255,255,255,0.1)",
+                    pathTransition: "stroke-dashoffset 1.5s ease-in-out",
+                    textSize: '22px',
+                    rotation: 0.25,
+                  })}
+                />
+              </div>
+              <motion.div
+                className="mt-4 text-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <p className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-pink-500">
+                  Followers
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Active community
+                </p>
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </Card>
+
+      {/* Video Hero Section */}
+      <div className="relative min-h-[50vh] md:h-[90vh] w-screen -mx-[calc(50vw-50%)] overflow-hidden mb-8">
         <div className="relative h-full w-full">
+          {/* Video container with responsive design */}
           <div className="absolute inset-0 w-full h-full">
             {videos && videos[0] ? (
               <iframe
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover md:object-contain"
                 src={`https://www.youtube.com/embed/${
                   videos[0].url?.split('v=')?.[1]?.split('&')?.[0] || 
                   videos[0].url?.split('/')?.[3]?.split('?')?.[0] ||
