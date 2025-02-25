@@ -262,27 +262,29 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {services.filter(s => !s.highlight).map((service) => (
                   <Link key={service.name} href={service.route}>
-                    <Card className="p-6 cursor-pointer hover:bg-orange-500/5 transition-colors border-orange-500/10 hover:border-orange-500/30">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                          <service.icon className={`h-5 w-5 ${service.color}`} />
+                    <div>
+                      <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                            <service.icon className={`h-5 w-5 ${service.color}`} />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{service.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {service.description}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold">{service.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {service.description}
-                          </p>
+                        <div className="mt-4 flex items-baseline">
+                          <span className={`text-2xl font-bold ${service.color}`}>
+                            {service.stats.toLocaleString()}
+                          </span>
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {service.statsLabel}
+                          </span>
                         </div>
-                      </div>
-                      <div className="mt-4 flex items-baseline">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                          {service.stats.toLocaleString()}
-                        </span>
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {service.statsLabel}
-                        </span>
-                      </div>
-                    </Card>
+                      </Card>
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -303,10 +305,7 @@ export default function Dashboard() {
                   { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards", color: "text-amber-500" }
                 ].map((service) => (
                   <Link key={service.title} href={service.link}>
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
+                    <div>
                       <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
@@ -328,7 +327,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                       </Card>
-                    </motion.div>
+                    </div>
                   </Link>
                 ))}
               </div>
