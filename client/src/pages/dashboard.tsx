@@ -293,14 +293,14 @@ export default function Dashboard() {
               <h2 className="text-xl font-semibold mb-4">Key Services</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { title: "Education", description: "Learn music skills", link: "/education", icon: GraduationCap, statsValue: metrics.coursesEnrolled, statsLabel: "Courses" },
-                  { title: "Store", description: "Sell merchandise", link: "/store", icon: ShoppingBag, statsValue: metrics.merchandiseSold, statsLabel: "Products" },
-                  { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: Tv, statsValue: 24, statsLabel: "Videos" },
-                  { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: Video, statsValue: metrics.youtubeViews, statsLabel: "Views" },
-                  { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: Music, statsValue: metrics.spotifyFollowers, statsLabel: "Followers" },
-                  { title: "Contracts", description: "Legal documents", link: "/contracts", icon: FileText, statsValue: metrics.contractsCreated, statsLabel: "Documents" },
-                  { title: "Profile", description: "Artist profile", link: "/profile", icon: User, statsValue: 1, statsLabel: "Profile" },
-                  { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards" }
+                  { title: "Education", description: "Learn music skills", link: "/education", icon: GraduationCap, statsValue: metrics.coursesEnrolled, statsLabel: "Courses", color: "text-blue-500" },
+                  { title: "Store", description: "Sell merchandise", link: "/store", icon: ShoppingBag, statsValue: metrics.merchandiseSold, statsLabel: "Products", color: "text-green-500" },
+                  { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: Tv, statsValue: 24, statsLabel: "Videos", color: "text-red-500" },
+                  { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: Video, statsValue: metrics.youtubeViews, statsLabel: "Views", color: "text-rose-500" },
+                  { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: Music, statsValue: metrics.spotifyFollowers, statsLabel: "Followers", color: "text-emerald-500" },
+                  { title: "Contracts", description: "Legal documents", link: "/contracts", icon: FileText, statsValue: metrics.contractsCreated, statsLabel: "Documents", color: "text-indigo-500" },
+                  { title: "Profile", description: "Artist profile", link: "/profile", icon: User, statsValue: 1, statsLabel: "Profile", color: "text-purple-500" },
+                  { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards", color: "text-amber-500" }
                 ].map((service) => (
                   <Link key={service.title} href={service.link}>
                     <motion.div
@@ -309,8 +309,8 @@ export default function Dashboard() {
                     >
                       <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
                         <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                            <service.icon className="h-6 w-6 text-orange-500" />
+                          <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                            <service.icon className={`h-6 w-6 ${service.color}`} />
                           </div>
                           <div>
                             <h3 className="font-semibold">{service.title}</h3>
@@ -320,7 +320,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div className="mt-4 flex items-baseline">
-                          <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
+                          <span className={`text-2xl font-bold ${service.color}`}>
                             {service.statsValue.toLocaleString()}
                           </span>
                           <span className="ml-2 text-sm text-muted-foreground">
