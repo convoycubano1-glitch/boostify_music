@@ -499,17 +499,21 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       </div>
 
       {/* Statistics section with animated charts */}
-      <Card className="p-6 mb-8">
-        <motion.div variants={itemVariants}>
+      <Card className="p-6 mb-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 animate-pulse" />
+        <motion.div 
+          variants={itemVariants}
+          className="relative z-10"
+        >
           <h3 className="text-2xl font-semibold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
             <ChartBar className="w-6 h-6 mr-2 text-orange-500" />
             Statistics
           </h3>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <motion.div 
-              className="flex flex-col items-center"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              className="flex flex-col items-center group"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ 
                 type: "spring",
                 stiffness: 260,
@@ -517,22 +521,41 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 delay: 0.1
               }}
             >
-              <CircularProgressbar
-                value={mockArtist.statistics.monthlyListeners}
-                strokeWidth={10}
-                styles={buildStyles({
-                  pathColor: "#E1306C",
-                  textColor: "#E1306C",
-                  trailColor: "#f5f5f5",
-                  pathTransition: "stroke-dashoffset 0.5s ease 0s"
-                })}
-              />
-              <p className="text-lg font-medium mt-2">Monthly Listeners</p>
+              <div className="relative">
+                <div className="absolute -inset-2 bg-orange-500/20 rounded-full blur-lg group-hover:bg-orange-500/30 transition-all duration-500" />
+                <CircularProgressbar
+                  value={mockArtist.statistics.monthlyListeners}
+                  text={`${mockArtist.statistics.monthlyListeners}k`}
+                  strokeWidth={12}
+                  styles={buildStyles({
+                    pathColor: "#E1306C",
+                    textColor: "#E1306C",
+                    trailColor: "rgba(255,255,255,0.1)",
+                    pathTransition: "stroke-dashoffset 1.5s ease-in-out",
+                    textSize: '22px',
+                    rotation: 0.25,
+                  })}
+                />
+              </div>
+              <motion.div
+                className="mt-4 text-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <p className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+                  Monthly Listeners
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Growing steadily
+                </p>
+              </motion.div>
             </motion.div>
+
             <motion.div 
-              className="flex flex-col items-center"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              className="flex flex-col items-center group"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ 
                 type: "spring",
                 stiffness: 260,
@@ -540,22 +563,41 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 delay: 0.2
               }}
             >
-              <CircularProgressbar
-                value={mockArtist.statistics.totalStreams}
-                strokeWidth={10}
-                styles={buildStyles({
-                  pathColor: "#1DA1F2",
-                  textColor: "#1DA1F2",
-                  trailColor: "#f5f5f5",
-                  pathTransition: "stroke-dashoffset 0.5s ease 0s"
-                })}
-              />
-              <p className="text-lg font-medium mt-2">Total Streams</p>
+              <div className="relative">
+                <div className="absolute -inset-2 bg-blue-500/20 rounded-full blur-lg group-hover:bg-blue-500/30 transition-all duration-500" />
+                <CircularProgressbar
+                  value={mockArtist.statistics.totalStreams}
+                  text={`${mockArtist.statistics.totalStreams}k`}
+                  strokeWidth={12}
+                  styles={buildStyles({
+                    pathColor: "#1DA1F2",
+                    textColor: "#1DA1F2",
+                    trailColor: "rgba(255,255,255,0.1)",
+                    pathTransition: "stroke-dashoffset 1.5s ease-in-out",
+                    textSize: '22px',
+                    rotation: 0.25,
+                  })}
+                />
+              </div>
+              <motion.div
+                className="mt-4 text-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <p className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">
+                  Total Streams
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Across all platforms
+                </p>
+              </motion.div>
             </motion.div>
+
             <motion.div 
-              className="flex flex-col items-center"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              className="flex flex-col items-center group"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ 
                 type: "spring",
                 stiffness: 260,
@@ -563,17 +605,98 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 delay: 0.3
               }}
             >
-              <CircularProgressbar
-                value={mockArtist.statistics.followers}
-                strokeWidth={10}
-                styles={buildStyles({
-                  pathColor: "#FF0000",
-                  textColor: "#FF0000",
-                  trailColor: "#f5f5f5",
-                  pathTransition: "stroke-dashoffset 0.5s ease 0s"
-                })}
-              />
-              <p className="text-lg font-medium mt-2">Followers</p>
+              <div className="relative">
+                <div className="absolute -inset-2 bg-red-500/20 rounded-full blur-lg group-hover:bg-red-500/30 transition-all duration-500" />
+                <CircularProgressbar
+                  value={mockArtist.statistics.followers}
+                  text={`${mockArtist.statistics.followers}k`}
+                  strokeWidth={12}
+                  styles={buildStyles({
+                    pathColor: "#FF0000",
+                    textColor: "#FF0000",
+                    trailColor: "rgba(255,255,255,0.1)",
+                    pathTransition: "stroke-dashoffset 1.5s ease-in-out",
+                    textSize: '22px',
+                    rotation: 0.25,
+                  })}
+                />
+              </div>
+              <motion.div
+                className="mt-4 text-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <p className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-pink-500">
+                  Followers
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Active community
+                </p>
+              </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Additional Statistics Bars */}
+          <div className="mt-8 space-y-6">
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="space-y-2"
+            >
+              <div className="flex justify-between text-sm">
+                <span>Engagement Rate</span>
+                <span className="text-orange-500">85%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "85%" }}
+                  transition={{ duration: 1, delay: 0.7 }}
+                  className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="space-y-2"
+            >
+              <div className="flex justify-between text-sm">
+                <span>Concert Attendance</span>
+                <span className="text-blue-500">92%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "92%" }}
+                  transition={{ duration: 1, delay: 0.8 }}
+                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="space-y-2"
+            >
+              <div className="flex justify-between text-sm">
+                <span>Merch Sales Growth</span>
+                <span className="text-green-500">78%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "78%" }}
+                  transition={{ duration: 1, delay: 0.9 }}
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
+                />
+              </div>
             </motion.div>
           </div>
         </motion.div>
