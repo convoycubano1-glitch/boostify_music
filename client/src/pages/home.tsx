@@ -454,8 +454,14 @@ export default function HomePage() {
             className="relative max-w-4xl mx-auto mb-16"
           >
             <div className="relative rounded-xl overflow-hidden bg-black/50 backdrop-blur-sm p-2">
+              {/* Gradients */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50 z-10" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/30 via-transparent to-red-500/30 z-10" />
+
+              {/* Video */}
               <video
-                className="w-full rounded-lg"
+                className="w-full rounded-lg relative"
                 controls
                 autoPlay
                 loop
@@ -465,6 +471,27 @@ export default function HomePage() {
                 <source src="/assets/indications/Welcome to Boostify Music.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
+
+              {/* Text Overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 p-6">
+                <motion.h2 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-yellow-500 to-red-500 drop-shadow-lg"
+                >
+                  Everything You Need
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                  className="text-xl md:text-2xl text-white max-w-2xl text-center font-medium drop-shadow-lg"
+                >
+                  Comprehensive tools to boost your music career and reach new audiences
+                </motion.p>
+              </div>
             </div>
           </motion.div>
 
