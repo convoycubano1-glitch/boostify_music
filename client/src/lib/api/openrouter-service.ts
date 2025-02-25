@@ -23,7 +23,8 @@ export const AgentResponseSchema = z.object({
 export type AgentResponse = z.infer<typeof AgentResponseSchema>;
 
 // Configuración de OpenRouter
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+// Try to get the API key from either import.meta.env or process.env
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
 const BASE_URL = 'https://openrouter.ai/api/v1';
 
 // Funciones de utilidad para los agentes
@@ -71,24 +72,40 @@ export const openRouterService = {
         });
       }
       
+      // Log what we're doing to help debug
+      console.log('Making request to OpenRouter with prompt:', prompt.slice(0, 50) + '...');
+      
       const response = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin,
+          'X-Title': 'Boostify Music Assistant' // Add a title
         },
         body: JSON.stringify({
-          model: 'openai/gpt-4-turbo-preview',
+          model: 'anthropic/claude-3-haiku', // Using a smaller model which may be more reliable
           messages
         })
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('OpenRouter API error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      
+      // Validate the expected structure of the response
+      if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error('Invalid response structure:', data);
+        throw new Error('Invalid response structure from OpenRouter API');
+      }
 
       const agentResponse: AgentResponse = {
         id: crypto.randomUUID(),
@@ -110,7 +127,36 @@ export const openRouterService = {
       return agentResponse;
     } catch (error) {
       console.error('Error in chatWithAgent:', error);
-      throw error;
+      
+      // Provide a fallback response in case of errors
+      const fallbackResponse: AgentResponse = {
+        id: crypto.randomUUID(),
+        userId,
+        agentType,
+        query: prompt,
+        response: "Lo siento, no puedo responder en este momento. Hay un problema con nuestra conexión al servicio de IA. Por favor, intenta nuevamente más tarde.",
+        timestamp: new Date(),
+        metadata: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          fallback: true
+        }
+      };
+      
+      // Try to save the error to Firestore, but don't fail if this also fails
+      try {
+        await saveAgentResponse({
+          ...fallbackResponse,
+          metadata: {
+            ...fallbackResponse.metadata,
+            originalError: error instanceof Error ? error.toString() : JSON.stringify(error)
+          }
+        });
+      } catch (firestoreError) {
+        console.error('Could not save error to Firestore:', firestoreError);
+      }
+      
+      // Return the fallback response so the UI doesn't break
+      return fallbackResponse;
     }
   },
 
@@ -154,14 +200,30 @@ export const openRouterService = {
 // Función auxiliar para guardar respuestas en Firestore
 async function saveAgentResponse(response: AgentResponse): Promise<void> {
   try {
-    const agentResponsesRef = collection(db, 'agentResponses');
-    await addDoc(agentResponsesRef, {
+    // Verificar que tenemos una conexión a Firestore antes de intentar guardar
+    if (!db) {
+      console.warn('Firestore not initialized, skipping save operation');
+      return;
+    }
+    
+    // Asegurarnos de que los campos son válidos para Firestore
+    const sanitizedResponse = {
       ...response,
-      timestamp: serverTimestamp()
-    });
+      // Convertir timestamp a Firestore timestamp si no es un serverTimestamp
+      timestamp: serverTimestamp(),
+      // Asegurarnos de que el metadata es un objeto válido para Firestore
+      metadata: response.metadata ? JSON.parse(JSON.stringify(response.metadata)) : {},
+      // Si userId es undefined, usar 'anonymous'
+      userId: response.userId || 'anonymous'
+    };
+    
+    const agentResponsesRef = collection(db, 'agentResponses');
+    await addDoc(agentResponsesRef, sanitizedResponse);
+    console.log('Agent response saved to Firestore successfully');
   } catch (error) {
     console.error('Error saving agent response:', error);
-    throw error;
+    // No rethrow para que esto no rompa la experiencia del usuario
+    // solo logueamos el error
   }
 }
 
