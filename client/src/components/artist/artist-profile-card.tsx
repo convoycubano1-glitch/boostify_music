@@ -57,6 +57,7 @@ export interface ArtistProfileProps {
 interface Song {
   id: string;
   name: string;
+  title?: string;
   duration?: string;
   audioUrl: string;
   userId: string;
@@ -313,9 +314,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
-          ) : songs.length === 0 ? (
-            <p className="text-center text-muted-foreground">No tracks available</p>
-          ) : (
+          ) : songs && songs.length > 0 ? (
             songs.map((song, index) => (
               <div
                 key={song.id}
@@ -343,9 +342,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     )}
                   </Button>
                   <div>
-                    <span className="font-medium">{song.name}</span>
+                    <span className="font-medium">{song.name || song.title}</span>
                     <span className="text-sm text-muted-foreground block">
-                      {new Date(song.createdAt?.seconds * 1000).toLocaleDateString()}
+                      {song.createdAt ? new Date(song.createdAt).toLocaleDateString() : 'No date'}
                     </span>
                   </div>
                 </div>
@@ -354,6 +353,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </span>
               </div>
             ))
+          ) : (
+            <p className="text-center text-muted-foreground">No tracks available</p>
           )}
         </div>
       </motion.div>
@@ -366,10 +367,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <div className="col-span-full flex items-center justify-center p-4">
           <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
         </div>
-      ) : videos.length === 0 ? (
-        <p className="col-span-full text-center text-muted-foreground">No videos available</p>
-      ) : (
+      ) : videos && videos.length > 0 ? (
         videos.map((video) => {
+          const videoId = video.url ? getYoutubeVideoId(video.url) : '';
           return (
             <motion.div
               key={video.id}
@@ -380,7 +380,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="w-full h-full">
                 <iframe
                   className="w-full h-full rounded-lg"
-                  src={`https://www.youtube.com/embed/${getYoutubeVideoId(video.url)}?rel=0`}
+                  src={`https://www.youtube.com/embed/${videoId}?rel=0`}
                   title={video.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -389,12 +389,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/30 to-transparent">
                 <h4 className="text-white font-medium truncate mb-2">{video.title}</h4>
                 <p className="text-sm text-white/70">
-                  {new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}
+                  {video.createdAt ? new Date(video.createdAt).toLocaleDateString() : 'No date'}
                 </p>
               </div>
             </motion.div>
           );
         })
+      ) : (
+        <p className="col-span-full text-center text-muted-foreground">No videos available</p>
       )}
     </div>
   );
@@ -729,7 +731,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 <div className="flex items-center">
                   <Globe className="w-5 h-5 text-orange-500 mr-3" />
                   <a
-                    href={mockArtist.website}
+                                        href={mockArtist.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-orange-500"
