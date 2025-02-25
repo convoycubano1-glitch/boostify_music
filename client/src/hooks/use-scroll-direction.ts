@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 export function useScrollDirection() {
   const [scrollDirection, setScrollDirection] = useState<"up" | "down">("up");
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
       
       if (currentScrollY > lastScrollY) {
         setScrollDirection("down");
@@ -21,5 +23,5 @@ export function useScrollDirection() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  return scrollDirection;
+  return { scrollDirection, scrollY };
 }

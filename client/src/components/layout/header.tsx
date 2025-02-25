@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,14 +9,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLanguageDetection } from "@/hooks/use-language-detection";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
 
 export function Header() {
   const { user } = useAuth();
   const { logout } = useFirebaseAuth();
   const { detectedLanguage } = useLanguageDetection();
+  const { scrollDirection, scrollY } = useScrollDirection();
+  const [showFullHeader, setShowFullHeader] = useState(true);
 
+  // Handle scroll effect for header
+  useEffect(() => {
+    if (scrollY > 50) {
+      if (scrollDirection === "down") {
+        setShowFullHeader(false);
+      } else {
+        setShowFullHeader(true);
+      }
+    } else {
+      setShowFullHeader(true);
+    }
+  }, [scrollDirection, scrollY]);
+  
   useEffect(() => {
     const initTranslate = () => {
       if (window.google && window.google.translate) {
@@ -56,6 +72,7 @@ export function Header() {
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
+    { name: "Inversores", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
   if (!user) return null;
@@ -64,7 +81,9 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-[#1B1B1B]">
+      <header className={`fixed top-0 z-50 w-full border-b border-border/40 bg-[#1B1B1B] transition-transform duration-300 ${
+        scrollY > 50 && !showFullHeader ? "-translate-y-16" : "translate-y-0"
+      }`}>
         <div className="container flex h-16 max-w-screen-2xl items-center">
           <div className="flex flex-1 items-center justify-between space-x-4">
             {/* Logo section */}
