@@ -64,19 +64,6 @@ export function Head({
           <meta property="og:audio:type" content="application/mp3" />
         </>
       )}
-
-      {/* Schema.org markup for better SEO */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "http://schema.org",
-          "@type": type === "profile" ? "MusicGroup" : "WebSite",
-          "name": title,
-          "description": truncatedDescription,
-          "url": url,
-          "image": absoluteImageUrl,
-          "creator": type === "profile" ? title : undefined
-        }, null, 2)}
-      </script>
     </Helmet>
   );
 }
