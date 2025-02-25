@@ -18,7 +18,6 @@ export function Header() {
   const { detectedLanguage } = useLanguageDetection();
 
   useEffect(() => {
-    // Wait for Google Translate script to load
     const initTranslate = () => {
       if (window.google && window.google.translate) {
         const translateElement = document.getElementById('google_translate_element');
@@ -33,7 +32,7 @@ export function Header() {
     };
 
     initTranslate();
-  }, [detectedLanguage]); // Re-init when language changes
+  }, [detectedLanguage]);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
@@ -45,7 +44,10 @@ export function Header() {
     { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
-    { name: "Store", href: "/store", icon: Store, highlight: true },
+    { name: "Store", href: "/store", icon: Store, highlight: true }
+  ];
+
+  const secondaryNavigation = [
     { name: "Artist Image", href: "/artist-image-advisor", icon: Users },
     { name: "Merch", href: "/merchandise", icon: Store },
     { name: "Spotify", href: "/spotify", icon: Music2 },
@@ -61,135 +63,143 @@ export function Header() {
   const isAdmin = user?.email === 'admin@example.com' || user?.email?.includes('admin');
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center">
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+    <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-[#1B1B1B]">
+      <div className="container flex h-16 max-w-screen-2xl items-center">
+        <div className="flex flex-1 items-center justify-between space-x-4">
+          {/* Logo section */}
+          <Link href="/" className="flex items-center space-x-3">
+            <img
+              src="/assets/freepik__boostify_music_organe_abstract_icon.png"
+              alt="Boostify Music"
+              className="h-8 w-8"
+            />
+            <div className="hidden md:block">
+              <span className="text-lg font-bold text-white">
+                Boostify
+              </span>
+            </div>
+          </Link>
+
+          {/* Primary Navigation */}
+          <nav className="hidden lg:flex items-center space-x-1">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center px-4 py-2 text-sm font-medium transition-colors hover:text-orange-500 ${
+                  item.highlight ? 'text-orange-500' : 'text-gray-200'
+                }`}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right side actions */}
           <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2 hover:opacity-90 transition-opacity">
-              <img
-                src="/assets/freepik__boostify_music_organe_abstract_icon.png"
-                alt="Boostify Music"
-                className="h-6 w-6"
+            {/* Search - To be implemented */}
+            <div className="hidden lg:flex">
+              <input
+                type="search"
+                placeholder="Search..."
+                className="h-9 w-[200px] rounded-md bg-[#2A2A2A] px-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
-              <div className="hidden lg:block">
-                <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                  Boostify
-                </span>
-                <span className="text-[10px] block text-muted-foreground -mt-1">
-                  Music Marketing Platform
-                </span>
-              </div>
-            </Link>
+            </div>
 
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="lg:hidden">
-                <Home className="h-4 w-4" />
-              </Button>
-            </Link>
-
-            <nav className="hidden lg:flex items-center space-x-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center text-xs font-medium transition-colors hover:text-orange-500 ${
-                    item.highlight ? 'text-orange-500 bg-orange-500/10 px-2 py-1 rounded-full' : 'px-1'
-                  }`}
-                >
-                  <item.icon className="mr-1 h-3 w-3" />
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-2">
+            {/* International */}
             <Link href="/boostify-international">
-              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 gap-1 text-xs h-8">
-                <Globe className="h-3 w-3" />
-                <span className="hidden sm:inline">Boostify International</span>
-                <span className="sm:hidden">Int'l</span>
+              <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] gap-2">
+                <Globe className="h-4 w-4" />
+                <span className="hidden sm:inline">International</span>
               </Button>
             </Link>
 
+            {/* Google Translate */}
             <div
               id="google_translate_element"
-              className="min-w-[100px] flex items-center justify-center bg-background/80 rounded-md px-2 h-8"
-            ></div>
+              className="hidden sm:flex items-center justify-center bg-[#2A2A2A] rounded-md px-2 h-9"
+            />
 
+            {/* Admin Panel */}
             {isAdmin && (
               <Link href="/admin">
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 gap-1 text-xs h-8">
-                  <Shield className="h-3 w-3" />
-                  <span className="hidden sm:inline">Admin Panel</span>
-                  <span className="sm:hidden">Admin</span>
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:inline">Admin</span>
                 </Button>
               </Link>
             )}
 
+            {/* Settings */}
             <Link href="/settings">
-              <Button variant="ghost" size="icon" className="hidden lg:flex h-8 w-8">
-                <Settings className="h-3 w-3" />
+              <Button variant="ghost" size="icon" className="hidden lg:flex h-9 w-9 text-white hover:bg-[#2A2A2A]">
+                <Settings className="h-4 w-4" />
               </Button>
             </Link>
 
+            {/* Mobile Menu */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Menu className="h-3 w-3" />
-                  <span className="sr-only">Toggle menu</span>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9 text-white hover:bg-[#2A2A2A]">
+                  <Menu className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[300px] max-h-[80vh] overflow-y-auto">
-                {navigation.map((item) => (
+              <DropdownMenuContent align="end" className="w-[300px] bg-[#1B1B1B] border-[#2A2A2A]">
+                {[...navigation, ...secondaryNavigation].map((item) => (
                   <Link key={item.name} href={item.href}>
-                    <DropdownMenuItem className={`py-2 text-xs ${
-                      item.highlight ? 'text-orange-500 bg-orange-500/10' : ''
-                    }`}>
-                      <item.icon className="mr-2 h-3 w-3" />
-                      <span>{item.name}</span>
+                    <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.name}
                     </DropdownMenuItem>
                   </Link>
                 ))}
-                <DropdownMenuItem onSelect={() => logout()} className="py-2 text-xs">
-                  <span>Logout</span>
+                <DropdownMenuItem 
+                  onSelect={() => logout()} 
+                  className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A]"
+                >
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-7 w-7 rounded-full">
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
                       alt={user.displayName || "User avatar"}
-                      className="h-7 w-7 rounded-full"
+                      className="h-8 w-8 rounded-full"
                     />
                   ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/10">
-                      <span className="text-xs font-medium text-orange-500">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/10">
+                      <span className="text-sm font-medium text-orange-500">
                         {user.displayName?.[0] || user.email?.[0] || "U"}
                       </span>
                     </div>
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-56 bg-[#1B1B1B] border-[#2A2A2A]">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
                     {user.displayName && (
-                      <p className="text-xs font-medium">{user.displayName}</p>
+                      <p className="text-sm font-medium text-white">{user.displayName}</p>
                     )}
                     {user.email && (
-                      <p className="text-[10px] text-muted-foreground">{user.email}</p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
                     )}
                   </div>
                 </div>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="text-xs">Settings</Link>
+                  <Link href="/settings" className="text-sm text-gray-200 hover:bg-[#2A2A2A]">Settings</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => logout()} className="text-xs">
+                <DropdownMenuItem 
+                  onSelect={() => logout()} 
+                  className="text-sm text-gray-200 hover:bg-[#2A2A2A]"
+                >
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
