@@ -204,21 +204,43 @@ export default function Dashboard() {
       <main className="flex-1">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-              <div className="text-center md:text-left">
-                <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                  Welcome Back{user?.displayName ? `, ${user.displayName}` : ''}
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                  Manage your music presence and create engaging content
-                </p>
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-6">
+              <div className="flex flex-col md:flex-row gap-6 items-center">
+                <div className="text-center md:text-left">
+                  <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
+                    Welcome Back{user?.displayName ? `, ${user.displayName}` : ''}
+                  </h1>
+                  <p className="text-muted-foreground mt-2">
+                    Manage your music presence and create engaging content
+                  </p>
+                  <div className="mt-4">
+                    <Link href="/analytics">
+                      <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
+                        <Activity className="mr-2 h-4 w-4" />
+                        View Analytics
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                <div className="w-full max-w-md rounded-lg overflow-hidden shadow-xl mt-4 md:mt-0 relative" style={{ minHeight: "225px" }}>
+                  <video 
+                    src="/assets/Standard_Mode_Generated_Video (2).mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    className="w-full h-full object-cover absolute top-0 left-0"
+                    style={{ 
+                      aspectRatio: "16/9",
+                      objectFit: "cover",
+                      display: "block",
+                      width: "100%",
+                      height: "100%"
+                    }}
+                  />
+                </div>
               </div>
-              <Link href="/analytics">
-                <Button className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto">
-                  <Activity className="mr-2 h-4 w-4" />
-                  View Analytics
-                </Button>
-              </Link>
             </div>
 
             {/* Featured Services Section */}
