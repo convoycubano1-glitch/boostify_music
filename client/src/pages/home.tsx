@@ -453,11 +453,6 @@ export default function HomePage() {
             className="relative max-w-4xl mx-auto mb-16"
           >
             <div className="relative rounded-xl overflow-hidden bg-black/50 backdrop-blur-sm p-2">
-              {/* Gradients */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/30 z-10" />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30 z-10" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/20 via-transparent to-red-500/20 z-10" />
-
               {/* Video */}
               <div className="relative group">
                 <video
@@ -465,6 +460,7 @@ export default function HomePage() {
                   controls
                   autoPlay
                   loop
+                  muted
                   controlsList="nodownload"
                   style={{
                     '--webkit-media-controls-timeline-container': {
