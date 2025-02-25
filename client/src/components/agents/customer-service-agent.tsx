@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Mic, MicOff, Send, Minimize as MinimizeIcon, Bot, Phone, HeadsetIcon, UserRound, Headphones } from 'lucide-react';
+import { MessageSquare, X, Mic, MicOff, Send, Minimize as MinimizeIcon, Bot, Phone, Headphones, UserRound, ExternalLink, Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { openRouterService } from "@/lib/api/openrouter-service";
@@ -78,6 +79,40 @@ type Message = {
   audio?: string; // Base64 encoded audio
 };
 
+// Define ElevenLabs agent types
+type ElevenLabsAgent = {
+  id: string;
+  name: string;
+  description: string;
+  agentId: string; // ID from ElevenLabs
+  icon: React.ReactNode;
+};
+
+// ElevenLabs agent definitions
+const ELEVENLABS_AGENTS: ElevenLabsAgent[] = [
+  {
+    id: 'business-relations',
+    name: 'Business Relations',
+    description: 'Speak with our business relations specialist about partnerships and collaborations.',
+    agentId: '35d5WwGMFwiAxQm227eG',
+    icon: <UserRound className="h-5 w-5" />
+  },
+  {
+    id: 'sales-agent',
+    name: 'Sales Agent',
+    description: 'Get information about pricing, subscriptions, and premium features.',
+    agentId: 't3LcVskNIQ9ADwZ5AGoe',
+    icon: <Bot className="h-5 w-5" />
+  },
+  {
+    id: 'support-agent',
+    name: 'Support Agent',
+    description: 'Technical support for platform features and troubleshooting.',
+    agentId: 't3LcVskNIQ9ADwZ5AGoe',
+    icon: <Headphones className="h-5 w-5" />
+  }
+];
+
 const SYSTEM_PROMPT = `You are a helpful, friendly, and knowledgeable customer service agent for an advanced AI-powered music platform. Your name is Melody, and you're specialized in helping users navigate our platform.
 
 You should assist users with questions about:
@@ -111,6 +146,11 @@ export const CustomerServiceAgent: React.FC = () => {
   const [audioApiStatus, setAudioApiStatus] = useState<'loading' | 'available' | 'unavailable'>('loading');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [input, setInput] = useState('');
+  
+  // ElevenLabs agent dialog state
+  const [isAgentDialogOpen, setIsAgentDialogOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<ElevenLabsAgent | null>(null);
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -437,6 +477,36 @@ export const CustomerServiceAgent: React.FC = () => {
     }, 300);
   };
 
+  // Handle opening agent selection dialog
+  const openAgentDialog = () => {
+    setIsAgentDialogOpen(true);
+  };
+
+  // Handle selected agent connection
+  const connectWithAgent = (agent: ElevenLabsAgent) => {
+    setSelectedAgent(agent);
+    setIsAgentDialogOpen(false);
+    
+    // Open ElevenLabs agent in a new window
+    const elevenLabsAgentUrl = `https://elevenlabs.io/app/talk-to?agent_id=${agent.agentId}`;
+    window.open(elevenLabsAgentUrl, '_blank');
+    
+    // Add system message to indicate connection
+    const systemMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'system',
+      content: `You are now being connected with our ${agent.name}. A new window has been opened where you can continue the conversation.`,
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, systemMessage]);
+    
+    toast({
+      title: `Connecting with ${agent.name}`,
+      description: "A new window has been opened to continue your conversation with our specialist.",
+    });
+  };
+
   return (
     <>
       {/* Audio element for TTS playback */}
@@ -588,6 +658,68 @@ export const CustomerServiceAgent: React.FC = () => {
 
                   {/* Chat input */}
                   <div className="p-3 border-t border-gray-800">
+                    <div className="flex items-center mb-2 px-1">
+                      <div className="flex-1 flex justify-start gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-xs text-gray-400 hover:text-orange-400 hover:bg-orange-600/10"
+                                onClick={openAgentDialog}
+                              >
+                                <Phone className="h-3.5 w-3.5 mr-1" />
+                                Talk to an Agent
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                              Connect with a live voice agent
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`h-8 px-2 text-xs transition-all duration-300 ${
+                                  audioEnabled 
+                                    ? 'text-orange-400 bg-orange-600/10' 
+                                    : 'text-gray-400 hover:text-orange-400 hover:bg-orange-600/10'
+                                }`}
+                                onClick={toggleAudio}
+                                disabled={audioApiStatus === 'unavailable'}
+                              >
+                                {audioEnabled ? 
+                                  <><Headphones className="h-3.5 w-3.5 mr-1" /> Voice enabled</> :
+                                  <><Headphones className="h-3.5 w-3.5 mr-1" /> Enable voice</>
+                                }
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                              {audioApiStatus === 'unavailable' 
+                                ? "Voice responses unavailable" 
+                                : audioEnabled 
+                                  ? "Disable voice responses" 
+                                  : "Enable voice responses"}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      
+                      {/* Info button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded-full text-gray-400 hover:text-orange-400 hover:bg-orange-600/10"
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
                     <div className="flex gap-2">
                       <Textarea
                         ref={inputRef}
@@ -597,46 +729,15 @@ export const CustomerServiceAgent: React.FC = () => {
                         placeholder="Ask me anything about our music platform..."
                         className="min-h-10 max-h-32 resize-none bg-zinc-800 border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm"
                       />
-                      <div className="flex flex-col gap-2">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`rounded-full transition-all duration-300 ${
-                                  audioEnabled 
-                                    ? 'bg-orange-600 text-white' 
-                                    : audioApiStatus === 'unavailable'
-                                      ? 'bg-zinc-700 text-gray-400 opacity-50' 
-                                      : 'bg-zinc-800 text-gray-400'
-                                }`}
-                                onClick={toggleAudio}
-                                disabled={audioApiStatus === 'unavailable'}
-                              >
-                                {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="text-xs">
-                              {audioApiStatus === 'unavailable' 
-                                ? "Voice responses unavailable" 
-                                : audioEnabled 
-                                  ? "Disable voice responses" 
-                                  : "Enable voice responses"}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="rounded-full bg-orange-600 text-white hover:bg-orange-700"
-                          onClick={handleSendMessage}
-                          disabled={!input.trim() || isLoading}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full bg-orange-600 text-white hover:bg-orange-700"
+                        onClick={handleSendMessage}
+                        disabled={!input.trim() || isLoading}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </>
@@ -656,46 +757,127 @@ export const CustomerServiceAgent: React.FC = () => {
             transition={{ duration: 0.2, delay: 0.1 }}
             className="fixed bottom-20 sm:bottom-6 right-[390px] z-[9999] hidden md:block"
           >
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="bg-black/80 border-orange-500/20 text-orange-500 hover:bg-black/90 hover:text-orange-400 backdrop-blur-lg"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Quick Questions
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent side="left" className="w-80 bg-black/90 border border-orange-500/20 backdrop-blur-lg text-white p-0">
-                <div className="p-2">
-                  <h4 className="font-medium text-sm mb-2 text-orange-500">Frequently Asked Questions</h4>
-                  <div className="space-y-1">
-                    {[
-                      "How do I connect my Spotify account?",
-                      "What audio quality do you support?",
-                      "How can I collaborate with other artists?",
-                      "What are the subscription options?",
-                      "How do I share my playlist on social media?"
-                    ].map((question, index) => (
-                      <Button
-                        key={index}
-                        variant="ghost"
-                        className="w-full justify-start text-xs text-left h-auto py-2 hover:bg-orange-600/20 hover:text-orange-300"
-                        onClick={() => {
-                          setInput(question);
-                          inputRef.current?.focus();
-                        }}
-                      >
-                        {question}
-                      </Button>
-                    ))}
+            <div className="flex flex-col gap-2">
+              {/* Agent Connection Button */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="bg-black/80 border-orange-500/20 text-orange-500 hover:bg-black/90 hover:text-orange-400 backdrop-blur-lg"
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Speak with an Agent
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="left" className="w-80 bg-black/90 border border-orange-500/20 backdrop-blur-lg text-white p-0">
+                  <div className="p-2">
+                    <h4 className="font-medium text-sm mb-2 text-orange-500">Select an Agent to Call</h4>
+                    <p className="text-xs text-gray-300 mb-3">
+                      Connect with one of our voice agents for specialized assistance. A new window will open for your conversation.
+                    </p>
+                    <div className="space-y-2">
+                      {ELEVENLABS_AGENTS.map((agent) => (
+                        <div 
+                          key={agent.id}
+                          className="p-2 rounded-lg border border-gray-800 hover:border-orange-500/50 hover:bg-gray-900/50 cursor-pointer transition-all"
+                          onClick={() => connectWithAgent(agent)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-orange-600/30 text-orange-500">
+                              {agent.icon}
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-sm text-orange-400">{agent.name}</h5>
+                              <p className="text-xs text-gray-400">{agent.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Quick Questions */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="bg-black/80 border-orange-500/20 text-orange-500 hover:bg-black/90 hover:text-orange-400 backdrop-blur-lg"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Quick Questions
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="left" className="w-80 bg-black/90 border border-orange-500/20 backdrop-blur-lg text-white p-0">
+                  <div className="p-2">
+                    <h4 className="font-medium text-sm mb-2 text-orange-500">Frequently Asked Questions</h4>
+                    <div className="space-y-1">
+                      {[
+                        "How do I connect my Spotify account?",
+                        "What audio quality do you support?",
+                        "How can I collaborate with other artists?",
+                        "What are the subscription options?",
+                        "How do I share my playlist on social media?"
+                      ].map((question, index) => (
+                        <Button
+                          key={index}
+                          variant="ghost"
+                          className="w-full justify-start text-xs text-left h-auto py-2 hover:bg-orange-600/20 hover:text-orange-300"
+                          onClick={() => {
+                            setInput(question);
+                            inputRef.current?.focus();
+                          }}
+                        >
+                          {question}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Agent Selection Dialog */}
+      <Dialog open={isAgentDialogOpen} onOpenChange={setIsAgentDialogOpen}>
+        <DialogContent className="bg-black/95 border border-orange-500/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-orange-500">Connect with an Agent</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              Choose a specialized agent to help with your specific needs. The conversation will open in a new window.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-2">
+            {ELEVENLABS_AGENTS.map((agent) => (
+              <div 
+                key={agent.id}
+                className="p-3 rounded-lg border border-gray-800 hover:border-orange-500/50 hover:bg-gray-900/50 cursor-pointer transition-all"
+                onClick={() => connectWithAgent(agent)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-orange-600/30 text-orange-500">
+                    {agent.icon}
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm text-orange-400">{agent.name}</h5>
+                    <p className="text-xs text-gray-400">{agent.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAgentDialogOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
