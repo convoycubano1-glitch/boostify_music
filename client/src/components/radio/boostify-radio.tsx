@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Volume2, Mic, Play, Pause, Radio, X, SkipForward } from "lucide-react";
+import { Volume2, Mic, Play, Pause, Radio, X, SkipForward, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
@@ -34,6 +34,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [currentStreamingTrack, setCurrentStreamingTrack] = useState<StreamingTrack | null>(null);
+  const [isInitializingServices, setIsInitializingServices] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
@@ -43,6 +44,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
   }, []);
 
   const initializeStreamingServices = async () => {
+    setIsInitializingServices(true);
     try {
       const spotifyService = new SpotifyStreamingService();
       const connected = await spotifyService.connect().catch(err => {
@@ -62,9 +64,14 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
       console.error('Error initializing streaming services:', error);
       toast({
         title: "Error de conexión",
-        description: "No se pudo conectar con los servicios de streaming",
+        description: "No se pudo conectar con los servicios de streaming. Reintentando...",
         variant: "destructive"
       });
+
+      // Reintento después de 5 segundos
+      setTimeout(initializeStreamingServices, 5000);
+    } finally {
+      setIsInitializingServices(false);
     }
   };
 
@@ -224,6 +231,7 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
                 isPlaying && "text-orange-500"
               )}
               onClick={togglePlay}
+              disabled={isInitializingServices}
             >
               {isPlaying ? (
                 <Pause className="h-6 w-6" />
@@ -266,7 +274,12 @@ export function BoostifyRadio({ className, onClose }: BoostifyRadioProps) {
           </div>
 
           <div className="text-sm text-white/60">
-            {currentStreamingTrack ? (
+            {isInitializingServices ? (
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Conectando servicios de streaming...</span>
+              </div>
+            ) : currentStreamingTrack ? (
               <p className="truncate">{currentStreamingTrack.title} - {currentStreamingTrack.artist}</p>
             ) : currentSong ? (
               <p className="truncate">{currentSong.name}</p>

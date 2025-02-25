@@ -36,12 +36,27 @@ export class SpotifyStreamingService implements StreamingService {
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load Spotify SDK'));
       document.body.appendChild(script);
+
+      // Add a timeout to prevent hanging
+      setTimeout(() => {
+        reject(new Error('Spotify SDK load timeout'));
+      }, 10000);
     });
   }
 
   async connect(): Promise<boolean> {
     try {
-      // En una implementación real, esto usaría el flujo OAuth2
+      // Esperar a que el SDK se cargue con reintento
+      for (let i = 0; i < 3; i++) {
+        try {
+          await this.loadSpotifyScript();
+          break;
+        } catch (error) {
+          if (i === 2) throw error;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
       const token = await this.getSpotifyToken();
       this.accessToken = token;
       await this.initializePlayer(token);
@@ -50,13 +65,17 @@ export class SpotifyStreamingService implements StreamingService {
     } catch (error) {
       console.error('Error connecting to Spotify:', error);
       this.isAuthenticated = false;
-      return false;
+      throw new StreamingError(
+        'Failed to connect to Spotify',
+        'spotify',
+        'SDK_NOT_LOADED'
+      );
     }
   }
 
   private async getSpotifyToken(): Promise<string> {
+    // En una implementación real, esto usaría el flujo OAuth2
     // Por ahora retornamos un token temporal para pruebas
-    // En producción, esto debería obtener el token a través de OAuth
     return "test_token";
   }
 
@@ -73,6 +92,27 @@ export class SpotifyStreamingService implements StreamingService {
       this.player = new window.Spotify.Player({
         name: 'Boostify Radio',
         getOAuthToken: cb => cb(token)
+      });
+
+      // Agregar event listeners para el player
+      this.player.addListener('initialization_error', ({ message }) => {
+        console.error('Failed to initialize:', message);
+        throw new Error(message);
+      });
+
+      this.player.addListener('authentication_error', ({ message }) => {
+        console.error('Failed to authenticate:', message);
+        throw new Error(message);
+      });
+
+      this.player.addListener('account_error', ({ message }) => {
+        console.error('Failed to validate Spotify account:', message);
+        throw new Error(message);
+      });
+
+      this.player.addListener('playback_error', ({ message }) => {
+        console.error('Failed to perform playback:', message);
+        throw new Error(message);
       });
 
       // Connect to the player
