@@ -1,11 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Home, Video, Music2, Bot, User, Radio } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export function BottomNav() {
   const [location] = useLocation();
-  const isMobile = useIsMobile();
 
   const navItems = [
     {
@@ -37,11 +35,11 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-t border-orange-500/20">
-      <div className="max-w-screen-xl mx-auto px-2 md:px-4">
+      <div className="max-w-screen-xl mx-auto px-4">
         <div className="flex items-center justify-between py-2">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
-              <a className="flex flex-col items-center gap-1 p-2 min-w-[3.5rem] md:min-w-[4rem] rounded-lg transition-all duration-300 hover:bg-orange-500/10">
+              <a className="flex flex-col items-center gap-1 p-2 min-w-[4rem] rounded-lg transition-all duration-300 hover:bg-orange-500/10">
                 <div className="relative flex items-center justify-center">
                   <item.icon
                     className={cn(
@@ -60,8 +58,7 @@ export function BottomNav() {
                     "text-[10px] transition-colors duration-300 whitespace-nowrap",
                     location === item.href
                       ? "text-orange-500 font-medium"
-                      : "text-muted-foreground",
-                    !isMobile ? "block" : "md:block hidden" // Hide text on mobile, show on larger screens
+                      : "text-muted-foreground"
                   )}
                 >
                   {item.title}
@@ -70,16 +67,13 @@ export function BottomNav() {
             </Link>
           ))}
           <button
-            className="flex flex-col items-center gap-1 p-2 min-w-[3.5rem] md:min-w-[4rem] rounded-lg transition-all duration-300 hover:bg-orange-500/10"
+            className="flex flex-col items-center gap-1 p-2 min-w-[4rem] rounded-lg transition-all duration-300 hover:bg-orange-500/10"
             onClick={() => window.dispatchEvent(new CustomEvent('toggle-radio'))}
           >
             <div className="relative flex items-center justify-center">
               <Radio className="w-5 h-5 text-muted-foreground hover:text-orange-500 transition-all duration-300" />
             </div>
-            <span className={cn(
-              "text-[10px] text-muted-foreground",
-              !isMobile ? "block" : "md:block hidden" // Hide text on mobile, show on larger screens
-            )}>
+            <span className="text-[10px] text-muted-foreground">
               Radio
             </span>
           </button>
