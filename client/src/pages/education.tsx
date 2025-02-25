@@ -15,6 +15,7 @@ import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
 import { createCourseEnrollmentSession } from "@/lib/api/stripe-service";
+import MasterclassSection from "@/components/education/MasterclassSection";
 
 interface CourseFormData {
   title: string;
@@ -547,6 +548,10 @@ export default function EducationPage() {
               </Card>
             </motion.div>
           ))}
+        </div>
+        
+        <div className="my-16 border-t border-gray-800 pt-16">
+          <MasterclassSection />
         </div>
       </main>
     </div>
