@@ -48,6 +48,7 @@ import SmartCardsPage from "@/pages/smart-cards";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
+import { CustomerServiceAgent } from "@/components/agents/customer-service-agent";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -157,6 +158,7 @@ const Router = () => {
       </Switch>
       <BottomNav />
       {showRadio && <BoostifyRadio onClose={() => setShowRadio(false)} />}
+      <CustomerServiceAgent />
     </>
   );
 };
