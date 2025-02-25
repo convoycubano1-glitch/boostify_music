@@ -21,6 +21,12 @@ export class SpotifyStreamingService implements StreamingService {
 
   constructor() {
     this.loadSpotifyScript();
+    // Add check for debugging
+    console.log("OpenAI API Key available:", !!import.meta.env.VITE_SPOTIFY_CLIENT_ID);
+
+    if (!import.meta.env.VITE_SPOTIFY_CLIENT_ID) {
+      console.error('Spotify client ID is not configured');
+    }
   }
 
   private loadSpotifyScript(): Promise<void> {
@@ -74,9 +80,38 @@ export class SpotifyStreamingService implements StreamingService {
   }
 
   private async getSpotifyToken(): Promise<string> {
-    // En una implementación real, esto usaría el flujo OAuth2
     // Por ahora retornamos un token temporal para pruebas
-    return "test_token";
+    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_SPOTIFY_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error('Spotify credentials not configured');
+    }
+
+    try {
+      const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+        },
+        body: 'grant_type=client_credentials'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get access token');
+      }
+
+      const data = await response.json();
+      return data.access_token;
+    } catch (error) {
+      console.error('Error getting Spotify token:', error);
+      throw new StreamingError(
+        'Failed to authenticate with Spotify',
+        'spotify',
+        'AUTH_FAILED'
+      );
+    }
   }
 
   private async initializePlayer(token: string): Promise<void> {
@@ -145,18 +180,31 @@ export class SpotifyStreamingService implements StreamingService {
       return [];
     }
 
-    // Implementación mock para pruebas
-    return [
-      {
-        id: '1',
-        title: 'Test Song',
-        artist: 'Test Artist',
-        duration: 180,
-        streamUrl: 'https://example.com/test.mp3',
-        source: 'spotify',
-        albumArt: 'https://example.com/art.jpg'
+    try {
+      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track`, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search tracks');
       }
-    ];
+
+      const data = await response.json();
+      return data.tracks.items.map((track: any) => ({
+        id: track.id,
+        title: track.name,
+        artist: track.artists[0].name,
+        duration: track.duration_ms / 1000,
+        streamUrl: track.preview_url,
+        source: 'spotify',
+        albumArt: track.album.images[0]?.url
+      }));
+    } catch (error) {
+      console.error('Error searching tracks:', error);
+      return [];
+    }
   }
 
   async getRecommendations(): Promise<StreamingTrack[]> {
@@ -164,18 +212,31 @@ export class SpotifyStreamingService implements StreamingService {
       return [];
     }
 
-    // Implementación mock para pruebas
-    return [
-      {
-        id: '2',
-        title: 'Recommended Song',
-        artist: 'Recommended Artist',
-        duration: 240,
-        streamUrl: 'https://example.com/recommended.mp3',
-        source: 'spotify',
-        albumArt: 'https://example.com/recommended-art.jpg'
+    try {
+      const response = await fetch('https://api.spotify.com/v1/recommendations?limit=20', {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get recommendations');
       }
-    ];
+
+      const data = await response.json();
+      return data.tracks.map((track: any) => ({
+        id: track.id,
+        title: track.name,
+        artist: track.artists[0].name,
+        duration: track.duration_ms / 1000,
+        streamUrl: track.preview_url,
+        source: 'spotify',
+        albumArt: track.album.images[0]?.url
+      }));
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      return [];
+    }
   }
 
   async play(track: StreamingTrack): Promise<void> {
