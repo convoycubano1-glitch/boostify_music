@@ -11,7 +11,10 @@ import { generateCourseContent, extendCourseContent, AdditionalCourseContent } f
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, PlusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
-import { collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
+import { 
+  collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc,
+  getDoc, setDoc 
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
 import { generateImageWithFal } from "@/lib/api/fal-ai";
@@ -67,73 +70,162 @@ export default function EducationPage() {
   const [isExtendingCourse, setIsExtendingCourse] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   
-  // Estado para controlar la regeneración de imágenes
+  // Estados para controlar la regeneración de imágenes
   const [isRegeneratingImages, setIsRegeneratingImages] = useState(false);
   const [regenerationProgress, setRegenerationProgress] = useState(0);
   const [showCategoryCarousel, setShowCategoryCarousel] = useState(true);
   
-  // Estado para las categorías de nivel con sus imágenes
+  // Estado para las categorías de nivel con sus imágenes (defaults temporales)
   const [levelImages, setLevelImages] = useState({
-    Beginner: "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bXVzaWMscHJvZHVjdGlvbixzdHVkaW98fHx8fHwxNzQwNTk3OTMx&ixlib=rb-4.0.3&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=1080",
-    Intermediate: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bXVzaWMscHJvZHVjdGlvbixzdHVkaW98fHx8fHwxNzQwNTk3OTcy&ixlib=rb-4.0.3&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=1080", 
-    Advanced: "https://images.unsplash.com/photo-1574075874181-86efb4f5969e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bXVzaWMscHJvZHVjdGlvbixzdHVkaW98fHx8fHwxNzQwNTk3OTgw&ixlib=rb-4.0.3&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=1080"
+    Beginner: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Beginner%20Music%20Education",
+    Intermediate: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Intermediate%20Music%20Education", 
+    Advanced: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Advanced%20Music%20Education"
   });
+  
+  // Colección para el caché de imágenes generadas
+  const imagesCacheCollection = "generated_images_cache";
+  
+  /**
+   * Recupera una imagen del caché de Firestore o genera una nueva si no existe
+   * @param key Clave única para identificar la imagen (ej: "category_Beginner")
+   * @param prompt Prompt para generar la imagen si no está en caché
+   * @param options Opciones adicionales para la generación
+   * @returns URL de la imagen (desde caché o recién generada)
+   */
+  const getOrGenerateImage = async (key: string, prompt: string, options?: {
+    negativePrompt?: string,
+    imageSize?: string,
+    forceRegenerate?: boolean
+  }): Promise<string> => {
+    try {
+      // Primero verificamos si la imagen ya existe en el caché
+      if (!options?.forceRegenerate) {
+        const cacheRef = doc(db, imagesCacheCollection, key);
+        const cacheDoc = await getDoc(cacheRef);
+        
+        if (cacheDoc.exists()) {
+          const cachedData = cacheDoc.data();
+          // Verificar que la URL es válida y no es de Unsplash
+          if (cachedData.imageUrl && 
+              !cachedData.imageUrl.includes('unsplash.com') && 
+              !cachedData.imageUrl.includes('placeholder')) {
+            console.log(`Imagen recuperada del caché para: ${key}`);
+            return cachedData.imageUrl;
+          }
+        }
+      }
+      
+      // Si no está en caché o se fuerza regeneración, intentamos generar con fal-ai
+      console.log(`Generando nueva imagen para: ${key}`);
+      console.log("Prompt:", prompt.substring(0, 50) + "...");
+      
+      // Intento de generación con FAL.AI
+      try {
+        const result = await generateImageWithFal({
+          prompt,
+          negativePrompt: options?.negativePrompt || "text, words, watermarks, logos, blurry, distorted, people, faces",
+          imageSize: options?.imageSize || "landscape_16_9"
+        });
+        
+        if (result.data?.images?.[0]) {
+          // Procesar la URL de la imagen
+          let imageUrl = result.data.images[0];
+          if (typeof imageUrl === 'object' && imageUrl.url) {
+            imageUrl = imageUrl.url;
+          }
+          
+          // Guardar en caché
+          const cacheRef = doc(db, imagesCacheCollection, key);
+          await setDoc(cacheRef, {
+            key,
+            prompt,
+            imageUrl,
+            timestamp: Timestamp.now(),
+            source: 'fal-ai'
+          });
+          
+          console.log(`Imagen generada y guardada en caché: ${key}`);
+          return imageUrl;
+        } else {
+          throw new Error("No image data in fal-ai response");
+        }
+      } catch (error) {
+        console.error(`Error generando imagen con fal-ai para ${key}:`, error);
+        
+        // Si hay un error con FAL.ai, verificamos si hay una imagen en caché, aunque sea antigua
+        const cacheRef = doc(db, imagesCacheCollection, key);
+        const cacheDoc = await getDoc(cacheRef);
+        
+        if (cacheDoc.exists() && cacheDoc.data().imageUrl) {
+          console.log(`Recuperando imagen existente en caché debido a error de generación: ${key}`);
+          return cacheDoc.data().imageUrl;
+        }
+        
+        // Si no hay nada en caché, usamos un placeholder basado en el nivel/categoría
+        return `https://placehold.co/1200x800/2A2A2A/FFFFFF?text=${encodeURIComponent(key.replace('_', ' '))}`;
+      }
+    } catch (finalError) {
+      console.error(`Error final en getOrGenerateImage para ${key}:`, finalError);
+      return `https://placehold.co/1200x800/2A2A2A/FFFFFF?text=${encodeURIComponent(key)}`;
+    }
+  };
   
   // Función para regenerar las imágenes de categorías
   const regenerateCategoryImages = async () => {
     try {
       toast({
-        title: "Generando imágenes",
-        description: "Regenerando imágenes para las categorías principales..."
+        title: "Cargando imágenes de categorías",
+        description: "Obteniendo o generando imágenes para las categorías principales..."
       });
       
       const levels = ['Beginner', 'Intermediate', 'Advanced'];
+      const newImages: Record<string, string> = { ...levelImages };
       
       for (let i = 0; i < levels.length; i++) {
         const level = levels[i];
         const prompt = `professional photorealistic ${level.toLowerCase()} music studio setup for education, modern design, high quality equipment, ${level === 'Beginner' ? 'simple setup' : level === 'Intermediate' ? 'medium complexity' : 'professional advanced setup'}`;
         
         try {
-          const result = await generateImageWithFal({
-            prompt,
-            negativePrompt: "text, words, watermarks, logos, blurry, distorted, people, faces",
-            imageSize: "landscape_16_9"
+          // Clave única para esta imagen en el caché
+          const cacheKey = `category_${level}`;
+          
+          // Obtener o generar la imagen
+          const imageUrl = await getOrGenerateImage(cacheKey, prompt, {
+            imageSize: "landscape_16_9",
+            // Solo forzar regeneración si se solicita explícitamente
+            forceRegenerate: false
           });
           
-          if (result.data?.images?.[0]) {
-            // Asegurarnos de tener la URL de la imagen (el formato puede variar)
-            let newImage = result.data.images[0];
-            if (typeof newImage === 'object' && newImage.url) {
-              newImage = newImage.url;
-            }
-            
-            console.log(`Imagen generada para categoría ${level}:`, newImage.substring(0, 50) + "...");
-            
-            // Actualizar el estado local
-            setLevelImages(prev => ({
-              ...prev,
-              [level]: newImage
-            }));
-            
-            toast({
-              title: "Progreso",
-              description: `Imagen para categoría ${level} generada (${i+1}/${levels.length})`
-            });
-          }
+          // Actualizar estado local
+          newImages[level] = imageUrl;
+          
+          // Notificar progreso
+          toast({
+            title: "Progreso",
+            description: `Imagen para categoría ${level} lista (${i+1}/${levels.length})`
+          });
         } catch (error) {
-          console.error(`Error generando imagen para categoría ${level}:`, error);
+          console.error(`Error procesando imagen para categoría ${level}:`, error);
         }
       }
       
+      // Actualizar el estado con todas las imágenes juntas
+      // Hay que asegurarse de que todas las propiedades Beginner, Intermediate y Advanced existan
+      setLevelImages({
+        Beginner: newImages.Beginner || levelImages.Beginner,
+        Intermediate: newImages.Intermediate || levelImages.Intermediate,
+        Advanced: newImages.Advanced || levelImages.Advanced
+      });
+      
       toast({
         title: "Éxito",
-        description: "¡Imágenes de categorías regeneradas con éxito!"
+        description: "Imágenes de categorías cargadas correctamente"
       });
     } catch (error) {
-      console.error("Error regenerando imágenes de categorías:", error);
+      console.error("Error procesando imágenes de categorías:", error);
       toast({
         title: "Error",
-        description: "Error al regenerar imágenes de categorías",
+        description: "Error al procesar imágenes de categorías",
         variant: "destructive"
       });
     }
@@ -178,78 +270,80 @@ export default function EducationPage() {
         }) as Course[];
         setCourses(coursesData);
         
-        // Después de cargar los cursos, regeneramos automáticamente las imágenes
-        // de cursos que tengan imágenes de Unsplash o que no tengan imágenes generadas por IA
-        const coursesToUpdate = coursesData.filter(course => {
-          // Verificamos si la URL contiene 'unsplash.com' o si no contiene 'fal-ai'
+        // Después de cargar los cursos, procesamos las imágenes utilizando nuestro sistema de caché
+        // para evitar regeneraciones innecesarias que consuman tokens de API
+        const coursesToProcess = coursesData.filter(course => {
+          // Verificamos si la URL contiene 'unsplash.com' o si no es una imagen generada por fal-ai
           return course.thumbnail?.includes('unsplash.com') || 
                  (course.thumbnail && !course.thumbnail.includes('fal-ai'));
         });
         
-        if (coursesToUpdate.length > 0) {
-          console.log(`Detectados ${coursesToUpdate.length} cursos con imágenes no generadas por IA. Regenerando...`);
+        if (coursesToProcess.length > 0) {
+          console.log(`Detectados ${coursesToProcess.length} cursos con imágenes que necesitan procesamiento. Verificando caché...`);
           
           // Indicador visual para el usuario
           toast({
-            title: "Mejora Automática de Imágenes",
-            description: `Regenerando ${coursesToUpdate.length} imágenes de cursos con IA...`,
+            title: "Procesando Imágenes",
+            description: `Verificando y procesando ${coursesToProcess.length} imágenes de cursos...`,
             duration: 5000
           });
           
-          // Procesamos los cursos en pequeños lotes para evitar sobrecargar la API
-          const batchSize = 3;
-          for (let i = 0; i < coursesToUpdate.length; i += batchSize) {
-            const batch = coursesToUpdate.slice(i, i + batchSize);
+          // Procesamos los cursos uno por uno para evitar sobrecargar la API
+          // y asegurarnos de usar el caché correctamente
+          for (let i = 0; i < coursesToProcess.length; i++) {
+            const course = coursesToProcess[i];
             
-            // Procesar lote
-            await Promise.all(batch.map(async (course) => {
-              try {
-                // Generamos un prompt específico para cada curso basado en su título, categoría y nivel
-                const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image`;
-                
-                const result = await generateImageWithFal({
-                  prompt: imagePrompt,
-                  negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
-                  imageSize: "square_1_1"
-                });
-                
-                if (result.data?.images?.[0]) {
-                  let newThumbnail = result.data.images[0];
-                  if (typeof newThumbnail === 'object' && newThumbnail.url) {
-                    newThumbnail = newThumbnail.url;
-                  }
-                  
-                  console.log(`Imagen regenerada para: ${course.title}`, newThumbnail.substring(0, 50) + "...");
-                  
-                  // Actualizar en Firestore
-                  const courseRef = doc(db, 'courses', course.id);
-                  await updateDoc(courseRef, { thumbnail: newThumbnail });
-                  
-                  // Actualizar localmente para reflejar cambios inmediatamente sin necesidad de recargar
-                  setCourses(prev => prev.map(c => 
-                    c.id === course.id ? { ...c, thumbnail: newThumbnail } : c
-                  ));
-                }
-              } catch (error) {
-                console.error(`Error regenerando imagen para curso ${course.title}:`, error);
-              }
-            }));
-            
-            // Si hay más lotes por procesar, mostrar progreso
-            if (i + batchSize < coursesToUpdate.length) {
-              const progress = Math.min(100, Math.round(((i + batchSize) / coursesToUpdate.length) * 100));
-              toast({
-                title: "Progreso de Regeneración",
-                description: `${progress}% completado (${i + batchSize}/${coursesToUpdate.length} imágenes)`,
-                duration: 3000
+            try {
+              // Clave única para el caché - incluimos título y categoría para identificación única
+              const cacheKey = `course_${course.id}_${course.title.substring(0, 20).replace(/\s+/g, '_').toLowerCase()}`;
+              
+              // Prompt específico para este curso
+              const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image`;
+              
+              console.log(`Procesando imagen para curso: ${course.title} (${i+1}/${coursesToProcess.length})`);
+              
+              // Obtener imagen del caché o generar nueva si es necesario
+              const imageUrl = await getOrGenerateImage(cacheKey, imagePrompt, {
+                negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
+                imageSize: "square", // Usamos "square" que es el valor soportado por FAL.ai
+                // No forzamos regeneración para ahorrar tokens
+                forceRegenerate: false
               });
+              
+              // Solo actualizamos en Firestore si la URL es diferente a la actual
+              // y no es una URL de placeholder (para casos donde fal-ai falló)
+              if (imageUrl !== course.thumbnail && !imageUrl.includes('placehold.co')) {
+                console.log(`Actualizando imagen para curso: ${course.title}`);
+                
+                // Guardar en Firestore
+                const courseRef = doc(db, 'courses', course.id);
+                await updateDoc(courseRef, { thumbnail: imageUrl });
+                
+                // Actualizar localmente
+                setCourses(prev => prev.map(c => 
+                  c.id === course.id ? { ...c, thumbnail: imageUrl } : c
+                ));
+                
+                // Notificar al usuario
+                if ((i+1) % 3 === 0 || i === coursesToProcess.length - 1) {
+                  toast({
+                    title: "Progreso",
+                    description: `Procesado ${i+1} de ${coursesToProcess.length} imágenes`,
+                    duration: 2000
+                  });
+                }
+              } else {
+                console.log(`La imagen para ${course.title} ya está actualizada o se usó un placeholder`);
+              }
+            } catch (error) {
+              console.error(`Error procesando imagen para curso ${course.title}:`, error);
             }
           }
           
           // Notificación de finalización
           toast({
-            title: "Regeneración Completada",
-            description: `Se han actualizado ${coursesToUpdate.length} imágenes de cursos con IA avanzada`,
+            title: "Procesamiento Completado",
+            description: `Se han verificado ${coursesToProcess.length} imágenes de cursos`,
             duration: 5000
           });
         }

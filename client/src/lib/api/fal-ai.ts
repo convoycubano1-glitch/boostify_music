@@ -31,11 +31,18 @@ export async function generateImageWithFal(params: GenerateImageParams) {
   const enhancedPrompt = enhancePrompt(params.prompt);
   
   try {
+    // Convert square_1_1 to the actual supported value 'square'
+    let correctImageSize = params.imageSize || "landscape_16_9";
+    if (correctImageSize === "square_1_1") {
+      correctImageSize = "square";
+      console.log("Converted square_1_1 to square for FAL.ai compatibility");
+    }
+    
     const result = await fal.subscribe("fal-ai/flux-pro", {
       input: {
         prompt: enhancedPrompt,
         negative_prompt: params.negativePrompt || "low quality, bad anatomy, blurry, pixelated, watermarks, text, deformed, unrealistic",
-        image_size: params.imageSize || "landscape_16_9",
+        image_size: correctImageSize,
         seed: Math.floor(Math.random() * 1000000), // Random seed for variety
         num_images: 1, // Generate a single high-quality image
         scheduler: "DPM++ 2M Karras", // Better quality scheduler
