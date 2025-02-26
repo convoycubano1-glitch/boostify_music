@@ -5,7 +5,7 @@ interface Message {
   content: string;
 }
 
-interface VideoPromptParams {
+export interface VideoPromptParams {
   shotType: string;
   cameraFormat: string;
   mood: string;

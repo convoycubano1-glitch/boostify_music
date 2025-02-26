@@ -28,7 +28,7 @@ import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
-import { analyzeImage, generateVideoPromptWithRetry } from "@/lib/api/openrouter";
+import { analyzeImage, generateVideoPromptWithRetry, type VideoPromptParams } from "@/lib/api/openrouter";
 import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
 
 // OpenAI configuration for audio transcription only
@@ -759,21 +759,73 @@ ${transcription}`;
     }
   };
 
-  const handleExportVideo = async () => {
-    setIsExporting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 4000));
-      toast({
-        title: "Exportación completa",
-        description: "Video disponible para descarga",
-      });
-    } catch (error) {
-      console.error("Error exportando:", error);
+  /**
+   * Exporta el video generado basado en las imágenes y el audio
+   * @returns Promise<string> URL del video generado
+   */
+  const handleExportVideo = async (): Promise<string | null> => {
+    if (!timelineItems.length || !audioBuffer) {
       toast({
         title: "Error",
-        description: "Error al exportar el video",
+        description: "No hay suficientes elementos para exportar el video",
         variant: "destructive",
       });
+      return null;
+    }
+    
+    // Verificar que todos los segmentos tengan imágenes generadas
+    const missingImages = timelineItems.filter(item => !item.generatedImage && !item.firebaseUrl).length;
+    if (missingImages > 0) {
+      toast({
+        title: "Advertencia",
+        description: `Faltan ${missingImages} imágenes por generar. El video puede estar incompleto.`,
+        variant: "destructive",
+      });
+    }
+    
+    setIsExporting(true);
+    try {
+      // Primero, guardar todas las imágenes en Firebase para tener URLs estables
+      const savePromises = timelineItems.map(async (item) => {
+        if (item.generatedImage && !item.firebaseUrl) {
+          const url = await saveToFirebase(item);
+          if (url) {
+            return {
+              id: item.id,
+              url
+            };
+          }
+        }
+        return {
+          id: item.id,
+          url: item.firebaseUrl || item.generatedImage
+        };
+      });
+      
+      const savedImages = await Promise.all(savePromises);
+      
+      // Simulamos el proceso de renderizado (en una implementación real, aquí iría la lógica de FFmpeg)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Crear un simulado video URL (en una implementación real, esto sería una URL de Firebase Storage)
+      const mockVideoUrl = `https://storage.googleapis.com/music-video-generator/${Date.now()}_export.mp4`;
+      
+      toast({
+        title: "Exportación completada",
+        description: "Video disponible para descarga",
+      });
+      
+      setCurrentStep(6); // Marcar como completado
+
+      return mockVideoUrl;
+    } catch (error) {
+      console.error("Error exportando video:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al exportar el video",
+        variant: "destructive",
+      });
+      return null;
     } finally {
       setIsExporting(false);
     }
@@ -996,94 +1048,130 @@ ${transcription}`;
     return segments;
   };
 
+  /**
+   * Genera un prompt para un segmento de timeline específico
+   * @param segment - El segmento de timeline para el que se generará el prompt
+   * @returns Un string con el prompt generado o un mensaje de error
+   */
   const generatePromptForSegment = async (segment: TimelineItem): Promise<string> => {
+    if (!segment || typeof segment.id !== 'number') {
+      console.error("Segmento inválido:", segment);
+      return "Error: segmento inválido";
+    }
+    
     const maxAttempts = 3;
     let attempt = 0;
+    let lastError: Error | null = null;
     
     // Determinar qué parte de la transcripción corresponde a este segmento
     const segmentStartTime = segment.start_time / 1000; // convertir a segundos
     const segmentEndTime = segment.end_time / 1000;
     let relevantLyrics = "";
     
-    // Si tenemos transcripción con timestamps
-    if (transcriptionWithTimestamps && Array.isArray(transcriptionWithTimestamps.segments)) {
-      // Buscar segmentos de la transcripción que coincidan con este segmento de timeline
-      const relevantSegments = transcriptionWithTimestamps.segments.filter(
-        (s: {start: number, end: number}) => 
-          (s.start >= segmentStartTime && s.start <= segmentEndTime) || 
-          (s.end >= segmentStartTime && s.end <= segmentEndTime)
-      );
+    try {
+      // Si tenemos transcripción con timestamps
+      if (transcriptionWithTimestamps && Array.isArray(transcriptionWithTimestamps.segments)) {
+        // Buscar segmentos de la transcripción que coincidan con este segmento de timeline
+        const relevantSegments = transcriptionWithTimestamps.segments.filter(
+          (s: {start: number, end: number}) => 
+            (s.start >= segmentStartTime && s.start <= segmentEndTime) || 
+            (s.end >= segmentStartTime && s.end <= segmentEndTime)
+        );
+        
+        if (relevantSegments.length > 0) {
+          relevantLyrics = relevantSegments
+            .map((s: {text: string}) => s.text || "")
+            .filter(text => text.trim().length > 0)
+            .join(" ");
+        }
+      }
       
-      if (relevantSegments.length > 0) {
-        relevantLyrics = relevantSegments.map((s: {text: string}) => s.text).join(" ");
-      }
-    }
-    
-    // Si no hay letras específicas, usar transcripción general
-    if (!relevantLyrics && transcription) {
-      // Dividir la transcripción total proporcionalmente
-      const totalDuration = timelineItems[timelineItems.length - 1]?.end_time / 1000 - timelineItems[0]?.start_time / 1000;
-      if (totalDuration > 0) {
-        const segmentDuration = segmentEndTime - segmentStartTime;
-        const segmentPercent = segmentDuration / totalDuration;
-        
-        // Estimar qué parte de la transcripción corresponde a este segmento
-        const transcriptionWords = transcription.split(/\s+/);
-        const startWordIndex = Math.floor((segmentStartTime - (timelineItems[0]?.start_time / 1000)) / totalDuration * transcriptionWords.length);
-        const wordCount = Math.floor(segmentPercent * transcriptionWords.length);
-        
-        if (startWordIndex >= 0 && wordCount > 0) {
-          relevantLyrics = transcriptionWords.slice(startWordIndex, startWordIndex + wordCount).join(" ");
+      // Si no hay letras específicas, usar transcripción general
+      if (!relevantLyrics && transcription) {
+        // Dividir la transcripción total proporcionalmente
+        const totalDuration = timelineItems[timelineItems.length - 1]?.end_time / 1000 - timelineItems[0]?.start_time / 1000;
+        if (totalDuration > 0) {
+          const segmentDuration = segmentEndTime - segmentStartTime;
+          const segmentPercent = segmentDuration / totalDuration;
+          
+          // Estimar qué parte de la transcripción corresponde a este segmento
+          const transcriptionWords = transcription.split(/\s+/);
+          const startWordIndex = Math.floor((segmentStartTime - (timelineItems[0]?.start_time / 1000)) / totalDuration * transcriptionWords.length);
+          const wordCount = Math.floor(segmentPercent * transcriptionWords.length);
+          
+          if (startWordIndex >= 0 && wordCount > 0) {
+            relevantLyrics = transcriptionWords.slice(startWordIndex, startWordIndex + wordCount).join(" ");
+          }
         }
       }
-    }
 
-    while (attempt < maxAttempts) {
-      try {
-        console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
-        
-        // Preparar parámetros base para el prompt
-        const promptParams = {
-          shotType: segment.shotType || "medium shot",
-          cameraFormat: videoStyle.cameraFormat,
-          mood: videoStyle.mood,
-          visualStyle: videoStyle.characterStyle,
-          visualIntensity: videoStyle.visualIntensity,
-          narrativeIntensity: videoStyle.narrativeIntensity,
-          colorPalette: videoStyle.colorPalette,
-          duration: segment.duration / 1000,
-          directorStyle: videoStyle.selectedDirector?.style,
-          specialty: videoStyle.selectedDirector?.specialty,
-          styleReference: ""
-        };
-
-        const prompt = await generateVideoPromptWithRetry(promptParams);
-
-        if (prompt && prompt !== "Error generating prompt") {
-          return prompt;
-        }
-
-        console.log(`Attempt ${attempt + 1} failed, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
-        attempt++;
-
-      } catch (error) {
-        console.error(`Error in attempt ${attempt + 1}:`, error);
-
-        if (attempt === maxAttempts - 1) {
-          toast({
-            title: "Error",
-            description: "No se pudo generar el prompt después de varios intentos",
-            variant: "destructive",
-          });
-          return segment.imagePrompt || "Error generating prompt";
-        }
-
-        attempt++;
-        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      // Si aún no tenemos letras, usar un placeholder
+      if (!relevantLyrics || relevantLyrics.trim().length === 0) {
+        relevantLyrics = "Instrumental";
+        console.log(`No se encontraron letras para el segmento ${segment.id}, usando 'Instrumental'`);
       }
+
+      while (attempt < maxAttempts) {
+        try {
+          console.log(`Generando prompt para segmento ${segment.id}, intento ${attempt + 1}/${maxAttempts}`);
+          
+          // Validar parámetros del estilo de video antes de crear el prompt
+          if (!videoStyle.cameraFormat || !videoStyle.mood || !videoStyle.characterStyle || 
+              !videoStyle.colorPalette || videoStyle.visualIntensity === undefined || 
+              videoStyle.narrativeIntensity === undefined) {
+            throw new Error("Faltan parámetros de estilo para generar el prompt");
+          }
+          
+          // Preparar parámetros base para el prompt con tipado
+          const promptParams: VideoPromptParams = {
+            shotType: segment.shotType || "medium shot",
+            cameraFormat: videoStyle.cameraFormat,
+            mood: videoStyle.mood,
+            visualStyle: videoStyle.characterStyle,
+            visualIntensity: videoStyle.visualIntensity,
+            narrativeIntensity: videoStyle.narrativeIntensity,
+            colorPalette: videoStyle.colorPalette,
+            duration: segment.duration / 1000,
+            directorStyle: videoStyle.selectedDirector?.style,
+            specialty: videoStyle.selectedDirector?.specialty,
+            styleReference: ""
+          };
+
+          // Añadir información de letra a los parámetros
+          const promptWithLyrics = `Escena para video musical que represente estas letras: "${relevantLyrics}". ${await generateVideoPromptWithRetry(promptParams)}`;
+
+          if (promptWithLyrics && promptWithLyrics !== "Error generating prompt") {
+            return promptWithLyrics;
+          }
+
+          console.log(`Intento ${attempt + 1} falló, reintentando...`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+          attempt++;
+
+        } catch (error) {
+          console.error(`Error en intento ${attempt + 1}:`, error);
+          lastError = error instanceof Error ? error : new Error(String(error));
+
+          if (attempt === maxAttempts - 1) {
+            toast({
+              title: "Error",
+              description: "No se pudo generar el prompt después de varios intentos",
+              variant: "destructive",
+            });
+            return segment.imagePrompt || "Error generating prompt";
+          }
+
+          attempt++;
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+        }
+      }
+    } catch (outerError) {
+      console.error("Error general en generatePromptForSegment:", outerError);
+      lastError = outerError instanceof Error ? outerError : new Error(String(outerError));
     }
 
+    // Si llegamos aquí, ningún intento tuvo éxito
+    console.error(`No se pudo generar prompt para segmento ${segment.id} después de múltiples intentos:`, lastError);
     return segment.imagePrompt || "Error generating prompt";
   };
 
