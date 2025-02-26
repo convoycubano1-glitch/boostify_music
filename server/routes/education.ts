@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import { Express } from 'express';
+import { generateImageWithFal } from '@/lib/api/fal-ai';
+import { getRelevantImage } from '@/lib/unsplash-service';
 
 /**
  * Setup routes for Education related API endpoints
  */
-import { generateImageWithFal } from '../services/fal-ai-service';
-import { getRelevantImage } from '../services/unsplash-service';
 
 export function setupEducationRoutes(app: Express) {
   // Endpoint to generate course content with OpenRouter
