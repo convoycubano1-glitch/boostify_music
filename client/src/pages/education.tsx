@@ -160,7 +160,13 @@ export default function EducationPage() {
         });
         
         if (result.data?.images?.[0]) {
-          thumbnailUrl = result.data.images[0];
+          // Asegurarnos de tener la URL de la imagen (el formato puede variar)
+          let generatedImage = result.data.images[0];
+          if (typeof generatedImage === 'object' && generatedImage.url) {
+            thumbnailUrl = generatedImage.url;
+          } else {
+            thumbnailUrl = generatedImage;
+          }
           console.log("Fal-ai image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
         } else {
           throw new Error("No image data in fal-ai response");
@@ -315,8 +321,14 @@ export default function EducationPage() {
           });
           
           if (result.data?.images?.[0]) {
-            thumbnailUrl = result.data.images[0];
-            console.log("Fal-ai image generated successfully");
+            // Asegurarnos de tener la URL correcta de la imagen (el formato puede variar)
+            let generatedImage = result.data.images[0];
+            if (typeof generatedImage === 'object' && generatedImage.url) {
+              thumbnailUrl = generatedImage.url;
+            } else {
+              thumbnailUrl = generatedImage;
+            }
+            console.log("Fal-ai image generated successfully for sample course:", course.title);
           } else {
             throw new Error("No image data in fal-ai response");
           }
@@ -588,12 +600,9 @@ export default function EducationPage() {
                 setRegenerationProgress(0);
                 
                 try {
-                  // Filtrar cursos que probablemente usen imágenes de Unsplash o que no son de fal-ai
-                  const coursesToUpdate = courses.filter(course => 
-                    course.thumbnail.includes('unsplash.com') || 
-                    !course.thumbnail.includes('fal-ai') ||
-                    !course.thumbnail.startsWith('data:image')
-                  );
+                  // Regenerar las imágenes para todos los cursos, independientemente de su origen
+                  // Esto asegura que todas las portadas se generen con fal-ai
+                  const coursesToUpdate = [...courses];
                   
                   if (coursesToUpdate.length === 0) {
                     toast({
@@ -625,7 +634,13 @@ export default function EducationPage() {
                       });
                       
                       if (result.data?.images?.[0]) {
-                        const newThumbnail = result.data.images[0];
+                        // Asegurarnos de tener la URL de la imagen (el formato puede variar)
+                        let newThumbnail = result.data.images[0];
+                        if (typeof newThumbnail === 'object' && newThumbnail.url) {
+                          newThumbnail = newThumbnail.url;
+                        }
+                        
+                        console.log(`Imagen generada para ${course.title}:`, newThumbnail.substring(0, 50) + "...");
                         
                         // Actualizar en Firestore
                         const courseRef = doc(db, 'courses', course.id);
