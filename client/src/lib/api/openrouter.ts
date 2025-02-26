@@ -104,13 +104,20 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
       const promptText = generateVideoPrompt(params);
       console.log("Generated prompt text:", promptText);
 
-      // Preparar headers con validación adicional
+      // Preparar headers con el formato exacto requerido por OpenRouter
       const headers = {
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": window.location.origin,
+        "Authorization": `Bearer ${apiKey.trim()}`, // Asegurarse de que no haya espacios
+        "HTTP-Referer": window.location.origin || "https://boostify.music.app",
         "X-Title": "Music Video Creator",
         "Content-Type": "application/json"
       };
+
+      // Log para debugging (sin exponer la clave completa)
+      console.log("OpenRouter request headers:", {
+        Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
+        "HTTP-Referer": headers["HTTP-Referer"],
+        "X-Title": headers["X-Title"]
+      });
 
       // Verificar que la clave de autorización no esté vacía
       if (!headers.Authorization || headers.Authorization === "Bearer " || headers.Authorization === "Bearer undefined") {
@@ -222,14 +229,30 @@ export async function generateCourseContent(prompt: string) {
       throw new Error('OpenRouter API key not configured');
     }
 
+    // Obtener la clave API para el curso
+    const apiKey = env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is missing or undefined');
+    }
+    
+    // Preparar los headers correctos para OpenRouter
+    const headers = {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin || "https://boostify.music.app",
+      "X-Title": "Boostify Music Education",
+      "Content-Type": "application/json"
+    };
+    
+    // Log para debugging (sin exponer la clave completa)
+    console.log("OpenRouter course generation headers:", {
+      Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
+      "HTTP-Referer": headers["HTTP-Referer"],
+      "X-Title": headers["X-Title"]
+    });
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Boostify Music Education",
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify({
         model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [
@@ -325,14 +348,30 @@ export async function generateCourseContent(prompt: string) {
 
 export async function chatWithAI(messages: Message[]) {
   try {
+    // Obtener la clave API para chat
+    const apiKey = env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is missing or undefined');
+    }
+    
+    // Preparar los headers correctos para OpenRouter
+    const headers = {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin || "https://boostify.music.app",
+      "X-Title": "Music Video Creator",
+      "Content-Type": "application/json"
+    };
+    
+    // Log para debugging (sin exponer la clave completa)
+    console.log("OpenRouter chat headers:", {
+      Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
+      "HTTP-Referer": headers["HTTP-Referer"],
+      "X-Title": headers["X-Title"]
+    });
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Music Video Creator",
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify({
         model: "deepseek/deepseek-r1-distill-llama-8b",
         messages,
@@ -380,13 +419,20 @@ export async function generateVideoScript(prompt: string): Promise<string> {
     try {
       console.log(`Intento ${retryCount + 1}/${maxRetries} para generar guion de video`);
 
-      // Preparar headers con validación adicional
+      // Preparar headers con formato exacto para OpenRouter
       const headers = {
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": window.location.origin,
+        "Authorization": `Bearer ${apiKey.trim()}`,
+        "HTTP-Referer": window.location.origin || "https://boostify.music.app",
         "X-Title": "Music Video Creator",
         "Content-Type": "application/json"
       };
+
+      // Log para debugging (sin exponer la clave completa)
+      console.log("OpenRouter script headers:", {
+        Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
+        "HTTP-Referer": headers["HTTP-Referer"],
+        "X-Title": headers["X-Title"]
+      });
 
       // Verificar que la clave de autorización no esté vacía
       if (!headers.Authorization || headers.Authorization === "Bearer " || headers.Authorization === "Bearer undefined") {
@@ -394,7 +440,7 @@ export async function generateVideoScript(prompt: string): Promise<string> {
       }
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
+        method: "POST", 
         headers,
         body: JSON.stringify({
           model: "anthropic/claude-3-sonnet",
@@ -580,14 +626,25 @@ function generateFallbackVideoScript(prompt: string): string {
 
 export async function analyzeImage(imageUrl: string) {
   try {
+    // Obtener la clave API para análisis de imagen
+    const apiKey = env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is missing or undefined');
+    }
+    
+    // Preparar los headers correctos para OpenRouter
+    const headers = {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin || "https://boostify.music.app",
+      "X-Title": "Music Video Creator",
+      "Content-Type": "application/json"
+    };
+    
+    console.log("OpenRouter image analysis API key check:", !!apiKey);
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Music Video Creator",
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify({
         model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [
@@ -619,14 +676,25 @@ export async function analyzeImage(imageUrl: string) {
 
 export async function transcribeWithAI(audioBase64: string) {
   try {
+    // Obtener la clave API para transcripción
+    const apiKey = env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is missing or undefined');
+    }
+    
+    // Preparar los headers correctos para OpenRouter
+    const headers = {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin || "https://boostify.music.app",
+      "X-Title": "Music Video Creator",
+      "Content-Type": "application/json"
+    };
+    
+    console.log("OpenRouter transcription API key check:", !!apiKey);
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Music Video Creator",
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify({
         model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
         messages: [{
