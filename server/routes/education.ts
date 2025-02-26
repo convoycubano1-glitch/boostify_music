@@ -4,6 +4,9 @@ import { Express } from 'express';
 /**
  * Setup routes for Education related API endpoints
  */
+import { generateImageWithFal } from '../services/fal-ai-service';
+import { getRelevantImage } from '../services/unsplash-service';
+
 export function setupEducationRoutes(app: Express) {
   // Endpoint to generate course content with OpenRouter
   app.post('/api/education/generate-course', async (req: Request, res: Response) => {
@@ -15,13 +18,15 @@ export function setupEducationRoutes(app: Express) {
       }
 
       // Get the OpenRouter API key from environment variables
-      const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+      const OPENROUTER_API_KEY = process.env.VITE_OPENROUTER_API_KEY;
       
       if (!OPENROUTER_API_KEY) {
         return res.status(500).json({ 
           error: 'OpenRouter API key is not configured on the server' 
         });
       }
+      
+      console.log("Using OpenRouter API key:", OPENROUTER_API_KEY.substring(0, 10) + "...");
 
       // Prepare the headers for OpenRouter
       const headers = {
@@ -109,7 +114,7 @@ export function setupEducationRoutes(app: Express) {
 
   // Endpoint to safely get the OpenRouter API key
   app.get('/api/get-openrouter-key', (req: Request, res: Response) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
       return res.json({ exists: false });
     }
@@ -128,13 +133,15 @@ export function setupEducationRoutes(app: Express) {
       }
 
       // Obtener OpenRouter API key
-      const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+      const OPENROUTER_API_KEY = process.env.VITE_OPENROUTER_API_KEY;
       
       if (!OPENROUTER_API_KEY) {
         return res.status(500).json({ 
           error: 'OpenRouter API key no está configurada en el servidor' 
         });
       }
+      
+      console.log("Using OpenRouter API key for extension:", OPENROUTER_API_KEY.substring(0, 10) + "...");
 
       // Preparar headers para OpenRouter
       const headers = {
