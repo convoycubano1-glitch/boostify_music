@@ -426,11 +426,18 @@ ${transcription}`;
           scriptResult = JSON.parse(jsonContent);
         } catch (parseError) {
           // Intentar extraer JSON válido si está dentro de comillas, markdown, etc.
-          const jsonMatch = jsonContent.match(/\{[\s\S]*"segments"[\s\S]*\}/);
-          if (jsonMatch) {
-            scriptResult = JSON.parse(jsonMatch[0]);
+          const error = parseError as Error;
+          console.error("Error parsing JSON:", error.message);
+          
+          if (typeof jsonContent === 'string') {
+            const jsonMatch = jsonContent.match(/\{[\s\S]*"segments"[\s\S]*\}/);
+            if (jsonMatch) {
+              scriptResult = JSON.parse(jsonMatch[0]);
+            } else {
+              throw new Error("No se pudo extraer un JSON válido de la respuesta");
+            }
           } else {
-            throw new Error("No se pudo extraer un JSON válido de la respuesta");
+            throw new Error("La respuesta no es una cadena de texto válida");
           }
         }
 
@@ -512,7 +519,7 @@ ${transcription}`;
       if (resultWithImages?.images?.[0]?.url) {
         const updatedItems = timelineItems.map(timelineItem =>
           timelineItem.id === item.id
-            ? { ...timelineItem, generatedImage: result.images[0].url }
+            ? { ...timelineItem, generatedImage: resultWithImages.images![0].url }
             : timelineItem
         );
         setTimelineItems(updatedItems);
@@ -663,7 +670,10 @@ ${transcription}`;
             },
           });
 
-          if (!result?.images?.[0]?.url) {
+          // Asegurar que el resultado tiene la estructura correcta
+          const resultWithImages = result as { images?: Array<{url: string}> };
+          
+          if (!resultWithImages?.images?.[0]?.url) {
             throw new Error("No se recibió URL de imagen");
           }
 
@@ -672,7 +682,7 @@ ${transcription}`;
             if (timelineItem.id === item.id) {
               return {
                 ...timelineItem,
-                generatedImage: result.images[0].url
+                generatedImage: resultWithImages.images![0].url
               };
             }
             return timelineItem;
