@@ -185,6 +185,9 @@ interface TimelineItem {
   transition?: string;
   mood?: string;
   firebaseUrl?: string;
+  // Campos para análisis de audio
+  energy?: number;
+  averageEnergy?: number;
   // Campos adicionales para compatibilidad con TimelineClip
   start: number;
   type: 'video' | 'image' | 'transition' | 'audio';
@@ -237,6 +240,7 @@ export function MusicVideoAI() {
     narrativeIntensity: 50,
     referenceImage: null as string | null,
     styleDescription: "",
+    styleReferenceUrl: "",
     selectedDirector: null as Director | null
   });
   const storage = getStorage();
@@ -922,134 +926,214 @@ ${transcription}`;
     setTimelineItems(updatedItems);
   };
 
-  const detectBeatsAndCreateSegments = async () => {
+  /**
+   * Detecta beats en el archivo de audio y crea segmentos para el timeline
+   * Implementa un algoritmo de detección de beats basado en energía acústica
+   * @returns Array de TimelineItem con los segmentos detectados
+   */
+  const detectBeatsAndCreateSegments = async (): Promise<TimelineItem[]> => {
     if (!audioBuffer) return [];
 
-    const channelData = audioBuffer.getChannelData(0);
-    const sampleRate = audioBuffer.sampleRate;
-    const totalDuration = audioBuffer.duration;
+    try {
+      // Obtenemos los datos del canal y la información del audio
+      const channelData = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const totalDuration = audioBuffer.duration;
 
-    const editingStyle = editingStyles.find(style => style.id === selectedEditingStyle)!;
-    const windowSize = Math.floor(sampleRate * (selectedEditingStyle === "rhythmic" ? 0.025 : 0.05));
-    const threshold = selectedEditingStyle === "dynamic" ? 0.15 : 0.12;
-    const minSegmentDuration = editingStyle.duration.min;
-    const maxSegmentDuration = editingStyle.duration.max;
-    let lastBeatTime = 0;
-    let energyHistory: number[] = [];
-    const historySize = 43;
-    const segments: TimelineItem[] = [];
-    const shotTypes = [
-      {
-        type: "wide shot",
-        description: "Plano general que muestra el entorno completo y establece el contexto",
-        prompt: "wide angle shot showing the complete environment and atmosphere"
-      },
-      {
-        type: "medium shot",
-        description: "Plano medio que captura la expresión y el lenguaje corporal",
-        prompt: "medium shot focusing on upper body and expression"
-      },
-      {
-        type: "close-up",
-        description: "Primer plano que enfatiza la emoción y los detalles",
-        prompt: "close-up shot emphasizing emotion and facial details"
-      },
-      {
-        type: "extreme close-up",
-        description: "Plano detalle que muestra detalles específicos",
-        prompt: "extreme close-up showing intricate details"
-      },
-      {
-        type: "tracking shot",
-        description: "Plano de seguimiento que añade dinamismo",
-        prompt: "smooth tracking shot following the subject"
+      // Configuramos parámetros según el estilo de edición seleccionado
+      const editingStyle = editingStyles.find(style => style.id === selectedEditingStyle);
+      if (!editingStyle) {
+        console.error("Estilo de edición no encontrado:", selectedEditingStyle);
+        throw new Error("Estilo de edición no válido");
       }
-    ];
 
-    const transitions = ["cut", "fade", "dissolve", "crossfade"];
+      // Ajustamos parámetros técnicos según el estilo
+      const windowSize = Math.floor(sampleRate * (selectedEditingStyle === "rhythmic" ? 0.025 : 0.05));
+      const threshold = selectedEditingStyle === "dynamic" ? 0.15 : 0.12;
+      const minSegmentDuration = editingStyle.duration.min;
+      const maxSegmentDuration = editingStyle.duration.max;
 
-    for (let i = 0; i < channelData.length; i += windowSize) {
-      let sum = 0;
-      for (let j = 0; j < windowSize; j++) {
-        if (i + j < channelData.length) {
-          sum += Math.abs(channelData[i + j]);
+      let lastBeatTime = 0;
+      let energyHistory: number[] = [];
+      const historySize = 43; // Ventana para comparar la energía
+      const segments: TimelineItem[] = [];
+
+      // Definimos tipos de planos disponibles con sus descripciones y prompts base
+      const shotTypes = [
+        {
+          type: "wide shot",
+          description: "Plano general que muestra el entorno completo y establece el contexto",
+          prompt: "wide angle shot showing the complete environment and atmosphere",
+          weight: 1 // Peso para controlar frecuencia
+        },
+        {
+          type: "medium shot",
+          description: "Plano medio que captura la expresión y el lenguaje corporal",
+          prompt: "medium shot focusing on upper body and expression",
+          weight: 3 // Más común en videos musicales
+        },
+        {
+          type: "close-up",
+          description: "Primer plano que enfatiza la emoción y los detalles",
+          prompt: "close-up shot emphasizing emotion and facial details",
+          weight: 4 // Muy común en videos musicales
+        },
+        {
+          type: "extreme close-up",
+          description: "Plano detalle que muestra detalles específicos",
+          prompt: "extreme close-up showing intricate details",
+          weight: 2 // Uso moderado
+        },
+        {
+          type: "tracking shot",
+          description: "Plano de seguimiento que añade dinamismo",
+          prompt: "smooth tracking shot following the subject with dynamic camera movement",
+          weight: 2 // Uso moderado
+        },
+        {
+          type: "aerial shot",
+          description: "Plano aéreo que muestra la escena desde arriba",
+          prompt: "aerial view looking down at the scene, capturing scale and environment",
+          weight: 1 // Menos frecuente
+        }
+      ];
+
+      // Tipos de transiciones entre escenas
+      const transitions = [
+        { type: "cut", weight: 5 }, // Más común
+        { type: "fade", weight: 3 },
+        { type: "dissolve", weight: 2 },
+        { type: "crossfade", weight: 2 }
+      ];
+
+      // Función para seleccionar un elemento basado en pesos
+      const weightedSelection = <T extends { weight: number }>(items: T[]): T => {
+        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        
+        for (const item of items) {
+          random -= item.weight;
+          if (random <= 0) return item;
+        }
+        
+        return items[0]; // Fallback
+      };
+
+      // Análisis de energía por ventanas para detectar beats
+      for (let i = 0; i < channelData.length; i += windowSize) {
+        let sum = 0;
+        for (let j = 0; j < windowSize; j++) {
+          if (i + j < channelData.length) {
+            sum += Math.abs(channelData[i + j]);
+          }
+        }
+        const energy = sum / windowSize;
+        energyHistory.push(energy);
+
+        if (energyHistory.length > historySize) {
+          energyHistory.shift();
+
+          const averageEnergy = energyHistory.reduce((a, b) => a + b) / energyHistory.length;
+          const currentTime = i / sampleRate;
+
+          // Detección de beat basada en umbral dinámico
+          if (energy > averageEnergy * threshold &&
+              currentTime - lastBeatTime >= minSegmentDuration &&
+              currentTime - lastBeatTime <= maxSegmentDuration) {
+
+            // Seleccionar tipo de plano y transición con ponderación
+            const shotType = weightedSelection(shotTypes);
+            const transition = weightedSelection(transitions).type;
+
+            let segmentDuration = currentTime - lastBeatTime;
+
+            // Ajustar duración según estilo de edición
+            if (selectedEditingStyle === "dynamic") {
+              // Duración inversamente proporcional a la energía - más energía, cortes más rápidos
+              segmentDuration = Math.max(minSegmentDuration,
+                maxSegmentDuration * (1 - energy / (averageEnergy * 2)));
+            } else if (selectedEditingStyle === "minimalist") {
+              // Estilo minimalista prefiere tomas más largas
+              segmentDuration = Math.max(segmentDuration, minSegmentDuration * 1.5);
+            } else if (selectedEditingStyle === "rhythmic") {
+              // Estilo rítmico se ajusta exactamente al beat
+              segmentDuration = Math.max(minSegmentDuration, Math.min(segmentDuration, maxSegmentDuration * 0.8));
+            }
+
+            // Calcula el estado de ánimo basado en la parte del video (inicio/medio/final)
+            const videoProgress = currentTime / totalDuration;
+            let mood = 'neutral';
+            
+            if (videoProgress < 0.25) mood = 'introductory';
+            else if (videoProgress > 0.75) mood = 'conclusive';
+            else if (energy > averageEnergy * 1.5) mood = 'intense';
+            else if (energy < averageEnergy * 0.7) mood = 'calm';
+
+            segments.push({
+              id: segments.length + 1,
+              group: 1,
+              title: `Escena ${segments.length + 1}`,
+              start_time: lastBeatTime * 1000,
+              end_time: (lastBeatTime + segmentDuration) * 1000,
+              description: shotType.description,
+              shotType: shotType.type,
+              duration: segmentDuration * 1000,
+              transition: transition,
+              imagePrompt: shotType.prompt,
+              // Campos adicionales para compatibilidad con TimelineClip
+              start: lastBeatTime,
+              type: 'image',
+              mood: mood,
+              // Datos para análisis
+              energy: energy,
+              averageEnergy: averageEnergy
+            });
+
+            lastBeatTime = currentTime;
+          }
         }
       }
-      const energy = sum / windowSize;
-      energyHistory.push(energy);
 
-      if (energyHistory.length > historySize) {
-        energyHistory.shift();
-
-        const averageEnergy = energyHistory.reduce((a, b) => a + b) / energyHistory.length;
-        const currentTime = i / sampleRate;
-
-        if (energy > averageEnergy * threshold &&
-            currentTime - lastBeatTime >= minSegmentDuration &&
-            currentTime - lastBeatTime <= maxSegmentDuration) {
-
-          const shotType = shotTypes[Math.floor(Math.random() * shotTypes.length)];
-          const transition = transitions[Math.floor(Math.random() * transitions.length)];
-
-          let segmentDuration = currentTime - lastBeatTime;
-
-          if (selectedEditingStyle === "dynamic") {
-            segmentDuration = Math.max(minSegmentDuration,
-              maxSegmentDuration * (1 - energy / (averageEnergy * 2)));
-          } else if (selectedEditingStyle === "minimalist") {
-            segmentDuration = Math.max(segmentDuration, minSegmentDuration);
-          }
-
+      // Asegurarse de que el video cubre la duración completa del audio
+      if (segments.length > 0) {
+        const lastSegment = segments[segments.length - 1];
+        if (lastSegment.end_time / 1000 < totalDuration) {
+          const finalShotType = weightedSelection(shotTypes);
           segments.push({
             id: segments.length + 1,
             group: 1,
-            title: `Escena ${segments.length + 1}`,
-            start_time: lastBeatTime * 1000,
-            end_time: (lastBeatTime + segmentDuration) * 1000,
-            description: shotType.description,
-            shotType: shotType.type,
-            duration: segmentDuration * 1000,
-            transition: transition,
-            imagePrompt: shotType.prompt,
+            title: `Escena Final`,
+            start_time: lastSegment.end_time,
+            end_time: totalDuration * 1000,
+            description: finalShotType.description,
+            shotType: finalShotType.type,
+            duration: (totalDuration * 1000) - lastSegment.end_time,
+            transition: "fade",
+            imagePrompt: finalShotType.prompt,
             // Campos adicionales para compatibilidad con TimelineClip
-            start: lastBeatTime,
+            start: lastSegment.end_time / 1000,
             type: 'image',
-            mood: 'neutral'
+            mood: 'conclusive'
           });
-
-          lastBeatTime = currentTime;
         }
       }
-    }
 
-    if (segments.length > 0) {
-      const lastSegment = segments[segments.length - 1];
-      if (lastSegment.end_time / 1000 < totalDuration) {
-        const finalShotType = shotTypes[Math.floor(Math.random() * shotTypes.length)];
-        segments.push({
-          id: segments.length + 1,
-          group: 1,
-          title: `Escena Final`,
-          start_time: lastSegment.end_time,
-          end_time: totalDuration * 1000,
-          description: finalShotType.description,
-          shotType: finalShotType.type,
-          duration: (totalDuration * 1000) - lastSegment.end_time,
-          transition: "fade",
-          imagePrompt: finalShotType.prompt,
-          // Campos adicionales para compatibilidad con TimelineClip
-          start: lastSegment.end_time / 1000,
-          type: 'image',
-          mood: 'conclusive'
-        });
-      }
+      console.log(`Generados ${segments.length} segmentos para una duración de ${totalDuration.toFixed(2)} segundos`);
+      return segments;
+    } catch (error) {
+      console.error("Error en detectBeatsAndCreateSegments:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron detectar los beats del audio",
+        variant: "destructive",
+      });
+      return [];
     }
-
-    return segments;
   };
 
   /**
    * Genera un prompt para un segmento de timeline específico
+   * Extrae las letras correspondientes al segmento y genera un prompt visual
    * @param segment - El segmento de timeline para el que se generará el prompt
    * @returns Un string con el prompt generado o un mensaje de error
    */
@@ -1069,13 +1153,17 @@ ${transcription}`;
     let relevantLyrics = "";
     
     try {
-      // Si tenemos transcripción con timestamps
+      console.log(`Generando prompt para segmento ${segment.id} (${segmentStartTime.toFixed(2)}s - ${segmentEndTime.toFixed(2)}s)`);
+      
+      // PASO 1: EXTRACCIÓN DE LETRAS RELEVANTES
+      // Si tenemos transcripción con timestamps (más preciso)
       if (transcriptionWithTimestamps && Array.isArray(transcriptionWithTimestamps.segments)) {
         // Buscar segmentos de la transcripción que coincidan con este segmento de timeline
         const relevantSegments = transcriptionWithTimestamps.segments.filter(
           (s: {start: number, end: number}) => 
             (s.start >= segmentStartTime && s.start <= segmentEndTime) || 
-            (s.end >= segmentStartTime && s.end <= segmentEndTime)
+            (s.end >= segmentStartTime && s.end <= segmentEndTime) ||
+            (s.start <= segmentStartTime && s.end >= segmentEndTime)
         );
         
         if (relevantSegments.length > 0) {
@@ -1083,34 +1171,67 @@ ${transcription}`;
             .map((s: {text: string}) => s.text || "")
             .filter(text => text.trim().length > 0)
             .join(" ");
+          
+          console.log(`Encontrados ${relevantSegments.length} segmentos con timestamps para este fragmento`);
         }
       }
       
       // Si no hay letras específicas, usar transcripción general
       if (!relevantLyrics && transcription) {
         // Dividir la transcripción total proporcionalmente
-        const totalDuration = timelineItems[timelineItems.length - 1]?.end_time / 1000 - timelineItems[0]?.start_time / 1000;
+        const totalDuration = timelineItems.length > 0 ? 
+          (timelineItems[timelineItems.length - 1].end_time / 1000) - (timelineItems[0].start_time / 1000) : 0;
+          
         if (totalDuration > 0) {
           const segmentDuration = segmentEndTime - segmentStartTime;
           const segmentPercent = segmentDuration / totalDuration;
+          const startPercent = (segmentStartTime - (timelineItems[0].start_time / 1000)) / totalDuration;
           
           // Estimar qué parte de la transcripción corresponde a este segmento
           const transcriptionWords = transcription.split(/\s+/);
-          const startWordIndex = Math.floor((segmentStartTime - (timelineItems[0]?.start_time / 1000)) / totalDuration * transcriptionWords.length);
-          const wordCount = Math.floor(segmentPercent * transcriptionWords.length);
+          const startWordIndex = Math.floor(startPercent * transcriptionWords.length);
+          const wordCount = Math.max(1, Math.floor(segmentPercent * transcriptionWords.length));
           
-          if (startWordIndex >= 0 && wordCount > 0) {
-            relevantLyrics = transcriptionWords.slice(startWordIndex, startWordIndex + wordCount).join(" ");
+          if (startWordIndex >= 0 && wordCount > 0 && startWordIndex < transcriptionWords.length) {
+            const endWordIndex = Math.min(startWordIndex + wordCount, transcriptionWords.length);
+            relevantLyrics = transcriptionWords.slice(startWordIndex, endWordIndex).join(" ");
+            console.log(`Usando transcripción proporcional: palabras ${startWordIndex}-${endWordIndex} de ${transcriptionWords.length}`);
           }
         }
       }
 
-      // Si aún no tenemos letras, usar un placeholder
+      // Si aún no tenemos letras, usar información contextual basada en el segmento
       if (!relevantLyrics || relevantLyrics.trim().length === 0) {
-        relevantLyrics = "Instrumental";
-        console.log(`No se encontraron letras para el segmento ${segment.id}, usando 'Instrumental'`);
+        // Determinar contexto basado en la posición en el video y características del segmento
+        const isBeginningSong = timelineItems.indexOf(segment) < Math.min(3, timelineItems.length * 0.2);
+        const isEndingSong = timelineItems.indexOf(segment) > timelineItems.length * 0.8;
+        const isHighEnergy = segment.energy && segment.averageEnergy && segment.energy > segment.averageEnergy * 1.3;
+        const isLowEnergy = segment.energy && segment.averageEnergy && segment.energy < segment.averageEnergy * 0.7;
+        
+        if (isHighEnergy) {
+          relevantLyrics = isBeginningSong 
+            ? "Introducción enérgica e intensa" 
+            : isEndingSong 
+              ? "Climax final con gran energía" 
+              : "Sección instrumental con alta intensidad";
+        } else if (isLowEnergy) {
+          relevantLyrics = isBeginningSong 
+            ? "Introducción suave y atmosférica" 
+            : isEndingSong 
+              ? "Cierre melódico y reflexivo" 
+              : "Interludio tranquilo y contemplativo";
+        } else {
+          relevantLyrics = isBeginningSong 
+            ? "Introducción de la canción" 
+            : isEndingSong 
+              ? "Conclusión de la canción" 
+              : "Instrumental";
+        }
+        
+        console.log(`No se encontraron letras específicas, usando contexto: "${relevantLyrics}"`);
       }
 
+      // PASO 2: GENERACIÓN DEL PROMPT CON MÚLTIPLES INTENTOS
       while (attempt < maxAttempts) {
         try {
           console.log(`Generando prompt para segmento ${segment.id}, intento ${attempt + 1}/${maxAttempts}`);
@@ -1119,14 +1240,19 @@ ${transcription}`;
           if (!videoStyle.cameraFormat || !videoStyle.mood || !videoStyle.characterStyle || 
               !videoStyle.colorPalette || videoStyle.visualIntensity === undefined || 
               videoStyle.narrativeIntensity === undefined) {
+            console.error("Estilos de video incompletos:", videoStyle);
             throw new Error("Faltan parámetros de estilo para generar el prompt");
           }
           
-          // Preparar parámetros base para el prompt con tipado
+          // Preparar parámetros para el prompt con tipado
           const promptParams: VideoPromptParams = {
             shotType: segment.shotType || "medium shot",
             cameraFormat: videoStyle.cameraFormat,
-            mood: videoStyle.mood,
+            mood: segment.mood === 'intense' 
+              ? 'Enérgico' 
+              : segment.mood === 'calm' 
+                ? 'Tranquilo' 
+                : videoStyle.mood,
             visualStyle: videoStyle.characterStyle,
             visualIntensity: videoStyle.visualIntensity,
             narrativeIntensity: videoStyle.narrativeIntensity,
@@ -1134,17 +1260,18 @@ ${transcription}`;
             duration: segment.duration / 1000,
             directorStyle: videoStyle.selectedDirector?.style,
             specialty: videoStyle.selectedDirector?.specialty,
-            styleReference: ""
+            styleReference: videoStyle.styleReferenceUrl || ""
           };
 
           // Añadir información de letra a los parámetros
           const promptWithLyrics = `Escena para video musical que represente estas letras: "${relevantLyrics}". ${await generateVideoPromptWithRetry(promptParams)}`;
 
           if (promptWithLyrics && promptWithLyrics !== "Error generating prompt") {
+            console.log(`Prompt generado exitosamente para segmento ${segment.id}`);
             return promptWithLyrics;
           }
 
-          console.log(`Intento ${attempt + 1} falló, reintentando...`);
+          console.warn(`Intento ${attempt + 1} falló, reintentando en ${2 * (attempt + 1)} segundos...`);
           await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
           attempt++;
 
@@ -1161,8 +1288,11 @@ ${transcription}`;
             return segment.imagePrompt || "Error generating prompt";
           }
 
+          // Backoff exponencial
+          const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
+          console.log(`Reintentando en ${backoffTime/1000} segundos...`);
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
           attempt++;
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
         }
       }
     } catch (outerError) {
@@ -1170,9 +1300,14 @@ ${transcription}`;
       lastError = outerError instanceof Error ? outerError : new Error(String(outerError));
     }
 
-    // Si llegamos aquí, ningún intento tuvo éxito
+    // FALLBACK: Si ningún intento tuvo éxito
     console.error(`No se pudo generar prompt para segmento ${segment.id} después de múltiples intentos:`, lastError);
-    return segment.imagePrompt || "Error generating prompt";
+    
+    // Como último recurso, usar un prompt básico basado en el tipo de plano y el mood
+    const fallbackPrompt = `${segment.shotType || 'medium shot'} of a ${segment.mood || 'neutral'} scene with ${videoStyle.colorPalette || 'balanced'} colors. ${relevantLyrics}`;
+    
+    console.warn(`Usando prompt fallback para segmento ${segment.id}: ${fallbackPrompt}`);
+    return fallbackPrompt;
   };
 
   const generatePromptsForSegments = async () => {
