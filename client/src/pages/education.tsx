@@ -1170,15 +1170,15 @@ export default function EducationPage() {
           </div>
         </div>
 
-        {/* Sección moderna con vídeo de fondo */}
+        {/* Sección moderna con vídeo de fondo - Optimizada para móvil */}
         {showCategoryCarousel && (
-          <div className="w-full mb-16 relative">
-            <h2 className="text-4xl font-bold text-white mb-8 relative z-20">
+          <div className="w-full mb-10 md:mb-16 relative px-4 md:px-0">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 md:mb-8 relative z-20 text-center md:text-left">
               Explore Music <span className="text-orange-500">Education Levels</span>
             </h2>
             
-            {/* Video de fondo con overlay */}
-            <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden rounded-2xl">
+            {/* Video de fondo con overlay - Visible solo en tablets y desktop */}
+            <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden rounded-2xl hidden md:block">
               <div className="absolute inset-0 bg-black/60 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
               <video 
                 className="w-full h-full object-cover"
@@ -1186,47 +1186,54 @@ export default function EducationPage() {
                 muted 
                 loop 
                 playsInline
+                preload="auto"
               >
                 <source src="/assets/Standard_Mode_Generated_Video (9).mp4" type="video/mp4" />
               </video>
             </div>
             
-            {/* Tarjetas modernas con efecto de hover */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-20 p-4">
+            {/* Fondo estático para móviles */}
+            <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden rounded-2xl block md:hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-orange-950/20 z-10" />
+            </div>
+            
+            {/* Tarjetas modernas con efecto de hover - Responsive */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 relative z-20 p-2 md:p-4">
               {/* Beginner */}
-              <div className="bg-gradient-to-br from-black/80 to-orange-950/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-900/30 shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/20 group">
-                <div className="p-6 relative">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">Beginner</h3>
-                  <p className="text-gray-300 mb-6">Start your music career journey with foundational knowledge and essential skills.</p>
-                  <button className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors">Get Started</button>
+              <div className="bg-gradient-to-br from-black/80 to-orange-950/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-900/30 shadow-xl transform transition-all duration-300 hover:scale-102 md:hover:scale-105 hover:shadow-orange-500/20 group">
+                <div className="p-4 md:p-6 relative">
+                  <div className="absolute top-0 right-0 w-20 h-20 md:w-24 md:h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 group-hover:text-orange-400 transition-colors">Beginner</h3>
+                  <p className="text-gray-300 text-sm md:text-base mb-4 md:mb-6">Start your music career journey with foundational knowledge and essential skills.</p>
+                  <button className="w-full md:w-auto px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors text-sm md:text-base">Get Started</button>
                 </div>
               </div>
               
               {/* Intermediate */}
-              <div className="bg-gradient-to-br from-black/80 to-orange-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-800/30 shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/20 group">
-                <div className="p-6 relative">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">Intermediate</h3>
-                  <p className="text-gray-300 mb-6">Enhance your existing skills and expand your musical horizons with advanced techniques.</p>
-                  <button className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors">Level Up</button>
+              <div className="bg-gradient-to-br from-black/80 to-orange-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-800/30 shadow-xl transform transition-all duration-300 hover:scale-102 md:hover:scale-105 hover:shadow-orange-500/20 group">
+                <div className="p-4 md:p-6 relative">
+                  <div className="absolute top-0 right-0 w-20 h-20 md:w-24 md:h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 group-hover:text-orange-400 transition-colors">Intermediate</h3>
+                  <p className="text-gray-300 text-sm md:text-base mb-4 md:mb-6">Enhance your existing skills and expand your musical horizons with advanced techniques.</p>
+                  <button className="w-full md:w-auto px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors text-sm md:text-base">Level Up</button>
                 </div>
               </div>
               
               {/* Advanced */}
-              <div className="bg-gradient-to-br from-black/80 to-orange-800/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-700/30 shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/20 group">
-                <div className="p-6 relative">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">Advanced</h3>
-                  <p className="text-gray-300 mb-6">Master advanced industry techniques and prepare for professional music career success.</p>
-                  <button className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors">Master Now</button>
+              <div className="bg-gradient-to-br from-black/80 to-orange-800/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-700/30 shadow-xl transform transition-all duration-300 hover:scale-102 md:hover:scale-105 hover:shadow-orange-500/20 group md:col-span-2 lg:col-span-1 md:col-start-1 md:col-end-3 lg:col-start-auto lg:col-end-auto">
+                <div className="p-4 md:p-6 relative">
+                  <div className="absolute top-0 right-0 w-20 h-20 md:w-24 md:h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 group-hover:text-orange-400 transition-colors">Advanced</h3>
+                  <p className="text-gray-300 text-sm md:text-base mb-4 md:mb-6">Master advanced industry techniques and prepare for professional music career success.</p>
+                  <button className="w-full md:w-auto px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors text-sm md:text-base">Master Now</button>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Cursos - Optimizados para móvil */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 px-2 md:px-0">
           {courses.map((course) => (
             <motion.div
               key={course.id}
@@ -1242,18 +1249,27 @@ export default function EducationPage() {
                     src={course.thumbnail}
                     alt={course.title}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
                   />
                   <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 rounded-full">
-                    <span className="text-sm font-medium text-white">{course.level}</span>
+                    <span className="text-xs md:text-sm font-medium text-white">{course.level}</span>
                   </div>
 
+                  {/* Botón de reproducción visible en móvil sin necesidad de hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex justify-center items-center p-4 md:hidden">
+                    <div className="rounded-full bg-orange-500/80 p-2 cursor-pointer hover:bg-orange-600 transition-colors">
+                      <Play className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+
+                  {/* Solo mostrar este overlay en desktop donde funciona el hover */}
                   <AnimatePresence>
                     {hoveredCourse === course.id && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/75 flex flex-col justify-center items-center p-4 space-y-3"
+                        className="absolute inset-0 bg-black/75 hidden md:flex flex-col justify-center items-center p-4 space-y-3"
                       >
                         <motion.div
                           initial={{ scale: 0 }}
@@ -1277,49 +1293,67 @@ export default function EducationPage() {
                   </AnimatePresence>
                 </div>
 
-                <div className="p-6">
-                  <div className="flex items-center gap-2 text-orange-500 text-sm mb-2">
-                    <Clock className="h-4 w-4" />
+                <div className="p-4 md:p-6">
+                  <div className="flex items-center gap-1 md:gap-2 text-orange-500 text-xs md:text-sm mb-2">
+                    <Clock className="h-3 w-3 md:h-4 md:w-4" />
                     <span>{course.duration}</span>
                     <span>•</span>
-                    <BookOpen className="h-4 w-4" />
+                    <BookOpen className="h-3 w-3 md:h-4 md:w-4" />
                     <span>{course.lessons} lessons</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-orange-500 transition-colors">
+                  <h3 className="text-lg md:text-xl font-semibold text-white mb-2 group-hover:text-orange-500 transition-colors line-clamp-1">
                     {course.title}
                   </h3>
-                  <p className="text-gray-400 mb-4 line-clamp-2">{course.description}</p>
+                  <p className="text-gray-400 text-sm md:text-base mb-3 md:mb-4 line-clamp-2">{course.description}</p>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Award className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-gray-400">Certificate Included</span>
+                  <div className="flex flex-wrap items-center justify-between mb-3 md:mb-4 gap-2">
+                    <div className="flex items-center gap-1 md:gap-2">
+                      <Award className="h-3 w-3 md:h-4 md:w-4 text-orange-500" />
+                      <span className="text-xs md:text-sm text-gray-400">Certificate</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-gray-400">{course.enrolledStudents} enrolled</span>
+                      <Users className="h-3 w-3 md:h-4 md:w-4 text-orange-500" />
+                      <span className="text-xs md:text-sm text-gray-400">{course.enrolledStudents} enrolled</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      <span className="font-medium text-white">
+                  <div className="flex justify-between items-center mb-3 md:mb-4">
+                    <div className="flex items-center gap-1 md:gap-2">
+                      <Star className="h-3 w-3 md:h-4 md:w-4 text-orange-500 fill-orange-500" />
+                      <span className="font-medium text-white text-sm md:text-base">
                         {typeof course.rating === 'number'
                           ? course.rating.toFixed(1)
                           : parseFloat(String(course.rating)).toFixed(1)}
                       </span>
-                      <span className="text-gray-400">({course.totalReviews} reviews)</span>
+                      <span className="text-gray-400 text-xs md:text-sm">({course.totalReviews} reviews)</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium text-white">${course.price.toFixed(2)}</span>
+                    <div className="flex items-center gap-1 md:gap-2">
+                      <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-orange-500" />
+                      <span className="font-medium text-white text-sm md:text-base">${course.price.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mb-4">
+                  {/* Botones Responsive - Simples en móvil, completos en desktop */}
+                  <div className="grid grid-cols-2 gap-2 md:gap-4">
+                    <Link href={`/course/${course.id}`} className="w-full">
+                      <Button className="w-full bg-orange-500 hover:bg-orange-600 group text-xs md:text-sm px-2 md:px-4">
+                        <span className="whitespace-nowrap">View Course</span>
+                        <ChevronRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                    </Link>
+                    <Button
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-xs md:text-sm px-2 md:px-4"
+                      onClick={() => handleEnrollCourse(course)}
+                    >
+                      <span className="whitespace-nowrap">Enroll Now</span>
+                      <ChevronRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2 transition-transform group-hover:translate-x-1" />
+                    </Button>
+                  </div>
+                  
+                  {/* Solo en desktop - Botón para ampliar el curso */}
+                  <div className="hidden md:flex mt-3 gap-2">
                     <Button 
-                      className="flex-1 bg-orange-700 hover:bg-orange-800"
+                      className="flex-1 bg-orange-700 hover:bg-orange-800 text-sm"
                       onClick={() => {
                         setSelectedCourse(course);
                         setShowExtendDialog(true);
@@ -1327,22 +1361,6 @@ export default function EducationPage() {
                     >
                       <span>Ampliar Curso</span>
                       <PlusCircle className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <Link href={`/course/${course.id}`}>
-                      <Button className="flex-1 bg-orange-500 hover:bg-orange-600 group">
-                        <span>View Course</span>
-                        <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                      </Button>
-                    </Link>
-                    <Button
-                      className="bg-orange-500 hover:bg-orange-600"
-                      onClick={() => handleEnrollCourse(course)}
-                    >
-                      <span>Enroll Now</span>
-                      <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </div>
                 </div>
