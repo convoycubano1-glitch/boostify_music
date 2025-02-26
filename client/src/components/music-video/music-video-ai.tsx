@@ -28,7 +28,8 @@ import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
-import { generateVideoScript, analyzeImage, generateVideoPromptWithRetry } from "@/lib/api/openrouter";
+import { analyzeImage, generateVideoPromptWithRetry } from "@/lib/api/openrouter";
+import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({
@@ -417,6 +418,11 @@ CRUCIAL:
 LETRA COMPLETA DE LA CANCIÓN:
 ${transcription}`;
 
+      // La función generateVideoScript necesita un parámetro string
+      if (typeof prompt !== 'string') {
+        throw new Error("El prompt debe ser una cadena de texto");
+      }
+      
       const jsonContent = await generateVideoScript(prompt);
 
       try {
@@ -433,12 +439,19 @@ ${transcription}`;
           const error = parseError as Error;
           console.error("Error parsing JSON:", error.message);
           
-          // Asegúrate de que jsonContent es una cadena antes de usar match
+          // Verificar que jsonContent es un string antes de usar regex
           if (typeof jsonContent === 'string') {
-            const jsonMatch = jsonContent.match(/\{[\s\S]*"segments"[\s\S]*\}/);
-            if (jsonMatch && jsonMatch[0]) {
-              scriptResult = JSON.parse(jsonMatch[0]);
-            } else {
+            // Extraer un objeto JSON válido de la respuesta
+            try {
+              const regex = /\{[\s\S]*"segments"[\s\S]*\}/;
+              const match = jsonContent.match(regex);
+              if (match && match[0]) {
+                scriptResult = JSON.parse(match[0]);
+              } else {
+                throw new Error("No se pudo encontrar un JSON válido con segmentos");
+              }
+            } catch (regexError) {
+              console.error("Error en la búsqueda de JSON con regex:", regexError);
               throw new Error("No se pudo extraer un JSON válido de la respuesta");
             }
           } else {
