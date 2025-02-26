@@ -126,9 +126,13 @@ export default function EducationPage() {
 
     try {
       setIsGenerating(true);
+      
+      console.log("Starting course creation process...");
 
       const imagePrompt = `professional education ${newCourse.title} ${newCourse.category} course cover`;
+      console.log("Generating image with prompt:", imagePrompt);
       const thumbnailUrl = await getRelevantImage(imagePrompt);
+      console.log("Image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
 
       const prompt = `Generate a professional music course with these characteristics:
         - Title: "${newCourse.title}"
@@ -136,9 +140,23 @@ export default function EducationPage() {
         - Level: ${newCourse.level}
         - Category: ${newCourse.category}
 
-        The course should be detailed and practical, focused on the current music industry.`;
+        The course should be detailed and practical, focused on the current music industry.
+        Create a comprehensive course with clear structure, practical lessons, and actionable content.`;
 
+      console.log("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
+      toast({
+        title: "Creating course",
+        description: "Generating course content with AI... This might take a moment."
+      });
+      
       const courseContent = await generateCourseContent(prompt);
+      console.log("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
+      
+      if (!courseContent || !courseContent.curriculum || !Array.isArray(courseContent.curriculum)) {
+        throw new Error("Invalid course content structure received from AI. Please try again.");
+      }
+      
+      console.log(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
       const randomData = generateRandomCourseData();
 
       const courseData = {
@@ -237,9 +255,15 @@ export default function EducationPage() {
     let createdCount = 0;
 
     try {
+      console.log("Starting sample courses creation process...");
+      
       for (const course of sampleCourses) {
+        console.log(`Creating sample course: ${course.title}`);
+        
         const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
+        console.log("Generating image with prompt:", imagePrompt);
         const thumbnailUrl = await getRelevantImage(imagePrompt);
+        console.log("Image generated successfully");
 
         const prompt = `Generate a professional music course with these characteristics:
           - Title: "${course.title}"
@@ -247,9 +271,25 @@ export default function EducationPage() {
           - Level: ${course.level}
           - Category: ${course.category}
 
-          The course should be detailed and practical, focused on the current music industry. Include specific actionable steps and real-world examples.`;
+          The course should be detailed and practical, focused on the current music industry. 
+          Include specific actionable steps and real-world examples.
+          Create a comprehensive curriculum with clear structure and practical lessons.`;
 
+        console.log("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
+        toast({
+          title: "Creating course sample",
+          description: `Generating content for "${course.title}"... This might take a moment.`
+        });
+        
         const courseContent = await generateCourseContent(prompt);
+        console.log("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
+        
+        if (!courseContent || !courseContent.curriculum || !Array.isArray(courseContent.curriculum)) {
+          console.error("Invalid content structure:", courseContent);
+          throw new Error(`Invalid course content structure for "${course.title}". Please try again.`);
+        }
+        
+        console.log(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
         const randomData = generateRandomCourseData();
 
         const courseData = {
