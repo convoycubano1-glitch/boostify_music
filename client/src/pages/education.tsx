@@ -85,19 +85,20 @@ export default function EducationPage() {
   };
   
   const [levelImages, setLevelImages] = useState<LevelImages>({
-    Beginner: "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg", // Equipo de estudio para principiantes
-    Intermediate: "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg", // Estudio intermedio con más equipo
-    Advanced: "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg" // Estudio profesional de alta gama
+    Beginner: "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg", // Imagen de estudio musical para principiantes
+    Intermediate: "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg", // Imagen de estudio intermedio profesional 
+    Advanced: "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg" // Imagen de estudio avanzado de alta gama
   });
   
   // Colección para el caché de imágenes generadas
   const imagesCacheCollection = "generated_images_cache";
   
-  // Lista de imágenes críticas que siempre deben precargarse
+  // Lista de imágenes críticas que siempre deben precargarse 
+  // Estas son exactamente las mismas imágenes que se usan en la página
   const criticalImageUrls = [
-    "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg", // Beginner
-    "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg", // Intermediate
-    "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg", // Advanced
+    levelImages.Beginner,    // Beginner level
+    levelImages.Intermediate, // Intermediate level
+    levelImages.Advanced,     // Advanced level
     "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg", // Marketing
     "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg", // Distribution
   ];
