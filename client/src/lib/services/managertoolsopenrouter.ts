@@ -3,27 +3,54 @@ import { collection, addDoc, query, where, getDocs, serverTimestamp } from "fire
 import OpenAI from 'openai';
 import { env } from "@/env";
 
-if (!env.VITE_OPENROUTER_API_KEY) {
-  console.error('OpenRouter API key is not configured');
-  throw new Error('OpenRouter API key is not configured');
-}
-
-const openai = new OpenAI({
-  apiKey: env.VITE_OPENROUTER_API_KEY || '',
-  baseURL: 'https://openrouter.ai/api/v1',
-  dangerouslyAllowBrowser: true,
-  defaultHeaders: {
-    'HTTP-Referer': window.location.origin,
-    'X-Title': 'Boostify Music Manager',
+// Get OpenRouter API key from environment
+const getOpenRouterKey = async (): Promise<string> => {
+  // First check if it's available from our environment
+  if (env.VITE_OPENROUTER_API_KEY) {
+    return env.VITE_OPENROUTER_API_KEY;
   }
-});
+  
+  // If not in environment, try to fetch from server endpoint
+  try {
+    const response = await fetch('/api/get-openrouter-key');
+    if (!response.ok) {
+      throw new Error('Failed to fetch OpenRouter key from server');
+    }
+    const data = await response.json();
+    if (data.key) {
+      return data.key;
+    }
+    throw new Error('No key returned from server');
+  } catch (error) {
+    console.error('Error fetching OpenRouter key:', error);
+    throw new Error('OpenRouter API key is not available');
+  }
+};
+
+// Initialize OpenAI client with OpenRouter configuration
+const createOpenAIClient = async () => {
+  const apiKey = await getOpenRouterKey();
+  
+  return new OpenAI({
+    apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+    dangerouslyAllowBrowser: true,
+    defaultHeaders: {
+      'HTTP-Referer': window.location.origin,
+      'X-Title': 'Boostify Music Manager',
+    }
+  });
+};
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     try {
       console.log('Making request to OpenRouter with prompt:', prompt);
+      
+      // Create OpenAI client with OpenRouter configuration
+      const openaiClient = await createOpenAIClient();
 
-      const completion = await openai.chat.completions.create({
+      const completion = await openaiClient.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
           {
@@ -39,10 +66,10 @@ export const managerToolsService = {
         max_tokens: 2000
       });
 
-      console.log('OpenRouter response:', completion);
+      console.log('OpenRouter response received');
 
       if (!completion.choices?.[0]?.message?.content) {
-        console.error('Invalid response format:', completion);
+        console.error('Invalid response format from OpenRouter');
         throw new Error('Invalid API response format');
       }
 
