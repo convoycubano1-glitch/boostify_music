@@ -528,7 +528,7 @@ ${transcription}`;
 
     const items = shots.map((shot, index) => {
       const duration = shot.duration ? parseFloat(shot.duration) * 1000 : Math.floor(Math.random() * (5000 - 1000) + 1000);
-      const item = {
+      const item: TimelineItem = {
         id: index + 1,
         group: 1,
         title: shot.shotType,
@@ -539,7 +539,12 @@ ${transcription}`;
         imagePrompt: shot.imagePrompt,
         generatedImage: undefined,
         duration: duration,
-        transition: shot.transition || "cut"
+        transition: shot.transition || "cut",
+        // Campos necesarios para compatibilidad con TimelineClip
+        start: (currentTime - baseTime) / 1000,
+        type: 'image',
+        thumbnail: undefined,
+        mood: 'neutral'
       };
       currentTime += duration;
       return item;
@@ -1181,7 +1186,36 @@ ${transcription}`;
 
   return (
     <div className="min-h-screen bg-background">
-      <ProgressSteps currentStep={currentStep} />
+      <ProgressSteps 
+        currentStep={currentStep} 
+        steps={[
+          {
+            title: "Transcripción de Audio",
+            description: "Analizando y transcribiendo la letra de tu canción",
+            status: currentStep > 1 ? "completed" : currentStep === 1 ? "current" : "pending"
+          },
+          {
+            title: "Generación de Guion",
+            description: "Creando un guion visual basado en tu música",
+            status: currentStep > 2 ? "completed" : currentStep === 2 ? "current" : "pending"
+          },
+          {
+            title: "Sincronización",
+            description: "Sincronizando el video con el ritmo de la música",
+            status: currentStep > 3 ? "completed" : currentStep === 3 ? "current" : "pending"
+          },
+          {
+            title: "Generación de Escenas",
+            description: "Creando las escenas del video musical",
+            status: currentStep > 4 ? "completed" : currentStep === 4 ? "current" : "pending"
+          },
+          {
+            title: "Renderizado Final",
+            description: "Combinando todo en tu video musical",
+            status: currentStep > 5 ? "completed" : currentStep === 5 ? "current" : "pending"
+          }
+        ]}
+      />
 
       <div className="container py-6 space-y-8">
         <Card className="p-6">
