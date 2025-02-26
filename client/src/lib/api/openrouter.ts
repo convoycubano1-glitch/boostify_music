@@ -315,13 +315,24 @@ export async function chatWithAI(messages: Message[]) {
   }
 }
 
-export async function generateVideoScript(prompt: string) {
+/**
+ * Genera un guion para un video musical utilizando IA avanzada
+ * @param prompt - Texto que describe la canción y los requisitos del video
+ * @returns Una cadena JSON con el guion del video musical
+ * @throws Error si hay problemas con la API o el formato de respuesta
+ */
+export async function generateVideoScript(prompt: string): Promise<string> {
+  if (!prompt || typeof prompt !== 'string') {
+    throw new Error("El prompt debe ser una cadena de texto válida");
+  }
+
   const maxRetries = 3;
   let retryCount = 0;
+  let lastError: Error | null = null;
 
   while (retryCount < maxRetries) {
     try {
-      console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video script`);
+      console.log(`Intento ${retryCount + 1}/${maxRetries} para generar guion de video`);
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",

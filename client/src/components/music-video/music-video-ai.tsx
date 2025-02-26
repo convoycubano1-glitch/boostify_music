@@ -423,8 +423,8 @@ ${transcription}`;
         throw new Error("El prompt debe ser una cadena de texto");
       }
       
-      // Llamada a la API para generar el guion
-      const jsonContent = await generateVideoScriptAPI(prompt);
+      // Llamada a la API para generar el guion con validación de tipos
+      const jsonContent: string = await generateVideoScriptAPI(prompt);
 
       try {
         // Validar y procesar la respuesta
