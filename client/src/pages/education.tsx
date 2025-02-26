@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
 import { 
   collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc,
-  getDoc, setDoc 
+  getDoc, setDoc, where, limit
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
@@ -85,88 +85,124 @@ export default function EducationPage() {
   // Colección para el caché de imágenes generadas
   const imagesCacheCollection = "generated_images_cache";
   
+  // Memoria caché local para imágenes (reducirá las solicitudes innecesarias a Firebase)
+  const imageCache: Record<string, string> = {};
+  
   /**
-   * Recupera una imagen del caché de Firestore o genera una nueva si no existe
-   * @param key Clave única para identificar la imagen (ej: "category_Beginner")
-   * @param prompt Prompt para generar la imagen si no está en caché
-   * @param options Opciones adicionales para la generación
-   * @returns URL de la imagen (desde caché o recién generada)
+   * Sistema OPTIMIZADO de gestión de imágenes que evita generaciones innecesarias
+   * @param key Clave única para identificar la imagen
+   * @param prompt Prompt para generar la imagen solo si es absolutamente necesario
+   * @param options Opciones adicionales para la gestión de imágenes
+   * @returns URL de la imagen (prioriza la base de datos y cache local)
    */
   const getOrGenerateImage = async (key: string, prompt: string, options?: {
     negativePrompt?: string,
     imageSize?: string,
-    forceRegenerate?: boolean
+    forceRegenerate?: boolean,
+    category?: string
   }): Promise<string> => {
     try {
-      // Primero verificamos si la imagen ya existe en el caché
-      if (!options?.forceRegenerate) {
-        const cacheRef = doc(db, imagesCacheCollection, key);
-        const cacheDoc = await getDoc(cacheRef);
-        
-        if (cacheDoc.exists()) {
-          const cachedData = cacheDoc.data();
-          // Verificar que la URL es válida y no es de Unsplash
-          if (cachedData.imageUrl && 
-              !cachedData.imageUrl.includes('unsplash.com') && 
-              !cachedData.imageUrl.includes('placeholder')) {
-            console.log(`Imagen recuperada del caché para: ${key}`);
-            return cachedData.imageUrl;
-          }
-        }
+      console.log(`Solicitando imagen para: ${key}`);
+      
+      // 1. PASO 1: Verificar caché LOCAL para evitar incluso acceder a Firebase
+      if (imageCache[key] && !options?.forceRegenerate) {
+        console.log(`✅ Imagen recuperada de caché local: ${key}`);
+        return imageCache[key];
       }
       
-      // Si no está en caché o se fuerza regeneración, intentamos generar con fal-ai
-      console.log(`Generando nueva imagen para: ${key}`);
-      console.log("Prompt:", prompt.substring(0, 50) + "...");
-      
-      // Intento de generación con FAL.AI
+      // 2. PASO 2: Verificar la existencia directa en Firestore (sin consulta compleja)
       try {
-        const result = await generateImageWithFal({
-          prompt,
-          negativePrompt: options?.negativePrompt || "text, words, watermarks, logos, blurry, distorted, people, faces",
-          imageSize: options?.imageSize || "landscape_16_9"
-        });
+        const cachedDoc = await getDoc(doc(db, imagesCacheCollection, key));
         
-        if (result.data?.images?.[0]) {
-          // Procesar la URL de la imagen
-          let imageUrl = result.data.images[0];
-          if (typeof imageUrl === 'object' && imageUrl.url) {
-            imageUrl = imageUrl.url;
+        if (cachedDoc.exists() && !options?.forceRegenerate) {
+          const data = cachedDoc.data();
+          if (data.imageUrl && !data.imageUrl.includes('unsplash.com')) {
+            console.log(`✅ Imagen recuperada de Firestore: ${key}`);
+            // Guardamos en caché local para futuras solicitudes
+            imageCache[key] = data.imageUrl;
+            return data.imageUrl;
           }
+        }
+      } catch (dbError) {
+        console.log(`⚠️ No se pudo verificar en Firestore: ${dbError.message}`);
+        // Continuamos con el proceso aunque haya error
+      }
+      
+      // 3. PASO 3: Intentar generar imagen con FAL.ai si no hay problemas de permisos
+      try {
+        // Sólo generamos imagen nueva si:
+        // 1. Se solicita explícitamente con forceRegenerate
+        // 2. O si no tenemos la imagen en caché y el usuario tiene permisos
+        if (options?.forceRegenerate || !imageCache[key]) {
+          console.log(`🔄 Generando nueva imagen con FAL.ai para: ${key}`);
           
-          // Guardar en caché
-          const cacheRef = doc(db, imagesCacheCollection, key);
-          await setDoc(cacheRef, {
-            key,
+          const result = await generateImageWithFal({
             prompt,
-            imageUrl,
-            timestamp: Timestamp.now(),
-            source: 'fal-ai'
+            negativePrompt: options?.negativePrompt || "low quality, blurry, distorted, unrealistic, watermark, text, words",
+            imageSize: options?.imageSize || "square" // Usamos formato correcto
           });
           
-          console.log(`Imagen generada y guardada en caché: ${key}`);
-          return imageUrl;
-        } else {
-          throw new Error("No image data in fal-ai response");
+          if (result.data?.images?.[0]) {
+            // Procesar la URL de la imagen
+            let imageUrl = result.data.images[0];
+            if (typeof imageUrl === 'object' && imageUrl.url) {
+              imageUrl = imageUrl.url;
+            }
+            
+            console.log(`✅ Imagen generada exitosamente para: ${key}`);
+            
+            // Guardar en caché local
+            imageCache[key] = imageUrl;
+            
+            // Intentar guardar en Firestore (pero no bloqueamos si falla)
+            try {
+              await setDoc(doc(db, imagesCacheCollection, key), {
+                key,
+                prompt,
+                imageUrl,
+                timestamp: Timestamp.now(),
+                category: options?.category || '',
+                source: 'fal-ai'
+              });
+              console.log(`✅ Imagen guardada en Firestore: ${key}`);
+            } catch (saveError) {
+              console.warn(`⚠️ No se pudo guardar en Firestore, pero la imagen está en caché local: ${saveError.message}`);
+              // Continuamos usando la imagen aunque no se guarde en Firestore
+            }
+            
+            return imageUrl;
+          }
         }
-      } catch (error) {
-        console.error(`Error generando imagen con fal-ai para ${key}:`, error);
-        
-        // Si hay un error con FAL.ai, verificamos si hay una imagen en caché, aunque sea antigua
-        const cacheRef = doc(db, imagesCacheCollection, key);
-        const cacheDoc = await getDoc(cacheRef);
-        
-        if (cacheDoc.exists() && cacheDoc.data().imageUrl) {
-          console.log(`Recuperando imagen existente en caché debido a error de generación: ${key}`);
-          return cacheDoc.data().imageUrl;
-        }
-        
-        // Si no hay nada en caché, usamos un placeholder basado en el nivel/categoría
-        return `https://placehold.co/1200x800/2A2A2A/FFFFFF?text=${encodeURIComponent(key.replace('_', ' '))}`;
+      } catch (genError) {
+        console.error(`❌ Error generando imagen: ${genError.message}`);
+        // Continuamos con placeholder
       }
+      
+      // 4. PASO 4: Si todo lo anterior falla, usar un placeholder
+      const placeholderUrl = `https://placehold.co/800x800/1A1A2E/FFFFFF?text=${encodeURIComponent(key.replace(/_/g, ' '))}`;
+      
+      // Guardar el placeholder en caché local
+      imageCache[key] = placeholderUrl;
+      
+      // Intentar guardar en Firestore el placeholder, pero no bloqueamos si falla
+      try {
+        await setDoc(doc(db, imagesCacheCollection, key), {
+          key,
+          prompt,
+          imageUrl: placeholderUrl,
+          timestamp: Timestamp.now(),
+          category: options?.category || '',
+          source: 'placeholder' 
+        });
+      } catch (saveError) {
+        console.warn(`⚠️ No se pudo guardar placeholder en Firestore: ${saveError.message}`);
+      }
+      
+      return placeholderUrl;
     } catch (finalError) {
-      console.error(`Error final en getOrGenerateImage para ${key}:`, finalError);
-      return `https://placehold.co/1200x800/2A2A2A/FFFFFF?text=${encodeURIComponent(key)}`;
+      console.error(`❌ Error crítico en sistema de imágenes: ${finalError.message}`);
+      const fallbackUrl = `https://placehold.co/800x800/1A1A2E/FFFFFF?text=Error`;
+      return fallbackUrl;
     }
   };
   
@@ -398,100 +434,44 @@ export default function EducationPage() {
       
       console.log("Starting course creation process...");
 
-      // Crear un prompt más específico y detallado para la generación de la imagen
+      // Crear un prompt específico para la generación de la imagen
       const imagePrompt = `professional ${newCourse.level.toLowerCase()} level ${newCourse.category.toLowerCase()} music education course cover titled "${newCourse.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
-      console.log("Generating image with fal-ai:", imagePrompt);
+      console.log("Obteniendo imagen para el nuevo curso:", newCourse.title);
       
-      let thumbnailUrl = "";
-      try {
-        // Intentar generar con fal-ai con reintentos
-        let attempts = 0;
-        const maxAttempts = 3;
+      // Crear una clave única para este curso en la base de datos
+      // Usamos un ID temporal ya que aún no tenemos el ID real del curso
+      const tempId = Date.now().toString();
+      const cacheKey = `course_temp_${tempId}_${newCourse.title.substring(0, 20).replace(/\s+/g, '_').toLowerCase()}`;
+      
+      // Usar nuestro sistema optimizado de imágenes que prioriza la base de datos
+      let thumbnailUrl = await getOrGenerateImage(cacheKey, imagePrompt, {
+        negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional", 
+        imageSize: "square", // Usamos el formato correcto para FAL.ai
+        category: newCourse.category, // Incluimos la categoría para reutilización
+        forceRegenerate: false // No forzamos regeneración para ahorrar tokens
+      });
+      
+      // Si obtenemos un placeholder, usamos una imagen predefinida según la categoría
+      if (thumbnailUrl.includes('placehold.co')) {
+        console.log("Usando imagen predefinida para el curso por categoría");
         
-        while (attempts < maxAttempts) {
-          attempts++;
-          try {
-            console.log(`Intento ${attempts} de generar imagen con fal-ai`);
-            const result = await generateImageWithFal({
-              prompt: imagePrompt,
-              negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
-              imageSize: "square_1_1"
-            });
-            
-            if (result.data?.images?.[0]) {
-              // Asegurarnos de tener la URL de la imagen (el formato puede variar)
-              let generatedImage = result.data.images[0];
-              if (typeof generatedImage === 'object' && generatedImage.url) {
-                thumbnailUrl = generatedImage.url;
-              } else {
-                thumbnailUrl = generatedImage;
-              }
-              console.log("Fal-ai image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
-              break; // Salir del bucle si se generó correctamente
-            } else {
-              throw new Error("No image data in fal-ai response");
-            }
-          } catch (error) {
-            console.error(`Error en intento ${attempts}:`, error);
-            if (attempts >= maxAttempts) {
-              throw error; // Re-lanzar el error después del último intento
-            }
-            // Esperar un momento antes de reintentar (backoff exponencial)
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-          }
-        }
+        // Mapa de imágenes predefinidas por categoría
+        const defaultCategoryImages: Record<string, string> = {
+          "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
+          "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
+          "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
+          "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
+          "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg",
+          "default": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg"
+        };
         
-        if (!thumbnailUrl) {
-          throw new Error("No se pudo generar la imagen después de múltiples intentos");
-        }
-      } catch (error) {
-        console.error("Error generating with fal-ai, using alternative approach:", error);
+        // Si tenemos una imagen predefinida para esta categoría, la usamos
+        const categoryImage = defaultCategoryImages[newCourse.category] || defaultCategoryImages.default;
+        thumbnailUrl = categoryImage;
+        console.log("🔄 Usando imagen predefinida para categoría:", newCourse.category);
         
-        // Intentar con un prompt más simple como alternativa (sin usar Unsplash como fallback)
-        try {
-          const simplePrompt = `minimal music ${newCourse.category} course cover, clean design, abstract`;
-          const result = await generateImageWithFal({
-            prompt: simplePrompt,
-            negativePrompt: "text, words, people, faces, blurry",
-            imageSize: "square_1_1"
-          });
-          
-          if (result.data?.images?.[0]) {
-            let generatedImage = result.data.images[0];
-            if (typeof generatedImage === 'object' && generatedImage.url) {
-              thumbnailUrl = generatedImage.url;
-            } else {
-              thumbnailUrl = generatedImage;
-            }
-            console.log("Alternative fal-ai image generated:", thumbnailUrl.substring(0, 50) + "...");
-          } else {
-            // Si todo falla, creamos una URL de imagen estática con gradiente basada en la categoría
-            const colors = {
-              "Marketing": "from-orange-500 to-red-700",
-              "Business": "from-blue-500 to-indigo-700",
-              "Production": "from-green-500 to-emerald-700",
-              "Branding": "from-purple-500 to-violet-700",
-              "Distribution": "from-pink-500 to-rose-700",
-              "default": "from-gray-700 to-slate-900"
-            };
-            
-            // Esta es una URL de ejemplo que debería reemplazarse con una imagen real en producción
-            const categoryColor = colors[newCourse.category as keyof typeof colors] || colors.default;
-            thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(newCourse.title)}&css=.bg{background:linear-gradient(135deg,${categoryColor});}`;
-            
-            console.log("Using placeholder image:", thumbnailUrl);
-            
-            toast({
-              title: "Advertencia",
-              description: "No se pudo generar una imagen personalizada. Se usará una imagen temporal.",
-              variant: "destructive"
-            });
-          }
-        } catch (finalError) {
-          console.error("Todos los intentos de generación fallaron:", finalError);
-          // URL de marcador de posición final si todo falla
-          thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(newCourse.title)}`;
-        }
+        // Guardamos esta asociación en la caché local
+        imageCache[cacheKey] = thumbnailUrl;
       }
 
       const prompt = `Generate a professional music course with these characteristics:
@@ -628,89 +608,25 @@ export default function EducationPage() {
         const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
         console.log("Generating image with fal-ai for sample course:", course.title);
         
-        let thumbnailUrl = "";
-        try {
-          // Intentar generar con fal-ai con reintentos
-          let attempts = 0;
-          const maxAttempts = 2; // Menos intentos que para cursos normales para no ralentizar demasiado
-          
-          while (attempts < maxAttempts) {
-            attempts++;
-            try {
-              console.log(`Sample course: Intento ${attempts} de generar imagen para "${course.title}"`);
-              const result = await generateImageWithFal({
-                prompt: imagePrompt,
-                negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
-                imageSize: "square_1_1"
-              });
-              
-              if (result.data?.images?.[0]) {
-                // Asegurarnos de tener la URL de la imagen (el formato puede variar)
-                let generatedImage = result.data.images[0];
-                if (typeof generatedImage === 'object' && generatedImage.url) {
-                  thumbnailUrl = generatedImage.url;
-                } else {
-                  thumbnailUrl = generatedImage;
-                }
-                console.log(`Fal-ai image generated successfully for sample course "${course.title}"`);
-                break; // Salir del bucle si se generó correctamente
-              } else {
-                throw new Error("No image data in fal-ai response");
-              }
-            } catch (error) {
-              console.error(`Error en intento ${attempts} para curso de muestra:`, error);
-              if (attempts >= maxAttempts) {
-                throw error; // Re-lanzar el error después del último intento
-              }
-              // Esperar un momento antes de reintentar
-              await new Promise(resolve => setTimeout(resolve, 500 * attempts));
-            }
-          }
-          
-          if (!thumbnailUrl) {
-            throw new Error("No se pudo generar la imagen después de múltiples intentos");
-          }
-        } catch (error) {
-          console.error("Error generating with fal-ai for sample course, using alternative:", error);
-          
-          // Usar un enfoque alternativo - prompt más simple
-          try {
-            const simplePrompt = `minimal music ${course.category} course cover, clean design, abstract`;
-            const result = await generateImageWithFal({
-              prompt: simplePrompt,
-              negativePrompt: "text, words, people, faces, blurry",
-              imageSize: "square_1_1"
-            });
-            
-            if (result.data?.images?.[0]) {
-              let generatedImage = result.data.images[0];
-              if (typeof generatedImage === 'object' && generatedImage.url) {
-                thumbnailUrl = generatedImage.url;
-              } else {
-                thumbnailUrl = generatedImage;
-              }
-              console.log(`Alternative fal-ai image generated for sample course "${course.title}"`);
-            } else {
-              // Usar un color de fondo según la categoría para generar una imagen de placeholder
-              const colors = {
-                "Marketing": "from-orange-500 to-red-700",
-                "Business": "from-blue-500 to-indigo-700",
-                "Production": "from-green-500 to-emerald-700",
-                "Branding": "from-purple-500 to-violet-700",
-                "Distribution": "from-pink-500 to-rose-700",
-                "default": "from-gray-700 to-slate-900"
-              };
-              
-              const categoryColor = colors[course.category as keyof typeof colors] || colors.default;
-              thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(course.title)}&css=.bg{background:linear-gradient(135deg,${categoryColor});}`;
-              
-              console.log(`Using placeholder image for sample course "${course.title}"`);
-            }
-          } catch (finalError) {
-            console.error(`All image generation attempts failed for "${course.title}":`, finalError);
-            thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(course.title)}`;
-          }
-        }
+        // Usar nuestro sistema mejorado para la generación de imágenes
+        const cacheKey = `course_sample_${Date.now()}_${course.title.substring(0, 20).replace(/\s+/g, '_').toLowerCase()}`;
+        
+        // Usamos imágenes predefinidas según la categoría para evitar generaciones innecesarias
+        const defaultCategoryImages: Record<string, string> = {
+          "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
+          "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
+          "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
+          "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
+          "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg",
+          "default": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg"
+        };
+        
+        // Usamos directamente la imagen predefinida por categoría
+        let thumbnailUrl = defaultCategoryImages[course.category] || defaultCategoryImages.default;
+        console.log(`Using predefined image for sample course "${course.title}" (${course.category})`);
+        
+        // Guardamos en caché local para futuras referencias
+        imageCache[cacheKey] = thumbnailUrl;
 
         const prompt = `Generate a professional music course with these characteristics:
           - Title: "${course.title}"
