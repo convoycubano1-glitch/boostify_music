@@ -878,11 +878,14 @@ export async function analyzeImage(imageUrl: string) {
     
     console.log("OpenRouter image analysis API key check:", !!apiKey);
     
+    // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
+    console.log("Using Gemini 2.0 Flash model for image analysis");
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+        model: "google/gemini-2.0-flash-001", // Modelo solicitado por el usuario
         messages: [
           {
             role: "system",
@@ -928,11 +931,14 @@ export async function transcribeWithAI(audioBase64: string) {
     
     console.log("OpenRouter transcription API key check:", !!apiKey);
     
+    // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
+    console.log("Using Gemini 2.0 Flash model for audio transcription");
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+        model: "google/gemini-2.0-flash-001", // Modelo solicitado por el usuario
         messages: [{
           role: "user",
           content: `Please transcribe this audio content into text format. The audio is encoded in base64: ${audioBase64}`
