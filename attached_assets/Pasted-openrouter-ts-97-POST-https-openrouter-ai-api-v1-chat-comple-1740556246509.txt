@@ -1,0 +1,46 @@
+openrouter.ts:97 
+            
+            
+           POST https://openrouter.ai/api/v1/chat/completions 401 (Unauthorized)
+generateVideoPromptWithRetry @ openrouter.ts:97Entender este errorAI
+openrouter.ts:124 API Response: {error: {…}}
+openrouter.ts:128 API Error: No auth credentials found
+generateVideoPromptWithRetry @ openrouter.ts:128Entender este errorAI
+openrouter.ts:154 Error in attempt 3: Error: API error: 401 No auth credentials found
+    at generateVideoPromptWithRetry (openrouter.ts:137:15)
+    at async generatePromptForSegment (music-video-ai.tsx:1396:115)
+    at async music-video-ai.tsx:1475:33
+    at async Promise.all (index 2)
+    at async generatePromptsForSegments (music-video-ai.tsx:1473:27)
+generateVideoPromptWithRetry @ openrouter.ts:154Entender este errorAI
+openrouter.ts:82 Waiting 12 seconds before retry 3
+openrouter.ts:97 
+            
+            
+           POST https://openrouter.ai/api/v1/chat/completions 401 (Unauthorized)
+generateVideoPromptWithRetry @ openrouter.ts:97Entender este errorAI
+openrouter.ts:124 API Response: {error: {…}}
+openrouter.ts:128 API Error: No auth credentials found
+generateVideoPromptWithRetry @ openrouter.ts:128Entender este errorAI
+openrouter.ts:154 Error in attempt 3: Error: API error: 401 No auth credentials found
+    at generateVideoPromptWithRetry (openrouter.ts:137:15)
+    at async generatePromptForSegment (music-video-ai.tsx:1396:115)
+    at async music-video-ai.tsx:1475:33
+    at async Promise.all (index 1)
+    at async generatePromptsForSegments (music-video-ai.tsx:1473:27)
+generateVideoPromptWithRetry @ openrouter.ts:154Entender este errorAI
+openrouter.ts:82 Waiting 12 seconds before retry 3
+openrouter.ts:97 
+            
+            
+           POST https://openrouter.ai/api/v1/chat/completions 401 (Unauthorized)
+generateVideoPromptWithRetry @ openrouter.ts:97Entender este errorAI
+openrouter.ts:124 API Response: {error: {…}}
+openrouter.ts:128 API Error: No auth credentials found
+generateVideoPromptWithRetry @ openrouter.ts:128Entender este errorAI
+openrouter.ts:154 Error in attempt 3: Error: API error: 401 No auth credentials found
+    at generateVideoPromptWithRetry (openrouter.ts:137:15)
+    at async generatePromptForSegment (music-video-ai.tsx:1396:115)
+    at async music-video-ai.tsx:1475:33
+    at async Promise.all (index 0)
+    at async generatePromptsForSegments (music-video-ai.tsx:1473:27)

@@ -87,6 +87,16 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
   const maxRetries = 5;
   let retryCount = 0;
 
+  // Verificar si la API key está presente antes de realizar cualquier solicitud
+  const apiKey = env.VITE_OPENROUTER_API_KEY;
+  if (!apiKey) {
+    console.error("OpenRouter API key is missing or undefined. Using fallback prompt generation.");
+    return generateVideoPrompt(params); // Usar generación local como fallback
+  }
+
+  // Registrar la disponibilidad de la API key (sin mostrar el valor)
+  console.log("OpenRouter API key availability check:", !!apiKey);
+
   while (retryCount < maxRetries) {
     try {
       console.log(`Attempt ${retryCount + 1}/${maxRetries} to generate video prompt`);
@@ -94,14 +104,23 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
       const promptText = generateVideoPrompt(params);
       console.log("Generated prompt text:", promptText);
 
+      // Preparar headers con validación adicional
+      const headers = {
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Music Video Creator",
+        "Content-Type": "application/json"
+      };
+
+      // Verificar que la clave de autorización no esté vacía
+      if (!headers.Authorization || headers.Authorization === "Bearer " || headers.Authorization === "Bearer undefined") {
+        throw new Error("Authorization header is invalid: API key is missing");
+      }
+
+      // Realizar la solicitud a la API
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Music Video Creator",
-          "Content-Type": "application/json"
-        },
+        headers,
         body: JSON.stringify({
           model: "mistralai/mixtral-8x7b-instruct",
           messages: [
@@ -120,13 +139,29 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
         })
       });
 
-      const data = await response.json();
+      // Manejar la respuesta
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Error parsing API response:", jsonError);
+        throw new Error(`Unable to parse API response: ${jsonError.message}`);
+      }
+      
       console.log("API Response:", data);
 
       if (!response.ok) {
         const errorMessage = data.error?.message || response.statusText;
         console.error("API Error:", errorMessage);
 
+        if (response.status === 401 || response.status === 403) {
+          console.error("Authentication error with OpenRouter API. Check your API key.");
+          
+          // Después de un error de autenticación, usar el prompt generado localmente
+          console.log("Using locally generated prompt instead");
+          return `${promptText} (Note: This is a fallback prompt - AI enhancement unavailable)`;
+        }
+        
         if (response.status === 429) {
           console.log("Rate limit hit, implementing backoff...");
           await backoff(retryCount);
@@ -147,6 +182,7 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
         throw new Error("Empty prompt generated");
       }
 
+      // Guardar en caché para futuros usos
       promptCache.set(JSON.stringify(params), generatedPrompt);
       return generatedPrompt;
 
@@ -163,7 +199,9 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
         }
 
         // Generar un prompt base como último recurso
-        return generateVideoPrompt(params);
+        const fallbackPrompt = generateVideoPrompt(params);
+        console.log("Using fallback prompt generation:", fallbackPrompt.substring(0, 50) + "...");
+        return fallbackPrompt;
       }
 
       await backoff(retryCount);
@@ -326,22 +364,38 @@ export async function generateVideoScript(prompt: string): Promise<string> {
     throw new Error("El prompt debe ser una cadena de texto válida");
   }
 
+  // Verificar si la API key está presente antes de realizar cualquier solicitud
+  const apiKey = env.VITE_OPENROUTER_API_KEY;
+  if (!apiKey) {
+    console.error("OpenRouter API key is missing or undefined. Using fallback script generation.");
+    return generateFallbackVideoScript(prompt);
+  }
+
+  console.log("OpenRouter API key availability check:", !!apiKey);
+
   const maxRetries = 3;
   let retryCount = 0;
-  let lastError: Error | null = null;
 
   while (retryCount < maxRetries) {
     try {
       console.log(`Intento ${retryCount + 1}/${maxRetries} para generar guion de video`);
 
+      // Preparar headers con validación adicional
+      const headers = {
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Music Video Creator",
+        "Content-Type": "application/json"
+      };
+
+      // Verificar que la clave de autorización no esté vacía
+      if (!headers.Authorization || headers.Authorization === "Bearer " || headers.Authorization === "Bearer undefined") {
+        throw new Error("Authorization header is invalid: API key is missing");
+      }
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.VITE_OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Music Video Creator",
-          "Content-Type": "application/json"
-        },
+        headers,
         body: JSON.stringify({
           model: "anthropic/claude-3-sonnet",
           messages: [
@@ -397,9 +451,21 @@ FORMATO DE RESPUESTA (JSON):
         })
       });
 
+      // Manejar la respuesta
+      let errorData;
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: { message: "Failed to parse error response" } };
+        }
         console.error("Script generation API Error:", errorData);
+
+        if (response.status === 401 || response.status === 403) {
+          console.error("Authentication error with OpenRouter API. Check your API key.");
+          return generateFallbackVideoScript(prompt);
+        }
 
         if (response.status === 429) {
           console.log("Rate limit hit, implementing backoff...");
@@ -411,7 +477,14 @@ FORMATO DE RESPUESTA (JSON):
         throw new Error(`Error generating script: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Error parsing API response:", jsonError);
+        throw new Error(`Unable to parse API response: ${jsonError.message}`);
+      }
+      
       console.log("Script generation response:", data);
 
       if (!data.choices?.[0]?.message?.content) {
@@ -445,6 +518,9 @@ FORMATO DE RESPUESTA (JSON):
       console.error(`Error in attempt ${retryCount + 1}:`, error);
 
       if (retryCount === maxRetries - 1) {
+        if (error instanceof Error && error.message.includes("API key")) {
+          return generateFallbackVideoScript(prompt);
+        }
         throw error;
       }
 
@@ -453,7 +529,53 @@ FORMATO DE RESPUESTA (JSON):
     }
   }
 
-  throw new Error(`Failed to generate script after ${maxRetries} attempts`);
+  // Si todos los intentos fallan, usar la generación de respaldo
+  console.warn("Failed all attempts to generate script - using fallback");
+  return generateFallbackVideoScript(prompt);
+}
+
+/**
+ * Genera un guion de video de fallback cuando la API no está disponible
+ * @param prompt El prompt original con información de la canción
+ * @returns Un JSON string con una estructura básica de guion
+ */
+function generateFallbackVideoScript(prompt: string): string {
+  console.log("Generating fallback video script for:", prompt.substring(0, 100) + "...");
+  
+  // Extraer posibles líneas de letras del prompt
+  const lines = prompt.split('\n');
+  const lyricsLines = lines.filter(line => 
+    line.length > 10 && 
+    !line.includes("http") && 
+    !line.includes("Requisitos:") &&
+    !line.startsWith("Género:") &&
+    !line.startsWith("Estilo:") &&
+    !line.startsWith("Mood:") &&
+    !line.startsWith("Tema:")
+  );
+  
+  // Crear segmentos dividiendo las letras disponibles
+  const totalSegments = Math.min(6, Math.ceil(lyricsLines.length / 2));
+  const segments = [];
+  
+  for (let i = 0; i < totalSegments; i++) {
+    const startIndex = Math.floor(i * lyricsLines.length / totalSegments);
+    const endIndex = Math.floor((i + 1) * lyricsLines.length / totalSegments);
+    const segmentLyrics = lyricsLines.slice(startIndex, endIndex).join(" ");
+    
+    segments.push({
+      id: i + 1,
+      lyrics: segmentLyrics || `Segmento ${i + 1} de la canción`,
+      musical_elements: "Elementos instrumentales y ritmo base de la canción",
+      description: `Escena visual representando el segmento ${i + 1} de la canción, capturando la esencia emocional de este momento.`,
+      imagePrompt: `Escena cinematográfica para un video musical con iluminación dramática, enfoque en los detalles emocionales del momento representado por las letras: "${segmentLyrics || 'esta parte de la canción'}"`,
+      shotType: ["close-up", "medium shot", "wide shot", "tracking shot", "overhead shot"][i % 5],
+      mood: ["emotivo", "enérgico", "melancólico", "introspectivo", "celebratorio"][i % 5],
+      transition: ["corte", "fundido", "barrido", "desvanecimiento", "zoom"][i % 5]
+    });
+  }
+  
+  return JSON.stringify({ segments });
 }
 
 export async function analyzeImage(imageUrl: string) {
