@@ -215,17 +215,50 @@ export default function CourseDetailPage() {
       return;
     }
 
+    console.log(`Generating content for lesson: "${lessonTitle}"`);
+    
+    // Check if we already have this lesson content saved
     const currentLessonContents = progress.lessonContents || {};
-
+    
     if (currentLessonContents[lessonTitle]) {
+      console.log('Using cached lesson content from Firestore');
       setSelectedLesson(currentLessonContents[lessonTitle]);
+      return;
+    }
+
+    // First check if the OpenRouter API key is accessible
+    try {
+      const apiKeyResponse = await fetch("/api/get-openrouter-key");
+      const keyData = await apiKeyResponse.json();
+      
+      if (!apiKeyResponse.ok || !keyData.exists || !keyData.key) {
+        console.error("OpenRouter API key not available:", keyData);
+        toast({
+          title: "API Key Issue",
+          description: "There was a problem accessing the API key. Contact support.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      console.log("OpenRouter API key is available and valid");
+    } catch (keyError) {
+      console.error("Error checking OpenRouter API key:", keyError);
+      toast({
+        title: "API Configuration Error",
+        description: "Could not verify API configuration. Please try again later.",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsGeneratingContent(true);
     try {
+      console.log("Starting lesson content generation process...");
       const content = await generateLessonContent(lessonTitle, lessonDescription);
+      console.log("Lesson content generated successfully:", content);
 
+      // Update progress in memory and in Firestore
       const newProgress = {
         ...progress,
         lessonContents: {
@@ -235,10 +268,12 @@ export default function CourseDetailPage() {
       };
 
       if (auth.currentUser && courseId) {
+        console.log("Saving lesson content to Firestore...");
         const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
         await updateDoc(progressRef, {
           lessonContents: newProgress.lessonContents
         });
+        console.log("Lesson content saved to Firestore successfully");
       }
 
       setProgress(newProgress);
@@ -246,13 +281,28 @@ export default function CourseDetailPage() {
 
       toast({
         title: "Success",
-        description: "Lesson content generated successfully"
+        description: "Lesson content generated successfully",
+        variant: "default"
       });
     } catch (error) {
       console.error('Error generating lesson content:', error);
+      
+      // Provide a more specific error message if possible
+      let errorMessage = "Failed to generate lesson content. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('auth')) {
+          errorMessage = "Authentication error with the AI service. Please try again later.";
+        } else if (error.message.includes('timeout') || error.message.includes('network')) {
+          errorMessage = "Network issue while generating content. Check your connection.";
+        } else if (error.message.includes('parse') || error.message.includes('JSON')) {
+          errorMessage = "Error processing AI response. Try again or contact support.";
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to generate lesson content. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
