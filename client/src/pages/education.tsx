@@ -896,20 +896,24 @@ export default function EducationPage() {
       <Header />
       
       {/* Componente de precarga invisible para asegurar que todas las imágenes críticas estén disponibles */}
-      <ImagePreloader 
-        urls={criticalImageUrls}
-        onComplete={(success, failure) => {
-          console.log(`✅ Precarga de imágenes críticas completada. Éxito: ${success}, Fallos: ${failure}`);
-          setCriticalAssetsLoaded(true);
-          if (failure > 0) {
-            toast({
-              title: "Aviso",
-              description: "Algunas imágenes pueden tardar en cargar correctamente. Los recursos críticos están siendo procesados.",
-              duration: 5000
-            });
-          }
-        }}
-      />
+      {/* Solo renderizamos el componente de precarga cuando es estrictamente necesario */}
+      {!criticalAssetsLoaded && (
+        <ImagePreloader 
+          urls={criticalImageUrls}
+          timeout={5000} // Reducimos el tiempo de espera para evitar bloqueos
+          onComplete={(success, failure) => {
+            console.log(`✅ Precarga de imágenes críticas completada. Éxito: ${success}, Fallos: ${failure}`);
+            setCriticalAssetsLoaded(true);
+            if (failure > 0) {
+              toast({
+                title: "Aviso",
+                description: "Algunas imágenes pueden tardar en cargar correctamente. Los recursos críticos están siendo procesados.",
+                duration: 5000
+              });
+            }
+          }}
+        />
+      )}
 
       <main className="container mx-auto px-4 py-8 pt-20">
         {/* Dialog para extender un curso */}

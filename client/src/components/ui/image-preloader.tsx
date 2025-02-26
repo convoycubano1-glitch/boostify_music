@@ -49,6 +49,23 @@ export function ImagePreloader({
       return;
     }
     
+    // Verificamos si todas las imágenes están ya en la caché del navegador
+    try {
+      const cachedImages = JSON.parse(sessionStorage.getItem('cachedImagesLoaded') || '{}');
+      const allCached = urls.every(url => cachedImages[url]);
+      
+      if (allCached) {
+        console.log('✅ Todas las imágenes ya están en caché, omitiendo precarga');
+        successCountRef.current = urls.length;
+        setLoaded(urls.length);
+        onComplete?.(urls.length, 0);
+        setIsComplete(true);
+        return;
+      }
+    } catch (e) {
+      // Ignorar errores y continuar con la precarga normal
+    }
+    
     // Función para verificar si todas las imágenes se han procesado
     const checkComplete = () => {
       if (!isMountedRef.current) return;
@@ -95,9 +112,15 @@ export function ImagePreloader({
         setLoaded(prev => prev + 1);
         // Guardamos en sessionStorage para futuro uso
         try {
+          // Actualizamos ambos caches: el normal y el de 'ya cargadas'
           const cachedImages = JSON.parse(sessionStorage.getItem('cachedImages') || '{}');
           cachedImages[url] = true;
           sessionStorage.setItem('cachedImages', JSON.stringify(cachedImages));
+          
+          // También marcamos como "completamente cargada" para futuras precargaciones
+          const loadedImages = JSON.parse(sessionStorage.getItem('cachedImagesLoaded') || '{}');
+          loadedImages[url] = true;
+          sessionStorage.setItem('cachedImagesLoaded', JSON.stringify(loadedImages));
         } catch (e) {
           // Ignoramos errores de almacenamiento
         }
