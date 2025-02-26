@@ -872,7 +872,7 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
       if (!data || !data.choices) {
         console.error("Invalid response structure (missing choices array):", data);
         
-        // We don't have responseText here, so we should return a generic message
+        // Return generic message when no valid response structure
         console.log("No valid response structure available");
         return "Sorry, I couldn't generate a proper response at this time.";
       }
