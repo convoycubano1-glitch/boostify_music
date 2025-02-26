@@ -1170,32 +1170,58 @@ export default function EducationPage() {
           </div>
         </div>
 
-        {/* Carrusel de categorías con las imágenes regeneradas por AI */}
+        {/* Sección moderna con vídeo de fondo */}
         {showCategoryCarousel && (
-          <div className="w-full mb-12">
-            <h2 className="text-2xl font-bold text-white mb-4">Explore by Level</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Object.entries(levelImages).map(([level, imageUrl]) => (
-                <div key={level} className="relative overflow-hidden rounded-lg group h-48 cursor-pointer">
-                  <img 
-                    src={imageUrl} 
-                    alt={`${level} level courses`} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-1">{level}</h3>
-                      <p className="text-gray-300 text-sm">
-                        {level === 'Beginner' 
-                          ? 'Start your music career journey'
-                          : level === 'Intermediate' 
-                            ? 'Enhance your existing skills'
-                            : 'Master advanced industry techniques'}
-                      </p>
-                    </div>
-                  </div>
+          <div className="w-full mb-16 relative">
+            <h2 className="text-4xl font-bold text-white mb-8 relative z-20">
+              Explore Music <span className="text-orange-500">Education Levels</span>
+            </h2>
+            
+            {/* Video de fondo con overlay */}
+            <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden rounded-2xl">
+              <div className="absolute inset-0 bg-black/60 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
+              <video 
+                className="w-full h-full object-cover"
+                autoPlay 
+                muted 
+                loop 
+                playsInline
+              >
+                <source src="/assets/Standard_Mode_Generated_Video (9).mp4" type="video/mp4" />
+              </video>
+            </div>
+            
+            {/* Tarjetas modernas con efecto de hover */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-20 p-4">
+              {/* Beginner */}
+              <div className="bg-gradient-to-br from-black/80 to-orange-950/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-900/30 shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/20 group">
+                <div className="p-6 relative">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
+                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">Beginner</h3>
+                  <p className="text-gray-300 mb-6">Start your music career journey with foundational knowledge and essential skills.</p>
+                  <button className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors">Get Started</button>
                 </div>
-              ))}
+              </div>
+              
+              {/* Intermediate */}
+              <div className="bg-gradient-to-br from-black/80 to-orange-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-800/30 shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/20 group">
+                <div className="p-6 relative">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
+                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">Intermediate</h3>
+                  <p className="text-gray-300 mb-6">Enhance your existing skills and expand your musical horizons with advanced techniques.</p>
+                  <button className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors">Level Up</button>
+                </div>
+              </div>
+              
+              {/* Advanced */}
+              <div className="bg-gradient-to-br from-black/80 to-orange-800/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-700/30 shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-orange-500/20 group">
+                <div className="p-6 relative">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8"></div>
+                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">Advanced</h3>
+                  <p className="text-gray-300 mb-6">Master advanced industry techniques and prepare for professional music career success.</p>
+                  <button className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md transition-colors">Master Now</button>
+                </div>
+              </div>
             </div>
           </div>
         )}
