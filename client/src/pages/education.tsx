@@ -123,8 +123,8 @@ export default function EducationPage() {
             return data.imageUrl;
           }
         }
-      } catch (dbError) {
-        console.log(`⚠️ No se pudo verificar en Firestore: ${dbError.message}`);
+      } catch (error: any) {
+        console.log(`⚠️ No se pudo verificar en Firestore: ${error.message || "Error desconocido"}`);
         // Continuamos con el proceso aunque haya error
       }
       
@@ -165,16 +165,16 @@ export default function EducationPage() {
                 source: 'fal-ai'
               });
               console.log(`✅ Imagen guardada en Firestore: ${key}`);
-            } catch (saveError) {
-              console.warn(`⚠️ No se pudo guardar en Firestore, pero la imagen está en caché local: ${saveError.message}`);
+            } catch (error: any) {
+              console.warn(`⚠️ No se pudo guardar en Firestore, pero la imagen está en caché local: ${error.message || "Error desconocido"}`);
               // Continuamos usando la imagen aunque no se guarde en Firestore
             }
             
             return imageUrl;
           }
         }
-      } catch (genError) {
-        console.error(`❌ Error generando imagen: ${genError.message}`);
+      } catch (error: any) {
+        console.error(`❌ Error generando imagen: ${error.message || "Error desconocido"}`);
         // Continuamos con placeholder
       }
       
@@ -194,8 +194,8 @@ export default function EducationPage() {
           category: options?.category || '',
           source: 'placeholder' 
         });
-      } catch (saveError) {
-        console.warn(`⚠️ No se pudo guardar placeholder en Firestore: ${saveError.message}`);
+      } catch (error: any) {
+        console.warn(`⚠️ No se pudo guardar placeholder en Firestore: ${error.message || "Error desconocido"}`);
       }
       
       return placeholderUrl;
@@ -277,17 +277,74 @@ export default function EducationPage() {
     return () => unsubscribe();
   }, []);
 
-  // Efecto para generar automáticamente las imágenes de categorías
+  // Efecto para cargar imágenes de categorías desde Firestore
   useEffect(() => {
-    // Regenera las imágenes de categorías solo si las URLs contienen "unsplash"
-    const shouldRegenerateImages = Object.values(levelImages).some(url => 
-      url.includes('unsplash.com') || !url.includes('fal-ai')
-    );
+    const loadImagesFromFirestore = async () => {
+      try {
+        console.log("Verificando imágenes guardadas en Firestore...");
+        const levels = ['Beginner', 'Intermediate', 'Advanced'];
+        let needsUpdate = false;
+        const newImages = { ...levelImages };
+        
+        // Primero verificamos si todas las imágenes ya están en el caché local (memoria)
+        if (imageCache['category_Beginner'] && 
+            imageCache['category_Intermediate'] && 
+            imageCache['category_Advanced']) {
+          console.log("✅ Todas las imágenes de categorías ya están en caché local, usando esas versiones");
+          setLevelImages({
+            Beginner: imageCache['category_Beginner'],
+            Intermediate: imageCache['category_Intermediate'],
+            Advanced: imageCache['category_Advanced']
+          });
+          return; // Salimos porque ya tenemos todas las imágenes
+        }
+        
+        // Si no están todas en caché local, intentamos cargarlas desde Firestore
+        for (const level of levels) {
+          const cacheKey = `category_${level}`;
+          try {
+            // Intentar obtener de Firestore
+            const cachedDoc = await getDoc(doc(db, imagesCacheCollection, cacheKey));
+            if (cachedDoc.exists()) {
+              const data = cachedDoc.data();
+              if (data.imageUrl && !data.imageUrl.includes('unsplash.com')) {
+                console.log(`✅ Imagen para categoría ${level} cargada desde Firestore`);
+                newImages[level] = data.imageUrl;
+                // Guardar en caché local para futuro uso
+                imageCache[cacheKey] = data.imageUrl;
+              } else {
+                console.log(`⚠️ La imagen de ${level} en Firestore no es válida, se necesita regenerar`);
+                needsUpdate = true;
+              }
+            } else {
+              console.log(`⚠️ No se encontró imagen para categoría ${level} en Firestore`);
+              needsUpdate = true;
+            }
+          } catch (error) {
+            console.error(`Error cargando imagen para ${level} desde Firestore:`, error);
+            needsUpdate = true;
+          }
+        }
+        
+        // Actualizar el estado con las imágenes cargadas
+        setLevelImages({
+          Beginner: newImages.Beginner || levelImages.Beginner,
+          Intermediate: newImages.Intermediate || levelImages.Intermediate,
+          Advanced: newImages.Advanced || levelImages.Advanced
+        });
+        
+        // Solo regenerar si es necesario (algo no se encontró o no es válido)
+        if (needsUpdate) {
+          console.log("🔄 Algunas imágenes necesitan ser regeneradas...");
+          // Esperar un momento para que la UI se actualice primero
+          setTimeout(() => regenerateCategoryImages(), 1000);
+        }
+      } catch (error) {
+        console.error("Error cargando imágenes desde Firestore:", error);
+      }
+    };
     
-    if (shouldRegenerateImages) {
-      console.log("Regenerando imágenes de categorías automáticamente...");
-      regenerateCategoryImages();
-    }
+    loadImagesFromFirestore();
   }, []);
 
   useEffect(() => {
