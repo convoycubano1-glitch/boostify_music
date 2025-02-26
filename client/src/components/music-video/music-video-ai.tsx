@@ -35,6 +35,7 @@ import {
   type VideoPromptParams 
 } from "@/lib/api/openrouter";
 import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
+import { FileText } from "lucide-react";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({
@@ -2034,13 +2035,13 @@ ${transcription}`;
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">5. Generar Prompts</Label>
+                  <Label className="text-lg font-semibold mb-4">6. Generar Prompts</Label>
                   <Button
                     onClick={generatePromptsForSegments}
                     disabled={
                       timelineItems.length === 0 ||
                       isGeneratingScript ||
-                      currentStep < 3 ||
+                      currentStep < 4 ||
                       !videoStyle.mood ||
                       !videoStyle.colorPalette ||
                       !videoStyle.characterStyle
@@ -2062,13 +2063,13 @@ ${transcription}`;
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">6. Generar Imágenes</Label>
+                  <Label className="text-lg font-semibold mb-4">7. Generar Imágenes</Label>
                   <Button
                     onClick={generateShotImages}
                     disabled={
                       !timelineItems.length ||
                       isGeneratingShots ||
-                      currentStep < 4
+                      currentStep < 5
                     }
                     className="w-full"
                   >
