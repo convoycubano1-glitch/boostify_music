@@ -70,6 +70,7 @@ export default function EducationPage() {
   // Estado para controlar la regeneración de imágenes
   const [isRegeneratingImages, setIsRegeneratingImages] = useState(false);
   const [regenerationProgress, setRegenerationProgress] = useState(0);
+  const [showCategoryCarousel, setShowCategoryCarousel] = useState(true);
   
   // Estado para las categorías de nivel con sus imágenes
   const [levelImages, setLevelImages] = useState({
@@ -148,6 +149,19 @@ export default function EducationPage() {
     return () => unsubscribe();
   }, []);
 
+  // Efecto para generar automáticamente las imágenes de categorías
+  useEffect(() => {
+    // Regenera las imágenes de categorías solo si las URLs contienen "unsplash"
+    const shouldRegenerateImages = Object.values(levelImages).some(url => 
+      url.includes('unsplash.com') || !url.includes('fal-ai')
+    );
+    
+    if (shouldRegenerateImages) {
+      console.log("Regenerando imágenes de categorías automáticamente...");
+      regenerateCategoryImages();
+    }
+  }, []);
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -163,11 +177,87 @@ export default function EducationPage() {
           };
         }) as Course[];
         setCourses(coursesData);
+        
+        // Después de cargar los cursos, regeneramos automáticamente las imágenes
+        // de cursos que tengan imágenes de Unsplash o que no tengan imágenes generadas por IA
+        const coursesToUpdate = coursesData.filter(course => {
+          // Verificamos si la URL contiene 'unsplash.com' o si no contiene 'fal-ai'
+          return course.thumbnail?.includes('unsplash.com') || 
+                 (course.thumbnail && !course.thumbnail.includes('fal-ai'));
+        });
+        
+        if (coursesToUpdate.length > 0) {
+          console.log(`Detectados ${coursesToUpdate.length} cursos con imágenes no generadas por IA. Regenerando...`);
+          
+          // Indicador visual para el usuario
+          toast({
+            title: "Mejora Automática de Imágenes",
+            description: `Regenerando ${coursesToUpdate.length} imágenes de cursos con IA...`,
+            duration: 5000
+          });
+          
+          // Procesamos los cursos en pequeños lotes para evitar sobrecargar la API
+          const batchSize = 3;
+          for (let i = 0; i < coursesToUpdate.length; i += batchSize) {
+            const batch = coursesToUpdate.slice(i, i + batchSize);
+            
+            // Procesar lote
+            await Promise.all(batch.map(async (course) => {
+              try {
+                // Generamos un prompt específico para cada curso basado en su título, categoría y nivel
+                const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image`;
+                
+                const result = await generateImageWithFal({
+                  prompt: imagePrompt,
+                  negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
+                  imageSize: "square_1_1"
+                });
+                
+                if (result.data?.images?.[0]) {
+                  let newThumbnail = result.data.images[0];
+                  if (typeof newThumbnail === 'object' && newThumbnail.url) {
+                    newThumbnail = newThumbnail.url;
+                  }
+                  
+                  console.log(`Imagen regenerada para: ${course.title}`, newThumbnail.substring(0, 50) + "...");
+                  
+                  // Actualizar en Firestore
+                  const courseRef = doc(db, 'courses', course.id);
+                  await updateDoc(courseRef, { thumbnail: newThumbnail });
+                  
+                  // Actualizar localmente para reflejar cambios inmediatamente sin necesidad de recargar
+                  setCourses(prev => prev.map(c => 
+                    c.id === course.id ? { ...c, thumbnail: newThumbnail } : c
+                  ));
+                }
+              } catch (error) {
+                console.error(`Error regenerando imagen para curso ${course.title}:`, error);
+              }
+            }));
+            
+            // Si hay más lotes por procesar, mostrar progreso
+            if (i + batchSize < coursesToUpdate.length) {
+              const progress = Math.min(100, Math.round(((i + batchSize) / coursesToUpdate.length) * 100));
+              toast({
+                title: "Progreso de Regeneración",
+                description: `${progress}% completado (${i + batchSize}/${coursesToUpdate.length} imágenes)`,
+                duration: 3000
+              });
+            }
+          }
+          
+          // Notificación de finalización
+          toast({
+            title: "Regeneración Completada",
+            description: `Se han actualizado ${coursesToUpdate.length} imágenes de cursos con IA avanzada`,
+            duration: 5000
+          });
+        }
       } catch (error) {
         console.error('Error fetching courses:', error);
         toast({
           title: "Error",
-          description: "Failed to load courses",
+          description: "No se pudieron cargar los cursos",
           variant: "destructive"
         });
       } finally {
@@ -176,7 +266,7 @@ export default function EducationPage() {
     };
 
     fetchCourses();
-  }, [toast]);
+  }, [toast, levelImages]);
 
   const generateRandomCourseData = () => {
     return {
@@ -214,35 +304,100 @@ export default function EducationPage() {
       
       console.log("Starting course creation process...");
 
-      const imagePrompt = `professional photorealistic education ${newCourse.title} ${newCourse.category} music industry course cover, modern design, minimalist, high quality`;
+      // Crear un prompt más específico y detallado para la generación de la imagen
+      const imagePrompt = `professional ${newCourse.level.toLowerCase()} level ${newCourse.category.toLowerCase()} music education course cover titled "${newCourse.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
       console.log("Generating image with fal-ai:", imagePrompt);
       
       let thumbnailUrl = "";
       try {
-        // Intentar generar con fal-ai primero
-        const result = await generateImageWithFal({
-          prompt: imagePrompt,
-          negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
-          imageSize: "square_1_1"
-        });
+        // Intentar generar con fal-ai con reintentos
+        let attempts = 0;
+        const maxAttempts = 3;
         
-        if (result.data?.images?.[0]) {
-          // Asegurarnos de tener la URL de la imagen (el formato puede variar)
-          let generatedImage = result.data.images[0];
-          if (typeof generatedImage === 'object' && generatedImage.url) {
-            thumbnailUrl = generatedImage.url;
-          } else {
-            thumbnailUrl = generatedImage;
+        while (attempts < maxAttempts) {
+          attempts++;
+          try {
+            console.log(`Intento ${attempts} de generar imagen con fal-ai`);
+            const result = await generateImageWithFal({
+              prompt: imagePrompt,
+              negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
+              imageSize: "square_1_1"
+            });
+            
+            if (result.data?.images?.[0]) {
+              // Asegurarnos de tener la URL de la imagen (el formato puede variar)
+              let generatedImage = result.data.images[0];
+              if (typeof generatedImage === 'object' && generatedImage.url) {
+                thumbnailUrl = generatedImage.url;
+              } else {
+                thumbnailUrl = generatedImage;
+              }
+              console.log("Fal-ai image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
+              break; // Salir del bucle si se generó correctamente
+            } else {
+              throw new Error("No image data in fal-ai response");
+            }
+          } catch (error) {
+            console.error(`Error en intento ${attempts}:`, error);
+            if (attempts >= maxAttempts) {
+              throw error; // Re-lanzar el error después del último intento
+            }
+            // Esperar un momento antes de reintentar (backoff exponencial)
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
           }
-          console.log("Fal-ai image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
-        } else {
-          throw new Error("No image data in fal-ai response");
+        }
+        
+        if (!thumbnailUrl) {
+          throw new Error("No se pudo generar la imagen después de múltiples intentos");
         }
       } catch (error) {
-        console.error("Error generating with fal-ai, using fallback:", error);
-        // Fallback a Unsplash si fal-ai falla
-        thumbnailUrl = await getRelevantImage(imagePrompt);
-        console.log("Fallback image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
+        console.error("Error generating with fal-ai, using alternative approach:", error);
+        
+        // Intentar con un prompt más simple como alternativa (sin usar Unsplash como fallback)
+        try {
+          const simplePrompt = `minimal music ${newCourse.category} course cover, clean design, abstract`;
+          const result = await generateImageWithFal({
+            prompt: simplePrompt,
+            negativePrompt: "text, words, people, faces, blurry",
+            imageSize: "square_1_1"
+          });
+          
+          if (result.data?.images?.[0]) {
+            let generatedImage = result.data.images[0];
+            if (typeof generatedImage === 'object' && generatedImage.url) {
+              thumbnailUrl = generatedImage.url;
+            } else {
+              thumbnailUrl = generatedImage;
+            }
+            console.log("Alternative fal-ai image generated:", thumbnailUrl.substring(0, 50) + "...");
+          } else {
+            // Si todo falla, creamos una URL de imagen estática con gradiente basada en la categoría
+            const colors = {
+              "Marketing": "from-orange-500 to-red-700",
+              "Business": "from-blue-500 to-indigo-700",
+              "Production": "from-green-500 to-emerald-700",
+              "Branding": "from-purple-500 to-violet-700",
+              "Distribution": "from-pink-500 to-rose-700",
+              "default": "from-gray-700 to-slate-900"
+            };
+            
+            // Esta es una URL de ejemplo que debería reemplazarse con una imagen real en producción
+            const categoryColor = colors[newCourse.category as keyof typeof colors] || colors.default;
+            thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(newCourse.title)}&css=.bg{background:linear-gradient(135deg,${categoryColor});}`;
+            
+            console.log("Using placeholder image:", thumbnailUrl);
+            
+            toast({
+              title: "Advertencia",
+              description: "No se pudo generar una imagen personalizada. Se usará una imagen temporal.",
+              variant: "destructive"
+            });
+          }
+        } catch (finalError) {
+          console.error("Todos los intentos de generación fallaron:", finalError);
+          // URL de marcador de posición final si todo falla
+          thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(newCourse.title)}`;
+        }
       }
 
       const prompt = `Generate a professional music course with these characteristics:
@@ -375,35 +530,92 @@ export default function EducationPage() {
       for (const course of sampleCourses) {
         console.log(`Creating sample course: ${course.title}`);
         
-        const imagePrompt = `professional photorealistic education ${course.title} ${course.category} music industry course cover, modern design, minimalist, high quality`;
-        console.log("Generating image with fal-ai:", imagePrompt);
+        // Crear un prompt más específico para la imagen de curso de muestra
+        const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
+        console.log("Generating image with fal-ai for sample course:", course.title);
         
         let thumbnailUrl = "";
         try {
-          // Intentar generar con fal-ai primero
-          const result = await generateImageWithFal({
-            prompt: imagePrompt,
-            negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
-            imageSize: "square_1_1"
-          });
+          // Intentar generar con fal-ai con reintentos
+          let attempts = 0;
+          const maxAttempts = 2; // Menos intentos que para cursos normales para no ralentizar demasiado
           
-          if (result.data?.images?.[0]) {
-            // Asegurarnos de tener la URL correcta de la imagen (el formato puede variar)
-            let generatedImage = result.data.images[0];
-            if (typeof generatedImage === 'object' && generatedImage.url) {
-              thumbnailUrl = generatedImage.url;
-            } else {
-              thumbnailUrl = generatedImage;
+          while (attempts < maxAttempts) {
+            attempts++;
+            try {
+              console.log(`Sample course: Intento ${attempts} de generar imagen para "${course.title}"`);
+              const result = await generateImageWithFal({
+                prompt: imagePrompt,
+                negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed, amateurish, unprofessional",
+                imageSize: "square_1_1"
+              });
+              
+              if (result.data?.images?.[0]) {
+                // Asegurarnos de tener la URL de la imagen (el formato puede variar)
+                let generatedImage = result.data.images[0];
+                if (typeof generatedImage === 'object' && generatedImage.url) {
+                  thumbnailUrl = generatedImage.url;
+                } else {
+                  thumbnailUrl = generatedImage;
+                }
+                console.log(`Fal-ai image generated successfully for sample course "${course.title}"`);
+                break; // Salir del bucle si se generó correctamente
+              } else {
+                throw new Error("No image data in fal-ai response");
+              }
+            } catch (error) {
+              console.error(`Error en intento ${attempts} para curso de muestra:`, error);
+              if (attempts >= maxAttempts) {
+                throw error; // Re-lanzar el error después del último intento
+              }
+              // Esperar un momento antes de reintentar
+              await new Promise(resolve => setTimeout(resolve, 500 * attempts));
             }
-            console.log("Fal-ai image generated successfully for sample course:", course.title);
-          } else {
-            throw new Error("No image data in fal-ai response");
+          }
+          
+          if (!thumbnailUrl) {
+            throw new Error("No se pudo generar la imagen después de múltiples intentos");
           }
         } catch (error) {
-          console.error("Error generating with fal-ai, using fallback:", error);
-          // Fallback a Unsplash si fal-ai falla
-          thumbnailUrl = await getRelevantImage(imagePrompt);
-          console.log("Fallback image generated successfully");
+          console.error("Error generating with fal-ai for sample course, using alternative:", error);
+          
+          // Usar un enfoque alternativo - prompt más simple
+          try {
+            const simplePrompt = `minimal music ${course.category} course cover, clean design, abstract`;
+            const result = await generateImageWithFal({
+              prompt: simplePrompt,
+              negativePrompt: "text, words, people, faces, blurry",
+              imageSize: "square_1_1"
+            });
+            
+            if (result.data?.images?.[0]) {
+              let generatedImage = result.data.images[0];
+              if (typeof generatedImage === 'object' && generatedImage.url) {
+                thumbnailUrl = generatedImage.url;
+              } else {
+                thumbnailUrl = generatedImage;
+              }
+              console.log(`Alternative fal-ai image generated for sample course "${course.title}"`);
+            } else {
+              // Usar un color de fondo según la categoría para generar una imagen de placeholder
+              const colors = {
+                "Marketing": "from-orange-500 to-red-700",
+                "Business": "from-blue-500 to-indigo-700",
+                "Production": "from-green-500 to-emerald-700",
+                "Branding": "from-purple-500 to-violet-700",
+                "Distribution": "from-pink-500 to-rose-700",
+                "default": "from-gray-700 to-slate-900"
+              };
+              
+              const categoryColor = colors[course.category as keyof typeof colors] || colors.default;
+              thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(course.title)}&css=.bg{background:linear-gradient(135deg,${categoryColor});}`;
+              
+              console.log(`Using placeholder image for sample course "${course.title}"`);
+            }
+          } catch (finalError) {
+            console.error(`All image generation attempts failed for "${course.title}":`, finalError);
+            thumbnailUrl = `https://placehold.co/600x600/1f1f1f/ffffff?text=${encodeURIComponent(course.title)}`;
+          }
         }
 
         const prompt = `Generate a professional music course with these characteristics:
@@ -636,7 +848,8 @@ export default function EducationPage() {
           </DialogContent>
         </Dialog>
 
-        <div className="flex justify-between items-center mb-12">
+        {/* Encabezado y botones */}
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Music Industry Education</h1>
             <p className="text-gray-400 max-w-2xl">
@@ -850,6 +1063,36 @@ export default function EducationPage() {
             </Dialog>
           </div>
         </div>
+
+        {/* Carrusel de categorías con las imágenes regeneradas por AI */}
+        {showCategoryCarousel && (
+          <div className="w-full mb-12">
+            <h2 className="text-2xl font-bold text-white mb-4">Explore by Level</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {Object.entries(levelImages).map(([level, imageUrl]) => (
+                <div key={level} className="relative overflow-hidden rounded-lg group h-48 cursor-pointer">
+                  <img 
+                    src={imageUrl} 
+                    alt={`${level} level courses`} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-1">{level}</h3>
+                      <p className="text-gray-300 text-sm">
+                        {level === 'Beginner' 
+                          ? 'Start your music career journey'
+                          : level === 'Intermediate' 
+                            ? 'Enhance your existing skills'
+                            : 'Master advanced industry techniques'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {courses.map((course) => (
