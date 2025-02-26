@@ -84,17 +84,46 @@ function createFallbackCourseContent(prompt: string): CourseContent {
 
 /**
  * Generate course content using the OpenRouter API 
- * For now, we just use the fallback system to ensure courses can be created
+ * Will try to use the API first, falling back to local generation if needed
  */
 export async function generateCourseContent(prompt: string): Promise<CourseContent> {
   try {
     console.log("Starting course content generation...");
     
-    // Instead of calling the backend API that might not be fully working yet,
-    // let's just use the fallback content generator directly for now
-    console.log("Using local course content generator for reliable operation");
-    return createFallbackCourseContent(prompt);
-    
+    try {
+      // First attempt: Try to use the direct API call to OpenRouter
+      console.log("Attempting direct OpenRouter API call...");
+      const content = await generateCourseContentDirect(prompt);
+      console.log("Successfully generated course content with OpenRouter API");
+      return content;
+    } catch (directError) {
+      console.warn("Direct OpenRouter API call failed:", directError);
+      
+      try {
+        // Second attempt: Try the backend API route
+        console.log("Attempting backend API route...");
+        const response = await fetch('/api/education/generate-course', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt }),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log("Successfully generated course content with backend API");
+        return data;
+      } catch (backendError) {
+        console.warn("Backend API route failed:", backendError);
+        // Both attempts failed, use fallback
+        throw new Error("Both API attempts failed, using fallback");
+      }
+    }
   } catch (error) {
     console.error("Course generation error:", error);
     console.log("Using fallback course content generation due to error");

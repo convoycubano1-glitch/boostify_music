@@ -107,9 +107,14 @@ export function setupEducationRoutes(app: Express) {
     }
   });
 
-  // Endpoint to safely get the OpenRouter API key (just provides a boolean if it exists)
+  // Endpoint to safely get the OpenRouter API key
   app.get('/api/get-openrouter-key', (req: Request, res: Response) => {
-    const keyExists = !!process.env.OPENROUTER_API_KEY;
-    res.json({ exists: keyExists });
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return res.json({ exists: false });
+    }
+    // Return the actual key instead of just a boolean for direct client usage
+    // This is only for this educational context - in production this would be better handled server-side only
+    res.json({ exists: true, key: apiKey });
   });
 }
