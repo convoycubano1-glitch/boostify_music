@@ -1,84 +1,45 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import OpenAI from 'openai';
+import { apiRequest } from "@/lib/queryClient";
 import { env } from "@/env";
-
-// Get OpenRouter API key from environment
-const getOpenRouterKey = async (): Promise<string> => {
-  // First check if it's available from our environment
-  if (env.VITE_OPENROUTER_API_KEY) {
-    return env.VITE_OPENROUTER_API_KEY;
-  }
-  
-  // If not in environment, try to fetch from server endpoint
-  try {
-    const response = await fetch('/api/get-openrouter-key');
-    if (!response.ok) {
-      throw new Error('Failed to fetch OpenRouter key from server');
-    }
-    const data = await response.json();
-    if (data.key) {
-      return data.key;
-    }
-    throw new Error('No key returned from server');
-  } catch (error) {
-    console.error('Error fetching OpenRouter key:', error);
-    throw new Error('OpenRouter API key is not available');
-  }
-};
-
-// Initialize OpenAI client with OpenRouter configuration
-const createOpenAIClient = async () => {
-  const apiKey = await getOpenRouterKey();
-  
-  return new OpenAI({
-    apiKey,
-    baseURL: 'https://openrouter.ai/api/v1',
-    dangerouslyAllowBrowser: true,
-    defaultHeaders: {
-      'HTTP-Referer': window.location.origin,
-      'X-Title': 'Boostify Music Manager',
-    }
-  });
-};
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     try {
       console.log('Making request to OpenRouter with prompt:', prompt);
       
-      // Create OpenAI client with OpenRouter configuration
-      const openaiClient = await createOpenAIClient();
-
-      const completion = await openaiClient.chat.completions.create({
-        model: "anthropic/claude-3-sonnet",
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert AI assistant specialized in ${type} management for music artists and events. Provide detailed, well-structured responses.`
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
+      // Use the server-side endpoint instead of direct OpenRouter connection
+      const response = await apiRequest('/api/manager/generate-content', {
+        method: 'POST',
+        body: JSON.stringify({
+          prompt,
+          type
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response from server:', errorData);
+        throw new Error(errorData.error || 'Failed to generate content');
+      }
 
-      console.log('OpenRouter response received');
-
-      if (!completion.choices?.[0]?.message?.content) {
-        console.error('Invalid response format from OpenRouter');
+      const data = await response.json();
+      console.log('Response received from server');
+      
+      if (!data.content) {
+        console.error('Invalid response format from server');
         throw new Error('Invalid API response format');
       }
 
-      return completion.choices[0].message.content;
+      return data.content;
 
     } catch (error: any) {
       console.error('Error in generateWithAI:', error);
       if (error.status === 401) {
-        throw new Error('Authentication failed. Please check your OpenRouter API key configuration.');
+        throw new Error('Authentication failed. Please check your API key configuration.');
       } else if (error.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
       }

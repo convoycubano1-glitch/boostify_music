@@ -77,4 +77,81 @@ export function setupOpenAIRoutes(app: Express) {
       });
     }
   });
+
+  /**
+   * Manager Tools Content Generation Endpoint
+   * This endpoint receives requests from the client and proxies them to OpenRouter
+   * with proper server-side authentication
+   */
+  app.post('/api/manager/generate-content', async (req: Request, res: Response) => {
+    try {
+      const { prompt, type } = req.body;
+
+      if (!prompt || !type) {
+        return res.status(400).json({ error: 'Prompt and type are required' });
+      }
+
+      if (!OPENROUTER_API_KEY) {
+        return res.status(500).json({ error: 'OpenRouter API key is not configured on the server' });
+      }
+
+      console.log(`Generating ${type} content with prompt:`, prompt);
+
+      // Prepare system prompt based on content type
+      const systemPrompt = `You are an expert AI assistant specialized in ${type} management for music artists and events. Provide detailed, well-structured responses.`;
+      
+      const response = await fetch(`${BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': req.headers.referer || 'https://boostify-music.app',
+          'X-Title': 'Boostify Music Manager Tools',
+        },
+        body: JSON.stringify({
+          model: "anthropic/claude-3-sonnet",
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenRouter API error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        
+        return res.status(response.status).json({ 
+          error: `OpenRouter API error: ${response.status} ${response.statusText}`,
+          details: errorText
+        });
+      }
+
+      const data = await response.json();
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        return res.status(500).json({ error: 'Invalid response format from OpenRouter' });
+      }
+      
+      return res.json({ content: data.choices[0].message.content });
+    } catch (error) {
+      console.error('Error in manager content generation endpoint:', error);
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
 }
