@@ -455,26 +455,18 @@ export default function SettingsPage() {
                   )}
                 />
                 
-                <FormField
-                  control={securityForm.control}
-                  name="twoFactorEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Two-Factor Authentication</FormLabel>
-                        <FormDescription className="text-xs md:text-sm">
-                          Enable two-factor authentication for enhanced security
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch 
-                          checked={settings.security.twoFactorEnabled} 
-                          onCheckedChange={(value) => settings.updateSecurity({ twoFactorEnabled: value })}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
+                  <div className="space-y-0.5">
+                    <Label>Two-Factor Authentication</Label>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      Enable two-factor authentication for enhanced security
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={settings.security.twoFactorEnabled} 
+                    onCheckedChange={(value) => settings.updateSecurity({ twoFactorEnabled: value })}
+                  />
+                </div>
                 
                 <Button 
                   type="submit" 

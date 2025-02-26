@@ -147,18 +147,82 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
       });
 
       // Manejar la respuesta
+      const contentType = response.headers.get('content-type') || '';
       let data;
-      try {
-        data = await response.json();
-      } catch (error) {
-        console.error("Error parsing API response:", error as Error);
-        throw new Error(`Unable to parse API response: ${(error as Error).message}`);
+      let responseText;
+
+      // Check for non-JSON responses first
+      if (!contentType.includes('application/json')) {
+        try {
+          responseText = await response.text();
+          console.log("Non-JSON response received:", responseText.substring(0, 100) + "...");
+          
+          // Try to detect if the response is actually JSON despite the header
+          if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+            try {
+              data = JSON.parse(responseText);
+              console.log("Successfully parsed response as JSON despite incorrect content-type");
+            } catch (parseError) {
+              console.error("Failed to parse as JSON even though it looked like JSON:", parseError);
+              // Proceed with text handling flow
+            }
+          }
+          
+          // If we couldn't parse as JSON or it's not JSON-like, use the text directly
+          if (!data) {
+            // For non-JSON responses that are successful, we'll use the text as the content
+            if (response.ok) {
+              console.log("Using non-JSON text response as content");
+              // Create a mimicked JSON structure that matches what we expect
+              data = {
+                choices: [{
+                  message: {
+                    content: responseText
+                  }
+                }]
+              };
+            }
+          }
+        } catch (textError) {
+          console.error("Error reading response as text:", textError);
+          throw new Error(`Unable to read API response: ${(textError as Error).message}`);
+        }
+      } else {
+        // Standard JSON handling
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          console.error("Error parsing API response as JSON:", jsonError);
+          
+          // Try to get the response as text as a fallback
+          try {
+            responseText = await response.text();
+            console.log("Response couldn't be parsed as JSON. Raw text:", 
+                      responseText.substring(0, 100) + "...");
+            
+            // If the response is actually text we can use, create a mock JSON structure
+            if (response.ok && responseText) {
+              data = {
+                choices: [{
+                  message: {
+                    content: responseText
+                  }
+                }]
+              };
+            } else {
+              throw new Error(`Unable to parse API response as JSON: ${(jsonError as Error).message}`);
+            }
+          } catch (textError) {
+            console.error("Error reading response as text after JSON parse failed:", textError);
+            throw new Error(`Unable to read API response: ${(textError as Error).message}`);
+          }
+        }
       }
       
       console.log("API Response:", data);
 
       if (!response.ok) {
-        const errorMessage = data.error?.message || response.statusText;
+        const errorMessage = data?.error?.message || response.statusText;
         console.error("API Error:", errorMessage);
 
         if (response.status === 401 || response.status === 403) {
@@ -179,9 +243,34 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
         throw new Error(`API error: ${response.status} ${errorMessage}`);
       }
 
-      if (!data.choices?.[0]?.message?.content) {
-        console.error("Invalid response structure:", data);
-        throw new Error("Invalid API response format");
+      // Validate the response structure
+      if (!data || !data.choices) {
+        console.error("Invalid response structure (missing choices array):", data);
+        
+        // If we have text content but not in the expected format, try to use it directly
+        if (responseText) {
+          console.log("Using raw text response as fallback");
+          return responseText;
+        }
+        
+        throw new Error("Invalid API response format: missing choices array");
+      }
+      
+      if (!data.choices[0]?.message?.content) {
+        console.error("Invalid response structure (missing message content):", data);
+        
+        // Try to extract content from alternative response structures
+        const alternativeContent = 
+          data.choices[0]?.text || // Some APIs use 'text' instead of 'message.content'
+          data.choices[0]?.content || // Some use direct 'content'
+          (typeof data.choices[0] === 'string' ? data.choices[0] : null); // Some return the string directly
+          
+        if (alternativeContent) {
+          console.log("Using alternative content structure");
+          return alternativeContent;
+        }
+        
+        throw new Error("Invalid API response format: missing message content");
       }
 
       const generatedPrompt = data.choices[0].message.content.trim();
@@ -222,7 +311,7 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
 // Resto de las funciones se mantienen igual que en la versión anterior
 export async function generateCourseContent(prompt: string) {
   try {
-    console.log("Starting course content generation with OpenRouter...");
+    console.log("Starting course content generation with OpenRouter (Gemini 2.0)...");
 
     if (!env.VITE_OPENROUTER_API_KEY) {
       console.error("OpenRouter API key is missing");
@@ -250,11 +339,14 @@ export async function generateCourseContent(prompt: string) {
       "X-Title": headers["X-Title"]
     });
     
+    // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
+    console.log("Using Gemini 2.0 Flash model for course content generation");
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+        model: "google/gemini-2.0-flash-001", // Modelo solicitado por el usuario
         messages: [
           {
             role: "system",
@@ -287,25 +379,89 @@ export async function generateCourseContent(prompt: string) {
 
     console.log("OpenRouter API response status:", response.status);
 
+    // Manejo mejorado de respuestas de la API
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+    let responseText;
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("OpenRouter API error:", errorData);
-      throw new Error(`Error generating course content: ${response.statusText}. Status: ${response.status}`);
+      try {
+        const errorData = await response.json().catch(async () => {
+          // Si no podemos obtener JSON, intentamos obtener el texto
+          const errorText = await response.text().catch(() => "Unknown error");
+          return { error: { message: errorText } };
+        });
+        console.error("OpenRouter API error:", errorData);
+        throw new Error(`Error generating course content: ${response.statusText}. Status: ${response.status}`);
+      } catch (parseError) {
+        console.error("Error parsing error response:", parseError);
+        throw new Error(`API error (${response.status}): Could not parse error response`);
+      }
     }
 
-    const data = await response.json();
+    // Manejo de posibles respuestas no-JSON
+    if (!contentType.includes('application/json')) {
+      try {
+        responseText = await response.text();
+        console.log("Non-JSON response received:", responseText.substring(0, 100) + "...");
+        
+        // Comprobar si es realmente JSON a pesar del tipo de contenido incorrecto
+        if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+          try {
+            data = JSON.parse(responseText);
+            console.log("Successfully parsed response as JSON despite incorrect content-type");
+          } catch (parseError) {
+            console.error("Failed to parse as JSON even though it looked like JSON:", parseError);
+            throw new Error("API returned invalid JSON response");
+          }
+        } else {
+          throw new Error("API returned non-JSON response: " + responseText.substring(0, 100) + "...");
+        }
+      } catch (textError) {
+        console.error("Error reading response:", textError);
+        throw new Error(`Unable to read API response: ${(textError as Error).message}`);
+      }
+    } else {
+      // Manejo estándar de JSON
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Error parsing API JSON response:", jsonError);
+        throw new Error(`Unable to parse API response as JSON: ${(jsonError as Error).message}`);
+      }
+    }
+
     console.log("OpenRouter raw response:", data);
 
-    if (!data.choices?.[0]?.message?.content) {
-      console.error("Invalid API response structure:", data);
-      throw new Error("Invalid API response format");
+    // Validación de estructura de respuesta con manejo de errores mejorado
+    if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error("Invalid API response structure (missing/empty choices array):", data);
+      throw new Error("Invalid API response format: missing choices array");
     }
 
-    const content = data.choices[0].message.content;
+    // Extracción del contenido con manejo de diferentes estructuras posibles
+    let content;
+    const firstChoice = data.choices[0];
+    
+    if (firstChoice.message?.content) {
+      content = firstChoice.message.content;
+    } else if (firstChoice.text) {
+      content = firstChoice.text;
+    } else if (firstChoice.content) {
+      content = firstChoice.content;
+    } else if (typeof firstChoice === 'string') {
+      content = firstChoice;
+    } else {
+      console.error("Cannot extract content from API response:", firstChoice);
+      throw new Error("Cannot extract content from API response");
+    }
+
     console.log("Raw content received:", content);
 
+    // Intento de parsear el JSON con manejo de errores robusto
     try {
-      const parsed = JSON.parse(content);
+      // Si el contenido no es un string, intentamos usarlo directamente (podría ser ya un objeto)
+      const parsed = typeof content === 'string' ? JSON.parse(content) : content;
 
       // Strict validation of the structure
       if (typeof parsed.overview !== 'string') {
@@ -369,26 +525,103 @@ export async function chatWithAI(messages: Message[]) {
       "X-Title": headers["X-Title"]
     });
     
+    // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
+    console.log("Using Gemini 2.0 Flash model for chat completion");
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "deepseek/deepseek-r1-distill-llama-8b",
+        model: "google/gemini-2.0-flash-001", // Modelo solicitado por el usuario
         messages,
         temperature: 0.7,
         max_tokens: 2000
       })
     });
 
+    // Manejo mejorado de respuestas y errores
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+    let responseText;
+
     if (!response.ok) {
-      throw new Error(`Error in AI chat: ${response.statusText}`);
+      try {
+        const errorData = await response.json().catch(async () => {
+          // Si no podemos obtener JSON, intentamos obtener el texto
+          const errorText = await response.text().catch(() => "Unknown error");
+          return { error: { message: errorText } };
+        });
+        console.error("OpenRouter API error:", errorData);
+        throw new Error(`Error in AI chat: ${response.statusText}. Status: ${response.status}`);
+      } catch (parseError) {
+        console.error("Error parsing error response:", parseError);
+        throw new Error(`API error (${response.status}): Could not parse error response`);
+      }
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
+    // Manejo de posibles respuestas no-JSON
+    if (!contentType.includes('application/json')) {
+      try {
+        responseText = await response.text();
+        console.log("Non-JSON response received from chat API:", responseText.substring(0, 100) + "...");
+        
+        // Comprobar si es realmente JSON a pesar del tipo de contenido incorrecto
+        if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+          try {
+            data = JSON.parse(responseText);
+            console.log("Successfully parsed chat response as JSON despite incorrect content-type");
+          } catch (parseError) {
+            console.error("Failed to parse chat response as JSON:", parseError);
+            // Si no se puede analizar como JSON pero la respuesta se ve bien, usamos el texto como respuesta
+            return responseText;
+          }
+        } else {
+          // Si no es JSON pero la respuesta tiene contenido, la usamos directamente
+          return responseText;
+        }
+      } catch (textError) {
+        console.error("Error reading chat response:", textError);
+        throw new Error(`Unable to read API response: ${(textError as Error).message}`);
+      }
+    } else {
+      // Manejo estándar de JSON
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Error parsing chat JSON response:", jsonError);
+        throw new Error(`Unable to parse API response as JSON: ${(jsonError as Error).message}`);
+      }
+    }
+
+    // Extraer el contenido con manejo de diferentes estructuras posibles
+    if (!data || !data.choices || data.choices.length === 0) {
+      console.error("Invalid chat API response structure:", data);
+      
+      // Si tenemos texto de respuesta, usémoslo como último recurso
+      if (responseText) {
+        return responseText;
+      }
+      
+      throw new Error("Invalid API response format: missing choices array");
+    }
+
+    const firstChoice = data.choices[0];
+    
+    if (firstChoice.message?.content) {
+      return firstChoice.message.content;
+    } else if (firstChoice.text) {
+      return firstChoice.text;
+    } else if (firstChoice.content) {
+      return firstChoice.content;
+    } else if (typeof firstChoice === 'string') {
+      return firstChoice;
+    }
+    
+    console.error("Unexpected chat response format:", firstChoice);
+    throw new Error("Cannot extract content from API response");
   } catch (error) {
     console.error('Error in AI chat:', error);
-    throw error;
+    return `Lo siento, no puedo procesar tu solicitud en este momento debido a un error: ${error instanceof Error ? error.message : 'Error desconocido'}. Por favor, intenta nuevamente más tarde.`;
   }
 }
 
@@ -439,11 +672,14 @@ export async function generateVideoScript(prompt: string): Promise<string> {
         throw new Error("Authorization header is invalid: API key is missing");
       }
 
+      // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
+      console.log("Using Gemini 2.0 Flash model for video script generation");
+      
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST", 
         headers,
         body: JSON.stringify({
-          model: "anthropic/claude-3-sonnet",
+          model: "google/gemini-2.0-flash-001", // Modelo solicitado por el usuario
           messages: [
             {
               role: "system",
@@ -955,11 +1191,17 @@ function generarGuionFallback(lyrics: string): string {
     const textoNormalizado = texto.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
     const palabras = textoNormalizado.split(/\s+/);
     
+    // Definir tipo para palabrasGenero
+    type GeneroKey = 'pop' | 'rock' | 'hip-hop' | 'reggaeton' | 'r&b' | 'electrónica' | 'indie';
+    type PalabrasGeneroType = {
+      [K in GeneroKey]: string[];
+    };
+    
     // Contar ocurrencias de palabras clave por género
     const conteoGeneros: Record<string, number> = {};
-    Object.keys(palabrasGenero).forEach(genero => {
+    (Object.keys(palabrasGenero) as GeneroKey[]).forEach(genero => {
       conteoGeneros[genero] = 0;
-      palabrasGenero[genero].forEach(palabra => {
+      palabrasGenero[genero].forEach((palabra: string) => {
         const regex = new RegExp(`\\b${palabra}\\b`, 'gi');
         const coincidencias = (textoNormalizado.match(regex) || []).length;
         conteoGeneros[genero] += coincidencias;
@@ -996,7 +1238,9 @@ function generarGuionFallback(lyrics: string): string {
       .slice(0, 5)
       .map(entry => entry[0]);
     
-    return [generoDetectado, ...new Set([...emocionesDetectadas, ...palabrasFrecuentes])];
+    // Convertir Set a Array para evitar problemas de iteración
+    const emocionesArray = [...emocionesDetectadas];
+    return [generoDetectado, ...emocionesArray, ...palabrasFrecuentes];
   }
   
   // Dividir la letra en líneas y filtrar líneas vacías
