@@ -854,7 +854,16 @@ export default function CourseDetailPage() {
 
                     {hasContent && (
                       <div className="space-y-4">
-                        <Accordion type="single" collapsible>
+                        <Accordion type="single" collapsible onValueChange={(value) => {
+                          // Si se expande el acordeón (value === "content"), generar la imagen para la lección
+                          if (value === "content" && lesson.title) {
+                            // Comprobar si ya tenemos una imagen para esta lección
+                            if (!progress.generatedImages || !progress.generatedImages[lesson.title]) {
+                              // Generar imagen automáticamente al abrir el contenido
+                              generateLessonImage(lesson.title, lesson.description);
+                            }
+                          }
+                        }}>
                           <AccordionItem value="content">
                             <AccordionTrigger className="text-white">View Lesson Content</AccordionTrigger>
                             <AccordionContent>
