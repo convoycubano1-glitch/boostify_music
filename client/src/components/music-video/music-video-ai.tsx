@@ -328,6 +328,48 @@ export function MusicVideoAI() {
     }
   }, [toast]);
 
+  const generateScriptFromTranscription = async () => {
+    if (!transcription) {
+      toast({
+        title: "Error",
+        description: "Es necesario transcribir el audio primero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingScript(true);
+    try {
+      // Llamar a la API para generar el guion
+      toast({
+        title: "Procesando",
+        description: "Generando guion basado en la letra de la canción...",
+      });
+
+      const scriptResponse = await generateMusicVideoScript(transcription);
+      
+      // Guardar el guion completo
+      setScriptContent(scriptResponse);
+      
+      // Marcar este paso como completado
+      setCurrentStep(3);
+      
+      toast({
+        title: "Éxito",
+        description: "Guion del video musical generado correctamente",
+      });
+    } catch (error) {
+      console.error("Error generando guion:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al generar el guion del video musical",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
   const syncAudioWithTimeline = async () => {
     if (!audioBuffer) return;
 
@@ -336,7 +378,7 @@ export function MusicVideoAI() {
       const segments = await detectBeatsAndCreateSegments();
       if (segments && segments.length > 0) {
         setTimelineItems(segments);
-        setCurrentStep(3);
+        setCurrentStep(4); // Actualizamos este paso de 3 a 4 ya que agregamos un paso antes
 
         toast({
           title: "Éxito",
