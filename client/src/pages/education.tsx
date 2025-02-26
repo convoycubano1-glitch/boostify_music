@@ -76,7 +76,14 @@ export default function EducationPage() {
   const [showCategoryCarousel, setShowCategoryCarousel] = useState(true);
   
   // Estado para las categorías de nivel con sus imágenes (defaults temporales)
-  const [levelImages, setLevelImages] = useState({
+  type LevelImages = {
+    Beginner: string;
+    Intermediate: string;
+    Advanced: string;
+    [key: string]: string; // Permitir índices de string adicionales
+  };
+  
+  const [levelImages, setLevelImages] = useState<LevelImages>({
     Beginner: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Beginner%20Music%20Education",
     Intermediate: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Intermediate%20Music%20Education", 
     Advanced: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Advanced%20Music%20Education"
@@ -85,15 +92,39 @@ export default function EducationPage() {
   // Colección para el caché de imágenes generadas
   const imagesCacheCollection = "generated_images_cache";
   
-  // Memoria caché local para imágenes (reducirá las solicitudes innecesarias a Firebase)
-  const imageCache: Record<string, string> = {};
+  // Memoria caché local PERSISTENTE para imágenes (persiste entre recargas de página)
+  // Usamos sessionStorage para mantener la persistencia durante la sesión del usuario
+  const getImageCache = (): Record<string, string> => {
+    try {
+      const cachedData = sessionStorage.getItem('imageCache');
+      if (cachedData) {
+        return JSON.parse(cachedData);
+      }
+    } catch (error) {
+      console.warn("Error al recuperar caché de imágenes:", error);
+    }
+    return {};
+  };
+  
+  // Inicializamos el caché con datos almacenados en sessionStorage
+  const imageCache: Record<string, string> = getImageCache();
+  
+  // Función para guardar en caché local persistente
+  const saveToImageCache = (key: string, url: string) => {
+    try {
+      imageCache[key] = url;
+      sessionStorage.setItem('imageCache', JSON.stringify(imageCache));
+    } catch (error) {
+      console.warn("Error al guardar en caché de imágenes:", error);
+    }
+  };
   
   /**
-   * Sistema OPTIMIZADO de gestión de imágenes que evita generaciones innecesarias
+   * Sistema MEJORADO de gestión de imágenes que evita COMPLETAMENTE generaciones innecesarias
    * @param key Clave única para identificar la imagen
    * @param prompt Prompt para generar la imagen solo si es absolutamente necesario
    * @param options Opciones adicionales para la gestión de imágenes
-   * @returns URL de la imagen (prioriza la base de datos y cache local)
+   * @returns URL de la imagen (prioriza datos guardados)
    */
   const getOrGenerateImage = async (key: string, prompt: string, options?: {
     negativePrompt?: string,
@@ -102,15 +133,52 @@ export default function EducationPage() {
     category?: string
   }): Promise<string> => {
     try {
-      console.log(`Solicitando imagen para: ${key}`);
+      console.log(`SOLICITUD DE IMAGEN: ${key}`);
       
-      // 1. PASO 1: Verificar caché LOCAL para evitar incluso acceder a Firebase
+      // 1. PASO 1: Verificar caché LOCAL PERSISTENTE primero
       if (imageCache[key] && !options?.forceRegenerate) {
-        console.log(`✅ Imagen recuperada de caché local: ${key}`);
+        console.log(`✅ Imagen recuperada de caché persistente: ${key}`);
         return imageCache[key];
       }
       
-      // 2. PASO 2: Verificar la existencia directa en Firestore (sin consulta compleja)
+      // 2. PASO 2: Verificar imágenes predefinidas para categorías
+      if (options?.category) {
+        const defaultCategoryImages: Record<string, string> = {
+          "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
+          "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
+          "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
+          "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
+          "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg",
+          "default": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg"
+        };
+        
+        // Usar la imagen predefinida para esta categoría
+        if (key.includes('category_') || key.includes('course_')) {
+          const categoryImage = defaultCategoryImages[options.category] || defaultCategoryImages.default;
+          console.log(`🖼️ Usando imagen predefinida para categoría (${options.category}): ${key}`);
+          
+          // Guardar en caché persistente
+          saveToImageCache(key, categoryImage);
+          
+          // Intentar guardar en Firestore (sin bloquear)
+          try {
+            await setDoc(doc(db, imagesCacheCollection, key), {
+              key,
+              prompt,
+              imageUrl: categoryImage,
+              timestamp: Timestamp.now(),
+              category: options.category,
+              source: 'predefined'
+            });
+          } catch (error: any) {
+            console.warn(`⚠️ No se pudo guardar en Firestore: ${error.message || "Error desconocido"}`);
+          }
+          
+          return categoryImage;
+        }
+      }
+      
+      // 3. PASO 3: Verificar la existencia en Firestore como último recurso
       try {
         const cachedDoc = await getDoc(doc(db, imagesCacheCollection, key));
         
@@ -118,89 +186,25 @@ export default function EducationPage() {
           const data = cachedDoc.data();
           if (data.imageUrl && !data.imageUrl.includes('unsplash.com')) {
             console.log(`✅ Imagen recuperada de Firestore: ${key}`);
-            // Guardamos en caché local para futuras solicitudes
-            imageCache[key] = data.imageUrl;
+            // Guardamos en caché persistente
+            saveToImageCache(key, data.imageUrl);
             return data.imageUrl;
           }
         }
       } catch (error: any) {
         console.log(`⚠️ No se pudo verificar en Firestore: ${error.message || "Error desconocido"}`);
-        // Continuamos con el proceso aunque haya error
       }
       
-      // 3. PASO 3: Intentar generar imagen con FAL.ai si no hay problemas de permisos
-      try {
-        // Sólo generamos imagen nueva si:
-        // 1. Se solicita explícitamente con forceRegenerate
-        // 2. O si no tenemos la imagen en caché y el usuario tiene permisos
-        if (options?.forceRegenerate || !imageCache[key]) {
-          console.log(`🔄 Generando nueva imagen con FAL.ai para: ${key}`);
-          
-          const result = await generateImageWithFal({
-            prompt,
-            negativePrompt: options?.negativePrompt || "low quality, blurry, distorted, unrealistic, watermark, text, words",
-            imageSize: options?.imageSize || "square" // Usamos formato correcto
-          });
-          
-          if (result.data?.images?.[0]) {
-            // Procesar la URL de la imagen
-            let imageUrl = result.data.images[0];
-            if (typeof imageUrl === 'object' && imageUrl.url) {
-              imageUrl = imageUrl.url;
-            }
-            
-            console.log(`✅ Imagen generada exitosamente para: ${key}`);
-            
-            // Guardar en caché local
-            imageCache[key] = imageUrl;
-            
-            // Intentar guardar en Firestore (pero no bloqueamos si falla)
-            try {
-              await setDoc(doc(db, imagesCacheCollection, key), {
-                key,
-                prompt,
-                imageUrl,
-                timestamp: Timestamp.now(),
-                category: options?.category || '',
-                source: 'fal-ai'
-              });
-              console.log(`✅ Imagen guardada en Firestore: ${key}`);
-            } catch (error: any) {
-              console.warn(`⚠️ No se pudo guardar en Firestore, pero la imagen está en caché local: ${error.message || "Error desconocido"}`);
-              // Continuamos usando la imagen aunque no se guarde en Firestore
-            }
-            
-            return imageUrl;
-          }
-        }
-      } catch (error: any) {
-        console.error(`❌ Error generando imagen: ${error.message || "Error desconocido"}`);
-        // Continuamos con placeholder
-      }
-      
-      // 4. PASO 4: Si todo lo anterior falla, usar un placeholder
+      // 4. PASO 4: No generamos nuevas imágenes, usamos placeholders definitivos
+      console.log(`⚠️ No se encontró imagen para ${key}, usando placeholder permanente`);
       const placeholderUrl = `https://placehold.co/800x800/1A1A2E/FFFFFF?text=${encodeURIComponent(key.replace(/_/g, ' '))}`;
       
-      // Guardar el placeholder en caché local
-      imageCache[key] = placeholderUrl;
-      
-      // Intentar guardar en Firestore el placeholder, pero no bloqueamos si falla
-      try {
-        await setDoc(doc(db, imagesCacheCollection, key), {
-          key,
-          prompt,
-          imageUrl: placeholderUrl,
-          timestamp: Timestamp.now(),
-          category: options?.category || '',
-          source: 'placeholder' 
-        });
-      } catch (error: any) {
-        console.warn(`⚠️ No se pudo guardar placeholder en Firestore: ${error.message || "Error desconocido"}`);
-      }
+      // Guardar en caché persistente
+      saveToImageCache(key, placeholderUrl);
       
       return placeholderUrl;
-    } catch (finalError) {
-      console.error(`❌ Error crítico en sistema de imágenes: ${finalError.message}`);
+    } catch (error: any) {
+      console.error(`❌ Error crítico en sistema de imágenes: ${error.message || "Error desconocido"}`);
       const fallbackUrl = `https://placehold.co/800x800/1A1A2E/FFFFFF?text=Error`;
       return fallbackUrl;
     }
@@ -284,7 +288,7 @@ export default function EducationPage() {
         console.log("Verificando imágenes guardadas en Firestore...");
         const levels = ['Beginner', 'Intermediate', 'Advanced'];
         let needsUpdate = false;
-        const newImages = { ...levelImages };
+        const newImages: Record<string, string> = { ...levelImages };
         
         // Primero verificamos si todas las imágenes ya están en el caché local (memoria)
         if (imageCache['category_Beginner'] && 
