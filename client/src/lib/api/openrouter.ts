@@ -839,13 +839,41 @@ FORMATO DE RESPUESTA (estrictamente en formato JSON):
 
       // Verificar que la respuesta sea JSON válido
       const scriptContent = data.choices[0].message.content;
-      const parsed = JSON.parse(scriptContent); // Esto fallará si no es JSON válido
       
-      if (!parsed.segmentos || !Array.isArray(parsed.segmentos) || parsed.segmentos.length === 0) {
-        throw new Error("El guión generado no tiene segmentos válidos");
+      try {
+        // Intentar analizar el JSON
+        const parsed = JSON.parse(scriptContent);
+        
+        // Verificar estructura básica
+        if (!parsed.segmentos || !Array.isArray(parsed.segmentos) || parsed.segmentos.length === 0) {
+          console.warn("El guión no tiene la estructura esperada, usando fallback");
+          return generarGuionFallback(lyrics);
+        }
+        
+        return scriptContent;
+      } catch (parseError) {
+        console.error("La respuesta no es un JSON válido:", parseError);
+        
+        // Intentar extraer JSON válido si está dentro de la respuesta (por ejemplo, en un bloque de código)
+        const jsonRegex = /{[\s\S]*"segmentos"[\s\S]*\}/;
+        const match = scriptContent.match(jsonRegex);
+        
+        if (match && match[0]) {
+          try {
+            // Intentar analizar el JSON extraído
+            const extracted = JSON.parse(match[0]);
+            if (extracted.segmentos && Array.isArray(extracted.segmentos)) {
+              console.log("JSON extraído con éxito del texto");
+              return match[0];
+            }
+          } catch (extractError) {
+            console.error("Error al extraer JSON:", extractError);
+          }
+        }
+        
+        // Si todo falla, usar el generador de fallback
+        return generarGuionFallback(lyrics);
       }
-
-      return scriptContent;
     } catch (error) {
       console.error(`Error en intento ${retryCount + 1}:`, error);
       

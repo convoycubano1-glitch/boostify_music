@@ -349,8 +349,16 @@ export function MusicVideoAI() {
 
       const scriptResponse = await generateMusicVideoScript(transcription);
       
-      // Guardar el guion completo
-      setScriptContent(scriptResponse);
+      // Intentar dar formato al JSON para mejor visualización
+      try {
+        // Verificamos si ya es un string JSON válido, y lo parseamos para darle formato
+        const parsed = JSON.parse(scriptResponse);
+        setScriptContent(JSON.stringify(parsed, null, 2));
+      } catch (parseError) {
+        // Si no se puede parsear, usamos directamente la respuesta
+        console.warn("No se pudo formatear el JSON del guion, usando respuesta directa", parseError);
+        setScriptContent(scriptResponse);
+      }
       
       // Marcar este paso como completado
       setCurrentStep(3);
@@ -1017,11 +1025,41 @@ ${transcription}`;
     setScriptContent(value);
     try {
       const scriptData = JSON.parse(value);
+      
+      // Compatibilidad con diferentes formatos de script
       if (scriptData.shots && Array.isArray(scriptData.shots)) {
+        // Formato anterior
         generateTimelineItems(scriptData.shots);
+      } else if (scriptData.segments && Array.isArray(scriptData.segments)) {
+        // Nuevo formato de script desde generateMusicVideoScript
+        const shotItems = scriptData.segments.map((segment: any) => ({
+          shotType: segment.tipo_plano || segment.shotType || "Plano medio",
+          description: segment.descripción_visual || segment.description || "",
+          imagePrompt: segment.imagePrompt || "",
+          transition: segment.transición || segment.transition || "corte directo",
+          duration: typeof segment.duration === 'number' ? String(segment.duration) : "3"
+        }));
+        generateTimelineItems(shotItems);
+      } else if (scriptData.segmentos && Array.isArray(scriptData.segmentos)) {
+        // Formato en español
+        const shotItems = scriptData.segmentos.map((segmento: any) => ({
+          shotType: segmento.tipo_plano || "Plano medio",
+          description: segmento.descripción_visual || "",
+          imagePrompt: `Escena musical: ${segmento.descripción_visual || ""}. Estilo: ${segmento.mood || "neutral"}`,
+          transition: segmento.transición || "corte directo",
+          duration: typeof segmento.duration === 'number' ? String(segmento.duration) : "3"
+        }));
+        generateTimelineItems(shotItems);
+      } else {
+        console.warn("Formato de script no reconocido:", scriptData);
       }
     } catch (error) {
       console.error("Error parsing script:", error);
+      toast({
+        title: "Error de formato",
+        description: "El script no tiene un formato JSON válido",
+        variant: "destructive"
+      });
     }
   };
 
