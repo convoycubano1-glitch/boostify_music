@@ -746,36 +746,43 @@ export async function generateMusicVideoScript(lyrics: string, audioAnalysis?: a
   console.log("OpenRouter script generation API key check:", !!apiKey);
   
   // Construcción del prompt
-  const systemPrompt = `Eres un director de vídeos musicales profesional con amplia experiencia en la industria musical.
-Tu tarea es crear un guion detallado para un video musical basado en esta letra de canción, siguiendo estas instrucciones específicas:
+  const systemPrompt = `Eres un director de vídeos musicales de élite con 20 años de experiencia trabajando con artistas destacados de la industria musical. Tu especialidad es analizar letras y producir guiones visuales que capturan perfectamente la esencia artística de cada canción.
 
-1. ANÁLISIS MUSICAL:
-   - Identifica el posible género musical basado en la letra
-   - Señala posibles momentos para solos instrumentales
-   - Identifica cambios de ritmo, estructura (verso, coro, puente)
-   - Anota características musicales importantes para la visualización
+Tu tarea es crear un guion de video musical PROFESIONAL basado en esta letra, siguiendo estos principios de producción:
 
-2. ANÁLISIS NARRATIVO:
-   - Extrae la historia o tema principal de la letra
-   - Define los personajes o elementos visuales principales
-   - Identifica el arco emocional a lo largo de la canción
-   - Determina el mensaje o significado central
+## 1. ANÁLISIS MUSICAL PROFUNDO (obligatorio):
+   - Identifica con precisión el género musical basado en referencias líricas, temática y estructura
+   - Determina la estructura exacta (intro-verso-precoro-coro-puente, etc.) con tiempos aproximados
+   - Analiza el ritmo lírico y cómo influye en las transiciones visuales
+   - Identifica momentos clave para sincronización visual (drops, cambios de ritmo, climax líricos)
+   - Detecta referencias a instrumentación específica que pueda visualizarse
 
-3. DISEÑO VISUAL:
-   - Propón un estilo visual coherente con el género y tema
-   - Sugiere una paleta de colores apropiada
-   - Indica tipos de locaciones que complementen la narrativa
-   - Describe el estilo de cinematografía más adecuado
+## 2. ANÁLISIS NARRATIVO CINEMATOGRÁFICO:
+   - Extrae la historia principal y posibles subtramas presentes en la letra
+   - Define personajes principales, secundarios y sus arcos dramáticos
+   - Establece claramente el contexto temporal y espacial sugerido por la letra
+   - Identifica el arco emocional completo (tensión-resolución) a lo largo de la canción
+   - Determina subtextos y significados simbólicos que pueden representarse visualmente
 
-4. GUION DETALLADO:
-   - Divide la canción en segmentos lógicos (introducción, versos, coro, puente, etc.)
+## 3. DIRECCIÓN ARTÍSTICA PROFESIONAL:
+   - Propón un estilo visual específico con referentes cinematográficos concretos
+   - Desarrolla una paleta de colores detallada que evolucione con la narrativa
+   - Especifica locaciones precisas con descripciones atmosféricas completas
+   - Detalla el tratamiento visual (grano, saturación, contraste) según el género y emoción
+   - Sugiere vestuario, maquillaje y dirección de arte coherente con el concepto
+
+## 4. GUION TÉCNICO DETALLADO POR SEGMENTOS:
+   - Divide la canción en segmentos con marcas de tiempo aproximadas
    - Para cada segmento, proporciona:
-     * La parte exacta de la letra correspondiente
-     * Una descripción detallada de la escena visual
-     * El tipo de plano recomendado (primer plano, plano medio, etc.)
-     * El estado de ánimo/atmósfera de la escena
-     * Transiciones entre escenas
-     * Efectos visuales especiales si son necesarios
+     * La parte exacta de la letra correspondiente (palabra por palabra)
+     * Una descripción técnica de la escena con vocabulario cinematográfico profesional
+     * Especificaciones técnicas exactas: tipo de plano, movimiento de cámara, lente, altura
+     * Dirección actoral y coreográfica específica si aplica
+     * Transiciones profesionales con términos técnicos (J-cut, L-cut, dolly zoom, etc.)
+     * Efectos visuales detallados con referencias técnicas específicas
+     * Notas de sincronización precisas con la música (beats, drops, crescendos)
+
+Tu análisis debe ser extremadamente detallado, usando terminología profesional de la industria cinematográfica y musical, como si fuera un guion real para producción.
 
 FORMATO DE RESPUESTA (estrictamente en formato JSON):
 {
@@ -893,91 +900,402 @@ FORMATO DE RESPUESTA (estrictamente en formato JSON):
 }
 
 /**
- * Genera un guion básico cuando la API falla
+ * Genera un guion profesional como respaldo cuando la API falla
+ * Usa un análisis básico del texto para determinar características y crear segmentos lógicos
  */
 function generarGuionFallback(lyrics: string): string {
-  console.log("Generando guion fallback con la letra:", lyrics.substring(0, 100) + "...");
+  console.log("Generando guion profesional de respaldo, analizando letra:", lyrics.substring(0, 100) + "...");
+  
+  // Función para extraer palabras clave relevantes de la letra
+  function extraerPalabrasClave(texto: string): string[] {
+    // Lista de palabras clave comunes en varios géneros musicales
+    const palabrasGenero = {
+      "pop": ["love", "heart", "dance", "night", "feel", "baby", "dream", "star", "light", "amor", "corazón", "bailar", "noche", "sentir", "sueño", "estrella", "luz"],
+      "rock": ["rock", "hard", "fire", "burn", "fight", "rebel", "wild", "soul", "free", "fuego", "lucha", "rebelde", "salvaje", "alma", "libre"],
+      "hip-hop": ["street", "flow", "money", "hustle", "beat", "rap", "real", "hood", "game", "calle", "dinero", "ritmo", "verdad", "barrio", "juego"],
+      "reggaeton": ["party", "perreo", "flow", "dem", "baby", "shorty", "fiesta", "ritmo", "belleza", "cuerpo", "baila"],
+      "r&b": ["soul", "baby", "feel", "love", "smooth", "heart", "night", "touch", "slow", "alma", "sentir", "amor", "corazón", "noche", "tocar", "lento"],
+      "electrónica": ["beat", "bass", "drop", "night", "feel", "high", "dream", "dance", "ritmo", "bajo", "noche", "sentir", "sueño", "bailar"],
+      "indie": ["heart", "feel", "dream", "soul", "mind", "light", "ocean", "mountain", "corazón", "sentir", "sueño", "alma", "mente", "luz", "océano", "montaña"]
+    };
+    
+    // Normalizar texto: convertir a minúsculas y eliminar signos de puntuación
+    const textoNormalizado = texto.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    const palabras = textoNormalizado.split(/\s+/);
+    
+    // Contar ocurrencias de palabras clave por género
+    const conteoGeneros: Record<string, number> = {};
+    Object.keys(palabrasGenero).forEach(genero => {
+      conteoGeneros[genero] = 0;
+      palabrasGenero[genero].forEach(palabra => {
+        const regex = new RegExp(`\\b${palabra}\\b`, 'gi');
+        const coincidencias = (textoNormalizado.match(regex) || []).length;
+        conteoGeneros[genero] += coincidencias;
+      });
+    });
+    
+    // Determinar el género más probable
+    let generoDetectado = "pop"; // Valor por defecto
+    let maxCoincidencias = 0;
+    
+    Object.entries(conteoGeneros).forEach(([genero, coincidencias]) => {
+      if (coincidencias > maxCoincidencias) {
+        maxCoincidencias = coincidencias;
+        generoDetectado = genero;
+      }
+    });
+    
+    // Extraer palabras emocionales o descriptivas para el tema
+    const palabrasEmocionales = ["love", "hate", "joy", "sad", "happy", "angry", "peace", "war", "hope", "fear", 
+                               "amor", "odio", "alegría", "triste", "feliz", "enojado", "paz", "guerra", "esperanza", "miedo"];
+    const emocionesDetectadas = palabras.filter(palabra => palabrasEmocionales.includes(palabra));
+    
+    // Si no hay emociones detectadas específicamente, extraer las palabras más frecuentes
+    const frecuenciaPalabras: Record<string, number> = {};
+    palabras.forEach(palabra => {
+      if (palabra.length > 3) { // Ignorar palabras muy cortas
+        frecuenciaPalabras[palabra] = (frecuenciaPalabras[palabra] || 0) + 1;
+      }
+    });
+    
+    // Ordenar palabras por frecuencia y tomar las 5 más comunes
+    const palabrasFrecuentes = Object.entries(frecuenciaPalabras)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(entry => entry[0]);
+    
+    return [generoDetectado, ...new Set([...emocionesDetectadas, ...palabrasFrecuentes])];
+  }
   
   // Dividir la letra en líneas y filtrar líneas vacías
   const lineas = lyrics.split('\n').filter(linea => linea.trim().length > 0);
   
-  // Determinar cuántos segmentos crear (mínimo 3, máximo 8)
-  const numSegmentos = Math.min(8, Math.max(3, Math.ceil(lineas.length / 4)));
+  // Analizar palabras clave para determinar género y tema
+  const palabrasClave = extraerPalabrasClave(lyrics);
+  const generoDetectado = palabrasClave[0];
   
-  // Géneros musicales comunes para asignar aleatoriamente
-  const generos = ["pop", "rock", "hip-hop", "balada", "electrónica", "indie", "r&b"];
-  const generoSeleccionado = generos[Math.floor(Math.random() * generos.length)];
+  // Mapear el género detectado a un estilo visual y paleta de colores coherente
+  const estilosVisualesPorGenero: Record<string, {estilo: string, paleta: string, cinematografia: string}> = {
+    "pop": {
+      estilo: "brillante y contemporáneo",
+      paleta: "colores saturados y vibrantes con alto contraste",
+      cinematografia: "planos dinámicos con steady cam y drone shots"
+    },
+    "rock": {
+      estilo: "crudo y energético",
+      paleta: "alto contraste con predominio de negros, rojos y azules metálicos",
+      cinematografia: "cámara en mano con movimientos bruscos y cortes rápidos"
+    },
+    "hip-hop": {
+      estilo: "urbano con estética callejera",
+      paleta: "tonos urbanos con filtro de alto contraste y colores neón en la noche",
+      cinematografia: "ángulos bajos, gran angular y transiciones estilizadas"
+    },
+    "reggaeton": {
+      estilo: "sensual y festivo",
+      paleta: "colores cálidos y saturados con acentos neón",
+      cinematografia: "cámara fluida con movimientos sensuales y ralentizados"
+    },
+    "r&b": {
+      estilo: "íntimo y sofisticado",
+      paleta: "tonos suaves con acentos dorados y azules profundos",
+      cinematografia: "movimientos lentos y fluidos con enfoque en primeros planos"
+    },
+    "electrónica": {
+      estilo: "futurista y minimalista",
+      paleta: "colores neón sobre fondos oscuros con efectos de luz",
+      cinematografia: "tomas rápidas sincronizadas con beats y efectos visuales digitales"
+    },
+    "indie": {
+      estilo: "atmosférico y nostálgico",
+      paleta: "colores desaturados con tonos vintage y filtros de película",
+      cinematografia: "tomas contemplativas y composiciones artísticas"
+    }
+  };
   
-  // Estilos visuales para asignar aleatoriamente
-  const estilos = ["minimalista", "saturado", "cinematográfico", "documental", "surrealista"];
-  const estiloSeleccionado = estilos[Math.floor(Math.random() * estilos.length)];
+  // Seleccionar estilo visual basado en el género detectado (o usar uno predeterminado)
+  const estiloVisual = estilosVisualesPorGenero[generoDetectado] || {
+    estilo: "cinematográfico contemporáneo",
+    paleta: "contrastada con tonos complementarios",
+    cinematografia: "combinación equilibrada de planos estáticos y dinámicos"
+  };
   
-  // Paletas de colores
-  const paletas = ["tonos fríos (azules y verdes)", "tonos cálidos (rojos y naranjas)", "alto contraste", "monocromático", "pastel"];
-  const paletaSeleccionada = paletas[Math.floor(Math.random() * paletas.length)];
+  // Determinar tema principal y mensaje según las palabras clave
+  let temaPrincipal = "Expresión emocional personal";
+  let mensaje = "Conexión con experiencias universales";
   
-  // Crear segmentos
+  if (palabrasClave.some(p => ["love", "heart", "amor", "corazón", "baby", "feel", "sentir"].includes(p))) {
+    temaPrincipal = "Relación romántica y conexión emocional";
+    mensaje = "El poder transformador del amor";
+  } else if (palabrasClave.some(p => ["party", "dance", "night", "fiesta", "bailar", "noche"].includes(p))) {
+    temaPrincipal = "Celebración y escape a través de la fiesta";
+    mensaje = "Vivir el momento presente con intensidad";
+  } else if (palabrasClave.some(p => ["fight", "power", "strong", "lucha", "poder", "fuerte"].includes(p))) {
+    temaPrincipal = "Superación personal y empoderamiento";
+    mensaje = "La fortaleza interior ante la adversidad";
+  } else if (palabrasClave.some(p => ["sad", "pain", "triste", "dolor", "lost", "perdido"].includes(p))) {
+    temaPrincipal = "Dolor emocional y proceso de sanación";
+    mensaje = "Transformación a través del sufrimiento";
+  }
+  
+  // Determinar cuántos segmentos crear (mínimo 4, máximo 10)
+  let numSegmentos = Math.min(10, Math.max(4, Math.ceil(lineas.length / 3)));
+  
+  // Si la letra es muy corta, garantizar un mínimo razonable de segmentos
+  if (lyrics.length < 200) numSegmentos = 4;
+  else if (lyrics.length > 800) numSegmentos = 10;
+  
+  // Estimar duración total aproximada basada en la extensión de la letra
+  const duracionEstimada = Math.max(180, Math.min(300, lyrics.length / 10));
+  const duracionPorSegmento = duracionEstimada / numSegmentos;
+  
+  // Definir posibles tipos de planos con descripciones profesionales
+  const tiposPlano = [
+    {
+      tipo: "extreme close-up (ECU)",
+      desc: "primerísimo primer plano que destaca detalles íntimos",
+      tecnica: "lente macro o teleobjetivo de 85-135mm, iluminación lateral para enfatizar texturas"
+    },
+    {
+      tipo: "close-up (CU)",
+      desc: "primer plano que captura emociones y expresiones",
+      tecnica: "lente 50-85mm con apertura amplia (f/1.8-2.8) para desenfocar el fondo"
+    },
+    {
+      tipo: "medium close-up (MCU)",
+      desc: "plano medio corto desde pecho hacia arriba",
+      tecnica: "lente 35-50mm, composición con regla de tercios, profundidad de campo media"
+    },
+    {
+      tipo: "medium shot (MS)",
+      desc: "plano medio que muestra contexto y lenguaje corporal",
+      tecnica: "lente 35mm, altura a nivel de los ojos, espacio para gestos y movimiento"
+    },
+    {
+      tipo: "full shot (FS)",
+      desc: "plano entero que muestra la figura completa",
+      tecnica: "lente 24-35mm, composición equilibrada con espacio negativo intencional"
+    },
+    {
+      tipo: "wide shot (WS)",
+      desc: "plano general que establece el entorno completo",
+      tecnica: "gran angular 16-24mm, profundidad de campo amplia, composición con líneas guía"
+    },
+    {
+      tipo: "extreme wide shot (EWS)",
+      desc: "plano muy abierto que muestra escala y contexto amplio",
+      tecnica: "ultra gran angular o drone, altura elevada, encuadre panorámico"
+    },
+    {
+      tipo: "over-the-shoulder shot (OTS)",
+      desc: "toma desde detrás del hombro que muestra perspectiva subjetiva",
+      tecnica: "lente 35-50mm, composición en diagonal, enfoque selectivo"
+    },
+    {
+      tipo: "dutch angle",
+      desc: "ángulo inclinado que genera tensión e inestabilidad",
+      tecnica: "inclinación de 15-30 grados, contrastes fuertes, composición desequilibrada"
+    },
+    {
+      tipo: "dolly shot",
+      desc: "movimiento fluido de acercamiento o alejamiento",
+      tecnica: "riel dolly o gimbal, movimiento lento constante, enfoque constante en sujeto"
+    }
+  ];
+  
+  // Definir transiciones profesionales con términos técnicos
+  const transiciones = [
+    {
+      tipo: "corte directo",
+      desc: "transición inmediata entre planos",
+      uso: "cambios de ritmo dinámicos, sincronización con beats"
+    },
+    {
+      tipo: "match cut",
+      desc: "corte que conecta elementos visuales similares",
+      uso: "crear continuidad visual entre escenas distintas"
+    },
+    {
+      tipo: "J-cut",
+      desc: "transición donde el audio precede a la imagen",
+      uso: "anticipar la siguiente escena y crear tensión"
+    },
+    {
+      tipo: "L-cut",
+      desc: "transición donde la imagen cambia pero el audio continúa",
+      uso: "mantener la continuidad narrativa entre escenas"
+    },
+    {
+      tipo: "fundido cruzado",
+      desc: "superposición gradual entre dos imágenes",
+      uso: "transiciones suaves entre secuencias relacionadas"
+    },
+    {
+      tipo: "fundido a negro",
+      desc: "desvanecimiento gradual a negro",
+      uso: "conclusión de secuencias o cambios mayores de tiempo/espacio"
+    },
+    {
+      tipo: "iris",
+      desc: "transición circular que se abre o cierra",
+      uso: "enfatizar un elemento o crear efecto vintage"
+    },
+    {
+      tipo: "barrido",
+      desc: "movimiento rápido que difumina la imagen",
+      uso: "transiciones energéticas entre locaciones distintas"
+    },
+    {
+      tipo: "morphing",
+      desc: "transformación fluida de un elemento a otro",
+      uso: "transiciones oníricas o simbolismo visual"
+    },
+    {
+      tipo: "smash cut",
+      desc: "corte abrupto entre escenas contrastantes",
+      uso: "crear impacto y sorpresa, contrastar atmósferas"
+    }
+  ];
+  
+  // Estados de ánimo con descripción cinematográfica
+  const moods = [
+    { mood: "melancólico", desc: "atmósfera contemplativa con iluminación suave y ritmo pausado" },
+    { mood: "eufórico", desc: "energía vibrante con movimientos rápidos e iluminación intensa" },
+    { mood: "introspectivo", desc: "ambiente íntimo con sombras marcadas y composición minimalista" },
+    { mood: "tenso", desc: "atmósfera inquietante con contrastes fuertes y encuadres desbalanceados" },
+    { mood: "onírico", desc: "calidad etérea con difusión suave y colores superpuestos" },
+    { mood: "nostálgico", desc: "estética vintage con tonos desaturados y texturas analógicas" },
+    { mood: "épico", desc: "escala grandiosa con movimientos amplios y profundidad dramática" },
+    { mood: "íntimo", desc: "proximidad emocional con planos cercanos y luz envolvente" },
+    { mood: "surrealista", desc: "distorsión deliberada con yuxtaposiciones inesperadas y simbolismo" },
+    { mood: "visceral", desc: "intensidad física con movimientos bruscos y contrastes extremos" }
+  ];
+  
+  // Crear segmentos avanzados
   const segmentos = [];
-  const duracionAproxPorSegmento = 30; // segundos
   
   for (let i = 0; i < numSegmentos; i++) {
+    // Determinar tiempo aproximado
+    const tiempoInicio = formatearTiempo(i * duracionPorSegmento);
+    const tiempoFin = formatearTiempo((i + 1) * duracionPorSegmento);
+    
     // Seleccionar líneas para este segmento
     const inicio = Math.floor(i * lineas.length / numSegmentos);
     const fin = Math.floor((i + 1) * lineas.length / numSegmentos);
     const letraSegmento = lineas.slice(inicio, fin).join(" ");
     
-    // Tiempo aproximado
-    const tiempoInicio = formatearTiempo(i * duracionAproxPorSegmento);
-    const tiempoFin = formatearTiempo((i + 1) * duracionAproxPorSegmento);
-    
-    // Determinar tipo de segmento en base a la posición
+    // Determinar tipo de segmento en base a la posición (estructura musical típica)
     let tipo;
     if (i === 0) tipo = "introducción";
-    else if (i === numSegmentos - 1) tipo = "cierre";
-    else tipo = i % 2 === 0 ? "verso" : "coro";
+    else if (i === numSegmentos - 1) tipo = "outro";
+    else if (i === Math.floor(numSegmentos * 0.25) || i === Math.floor(numSegmentos * 0.75)) tipo = "coro";
+    else if (i === Math.floor(numSegmentos * 0.5)) tipo = "puente";
+    else tipo = "verso";
     
-    // Tipos de planos
-    const tiposPlano = ["primer plano", "plano medio", "plano general", "plano secuencia", "plano detalle"];
-    const planoSeleccionado = tiposPlano[i % tiposPlano.length];
+    // Seleccionar elementos visuales con cierta lógica narrativa según posición
+    const indiceProgresivo = Math.floor((i / numSegmentos) * 10) % 10; // 0-9 progresivo según avance
     
-    // Estados de ánimo
-    const moods = ["melancólico", "energético", "introspectivo", "eufórico", "tenso", "relajado"];
-    const moodSeleccionado = moods[i % moods.length];
+    // Al inicio usar planos más abiertos, en el medio más cerrados, y al final variar
+    let indicePlano = 0;
+    if (i < numSegmentos * 0.3) indicePlano = 6 - Math.floor(i * 3 / numSegmentos); // Más abiertos al inicio (6->3)
+    else if (i < numSegmentos * 0.7) indicePlano = 2 + (i % 3); // Más cerrados en medio (2-4)
+    else indicePlano = (i % tiposPlano.length); // Variados al final
     
-    // Transiciones
-    const transiciones = ["corte directo", "fundido", "barrido", "desvanecimiento", "zoom"];
-    const transicionSeleccionada = transiciones[i % transiciones.length];
+    // Al inicio transiciones más suaves, más dinámicas en el medio, conclusivas al final
+    let indiceTransicion = 0;
+    if (i < numSegmentos * 0.3) indiceTransicion = i % 3; // Suaves al inicio (0-2)
+    else if (i < numSegmentos * 0.7) indiceTransicion = 3 + (i % 4); // Dinámicas en medio (3-6)
+    else if (i < numSegmentos * 0.9) indiceTransicion = 7 + (i % 2); // Más dramáticas cerca del final (7-8)
+    else indiceTransicion = 5; // Fundido al final
+    
+    // Mood progresivo según la narrativa de la canción
+    const indiceMood = Math.min(9, Math.max(0, Math.floor((i / numSegmentos) * moods.length)));
+    
+    const planoElegido = tiposPlano[indicePlano];
+    const transicionElegida = transiciones[indiceTransicion];
+    const moodElegido = moods[indiceMood];
+    
+    // Crear descripción visual basada en la letra y el tipo de segmento
+    let descripcionVisual = "";
+    if (tipo === "introducción") {
+      descripcionVisual = `${planoElegido.tipo} que establece el contexto visual principal. ${estiloVisual.estilo} con ${moodElegido.desc}. Introducción del personaje/escenario principal con composición equilibrada y movimiento lento revelador.`;
+    } else if (tipo === "verso") {
+      descripcionVisual = `Secuencia narrativa con ${planoElegido.tipo} que desarrolla la historia. Iluminación que evoluciona de ${moodElegido.mood} a ${moods[(indiceMood+1)%10].mood}. ${planoElegido.tecnica} para mostrar progresión emocional.`;
+    } else if (tipo === "coro") {
+      descripcionVisual = `Montaje de imágenes impactantes en ${planoElegido.tipo} con ritmo acelerado. Explosión visual con ${estiloVisual.paleta} en su máxima intensidad. Movimientos fluidos y perfecta sincronización con el ritmo.`;
+    } else if (tipo === "puente") {
+      descripcionVisual = `Cambio dramático de ambiente con ${planoElegido.tipo} que rompe el patrón establecido. ${moodElegido.desc} con contraste visual respecto a las secciones previas. ${planoElegido.tecnica} pero con enfoque experimental.`;
+    } else if (tipo === "outro") {
+      descripcionVisual = `Resolución visual con ${planoElegido.tipo} que proporciona cierre narrativo. Atmósfera ${moodElegido.mood} con iluminación que sugiere conclusión. ${transicionElegida.tipo} hacia el plano final emblemático.`;
+    }
+    
+    // Elementos técnicos profesionales
+    const elementosTecnicos = `${planoElegido.tecnica}. Iluminación: ${moodElegido.mood === "melancólico" || moodElegido.mood === "introspectivo" ? "claroscuro con ratio 1:4" : "contraste medio con ratio 1:2"}. ${tipo === "coro" ? "Steadicam con movimiento fluido" : "Cámara estabilizada en trípode con sutiles paneos"}. Profundidad de campo ${tipo === "verso" ? "amplia" : "reducida"} con apertura ${tipo === "verso" ? "f/8-11" : "f/1.8-4"}.`;
     
     segmentos.push({
       id: i + 1,
       tipo: tipo,
       tiempo_aproximado: `${tiempoInicio}-${tiempoFin}`,
-      letra: letraSegmento || `[Parte instrumental ${i+1}]`,
-      descripción_visual: `Escena que representa visualmente el tema principal de la canción, adaptada a la emoción de esta sección.`,
-      tipo_plano: planoSeleccionado,
-      mood: moodSeleccionado,
-      transición: transicionSeleccionada,
-      elementos_técnicos: "Iluminación estándar, cámara estable",
-      notas_musicales: i % 3 === 0 ? "Atención al ritmo base" : "Seguir progresión armónica principal"
+      letra: letraSegmento || `[Sección instrumental - ${tipo}]`,
+      descripción_visual: descripcionVisual,
+      tipo_plano: planoElegido.tipo,
+      mood: moodElegido.mood,
+      transición: transicionElegida.tipo,
+      elementos_técnicos: elementosTecnicos,
+      notas_musicales: tipo === "coro" ? "Sincronización precisa con beats principales, enfatizando kicks y drops" : "Seguir progresión armónica con atención a cambios de intensidad vocal"
     });
   }
   
-  // Crear el guion completo
+  // Determinar elementos destacados según el género detectado
+  const elementosDestacados = [];
+  switch (generoDetectado) {
+    case "pop":
+      elementosDestacados.push("melodía vocal principal", "hooks repetitivos", "estructura verse-chorus");
+      break;
+    case "rock":
+      elementosDestacados.push("riffs de guitarra", "batería potente", "crescendos dramáticos");
+      break;
+    case "hip-hop":
+      elementosDestacados.push("beats rítmicos", "líneas de bajo marcadas", "patrones vocales rápidos");
+      break;
+    case "reggaeton":
+      elementosDestacados.push("dembow rhythm", "percusión latina", "beats constantes a 90-100 BPM");
+      break;
+    case "r&b":
+      elementosDestacados.push("voces melódicas", "armonías vocales", "melodías suaves de piano/sintetizador");
+      break;
+    case "electrónica":
+      elementosDestacados.push("drops electrónicos", "builds y breaks", "texturas sintéticas");
+      break;
+    case "indie":
+      elementosDestacados.push("instrumentación orgánica", "estructuras no convencionales", "texturas atmosféricas");
+      break;
+    default:
+      elementosDestacados.push("línea vocal principal", "patrones rítmicos", "estructura melódica");
+  }
+  
+  // Crear estructura profesional según el género
+  let estructuraMusical = "verse-chorus-verse-chorus-bridge-chorus";
+  if (generoDetectado === "hip-hop") estructuraMusical = "intro-verse-hook-verse-hook-bridge-hook-outro";
+  else if (generoDetectado === "electrónica") estructuraMusical = "intro-build-drop-breakdown-build-drop-outro";
+  else if (generoDetectado === "indie") estructuraMusical = "intro-verse-chorus-verse-bridge-verse-outro";
+  
+  // Crear el guion completo con mayor profesionalismo
   const guionCompleto = {
     análisis_musical: {
-      género: generoSeleccionado,
-      estructura: "verso-coro-verso-coro-puente-coro",
-      elementos_destacados: ["ritmo base", "línea vocal principal"]
+      género: generoDetectado,
+      estructura: estructuraMusical,
+      elementos_destacados: elementosDestacados
     },
     análisis_narrativo: {
-      tema_principal: "Basado en la letra de la canción",
-      arco_emocional: "Desarrollo emocional progresivo",
-      mensaje: "Mensaje central extraído de la letra"
+      tema_principal: temaPrincipal,
+      arco_emocional: `Evolución desde ${moods[0].mood} hasta ${moods[moods.length-1].mood} con climax en segmento ${Math.floor(numSegmentos * 0.7)}`,
+      mensaje: mensaje
     },
     diseño_visual: {
-      estilo: estiloSeleccionado,
-      paleta_colores: paletaSeleccionada,
-      cinematografía: "Combinación de planos estáticos y dinámicos"
+      estilo: estiloVisual.estilo,
+      paleta_colores: estiloVisual.paleta,
+      cinematografía: estiloVisual.cinematografia
     },
     segmentos: segmentos
   };
