@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent, extendCourseContent, AdditionalCourseContent } from "@/lib/api/education-service";
+import { ImagePreloader } from "@/components/ui/image-preloader";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, PlusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
@@ -91,6 +92,15 @@ export default function EducationPage() {
   
   // Colección para el caché de imágenes generadas
   const imagesCacheCollection = "generated_images_cache";
+  
+  // Lista de imágenes críticas que siempre deben precargarse
+  const criticalImageUrls = [
+    "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg", // Beginner
+    "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg", // Intermediate
+    "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg", // Advanced
+    "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg", // Marketing
+    "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg", // Distribution
+  ];
   
   // Memoria caché local PERSISTENTE para imágenes (persiste entre recargas de página)
   // Usamos sessionStorage para mantener la persistencia durante la sesión del usuario
@@ -281,70 +291,71 @@ export default function EducationPage() {
     return () => unsubscribe();
   }, []);
 
-  // Efecto para cargar imágenes de categorías desde Firestore
+  // Función auxiliar para precargar imágenes
+  const preloadImage = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve(url);
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+    });
+  };
+
+  // Efecto para cargar imágenes de categorías desde Firestore y asegurar su carga completa
   useEffect(() => {
     const loadImagesFromFirestore = async () => {
       try {
-        console.log("Verificando imágenes guardadas en Firestore...");
+        console.log("Verificando y precargando imágenes de categorías...");
         const levels = ['Beginner', 'Intermediate', 'Advanced'];
         let needsUpdate = false;
         const newImages: Record<string, string> = { ...levelImages };
         
-        // Primero verificamos si todas las imágenes ya están en el caché local (memoria)
-        if (imageCache['category_Beginner'] && 
-            imageCache['category_Intermediate'] && 
-            imageCache['category_Advanced']) {
-          console.log("✅ Todas las imágenes de categorías ya están en caché local, usando esas versiones");
-          setLevelImages({
-            Beginner: imageCache['category_Beginner'],
-            Intermediate: imageCache['category_Intermediate'],
-            Advanced: imageCache['category_Advanced']
+        // NUEVO: Precargar las imágenes predefinidas para asegurar su disponibilidad
+        const imagesToPreload = [
+          levelImages.Beginner,
+          levelImages.Intermediate,
+          levelImages.Advanced
+        ];
+        
+        try {
+          // Precargar imágenes en paralelo
+          await Promise.all(imagesToPreload.map(url => preloadImage(url)));
+          console.log("✅ Todas las imágenes predefinidas han sido precargadas correctamente");
+          
+          // Guardar en caché para uso futuro
+          saveToImageCache('category_Beginner', levelImages.Beginner);
+          saveToImageCache('category_Intermediate', levelImages.Intermediate);
+          saveToImageCache('category_Advanced', levelImages.Advanced);
+          
+          // Guardar en Firestore en segundo plano (sin esperar)
+          levels.forEach(level => {
+            const cacheKey = `category_${level}`;
+            setDoc(doc(db, imagesCacheCollection, cacheKey), {
+              key: cacheKey,
+              prompt: `Level ${level}`,
+              imageUrl: levelImages[level as keyof LevelImages],
+              timestamp: Timestamp.now(),
+              category: level,
+              source: 'predefined'
+            }).catch(err => console.warn(`No se pudo guardar imagen en Firestore: ${err.message}`));
           });
-          return; // Salimos porque ya tenemos todas las imágenes
+        } catch (preloadError) {
+          console.warn("⚠️ Error al precargar algunas imágenes:", preloadError);
+          needsUpdate = true;
         }
         
-        // Si no están todas en caché local, intentamos cargarlas desde Firestore
-        for (const level of levels) {
-          const cacheKey = `category_${level}`;
-          try {
-            // Intentar obtener de Firestore
-            const cachedDoc = await getDoc(doc(db, imagesCacheCollection, cacheKey));
-            if (cachedDoc.exists()) {
-              const data = cachedDoc.data();
-              if (data.imageUrl && !data.imageUrl.includes('unsplash.com')) {
-                console.log(`✅ Imagen para categoría ${level} cargada desde Firestore`);
-                newImages[level] = data.imageUrl;
-                // Guardar en caché local para futuro uso
-                imageCache[cacheKey] = data.imageUrl;
-              } else {
-                console.log(`⚠️ La imagen de ${level} en Firestore no es válida, se necesita regenerar`);
-                needsUpdate = true;
-              }
-            } else {
-              console.log(`⚠️ No se encontró imagen para categoría ${level} en Firestore`);
-              needsUpdate = true;
-            }
-          } catch (error) {
-            console.error(`Error cargando imagen para ${level} desde Firestore:`, error);
-            needsUpdate = true;
-          }
-        }
-        
-        // Actualizar el estado con las imágenes cargadas
+        // Actualizar el estado con las imágenes cargadas (aunque sean las mismas)
         setLevelImages({
-          Beginner: newImages.Beginner || levelImages.Beginner,
-          Intermediate: newImages.Intermediate || levelImages.Intermediate,
-          Advanced: newImages.Advanced || levelImages.Advanced
+          Beginner: levelImages.Beginner,
+          Intermediate: levelImages.Intermediate,
+          Advanced: levelImages.Advanced
         });
-        
-        // Solo regenerar si es necesario (algo no se encontró o no es válido)
-        if (needsUpdate) {
-          console.log("🔄 Algunas imágenes necesitan ser regeneradas...");
-          // Esperar un momento para que la UI se actualice primero
-          setTimeout(() => regenerateCategoryImages(), 1000);
-        }
       } catch (error) {
-        console.error("Error cargando imágenes desde Firestore:", error);
+        console.error("Error en el proceso de carga de imágenes:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar algunas imágenes. Usando versiones predeterminadas."
+        });
       }
     };
     
