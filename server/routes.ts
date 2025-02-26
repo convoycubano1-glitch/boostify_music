@@ -54,14 +54,14 @@ export function registerRoutes(app: Express): Server {
   app.use('/api/manager', managerRouter);
   app.use('/api/artist', artistRouter);
 
-  // Configurar la ruta de OpenAI antes que la autenticación y otras rutas para evitar bloqueos
+  // Configurar las rutas que NO requieren autenticación primero
   setupOpenAIRoutes(app);
+  setupEducationRoutes(app);
   
   // Servicios que requieren autenticación
   setupAuth(app);
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);
-  setupEducationRoutes(app);
 
   // Register courses routes
   app.use(coursesRouter);
