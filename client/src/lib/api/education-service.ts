@@ -135,6 +135,106 @@ export async function generateCourseContent(prompt: string): Promise<CourseConte
  * Direct API call to OpenRouter for course generation
  * This is a fallback in case the backend route isn't implemented yet
  */
+export async function generateCourseContentDirect(prompt: string): Promise<CourseContent> {
+  try {
+    console.log("Starting direct course content generation with OpenRouter...");
+
+    // Get OPENROUTER_API_KEY from the server
+    const apiKeyResponse = await fetch("/api/get-openrouter-key");
+    if (!apiKeyResponse.ok) {
+      throw new Error("Could not get OpenRouter API key");
+    }
+    
+    const { key, exists } = await apiKeyResponse.json();
+    if (!exists || !key) {
+      throw new Error("Invalid or missing OpenRouter API key");
+    }
+
+    // Prepare headers for OpenRouter
+    const headers = {
+      "Authorization": `Bearer ${key}`,
+      "HTTP-Referer": window.location.origin || "https://boostify.music.app",
+      "X-Title": "Boostify Music Education",
+      "Content-Type": "application/json"
+    };
+    
+    // Use the Gemini 2.0 Flash model
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        messages: [
+          {
+            role: "system",
+            content: `You are a JSON generator for music education courses. You MUST return a valid JSON object with this EXACT structure:
+{
+  "overview": "course overview text",
+  "objectives": ["objective1", "objective2", "objective3"],
+  "curriculum": [
+    {
+      "title": "lesson title",
+      "description": "lesson description",
+      "estimatedMinutes": 60
+    }
+  ],
+  "topics": ["topic1", "topic2", "topic3"],
+  "assignments": ["assignment1", "assignment2"],
+  "applications": ["application1", "application2"]
+}`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 2000,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      throw new Error("Invalid API response structure");
+    }
+
+    // Extract content from response
+    const content = data.choices[0].message?.content;
+    if (!content) {
+      throw new Error("No content in API response");
+    }
+
+    // Parse JSON content
+    try {
+      const parsed = JSON.parse(content);
+      
+      // Validate and ensure structure is correct
+      const validatedContent: CourseContent = {
+        overview: typeof parsed.overview === 'string' ? parsed.overview : 'Course overview',
+        objectives: Array.isArray(parsed.objectives) ? parsed.objectives : [],
+        curriculum: Array.isArray(parsed.curriculum) ? parsed.curriculum : [],
+        topics: Array.isArray(parsed.topics) ? parsed.topics : [],
+        assignments: Array.isArray(parsed.assignments) ? parsed.assignments : [],
+        applications: Array.isArray(parsed.applications) ? parsed.applications : []
+      };
+
+      return validatedContent;
+    } catch (parseError) {
+      console.error('Error parsing JSON from API response:', parseError);
+      throw new Error(`Failed to parse course content: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+    }
+  } catch (error) {
+    console.error('Direct OpenRouter API call failed:', error);
+    throw error; // Rethrow to allow fallback in the caller function
+  }
+}
 // Interfaz para el contenido adicional del curso
 export interface AdditionalCourseContent {
   additionalLessons: {
