@@ -147,6 +147,7 @@ interface ManagerToolData {
   userId: string;
   createdAt: Date;
   updatedAt: Date;
+  prompt?: string; // Added prompt field for AI responses
 }
 
 export default managerToolsService;

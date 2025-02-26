@@ -124,16 +124,16 @@ export function CalendarSection() {
     }
   };
 
-  const handleDownload = async (document: CalendarDocument) => {
+  const handleDownload = async (doc: CalendarDocument) => {
     try {
-      const blob = new Blob([document.content], { type: 'text/plain' });
+      const blob = new Blob([doc.content], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = url;
-      link.download = `schedule-plan-${new Date(document.createdAt.toDate()).toISOString().split('T')[0]}.txt`;
-      document.body.appendChild(link);
+      link.download = `schedule-plan-${new Date(doc.createdAt.toDate()).toISOString().split('T')[0]}.txt`;
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
       toast({
