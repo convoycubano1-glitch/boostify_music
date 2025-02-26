@@ -71,6 +71,73 @@ export default function EducationPage() {
   const [isRegeneratingImages, setIsRegeneratingImages] = useState(false);
   const [regenerationProgress, setRegenerationProgress] = useState(0);
   
+  // Estado para las categorías de nivel con sus imágenes
+  const [levelImages, setLevelImages] = useState({
+    Beginner: "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bXVzaWMscHJvZHVjdGlvbixzdHVkaW98fHx8fHwxNzQwNTk3OTMx&ixlib=rb-4.0.3&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=1080",
+    Intermediate: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bXVzaWMscHJvZHVjdGlvbixzdHVkaW98fHx8fHwxNzQwNTk3OTcy&ixlib=rb-4.0.3&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=1080", 
+    Advanced: "https://images.unsplash.com/photo-1574075874181-86efb4f5969e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bXVzaWMscHJvZHVjdGlvbixzdHVkaW98fHx8fHwxNzQwNTk3OTgw&ixlib=rb-4.0.3&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=1080"
+  });
+  
+  // Función para regenerar las imágenes de categorías
+  const regenerateCategoryImages = async () => {
+    try {
+      toast({
+        title: "Generando imágenes",
+        description: "Regenerando imágenes para las categorías principales..."
+      });
+      
+      const levels = ['Beginner', 'Intermediate', 'Advanced'];
+      
+      for (let i = 0; i < levels.length; i++) {
+        const level = levels[i];
+        const prompt = `professional photorealistic ${level.toLowerCase()} music studio setup for education, modern design, high quality equipment, ${level === 'Beginner' ? 'simple setup' : level === 'Intermediate' ? 'medium complexity' : 'professional advanced setup'}`;
+        
+        try {
+          const result = await generateImageWithFal({
+            prompt,
+            negativePrompt: "text, words, watermarks, logos, blurry, distorted, people, faces",
+            imageSize: "landscape_16_9"
+          });
+          
+          if (result.data?.images?.[0]) {
+            // Asegurarnos de tener la URL de la imagen (el formato puede variar)
+            let newImage = result.data.images[0];
+            if (typeof newImage === 'object' && newImage.url) {
+              newImage = newImage.url;
+            }
+            
+            console.log(`Imagen generada para categoría ${level}:`, newImage.substring(0, 50) + "...");
+            
+            // Actualizar el estado local
+            setLevelImages(prev => ({
+              ...prev,
+              [level]: newImage
+            }));
+            
+            toast({
+              title: "Progreso",
+              description: `Imagen para categoría ${level} generada (${i+1}/${levels.length})`
+            });
+          }
+        } catch (error) {
+          console.error(`Error generando imagen para categoría ${level}:`, error);
+        }
+      }
+      
+      toast({
+        title: "Éxito",
+        description: "¡Imágenes de categorías regeneradas con éxito!"
+      });
+    } catch (error) {
+      console.error("Error regenerando imágenes de categorías:", error);
+      toast({
+        title: "Error",
+        description: "Error al regenerar imágenes de categorías",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Firebase imports are already handled at the top of the file
 
   useEffect(() => {
