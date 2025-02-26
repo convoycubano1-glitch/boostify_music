@@ -7,11 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/layout/header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { generateCourseContent } from "@/lib/api/education-service";
-import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight } from "lucide-react";
+import { generateCourseContent, extendCourseContent, AdditionalCourseContent } from "@/lib/api/education-service";
+import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, PlusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
-import { collection, addDoc, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
 import { createCourseEnrollmentSession } from "@/lib/api/stripe-service";
@@ -25,8 +25,7 @@ interface CourseFormData {
   level: "Beginner" | "Intermediate" | "Advanced";
 }
 
-// Importar los tipos necesarios
-import { AdditionalCourseContent } from "@/lib/api/education-service";
+// Type for Course interface is defined below
 
 interface Course {
   id: string;
@@ -67,8 +66,7 @@ export default function EducationPage() {
   const [isExtendingCourse, setIsExtendingCourse] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   
-  // Importar el componente de documento de Firestore
-  const { doc, updateDoc } = require('firebase/firestore');
+  // Firebase imports are already handled at the top of the file
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -373,8 +371,7 @@ export default function EducationPage() {
         description: `Ampliando el curso "${selectedCourse.title}" con nuevo contenido...`
       });
 
-      // Importar la función desde education-service.ts
-      const { extendCourseContent } = await import('@/lib/api/education-service');
+      // Using extendCourseContent function imported at the top of file
 
       // Generar contenido adicional para el curso
       const additionalContent = await extendCourseContent(
