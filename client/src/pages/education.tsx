@@ -25,6 +25,9 @@ interface CourseFormData {
   level: "Beginner" | "Intermediate" | "Advanced";
 }
 
+// Importar los tipos necesarios
+import { AdditionalCourseContent } from "@/lib/api/education-service";
+
 interface Course {
   id: string;
   title: string;
@@ -39,6 +42,8 @@ interface Course {
   lessons: number;
   enrolledStudents: number;
   content?: any;
+  additionalContent?: AdditionalCourseContent[];
+  lastUpdated?: Date;
   createdAt: Date;
   createdBy: string;
 }
@@ -58,6 +63,12 @@ export default function EducationPage() {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [hoveredCourse, setHoveredCourse] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [isExtendingCourse, setIsExtendingCourse] = useState(false);
+  const [showExtendDialog, setShowExtendDialog] = useState(false);
+  
+  // Importar el componente de documento de Firestore
+  const { doc, updateDoc } = require('firebase/firestore');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -343,6 +354,77 @@ export default function EducationPage() {
     }
   };
 
+  const handleExtendCourse = async () => {
+    if (!selectedCourse) {
+      toast({
+        title: "Error",
+        description: "No se ha seleccionado ningún curso para extender",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsExtendingCourse(true);
+
+    try {
+      console.log("Iniciando extensión de curso:", selectedCourse.title);
+      toast({
+        title: "Generando contenido adicional",
+        description: `Ampliando el curso "${selectedCourse.title}" con nuevo contenido...`
+      });
+
+      // Importar la función desde education-service.ts
+      const { extendCourseContent } = await import('@/lib/api/education-service');
+
+      // Generar contenido adicional para el curso
+      const additionalContent = await extendCourseContent(
+        selectedCourse.id,
+        selectedCourse.title,
+        selectedCourse.description,
+        selectedCourse.content
+      );
+
+      console.log("Contenido adicional generado:", additionalContent);
+
+      // Si el curso ya tiene contenido adicional, agregamos al existente
+      const existingAdditionalContent = selectedCourse.additionalContent || [];
+      
+      // Actualizar el curso en Firestore
+      const courseRef = doc(db, 'courses', selectedCourse.id);
+      await updateDoc(courseRef, {
+        additionalContent: [...existingAdditionalContent, additionalContent],
+        lastUpdated: Timestamp.now()
+      });
+
+      // Actualizar el curso en el estado local
+      setCourses(prev => prev.map(course => 
+        course.id === selectedCourse.id 
+          ? { 
+              ...course, 
+              additionalContent: [...(course.additionalContent || []), additionalContent],
+              lastUpdated: new Date()
+            } 
+          : course
+      ));
+
+      toast({
+        title: "¡Éxito!",
+        description: `Se ha ampliado el curso "${selectedCourse.title}" con nuevo contenido`
+      });
+
+      setShowExtendDialog(false);
+    } catch (error: any) {
+      console.error('Error al extender el curso:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error al generar contenido adicional. Por favor intenta de nuevo.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExtendingCourse(false);
+    }
+  };
+
   const handleEnrollCourse = async (course: Course) => {
     if (!isAuthenticated) {
       toast({
@@ -395,6 +477,44 @@ export default function EducationPage() {
       <Header />
 
       <main className="container mx-auto px-4 py-8 pt-20">
+        {/* Dialog para extender un curso */}
+        <Dialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Ampliar Curso</DialogTitle>
+              <DialogDescription>
+                Generar contenido adicional para el curso "{selectedCourse?.title}". Esto agregará nuevas lecciones, recursos y temas avanzados al curso existente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 my-4">
+              <p className="text-sm text-gray-400">
+                Se utilizará inteligencia artificial para generar contenido adicional complementario al curso actual. El nuevo contenido incluirá:
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-400">
+                <li>5 lecciones adicionales con objetivos y aplicaciones prácticas</li>
+                <li>Recursos recomendados para profundizar en los temas</li>
+                <li>Temas avanzados relacionados con el contenido del curso</li>
+              </ul>
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={handleExtendCourse} 
+                disabled={isExtendingCourse}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {isExtendingCourse ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando contenido...
+                  </>
+                ) : (
+                  "Generar Contenido Adicional"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Music Industry Education</h1>
@@ -592,6 +712,19 @@ export default function EducationPage() {
                       <DollarSign className="h-4 w-4 text-orange-500" />
                       <span className="font-medium text-white">${course.price.toFixed(2)}</span>
                     </div>
+                  </div>
+
+                  <div className="flex gap-2 mb-4">
+                    <Button 
+                      className="flex-1 bg-orange-700 hover:bg-orange-800"
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        setShowExtendDialog(true);
+                      }}
+                    >
+                      <span>Ampliar Curso</span>
+                      <PlusCircle className="h-4 w-4 ml-2" />
+                    </Button>
                   </div>
 
                   <div className="flex gap-4">
