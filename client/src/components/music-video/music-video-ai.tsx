@@ -1840,8 +1840,8 @@ ${transcription}`;
                           </div>
                         </div>
                         
-                        <ScrollArea className="h-[300px] w-full rounded-md border p-4 bg-white">
-                          <pre className="text-sm whitespace-pre-wrap">{scriptContent}</pre>
+                        <ScrollArea className="h-[300px] w-full rounded-md border border-zinc-200 p-4 bg-zinc-950 text-zinc-100">
+                          <pre className="text-sm whitespace-pre-wrap font-mono">{scriptContent}</pre>
                         </ScrollArea>
                       </>
                     )}

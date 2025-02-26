@@ -850,36 +850,64 @@ FORMATO DE RESPUESTA (estrictamente en formato JSON):
 
       // Verificar que la respuesta sea JSON válido
       const scriptContent = data.choices[0].message.content;
+      console.log("Respuesta obtenida del modelo:", scriptContent.substring(0, 100) + "...");
       
       try {
         // Intentar analizar el JSON
         const parsed = JSON.parse(scriptContent);
         
         // Verificar estructura básica
-        if (!parsed.segmentos || !Array.isArray(parsed.segmentos) || parsed.segmentos.length === 0) {
+        if (!parsed.segmentos && !parsed.segments && !parsed.análisis_musical && !parsed.análisis_narrativo) {
           console.warn("El guión no tiene la estructura esperada, usando fallback");
           return generarGuionFallback(lyrics);
         }
         
-        return scriptContent;
+        // Formatear bien el resultado para mostrarlo
+        return JSON.stringify(parsed, null, 2);
       } catch (parseError) {
         console.error("La respuesta no es un JSON válido:", parseError);
         
         // Intentar extraer JSON válido si está dentro de la respuesta (por ejemplo, en un bloque de código)
-        const jsonRegex = /{[\s\S]*"segmentos"[\s\S]*\}/;
+        const jsonRegex = /{[\s\S]*?("segmentos"|"segments"|"análisis_musical"|"análisis_narrativo")[\s\S]*?}/;
         const match = scriptContent.match(jsonRegex);
         
         if (match && match[0]) {
           try {
             // Intentar analizar el JSON extraído
             const extracted = JSON.parse(match[0]);
-            if (extracted.segmentos && Array.isArray(extracted.segmentos)) {
-              console.log("JSON extraído con éxito del texto");
-              return match[0];
-            }
+            console.log("JSON extraído con éxito del texto");
+            return JSON.stringify(extracted, null, 2);
           } catch (extractError) {
             console.error("Error al extraer JSON:", extractError);
           }
+        }
+        
+        // Si es un texto que comienza con agradecimiento o explicación, asumimos que necesita formato
+        if (scriptContent.trim().startsWith("Gracias") || 
+            scriptContent.trim().startsWith("Aquí") ||
+            scriptContent.trim().startsWith("He") ||
+            scriptContent.trim().startsWith("Este")) {
+          
+          console.log("Convirtiendo respuesta de texto a formato de guion estructurado");
+          
+          // Crear un objeto JSON simulado con el contenido de texto
+          const formattedResponse = {
+            formato: "guion_técnico_profesional",
+            análisis_musical: {
+              género: "No especificado en respuesta de texto",
+              estructura: "No especificada en respuesta de texto",
+              elementos_destacados: ["No especificados en respuesta de texto"]
+            },
+            análisis_narrativo: {
+              tema_principal: "No especificado en respuesta de texto",
+              arco_emocional: "No especificado en respuesta de texto",
+              mensaje: "No especificado en respuesta de texto"
+            },
+            contenido_original: scriptContent.trim(),
+            nota: "Esta respuesta ha sido formateada automáticamente a partir de texto."
+          };
+          
+          return JSON.stringify(formattedResponse, null, 2);
         }
         
         // Si todo falla, usar el generador de fallback
