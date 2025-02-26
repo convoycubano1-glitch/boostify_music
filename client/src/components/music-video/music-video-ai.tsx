@@ -184,6 +184,10 @@ interface TimelineItem {
   transition?: string;
   mood?: string;
   firebaseUrl?: string;
+  // Campos adicionales para compatibilidad con TimelineClip
+  start: number;
+  type: 'video' | 'image' | 'transition' | 'audio';
+  thumbnail?: string; // Usaremos generatedImage o firebaseUrl para esto
 }
 
 const groups = [
@@ -341,75 +345,112 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      const prompt = `Como experto en dirección de videos musicales y análisis musical, necesito que analices esta canción y crees un guion detallado.
+      // Extraemos información de los cortes actuales en el timeline
+      const timelineInfo = timelineItems.map((item, index) => ({
+        id: item.id,
+        start_time: item.start_time,
+        end_time: item.end_time,
+        duration: item.duration
+      }));
 
-LETRA DE LA CANCIÓN A ANALIZAR:
+      // Calculamos duración exacta y número total de segmentos
+      const totalSegments = timelineItems.length;
+      const totalDuration = audioBuffer?.duration || 0;
+
+      const prompt = `Como director de videos musicales profesional, necesito que analices esta canción y crees un guion detallado, perfectamente sincronizado con los cortes musicales ya identificados.
+
+LETRA DE LA CANCIÓN:
 ${transcription}
 
-DURACIÓN TOTAL: ${audioBuffer?.duration.toFixed(2)} segundos
+DURACIÓN TOTAL: ${totalDuration.toFixed(2)} segundos
+
+INFORMACIÓN DE CORTES MUSICALES:
+${JSON.stringify(timelineInfo, null, 2)}
+
+REQUISITOS ESTRICTOS DE SINCRONIZACIÓN:
+1. Debes crear EXACTAMENTE ${totalSegments} segmentos de guion, uno para cada corte musical predefinido.
+2. Cada segmento debe corresponder con una sección específica de la letra que coincida con el tiempo exacto del corte.
+3. Si un corte abarca un periodo instrumental sin letra, especifica que es un momento instrumental y describe qué debería mostrarse.
 
 INSTRUCCIONES ESPECÍFICAS:
-1. ANÁLISIS MUSICAL:
-   - Identifica los instrumentos principales y elementos musicales
-   - Describe los cambios en la instrumentación
-   - Señala momentos de intensidad musical
+1. ANÁLISIS DE LETRA Y MÚSICA:
+   - Para cada corte, identifica qué parte exacta de la letra encaja con su duración
+   - Describe los elementos musicales precisos que ocurren durante ese corte
+   - Señala cualquier cambio de ritmo, tono o instrumentación
 
-2. ANÁLISIS DE LA LETRA:
-   - Divide la letra en segmentos narrativos coherentes
-   - Identifica el tema principal y subtemas
-   - Analiza el tono emocional de cada parte
+2. CREACIÓN DE GUION VISUAL SINCRONIZADO:
+   - Para cada segmento, relaciona la escena exactamente con la parte de la letra correspondiente
+   - Cada descripción visual debe reflejar el significado literal o metafórico de esa parte específica de la letra
+   - El tipo de plano y mood deben ser apropiados para el momento específico de la canción
 
-3. CREACIÓN DE GUION VISUAL:
-   - Cada segmento debe corresponder directamente con una parte específica de la letra
-   - Las escenas deben reflejar tanto la letra como los elementos musicales
-   - Incluye detalles específicos de cómo la música influye en cada toma
-
-ESTRUCTURA REQUERIDA (JSON):
+ESTRUCTURA REQUERIDA (JSON exacto):
 {
   "segments": [
     {
-      "id": número,
-      "lyrics": "parte específica de la letra para este segmento",
-      "musical_elements": "descripción detallada de instrumentos y elementos musicales",
-      "description": "descripción detallada de la escena que conecta con la letra y música",
-      "imagePrompt": "prompt detallado para generar imagen que capture la escena",
-      "shotType": "tipo de plano específico",
-      "mood": "estado de ánimo basado en la letra y música",
-      "transition": "tipo de transición que conecte con el siguiente segmento"
+      "id": número (debe coincidir con el ID del corte),
+      "timeStart": número (tiempo de inicio en segundos, debe coincidir con el corte),
+      "timeEnd": número (tiempo de fin en segundos, debe coincidir con el corte),
+      "lyrics": "parte EXACTA de la letra que ocurre durante este corte temporal",
+      "musical_elements": "descripción precisa de los elementos musicales durante este corte",
+      "description": "descripción visual detallada que representa fielmente esta parte específica de la letra",
+      "imagePrompt": "prompt detallado y específico para generar una imagen que capture esta escena",
+      "shotType": "tipo de plano específico (primer plano, plano medio, plano general, etc.)",
+      "mood": "estado de ánimo preciso basado en esta parte específica de la letra y música",
+      "transition": "tipo de transición hacia el siguiente segmento"
     }
   ]
 }
 
-IMPORTANTE:
-- Cada segmento debe tener una conexión clara con la letra y la música
-- Los prompts de imagen deben reflejar específicamente el contenido de la letra
-- La descripción debe explicar cómo la escena se relaciona con la letra
-- Máximo 10 segmentos para mantener la coherencia
+CRUCIAL:
+- Cada segmento debe tener un ID que coincida exactamente con el ID del corte musical correspondiente
+- Los tiempos de inicio y fin deben coincidir exactamente con los cortes musicales proporcionados
+- Los prompts de imagen deben reflejar ESPECÍFICAMENTE el contenido de la letra en ese corte exacto
+- La descripción debe explicar explícitamente cómo la escena se relaciona con esa parte específica de la letra
 
-LETRA ORIGINAL:
+LETRA COMPLETA DE LA CANCIÓN:
 ${transcription}`;
 
       const jsonContent = await generateVideoScript(prompt);
 
       try {
-        const scriptResult = JSON.parse(jsonContent);
-
-        if (!scriptResult.segments || !Array.isArray(scriptResult.segments)) {
-          throw new Error("Invalid script format");
+        // Validar y procesar la respuesta
+        let scriptResult;
+        try {
+          scriptResult = JSON.parse(jsonContent);
+        } catch (parseError) {
+          // Intentar extraer JSON válido si está dentro de comillas, markdown, etc.
+          const jsonMatch = jsonContent.match(/\{[\s\S]*"segments"[\s\S]*\}/);
+          if (jsonMatch) {
+            scriptResult = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error("No se pudo extraer un JSON válido de la respuesta");
+          }
         }
 
-        const limitedSegments = scriptResult.segments.slice(0, 10);
+        if (!scriptResult || !scriptResult.segments || !Array.isArray(scriptResult.segments)) {
+          throw new Error("Formato de guion inválido: no se encontró el array de segmentos");
+        }
 
-        const updatedItems = timelineItems.slice(0, 10).map((item, index) => {
-          const scriptSegment = limitedSegments[index];
+        // Crear un mapa para buscar segmentos por ID eficientemente
+        const segmentMap = new Map();
+        scriptResult.segments.forEach(segment => {
+          if (segment && segment.id !== undefined) {
+            segmentMap.set(segment.id, segment);
+          }
+        });
+
+        // Actualizar cada elemento del timeline con la información del guion
+        const updatedItems = timelineItems.map(item => {
+          const scriptSegment = segmentMap.get(item.id);
+          
           if (scriptSegment) {
             return {
               ...item,
-              description: `Letra: "${scriptSegment.lyrics}"\n\nMúsica: ${scriptSegment.musical_elements}\n\nEscena: ${scriptSegment.description}`,
-              imagePrompt: `${scriptSegment.imagePrompt} La escena debe representar estas letras específicas: "${scriptSegment.lyrics}" con estos elementos musicales: ${scriptSegment.musical_elements}`,
-              shotType: scriptSegment.shotType,
-              transition: scriptSegment.transition,
-              mood: scriptSegment.mood
+              description: `Letra: "${scriptSegment.lyrics || 'Instrumental'}"\n\nMúsica: ${scriptSegment.musical_elements || 'N/A'}\n\nEscena: ${scriptSegment.description || 'N/A'}`,
+              imagePrompt: `${scriptSegment.imagePrompt || ''} La escena representa estas letras precisas: "${scriptSegment.lyrics || 'Instrumental'}" con elementos musicales: ${scriptSegment.musical_elements || 'ritmo principal'}`,
+              shotType: scriptSegment.shotType || 'Plano medio',
+              transition: scriptSegment.transition || 'Corte directo',
+              mood: scriptSegment.mood || 'Neutral'
             };
           }
           return item;
@@ -418,21 +459,25 @@ ${transcription}`;
         setTimelineItems(updatedItems);
         setCurrentStep(4);
 
+        // Guardar el script completo para referencia
+        setScriptContent(JSON.stringify(scriptResult, null, 2));
+
         toast({
           title: "Éxito",
-          description: "Guion generado basado en el análisis de la letra y música",
+          description: "Guion sincronizado generado correctamente con todos los cortes musicales",
         });
 
       } catch (parseError) {
         console.error("Error parsing response:", parseError);
-        throw new Error("Error al procesar la respuesta del API");
+        console.error("Response content:", jsonContent);
+        throw new Error("Error al procesar la respuesta del guion: " + parseError.message);
       }
 
     } catch (error) {
       console.error("Error generating script:", error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al generar el guion del video",
+        title: "Error en la generación del guion",
+        description: error instanceof Error ? error.message : "Error al generar el guion sincronizado del video",
         variant: "destructive",
       });
     } finally {
@@ -858,7 +903,6 @@ ${transcription}`;
             segmentDuration = Math.max(segmentDuration, minSegmentDuration);
           }
 
-
           segments.push({
             id: segments.length + 1,
             group: 1,
@@ -869,7 +913,11 @@ ${transcription}`;
             shotType: shotType.type,
             duration: segmentDuration * 1000,
             transition: transition,
-            imagePrompt: shotType.prompt
+            imagePrompt: shotType.prompt,
+            // Campos adicionales para compatibilidad con TimelineClip
+            start: lastBeatTime,
+            type: 'image',
+            mood: 'neutral'
           });
 
           lastBeatTime = currentTime;
@@ -891,7 +939,11 @@ ${transcription}`;
           shotType: finalShotType.type,
           duration: (totalDuration * 1000) - lastSegment.end_time,
           transition: "fade",
-          imagePrompt: finalShotType.prompt
+          imagePrompt: finalShotType.prompt,
+          // Campos adicionales para compatibilidad con TimelineClip
+          start: lastSegment.end_time / 1000,
+          type: 'image',
+          mood: 'conclusive'
         });
       }
     }
