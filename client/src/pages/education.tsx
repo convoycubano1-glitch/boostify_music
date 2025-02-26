@@ -94,11 +94,11 @@ export default function EducationPage() {
   const imagesCacheCollection = "generated_images_cache";
   
   // Lista de imágenes críticas que siempre deben precargarse 
-  // Estas son exactamente las mismas imágenes que se usan en la página
+  // Usamos imágenes estáticas para evitar errores de renderizado
   const criticalImageUrls = [
-    levelImages.Beginner,    // Beginner level
-    levelImages.Intermediate, // Intermediate level
-    levelImages.Advanced,     // Advanced level
+    "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg", // Beginner
+    "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg", // Intermediate
+    "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg", // Advanced
     "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg", // Marketing
     "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg", // Distribution
   ];
