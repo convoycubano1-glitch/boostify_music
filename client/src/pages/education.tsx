@@ -67,6 +67,10 @@ export default function EducationPage() {
   const [isExtendingCourse, setIsExtendingCourse] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   
+  // Estado para controlar la regeneración de imágenes
+  const [isRegeneratingImages, setIsRegeneratingImages] = useState(false);
+  const [regenerationProgress, setRegenerationProgress] = useState(0);
+  
   // Firebase imports are already handled at the top of the file
 
   useEffect(() => {
@@ -566,7 +570,7 @@ export default function EducationPage() {
             <Button 
               onClick={createSampleCourses} 
               className="bg-orange-700 hover:bg-orange-800"
-              disabled={isGenerating}
+              disabled={isGenerating || isRegeneratingImages}
             >
               {isGenerating ? (
                 <>
@@ -575,6 +579,110 @@ export default function EducationPage() {
                 </>
               ) : (
                 <>Generar cursos de muestra</>
+              )}
+            </Button>
+            
+            <Button
+              onClick={async () => {
+                setIsRegeneratingImages(true);
+                setRegenerationProgress(0);
+                
+                try {
+                  // Filtrar cursos que probablemente usen imágenes de Unsplash o que no son de fal-ai
+                  const coursesToUpdate = courses.filter(course => 
+                    course.thumbnail.includes('unsplash.com') || 
+                    !course.thumbnail.includes('fal-ai') ||
+                    !course.thumbnail.startsWith('data:image')
+                  );
+                  
+                  if (coursesToUpdate.length === 0) {
+                    toast({
+                      title: "Información",
+                      description: "Todos los cursos ya tienen imágenes generadas con fal-ai"
+                    });
+                    setIsRegeneratingImages(false);
+                    return;
+                  }
+                  
+                  toast({
+                    title: "Regenerando imágenes",
+                    description: `Generando ${coursesToUpdate.length} nuevas imágenes de cursos con fal-ai...`
+                  });
+                  
+                  // Regenerar imágenes para cada curso
+                  for (let i = 0; i < coursesToUpdate.length; i++) {
+                    const course = coursesToUpdate[i];
+                    console.log(`Regenerando imagen para curso: ${course.title}`);
+                    
+                    const imagePrompt = `professional photorealistic education ${course.title} ${course.category} music industry course cover, modern design, minimalist, high quality`;
+                    
+                    try {
+                      // Generar nueva imagen con fal-ai
+                      const result = await generateImageWithFal({
+                        prompt: imagePrompt,
+                        negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
+                        imageSize: "square_1_1"
+                      });
+                      
+                      if (result.data?.images?.[0]) {
+                        const newThumbnail = result.data.images[0];
+                        
+                        // Actualizar en Firestore
+                        const courseRef = doc(db, 'courses', course.id);
+                        await updateDoc(courseRef, { thumbnail: newThumbnail });
+                        
+                        // Actualizar localmente
+                        setCourses(prev => prev.map(c => 
+                          c.id === course.id ? { ...c, thumbnail: newThumbnail } : c
+                        ));
+                        
+                        console.log(`Imagen regenerada con éxito para: ${course.title}`);
+                      } else {
+                        throw new Error("No image data in fal-ai response");
+                      }
+                    } catch (error) {
+                      console.error(`Error regenerando imagen para curso ${course.title}:`, error);
+                    }
+                    
+                    // Actualizar progreso
+                    const newProgress = Math.round(((i + 1) / coursesToUpdate.length) * 100);
+                    setRegenerationProgress(newProgress);
+                    
+                    // Mostrar progreso cada 25%
+                    if (newProgress % 25 === 0 || i === coursesToUpdate.length - 1) {
+                      toast({
+                        title: "Progreso",
+                        description: `Regeneración de imágenes: ${newProgress}% completado`
+                      });
+                    }
+                  }
+                  
+                  toast({
+                    title: "Éxito",
+                    description: `Se han regenerado ${coursesToUpdate.length} imágenes de cursos con fal-ai`
+                  });
+                } catch (error: any) {
+                  console.error('Error regenerando imágenes:', error);
+                  toast({
+                    title: "Error",
+                    description: error.message || "Error regenerando imágenes. Intente de nuevo.",
+                    variant: "destructive"
+                  });
+                } finally {
+                  setIsRegeneratingImages(false);
+                  setRegenerationProgress(0);
+                }
+              }}
+              className="bg-orange-600 hover:bg-orange-700"
+              disabled={isGenerating || isRegeneratingImages}
+            >
+              {isRegeneratingImages ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Regenerando imágenes... {regenerationProgress}%
+                </>
+              ) : (
+                <>Regenerar imágenes con AI</>
               )}
             </Button>
             
