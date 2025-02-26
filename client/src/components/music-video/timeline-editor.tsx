@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
-  Music, Image as ImageIcon, Edit, RefreshCw, X
+  Music, Image as ImageIcon, Edit, RefreshCw, X, 
+  PictureInPicture, MoreHorizontal, Save, Maximize2, Minimize2
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -53,6 +53,7 @@ export function TimelineEditor({
   const [zoom, setZoom] = useState(1);
   const [scrollPosition, setScrollPosition] = useState(0);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
   const [waveformData, setWaveformData] = useState<Array<{ max: number; min: number; }>>([]);
@@ -63,14 +64,30 @@ export function TimelineEditor({
   const [resizingSide, setResizingSide] = useState<'start' | 'end' | null>(null);
   const playheadAnimation = useAnimation();
   const [selectedImagePreview, setSelectedImagePreview] = useState<TimelineClip | null>(null);
+  const [expandedPreview, setExpandedPreview] = useState(false);
 
-  const timelineWidth = duration * zoom;
-  const timeToPixels = (time: number) => time * zoom;
-  const pixelsToTime = (pixels: number) => pixels / zoom;
+  const timelineWidth = duration * zoom * 100;
+  const timeToPixels = (time: number) => time * zoom * 100;
+  const pixelsToTime = (pixels: number) => pixels / (zoom * 100);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.5, 10));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.5, 0.1));
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev * 1.5, 10));
+    
+    // Si hay un clip seleccionado, centrar la vista en él
+    if (selectedClip !== null) {
+      const clip = clips.find(c => c.id === selectedClip);
+      if (clip && scrollAreaRef.current) {
+        const clipCenter = timeToPixels(clip.start + clip.duration / 2);
+        scrollAreaRef.current.scrollLeft = clipCenter - scrollAreaRef.current.clientWidth / 2;
+      }
+    }
+  };
 
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev / 1.5, 0.1));
+  };
+
+  // Efecto para la animación del cursor de reproducción
   useEffect(() => {
     if (isPlaying) {
       playheadAnimation.start({
@@ -80,11 +97,24 @@ export function TimelineEditor({
           ease: "linear"
         }
       });
+      
+      // Auto-scroll para seguir la cabeza de reproducción
+      if (scrollAreaRef.current) {
+        const playheadPosition = timeToPixels(currentTime);
+        const scrollLeft = scrollAreaRef.current.scrollLeft;
+        const clientWidth = scrollAreaRef.current.clientWidth;
+        
+        // Solo auto-scroll si la cabeza de reproducción está fuera del área visible
+        if (playheadPosition < scrollLeft || playheadPosition > scrollLeft + clientWidth) {
+          scrollAreaRef.current.scrollLeft = playheadPosition - clientWidth / 2;
+        }
+      }
     } else {
       playheadAnimation.set({ x: timeToPixels(currentTime) });
     }
-  }, [currentTime, isPlaying, timeToPixels, playheadAnimation]);
+  }, [currentTime, isPlaying, playheadAnimation, timeToPixels]);
 
+  // Generar datos de forma de onda para visualización de audio
   useEffect(() => {
     if (!audioBuffer) return;
 
@@ -110,6 +140,7 @@ export function TimelineEditor({
     setWaveformData(waveform);
   }, [audioBuffer]);
 
+  // Manejar clic en la línea de tiempo para mover la posición actual
   const handleTimelineClick = (e: React.MouseEvent) => {
     if (!timelineRef.current || isDragging) return;
     const rect = timelineRef.current.getBoundingClientRect();
@@ -118,6 +149,7 @@ export function TimelineEditor({
     onTimeUpdate(Math.max(0, Math.min(newTime, duration)));
   };
 
+  // Manejar movimiento del mouse sobre la forma de onda
   const handleWaveformMouseMove = (e: React.MouseEvent) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();
@@ -125,40 +157,57 @@ export function TimelineEditor({
     setHoveredTime(pixelsToTime(x));
   };
 
-  const handleClipDragStart = (clipId: number, e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', '');
+  // Funciones para manejar arrastrar y soltar clips
+  const handleClipDragStart = (clipId: number, e: React.MouseEvent) => {
+    e.preventDefault();
     const clip = clips.find(c => c.id === clipId);
     if (clip) {
       setIsDragging(true);
       setSelectedClip(clipId);
       setDragStartX(e.clientX);
       setClipStartTime(clip.start);
+      
+      // Agregar listeners al documento
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
     }
   };
-
-  const handleClipDragEnd = (e: React.DragEvent) => {
-    if (selectedClip !== null) {
+  
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging && selectedClip !== null) {
       const deltaX = e.clientX - dragStartX;
       const deltaTime = pixelsToTime(deltaX);
       const newStartTime = Math.max(0, clipStartTime + deltaTime);
-
+      
       onClipUpdate(selectedClip, {
         start: newStartTime
       });
+    } else if (resizingSide && selectedClip !== null) {
+      handleResizeMove(e as any);
     }
-
+  };
+  
+  const handleMouseUp = () => {
     setIsDragging(false);
-    setSelectedClip(null);
+    setResizingSide(null);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
   };
 
+  // Funciones para manejar redimensionamiento de clips
   const handleResizeStart = (clipId: number, side: 'start' | 'end', e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setSelectedClip(clipId);
     setResizingSide(side);
     setDragStartX(e.clientX);
     const clip = clips.find(c => c.id === clipId);
     if (clip) {
       setClipStartTime(clip.start);
+      
+      // Agregar listeners al documento
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
     }
   };
 
@@ -173,13 +222,11 @@ export function TimelineEditor({
 
     if (resizingSide === 'start') {
       const newStart = Math.max(0, clipStartTime + deltaTime);
-      const newDuration = clip.start + clip.duration - newStart;
-      if (newDuration >= 0.5) {
-        onClipUpdate(selectedClip, {
-          start: newStart,
-          duration: newDuration
-        });
-      }
+      const newDuration = Math.max(0.5, (clip.start + clip.duration) - newStart);
+      onClipUpdate(selectedClip, {
+        start: newStart,
+        duration: newDuration
+      });
     } else {
       const newDuration = Math.max(0.5, clip.duration + deltaTime);
       onClipUpdate(selectedClip, {
@@ -188,21 +235,17 @@ export function TimelineEditor({
     }
   };
 
-  const handleResizeEnd = () => {
-    setResizingSide(null);
-    setSelectedClip(null);
-  };
-
+  // Abrir vista previa al hacer doble clic en un clip
   const handleClipDoubleClick = (clip: TimelineClip) => {
     setSelectedImagePreview(clip);
   };
 
   return (
     <Card className="p-4 flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={() => onTimeUpdate(0)}
             disabled={clips.length === 0}
@@ -210,10 +253,111 @@ export function TimelineEditor({
             <SkipBack className="h-4 w-4" />
           </Button>
           <Button
+            variant="default"
+            onClick={isPlaying ? onPause : onPlay}
+            disabled={clips.length === 0}
+            className="min-w-24 bg-orange-500 hover:bg-orange-600"
+          >
+            {isPlaying ? (
+              <><Pause className="h-4 w-4 mr-2" /> Pausar</>
+            ) : (
+              <><Play className="h-4 w-4 mr-2" /> Reproducir</>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onTimeUpdate(duration)}
+            disabled={clips.length === 0}
+          >
+            <SkipForward className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-black/5 px-3 py-1.5 rounded-md font-mono text-sm border">
+            {formatTimecode(currentTime)}
+          </div>
+
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleZoomOut}
+              className="border-orange-500/30"
+            >
+              <ZoomOut className="h-4 w-4 text-orange-500" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleZoomIn}
+              className="border-orange-500/30"
+            >
+              <ZoomIn className="h-4 w-4 text-orange-500" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setExpandedPreview(!expandedPreview)}
+              className="border-orange-500/30"
+            >
+              {expandedPreview ? (
+                <Minimize2 className="h-4 w-4 text-orange-500" />
+              ) : (
+                <Maximize2 className="h-4 w-4 text-orange-500" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className={cn(
+        "relative w-full rounded-lg overflow-hidden mb-4 transition-all duration-300",
+        expandedPreview ? "aspect-video" : "h-48"
+      )}>
+        {selectedClip !== null && clips.find(c => c.id === selectedClip)?.thumbnail ? (
+          <img
+            src={clips.find(c => c.id === selectedClip)?.thumbnail}
+            alt="Preview"
+            className="w-full h-full object-cover"
+          />
+        ) : clips.some(c => c.thumbnail) ? (
+          <img
+            src={clips.find(c => c.thumbnail)?.thumbnail}
+            alt="Preview"
+            className="w-full h-full object-cover opacity-70"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+            <ImageIcon className="h-12 w-12 text-muted-foreground/25" />
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-primary/10">
+          <div
+            className="absolute h-full bg-orange-500 transition-all duration-100"
+            style={{ width: `${(currentTime / duration) * 100}%` }}
+          />
+        </div>
+
+        {/* Controles de reproducción superpuestos */}
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full p-1 opacity-0 hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onTimeUpdate(Math.max(0, currentTime - 5))}
+            className="h-8 w-8 text-white hover:bg-white/20"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
             variant="ghost"
             size="icon"
             onClick={isPlaying ? onPause : onPlay}
-            disabled={clips.length === 0}
+            className="h-8 w-8 text-white hover:bg-white/20"
           >
             {isPlaying ? (
               <Pause className="h-4 w-4" />
@@ -224,55 +368,16 @@ export function TimelineEditor({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onTimeUpdate(duration)}
-            disabled={clips.length === 0}
+            onClick={() => onTimeUpdate(Math.min(duration, currentTime + 5))}
+            className="h-8 w-8 text-white hover:bg-white/20"
           >
-            <SkipForward className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-black/10 px-3 py-1.5 rounded-md font-mono text-sm">
-            {formatTimecode(currentTime)}
-          </div>
-
-          <div className="flex items-center">
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-            <div className="flex items-center">
-              <Button variant="ghost" size="icon" onClick={handleZoomOut}>
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleZoomIn}>
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <div className="relative w-full aspect-video bg-black/10 rounded-lg overflow-hidden mb-4">
-        {selectedClip && clips.find(c => c.id === selectedClip)?.thumbnail ? (
-          <img
-            src={clips.find(c => c.id === selectedClip)?.thumbnail}
-            alt="Preview"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <ImageIcon className="h-12 w-12 text-muted-foreground/25" />
-          </div>
-        )}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/10">
-          <div
-            className="absolute h-full bg-primary transition-all duration-100"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      <ScrollArea
+      <ScrollArea 
+        ref={scrollAreaRef as any}
         className="h-[300px] sm:h-[400px] border rounded-lg"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
@@ -288,10 +393,8 @@ export function TimelineEditor({
             className="relative"
             style={{ width: `${timelineWidth}px`, minHeight: "300px" }}
             onClick={handleTimelineClick}
-            onMouseMove={resizingSide ? handleResizeMove : undefined}
-            onMouseUp={resizingSide ? handleResizeEnd : undefined}
-            onMouseLeave={resizingSide ? handleResizeEnd : undefined}
           >
+            {/* Escala de tiempo */}
             <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
               {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
                 <div
@@ -304,6 +407,7 @@ export function TimelineEditor({
               ))}
             </div>
 
+            {/* Forma de onda */}
             {waveformData.length > 0 && (
               <div
                 className="absolute left-0 right-0 h-24 mt-8"
@@ -365,6 +469,7 @@ export function TimelineEditor({
               </div>
             )}
 
+            {/* Clips de la línea de tiempo */}
             <div className="mt-36">
               <AnimatePresence>
                 {clips.map((clip) => (
@@ -375,36 +480,34 @@ export function TimelineEditor({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     className={cn(
-                      "absolute h-32 rounded-md overflow-hidden border cursor-pointer group",
-                      selectedClip === clip.id ? "ring-2 ring-primary" : "",
-                      isDragging ? "cursor-grabbing" : "cursor-grab"
+                      "absolute h-32 rounded-md overflow-hidden border cursor-move",
+                      selectedClip === clip.id ? "ring-2 ring-orange-500" : "",
+                      isDragging && selectedClip === clip.id ? "opacity-70" : ""
                     )}
                     style={{
                       left: `${timeToPixels(clip.start)}px`,
                       width: `${timeToPixels(clip.duration)}px`,
                       top: '8px'
                     }}
-                    draggable
-                    onDragStart={(e) => handleClipDragStart(clip.id, e)}
-                    onDragEnd={handleClipDragEnd}
+                    onMouseDown={(e) => handleClipDragStart(clip.id, e)}
                     onDoubleClick={() => handleClipDoubleClick(clip)}
                   >
                     <div
-                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
+                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-orange-500/20 z-10"
                       onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
                     />
                     <div
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/20"
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-orange-500/20 z-10"
                       onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
                     />
 
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-orange-500/10" />
 
                     {clip.thumbnail && (
                       <img
                         src={clip.thumbnail}
                         alt={clip.title}
-                        className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-75 transition-opacity"
+                        className="absolute inset-0 w-full h-full object-cover opacity-70 hover:opacity-90 transition-opacity"
                       />
                     )}
 
@@ -412,36 +515,47 @@ export function TimelineEditor({
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" />
-                            <span className="text-xs font-medium">
-                              {clip.shotType || 'Sin tipo de plano'}
-                            </span>
+                            <div className="bg-black/40 backdrop-blur-sm p-1 rounded flex items-center gap-1">
+                              <ImageIcon className="h-3 w-3 text-white" />
+                              <span className="text-[10px] font-medium text-white">
+                                {clip.shotType || 'Sin tipo'}
+                              </span>
+                            </div>
                           </div>
                           {onRegenerateImage && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => onRegenerateImage(clip.id)}
+                              className="h-6 w-6 rounded-full bg-black/40 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRegenerateImage(clip.id);
+                              }}
                             >
-                              <RefreshCw className="h-3 w-3" />
+                              <RefreshCw className="h-3 w-3 text-white" />
                             </Button>
                           )}
                         </div>
-                        <p className="text-xs text-white/90 line-clamp-2">
-                          {clip.imagePrompt || clip.description || 'Sin descripción'}
-                        </p>
+                        <div className="bg-black/40 backdrop-blur-sm p-1 rounded max-w-full">
+                          <p className="text-[10px] text-white/90 line-clamp-2">
+                            {clip.imagePrompt || clip.description || 'Sin descripción'}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[10px] text-white bg-black/40 backdrop-blur-sm p-1 rounded">
                           {formatTimecode(clip.duration)}
                         </span>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-6 w-6 rounded-full bg-black/40 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClipDoubleClick(clip);
+                          }}
                         >
-                          <Edit className="h-3 w-3" />
+                          <PictureInPicture className="h-3 w-3 text-white" />
                         </Button>
                       </div>
                     </div>
@@ -450,20 +564,22 @@ export function TimelineEditor({
               </AnimatePresence>
             </div>
 
+            {/* Cabeza de reproducción */}
             <motion.div
               animate={playheadAnimation}
-              className="absolute top-0 bottom-0 w-px bg-primary z-50"
+              className="absolute top-0 bottom-0 w-px bg-orange-500 z-50"
               initial={{ x: 0 }}
             >
-              <div className="absolute -top-1 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
-              <div className="absolute bottom-0 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
+              <div className="absolute -top-1 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full" />
+              <div className="absolute bottom-0 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full" />
             </motion.div>
           </div>
         )}
       </ScrollArea>
 
+      {/* Diálogo de vista previa de imagen */}
       <Dialog open={selectedImagePreview !== null} onOpenChange={() => setSelectedImagePreview(null)}>
-        <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-[90vw] sm:h-[90vh] flex flex-col p-0">
           <div className="relative w-full h-full">
             <Button
               variant="ghost"
@@ -497,19 +613,39 @@ export function TimelineEditor({
                     {selectedImagePreview?.imagePrompt || selectedImagePreview?.description}
                   </p>
                 </div>
-                {onRegenerateImage && selectedImagePreview && (
+                <div className="flex gap-2">
+                  {onRegenerateImage && selectedImagePreview && (
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        onRegenerateImage(selectedImagePreview.id);
+                        setSelectedImagePreview(null);
+                      }}
+                      className="shrink-0 bg-orange-500 hover:bg-orange-600"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Regenerar Imagen
+                    </Button>
+                  )}
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     onClick={() => {
-                      onRegenerateImage(selectedImagePreview.id);
-                      setSelectedImagePreview(null);
+                      if (selectedImagePreview?.thumbnail) {
+                        const link = document.createElement("a");
+                        link.href = selectedImagePreview.thumbnail;
+                        link.download = `${selectedImagePreview.shotType || 'imagen'}-${selectedImagePreview.id}.jpg`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
                     }}
                     className="shrink-0"
+                    disabled={!selectedImagePreview?.thumbnail}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Regenerar Imagen
+                    <Save className="h-4 w-4 mr-2" />
+                    Guardar Imagen
                   </Button>
-                )}
+                </div>
               </div>
             </div>
           </div>
