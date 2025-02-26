@@ -75,7 +75,7 @@ export default function EducationPage() {
   const [regenerationProgress, setRegenerationProgress] = useState(0);
   const [showCategoryCarousel, setShowCategoryCarousel] = useState(true);
   
-  // Estado para las categorías de nivel con sus imágenes (defaults temporales)
+  // Estado para las categorías de nivel con imágenes predefinidas de alta calidad
   type LevelImages = {
     Beginner: string;
     Intermediate: string;
@@ -84,9 +84,9 @@ export default function EducationPage() {
   };
   
   const [levelImages, setLevelImages] = useState<LevelImages>({
-    Beginner: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Beginner%20Music%20Education",
-    Intermediate: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Intermediate%20Music%20Education", 
-    Advanced: "https://placehold.co/1200x800/2A2A2A/FFFFFF?text=Advanced%20Music%20Education"
+    Beginner: "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg", // Equipo de estudio para principiantes
+    Intermediate: "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg", // Estudio intermedio con más equipo
+    Advanced: "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg" // Estudio profesional de alta gama
   });
   
   // Colección para el caché de imágenes generadas
