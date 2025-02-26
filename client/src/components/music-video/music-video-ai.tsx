@@ -1742,11 +1742,37 @@ ${transcription}`;
                     <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                       <pre className="text-sm whitespace-pre-wrap">{transcription || "Sin transcripción"}</pre>
                     </ScrollArea>
+                    <Button
+                      onClick={generateScriptFromTranscription}
+                      disabled={!transcription || isGeneratingScript || currentStep < 2}
+                      className="w-full"
+                    >
+                      {isGeneratingScript ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Generando guion...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Generar Guion Musical
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">3. Estilo Visual</Label>
+                  <Label className="text-lg font-semibold mb-4">3. Guion</Label>
+                  <div className="space-y-4">
+                    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                      <pre className="text-sm whitespace-pre-wrap">{scriptContent || "El guion se generará basado en la transcripción de la letra."}</pre>
+                    </ScrollArea>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <Label className="text-lg font-semibold mb-4">4. Estilo Visual</Label>
                   <div className="grid gap-4">
                     <div className="space-y-2">
                       <Label>Formato de Cámara</Label>
@@ -1964,10 +1990,10 @@ ${transcription}`;
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">4. Sincronizar Beats</Label>
+                  <Label className="text-lg font-semibold mb-4">5. Sincronizar Beats</Label>
                   <Button
                     onClick={syncAudioWithTimeline}
-                    disabled={!audioBuffer || isGeneratingShots || currentStep < 2}
+                    disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
                     className="w-full"
                   >
                     {isGeneratingShots ? (
