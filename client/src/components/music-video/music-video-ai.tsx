@@ -523,41 +523,105 @@ ${transcription}`;
     }
   };
 
+  /**
+   * Genera una imagen para un segmento específico utilizando FAL AI
+   * @param item - El segmento de timeline para el que se generará la imagen
+   * @returns Promise<string> URL de la imagen generada o null en caso de error
+   */
+  const generateImageForSegment = async (item: TimelineItem): Promise<string | null> => {
+    if (!item.imagePrompt) {
+      console.warn(`Segmento ${item.id} no tiene prompt para generar imagen`);
+      return null;
+    }
+
+    // Número de intentos para generación de imagen
+    const maxAttempts = 2;
+    let attempt = 0;
+    let lastError: Error | null = null;
+
+    while (attempt < maxAttempts) {
+      try {
+        // Formateamos el prompt para incluir información de estilo
+        const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
+        
+        console.log(`Generando imagen para segmento ${item.id}, intento ${attempt + 1}/${maxAttempts}`);
+        console.log(`Prompt: ${prompt.substring(0, 100)}...`);
+
+        // Llamada a la API de FAL
+        const result = await fal.subscribe("fal-ai/flux-pro", {
+          input: {
+            prompt,
+            negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark",
+            image_size: "landscape_16_9",
+            seed: seed + item.id // Usar una semilla específica para cada segmento, pero consistente en regeneraciones
+          },
+        });
+
+        // Verificar y procesar el resultado
+        const resultWithImages = result as { images?: Array<{url: string}> };
+        
+        if (resultWithImages?.images?.[0]?.url) {
+          console.log(`Imagen generada exitosamente para segmento ${item.id}`);
+          return resultWithImages.images[0].url;
+        } else {
+          throw new Error("No se recibió URL de imagen en la respuesta");
+        }
+      } catch (error) {
+        console.error(`Error en intento ${attempt + 1} para segmento ${item.id}:`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        // Si es el último intento, no esperamos
+        if (attempt < maxAttempts - 1) {
+          const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
+          console.log(`Reintentando en ${backoffTime/1000} segundos...`);
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
+        }
+        
+        attempt++;
+      }
+    }
+
+    console.error(`No se pudo generar imagen para segmento ${item.id} después de ${maxAttempts} intentos:`, lastError);
+    return null;
+  };
+
+  /**
+   * Regenera la imagen para un segmento específico
+   * @param item - El segmento de timeline cuya imagen se regenerará
+   */
   const regenerateImage = async (item: TimelineItem) => {
-    if (!item.imagePrompt) return;
+    if (!item.imagePrompt) {
+      toast({
+        title: "Error",
+        description: "Este segmento no tiene un prompt para generar imagen",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style`;
-
-      const result = await fal.subscribe("fal-ai/flux-pro", {
-        input: {
-          prompt,
-          negative_prompt: "low quality, blurry, distorted, deformed, unrealistic",
-          image_size: "landscape_16_9"
-        },
-      });
-
-      // Asegurar que el resultado tiene la estructura correcta
-      const resultWithImages = result as { images?: Array<{url: string}> };
+      const imageUrl = await generateImageForSegment(item);
       
-      if (resultWithImages?.images?.[0]?.url) {
+      if (imageUrl) {
         const updatedItems = timelineItems.map(timelineItem =>
           timelineItem.id === item.id
-            ? { ...timelineItem, generatedImage: resultWithImages.images![0].url }
+            ? { ...timelineItem, generatedImage: imageUrl }
             : timelineItem
         );
         setTimelineItems(updatedItems);
-      }
 
-      toast({
-        title: "Imagen regenerada",
-        description: "La imagen se ha regenerado exitosamente",
-      });
+        toast({
+          title: "Imagen regenerada",
+          description: "La imagen se ha regenerado exitosamente",
+        });
+      } else {
+        throw new Error("No se pudo generar la imagen");
+      }
     } catch (error) {
       console.error("Error regenerando imagen:", error);
       toast({
         title: "Error",
-        description: "Error al regenerar la imagen",
+        description: error instanceof Error ? error.message : "Error al regenerar la imagen",
         variant: "destructive",
       });
     }
@@ -671,66 +735,128 @@ ${transcription}`;
     }
   };
 
+  /**
+   * Genera imágenes para todos los segmentos que tengan prompts
+   * Procesa los segmentos en paralelo en batches para optimizar tiempo
+   */
   const generateShotImages = async () => {
+    if (timelineItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "No hay segmentos para generar imágenes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verificar que haya prompts generados
+    const itemsWithoutPrompts = timelineItems.filter(item => !item.imagePrompt).length;
+    if (itemsWithoutPrompts === timelineItems.length) {
+      toast({
+        title: "Error",
+        description: "Los segmentos no tienen prompts para generar imágenes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (itemsWithoutPrompts > 0) {
+      toast({
+        title: "Advertencia",
+        description: `${itemsWithoutPrompts} segmentos no tienen prompts y se omitirán`,
+        variant: "default",
+      });
+    }
+
     setIsGeneratingShots(true);
     try {
-      const items = timelineItems.slice(0, 10); // Limitar a 10 imágenes
+      // Limitar a máximo 10 imágenes para evitar sobrecarga
+      const items = timelineItems
+        .filter(item => item.imagePrompt && !item.generatedImage) // Solo procesar los que tienen prompt pero no imagen
+        .slice(0, 10);
+
+      if (items.length === 0) {
+        toast({
+          title: "Información",
+          description: "Todos los segmentos ya tienen imágenes generadas",
+        });
+        setIsGeneratingShots(false);
+        return;
+      }
+
+      toast({
+        title: "Iniciando generación",
+        description: `Generando ${items.length} imágenes para el video musical`,
+      });
+
       let successCount = 0;
+      let failCount = 0;
 
-      for (const item of items) {
-        if (!item.imagePrompt) continue;
-
+      // Procesar en batches de 2 para equilibrar velocidad y estabilidad
+      const batchSize = 2;
+      
+      for (let i = 0; i < items.length; i += batchSize) {
+        const currentBatch = items.slice(i, i + batchSize);
+        
         try {
-          console.log(`Generando imagen para el segmento ${item.id}`);
-
-          const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style`;
-
-          const result = await fal.subscribe("fal-ai/flux-pro", {
-            input: {
-              prompt,
-              negative_prompt: "low quality, blurry, distorted, deformed, unrealistic",
-              image_size: "landscape_16_9",
-              seed
-            },
-          });
-
-          // Asegurar que el resultado tiene la estructura correcta
-          const resultWithImages = result as { images?: Array<{url: string}> };
-          
-          if (!resultWithImages?.images?.[0]?.url) {
-            throw new Error("No se recibió URL de imagen");
-          }
-
-          // Actualizar el timeline inmediatamente con la nueva imagen
-          const newItems = timelineItems.map(timelineItem => {
-            if (timelineItem.id === item.id) {
-              return {
-                ...timelineItem,
-                generatedImage: resultWithImages.images![0].url
-              };
-            }
-            return timelineItem;
-          });
-
-          setTimelineItems(newItems);
-          successCount++;
-
-          // Mostrar progreso
+          // Mostrar batch actual
+          console.log(`Procesando batch ${Math.floor(i/batchSize) + 1} de ${Math.ceil(items.length/batchSize)}`);
           toast({
             title: "Progreso",
-            description: `Imagen ${successCount} de ${items.length} generada`
+            description: `Procesando batch ${Math.floor(i/batchSize) + 1} de ${Math.ceil(items.length/batchSize)}`,
           });
 
-          // Esperar antes de la siguiente generación
-          if (successCount < items.length) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-          }
+          // Generar imágenes para el batch actual en paralelo
+          const results = await Promise.all(
+            currentBatch.map(async (item) => {
+              try {
+                const imageUrl = await generateImageForSegment(item);
+                return {
+                  id: item.id,
+                  success: true,
+                  url: imageUrl
+                };
+              } catch (error) {
+                console.error(`Error en generación para segmento ${item.id}:`, error);
+                return {
+                  id: item.id,
+                  success: false,
+                  error: error instanceof Error ? error.message : "Error desconocido"
+                };
+              }
+            })
+          );
 
-        } catch (error) {
-          console.error(`Error generando imagen para segmento ${item.id}:`, error);
+          // Actualizar el timeline con las imágenes generadas
+          let updatedItems = [...timelineItems];
+          
+          for (const result of results) {
+            if (result.success && result.url) {
+              // Actualizar el item correspondiente
+              updatedItems = updatedItems.map(item => 
+                item.id === result.id 
+                  ? { ...item, generatedImage: result.url as string } 
+                  : item
+              );
+              successCount++;
+            } else {
+              failCount++;
+              console.error(`Fallo en segmento ${result.id}:`, result.error);
+            }
+          }
+          
+          // Actualizar estado solo una vez para todo el batch
+          setTimelineItems(updatedItems);
+
+          // Esperar entre batches para evitar rate limits
+          if (i + batchSize < items.length) {
+            await new Promise(resolve => setTimeout(resolve, 4000));
+          }
+        } catch (batchError) {
+          console.error(`Error procesando batch ${Math.floor(i/batchSize) + 1}:`, batchError);
           toast({
-            title: "Error",
-            description: `Error en imagen ${successCount + 1}, intentando siguiente...`,
+            title: "Error en batch",
+            description: `Error en batch ${Math.floor(i/batchSize) + 1}, continuando con el siguiente...`,
             variant: "destructive",
           });
         }
@@ -740,9 +866,12 @@ ${transcription}`;
       if (successCount > 0) {
         toast({
           title: "Proceso completado",
-          description: `Se generaron ${successCount} de ${items.length} imágenes`,
+          description: `Se generaron ${successCount} de ${items.length} imágenes ${failCount > 0 ? `(${failCount} fallaron)` : ''}`,
         });
-        setCurrentStep(prevStep => prevStep + 1);
+        
+        if (successCount === items.length) {
+          setCurrentStep(5); // Avanzar solo si se completaron todas
+        }
       } else {
         toast({
           title: "Error",
@@ -754,8 +883,8 @@ ${transcription}`;
     } catch (error) {
       console.error("Error en el proceso de generación:", error);
       toast({
-        title: "Error",
-        description: "Error en el proceso de generación de imágenes",
+        title: "Error general",
+        description: error instanceof Error ? error.message : "Error en el proceso de generación de imágenes",
         variant: "destructive",
       });
     } finally {
