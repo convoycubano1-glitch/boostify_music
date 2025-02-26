@@ -876,6 +876,9 @@ export default function EducationPage() {
     }
   };
 
+  // Estado para controlar si las imágenes críticas están cargadas
+  const [criticalAssetsLoaded, setCriticalAssetsLoaded] = useState(false);
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black">
@@ -886,9 +889,6 @@ export default function EducationPage() {
       </div>
     );
   }
-
-  // Estado para controlar si las imágenes críticas están cargadas
-  const [criticalAssetsLoaded, setCriticalAssetsLoaded] = useState(false);
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-orange-950/20">
