@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import { downloadTextFile } from "@/lib/download-helper";
 
 interface LogisticsDocument {
   id: string;
@@ -112,16 +113,9 @@ export function LogisticsSection() {
 
   const handleDownload = async (doc: LogisticsDocument) => {
     try {
-      const blob = new Blob([doc.content], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const link = window.document.createElement('a');
-      link.href = url;
-      link.download = `logistics-plan-${new Date(doc.createdAt.toDate()).toISOString().split('T')[0]}.txt`;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
+      const filename = `logistics-plan-${new Date(doc.createdAt.toDate()).toISOString().split('T')[0]}.txt`;
+      await downloadTextFile(doc.content, filename);
+      
       toast({
         title: "Success",
         description: "Logistics plan downloaded successfully"
