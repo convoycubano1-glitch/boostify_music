@@ -717,3 +717,249 @@ export async function transcribeWithAI(audioBase64: string) {
     throw error;
   }
 }
+
+/**
+ * Genera un guion detallado para un video musical basado en la transcripción de la letra
+ * 
+ * @param lyrics La transcripción de la letra de la canción
+ * @param audioAnalysis Análisis opcional de la pista de audio (beats, segmentos, etc)
+ * @returns Promise con el guion en formato JSON estructurado
+ */
+export async function generateMusicVideoScript(lyrics: string, audioAnalysis?: any): Promise<string> {
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  // Verificar si la API key está presente
+  const apiKey = env.VITE_OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error('OpenRouter API key is missing or undefined');
+  }
+  
+  // Preparar headers
+  const headers = {
+    "Authorization": `Bearer ${apiKey.trim()}`,
+    "HTTP-Referer": window.location.origin || "https://boostify.music.app",
+    "X-Title": "Music Video Creator - Script Generation",
+    "Content-Type": "application/json"
+  };
+  
+  console.log("OpenRouter script generation API key check:", !!apiKey);
+  
+  // Construcción del prompt
+  const systemPrompt = `Eres un director de vídeos musicales profesional con amplia experiencia en la industria musical.
+Tu tarea es crear un guion detallado para un video musical basado en esta letra de canción, siguiendo estas instrucciones específicas:
+
+1. ANÁLISIS MUSICAL:
+   - Identifica el posible género musical basado en la letra
+   - Señala posibles momentos para solos instrumentales
+   - Identifica cambios de ritmo, estructura (verso, coro, puente)
+   - Anota características musicales importantes para la visualización
+
+2. ANÁLISIS NARRATIVO:
+   - Extrae la historia o tema principal de la letra
+   - Define los personajes o elementos visuales principales
+   - Identifica el arco emocional a lo largo de la canción
+   - Determina el mensaje o significado central
+
+3. DISEÑO VISUAL:
+   - Propón un estilo visual coherente con el género y tema
+   - Sugiere una paleta de colores apropiada
+   - Indica tipos de locaciones que complementen la narrativa
+   - Describe el estilo de cinematografía más adecuado
+
+4. GUION DETALLADO:
+   - Divide la canción en segmentos lógicos (introducción, versos, coro, puente, etc.)
+   - Para cada segmento, proporciona:
+     * La parte exacta de la letra correspondiente
+     * Una descripción detallada de la escena visual
+     * El tipo de plano recomendado (primer plano, plano medio, etc.)
+     * El estado de ánimo/atmósfera de la escena
+     * Transiciones entre escenas
+     * Efectos visuales especiales si son necesarios
+
+FORMATO DE RESPUESTA (estrictamente en formato JSON):
+{
+  "análisis_musical": {
+    "género": "género musical detectado",
+    "estructura": "estructura de la canción (verso-coro-verso, etc.)",
+    "elementos_destacados": ["sección de metales", "solo de guitarra", etc.]
+  },
+  "análisis_narrativo": {
+    "tema_principal": "tema central de la canción",
+    "arco_emocional": "progresión emocional detectada",
+    "mensaje": "mensaje o significado principal"
+  },
+  "diseño_visual": {
+    "estilo": "estilo visual general",
+    "paleta_colores": "descripción de la paleta de colores",
+    "cinematografía": "enfoque cinematográfico recomendado"
+  },
+  "segmentos": [
+    {
+      "id": 1,
+      "tipo": "introducción/verso/coro/etc.",
+      "tiempo_aproximado": "00:00-00:30",
+      "letra": "fragmento exacto de la letra",
+      "descripción_visual": "descripción detallada de la escena",
+      "tipo_plano": "tipo de plano recomendado",
+      "mood": "estado de ánimo de la escena",
+      "transición": "tipo de transición a la siguiente escena",
+      "elementos_técnicos": "efectos visuales, movimientos de cámara, etc.",
+      "notas_musicales": "aspectos musicales importantes para esta escena"
+    }
+  ]
+}`;
+
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "anthropic/claude-3-opus:beta",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Aquí está la letra de la canción para la que necesito crear un guion de video musical:\n\n${lyrics}${audioAnalysis ? `\n\nAnálisis de audio disponible:\n${JSON.stringify(audioAnalysis, null, 2)}` : ''}` }
+          ],
+          temperature: 0.7,
+          max_tokens: 3000,
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
+        throw new Error(`Error en la API: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
+
+      const data = await response.json();
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error("Formato de respuesta inválido");
+      }
+
+      // Verificar que la respuesta sea JSON válido
+      const scriptContent = data.choices[0].message.content;
+      const parsed = JSON.parse(scriptContent); // Esto fallará si no es JSON válido
+      
+      if (!parsed.segmentos || !Array.isArray(parsed.segmentos) || parsed.segmentos.length === 0) {
+        throw new Error("El guión generado no tiene segmentos válidos");
+      }
+
+      return scriptContent;
+    } catch (error) {
+      console.error(`Error en intento ${retryCount + 1}:`, error);
+      
+      if (retryCount === maxRetries - 1) {
+        // Último intento fallido, devolver un guion básico como fallback
+        return generarGuionFallback(lyrics);
+      }
+      
+      // Implementar backoff exponencial
+      await backoff(retryCount);
+      retryCount++;
+    }
+  }
+  
+  // Como último recurso si agotamos todos los intentos
+  return generarGuionFallback(lyrics);
+}
+
+/**
+ * Genera un guion básico cuando la API falla
+ */
+function generarGuionFallback(lyrics: string): string {
+  console.log("Generando guion fallback con la letra:", lyrics.substring(0, 100) + "...");
+  
+  // Dividir la letra en líneas y filtrar líneas vacías
+  const lineas = lyrics.split('\n').filter(linea => linea.trim().length > 0);
+  
+  // Determinar cuántos segmentos crear (mínimo 3, máximo 8)
+  const numSegmentos = Math.min(8, Math.max(3, Math.ceil(lineas.length / 4)));
+  
+  // Géneros musicales comunes para asignar aleatoriamente
+  const generos = ["pop", "rock", "hip-hop", "balada", "electrónica", "indie", "r&b"];
+  const generoSeleccionado = generos[Math.floor(Math.random() * generos.length)];
+  
+  // Estilos visuales para asignar aleatoriamente
+  const estilos = ["minimalista", "saturado", "cinematográfico", "documental", "surrealista"];
+  const estiloSeleccionado = estilos[Math.floor(Math.random() * estilos.length)];
+  
+  // Paletas de colores
+  const paletas = ["tonos fríos (azules y verdes)", "tonos cálidos (rojos y naranjas)", "alto contraste", "monocromático", "pastel"];
+  const paletaSeleccionada = paletas[Math.floor(Math.random() * paletas.length)];
+  
+  // Crear segmentos
+  const segmentos = [];
+  const duracionAproxPorSegmento = 30; // segundos
+  
+  for (let i = 0; i < numSegmentos; i++) {
+    // Seleccionar líneas para este segmento
+    const inicio = Math.floor(i * lineas.length / numSegmentos);
+    const fin = Math.floor((i + 1) * lineas.length / numSegmentos);
+    const letraSegmento = lineas.slice(inicio, fin).join(" ");
+    
+    // Tiempo aproximado
+    const tiempoInicio = formatearTiempo(i * duracionAproxPorSegmento);
+    const tiempoFin = formatearTiempo((i + 1) * duracionAproxPorSegmento);
+    
+    // Determinar tipo de segmento en base a la posición
+    let tipo;
+    if (i === 0) tipo = "introducción";
+    else if (i === numSegmentos - 1) tipo = "cierre";
+    else tipo = i % 2 === 0 ? "verso" : "coro";
+    
+    // Tipos de planos
+    const tiposPlano = ["primer plano", "plano medio", "plano general", "plano secuencia", "plano detalle"];
+    const planoSeleccionado = tiposPlano[i % tiposPlano.length];
+    
+    // Estados de ánimo
+    const moods = ["melancólico", "energético", "introspectivo", "eufórico", "tenso", "relajado"];
+    const moodSeleccionado = moods[i % moods.length];
+    
+    // Transiciones
+    const transiciones = ["corte directo", "fundido", "barrido", "desvanecimiento", "zoom"];
+    const transicionSeleccionada = transiciones[i % transiciones.length];
+    
+    segmentos.push({
+      id: i + 1,
+      tipo: tipo,
+      tiempo_aproximado: `${tiempoInicio}-${tiempoFin}`,
+      letra: letraSegmento || `[Parte instrumental ${i+1}]`,
+      descripción_visual: `Escena que representa visualmente el tema principal de la canción, adaptada a la emoción de esta sección.`,
+      tipo_plano: planoSeleccionado,
+      mood: moodSeleccionado,
+      transición: transicionSeleccionada,
+      elementos_técnicos: "Iluminación estándar, cámara estable",
+      notas_musicales: i % 3 === 0 ? "Atención al ritmo base" : "Seguir progresión armónica principal"
+    });
+  }
+  
+  // Crear el guion completo
+  const guionCompleto = {
+    análisis_musical: {
+      género: generoSeleccionado,
+      estructura: "verso-coro-verso-coro-puente-coro",
+      elementos_destacados: ["ritmo base", "línea vocal principal"]
+    },
+    análisis_narrativo: {
+      tema_principal: "Basado en la letra de la canción",
+      arco_emocional: "Desarrollo emocional progresivo",
+      mensaje: "Mensaje central extraído de la letra"
+    },
+    diseño_visual: {
+      estilo: estiloSeleccionado,
+      paleta_colores: paletaSeleccionada,
+      cinematografía: "Combinación de planos estáticos y dinámicos"
+    },
+    segmentos: segmentos
+  };
+  
+  return JSON.stringify(guionCompleto, null, 2);
+}
+
+// Función auxiliar para formatear el tiempo en formato MM:SS
+function formatearTiempo(segundos: number): string {
+  const minutos = Math.floor(segundos / 60);
+  const segs = Math.floor(segundos % 60);
+  return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+}

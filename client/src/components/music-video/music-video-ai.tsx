@@ -28,7 +28,12 @@ import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { ProgressSteps } from "./progress-steps";
-import { analyzeImage, generateVideoPromptWithRetry, type VideoPromptParams } from "@/lib/api/openrouter";
+import { 
+  analyzeImage, 
+  generateVideoPromptWithRetry, 
+  generateMusicVideoScript,
+  type VideoPromptParams 
+} from "@/lib/api/openrouter";
 import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
 
 // OpenAI configuration for audio transcription only
