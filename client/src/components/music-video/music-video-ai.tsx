@@ -423,15 +423,20 @@ ${transcription}`;
         // Validar y procesar la respuesta
         let scriptResult;
         try {
-          scriptResult = JSON.parse(jsonContent);
+          if (typeof jsonContent === 'string') {
+            scriptResult = JSON.parse(jsonContent);
+          } else {
+            throw new Error("La respuesta no es una cadena de texto válida");
+          }
         } catch (parseError) {
           // Intentar extraer JSON válido si está dentro de comillas, markdown, etc.
           const error = parseError as Error;
           console.error("Error parsing JSON:", error.message);
           
+          // Asegúrate de que jsonContent es una cadena antes de usar match
           if (typeof jsonContent === 'string') {
             const jsonMatch = jsonContent.match(/\{[\s\S]*"segments"[\s\S]*\}/);
-            if (jsonMatch) {
+            if (jsonMatch && jsonMatch[0]) {
               scriptResult = JSON.parse(jsonMatch[0]);
             } else {
               throw new Error("No se pudo extraer un JSON válido de la respuesta");
@@ -447,7 +452,7 @@ ${transcription}`;
 
         // Crear un mapa para buscar segmentos por ID eficientemente
         const segmentMap = new Map();
-        scriptResult.segments.forEach(segment => {
+        scriptResult.segments.forEach((segment: { id?: number; }) => {
           if (segment && segment.id !== undefined) {
             segmentMap.set(segment.id, segment);
           }
@@ -482,9 +487,10 @@ ${transcription}`;
         });
 
       } catch (parseError) {
-        console.error("Error parsing response:", parseError);
+        const error = parseError as Error;
+        console.error("Error parsing response:", error);
         console.error("Response content:", jsonContent);
-        throw new Error("Error al procesar la respuesta del guion: " + parseError.message);
+        throw new Error("Error al procesar la respuesta del guion: " + error.message);
       }
 
     } catch (error) {
