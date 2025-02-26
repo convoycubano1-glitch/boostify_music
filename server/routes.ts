@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { setupOpenAIRoutes } from "./routes/openai";
+import { setupEducationRoutes } from "./routes/education";
 import { db } from "@db";
 import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments } from "@db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
@@ -60,6 +61,7 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);
+  setupEducationRoutes(app);
 
   // Register courses routes
   app.use(coursesRouter);
