@@ -1134,7 +1134,7 @@ export default function CourseDetailPage() {
                 onClick={nextQuestion}
                 className="bg-orange-500 hover:bg-orange-600"
               >
-                {selectedExamQuestion < (progress.lessonContents[currentExamLesson]?.content.exam.length || 0) - 1
+                {selectedExamQuestion < (currentExamLesson && progress.lessonContents[currentExamLesson]?.content.exam.length ? progress.lessonContents[currentExamLesson].content.exam.length - 1 : 0)
                   ? 'Next Question'
                   : 'Finish Exam'}
               </Button>
