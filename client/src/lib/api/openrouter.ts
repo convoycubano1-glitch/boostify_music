@@ -143,9 +143,9 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
       let data;
       try {
         data = await response.json();
-      } catch (jsonError) {
-        console.error("Error parsing API response:", jsonError);
-        throw new Error(`Unable to parse API response: ${jsonError.message}`);
+      } catch (error) {
+        console.error("Error parsing API response:", error as Error);
+        throw new Error(`Unable to parse API response: ${(error as Error).message}`);
       }
       
       console.log("API Response:", data);
@@ -480,9 +480,9 @@ FORMATO DE RESPUESTA (JSON):
       let data;
       try {
         data = await response.json();
-      } catch (jsonError) {
-        console.error("Error parsing API response:", jsonError);
-        throw new Error(`Unable to parse API response: ${jsonError.message}`);
+      } catch (error) {
+        console.error("Error parsing API response:", error as Error);
+        throw new Error(`Unable to parse API response: ${(error as Error).message}`);
       }
       
       console.log("Script generation response:", data);
