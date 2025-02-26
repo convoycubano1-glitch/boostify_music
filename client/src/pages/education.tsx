@@ -14,6 +14,7 @@ import { auth, db } from "@/firebase";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
+import { generateImageWithFal } from "@/lib/api/fal-ai";
 import { createCourseEnrollmentSession } from "@/lib/api/stripe-service";
 import MasterclassSection from "@/components/education/MasterclassSection";
 
@@ -142,10 +143,30 @@ export default function EducationPage() {
       
       console.log("Starting course creation process...");
 
-      const imagePrompt = `professional education ${newCourse.title} ${newCourse.category} course cover`;
-      console.log("Generating image with prompt:", imagePrompt);
-      const thumbnailUrl = await getRelevantImage(imagePrompt);
-      console.log("Image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
+      const imagePrompt = `professional photorealistic education ${newCourse.title} ${newCourse.category} music industry course cover, modern design, minimalist, high quality`;
+      console.log("Generating image with fal-ai:", imagePrompt);
+      
+      let thumbnailUrl = "";
+      try {
+        // Intentar generar con fal-ai primero
+        const result = await generateImageWithFal({
+          prompt: imagePrompt,
+          negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
+          imageSize: "square_1_1"
+        });
+        
+        if (result.data?.images?.[0]) {
+          thumbnailUrl = result.data.images[0];
+          console.log("Fal-ai image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
+        } else {
+          throw new Error("No image data in fal-ai response");
+        }
+      } catch (error) {
+        console.error("Error generating with fal-ai, using fallback:", error);
+        // Fallback a Unsplash si fal-ai falla
+        thumbnailUrl = await getRelevantImage(imagePrompt);
+        console.log("Fallback image generated successfully:", thumbnailUrl.substring(0, 50) + "...");
+      }
 
       const prompt = `Generate a professional music course with these characteristics:
         - Title: "${newCourse.title}"
@@ -277,10 +298,30 @@ export default function EducationPage() {
       for (const course of sampleCourses) {
         console.log(`Creating sample course: ${course.title}`);
         
-        const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
-        console.log("Generating image with prompt:", imagePrompt);
-        const thumbnailUrl = await getRelevantImage(imagePrompt);
-        console.log("Image generated successfully");
+        const imagePrompt = `professional photorealistic education ${course.title} ${course.category} music industry course cover, modern design, minimalist, high quality`;
+        console.log("Generating image with fal-ai:", imagePrompt);
+        
+        let thumbnailUrl = "";
+        try {
+          // Intentar generar con fal-ai primero
+          const result = await generateImageWithFal({
+            prompt: imagePrompt,
+            negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
+            imageSize: "square_1_1"
+          });
+          
+          if (result.data?.images?.[0]) {
+            thumbnailUrl = result.data.images[0];
+            console.log("Fal-ai image generated successfully");
+          } else {
+            throw new Error("No image data in fal-ai response");
+          }
+        } catch (error) {
+          console.error("Error generating with fal-ai, using fallback:", error);
+          // Fallback a Unsplash si fal-ai falla
+          thumbnailUrl = await getRelevantImage(imagePrompt);
+          console.log("Fallback image generated successfully");
+        }
 
         const prompt = `Generate a professional music course with these characteristics:
           - Title: "${course.title}"

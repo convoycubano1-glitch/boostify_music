@@ -10,6 +10,7 @@ import { auth, db } from "@/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { getRelevantImage } from "@/lib/unsplash-service";
+import { generateImageWithFal } from "@/lib/api/fal-ai";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateLessonContent, type LessonContent } from "@/lib/course-content-generator";
