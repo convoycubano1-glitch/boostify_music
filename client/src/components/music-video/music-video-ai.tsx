@@ -240,7 +240,14 @@ export function MusicVideoAI() {
   });
   const storage = getStorage();
   const [isSaving, setIsSaving] = useState(false);
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>(undefined);
+  const [transcriptionWithTimestamps, setTranscriptionWithTimestamps] = useState<{
+    segments: Array<{
+      start: number;
+      end: number;
+      text: string;
+    }>;
+  } | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -499,7 +506,10 @@ ${transcription}`;
         },
       });
 
-      if (result?.images?.[0]?.url) {
+      // Asegurar que el resultado tiene la estructura correcta
+      const resultWithImages = result as { images?: Array<{url: string}> };
+      
+      if (resultWithImages?.images?.[0]?.url) {
         const updatedItems = timelineItems.map(timelineItem =>
           timelineItem.id === item.id
             ? { ...timelineItem, generatedImage: result.images[0].url }
@@ -956,16 +966,55 @@ ${transcription}`;
     return segments;
   };
 
-  const generatePromptForSegment = async (segment: TimelineItem) => {
+  const generatePromptForSegment = async (segment: TimelineItem): Promise<string> => {
     const maxAttempts = 3;
     let attempt = 0;
+    
+    // Determinar qué parte de la transcripción corresponde a este segmento
+    const segmentStartTime = segment.start_time / 1000; // convertir a segundos
+    const segmentEndTime = segment.end_time / 1000;
+    let relevantLyrics = "";
+    
+    // Si tenemos transcripción con timestamps
+    if (transcriptionWithTimestamps && Array.isArray(transcriptionWithTimestamps.segments)) {
+      // Buscar segmentos de la transcripción que coincidan con este segmento de timeline
+      const relevantSegments = transcriptionWithTimestamps.segments.filter(
+        (s: {start: number, end: number}) => 
+          (s.start >= segmentStartTime && s.start <= segmentEndTime) || 
+          (s.end >= segmentStartTime && s.end <= segmentEndTime)
+      );
+      
+      if (relevantSegments.length > 0) {
+        relevantLyrics = relevantSegments.map((s: {text: string}) => s.text).join(" ");
+      }
+    }
+    
+    // Si no hay letras específicas, usar transcripción general
+    if (!relevantLyrics && transcription) {
+      // Dividir la transcripción total proporcionalmente
+      const totalDuration = timelineItems[timelineItems.length - 1]?.end_time / 1000 - timelineItems[0]?.start_time / 1000;
+      if (totalDuration > 0) {
+        const segmentDuration = segmentEndTime - segmentStartTime;
+        const segmentPercent = segmentDuration / totalDuration;
+        
+        // Estimar qué parte de la transcripción corresponde a este segmento
+        const transcriptionWords = transcription.split(/\s+/);
+        const startWordIndex = Math.floor((segmentStartTime - (timelineItems[0]?.start_time / 1000)) / totalDuration * transcriptionWords.length);
+        const wordCount = Math.floor(segmentPercent * transcriptionWords.length);
+        
+        if (startWordIndex >= 0 && wordCount > 0) {
+          relevantLyrics = transcriptionWords.slice(startWordIndex, startWordIndex + wordCount).join(" ");
+        }
+      }
+    }
 
     while (attempt < maxAttempts) {
       try {
-        console.log(`Generating prompt for segment${segment.id}, attempt ${attempt+ 1}/${maxAttempts}`);
-
+        console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
+        
+        // Preparar parámetros base para el prompt
         const promptParams = {
-          shotType: segment.shotType,
+          shotType: segment.shotType || "medium shot",
           cameraFormat: videoStyle.cameraFormat,
           mood: videoStyle.mood,
           visualStyle: videoStyle.characterStyle,
@@ -975,7 +1024,7 @@ ${transcription}`;
           duration: segment.duration / 1000,
           directorStyle: videoStyle.selectedDirector?.style,
           specialty: videoStyle.selectedDirector?.specialty,
-          styleReference: videoStyle.styleDescription
+          styleReference: ""
         };
 
         const prompt = await generateVideoPromptWithRetry(promptParams);
