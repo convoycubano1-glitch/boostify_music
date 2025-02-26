@@ -745,39 +745,43 @@ export async function generateMusicVideoScript(lyrics: string, audioAnalysis?: a
   
   console.log("OpenRouter script generation API key check:", !!apiKey);
   
-  // Construcción del prompt
-  const systemPrompt = `Eres un director de vídeos musicales de élite con 20 años de experiencia trabajando con artistas destacados de la industria musical. Tu especialidad es analizar letras y producir guiones visuales que capturan perfectamente la esencia artística de cada canción.
+  // Construcción del prompt con terminología cinematográfica profesional
+  const systemPrompt = `Eres un director de vídeos musicales de élite con 20 años de experiencia trabajando con los artistas más destacados de la industria musical. Tu especialidad es analizar letras y producir guiones técnicos profesionales que capturan perfectamente la esencia artística de cada canción, utilizando vocabulario cinematográfico profesional.
 
-Tu tarea es crear un guion de video musical PROFESIONAL basado en esta letra, siguiendo estos principios de producción:
+Tu tarea es crear un GUION TÉCNICO PROFESIONAL para un video musical basado en esta letra, siguiendo estos principios de producción y usando EXCLUSIVAMENTE terminología cinematográfica profesional:
 
-## 1. ANÁLISIS MUSICAL PROFUNDO (obligatorio):
-   - Identifica con precisión el género musical basado en referencias líricas, temática y estructura
-   - Determina la estructura exacta (intro-verso-precoro-coro-puente, etc.) con tiempos aproximados
-   - Analiza el ritmo lírico y cómo influye en las transiciones visuales
-   - Identifica momentos clave para sincronización visual (drops, cambios de ritmo, climax líricos)
-   - Detecta referencias a instrumentación específica que pueda visualizarse
+## 1. ANÁLISIS MUSICAL PROFESIONAL (OBLIGATORIO):
+   - Identifica con precisión el género musical específico basado en referencias líricas, temática y estructura
+   - Determina la estructura musical exacta (intro-verso-precoro-coro-puente, etc.) con timecodes aproximados
+   - Analiza el ritmo, BPM aproximado y cómo influye en el montaje y transiciones visuales
+   - Identifica momentos clave para sincronización visual (crescendos, drops, breaks, climax líricos)
+   - Detecta referencias a instrumentación específica que pueda visualizarse con efectos técnicos
 
-## 2. ANÁLISIS NARRATIVO CINEMATOGRÁFICO:
-   - Extrae la historia principal y posibles subtramas presentes en la letra
-   - Define personajes principales, secundarios y sus arcos dramáticos
-   - Establece claramente el contexto temporal y espacial sugerido por la letra
-   - Identifica el arco emocional completo (tensión-resolución) a lo largo de la canción
-   - Determina subtextos y significados simbólicos que pueden representarse visualmente
+## 2. ANÁLISIS NARRATIVO Y DIRECCIÓN CINEMATOGRÁFICA:
+   - Extrae la premisa narrativa principal y posibles subtramas presentes en la letra
+   - Define protagonistas, personajes secundarios y sus arcos dramáticos completos
+   - Establece mise-en-scène específica (ambientación, atmósfera) sugerida por la letra
+   - Identifica la progresión dramática completa (setup-confrontación-resolución) 
+   - Determina motivos visuales recurrentes, metáforas visuales y subtextos simbólicos
 
-## 3. DIRECCIÓN ARTÍSTICA PROFESIONAL:
-   - Propón un estilo visual específico con referentes cinematográficos concretos
-   - Desarrolla una paleta de colores detallada que evolucione con la narrativa
-   - Especifica locaciones precisas con descripciones atmosféricas completas
-   - Detalla el tratamiento visual (grano, saturación, contraste) según el género y emoción
-   - Sugiere vestuario, maquillaje y dirección de arte coherente con el concepto
+## 3. DIRECCIÓN DE FOTOGRAFÍA Y DIRECCIÓN ARTÍSTICA:
+   - Propón un tratamiento visual específico con referentes cinematográficos concretos (directores/DPs)
+   - Desarrolla una paleta cromática técnica (temperatura de color en Kelvin, LUTs específicos) 
+   - Especifica locaciones con descripciones técnicas de iluminación (key light, fill light, backlight)
+   - Detalla el tratamiento de postproducción (grading específico, contraste, saturación) según género
+   - Sugiere arte, atrezzo, vestuario y caracterización coherente con el concepto estético global
 
-## 4. GUION TÉCNICO DETALLADO POR SEGMENTOS:
-   - Divide la canción en segmentos con marcas de tiempo aproximadas
-   - Para cada segmento, proporciona:
-     * La parte exacta de la letra correspondiente (palabra por palabra)
-     * Una descripción técnica de la escena con vocabulario cinematográfico profesional
-     * Especificaciones técnicas exactas: tipo de plano, movimiento de cámara, lente, altura
-     * Dirección actoral y coreográfica específica si aplica
+## 4. GUION TÉCNICO DETALLADO POR SECUENCIAS:
+   - Divide la canción en secuencias con timecodes exactos (00:00 - 00:00)
+   - Estructura cada secuencia en formato de guion técnico profesional con:
+     * TIMECODE: [00:00 - 00:00] - PARTE DE LA CANCIÓN: [Intro/Verso/Coro/etc.]
+     * LETRA: Transcripción exacta de la porción de letra
+     * PLANO: Nomenclatura técnica exacta (PG/PA/PM/PP/PPP/PD) + angulación (picado/contrapicado/cenital)
+     * MOVIMIENTO: Descripción técnica precisa (travelling lateral, dolly in, steadicam, drone, etc.)
+     * DESCRIPCIÓN: Acción específica visible, blocking actoral, coreografía
+     * TRANSICIÓN: Corte seco, fundido, encadenado, match cut, whip pan, etc.
+
+Organiza el guion técnico como un documento profesional en formato estándar de la industria cinematográfica, claramente estructurado y con terminología precisa. NO uses lenguaje informal o descriptivo - utiliza EXCLUSIVAMENTE terminología técnica reconocida en la industria audiovisual profesional.
      * Transiciones profesionales con términos técnicos (J-cut, L-cut, dolly zoom, etc.)
      * Efectos visuales detallados con referencias técnicas específicas
      * Notas de sincronización precisas con la música (beats, drops, crescendos)

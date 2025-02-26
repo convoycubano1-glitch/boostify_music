@@ -1802,11 +1802,47 @@ ${transcription}`;
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">3. Guion</Label>
+                  <div className="flex justify-between items-center mb-4">
+                    <Label className="text-lg font-semibold">3. Guion Profesional</Label>
+                    {scriptContent && (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-800 hover:bg-amber-100">
+                        <Film className="h-3 w-3 mr-1" />
+                        Análisis cinematográfico
+                      </Badge>
+                    )}
+                  </div>
+                  
                   <div className="space-y-4">
-                    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                      <pre className="text-sm whitespace-pre-wrap">{scriptContent || "El guion se generará basado en la transcripción de la letra."}</pre>
-                    </ScrollArea>
+                    {!scriptContent ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground bg-slate-50 rounded-md">
+                        <FileText className="h-12 w-12 mb-3 text-muted-foreground/50" />
+                        <p className="max-w-md">El guion profesional se generará basado en la transcripción de la letra.</p>
+                        <p className="text-xs mt-2 max-w-md text-muted-foreground/70">
+                          Incluirá análisis de género musical, estructura narrativa, diseño visual y segmentación por escenas con vocabulario cinematográfico.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <span className="font-semibold block">Análisis Musical</span>
+                            <span className="text-muted-foreground">Género y estructura</span>
+                          </div>
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <span className="font-semibold block">Narrativa Visual</span>
+                            <span className="text-muted-foreground">Arco emocional y mensajes</span>
+                          </div>
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <span className="font-semibold block">Dirección Técnica</span>
+                            <span className="text-muted-foreground">Planos, transiciones, mood</span>
+                          </div>
+                        </div>
+                        
+                        <ScrollArea className="h-[300px] w-full rounded-md border p-4 bg-white">
+                          <pre className="text-sm whitespace-pre-wrap">{scriptContent}</pre>
+                        </ScrollArea>
+                      </>
+                    )}
                   </div>
                 </div>
 
