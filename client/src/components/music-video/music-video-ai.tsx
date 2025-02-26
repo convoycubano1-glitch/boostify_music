@@ -348,7 +348,7 @@ export function MusicVideoAI() {
     }
   };
 
-  const generateVideoScript = async () => {
+  const generateVideoScriptFromAudio = async () => {
     if (!transcription || timelineItems.length === 0) return;
 
     setIsGeneratingScript(true);
@@ -418,12 +418,13 @@ CRUCIAL:
 LETRA COMPLETA DE LA CANCIÓN:
 ${transcription}`;
 
-      // La función generateVideoScript necesita un parámetro string
+      // Validamos que el prompt sea una cadena de texto
       if (typeof prompt !== 'string') {
         throw new Error("El prompt debe ser una cadena de texto");
       }
       
-      const jsonContent = await generateVideoScript(prompt);
+      // Llamada a la API para generar el guion
+      const jsonContent = await generateVideoScriptAPI(prompt);
 
       try {
         // Validar y procesar la respuesta
