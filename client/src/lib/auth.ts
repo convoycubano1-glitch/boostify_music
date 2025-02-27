@@ -50,15 +50,34 @@ export async function getAuthToken(): Promise<string | null> {
       return null;
     }
     
-    // Use retry mechanism for token refresh
-    return await withRetry(() => currentUser.getIdToken(true));
+    try {
+      // Intentar recargar la información del usuario para asegurar un token fresco
+      console.log('Recargando información del usuario para obtener token fresco');
+      await auth.currentUser?.reload();
+    } catch (reloadError) {
+      console.warn('No se pudo recargar la información del usuario:', reloadError);
+      // Continuamos aunque haya error, intentando obtener el token disponible
+    }
+    
+    // Usar el mecanismo de reintento para obtener el token
+    console.log('Obteniendo token de autenticación...');
+    const token = await withRetry(() => currentUser.getIdToken(true));
+    console.log('Token obtenido correctamente:', token ? 'Token presente' : 'Token no disponible');
+    return token;
   } catch (error: unknown) {
     console.error('Error getting auth token after retries:', error);
     
-    // Proper type checking for Firebase errors
-    if (error && typeof error === 'object' && 'code' in error && 
-        error.code === 'auth/network-request-failed') {
-      console.warn('Network issues detected. The user may need to refresh the page or check connection.');
+    // Verificación de tipos apropiada para errores de Firebase
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as { code: string, message?: string };
+      console.warn(`Firebase auth error: ${firebaseError.code} - ${firebaseError.message || 'No message'}`);
+      
+      if (firebaseError.code === 'auth/network-request-failed') {
+        console.warn('Network issues detected. The user may need to refresh the page or check connection.');
+      } else if (firebaseError.code === 'auth/user-token-expired') {
+        console.warn('User token has expired. The user may need to sign in again.');
+        // Podríamos intentar cerrar sesión y redirigir a página de login automáticamente
+      }
     }
     
     return null;

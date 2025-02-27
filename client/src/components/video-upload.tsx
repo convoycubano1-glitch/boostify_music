@@ -70,6 +70,18 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
       // Obtener el token de autenticación
       const token = await getAuthToken();
       
+      if (!token) {
+        console.error("No se pudo obtener token de autenticación");
+        throw new Error("Error de autenticación. Por favor, vuelve a iniciar sesión.");
+      }
+      
+      console.log("Enviando metadatos de video al servidor", {
+        title: videoData.title,
+        category: videoData.category,
+        fileName: videoData.fileName,
+        hasToken: !!token,
+      });
+      
       // Usando fetch con autenticación
       const response = await fetch('/api/videos', {
         method: 'POST',
@@ -80,14 +92,21 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
         body: JSON.stringify(videoData),
       });
       
+      // Intentar obtener la respuesta como JSON incluso en caso de error
+      const responseData = await response.json().catch(err => {
+        console.error("Error al parsear respuesta:", err);
+        return { success: false, message: "Error al procesar la respuesta del servidor" };
+      });
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Error al guardar el video');
+        console.error("Error en respuesta del servidor:", responseData);
+        throw new Error(responseData?.message || responseData?.error || 'Error al guardar el video');
       }
       
-      return response.json();
+      return responseData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Video guardado exitosamente:", data);
       toast({
         title: "Video subido con éxito",
         description: "El video ha sido subido y está disponible en Boostify TV",
@@ -97,6 +116,7 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
       onClose();
     },
     onError: (error: Error) => {
+      console.error("Error en la mutación de guardar video:", error);
       toast({
         title: "Error al guardar el video",
         description: `No se pudo guardar la información del video: ${error.message}`,

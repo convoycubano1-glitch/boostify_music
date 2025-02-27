@@ -25,10 +25,21 @@ export function setupVideosRoutes(app: Express) {
    */
   app.post("/api/videos", authenticate, async (req: Request, res: Response) => {
     try {
+      console.log("Recibida solicitud para guardar metadatos de video:", {
+        body: req.body,
+        user: req.user ? { uid: req.user.uid } : 'No autenticado',
+        authenticated: !!req.user,
+        headers: {
+          contentType: req.headers['content-type'],
+          authorization: req.headers.authorization ? 'Bearer [TOKEN PRESENTE]' : 'No hay token'
+        }
+      });
+      
       // Validar los datos de entrada
       const result = videoSchema.safeParse(req.body);
       
       if (!result.success) {
+        console.error("Datos inválidos en la solicitud:", result.error.format());
         return res.status(400).json({
           success: false,
           message: "Datos inválidos",
@@ -37,6 +48,7 @@ export function setupVideosRoutes(app: Express) {
       }
       
       if (!req.user) {
+        console.error("Intento de guardar video sin autenticación");
         return res.status(401).json({
           success: false,
           message: "Usuario no autenticado",
@@ -53,20 +65,29 @@ export function setupVideosRoutes(app: Express) {
         views: 0,
       };
       
-      // Guardar en Firestore usando Admin SDK
-      const docRef = await firebaseDb.collection("videos").add(videoEntry);
+      console.log("Guardando entrada de video en Firestore:", videoEntry);
       
-      res.status(201).json({
-        success: true,
-        message: "Video guardado exitosamente",
-        videoId: docRef.id,
-      });
+      // Guardar en Firestore usando Admin SDK con manejo de errores mejorado
+      try {
+        const docRef = await firebaseDb.collection("videos").add(videoEntry);
+        console.log("Video guardado exitosamente con ID:", docRef.id);
+        
+        res.status(201).json({
+          success: true,
+          message: "Video guardado exitosamente",
+          videoId: docRef.id,
+        });
+      } catch (firestoreError) {
+        console.error("Error específico de Firestore al guardar el video:", firestoreError);
+        throw new Error(`Error de Firestore: ${(firestoreError as Error).message}`);
+      }
     } catch (error) {
       console.error("Error al guardar video:", error);
       res.status(500).json({
         success: false,
         message: "Error al guardar información del video",
         error: (error as Error).message,
+        stack: process.env.NODE_ENV !== 'production' ? (error as Error).stack : undefined
       });
     }
   });
