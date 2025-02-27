@@ -8,7 +8,7 @@ import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4'
 
 export default function AuthPage() {
   const { user } = useAuth();
-  const { signInWithGoogle, signInWithEmailTemporary } = useFirebaseAuth();
+  const { signInWithGoogle } = useFirebaseAuth();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
@@ -18,19 +18,6 @@ export default function AuthPage() {
       toast({
         title: "Authentication Error",
         description: "Could not sign in with Google",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Método temporal para iniciar sesión sin popups (solución para problemas con bloqueadores)
-  const handleTemporarySignIn = async () => {
-    try {
-      await signInWithEmailTemporary();
-    } catch (error: any) {
-      toast({
-        title: "Authentication Error",
-        description: "Could not sign in with temporary method",
         variant: "destructive",
       });
     }
@@ -61,33 +48,14 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <Button 
-            variant="outline" 
-            className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
-            onClick={handleGoogleSignIn}
-          >
-            <SiGoogle className="w-5 h-5" />
-            Continue with Google
-          </Button>
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-500" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-black px-2 text-gray-400">or</span>
-            </div>
-          </div>
-          
-          <Button 
-            variant="outline" 
-            className="w-full gap-2 bg-orange-500/20 text-white border-orange-500/50 hover:bg-orange-500/30"
-            onClick={handleTemporarySignIn}
-          >
-            Login as Demo User
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
+          onClick={handleGoogleSignIn}
+        >
+          <SiGoogle className="w-5 h-5" />
+          Continue with Google
+        </Button>
       </div>
     </div>
   );
