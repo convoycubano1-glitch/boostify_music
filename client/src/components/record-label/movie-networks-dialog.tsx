@@ -133,7 +133,7 @@ interface MovieNetworksDialogProps {
 }
 
 export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -142,7 +142,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
 
   // Simulated search animation
   useEffect(() => {
-    if (isOpen && isSearching) {
+    if (open && isSearching) {
       const timer = setTimeout(() => {
         // Filter networks based on search query
         const results = movieNetworks.flatMap(category => 
@@ -164,27 +164,27 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
       
       return () => clearTimeout(timer);
     }
-  }, [isSearching, searchQuery, isOpen]);
+  }, [isSearching, searchQuery, open]);
 
   // Focus search input when dialog opens
   useEffect(() => {
-    if (isOpen && searchInputRef.current) {
+    if (open && searchInputRef.current) {
       const timer = setTimeout(() => {
         searchInputRef.current?.focus();
       }, 300);
       
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [open]);
 
   const handleSearch = () => {
     setIsSearching(true);
   };
 
   // Reset search when dialog closes
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
       setTimeout(() => {
         setSearchQuery("");
         setSearchResults([]);
@@ -195,7 +195,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
