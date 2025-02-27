@@ -633,18 +633,23 @@ export default function ProducerToolsPage() {
 
           {/* AI Tools Section */}
           <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-6">AI Production Tools</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold">AI Production Tools</h2>
+              <div className="bg-orange-500/10 dark:bg-orange-500/5 border border-orange-500/20 rounded-lg px-3 py-1.5 text-xs md:text-sm text-orange-600 dark:text-orange-400">
+                <span className="hidden sm:inline">Potenciado por </span>IA avanzada
+              </div>
+            </div>
             <Tabs defaultValue="mastering" className="space-y-6">
-              <TabsList>
-                <TabsTrigger value="mastering">
+              <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-2">
+                <TabsTrigger value="mastering" className="flex-1 sm:flex-initial">
                   <Wand2 className="mr-2 h-4 w-4" />
-                  AI Mastering
+                  <span className="hidden xs:inline">AI</span> Mastering
                 </TabsTrigger>
-                <TabsTrigger value="generation">
+                <TabsTrigger value="generation" className="flex-1 sm:flex-initial">
                   <Music4 className="mr-2 h-4 w-4" />
-                  Music Generation
+                  <span className="hidden xs:inline">Music</span> Generation
                 </TabsTrigger>
-                <TabsTrigger value="cover">
+                <TabsTrigger value="cover" className="flex-1 sm:flex-initial">
                   <ImageIcon className="mr-2 h-4 w-4" />
                   Cover Art
                 </TabsTrigger>
@@ -652,38 +657,55 @@ export default function ProducerToolsPage() {
 
               {/* Mastering Tab */}
               <TabsContent value="mastering">
-                <Card className="p-6 backdrop-blur-sm">
-                  <div className="max-w-xl mx-auto space-y-4">
-                    <h2 className="text-2xl font-semibold">AI Mastering</h2>
-                    <p className="text-muted-foreground">
-                      Upload your track and let our AI master it to professional standards
-                    </p>
+                <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
+                  <div className="w-full max-w-xl mx-auto space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                          <Wand2 className="h-5 w-5 text-orange-500" />
+                          AI Mastering
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Mejora la calidad de tu música con tecnología avanzada
+                        </p>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2 text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full">
+                        <span className="font-medium">Profesional</span>
+                      </div>
+                    </div>
 
-                    <div className="space-y-4">
-                      <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="audio">Audio File</Label>
+                    <div className="space-y-4 bg-background/50 p-4 rounded-lg border border-border/50">
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="audio" className="flex items-center gap-2">
+                          <Upload className="h-4 w-4 text-orange-500" />
+                          Archivo de Audio
+                        </Label>
                         <Input
                           id="audio"
                           type="file"
                           accept="audio/*"
                           onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                          className="text-sm"
                         />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Formatos soportados: WAV, MP3, FLAC (máximo 20MB)
+                        </p>
                       </div>
 
                       <Button
                         onClick={handleMasterTrack}
                         disabled={isMastering || !selectedFile}
-                        className="w-full"
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                       >
                         {isMastering ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Mastering...
+                            Procesando...
                           </>
                         ) : (
                           <>
                             <Wand2 className="mr-2 h-4 w-4" />
-                            Master Track
+                            Masterizar Pista
                           </>
                         )}
                       </Button>
@@ -694,38 +716,55 @@ export default function ProducerToolsPage() {
 
               {/* Generation Tab */}
               <TabsContent value="generation">
-                <Card className="p-6 backdrop-blur-sm">
-                  <div className="max-w-xl mx-auto space-y-4">
-                    <h2 className="text-2xl font-semibold">AI Music Generation</h2>
-                    <p className="text-muted-foreground">
-                      Describe the music you want to create and let AI generate it for you
-                    </p>
+                <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
+                  <div className="w-full max-w-xl mx-auto space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                          <Music4 className="h-5 w-5 text-orange-500" />
+                          Generación Musical
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Describe la música que quieres crear y la IA la generará para ti
+                        </p>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2 text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full">
+                        <span className="font-medium">Premium</span>
+                      </div>
+                    </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 bg-background/50 p-4 rounded-lg border border-border/50">
                       <div className="grid w-full gap-1.5">
-                        <Label htmlFor="prompt">Description</Label>
+                        <Label htmlFor="prompt" className="flex items-center gap-2">
+                          <Music2 className="h-4 w-4 text-orange-500" />
+                          Descripción
+                        </Label>
                         <Textarea
                           id="prompt"
-                          placeholder="Describe the music you want to generate..."
+                          placeholder="Ej: Una pista de reggaeton con melodía de piano y bajo profundo, ritmo de 95 BPM..."
                           value={musicPrompt}
                           onChange={(e) => setMusicPrompt(e.target.value)}
+                          className="min-h-[120px] text-sm"
                         />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Incluye género, instrumentos, tempo, y estilo para mejores resultados
+                        </p>
                       </div>
 
                       <Button
                         onClick={handleGenerateMusic}
                         disabled={isGeneratingMusic || !musicPrompt}
-                        className="w-full"
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                       >
                         {isGeneratingMusic ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
+                            Generando...
                           </>
                         ) : (
                           <>
                             <Music4 className="mr-2 h-4 w-4" />
-                            Generate Music
+                            Generar Música
                           </>
                         )}
                       </Button>
@@ -736,54 +775,80 @@ export default function ProducerToolsPage() {
 
               {/* Cover Art Tab */}
               <TabsContent value="cover">
-                <Card className="p-6 backdrop-blur-sm">
-                  <div className="max-w-xl mx-auto space-y-4">
-                    <h2 className="text-2xl font-semibold">AI Cover Art Generation</h2>
-                    <p className="text-muted-foreground">
-                      Describe your ideal album cover and let AI create it for you
-                    </p>
+                <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
+                  <div className="w-full max-w-xl mx-auto space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                          <ImageIcon className="h-5 w-5 text-orange-500" />
+                          Portadas con IA
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Crea portadas profesionales para tus canciones y álbumes
+                        </p>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2 text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full">
+                        <span className="font-medium">Creativo</span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4 bg-background/50 p-4 rounded-lg border border-border/50">
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="coverPrompt" className="flex items-center gap-2">
+                            <ImageIcon className="h-4 w-4 text-orange-500" />
+                            Descripción
+                          </Label>
+                          <Textarea
+                            id="coverPrompt"
+                            placeholder="Ej: Portada para un álbum de R&B con colores neon, estilo urbano, atmosfera nocturna..."
+                            value={coverPrompt}
+                            onChange={(e) => setCoverPrompt(e.target.value)}
+                            className="min-h-[120px] text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Describe el estilo, paleta de colores y elementos visuales
+                          </p>
+                        </div>
 
-                    <div className="space-y-4">
-                      <div className="grid w-full gap-1.5">
-                        <Label htmlFor="coverPrompt">Description</Label>
-                        <Textarea
-                          id="coverPrompt"
-                          placeholder="Describe the cover art you want to generate..."
-                          value={coverPrompt}
-                          onChange={(e) => setCoverPrompt(e.target.value)}
-                        />
+                        <Button
+                          onClick={handleGenerateCover}
+                          disabled={isGeneratingCover || !coverPrompt}
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                        >
+                          {isGeneratingCover ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generando...
+                            </>
+                          ) : (
+                            <>
+                              <ImageIcon className="mr-2 h-4 w-4" />
+                              Generar Portada
+                            </>
+                          )}
+                        </Button>
                       </div>
 
-                      {generatedCoverUrl && (
-                        <div className="mt-4">
-                          <h3 className="text-lg font-medium mb-2">Generated Cover Art:</h3>
-                          <div className="aspect-video relative rounded-lg overflow-hidden border">
-                            <img
-                              src={generatedCoverUrl}
-                              alt="Generated cover art"
-                              className="w-full h-full object-cover"
-                            />
+                      {generatedCoverUrl ? (
+                        <div className="relative bg-background/50 rounded-lg border border-border/50 overflow-hidden">
+                          <img
+                            src={generatedCoverUrl}
+                            alt="Generated cover art"
+                            className="w-full h-full object-cover aspect-square"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white">
+                            <p className="text-xs font-medium">Portada Generada</p>
                           </div>
                         </div>
+                      ) : (
+                        <div className="flex flex-col justify-center items-center bg-background/50 rounded-lg border border-border/50 p-4 text-center gap-2 aspect-square">
+                          <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                          <p className="text-sm text-muted-foreground">
+                            La portada generada aparecerá aquí
+                          </p>
+                        </div>
                       )}
-
-                      <Button
-                        onClick={handleGenerateCover}
-                        disabled={isGeneratingCover || !coverPrompt}
-                        className="w-full"
-                      >
-                        {isGeneratingCover ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <ImageIcon className="mr-2 h-4 w-4" />
-                            Generate Cover
-                          </>
-                        )}
-                      </Button>
                     </div>
                   </div>
                 </Card>
