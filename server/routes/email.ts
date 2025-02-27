@@ -1,123 +1,166 @@
-import { Express, Request, Response } from "express";
-import sgMail from "@sendgrid/mail";
-import { authenticate } from "../middleware/auth";
-import { log } from "../vite";
+import { Express, Request, Response } from 'express';
+import { z } from 'zod';
+import sgMail from '@sendgrid/mail';
+import { authenticate } from '../middleware/auth';
+
+// Validación para los correos
+const emailProfileSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  recipientEmail: z.string().email(),
+  subject: z.string(),
+  message: z.string(),
+  profileUrl: z.string().url().optional(),
+  songUrl: z.string().url().optional(),
+  contactType: z.enum(['radio', 'tv', 'movie', 'other'])
+});
 
 /**
- * Configura las rutas relacionadas con el envío de emails
+ * Configura las rutas para envío de emails
  */
 export function setupEmailRoutes(app: Express) {
-  // Inicializar SendGrid con la API key
-  const sendgridApiKey = process.env.VITE_SENDGRID_API_KEY;
-  if (sendgridApiKey) {
-    sgMail.setApiKey(sendgridApiKey);
-  } else {
-    log("Warning: SendGrid API Key not found", "email-service");
+  // Si hay una clave de API de SendGrid en las variables de entorno, inicializa el cliente
+  if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   }
 
   /**
-   * Endpoint para enviar perfil de artista por email
-   * Requiere autenticación del usuario
+   * Endpoint para enviar perfil de artista a contactos
+   * Requiere autenticación
    */
-  app.post("/api/email/send-profile", authenticate, async (req: Request, res: Response) => {
+  app.post('/api/email/send-profile', authenticate, async (req: Request, res: Response) => {
     try {
-      const {
-        to,
-        contactName,
-        contactCompany,
-        artistName,
-        artistBio,
-        customMessage,
-        artistGenre,
-        socialLinks,
-        userId
-      } = req.body;
+      // Verificamos que tengamos una API key de SendGrid
+      if (!process.env.SENDGRID_API_KEY) {
+        return res.status(500).json({
+          success: false,
+          error: 'SendGrid API key not configured on server'
+        });
+      }
 
-      // Validación básica
-      if (!to || !artistName || !customMessage) {
+      // Validamos los datos del formulario
+      const profileData = emailProfileSchema.parse(req.body);
+      
+      // Configuramos el email
+      const msg = {
+        to: profileData.recipientEmail,
+        from: process.env.SENDGRID_FROM_EMAIL || 'noreply@boostifymusic.com', // Usar una dirección verificada en SendGrid
+        subject: profileData.subject,
+        text: `Mensaje de ${profileData.name} (${profileData.email}):\n\n${profileData.message}${
+          profileData.profileUrl ? `\n\nPerfil del artista: ${profileData.profileUrl}` : ''
+        }${
+          profileData.songUrl ? `\n\nEscucha mi música: ${profileData.songUrl}` : ''
+        }`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Perfil de Artista - Boostify Music</h2>
+            <p><strong>De:</strong> ${profileData.name} (${profileData.email})</p>
+            <p><strong>Tipo de contacto:</strong> ${
+              profileData.contactType === 'radio' ? 'Radio' : 
+              profileData.contactType === 'tv' ? 'Televisión' : 
+              profileData.contactType === 'movie' ? 'Cine' : 'Otro'
+            }</p>
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px;">
+              ${profileData.message.replace(/\n/g, '<br>')}
+            </div>
+            ${profileData.profileUrl ? `
+              <p style="margin-top: 20px;">
+                <a href="${profileData.profileUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Ver Perfil del Artista</a>
+              </p>
+            ` : ''}
+            ${profileData.songUrl ? `
+              <p style="margin-top: 10px;">
+                <a href="${profileData.songUrl}" style="display: inline-block; background-color: #7C3AED; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Escuchar Música</a>
+              </p>
+            ` : ''}
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #777; font-size: 12px;">
+              Este email fue enviado a través de la plataforma Boostify Music para artistas.
+            </p>
+          </div>
+        `
+      };
+      
+      // Enviamos el email
+      await sgMail.send(msg);
+      
+      // Respondemos éxito
+      return res.json({
+        success: true,
+        message: 'Email enviado exitosamente'
+      });
+      
+    } catch (error: any) {
+      console.error('Error al enviar email:', error);
+      
+      // Determinamos el tipo de error
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
-          message: "Missing required fields"
+          error: 'Datos de perfil inválidos',
+          details: error.errors
         });
       }
-
-      // Verificar si el usuario autenticado coincide con el userId
-      if (req.user?.uid !== userId) {
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorized: User ID mismatch"
-        });
-      }
-
-      // Construir el email HTML
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-            .header { background: linear-gradient(to right, #ff7e33, #f059a0); padding: 20px; color: white; border-radius: 8px 8px 0 0; }
-            .content { padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; }
-            .footer { font-size: 12px; color: #777; margin-top: 30px; text-align: center; }
-            .social-links { margin-top: 20px; }
-            .social-links a { display: inline-block; margin-right: 10px; color: #ff7e33; text-decoration: none; }
-            .message { white-space: pre-line; background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Perfil Artístico: ${artistName}</h1>
-            <p>${artistGenre || 'Música'}</p>
-          </div>
-          <div class="content">
-            <p>Estimado/a ${contactName},</p>
-            
-            <div class="message">${customMessage}</div>
-            
-            <h3>Sobre el artista:</h3>
-            <p>${artistBio}</p>
-            
-            <div class="social-links">
-              ${socialLinks.spotify ? `<a href="${socialLinks.spotify}" target="_blank">Spotify</a>` : ''}
-              ${socialLinks.instagram ? `<a href="${socialLinks.instagram}" target="_blank">Instagram</a>` : ''}
-              ${socialLinks.youtube ? `<a href="${socialLinks.youtube}" target="_blank">YouTube</a>` : ''}
-            </div>
-            
-            <div class="footer">
-              <p>Este correo fue enviado a través de Boostify Music - Plataforma de promoción y distribución musical</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      // Configuración del email
-      const msg = {
-        to,
-        from: 'no-reply@boostifymusic.com', // Debe ser un dominio verificado en SendGrid
-        subject: `Perfil artístico para ${contactCompany}`,
-        text: customMessage,
-        html: htmlContent,
-      };
-
-      // Enviar el email
-      await sgMail.send(msg);
-
-      // Registro de actividad
-      log(`Email sent to ${to} for user ${userId}`, "email-service");
-
-      return res.status(200).json({
-        success: true,
-        message: "Profile email sent successfully"
-      });
-    } catch (error) {
-      console.error("Error sending profile email:", error);
       
+      // Error de SendGrid o cualquier otro
       return res.status(500).json({
         success: false,
-        message: "Error sending email",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error.message || 'Error al enviar email'
+      });
+    }
+  });
+
+  /**
+   * Endpoint para búsqueda simulada de contactos
+   * Normalmente este endpoint se conectaría a una API externa o base de datos,
+   * pero para demo generamos datos simulados
+   */
+  app.get('/api/contacts/search', async (req: Request, res: Response) => {
+    try {
+      const searchTerm = (req.query.q as string || '').toLowerCase();
+      const type = req.query.type as string || 'all';
+      
+      // Simulamos un delay para la búsqueda
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Generamos datos mock
+      const mockContacts = [
+        { id: 1, name: 'Juan Pérez', email: 'juan.perez@radioglobal.com', type: 'radio', region: 'España' },
+        { id: 2, name: 'María Rodríguez', email: 'maria@tvnacional.com', type: 'tv', region: 'España' },
+        { id: 3, name: 'Carlos Ramirez', email: 'carlos@productionfilms.com', type: 'movie', region: 'México' },
+        { id: 4, name: 'Sofia Martinez', email: 'sofia@radiofm.mx', type: 'radio', region: 'México' },
+        { id: 5, name: 'Alejandro Torres', email: 'alejandro@moviechannel.com', type: 'movie', region: 'Colombia' },
+        { id: 6, name: 'Laura González', email: 'laura@tvnetwork.com', type: 'tv', region: 'Argentina' },
+        { id: 7, name: 'Ricardo Alvarez', email: 'ricardo@radiostation.ar', type: 'radio', region: 'Argentina' },
+        { id: 8, name: 'Ana Sánchez', email: 'ana@filmstudio.com', type: 'movie', region: 'Estados Unidos' },
+        { id: 9, name: 'Miguel Fernández', email: 'miguel@radioonline.com', type: 'radio', region: 'Chile' },
+        { id: 10, name: 'Carmen Ortiz', email: 'carmen@tvshows.cl', type: 'tv', region: 'Chile' }
+      ];
+      
+      // Filtramos por término de búsqueda y tipo
+      let results = mockContacts;
+      
+      if (searchTerm) {
+        results = results.filter(contact => 
+          contact.name.toLowerCase().includes(searchTerm) || 
+          contact.email.toLowerCase().includes(searchTerm) || 
+          contact.region.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      if (type !== 'all') {
+        results = results.filter(contact => contact.type === type);
+      }
+      
+      // Respondemos con los resultados
+      return res.json(results);
+      
+    } catch (error: any) {
+      console.error('Error en búsqueda de contactos:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al buscar contactos'
       });
     }
   });
