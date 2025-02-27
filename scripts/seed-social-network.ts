@@ -1,7 +1,7 @@
 import { db } from '../db';
 import { socialUsers, posts, comments } from '../db/schema';
 import { faker } from '@faker-js/faker/locale/es';
-import { fakerEN_US } from '@faker-js/faker/locale/en_US';
+import { faker as fakerEN_US } from '@faker-js/faker/locale/en_US';
 
 const TOTAL_USERS = 20;
 const TOTAL_POSTS = 40;
