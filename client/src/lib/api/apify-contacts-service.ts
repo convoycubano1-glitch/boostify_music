@@ -102,18 +102,18 @@ function getApifyClient() {
 
 /**
  * Extract contacts directly using the Apify API
- * This function can be used client-side as an alternative to the server API
+ * This function uses the Google Maps with Contact Details actor to extract comprehensive business contact information
  * @param searchTerm Term to search for
  * @param locality Geographic location to search in
  * @param category Category of contacts to search for
- * @param maxPages Maximum number of pages to crawl
+ * @param maxPages Maximum number of places to crawl
  * @returns Promise with extracted contacts
  */
 export async function extractContactsWithApify(
   searchTerm: string,
   locality: string,
   category: "radio" | "tv" | "movie" | "publishing" | "other",
-  maxPages: number = 1
+  maxResults: number = 10
 ): Promise<Contact[]> {
   try {
     // First check if we have the API token before proceeding
@@ -122,79 +122,45 @@ export async function extractContactsWithApify(
       throw new Error("Apify API token not available");
     }
     
-    // Build a search query that combines the search term, category, and locality
-    const queryWithCategory = `${searchTerm} ${category} ${locality}`;
+    console.log(`Extracting contacts using Apify for "${searchTerm} ${category}" in ${locality}`);
     
-    // Start an actor run with the Google SERP crawler
-    const actor = apifyClient.actor("apify/google-search-scraper");
+    // Start an actor run with the Google Maps with Contact Details actor
+    const actor = apifyClient.actor("lukaskrivka/google-maps-with-contact-details");
     const runInfo = await actor.call({
-      queries: [queryWithCategory],
-      maxPagesPerQuery: maxPages,
-      resultsPerPage: 10,
-      mobileResults: false,
-      languageCode: "",
-      countryCode: "US",
-      includeUnfilteredResults: false,
-      saveHtml: false,
-      saveHtmlToKeyValueStore: false,
-      customDataFunction: `
-        ({ input, $, request, response, html }) => {
-          const results = $(".g");
-          const extractedItems = [];
-          
-          results.each((index, el) => {
-            const title = $(el).find("h3").text().trim();
-            const url = $(el).find("a").first().attr("href");
-            const description = $(el).find(".VwiC3b").text().trim();
-            
-            if (title && url) {
-              extractedItems.push({
-                title,
-                url,
-                description
-              });
-            }
-          });
-          
-          return {
-            extractedItems
-          };
-        }
-      `
+      language: "en",
+      locationQuery: locality,
+      maxCrawledPlacesPerSearch: maxResults,
+      searchStringsArray: [
+        `${searchTerm} ${category}`
+      ],
+      skipClosedPlaces: false
     });
+    
+    console.log(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
     
     // Get the dataset items
     const { items } = await apifyClient.dataset(runInfo.defaultDatasetId).listItems();
+    console.log(`Retrieved ${items.length} contacts from Apify`);
     
     // Process and format the contacts
-    const contacts: Contact[] = items.flatMap((item: any) => {
-      const organicResults = item.organicResults || [];
-      
-      return organicResults.map((result: any) => {
-        // Extract company and other details from the title and description
-        const title = result.title || "";
-        const snippet = result.description || "";
-        const url = result.url || "";
-        
-        // Try to extract contact information
-        const emailMatch = snippet.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
-        const phoneMatch = snippet.match(/\+?[0-9\s()-]{10,}/);
-        
-        // Create a contact object
-        const contact: Contact = {
-          name: title.split(' - ')[0] || title,
-          category: category,
-          company: title.includes(' - ') ? title.split(' - ')[1] : '',
-          website: url,
-          email: emailMatch ? emailMatch[0] : undefined,
-          phone: phoneMatch ? phoneMatch[0] : undefined,
-          locality: locality,
-          notes: snippet,
-          extractedAt: new Date()
-        };
-        
-        return contact;
-      });
+    const contacts: Contact[] = items.map((item: any) => {
+      // Extract contact information from the Apify result
+      return {
+        name: item.name || "Unknown",
+        category: category,
+        company: item.name || "",
+        website: item.website || "",
+        email: item.email || undefined,
+        phone: item.phone || undefined,
+        address: item.address || undefined,
+        locality: locality,
+        notes: item.description || "",
+        extractedAt: new Date(),
+        // Add social media if available
+        twitter: item.twitter || undefined,
+        linkedin: item.linkedin || undefined,
+        instagram: item.instagram || undefined
+      };
     });
     
     return contacts;
@@ -222,7 +188,9 @@ export async function extractContacts(
     // First try direct Apify API call if token is available
     if (getApifyClient()) {
       try {
-        return await extractContactsWithApify(searchTerm, locality, category, maxPages);
+        // Convert maxPages to maxResults for new actor format
+        const maxResults = maxPages * 20; // Each "page" counts as 20 results
+        return await extractContactsWithApify(searchTerm, locality, category, maxResults);
       } catch (apiError) {
         console.warn("Direct Apify API call failed, falling back to server API:", apiError);
         // Fall back to server API

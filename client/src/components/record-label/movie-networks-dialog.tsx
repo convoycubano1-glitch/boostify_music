@@ -305,7 +305,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
           searchTerm,
           locality,
           "movie",
-          isAdmin ? maxPages : 1 // Only admins can use larger page values
+          isAdmin ? (maxPages * 20) : 10 // Only admins can use larger result counts (conversion for new actor)
         );
         
         // Update UI with the results
