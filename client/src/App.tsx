@@ -31,7 +31,7 @@ import MusicVideoCreator from "@/pages/music-video-creator";
 import NewsPage from "@/pages/news";
 import PRPage from "@/pages/pr";
 import PrivacyPage from "@/pages/privacy";
-import ProducerToolsPage from "@/pages/producer-tools-fixed";
+import ProducerToolsPage from "@/pages/producer-tools";
 import PromotionPage from "@/pages/promotion";
 import RecordLabelServices from "@/pages/record-label-services";
 import SettingsPage from "@/pages/settings";

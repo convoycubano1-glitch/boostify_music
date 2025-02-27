@@ -4,10 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
 import { motion } from "framer-motion";
-import { 
-  Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, 
-  Wand2, Image as ImageIcon, Upload, Loader2, Zap 
-} from "lucide-react";
+import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -635,44 +632,28 @@ export default function ProducerToolsPage() {
           </div>
 
           {/* AI Tools Section */}
-          <div className="mb-12 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-violet-500/5 to-blue-500/5 rounded-xl -z-10"></div>
-            <div className="absolute inset-0 bg-[url('https://fal.media/files/elephant/pA5H4n7Z5Mm3bLz74mUot_a051bbde5d634688bca0f16015321750.jpg')] bg-cover bg-center opacity-10 rounded-xl -z-20"></div>
-            
-            <div className="relative p-6 sm:p-8 rounded-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-8 w-1 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-transparent bg-clip-text">AI Production Tools</h2>
-                  </div>
-                  <p className="text-sm text-muted-foreground max-w-xl">
-                    Transform your music with cutting-edge AI technology. Our suite of professional tools helps you master, generate, and visualize your musical ideas effortlessly.
-                  </p>
-                </div>
-                <div className="bg-gradient-to-r from-orange-500/80 to-orange-600/80 rounded-lg px-4 py-2.5 text-xs md:text-sm text-white shadow-md">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    <span className="font-medium">Powered by Advanced AI</span>
-                  </div>
-                </div>
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold">AI Production Tools</h2>
+              <div className="bg-orange-500/10 dark:bg-orange-500/5 border border-orange-500/20 rounded-lg px-3 py-1.5 text-xs md:text-sm text-orange-600 dark:text-orange-400">
+                <span className="hidden sm:inline">Potenciado por </span>IA avanzada
               </div>
-              
-              <Tabs defaultValue="mastering" className="space-y-6">
-                <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-4 bg-white/10 backdrop-blur-sm p-1 rounded-lg border border-orange-500/20">
-                  <TabsTrigger value="mastering" className="flex-1 sm:flex-initial data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    <span className="hidden xs:inline">AI</span> Mastering
-                  </TabsTrigger>
-                  <TabsTrigger value="generation" className="flex-1 sm:flex-initial data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    <Music4 className="mr-2 h-4 w-4" />
-                    <span className="hidden xs:inline">Music</span> Generation
-                  </TabsTrigger>
-                  <TabsTrigger value="cover" className="flex-1 sm:flex-initial data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Cover Art
-                  </TabsTrigger>
-                </TabsList>
+            </div>
+            <Tabs defaultValue="mastering" className="space-y-6">
+              <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-2">
+                <TabsTrigger value="mastering" className="flex-1 sm:flex-initial">
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  <span className="hidden xs:inline">AI</span> Mastering
+                </TabsTrigger>
+                <TabsTrigger value="generation" className="flex-1 sm:flex-initial">
+                  <Music4 className="mr-2 h-4 w-4" />
+                  <span className="hidden xs:inline">Music</span> Generation
+                </TabsTrigger>
+                <TabsTrigger value="cover" className="flex-1 sm:flex-initial">
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Cover Art
+                </TabsTrigger>
+              </TabsList>
 
               {/* Mastering Tab */}
               <TabsContent value="mastering">
