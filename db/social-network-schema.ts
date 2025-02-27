@@ -1,21 +1,21 @@
 import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// Tabla de usuarios de la red social
+// Tabla de usuarios de la red social - EXACT column names from database
 export const socialUsers = pgTable("social_users", {
   id: integer("id").primaryKey().notNull(),
   displayName: text("displayName").notNull(),
   avatar: text("avatar"),
   bio: text("bio"),
+  interests: text("interests").array(),
   language: text("language").default("en"),
   isBot: boolean("isBot").default(false),
   personality: text("personality"),
-  interests: text("interests").array(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-// Tabla de publicaciones
+// Tabla de publicaciones - EXACT column names from database
 export const posts = pgTable("social_posts", {
   id: integer("id").primaryKey().notNull(),
   userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
@@ -25,15 +25,15 @@ export const posts = pgTable("social_posts", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-// Tabla de comentarios
+// Tabla de comentarios - EXACT column names from database
 export const comments = pgTable("social_comments", {
   id: integer("id").primaryKey().notNull(),
-  postId: integer("postId").notNull().references(() => posts.id, { onDelete: "cascade" }),
   userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  postId: integer("postId").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  parentId: integer("parentId").references(() => comments.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   likes: integer("likes").default(0),
   isReply: boolean("isReply").default(false),
-  parentId: integer("parentId").references(() => comments.id, { onDelete: "cascade" }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

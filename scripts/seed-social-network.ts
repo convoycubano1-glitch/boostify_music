@@ -122,19 +122,28 @@ function getFallbackResponse(prompt: string): string {
 }
 
 /**
+ * First clear any existing tables
+ */
+async function clearExistingData() {
+  try {
+    await db.delete(comments);
+    await db.delete(posts);
+    await db.delete(socialUsers);
+    console.log("Cleared existing social network data");
+  } catch (error) {
+    console.error("Error clearing existing data:", error);
+  }
+}
+
+/**
  * Main function to seed the social network database
  */
 async function seedSocialNetwork() {
   console.log("🌱 Starting social network seeding process...");
   
   try {
-    // Check if we already have data
-    const existingUsers = await db.select().from(socialUsers);
-    
-    if (existingUsers.length > 0) {
-      console.log("Database already contains social network data. Skipping seed.");
-      return;
-    }
+    // Clear existing data first
+    await clearExistingData();
     
     console.log(`Creating ${TOTAL_USERS} users...`);
     
@@ -148,12 +157,6 @@ async function seedSocialNetwork() {
       const fullName = isSpanish 
         ? faker.person.fullName() 
         : fakerEN_US.person.fullName();
-      
-      // Generar un username único basado en el nombre
-      const username = fullName.toLowerCase()
-        .replace(/\s+/g, '.')
-        .replace(/[^a-z0-9.]/g, '')
-        + Math.floor(Math.random() * 100);
       
       const user = {
         displayName: fullName,
