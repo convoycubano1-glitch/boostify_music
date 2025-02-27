@@ -498,7 +498,7 @@ export default function MasterclassSection() {
             </Dialog>
               
             <p className="text-center text-gray-400 mt-4 text-sm">
-              Comparte tu conocimiento y genera ingresos extra
+              Share your knowledge and generate extra income
             </p>
           </div>
         </div>
@@ -508,10 +508,10 @@ export default function MasterclassSection() {
         <div>
           <h2 className="text-3xl font-bold text-white flex items-center gap-2">
             <Video className="h-6 w-6 text-orange-500" />
-            Masterclasses Destacadas
+            Featured Masterclasses
           </h2>
           <p className="text-gray-400 max-w-2xl mt-2">
-            Las masterclasses más populares impartidas por artistas-ingenieros de éxito. Descubre técnicas de producción, enfoques creativos y conocimientos de la industria.
+            The most popular masterclasses taught by successful artist-engineers. Discover production techniques, creative approaches, and industry knowledge.
           </p>
         </div>
 
@@ -519,14 +519,14 @@ export default function MasterclassSection() {
           <DialogTrigger asChild>
             <Button className="bg-orange-500 hover:bg-orange-600">
               <Plus className="mr-2 h-4 w-4" />
-              Crear Masterclass
+              Create Masterclass
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Crear Nueva Masterclass</DialogTitle>
+              <DialogTitle>Create New Masterclass</DialogTitle>
               <DialogDescription>
-                Comparte tu experiencia con la comunidad musical. Crea una masterclass para enseñar tus técnicas de producción y proceso creativo.
+                Share your experience with the music community. Create a masterclass to teach your production techniques and creative process.
               </DialogDescription>
             </DialogHeader>
             {/* Contenido del diálogo igual que arriba */}
@@ -537,15 +537,15 @@ export default function MasterclassSection() {
       {masterclasses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-black/30 rounded-xl border border-gray-800">
           <Video className="h-16 w-16 text-orange-500 mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No hay masterclasses disponibles</h3>
+          <h3 className="text-xl font-semibold text-white mb-2">No masterclasses available</h3>
           <p className="text-gray-400 text-center max-w-md mb-6">
-            Sé el primero en crear una masterclass y compartir tu experiencia con la comunidad musical.
+            Be the first to create a masterclass and share your experience with the music community.
           </p>
           <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="mr-2 h-4 w-4" />
-                Crear tu Masterclass
+                Create Your Masterclass
               </Button>
             </DialogTrigger>
             {/* Dialog content es el mismo que arriba */}
@@ -557,15 +557,15 @@ export default function MasterclassSection() {
           <Tabs defaultValue="all" className="mb-8">
             <TabsList className="grid grid-cols-5 bg-black/40 p-1 rounded-lg">
               <TabsTrigger value="all" className="data-[state=active]:bg-orange-500">
-                Todos
+                All
               </TabsTrigger>
               <TabsTrigger value="production" className="data-[state=active]:bg-orange-500">
                 <Zap className="h-4 w-4 mr-2" />
-                Producción
+                Production
               </TabsTrigger>
               <TabsTrigger value="vocal production" className="data-[state=active]:bg-orange-500">
                 <Mic2 className="h-4 w-4 mr-2" />
-                Voces
+                Vocals
               </TabsTrigger>
               <TabsTrigger value="mastering" className="data-[state=active]:bg-orange-500">
                 <Headphones className="h-4 w-4 mr-2" />
