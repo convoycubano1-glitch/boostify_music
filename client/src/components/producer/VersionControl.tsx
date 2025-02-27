@@ -796,7 +796,7 @@ export function VersionControl() {
 
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Upload New Version</DialogTitle>
             <DialogDescription>
@@ -814,6 +814,7 @@ export function VersionControl() {
                 placeholder="e.g., Mix v1, Final Mix, etc."
                 value={newVersionName}
                 onChange={e => setNewVersionName(e.target.value)}
+                className="w-full"
               />
             </div>
             
@@ -825,7 +826,7 @@ export function VersionControl() {
                 value={selectedTrack}
                 onValueChange={setSelectedTrack}
               >
-                <SelectTrigger id="track-select">
+                <SelectTrigger id="track-select" className="w-full">
                   <SelectValue placeholder="Select track" />
                 </SelectTrigger>
                 <SelectContent>
@@ -848,6 +849,7 @@ export function VersionControl() {
                 accept="audio/*"
                 ref={fileInputRef}
                 disabled={isUploading}
+                className="w-full text-sm"
               />
               <p className="text-xs text-muted-foreground">
                 Accepted formats: MP3, WAV, OGG, AAC, M4A, FLAC
@@ -865,17 +867,19 @@ export function VersionControl() {
             )}
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button 
               variant="outline" 
               onClick={() => setShowUploadDialog(false)}
               disabled={isUploading}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button 
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading || !newVersionName || !selectedTrack}
+              className="w-full sm:w-auto"
             >
               {isUploading ? "Uploading..." : "Upload Version"}
             </Button>
