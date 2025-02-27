@@ -146,8 +146,9 @@ export default function FirestoreSocialPage() {
   };
 
   // Identificar si es un bot y obtener su insignia
-  const getBotBadge = (user: SocialUser) => {
-    if (!user.isBot) return null;
+  const getBotBadge = (user?: SocialUser | null) => {
+    // Verificar que el usuario exista y sea un bot
+    if (!user || !user.isBot) return null;
     
     return (
       <div className="flex items-center gap-1 ml-2">
