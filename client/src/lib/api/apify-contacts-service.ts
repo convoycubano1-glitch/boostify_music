@@ -7,6 +7,7 @@ import { ApifyClient } from "apify-client";
 
 // Define contact schema
 export const contactSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email").optional(),
   phone: z.string().optional(),

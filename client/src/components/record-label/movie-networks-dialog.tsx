@@ -270,7 +270,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
     }
   }, [open, auth?.user]);
 
-  // Extract contacts using Apify
+  // Extract contacts using Apify with direct client integration
   const handleExtractContacts = async () => {
     if (!auth?.user) {
       toast({
@@ -292,6 +292,48 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
 
     setExtractingContacts(true);
     try {
+      // First try direct client integration
+      try {
+        // Import the extractContactsWithApify function from our service
+        const { extractContactsWithApify } = await import("../../lib/api/apify-contacts-service");
+        
+        // Prepare search term based on the selected category and locality
+        const searchTerm = "Movie Production";
+        
+        // Extract contacts directly using Apify client
+        const contacts = await extractContactsWithApify(
+          searchTerm,
+          locality,
+          "movie",
+          isAdmin ? maxPages : 1 // Only admins can use larger page values
+        );
+        
+        // Update UI with the results
+        setApifyResults(contacts);
+        setLoadedDynamicContacts(true);
+        
+        // We don't have remaining extractions data when using direct API
+        // so we'll decrement the local counter
+        if (remainingExtractions !== null) {
+          const newRemaining = Math.max(0, remainingExtractions - 1);
+          setRemainingExtractions(newRemaining);
+          setExtractionLimitReached(newRemaining <= 0 && !isAdmin);
+        }
+        
+        toast({
+          title: "Contactos extraídos con éxito",
+          description: `Se han encontrado ${contacts.length} contactos de cine en ${locality}`,
+        });
+        
+        // Return early as we successfully extracted contacts
+        setExtractingContacts(false);
+        return;
+      } catch (directApiError) {
+        // Log the error but continue to try server-side method
+        console.warn("Direct Apify API call failed, falling back to server API:", directApiError);
+      }
+      
+      // Fall back to server API if direct integration fails
       // Get a fresh token before each request
       const token = await auth.user.getIdToken(true);
       console.log("Got fresh token for Apify request");
@@ -367,7 +409,9 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
           company: "Hollywood Films",
           website: "https://hollywoodfilms.com",
           address: `789 Studio Way, ${locality}, CA`,
-          extractedAt: new Date()
+          locality: locality,
+          extractedAt: new Date(),
+          category: "movie"
         },
         {
           name: "Film Licensing Manager",
@@ -377,7 +421,9 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
           company: "Silver Screen Productions",
           website: "https://silverscreen.com",
           address: `456 Cinema Blvd, ${locality}, CA`,
-          extractedAt: new Date()
+          locality: locality,
+          extractedAt: new Date(),
+          category: "movie"
         }
       ];
       

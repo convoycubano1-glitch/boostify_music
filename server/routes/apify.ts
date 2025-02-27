@@ -17,6 +17,7 @@ const contactExtractionSchema = z.object({
 
 // Define the schema for industry contacts
 export const industryContactSchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
@@ -414,10 +415,18 @@ export function setupApifyRoutes(app: Express) {
       // Get the run status
       const run = await apifyClient.run(runId).get();
       
+      // Check if run exists
+      if (!run) {
+        return res.status(404).json({
+          success: false,
+          message: 'Run not found'
+        });
+      }
+      
       return res.status(200).json({
         success: true,
-        status: run.status,
-        finishedAt: run.finishedAt
+        status: run.status || 'UNKNOWN',
+        finishedAt: run.finishedAt || null
       });
     } catch (error) {
       console.error('Error checking run status:', error);
@@ -476,13 +485,11 @@ export function setupApifyRoutes(app: Express) {
           locality: data.locality,
           notes: data.notes,
           extractedAt: data.extractedAt?.toDate() || new Date(),
-          userId: data.userId
+          userId: data.userId,
+          id: doc.id // Add doc ID for reference
         };
         
-        contacts.push({
-          ...contact,
-          id: doc.id as any // Add doc ID for reference
-        });
+        contacts.push(contact);
       });
       
       return res.status(200).json({ 
@@ -628,6 +635,7 @@ export function setupApifyRoutes(app: Express) {
         if (matchName || matchCompany) {
           mockContacts.push({
             ...contact,
+            id: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             locality: "Los Angeles",
             notes: "Demo contact for search functionality",
             extractedAt: new Date(),
