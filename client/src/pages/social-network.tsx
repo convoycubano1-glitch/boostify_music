@@ -1,29 +1,36 @@
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Users, Music, Globe, Settings, Bell, MessageSquare, TrendingUp } from "lucide-react";
+import React from "react";
 import { PostFeed } from "@/components/social/post-feed";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { SocialUser } from "@/lib/social/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked } from "lucide-react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+
+// Constantes que nos ahorraremos de repetir
+const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
+const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm";
 
 export default function SocialNetworkPage() {
-  const [activeTab, setActiveTab] = useState("feed");
+  const { user } = useAuth() || {};
+  const [activeTab, setActiveTab] = React.useState("feed");
 
-  // Consulta para obtener usuarios
-  const usersQuery = useQuery({
+  // Consulta para obtener usuarios (para mostrar en la barra lateral)
+  const { data: users } = useQuery({
     queryKey: ["/api/social/users"],
     queryFn: async () => {
-      const response = await fetch("/api/social/users");
-      if (!response.ok) {
-        throw new Error("Error al cargar usuarios");
-      }
-      return response.json();
-    },
+      return apiRequest<SocialUser[]>({ 
+        url: "/api/social/users", 
+        method: "GET" 
+      });
+    }
   });
 
+  // Función para obtener las iniciales del nombre
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -32,246 +39,209 @@ export default function SocialNetworkPage() {
       .toUpperCase();
   };
 
+  // Función para seleccionar un avatar aleatorio para usuarios sin uno
+  const getRandomAvatar = (userId: string) => {
+    const seed = userId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return `https://avatars.dicebear.com/api/initials/${seed}.svg`;
+  };
+
+  // Identificar si es un bot y obtener su insignia
+  const getBotBadge = (user: SocialUser) => {
+    if (!user.isBot) return null;
+    
+    return (
+      <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 inline-flex items-center">
+        <Sparkles className="h-3 w-3 mr-1" />
+        AI
+      </span>
+    );
+  };
+
+  // Identificar idioma y obtener su insignia
+  const getLanguageBadge = (language: string) => {
+    if (language === "es") {
+      return (
+        <span className={`${LANGUAGE_BADGE_CLASS} bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-100`}>
+          ES
+        </span>
+      );
+    } else {
+      return (
+        <span className={`${LANGUAGE_BADGE_CLASS} bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100`}>
+          EN
+        </span>
+      );
+    }
+  };
+
   return (
-    <div className="container py-8">
-      <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-8">
-        {/* Sidebar */}
-        <div className="lg:w-1/4">
-          <Card className="sticky top-20">
-            <CardHeader>
-              <CardTitle>Tu Comunidad</CardTitle>
-              <CardDescription>Conecta con otros artistas y profesionales de la música</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-sm font-medium mb-3">Navegación</h3>
-                <div className="space-y-2">
-                  <Button 
-                    variant={activeTab === "feed" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("feed")}
-                  >
-                    <Globe className="mr-2 h-4 w-4" />
-                    Feed Principal
-                  </Button>
-                  <Button 
-                    variant={activeTab === "trending" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("trending")}
-                  >
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Tendencias
-                  </Button>
-                  <Button 
-                    variant={activeTab === "artists" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("artists")}
-                  >
-                    <Music className="mr-2 h-4 w-4" />
-                    Artistas
-                  </Button>
-                  <Button 
-                    variant={activeTab === "messages" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("messages")}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Mensajes
-                  </Button>
-                  <Button 
-                    variant={activeTab === "notifications" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("notifications")}
-                  >
-                    <Bell className="mr-2 h-4 w-4" />
-                    Notificaciones
-                  </Button>
-                  <Button 
-                    variant={activeTab === "settings" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("settings")}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configuración
-                  </Button>
+    <div className="container py-6">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
+        {/* Barra lateral con información y usuarios */}
+        <div className="md:col-span-2">
+          <div className="space-y-6">
+            {/* Tarjeta de información sobre la red social */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="h-5 w-5 mr-2" />
+                  BoostifyNetwork
+                </CardTitle>
+                <CardDescription>
+                  Red social bilingüe para profesionales de la música
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className={INFO_GROUP_CLASS}>
+                  <Users className="h-4 w-4" />
+                  <span>{users?.length || 0} Miembros activos</span>
                 </div>
-              </div>
+                <div className={INFO_GROUP_CLASS}>
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Soporte para español e inglés</span>
+                </div>
+                <div className={INFO_GROUP_CLASS}>
+                  <Sparkles className="h-4 w-4" />
+                  <span>Asistentes IA integrados</span>
+                </div>
+                <div className={INFO_GROUP_CLASS}>
+                  <BadgeInfo className="h-4 w-4" />
+                  <span>Conversaciones contextualizadas</span>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Separator />
-
-              <div>
-                <h3 className="text-sm font-medium mb-3 flex items-center">
-                  <Users className="mr-2 h-4 w-4" />
-                  Usuarios Sugeridos
-                </h3>
-                
-                <div className="space-y-3">
-                  {usersQuery.isLoading ? (
-                    <p className="text-muted-foreground text-sm">Cargando usuarios...</p>
-                  ) : usersQuery.isError ? (
-                    <p className="text-muted-foreground text-sm">Error al cargar usuarios</p>
-                  ) : (
-                    usersQuery.data?.slice(0, 5).map((user: any) => (
-                      <div key={user.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar || undefined} alt={user.displayName} />
-                            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{user.displayName}</p>
-                            <p className="text-xs text-muted-foreground truncate max-w-[120px]">
-                              {user.isBot ? "Asistente AI" : "Usuario"}
-                            </p>
-                          </div>
+            {/* Lista de usuarios */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Users className="h-5 w-5 mr-2" />
+                  Miembros
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 max-h-[500px] overflow-y-auto">
+                {users ? (
+                  users.map((socialUser) => (
+                    <div key={socialUser.id} className="flex items-center space-x-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage 
+                          src={socialUser.avatar || getRandomAvatar(socialUser.id)} 
+                          alt={socialUser.displayName} 
+                        />
+                        <AvatarFallback>{getInitials(socialUser.displayName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center">
+                          <span className="font-medium truncate">
+                            {socialUser.displayName}
+                          </span>
+                          {getBotBadge(socialUser)}
                         </div>
-                        <Button variant="outline" size="sm">
-                          Seguir
-                        </Button>
+                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                          {getLanguageBadge(socialUser.language)}
+                          <span className="truncate max-w-[150px]">
+                            {socialUser.interests?.slice(0, 2).join(", ")}
+                          </span>
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
+                    </div>
+                  ))
+                ) : (
+                  // Placeholder para estado de carga
+                  Array(5).fill(null).map((_, i) => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+                        <div className="h-2 bg-muted rounded animate-pulse w-1/2" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
 
-              <Separator />
-
-              <div>
-                <h3 className="text-sm font-medium mb-3">Temas Populares</h3>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">#MúsicaIndependiente</Badge>
-                  <Badge variant="secondary">#ProducciónMusical</Badge>
-                  <Badge variant="secondary">#Boostify</Badge>
-                  <Badge variant="secondary">#ÉxitoMusical</Badge>
-                  <Badge variant="secondary">#MarketingMusical</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Enlaces útiles */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <BookMarked className="h-5 w-5 mr-2" />
+                  Enlaces
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="link" className="p-0 h-auto" asChild>
+                  <Link href="/education">Cursos educativos</Link>
+                </Button>
+                <Button variant="link" className="p-0 h-auto" asChild>
+                  <Link href="/record-label-services">Servicios de producción</Link>
+                </Button>
+                <Button variant="link" className="p-0 h-auto" asChild>
+                  <Link href="/artist-dashboard">Dashboard de artista</Link>
+                </Button>
+                <Button variant="link" className="p-0 h-auto" asChild>
+                  <Link href="/manager-tools">Herramientas de management</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="lg:w-1/2">
-          {activeTab === "feed" && (
-            <div>
-              <Card className="mb-6">
-                <CardHeader className="pb-3">
-                  <CardTitle>Feed Social de Boostify</CardTitle>
+        {/* Área principal de contenido */}
+        <div className="md:col-span-5">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="feed">Feed Social</TabsTrigger>
+              <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="feed" className="space-y-6">
+              <PostFeed />
+            </TabsContent>
+            
+            <TabsContent value="profile" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Mi Perfil
+                  </CardTitle>
                   <CardDescription>
-                    Conéctate con otros artistas, productores y profesionales de la industria musical
+                    Información de tu perfil en la red social
                   </CardDescription>
                 </CardHeader>
+                <CardContent className="flex items-center space-x-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarFallback className="text-lg">
+                      {user?.email?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {user?.email?.split('@')[0] || "Usuario"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {user?.email || "usuario@ejemplo.com"}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm">Editar perfil</Button>
+                  </div>
+                </CardContent>
               </Card>
-              
-              <PostFeed />
-            </div>
-          )}
 
-          {activeTab === "trending" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendencias</CardTitle>
-                <CardDescription>Descubre lo que está siendo tendencia en la comunidad musical</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Próximamente: Contenido de tendencias</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === "artists" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Artistas</CardTitle>
-                <CardDescription>Descubre y conecta con artistas de tu género musical</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Próximamente: Directorio de artistas</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === "messages" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Mensajes</CardTitle>
-                <CardDescription>Tus conversaciones con otros usuarios</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Próximamente: Sistema de mensajería</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === "notifications" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Notificaciones</CardTitle>
-                <CardDescription>Mantente al día con la actividad de tu red</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Próximamente: Centro de notificaciones</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === "settings" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuración</CardTitle>
-                <CardDescription>Personaliza tu experiencia en la red social</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Próximamente: Ajustes de la red social</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="lg:w-1/4">
-          <Card className="sticky top-20">
-            <CardHeader>
-              <CardTitle>Recursos Musicales</CardTitle>
-              <CardDescription>Herramientas y recursos para artistas</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-medium mb-2">Boostify Pro Tools</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Accede a herramientas profesionales de producción y marketing musical
-                </p>
-                <Button variant="default" className="w-full">
-                  Explorar Herramientas
-                </Button>
-              </div>
-              
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-medium mb-2">Conecta tu Spotify</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Comparte tu música y obtén análisis avanzados
-                </p>
-                <Button variant="outline" className="w-full">
-                  Conectar Cuenta
-                </Button>
-              </div>
-              
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-medium mb-2">Cursos de Educación Musical</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Mejora tus habilidades con cursos certificados
-                </p>
-                <Button variant="outline" className="w-full">
-                  Ver Cursos
-                </Button>
-              </div>
-              
-              <div className="text-xs text-center text-muted-foreground pt-4">
-                <p>© 2025 Boostify Social Network</p>
-                <p className="mt-1">Todos los derechos reservados</p>
-              </div>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mis publicaciones</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Aquí verás tus publicaciones cuando comiences a compartir contenido.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

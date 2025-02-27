@@ -1,9 +1,7 @@
 import { db } from "../db";
 import { socialUsers, posts, comments } from "../db/schema";
 import { faker } from "@faker-js/faker";
-import OpenAI from "openai";
 import { eq } from "drizzle-orm";
-import { lorem } from 'faker';
 
 // Function to generate random response using OpenRouter
 async function generateOpenRouterResponse(prompt: string): Promise<string> {
@@ -180,8 +178,9 @@ async function seedSocialNetwork() {
         let commentContent;
         if (commenter.isBot) {
           // AI-generated response
+          const userInterests = commenter.interests || ['music'];
           const prompt = `You are a social media user with the following personality: ${commenter.personality}. 
-            You're interested in: ${commenter.interests.join(', ')}.
+            You're interested in: ${userInterests.join(', ')}.
             Please write a short, conversational comment in ${commenter.language === 'es' ? 'Spanish' : 'English'} 
             (max 2 sentences) responding to this social media post: "${postDetails.content}"`;
           
@@ -222,8 +221,9 @@ async function seedSocialNetwork() {
           
           if (postAuthor.isBot) {
             // AI-generated response
+            const userInterests = postAuthor.interests || ['music'];
             const prompt = `You are a social media user with the following personality: ${postAuthor.personality || 'friendly and engaged'}. 
-              You're interested in: ${postAuthor.interests.join(', ')}.
+              You're interested in: ${userInterests.join(', ')}.
               You made a post saying: "${postDetails.content}"
               Someone commented: "${commentContent}"
               Please write a brief reply in ${postAuthor.language === 'es' ? 'Spanish' : 'English'} (1-2 sentences) to this comment.`;

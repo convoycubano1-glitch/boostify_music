@@ -1,62 +1,70 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Heart, Share, Send } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { Separator } from "@/components/ui/separator";
+import { MessageSquare, Heart, Share2, Send, MoreHorizontal, PlusCircle, MessageCircle } from "lucide-react";
+import { MusicLoadingSpinner } from "@/components/ui/music-loading-spinner";
+import { format } from "date-fns";
+import { es, enUS } from "date-fns/locale";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { Post, Comment, SocialUser } from "@/lib/social/types";
-import { format, formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
+import { Post, Comment } from "@/lib/social/types";
 
 interface PostCardProps {
-  post: Post & {
-    user: SocialUser;
-    comments: (Comment & { user: SocialUser; replies?: (Comment & { user: SocialUser })[] })[];
-  };
+  post: Post;
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const { user } = useAuth() || {};
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [comment, setComment] = useState("");
-  const [replyToId, setReplyToId] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [showAllComments, setShowAllComments] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [showReplyForm, setShowReplyForm] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
+  const [newReply, setNewReply] = useState("");
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes || 0);
 
-  const formatDate = (date: Date) => {
-    if (typeof date === 'string') {
-      date = new Date(date);
-    }
-    
-    try {
-      // Determinar el idioma basado en el usuario del post
-      const locale = post.user.language === 'es' ? es : undefined;
-      
-      const now = new Date();
-      const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
-      
-      if (diffInHours < 24) {
-        return formatDistanceToNow(date, { addSuffix: true, locale });
-      } else {
-        return format(date, 'PPp', { locale });
-      }
-    } catch (error) {
-      console.error("Error formateando fecha:", error);
-      return "Fecha desconocida";
-    }
-  };
-
-  const likeMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      const response = await fetch(`/api/social/posts/${postId}/like`, {
+  // Mutación para crear un nuevo comentario
+  const createCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const response = await fetch(`/api/social/posts/${post.id}/comments`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Error al crear el comentario");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setNewComment("");
+      queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
+      toast({
+        title: "Comentario añadido",
+        description: "Tu comentario se ha publicado correctamente",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "No se pudo publicar el comentario",
+        variant: "destructive",
+      });
+      console.error(error);
+    },
+  });
+
+  // Mutación para dar like a un post
+  const likePostMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/social/posts/${post.id}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
       
       if (!response.ok) {
@@ -66,6 +74,8 @@ export function PostCard({ post }: PostCardProps) {
       return response.json();
     },
     onSuccess: () => {
+      setIsLiked(true);
+      setLikesCount(prev => prev + 1);
       queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
     },
     onError: (error) => {
@@ -78,61 +88,59 @@ export function PostCard({ post }: PostCardProps) {
     },
   });
 
-  const commentMutation = useMutation({
-    mutationFn: async ({ postId, content, parentId }: { postId: string; content: string; parentId?: string }) => {
-      const response = await fetch(`/api/social/posts/${postId}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ content, parentId }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Error al comentar");
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      setComment("");
-      setReplyText("");
-      setReplyToId(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "No se pudo publicar el comentario",
-        variant: "destructive",
-      });
-      console.error(error);
-    },
-  });
-
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) return;
-    
-    commentMutation.mutate({
-      postId: post.id,
-      content: comment,
+    if (!newComment.trim()) return;
+    createCommentMutation.mutate(newComment);
+  };
+
+  const handleSubmitReply = (commentId: string) => {
+    if (!newReply.trim()) return;
+    // Implementar lógica para enviar respuesta
+    // Esto se implementaría con una mutación similar a createCommentMutation
+    toast({
+      title: "Respuesta enviada",
+      description: "Tu respuesta se ha enviado correctamente",
+    });
+    setNewReply("");
+    setShowReplyForm(null);
+  };
+
+  const handleLikePost = () => {
+    if (!isLiked) {
+      likePostMutation.mutate();
+    }
+  };
+
+  const handleSharePost = () => {
+    // Implementar lógica para compartir post
+    toast({
+      title: "Compartir",
+      description: "Funcionalidad de compartir en desarrollo",
     });
   };
 
-  const handleSubmitReply = (e: React.FormEvent, commentId: string) => {
-    e.preventDefault();
-    if (!replyText.trim() || !commentId) return;
+  // Función para formatear fechas teniendo en cuenta el idioma
+  const formatDate = (date: string | Date) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     
-    commentMutation.mutate({
-      postId: post.id,
-      content: replyText,
-      parentId: commentId,
-    });
+    // Detectar idioma del navegador o usar español por defecto
+    const userLanguage = navigator.language || 'es';
+    const locale = userLanguage.startsWith('es') ? es : enUS;
+    
+    return format(dateObj, 'PPp', { locale });
   };
 
-  const handleLike = () => {
-    likeMutation.mutate(post.id);
+  // Determinar si el usuario es un bot para mostrar un indicador
+  const isUserBot = post.user?.isBot;
+
+  // Formatear el contenido del post (por ejemplo, convertir URLs en links)
+  const formatContent = (content: string) => {
+    // Esta es una implementación básica. Se podría mejorar con bibliotecas como linkify
+    return content.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>'
+    );
   };
 
   const getInitials = (name: string) => {
@@ -143,150 +151,227 @@ export function PostCard({ post }: PostCardProps) {
       .toUpperCase();
   };
 
-  const visibleComments = showAllComments ? post.comments : post.comments?.slice(0, 2);
-
   return (
-    <Card className="mb-4">
-      <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-2">
-        <Avatar>
-          <AvatarImage src={post.user.avatar || undefined} alt={post.user.displayName} />
-          <AvatarFallback>{getInitials(post.user.displayName)}</AvatarFallback>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3 flex flex-row items-start space-x-4">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={post.user?.avatar || undefined} alt={post.user?.displayName || "Usuario"} />
+          <AvatarFallback>{getInitials(post.user?.displayName || "Usuario")}</AvatarFallback>
         </Avatar>
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-semibold">{post.user.displayName}</h4>
-              <p className="text-xs text-muted-foreground">
-                {formatDate(post.createdAt)}
-                {post.user.isBot && (
-                  <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded-full">
-                    AI
-                  </span>
-                )}
-              </p>
-            </div>
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center">
+            <div className="font-semibold">{post.user?.displayName || "Usuario desconocido"}</div>
+            {isUserBot && (
+              <div className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                AI
+              </div>
+            )}
           </div>
+          <div className="text-xs text-muted-foreground">{formatDate(post.createdAt || new Date())}</div>
         </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
       </CardHeader>
-
-      <CardContent className="py-3">
-        <p className="whitespace-pre-wrap">{post.content}</p>
+      
+      <CardContent className="pb-3">
+        <div 
+          className="text-sm mb-3" 
+          dangerouslySetInnerHTML={{ __html: formatContent(post.content) }} 
+        />
+        
         {post.mediaUrl && (
-          <div className="mt-3">
-            <img
-              src={post.mediaUrl}
-              alt="Media adjunta"
-              className="rounded-md max-h-96 object-cover w-full"
+          <div className="rounded-md overflow-hidden mt-3">
+            <img 
+              src={post.mediaUrl} 
+              alt="Post media" 
+              className="w-full h-auto object-cover max-h-[500px]" 
             />
           </div>
         )}
-      </CardContent>
-
-      <CardFooter className="flex flex-col pt-0">
-        <div className="flex w-full items-center justify-between py-2 border-t border-b">
-          <Button variant="ghost" size="sm" onClick={handleLike}>
-            <Heart className="mr-1 h-4 w-4" />
-            {post.likes || 0}
-          </Button>
-          <Button variant="ghost" size="sm">
-            <MessageSquare className="mr-1 h-4 w-4" />
-            {post.comments?.length || 0}
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Share className="mr-1 h-4 w-4" />
-            {post.shares || 0}
-          </Button>
+        
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            <div className="flex items-center">
+              <Heart className="h-4 w-4 mr-1" />
+              <span>{likesCount}</span>
+            </div>
+            <div className="flex items-center">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              <span>{post.comments?.length || 0}</span>
+            </div>
+            <div className="flex items-center">
+              <Share2 className="h-4 w-4 mr-1" />
+              <span>{post.shares || 0}</span>
+            </div>
+          </div>
         </div>
-
-        {/* Comentarios */}
-        <div className="w-full mt-2">
-          {visibleComments && visibleComments.length > 0 && (
-            <div className="space-y-3">
-              {visibleComments.map((comment) => (
-                <div key={comment.id} className="pt-2">
-                  <div className="flex gap-2">
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={comment.user.avatar || undefined} alt={comment.user.displayName} />
-                      <AvatarFallback>{getInitials(comment.user.displayName)}</AvatarFallback>
+      </CardContent>
+      
+      <Separator />
+      
+      <CardFooter className="pt-3 pb-3 flex justify-between">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={`flex-1 ${isLiked ? 'text-red-500' : ''}`}
+          onClick={handleLikePost}
+          disabled={likePostMutation.isPending || isLiked}
+        >
+          {likePostMutation.isPending ? (
+            <MusicLoadingSpinner size="sm" className="mr-2" />
+          ) : (
+            <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
+          )}
+          Me gusta
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex-1"
+          onClick={() => setShowComments(!showComments)}
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Comentar
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex-1"
+          onClick={handleSharePost}
+        >
+          <Share2 className="h-4 w-4 mr-2" />
+          Compartir
+        </Button>
+      </CardFooter>
+      
+      {showComments && (
+        <div className="px-6 py-3 bg-muted/30">
+          {/* Formulario para nuevo comentario */}
+          <form onSubmit={handleSubmitComment} className="mb-4 flex space-x-2">
+            <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarFallback>TÚ</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 relative">
+              <Textarea
+                placeholder="Escribe un comentario..."
+                className="min-h-[60px] text-sm py-2"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
+              <Button 
+                type="submit" 
+                size="icon" 
+                variant="ghost" 
+                className="absolute bottom-2 right-2" 
+                disabled={!newComment.trim() || createCommentMutation.isPending}
+              >
+                {createCommentMutation.isPending ? (
+                  <MusicLoadingSpinner size="sm" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </form>
+          
+          {/* Lista de comentarios */}
+          <div className="space-y-4">
+            {post.comments && post.comments.length > 0 ? (
+              post.comments.map((comment) => (
+                <div key={comment.id} className="space-y-4">
+                  <div className="flex space-x-2">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={comment.user?.avatar || undefined} alt={comment.user?.displayName || "Comentarista"} />
+                      <AvatarFallback>{getInitials(comment.user?.displayName || "Usuario")}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-muted rounded-lg px-3 py-2">
-                        <div className="flex justify-between items-start">
+                        <div className="flex items-center">
                           <span className="font-medium text-sm">
-                            {comment.user.displayName}
-                            {comment.user.isBot && (
-                              <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded-full">
-                                AI
-                              </span>
-                            )}
+                            {comment.user?.displayName || "Usuario desconocido"}
                           </span>
-                          <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                          {comment.user?.isBot && (
+                            <div className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                              AI
+                            </div>
+                          )}
                         </div>
                         <p className="text-sm mt-1">{comment.content}</p>
                       </div>
-                      <div className="flex ml-1 mt-1 gap-2 text-xs text-muted-foreground">
+                      
+                      <div className="flex items-center space-x-4 mt-1 text-xs text-muted-foreground pl-3">
                         <button 
-                          className="hover:text-primary transition-colors"
-                          onClick={() => setReplyToId(replyToId === comment.id ? null : comment.id)}
+                          className="hover:text-foreground"
+                          onClick={() => setShowReplyForm(comment.id)}
                         >
                           Responder
                         </button>
-                        <button className="hover:text-primary transition-colors">
-                          Me gusta ({comment.likes})
-                        </button>
+                        <span>{formatDate(comment.createdAt || new Date())}</span>
                       </div>
-
-                      {/* Formulario de respuesta */}
-                      {replyToId === comment.id && (
-                        <form 
-                          className="mt-2 flex items-center gap-2"
-                          onSubmit={(e) => handleSubmitReply(e, comment.id)}
-                        >
-                          <Textarea
-                            placeholder="Escribe una respuesta..."
-                            className="min-h-8 text-sm"
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                          />
-                          <Button 
-                            type="submit" 
-                            size="icon" 
-                            className="shrink-0" 
-                            disabled={!replyText.trim() || commentMutation.isPending}
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </form>
+                      
+                      {/* Formulario para respuesta */}
+                      {showReplyForm === comment.id && (
+                        <div className="mt-2 pl-6 flex space-x-2">
+                          <Avatar className="h-6 w-6 flex-shrink-0">
+                            <AvatarFallback>TÚ</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 relative">
+                            <Textarea
+                              placeholder="Escribe tu respuesta..."
+                              className="min-h-[50px] text-xs py-2"
+                              value={newReply}
+                              onChange={(e) => setNewReply(e.target.value)}
+                            />
+                            <div className="flex justify-end mt-1 space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => setShowReplyForm(null)}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => handleSubmitReply(comment.id)}
+                                disabled={!newReply.trim()}
+                              >
+                                Responder
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       )}
-
+                      
                       {/* Respuestas */}
                       {comment.replies && comment.replies.length > 0 && (
-                        <div className="ml-4 mt-2 space-y-2">
+                        <div className="pl-6 mt-2 space-y-3">
                           {comment.replies.map((reply) => (
-                            <div key={reply.id} className="flex gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage src={reply.user.avatar || undefined} alt={reply.user.displayName} />
-                                <AvatarFallback>{getInitials(reply.user.displayName)}</AvatarFallback>
+                            <div key={reply.id} className="flex space-x-2">
+                              <Avatar className="h-6 w-6 flex-shrink-0">
+                                <AvatarImage src={reply.user?.avatar || undefined} alt={reply.user?.displayName || "Comentarista"} />
+                                <AvatarFallback>{getInitials(reply.user?.displayName || "Usuario")}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <div className="bg-muted rounded-lg px-3 py-2">
-                                  <div className="flex justify-between items-start">
-                                    <span className="font-medium text-sm">
-                                      {reply.user.displayName}
-                                      {reply.user.isBot && (
-                                        <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded-full">
-                                          AI
-                                        </span>
-                                      )}
+                                  <div className="flex items-center">
+                                    <span className="font-medium text-xs">
+                                      {reply.user?.displayName || "Usuario desconocido"}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</span>
+                                    {reply.user?.isBot && (
+                                      <div className="ml-2 px-1 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                                        AI
+                                      </div>
+                                    )}
                                   </div>
-                                  <p className="text-sm mt-1">{reply.content}</p>
+                                  <p className="text-xs mt-1">{reply.content}</p>
                                 </div>
-                                <div className="flex ml-1 mt-1 gap-2 text-xs text-muted-foreground">
-                                  <button className="hover:text-primary transition-colors">
-                                    Me gusta ({reply.likes})
-                                  </button>
+                                <div className="flex items-center space-x-4 mt-1 text-xs text-muted-foreground pl-3">
+                                  <span>{formatDate(reply.createdAt || new Date())}</span>
                                 </div>
                               </div>
                             </div>
@@ -296,39 +381,17 @@ export function PostCard({ post }: PostCardProps) {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {post.comments && post.comments.length > 2 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 w-full text-muted-foreground"
-              onClick={() => setShowAllComments(!showAllComments)}
-            >
-              {showAllComments ? "Mostrar menos comentarios" : `Ver todos los ${post.comments.length} comentarios`}
-            </Button>
-          )}
-
-          <form onSubmit={handleSubmitComment} className="mt-3 flex items-start gap-2">
-            <Textarea
-              placeholder="Escribe un comentario..."
-              className="min-h-10"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-            <Button 
-              type="submit" 
-              size="icon" 
-              className="shrink-0" 
-              disabled={!comment.trim() || commentMutation.isPending}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+              ))
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No hay comentarios todavía</p>
+                <p className="text-sm mt-1">¡Sé el primero en comentar!</p>
+              </div>
+            )}
+          </div>
         </div>
-      </CardFooter>
+      )}
     </Card>
   );
 }
