@@ -8,7 +8,7 @@ import { AffiliateLinks } from "@/components/affiliates/links";
 import { AffiliateEarnings } from "@/components/affiliates/earnings";
 import { AffiliateContentGenerator } from "@/components/affiliates/content-generator";
 import { AffiliateResources } from "@/components/affiliates/resources";
-import { AffiliateSupport } from "@/components/affiliate-support";
+import { AffiliateSupport } from "@/components/affiliates/affiliate-support";
 import { useAuth } from "@/hooks/use-auth";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";

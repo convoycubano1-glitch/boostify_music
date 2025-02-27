@@ -362,18 +362,18 @@ export function AffiliateResources() {
                 </CardContent>
                 <CardFooter className="p-4 pt-0 flex justify-between">
                   <span className="text-xs text-muted-foreground">
-                    Actualizado: {resource.lastUpdated}
+                    Updated: {resource.lastUpdated}
                   </span>
                   <div className="flex gap-2">
                     {resource.type === 'video' || resource.type === 'webinar' ? (
                       <Button size="sm" variant="outline">
                         <Play className="h-4 w-4 mr-1" />
-                        Ver
+                        Watch
                       </Button>
                     ) : (
                       <Button size="sm" variant="outline">
                         <Download className="h-4 w-4 mr-1" />
-                        Descargar
+                        Download
                       </Button>
                     )}
                   </div>
@@ -412,18 +412,18 @@ export function AffiliateResources() {
                       </div>
                       <div className="mt-auto flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">
-                          Actualizado: {resource.lastUpdated}
+                          Updated: {resource.lastUpdated}
                         </span>
                         <div className="flex gap-2">
                           {resource.type === 'video' ? (
                             <Button size="sm" variant="outline">
                               <Play className="h-4 w-4 mr-1" />
-                              Ver
+                              Watch
                             </Button>
                           ) : (
                             <Button size="sm" variant="outline">
                               <Download className="h-4 w-4 mr-1" />
-                              Descargar
+                              Download
                             </Button>
                           )}
                         </div>
@@ -467,7 +467,7 @@ export function AffiliateResources() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center">
                         <BookOpen className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <span className="text-sm">{resource.lessons} lecciones</span>
+                        <span className="text-sm">{resource.lessons} lessons</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -475,7 +475,7 @@ export function AffiliateResources() {
                       </div>
                     </div>
                     <Button>
-                      Iniciar curso
+                      Start course
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
@@ -486,9 +486,9 @@ export function AffiliateResources() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Próximos webinars y eventos</CardTitle>
+              <CardTitle>Upcoming webinars and events</CardTitle>
               <CardDescription>
-                No te pierdas estas oportunidades de aprendizaje en vivo
+                Don't miss these live learning opportunities
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -539,9 +539,9 @@ export function AffiliateResources() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Preguntas frecuentes</CardTitle>
+          <CardTitle>Frequently Asked Questions</CardTitle>
           <CardDescription>
-            Respuestas a las dudas más comunes de nuestros afiliados
+            Answers to the most common questions from our affiliates
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -560,11 +560,11 @@ export function AffiliateResources() {
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-2">
           <p className="text-sm text-muted-foreground">
-            ¿No encuentras la respuesta que buscas?
+            Can't find the answer you're looking for?
           </p>
           <Button variant="outline">
             <ExternalLink className="h-4 w-4 mr-1" />
-            Contactar soporte de afiliados
+            Contact affiliate support
           </Button>
         </CardFooter>
       </Card>

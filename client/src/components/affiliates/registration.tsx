@@ -17,27 +17,27 @@ import * as z from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Esquema de validación para el formulario
+// Validation schema for the form
 const affiliateFormSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
-  bio: z.string().min(10, { message: "La biografía debe tener al menos 10 caracteres" }).max(500, { message: "La biografía no puede exceder los 500 caracteres" }),
-  website: z.string().url({ message: "Ingresa una URL válida" }).optional().or(z.literal("")),
+  name: z.string().min(2, { message: "Name must have at least 2 characters" }),
+  bio: z.string().min(10, { message: "Bio must have at least 10 characters" }).max(500, { message: "Bio cannot exceed 500 characters" }),
+  website: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal("")),
   socialMedia: z.object({
     instagram: z.string().optional().or(z.literal("")),
     twitter: z.string().optional().or(z.literal("")),
     youtube: z.string().optional().or(z.literal("")),
     tiktok: z.string().optional().or(z.literal(""))
   }),
-  categories: z.array(z.string()).min(1, { message: "Selecciona al menos una categoría" }),
+  categories: z.array(z.string()).min(1, { message: "Please select at least one category" }),
   paymentMethod: z.enum(["paypal", "bank_transfer", "crypto"], { 
-    required_error: "Selecciona un método de pago" 
+    required_error: "Please select a payment method" 
   }),
-  paymentEmail: z.string().email({ message: "Ingresa un correo electrónico válido" }),
+  paymentEmail: z.string().email({ message: "Please enter a valid email address" }),
   termsAccepted: z.boolean().refine(val => val === true, {
-    message: "Debes aceptar los términos y condiciones"
+    message: "You must accept the terms and conditions"
   }),
   dataProcessingAccepted: z.boolean().refine(val => val === true, {
-    message: "Debes aceptar el procesamiento de datos"
+    message: "You must accept the data processing agreement"
   }),
 });
 
@@ -125,36 +125,36 @@ export function AffiliateRegistration() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Solicitud de Afiliado</CardTitle>
+        <CardTitle>Affiliate Application</CardTitle>
         <CardDescription>
-          Completa este formulario para unirte al programa de afiliados de Boostify. 
-          Revisaremos tu solicitud y te notificaremos cuando sea aprobada.
+          Complete this form to join the Boostify affiliate program.
+          We'll review your application and notify you when it's approved.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {success ? (
           <Alert className="bg-primary/20 border-primary">
             <CheckCircle2 className="h-4 w-4 text-primary" />
-            <AlertTitle>¡Solicitud enviada!</AlertTitle>
+            <AlertTitle>Application Submitted!</AlertTitle>
             <AlertDescription>
-              Tu solicitud ha sido recibida y será revisada por nuestro equipo. 
-              Te notificaremos por correo electrónico cuando sea aprobada.
+              Your application has been received and will be reviewed by our team.
+              We'll notify you by email when it's approved.
             </AlertDescription>
           </Alert>
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Información Personal</h3>
+                <h3 className="text-lg font-medium">Personal Information</h3>
                 
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre completo</FormLabel>
+                      <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Tu nombre y apellido" {...field} />
+                        <Input placeholder="Your first and last name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -166,16 +166,16 @@ export function AffiliateRegistration() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Biografía</FormLabel>
+                      <FormLabel>Biography</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Cuéntanos sobre ti, tu experiencia y por qué quieres ser afiliado de Boostify" 
+                          placeholder="Tell us about yourself, your experience, and why you want to be a Boostify affiliate" 
                           className="min-h-[120px]" 
                           {...field} 
                         />
                       </FormControl>
                       <FormDescription>
-                        Esta información nos ayudará a entender tu perfil como afiliado
+                        This information will help us understand your profile as an affiliate
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -184,16 +184,16 @@ export function AffiliateRegistration() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Presencia en línea</h3>
+                <h3 className="text-lg font-medium">Online Presence</h3>
                 
                 <FormField
                   control={form.control}
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sitio web o blog (opcional)</FormLabel>
+                      <FormLabel>Website or blog (optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://tusitio.com" {...field} />
+                        <Input placeholder="https://yourwebsite.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
