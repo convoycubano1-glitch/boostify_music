@@ -626,8 +626,8 @@ export default function MasterclassSection() {
                                 exit={{ y: 20, opacity: 0 }}
                                 className="text-center"
                               >
-                                <p className="text-white font-medium mb-2">Vista previa</p>
-                                <p className="text-gray-300 text-sm">Ver video de introducción</p>
+                                <p className="text-white font-medium mb-2">Preview</p>
+                                <p className="text-gray-300 text-sm">Watch introduction video</p>
                               </motion.div>
                             </motion.div>
                           )}
@@ -651,7 +651,7 @@ export default function MasterclassSection() {
 
                         <div className="flex items-center gap-2 mb-4">
                           <User className="h-4 w-4 text-orange-500" />
-                          <span className="text-sm text-gray-300">Por {masterclass.creatorName}</span>
+                          <span className="text-sm text-gray-300">By {masterclass.creatorName}</span>
                         </div>
 
                         <div className="flex justify-between items-center mb-4 mt-auto">
@@ -662,7 +662,7 @@ export default function MasterclassSection() {
                                 ? masterclass.rating.toFixed(1)
                                 : parseFloat(String(masterclass.rating)).toFixed(1)}
                             </span>
-                            <span className="text-gray-400">({masterclass.totalReviews} reseñas)</span>
+                            <span className="text-gray-400">({masterclass.totalReviews} reviews)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-orange-500" />
@@ -674,7 +674,7 @@ export default function MasterclassSection() {
                           className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 group"
                           onClick={() => handleEnrollMasterclass(masterclass)}
                         >
-                          <span>Inscribirme Ahora</span>
+                          <span>Enroll Now</span>
                           <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                         </Button>
                       </div>
@@ -722,7 +722,7 @@ export default function MasterclassSection() {
                             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                             onClick={() => handleEnrollMasterclass(masterclass)}
                           >
-                            Inscribirme
+                            Enroll
                           </Button>
                         </div>
                       </Card>
@@ -736,9 +736,9 @@ export default function MasterclassSection() {
           {/* Sección de testimonios */}
           <div className="mt-24 mb-16">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white mb-4">Lo que dicen nuestros estudiantes</h2>
+              <h2 className="text-3xl font-bold text-white mb-4">What Our Students Say</h2>
               <p className="text-gray-400 max-w-2xl mx-auto">
-                Conoce las experiencias de quienes ya han tomado nuestras masterclasses y cómo les ha ayudado en su carrera musical.
+                Discover the experiences of those who have taken our masterclasses and how they've helped in their music careers.
               </p>
             </div>
             
@@ -753,7 +753,7 @@ export default function MasterclassSection() {
                   </div>
                   <div>
                     <h4 className="text-white font-semibold">Miguel Rodríguez</h4>
-                    <p className="text-orange-400 text-sm">Productor de EDM</p>
+                    <p className="text-orange-400 text-sm">EDM Producer</p>
                   </div>
                 </div>
                 <p className="text-gray-300 italic mb-4">
@@ -778,7 +778,7 @@ export default function MasterclassSection() {
                   </div>
                   <div>
                     <h4 className="text-white font-semibold">Laura Medina</h4>
-                    <p className="text-orange-400 text-sm">Cantante y Productora</p>
+                    <p className="text-orange-400 text-sm">Singer & Producer</p>
                   </div>
                 </div>
                 <p className="text-gray-300 italic mb-4">
@@ -803,7 +803,7 @@ export default function MasterclassSection() {
                   </div>
                   <div>
                     <h4 className="text-white font-semibold">Javier Torres</h4>
-                    <p className="text-orange-400 text-sm">Ingeniero de Mastering</p>
+                    <p className="text-orange-400 text-sm">Mastering Engineer</p>
                   </div>
                 </div>
                 <p className="text-gray-300 italic mb-4">
