@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
 import { 
   Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search, 
-  Share2, Facebook, Twitter, Copy, Instagram, Linkedin 
+  Share2, Facebook, Twitter, Copy, Instagram, Linkedin, Loader2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -16,57 +17,26 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
 
 interface VideoContent {
   id: string;
   title: string;
   description: string;
   filePath: string;
-  thumbnailPath?: string;
+  thumbnailPath?: string | null;
   duration: string;
   views: number;
   category: "featured" | "live" | "videos" | "music";
 }
 
-// Videos from the client/public/assets/tv directory
-const videoContent: VideoContent[] = [
-  {
-    id: "1",
-    title: "Welcome to Boostify Music",
-    description: "An introduction to our innovative music platform and its features",
-    filePath: "/assets/tv/Welcome to Boostify Music.mp4",
-    duration: "2:15",
-    views: 45000,
-    category: "featured"
-  },
-  {
-    id: "2",
-    title: "Boostify YouTube Growth Suite",
-    description: "Learn how to grow your audience and reach on YouTube with our tools",
-    filePath: "/assets/tv/Boostify YouTube Growth Suite.mp4",
-    duration: "3:30",
-    views: 28000,
-    category: "featured"
-  },
-  {
-    id: "3",
-    title: "Boostify Instagram Growth Suite",
-    description: "Strategies and tools to enhance your Instagram presence and engagement",
-    filePath: "/assets/tv/Boostify instagram Growth Suite.mp4",
-    duration: "3:10",
-    views: 15000,
-    category: "videos"
-  },
-  {
-    id: "4",
-    title: "Legal Contract Management",
-    description: "How to manage your music contracts with our legal tools",
-    filePath: "/assets/tv/Legal Contract Management.mp4",
-    duration: "2:45",
-    views: 9800,
-    category: "videos"
-  }
-];
+// API response interface
+interface VideoResponse {
+  success: boolean;
+  videos: VideoContent[];
+  message?: string;
+  error?: string;
+}
 
 export default function BoostifyTvPage() {
   const [selectedTab, setSelectedTab] = useState("featured");

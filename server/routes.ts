@@ -5,6 +5,7 @@ import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { setupOpenAIRoutes } from "./routes/openai";
 import { setupEducationRoutes } from "./routes/education";
+import { setupFilesRoutes } from "./routes/files";
 import { db } from "@db";
 import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments } from "@db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
@@ -57,6 +58,7 @@ export function registerRoutes(app: Express): Server {
   // Configurar las rutas que NO requieren autenticación primero
   setupOpenAIRoutes(app);
   setupEducationRoutes(app);
+  setupFilesRoutes(app);
   
   // Servicios que requieren autenticación
   setupAuth(app);
