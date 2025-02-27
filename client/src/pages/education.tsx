@@ -973,10 +973,10 @@ export default function EducationPage() {
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando cursos...
+                  Generating courses...
                 </>
               ) : (
-                <>Generar cursos de muestra</>
+                <>Generate Sample Courses</>
               )}
             </Button>
             
@@ -986,33 +986,33 @@ export default function EducationPage() {
                 setRegenerationProgress(0);
                 
                 try {
-                  // Regenerar las imágenes para todos los cursos, independientemente de su origen
-                  // Esto asegura que todas las portadas se generen con fal-ai
+                  // Regenerate images for all courses, regardless of their origin
+                  // This ensures all thumbnails are generated with fal-ai
                   const coursesToUpdate = [...courses];
                   
                   if (coursesToUpdate.length === 0) {
                     toast({
-                      title: "Información",
-                      description: "Todos los cursos ya tienen imágenes generadas con fal-ai"
+                      title: "Information",
+                      description: "All courses already have AI-generated images"
                     });
                     setIsRegeneratingImages(false);
                     return;
                   }
                   
                   toast({
-                    title: "Regenerando imágenes",
-                    description: `Generando ${coursesToUpdate.length} nuevas imágenes de cursos con fal-ai...`
+                    title: "Regenerating Images",
+                    description: `Generating ${coursesToUpdate.length} new course images with AI...`
                   });
                   
-                  // Regenerar imágenes para cada curso
+                  // Regenerate images for each course
                   for (let i = 0; i < coursesToUpdate.length; i++) {
                     const course = coursesToUpdate[i];
-                    console.log(`Regenerando imagen para curso: ${course.title}`);
+                    console.log(`Regenerating image for course: ${course.title}`);
                     
                     const imagePrompt = `professional photorealistic education ${course.title} ${course.category} music industry course cover, modern design, minimalist, high quality`;
                     
                     try {
-                      // Generar nueva imagen con fal-ai
+                      // Generate new image with fal-ai
                       const result = await generateImageWithFal({
                         prompt: imagePrompt,
                         negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
@@ -1020,53 +1020,53 @@ export default function EducationPage() {
                       });
                       
                       if (result.data?.images?.[0]) {
-                        // Asegurarnos de tener la URL de la imagen (el formato puede variar)
+                        // Ensure we have the image URL (format may vary)
                         let newThumbnail = result.data.images[0];
                         if (typeof newThumbnail === 'object' && newThumbnail.url) {
                           newThumbnail = newThumbnail.url;
                         }
                         
-                        console.log(`Imagen generada para ${course.title}:`, newThumbnail.substring(0, 50) + "...");
+                        console.log(`Image generated for ${course.title}:`, newThumbnail.substring(0, 50) + "...");
                         
-                        // Actualizar en Firestore
+                        // Update in Firestore
                         const courseRef = doc(db, 'courses', course.id);
                         await updateDoc(courseRef, { thumbnail: newThumbnail });
                         
-                        // Actualizar localmente
+                        // Update locally
                         setCourses(prev => prev.map(c => 
                           c.id === course.id ? { ...c, thumbnail: newThumbnail } : c
                         ));
                         
-                        console.log(`Imagen regenerada con éxito para: ${course.title}`);
+                        console.log(`Image successfully regenerated for: ${course.title}`);
                       } else {
                         throw new Error("No image data in fal-ai response");
                       }
                     } catch (error) {
-                      console.error(`Error regenerando imagen para curso ${course.title}:`, error);
+                      console.error(`Error regenerating image for course ${course.title}:`, error);
                     }
                     
-                    // Actualizar progreso
+                    // Update progress
                     const newProgress = Math.round(((i + 1) / coursesToUpdate.length) * 100);
                     setRegenerationProgress(newProgress);
                     
-                    // Mostrar progreso cada 25%
+                    // Show progress at 25% intervals
                     if (newProgress % 25 === 0 || i === coursesToUpdate.length - 1) {
                       toast({
-                        title: "Progreso",
-                        description: `Regeneración de imágenes: ${newProgress}% completado`
+                        title: "Progress",
+                        description: `Image regeneration: ${newProgress}% complete`
                       });
                     }
                   }
                   
                   toast({
-                    title: "Éxito",
-                    description: `Se han regenerado ${coursesToUpdate.length} imágenes de cursos con fal-ai`
+                    title: "Success",
+                    description: `Successfully regenerated ${coursesToUpdate.length} course images with AI`
                   });
                 } catch (error: any) {
-                  console.error('Error regenerando imágenes:', error);
+                  console.error('Error regenerating images:', error);
                   toast({
                     title: "Error",
-                    description: error.message || "Error regenerando imágenes. Intente de nuevo.",
+                    description: error.message || "Error regenerating images. Please try again.",
                     variant: "destructive"
                   });
                 } finally {
@@ -1080,10 +1080,10 @@ export default function EducationPage() {
               {isRegeneratingImages ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Regenerando imágenes... {regenerationProgress}%
+                  Regenerating images... {regenerationProgress}%
                 </>
               ) : (
-                <>Regenerar imágenes con AI</>
+                <>Regenerate Images with AI</>
               )}
             </Button>
             
@@ -1170,14 +1170,14 @@ export default function EducationPage() {
           </div>
         </div>
 
-        {/* Sección moderna con vídeo de fondo - Optimizada para móvil */}
+        {/* Modern section with background video - Mobile optimized */}
         {showCategoryCarousel && (
           <div className="w-full mb-10 md:mb-16 relative px-4 md:px-0">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 md:mb-8 relative z-20 text-center md:text-left">
               Explore Music <span className="text-orange-500">Education Levels</span>
             </h2>
             
-            {/* Video de fondo con overlay - Visible solo en tablets y desktop */}
+            {/* Background video with overlay - Visible only on tablets and desktop */}
             <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden rounded-2xl hidden md:block">
               <div className="absolute inset-0 bg-black/60 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
               <video 
@@ -1192,12 +1192,12 @@ export default function EducationPage() {
               </video>
             </div>
             
-            {/* Fondo estático para móviles */}
+            {/* Static background for mobile */}
             <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden rounded-2xl block md:hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-orange-950/20 z-10" />
             </div>
             
-            {/* Tarjetas modernas con efecto de hover - Responsive */}
+            {/* Modern cards with hover effect - Responsive */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 relative z-20 p-2 md:p-4">
               {/* Beginner */}
               <div className="bg-gradient-to-br from-black/80 to-orange-950/40 backdrop-blur-sm rounded-xl overflow-hidden border border-orange-900/30 shadow-xl transform transition-all duration-300 hover:scale-102 md:hover:scale-105 hover:shadow-orange-500/20 group">
@@ -1232,7 +1232,7 @@ export default function EducationPage() {
           </div>
         )}
 
-        {/* Cursos - Optimizados para móvil */}
+        {/* Courses - Mobile optimized */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 px-2 md:px-0">
           {courses.map((course) => (
             <motion.div
@@ -1255,14 +1255,14 @@ export default function EducationPage() {
                     <span className="text-xs md:text-sm font-medium text-white">{course.level}</span>
                   </div>
 
-                  {/* Botón de reproducción visible en móvil sin necesidad de hover */}
+                  {/* Play button visible on mobile without hover */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex justify-center items-center p-4 md:hidden">
                     <div className="rounded-full bg-orange-500/80 p-2 cursor-pointer hover:bg-orange-600 transition-colors">
                       <Play className="h-6 w-6 text-white" />
                     </div>
                   </div>
 
-                  {/* Solo mostrar este overlay en desktop donde funciona el hover */}
+                  {/* Only show this overlay on desktop where hover works */}
                   <AnimatePresence>
                     {hoveredCourse === course.id && (
                       <motion.div
@@ -1333,7 +1333,7 @@ export default function EducationPage() {
                     </div>
                   </div>
 
-                  {/* Botones Responsive - Simples en móvil, completos en desktop */}
+                  {/* Responsive buttons - Simple on mobile, complete on desktop */}
                   <div className="grid grid-cols-2 gap-2 md:gap-4">
                     <Link href={`/course/${course.id}`} className="w-full">
                       <Button className="w-full bg-orange-500 hover:bg-orange-600 group text-xs md:text-sm px-2 md:px-4">
@@ -1350,17 +1350,17 @@ export default function EducationPage() {
                     </Button>
                   </div>
                   
-                  {/* Solo en desktop - Botón para ampliar el curso */}
-                  <div className="hidden md:flex mt-3 gap-2">
+                  {/* Desktop only - Button to extend the course */}
+                  <div className="flex mt-3 gap-2">
                     <Button 
-                      className="flex-1 bg-orange-700 hover:bg-orange-800 text-sm"
+                      className="flex-1 bg-orange-700 hover:bg-orange-800 text-xs md:text-sm"
                       onClick={() => {
                         setSelectedCourse(course);
                         setShowExtendDialog(true);
                       }}
                     >
-                      <span>Ampliar Curso</span>
-                      <PlusCircle className="h-4 w-4 ml-2" />
+                      <span className="whitespace-nowrap">Extend Course</span>
+                      <PlusCircle className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2" />
                     </Button>
                   </div>
                 </div>
