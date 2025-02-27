@@ -171,7 +171,7 @@ export default function AIAdvisorsPage() {
       </motion.div>
 
       <Dialog open={selectedAdvisor !== null} onOpenChange={(open) => !open && setSelectedAdvisor(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" aria-describedby="advisor-dialog-description">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               {calling ? (
@@ -183,7 +183,7 @@ export default function AIAdvisorsPage() {
                 <span>Connected with {selectedAdvisor?.name}</span>
               )}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="advisor-dialog-description">
               {calling ? (
                 <div className="flex flex-col items-center justify-center py-4">
                   <div className="relative w-24 h-24 mb-4">
@@ -196,7 +196,7 @@ export default function AIAdvisorsPage() {
                 </div>
               ) : (
                 <div className="py-4">
-                  <p>You're now connected with your {selectedAdvisor?.title.toLowerCase()}. This AI advisor is ready to help with any questions or guidance you need.</p>
+                  <p>You're now connected with your {selectedAdvisor?.title?.toLowerCase() || "advisor"}. This AI advisor is ready to help with any questions or guidance you need.</p>
                   <div className="flex items-center mt-4 p-3 bg-primary/10 rounded-lg">
                     <div className="mr-3 bg-primary rounded-full p-2">
                       {selectedAdvisor && <selectedAdvisor.icon className="h-4 w-4 text-white" />}
@@ -213,7 +213,7 @@ export default function AIAdvisorsPage() {
           {!calling && (
             <div className="flex flex-col space-y-3">
               <div className="bg-muted p-3 rounded-lg">
-                <p className="text-sm italic">This feature will connect to an AI agent trained specifically to provide expert advice in {selectedAdvisor?.title.toLowerCase()} services.</p>
+                <p className="text-sm italic">This feature will connect to an AI agent trained specifically to provide expert advice in {selectedAdvisor?.title?.toLowerCase() || "advisor"} services.</p>
               </div>
             </div>
           )}
