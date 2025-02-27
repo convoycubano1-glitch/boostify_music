@@ -23,10 +23,10 @@ export default function SocialNetworkPage() {
   const { data: users } = useQuery({
     queryKey: ["/api/social/users"],
     queryFn: async () => {
-      return apiRequest<SocialUser[]>({ 
+      return apiRequest({ 
         url: "/api/social/users", 
         method: "GET" 
-      });
+      }) as Promise<SocialUser[]>;
     }
   });
 
@@ -121,7 +121,7 @@ export default function SocialNetworkPage() {
               </CardHeader>
               <CardContent className="space-y-4 max-h-[500px] overflow-y-auto">
                 {users ? (
-                  users.map((socialUser) => (
+                  users.map((socialUser: SocialUser) => (
                     <div key={socialUser.id} className="flex items-center space-x-3">
                       <Avatar className="h-9 w-9">
                         <AvatarImage 

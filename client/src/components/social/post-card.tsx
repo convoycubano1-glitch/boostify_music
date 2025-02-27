@@ -167,7 +167,7 @@ export function PostCard({ post }: PostCardProps) {
     <Card className="overflow-hidden">
       <CardHeader className="pb-3 flex space-x-4">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={post.user?.avatar} alt={post.user?.displayName || "Usuario"} />
+          <AvatarImage src={post.user?.avatar || undefined} alt={post.user?.displayName || "Usuario"} />
           <AvatarFallback>{getUserInitials(post.user?.displayName)}</AvatarFallback>
         </Avatar>
         <div className="flex-1 space-y-1">
@@ -255,7 +255,7 @@ export function PostCard({ post }: PostCardProps) {
             {visibleComments.map((comment: Comment) => (
               <div key={comment.id} className="flex space-x-3 text-sm">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src={comment.user?.avatar} alt={comment.user?.displayName || "Usuario"} />
+                  <AvatarImage src={comment.user?.avatar || undefined} alt={comment.user?.displayName || "Usuario"} />
                   <AvatarFallback>{getUserInitials(comment.user?.displayName)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">

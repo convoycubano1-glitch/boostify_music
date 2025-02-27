@@ -1,4 +1,23 @@
-import { OpenRouterResponse } from "@/lib/social/types";
+// Define the OpenRouterResponse interface locally to avoid import issues
+interface OpenRouterResponse {
+  id: string;
+  choices: {
+    message: {
+      content: string;
+      role: string;
+    };
+    finish_reason: string;
+    index: number;
+  }[];
+  created: number;
+  model: string;
+  object: string;
+  usage: {
+    completion_tokens: number;
+    prompt_tokens: number;
+    total_tokens: number;
+  };
+}
 import fetch from "node-fetch";
 
 /**

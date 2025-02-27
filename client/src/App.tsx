@@ -47,6 +47,7 @@ import AchievementsPage from "@/pages/achievements-page";
 import CourseDetailPage from "@/pages/course-detail";
 import SmartCardsPage from "@/pages/smart-cards";
 import InvestorsDashboard from "@/pages/investors-dashboard";
+import SocialNetworkPage from "@/pages/social-network";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
@@ -169,6 +170,7 @@ const Router = () => {
   const WrappedSmartCardsPage = withPageWrapper(SmartCardsPage);
   const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
   const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
+  const WrappedSocialNetworkPage = withPageWrapper(SocialNetworkPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -220,6 +222,7 @@ const Router = () => {
         <ProtectedRoute path="/profile" component={WrappedProfilePage} />
         <ProtectedRoute path="/investors-dashboard" component={WrappedInvestorsDashboard} />
         <ProtectedRoute path="/affiliates" component={WrappedAffiliatesPage} />
+        <ProtectedRoute path="/social-network" component={WrappedSocialNetworkPage} />
 
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

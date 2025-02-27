@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { db } from "@/db";
-import { socialUsers, posts as socialPosts, comments } from "@/db/social-network-schema";
-import { users } from "@/db/schema";
+import { db } from "../db";
+import { socialUsers, posts as socialPosts, comments } from "../db/social-network-schema";
+import { users } from "../db/schema";
 import { and, eq, desc, asc } from "drizzle-orm";
-import { openRouterService } from "@/server/services/openrouter-service";
+import { openRouterService } from "../services/openrouter-service";
 
 const router = Router();
 
