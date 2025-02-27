@@ -109,8 +109,33 @@ export default function BoostifyTvPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 space-y-8 p-4 md:p-8 pt-20">
-        {/* Hero Section without Video Background */}
-        <div className="relative w-full h-[50vh] overflow-hidden rounded-xl mb-8 bg-gradient-to-r from-orange-900 to-gray-900">
+        {/* Hero Section with Featured Video */}
+        <div className="relative w-full h-[50vh] overflow-hidden rounded-xl mb-8">
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <Loader2 className="h-12 w-12 animate-spin text-orange-500" />
+            </div>
+          ) : isError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <p className="text-red-500">Error loading videos</p>
+            </div>
+          ) : processedVideos.length > 0 ? (
+            <video
+              id="feature-video"
+              className="absolute inset-0 w-full h-full object-cover"
+              src={processedVideos[0].filePath}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls={false}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <p className="text-white">No videos available</p>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
           <div className="relative h-full flex items-center justify-start px-4 md:px-12">
             <div className="max-w-2xl">
               <motion.div
@@ -132,8 +157,9 @@ export default function BoostifyTvPage() {
                     size="lg"
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                     onClick={() => {
-                      if (processedVideos.length > 0) {
-                        window.location.href = `#video-${processedVideos[0].id}`;
+                      const videoElement = document.getElementById('feature-video') as HTMLVideoElement;
+                      if (videoElement) {
+                        videoElement.play();
                       }
                     }}
                     disabled={isLoading || isError || processedVideos.length === 0}
