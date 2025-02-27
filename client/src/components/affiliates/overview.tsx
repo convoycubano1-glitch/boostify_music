@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarChart, LineChart, TrendingUp, Users, DollarSign, Link, Clock, ChevronRight, Download, Share2, Wallet, Award, ChevronUp, ChevronDown, ExternalLink, BarChart2, PieChart, Zap, FileDown, FileText, AreaChart, Rocket } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +29,7 @@ interface AffiliateOverviewProps {
 }
 
 export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
+  const { user } = useAuth() || {};
   // Sample data for stats and performance
   const stats = [
     {
@@ -460,7 +462,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
           <div className="flex justify-between items-center">
             <div>
               <h4 className="font-medium">{affiliateData?.name || "Affiliate"}</h4>
-              <p className="text-sm text-muted-foreground">{affiliateData?.email}</p>
+              <p className="text-sm text-muted-foreground">{user?.email || "No email available"}</p>
             </div>
             <Badge variant="outline" className="ml-auto flex items-center gap-1">
               <Award className="h-3.5 w-3.5 text-yellow-500" />

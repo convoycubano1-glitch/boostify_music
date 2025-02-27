@@ -43,7 +43,12 @@ import {
 } from "@/components/ui/tooltip";
 
 interface AffiliateContentGeneratorProps {
-  affiliateData: any;
+  affiliateData: {
+    id: string;
+    level?: string;
+    name?: string;
+    savedContent?: any[];
+  } | null;
 }
 
 // Esquema de validación para el formulario de generación de contenido

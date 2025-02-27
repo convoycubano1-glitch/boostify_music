@@ -4,6 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, LineChart, PieChart, ChevronDown, Download, Calendar, ArrowUpDown, Share2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Select,
   SelectContent,
@@ -531,7 +532,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Email de pago</h4>
-                    <p>{affiliateData?.paymentEmail || "usuario@ejemplo.com"}</p>
+                    <p>{user?.email || "usuario@ejemplo.com"}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Ciclo de pago</h4>
