@@ -450,35 +450,35 @@ export default function MasterclassSection() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <label htmlFor="level" className="text-sm font-medium">Nivel</label>
+                      <label htmlFor="level" className="text-sm font-medium">Level</label>
                       <select
                         id="level"
                         value={newMasterclass.level}
                         onChange={(e) => setNewMasterclass({ ...newMasterclass, level: e.target.value as "Beginner" | "Intermediate" | "Advanced" })}
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
                       >
-                        <option value="Beginner">Principiante</option>
-                        <option value="Intermediate">Intermedio</option>
-                        <option value="Advanced">Avanzado</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
                       </select>
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <label htmlFor="musicGenre" className="text-sm font-medium">Género Musical</label>
+                    <label htmlFor="musicGenre" className="text-sm font-medium">Music Genre</label>
                     <Input
                       id="musicGenre"
                       value={newMasterclass.musicGenre}
                       onChange={(e) => setNewMasterclass({ ...newMasterclass, musicGenre: e.target.value })}
-                      placeholder="ej., Electrónica, Hip Hop, Rock"
+                      placeholder="e.g., Electronic, Hip Hop, Rock"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <label htmlFor="specialization" className="text-sm font-medium">Especialización</label>
+                    <label htmlFor="specialization" className="text-sm font-medium">Specialization</label>
                     <Input
                       id="specialization"
                       value={newMasterclass.specialization}
                       onChange={(e) => setNewMasterclass({ ...newMasterclass, specialization: e.target.value })}
-                      placeholder="ej., Mixing, Sound Design, Arrangement"
+                      placeholder="e.g., Mixing, Sound Design, Arrangement"
                     />
                   </div>
                 </div>
@@ -487,10 +487,10 @@ export default function MasterclassSection() {
                     {isGenerating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generando Masterclass...
+                        Generating Masterclass...
                       </>
                     ) : (
-                      "Crear Masterclass"
+                      "Create Masterclass"
                     )}
                   </Button>
                 </DialogFooter>
