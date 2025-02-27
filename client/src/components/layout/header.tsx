@@ -122,10 +122,17 @@ export function Header() {
             <div className="flex items-center space-x-4">
               {/* Search - Removed */}
 
-              {/* International */}
+              {/* International with icon */}
               <Link href="/boostify-international">
                 <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] gap-2">
-                  <Globe className="h-4 w-4" />
+                  <div className="flex items-center">
+                    <Globe className="h-4 w-4" />
+                    <img 
+                      src="/assets/world-icon.svg" 
+                      alt="World Icon" 
+                      className="h-4 w-4 ml-1" 
+                    />
+                  </div>
                   <span className="hidden sm:inline">International</span>
                 </Button>
               </Link>
