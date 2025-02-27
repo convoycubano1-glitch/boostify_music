@@ -55,7 +55,7 @@ interface AffiliateLinksProps {
   affiliateData: any;
 }
 
-// Esquema de validación para la creación de un nuevo enlace
+// Validation schema for creating a new link
 const newLinkFormSchema = z.object({
   productId: z.string({ required_error: "Selecciona un producto" }),
   campaign: z.string().min(3, { message: "La campaña debe tener al menos 3 caracteres" }).max(50, { message: "La campaña no puede exceder los 50 caracteres" }).optional().or(z.literal("")),
@@ -285,9 +285,9 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Enlaces de Afiliado</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Affiliate Links</h2>
           <p className="text-muted-foreground">
-            Genera y gestiona tus enlaces de afiliado para promocionar productos
+            Generate and manage your affiliate links to promote products
           </p>
         </div>
         
