@@ -324,8 +324,8 @@ export function AffiliateResources() {
       <Tabs defaultValue="marketing" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="marketing">Marketing</TabsTrigger>
-          <TabsTrigger value="products">Productos</TabsTrigger>
-          <TabsTrigger value="education">Educación</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="education">Education</TabsTrigger>
         </TabsList>
         
         <TabsContent value="marketing" className="space-y-4 pt-4">
