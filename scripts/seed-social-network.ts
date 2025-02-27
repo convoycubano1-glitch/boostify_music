@@ -158,14 +158,7 @@ async function seedSocialNetwork() {
         ? faker.person.fullName() 
         : fakerEN_US.person.fullName();
       
-      // Generate a username from the full name
-      const username = fullName.toLowerCase()
-        .replace(/\s+/g, '.')
-        .replace(/[^a-z0-9.]/g, '')
-        + Math.floor(Math.random() * 100);
-      
       const user = {
-        username: username,
         displayName: fullName,
         avatar: avatars[i % avatars.length],
         bio: isSpanish 

@@ -4,7 +4,6 @@ import { relations } from "drizzle-orm";
 // Tabla de usuarios de la red social - EXACT column names from database
 export const socialUsers = pgTable("social_users", {
   id: integer("id").primaryKey().notNull(),
-  username: text("username").notNull().unique(),
   displayName: text("displayName").notNull(),
   avatar: text("avatar"),
   bio: text("bio"),
