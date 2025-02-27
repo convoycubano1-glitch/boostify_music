@@ -462,18 +462,20 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
             <Wand2 className="h-3.5 w-3.5" />
             {affiliateData?.level || "Basic"} Level
           </Badge>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
-                <AlertCircle className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p className="max-w-xs">
-                Los afiliados de nivel Premium tienen acceso a tipos de contenido adicionales y personalización avanzada.
-              </p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                  <AlertCircle className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="max-w-xs">
+                  Los afiliados de nivel Premium tienen acceso a tipos de contenido adicionales y personalización avanzada.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
