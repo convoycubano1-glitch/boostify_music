@@ -39,6 +39,11 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         const decodedToken: DecodedIdToken = await auth.verifyIdToken(token);
         
         // Create a custom user object with necessary properties
+        if (!decodedToken.uid) {
+          console.error('Token decodificado sin UID válido:', decodedToken);
+          return res.status(401).json({ error: 'Invalid authentication token - missing UID' });
+        }
+        
         const user: AuthUser = {
           uid: decodedToken.uid,
           email: decodedToken.email || null,
@@ -46,10 +51,13 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           isAdmin: decodedToken.admin === true
         };
         
+        // Log para asegurarnos que el UID está presente
+        console.log('ID de usuario extraído del token:', decodedToken.uid);
+        
         // Attach the user to the request
         req.user = user;
         
-        console.log('User authenticated via Firebase token:', req.user);
+        console.log('User authenticated via Firebase token:', JSON.stringify(req.user));
         return next();
       } catch (error) {
         console.error('Error verifying Firebase token:', error);

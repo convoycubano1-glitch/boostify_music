@@ -47,6 +47,7 @@ export function setupVideosRoutes(app: Express) {
         });
       }
       
+      // Verificación mejorada para asegurar que tenemos un objeto de usuario válido
       if (!req.user) {
         console.error("Intento de guardar video sin autenticación");
         return res.status(401).json({
@@ -55,12 +56,24 @@ export function setupVideosRoutes(app: Express) {
         });
       }
       
+      // Verificación adicional específica para el UID
+      if (!req.user.uid) {
+        console.error("Usuario autenticado pero sin UID válido:", req.user);
+        return res.status(401).json({
+          success: false,
+          message: "Error de autenticación: UID de usuario no válido",
+        });
+      }
+      
       const videoData = result.data;
+      
+      // Agregamos un log adicional para verificar el valor exacto del UID antes de crear el objeto
+      console.log("Usando UID del usuario para el video:", req.user.uid);
       
       // Agregar campos adicionales
       const videoEntry = {
         ...videoData,
-        userId: req.user.uid,
+        userId: req.user.uid, // Aseguramos que sea un string válido
         createdAt: new Date(),
         views: 0,
       };
