@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { 
   ExternalLink, 
   Search, 
@@ -17,11 +19,21 @@ import {
   Wifi, 
   Globe, 
   TrendingUp,
-  MoveRight
+  MoveRight,
+  MapPin,
+  Mail,
+  Phone,
+  Building,
+  Link,
+  AlertCircle
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
+// Initial data as fallback
 const radioNetworks = [
   {
     category: "National Networks",
@@ -115,16 +127,33 @@ const radioNetworks = [
   }
 ];
 
+interface RadioContact {
+  name: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  title?: string;
+  company?: string;
+  address?: string;
+  extractedAt: Date;
+}
+
 interface RadioNetworksDialogProps {
   children: React.ReactNode;
 }
 
 export function RadioNetworksDialog({ children }: RadioNetworksDialogProps) {
+  const { toast } = useToast();
+  const auth = useAuth();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [apifyResults, setApifyResults] = useState<RadioContact[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [locality, setLocality] = useState("Los Angeles");
+  const [extractingContacts, setExtractingContacts] = useState(false);
+  const [loadedDynamicContacts, setLoadedDynamicContacts] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Simulated search animation
@@ -165,6 +194,55 @@ export function RadioNetworksDialog({ children }: RadioNetworksDialogProps) {
 
   const handleSearch = () => {
     setIsSearching(true);
+  };
+
+  // Extract contacts using Apify
+  const handleExtractContacts = async () => {
+    if (!auth?.user) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para usar esta función",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setExtractingContacts(true);
+    try {
+      const response = await apiRequest({
+        url: '/api/contacts/extract',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: {
+          searchTerm: "Radio Publishing",
+          locality: locality,
+          maxPages: 1,
+          category: "radio"
+        }
+      });
+
+      if (response.data.success) {
+        setApifyResults(response.data.contacts);
+        setLoadedDynamicContacts(true);
+        toast({
+          title: "Contactos extraídos",
+          description: `Se han encontrado ${response.data.contacts.length} contactos de radio en ${locality}`,
+        });
+      } else {
+        throw new Error(response.data.message || "Error extracting contacts");
+      }
+    } catch (error) {
+      console.error("Error extracting contacts:", error);
+      toast({
+        title: "Error",
+        description: "No pudimos extraer los contactos. Inténtalo más tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setExtractingContacts(false);
+    }
   };
 
   // Reset search when dialog closes
