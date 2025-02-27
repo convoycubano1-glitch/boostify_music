@@ -14,7 +14,24 @@ import { db, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, GraduationCap, LineChart, Rocket, Stars, Sparkles, Award, Users, DollarSign, Link, FileText, LifeBuoy, Settings2 } from "lucide-react";
+import { 
+  CircleCheck, 
+  GraduationCap, 
+  LineChart, 
+  Rocket, 
+  Stars, 
+  Sparkles, 
+  Award, 
+  Users, 
+  DollarSign, 
+  Link, 
+  FileText, 
+  LifeBuoy, 
+  Settings2,
+  Zap,
+  Crown,
+  Headphones as HeadphonesIcon
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Define AffiliateData type
