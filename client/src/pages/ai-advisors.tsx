@@ -10,7 +10,9 @@ import {
   BriefcaseBusiness, 
   LucideIcon,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Scale,
+  Users2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -91,6 +93,26 @@ export default function AIAdvisorsPage() {
       animationDelay: 0.4
     },
     {
+      id: "legal",
+      name: "Daniel Morgan",
+      title: "Legal Advisor",
+      description: "Provides expert guidance on contracts, copyright, licensing, and intellectual property issues. Contact for legal consultation on music industry matters.",
+      icon: Scale,
+      phoneNumber: "+1-555-LEGAL",
+      color: "from-cyan-500 to-blue-600",
+      animationDelay: 0.5
+    },
+    {
+      id: "community",
+      name: "Sophia Patel",
+      title: "Community Manager",
+      description: "Specializes in fan engagement, social media strategies, and building your artist community. Get advice on growing and nurturing your fanbase.",
+      icon: Users2,
+      phoneNumber: "+1-555-SOCIAL",
+      color: "from-pink-500 to-purple-600",
+      animationDelay: 0.6
+    },
+    {
       id: "support",
       name: "Jamie West",
       title: "Support Specialist",
@@ -98,7 +120,7 @@ export default function AIAdvisorsPage() {
       icon: HelpCircle,
       phoneNumber: "+1-555-HELP",
       color: "from-gray-500 to-slate-600",
-      animationDelay: 0.5
+      animationDelay: 0.7
     }
   ];
 

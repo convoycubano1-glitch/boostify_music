@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, Headphones } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +72,7 @@ export function Header() {
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
-    { name: "AI Advisors", href: "/ai-advisors", icon: Headphones, highlight: true },
+    { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall, highlight: true },
     { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
     { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
@@ -133,7 +133,7 @@ export function Header() {
               {/* AI Advisors with orange highlight */}
               <Link href="/ai-advisors">
                 <Button size="sm" variant="ghost" className="text-orange-500 hover:bg-orange-500/10 gap-2">
-                  <Headphones className="h-4 w-4 text-orange-500" />
+                  <PhoneCall className="h-4 w-4 text-orange-500" />
                   <span className="hidden sm:inline">AI Advisors</span>
                 </Button>
               </Link>
