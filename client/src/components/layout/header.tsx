@@ -122,14 +122,14 @@ export function Header() {
             <div className="flex items-center space-x-4">
               {/* Search - Removed */}
 
-              {/* International Icon */}
-              <Link href="/boostify-international">
-                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2">
+              {/* Globe Icon - No Navigation */}
+              <div className="flex items-center">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 cursor-default">
                   <Globe className="h-4 w-4" />
                 </Button>
-              </Link>
+              </div>
               
-              {/* World Icon (Separate) */}
+              {/* World Icon - With Navigation */}
               <Link href="/boostify-international">
                 <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2">
                   <img 
