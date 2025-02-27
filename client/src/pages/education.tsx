@@ -954,221 +954,129 @@ export default function EducationPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Encabezado y botones */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-          <div className="w-full md:max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Music Industry Education</h1>
-            <p className="text-gray-400">
-              Master the business of music with our expert-led courses. From production techniques to marketing strategies,
-              our comprehensive curriculum will help you succeed in the music industry.
-            </p>
+        {/* Encabezado mejorado con gradientes e imagen de fondo */}
+        <div className="relative rounded-2xl overflow-hidden mb-12">
+          {/* Imagen de fondo */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg" 
+              alt="Music studio background" 
+              className="w-full h-full object-cover opacity-30"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <Button 
-              onClick={createSampleCourses} 
-              className="bg-orange-700 hover:bg-orange-800 w-full sm:w-auto"
-              disabled={isGenerating || isRegeneratingImages}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating courses...
-                </>
-              ) : (
-                <><PlusCircle className="mr-2 h-4 w-4" />Generate Sample Courses</>
-              )}
-            </Button>
+          
+          {/* Contenido principal */}
+          <div className="relative z-10 py-10 px-6 md:py-16 md:px-10">
+            {/* Elementos decorativos */}
+            <div className="absolute -left-8 -top-8 w-32 h-32 bg-gradient-to-br from-orange-600/30 to-purple-600/30 rounded-full blur-3xl"></div>
+            <div className="absolute right-10 bottom-10 w-40 h-40 bg-gradient-to-tl from-blue-600/20 to-purple-600/20 rounded-full blur-3xl"></div>
             
-            <Button
-              onClick={async () => {
-                setIsRegeneratingImages(true);
-                setRegenerationProgress(0);
-                
-                try {
-                  // Regenerate images for all courses, regardless of their origin
-                  // This ensures all thumbnails are generated with fal-ai
-                  const coursesToUpdate = [...courses];
-                  
-                  if (coursesToUpdate.length === 0) {
-                    toast({
-                      title: "Information",
-                      description: "All courses already have AI-generated images"
-                    });
-                    setIsRegeneratingImages(false);
-                    return;
-                  }
-                  
-                  toast({
-                    title: "Regenerating Images",
-                    description: `Generating ${coursesToUpdate.length} new course images with AI...`
-                  });
-                  
-                  // Regenerate images for each course
-                  for (let i = 0; i < coursesToUpdate.length; i++) {
-                    const course = coursesToUpdate[i];
-                    console.log(`Regenerating image for course: ${course.title}`);
-                    
-                    const imagePrompt = `professional photorealistic education ${course.title} ${course.category} music industry course cover, modern design, minimalist, high quality`;
-                    
-                    try {
-                      // Generate new image with fal-ai
-                      const result = await generateImageWithFal({
-                        prompt: imagePrompt,
-                        negativePrompt: "low quality, blurry, distorted, unrealistic, watermark, text, words, deformed",
-                        imageSize: "square_1_1"
-                      });
-                      
-                      if (result.data?.images?.[0]) {
-                        // Ensure we have the image URL (format may vary)
-                        let newThumbnail = result.data.images[0];
-                        if (typeof newThumbnail === 'object' && newThumbnail.url) {
-                          newThumbnail = newThumbnail.url;
-                        }
-                        
-                        console.log(`Image generated for ${course.title}:`, newThumbnail.substring(0, 50) + "...");
-                        
-                        // Update in Firestore
-                        const courseRef = doc(db, 'courses', course.id);
-                        await updateDoc(courseRef, { thumbnail: newThumbnail });
-                        
-                        // Update locally
-                        setCourses(prev => prev.map(c => 
-                          c.id === course.id ? { ...c, thumbnail: newThumbnail } : c
-                        ));
-                        
-                        console.log(`Image successfully regenerated for: ${course.title}`);
-                      } else {
-                        throw new Error("No image data in fal-ai response");
-                      }
-                    } catch (error) {
-                      console.error(`Error regenerating image for course ${course.title}:`, error);
-                    }
-                    
-                    // Update progress
-                    const newProgress = Math.round(((i + 1) / coursesToUpdate.length) * 100);
-                    setRegenerationProgress(newProgress);
-                    
-                    // Show progress at 25% intervals
-                    if (newProgress % 25 === 0 || i === coursesToUpdate.length - 1) {
-                      toast({
-                        title: "Progress",
-                        description: `Image regeneration: ${newProgress}% complete`
-                      });
-                    }
-                  }
-                  
-                  toast({
-                    title: "Success",
-                    description: `Successfully regenerated ${coursesToUpdate.length} course images with AI`
-                  });
-                } catch (error: any) {
-                  console.error('Error regenerating images:', error);
-                  toast({
-                    title: "Error",
-                    description: error.message || "Error regenerating images. Please try again.",
-                    variant: "destructive"
-                  });
-                } finally {
-                  setIsRegeneratingImages(false);
-                  setRegenerationProgress(0);
-                }
-              }}
-              className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
-              disabled={isGenerating || isRegeneratingImages}
-            >
-              {isRegeneratingImages ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Regenerating images... {regenerationProgress}%
-                </>
-              ) : (
-                <><Play className="mr-2 h-4 w-4" />Regenerate Images with AI</>
-              )}
-            </Button>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Course
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Create New Course</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details below to create a new course. All fields are required.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="title" className="text-sm font-medium">Course Title</label>
-                    <Input
-                      id="title"
-                      value={newCourse.title}
-                      onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
-                      placeholder="Enter course title"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="description" className="text-sm font-medium">Description</label>
-                    <Textarea
-                      id="description"
-                      value={newCourse.description}
-                      onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                      placeholder="Enter course description"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="price" className="text-sm font-medium">Price (USD)</label>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={newCourse.price}
-                      onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) })}
-                      placeholder="Enter price"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="category" className="text-sm font-medium">Category</label>
-                    <Input
-                      id="category"
-                      value={newCourse.category}
-                      onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
-                      placeholder="Enter category"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="level" className="text-sm font-medium">Level</label>
-                    <select
-                      id="level"
-                      value={newCourse.level}
-                      onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value as "Beginner" | "Intermediate" | "Advanced" })}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                    >
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Advanced">Advanced</option>
-                    </select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleCreateCourse} disabled={isGenerating}>
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating Course...
-                      </>
-                    ) : (
-                      "Create Course"
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-300 to-orange-500">
+                Music Industry Education
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mb-6 leading-relaxed">
+                Master the business of music with our expert-led courses. From production techniques to marketing strategies,
+                our comprehensive curriculum will help you succeed in the music industry.
+              </p>
+              
+              {/* Único botón para generar muestras */}
+              <Button 
+                onClick={createSampleCourses} 
+                className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-6 py-6 rounded-xl text-lg shadow-lg hover:shadow-orange-500/20 transition-all duration-300 mt-4"
+                disabled={isGenerating || isRegeneratingImages}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                    Generating courses...
+                  </>
+                ) : (
+                  <><PlusCircle className="mr-3 h-5 w-5" />Explore Our Sample Courses</>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
+            
+        <Dialog>
+          <DialogTrigger asChild>
+            <span className="hidden">Hidden create course button</span>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New Course</DialogTitle>
+              <DialogDescription>
+                Fill in the details below to create a new course. All fields are required.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="title" className="text-sm font-medium">Course Title</label>
+                <Input
+                  id="title"
+                  value={newCourse.title}
+                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                  placeholder="Enter course title"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="description" className="text-sm font-medium">Description</label>
+                <Textarea
+                  id="description"
+                  value={newCourse.description}
+                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                  placeholder="Enter course description"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="price" className="text-sm font-medium">Price (USD)</label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={newCourse.price}
+                  onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) })}
+                  placeholder="Enter price"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="category" className="text-sm font-medium">Category</label>
+                <Input
+                  id="category"
+                  value={newCourse.category}
+                  onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
+                  placeholder="Enter category"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="level" className="text-sm font-medium">Level</label>
+                <select
+                  id="level"
+                  value={newCourse.level}
+                  onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value as "Beginner" | "Intermediate" | "Advanced" })}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+                >
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleCreateCourse} disabled={isGenerating}>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Course...
+                  </>
+                ) : (
+                  "Create Course"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Modern section with background video - Mobile optimized */}
         {showCategoryCarousel && (
