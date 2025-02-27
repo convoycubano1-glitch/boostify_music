@@ -4,6 +4,7 @@ import { ApifyClient } from 'apify-client';
 import { authenticate } from '../middleware/auth';
 import { db } from '@db';
 import { z } from 'zod';
+import { auth, db as firebaseDb } from '../firebase';
 
 // Define validation schema for request body
 const contactExtractionSchema = z.object({
@@ -14,11 +15,11 @@ const contactExtractionSchema = z.object({
 });
 
 // Define the schema for industry contacts
-const industryContactSchema = z.object({
+export const industryContactSchema = z.object({
   name: z.string(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  website: z.string().url().optional(),
+  website: z.string().url().optional().or(z.string()),
   title: z.string().optional(),
   company: z.string().optional(),
   address: z.string().optional(),
@@ -41,13 +42,16 @@ export function setupApifyRoutes(app: Express) {
   if (!APIFY_TOKEN) {
     console.error('APIFY_API_TOKEN is not configured in environment variables');
   } else {
-    console.log('APIFY_API_TOKEN is configured');
+    console.log('APIFY_API_TOKEN is configured and ready for use');
   }
   
-  // Initialize the ApifyClient
-  const apifyClient = new ApifyClient({
-    token: APIFY_TOKEN,
-  });
+  // Initialize the ApifyClient with token from environment variables
+  const getApifyClient = () => {
+    // Always get a fresh token from environment to ensure we have the latest
+    return new ApifyClient({
+      token: process.env.APIFY_API_TOKEN,
+    });
+  };
 
   /**
    * Extract contacts using Apify and save to database
@@ -61,18 +65,24 @@ export function setupApifyRoutes(app: Express) {
       
       // Ensure user is authenticated
       if (!req.user || !req.user.uid) {
+        console.error('User not authenticated in /api/contacts/extract');
         return res.status(401).json({ success: false, message: 'User not authenticated' });
       }
       
       const userId = req.user.uid;
+      console.log(`Processing contact extraction for user ${userId}`);
       
       // Check if Apify token is available
-      if (!APIFY_TOKEN) {
+      if (!process.env.APIFY_API_TOKEN) {
+        console.error('Apify API token not found in environment');
         return res.status(500).json({ 
           success: false, 
           message: 'Apify API token not configured. Please contact administrator.' 
         });
       }
+      
+      // Get the apify client
+      const apifyClient = getApifyClient();
       
       // Prepare Actor input
       const input = {
@@ -80,48 +90,51 @@ export function setupApifyRoutes(app: Express) {
         "locality": locality,
         "maxPages": maxPages,
         "proxyOptions": {
-          "useApifyProxy": true,
-          "apifyProxyGroups": ["BUYPROXIES94952"]
+          "useApifyProxy": true
         }
       };
 
-      try {
-        // Run the Actor and wait for it to finish
-        console.log(`Starting Apify actor run for search: ${searchTerm} in ${locality}`);
-        const run = await apifyClient.actor("tz3kMHJE4vTnNSEf1").call(input);
-        console.log(`Apify run completed, dataset ID: ${run.defaultDatasetId}`);
+      // Run the Actor and wait for it to finish
+      console.log(`Starting Apify actor run for search: ${searchTerm} in ${locality}`);
+      const run = await apifyClient.actor("apify/google-search-scraper").call(input);
+      console.log(`Apify run completed, dataset ID: ${run.defaultDatasetId}`);
 
-        // Fetch results from the run's dataset
-        const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
-        console.log(`Retrieved ${items.length} contacts from Apify`);
+      // Fetch results from the run's dataset
+      const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+      console.log(`Retrieved ${items.length} contacts from Apify`);
+      
+      // Process and save the results
+      const savedContacts = [];
+      
+      for (const item of items) {
+        try {
+          // Transform Apify data to our schema with proper string handling
+          const contact: IndustryContact = {
+            name: typeof item.name === 'string' ? item.name : 
+                  typeof item.title === 'string' ? item.title : 'Unknown',
+            email: typeof item.email === 'string' ? item.email : undefined,
+            phone: typeof item.phone === 'string' ? item.phone : undefined,
+            website: typeof item.website === 'string' ? item.website : 
+                     typeof item.url === 'string' ? item.url : undefined,
+            title: typeof item.jobTitle === 'string' ? item.jobTitle : 
+                   typeof item.title === 'string' ? item.title : undefined,
+            company: typeof item.company === 'string' ? item.company : 
+                     typeof item.domain === 'string' ? item.domain : undefined,
+            address: typeof item.address === 'string' ? item.address : locality,
+            category,
+            locality,
+            notes: `Extracted from search: ${searchTerm}`,
+            extractedAt: new Date(),
+            userId
+          };
         
-        // Process and save the results
-        const savedContacts = [];
-        
-        for (const item of items) {
-          try {
-            // Transform Apify data to our schema
-            const contact: IndustryContact = {
-              name: typeof item.name === 'string' ? item.name : 'Unknown',
-              email: typeof item.email === 'string' ? item.email : undefined,
-              phone: typeof item.phone === 'string' ? item.phone : undefined,
-              website: typeof item.website === 'string' ? item.website : undefined,
-              title: typeof item.jobTitle === 'string' ? item.jobTitle : 
-                    typeof item.title === 'string' ? item.title : undefined,
-              company: typeof item.company === 'string' ? item.company : undefined,
-              address: typeof item.address === 'string' ? item.address : undefined,
-              category,
-              locality,
-              notes: `Extracted from search: ${searchTerm}`,
-              extractedAt: new Date(),
-              userId
-            };
+          // Save to Firebase Firestore
+          await firebaseDb.collection('industry_contacts').add({
+            ...contact,
+            extractedAt: new Date(),  // Convert Date to Firestore Timestamp
+          });
           
-          // Save to database - using Firebase in this example
-          // In a real app, you should use your database ORM
-          // Replace this with your actual database save logic
-          
-          // For now, just add to the response array
+          // Add to response array
           savedContacts.push(contact);
         } catch (error) {
           console.error('Error processing contact:', error);
@@ -134,21 +147,13 @@ export function setupApifyRoutes(app: Express) {
         contacts: savedContacts 
       });
     } catch (error) {
-      console.error('Error running Apify actor:', error);
+      console.error('Error in contact extraction:', error);
       return res.status(500).json({ 
         success: false, 
-        message: 'Failed to extract contacts from Apify',
+        message: 'Failed to extract contacts',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  } catch (error) {
-    console.error('Error in contact extraction:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to extract contacts',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
   });
   
   /**
@@ -170,9 +175,27 @@ export function setupApifyRoutes(app: Express) {
         return res.status(400).json({ success: false, message: 'Invalid category' });
       }
       
-      // In a real app, you would fetch contacts from your database
-      // This is a placeholder - replace with your database query
-      const contacts: IndustryContact[] = []; // Replace with actual DB query
+      // Query Firebase for contacts
+      let query = firebaseDb.collection('industry_contacts').where('userId', '==', userId);
+      
+      // Add category filter if provided
+      if (category) {
+        query = query.where('category', '==', category);
+      }
+      
+      // Execute query
+      const snapshot = await query.get();
+      
+      // Format the results
+      const contacts: IndustryContact[] = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        contacts.push({
+          ...data,
+          extractedAt: data.extractedAt.toDate(),
+          id: doc.id
+        } as IndustryContact);
+      });
       
       return res.status(200).json({ 
         success: true, 

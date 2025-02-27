@@ -5,10 +5,11 @@ import { z } from 'zod';
 
 // Define the schema for industry contacts
 export const industryContactSchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  website: z.string().url().optional(),
+  website: z.string().url().optional().or(z.string()),
   title: z.string().optional(),
   company: z.string().optional(),
   address: z.string().optional(),
@@ -73,15 +74,19 @@ export async function extractIndustryContacts(
     
     for (const item of items) {
       try {
-        // Transform Apify data to our schema
+        // Transform Apify data to our schema with proper string handling
         const contact: IndustryContact = {
-          name: item.name || 'Unknown',
-          email: item.email || undefined,
-          phone: item.phone || undefined,
-          website: item.website || undefined,
-          title: item.title || undefined,
-          company: item.company || undefined,
-          address: item.address || undefined,
+          name: typeof item.name === 'string' ? item.name : 
+                typeof item.title === 'string' ? item.title : 'Unknown',
+          email: typeof item.email === 'string' ? item.email : undefined,
+          phone: typeof item.phone === 'string' ? item.phone : undefined,
+          website: typeof item.website === 'string' ? item.website : 
+                   typeof item.url === 'string' ? item.url : undefined,
+          title: typeof item.jobTitle === 'string' ? item.jobTitle : 
+                 typeof item.title === 'string' ? item.title : undefined,
+          company: typeof item.company === 'string' ? item.company : 
+                   typeof item.domain === 'string' ? item.domain : undefined,
+          address: typeof item.address === 'string' ? item.address : locality,
           category,
           locality,
           notes: `Extracted from search: ${searchTerm}`,
