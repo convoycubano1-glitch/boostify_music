@@ -131,11 +131,22 @@ export function Header() {
               
               {/* World Icon - With Navigation to Social Network */}
               <Link href="/social-network">
-                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2">
                   <img 
                     src="/assets/world-icon.svg" 
                     alt="World Icon" 
                     className="h-4 w-4" 
+                  />
+                </Button>
+              </Link>
+              
+              {/* Firestore Social Network Icon */}
+              <Link href="/firestore-social">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2">
+                  <img 
+                    src="/assets/world-icon.svg" 
+                    alt="Firestore Social" 
+                    className="h-4 w-4 filter hue-rotate-60" 
                   />
                 </Button>
               </Link>

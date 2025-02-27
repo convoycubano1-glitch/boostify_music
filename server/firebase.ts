@@ -56,6 +56,21 @@ service cloud.firestore {
       // Simplify rules for development
       allow read, write: if request.auth != null;
     }
+    // Nuevas colecciones para la red social
+    match /social_users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /social_posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+    match /social_comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
   }
 }
 `;

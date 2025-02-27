@@ -48,6 +48,7 @@ import CourseDetailPage from "@/pages/course-detail";
 import SmartCardsPage from "@/pages/smart-cards";
 import InvestorsDashboard from "@/pages/investors-dashboard";
 import SocialNetworkPage from "@/pages/social-network";
+import FirestoreSocialPage from "@/pages/firestore-social";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
@@ -171,6 +172,7 @@ const Router = () => {
   const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
   const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
   const WrappedSocialNetworkPage = withPageWrapper(SocialNetworkPage);
+  const WrappedFirestoreSocialPage = withPageWrapper(FirestoreSocialPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -223,6 +225,7 @@ const Router = () => {
         <ProtectedRoute path="/investors-dashboard" component={WrappedInvestorsDashboard} />
         <ProtectedRoute path="/affiliates" component={WrappedAffiliatesPage} />
         <ProtectedRoute path="/social-network" component={WrappedSocialNetworkPage} />
+        <ProtectedRoute path="/firestore-social" component={WrappedFirestoreSocialPage} />
 
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
