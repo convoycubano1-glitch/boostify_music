@@ -216,7 +216,10 @@ const CreativeContactSearch: React.FC = () => {
             whileTap={{ scale: 0.97 }}
           >
             {isSearching ? (
-              <MusicLoadingSpinner size="sm" />
+              <div className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full bg-violet-500 animate-pulse"></div>
+                <span>Buscando...</span>
+              </div>
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -228,16 +231,31 @@ const CreativeContactSearch: React.FC = () => {
           </motion.button>
         </motion.div>
         
-        {/* Animación de partículas cuando se está buscando */}
+        {/* Barra de progreso moderna */}
         <AnimatePresence>
           {isSearching && (
             <motion.div 
-              className="absolute -bottom-6 left-1/2 transform -translate-x-1/2" 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              className="w-full mt-4" 
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
             >
-              <div className="text-sm text-purple-600">Buscando contactos...</div>
+              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                <motion.div 
+                  className="h-full bg-gradient-to-r from-blue-400 via-violet-500 to-purple-600"
+                  initial={{ width: "0%" }}
+                  animate={{ 
+                    width: "100%", 
+                    transition: { 
+                      duration: 2.5, 
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut"
+                    } 
+                  }}
+                />
+              </div>
+              <div className="text-sm text-center text-violet-600 mt-2">Buscando contactos en la industria...</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -283,32 +301,57 @@ const CreativeContactSearch: React.FC = () => {
               {searchResults.map((contact) => (
                 <motion.div
                   key={contact.id}
-                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-                  whileHover={{ y: -2 }}
+                  className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:shadow-lg transition-all"
+                  whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ duration: 0.2 }}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-semibold text-slate-800">{contact.name}</h4>
-                      <p className="text-sm text-gray-500">{contact.email}</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          contact.type === 'radio' ? 'bg-blue-100 text-blue-700' : 
-                          contact.type === 'tv' ? 'bg-purple-100 text-purple-700' : 
-                          'bg-amber-100 text-amber-700'
+                      <div className="flex items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                          contact.type === 'radio' ? 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600' : 
+                          contact.type === 'tv' ? 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600' : 
+                          'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600'
+                        }`}>
+                          {contact.type === 'radio' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                          ) : contact.type === 'tv' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">{contact.name}</h4>
+                          <p className="text-sm text-gray-500">{contact.email}</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          contact.type === 'radio' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 
+                          contact.type === 'tv' ? 'bg-purple-50 text-purple-700 border border-purple-200' : 
+                          'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}>
                           {contact.type === 'radio' ? 'Radio' : 
                            contact.type === 'tv' ? 'Televisión' : 'Cine'}
                         </span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200">
                           {contact.region}
                         </span>
                       </div>
                     </div>
                     <motion.button
-                      className="text-violet-600 hover:text-violet-800 text-sm font-medium"
+                      className="px-3 py-1.5 bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-medium rounded-md shadow-sm"
                       onClick={() => handleContactSelect(contact)}
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(124, 58, 237, 0.2)" }}
                       whileTap={{ scale: 0.95 }}
+                      initial={{ boxShadow: "0 2px 4px rgba(124, 58, 237, 0.1)" }}
                     >
                       Contactar
                     </motion.button>
@@ -324,7 +367,7 @@ const CreativeContactSearch: React.FC = () => {
       <AnimatePresence>
         {showForm && selectedContact && (
           <motion.div
-            className="mt-8 bg-white p-6 rounded-lg shadow-md border border-gray-200"
+            className="mt-8 bg-white p-6 rounded-2xl shadow-xl border border-gray-100"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -351,7 +394,7 @@ const CreativeContactSearch: React.FC = () => {
                   <input
                     type="text"
                     name="name"
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all"
                     value={formData.name}
                     onChange={handleFormChange}
                     required
@@ -364,7 +407,7 @@ const CreativeContactSearch: React.FC = () => {
                   <input
                     type="email"
                     name="email"
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all"
                     value={formData.email}
                     onChange={handleFormChange}
                     required
@@ -379,7 +422,7 @@ const CreativeContactSearch: React.FC = () => {
                 <input
                   type="text"
                   name="subject"
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all"
                   value={formData.subject}
                   onChange={handleFormChange}
                   required
@@ -393,7 +436,7 @@ const CreativeContactSearch: React.FC = () => {
                 <textarea
                   name="message"
                   rows={5}
-                  className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all resize-none"
                   value={formData.message}
                   onChange={handleFormChange}
                   placeholder="Describe tu proyecto, estilo musical y por qué te gustaría colaborar..."
@@ -409,7 +452,7 @@ const CreativeContactSearch: React.FC = () => {
                   <input
                     type="url"
                     name="profileUrl"
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all"
                     value={formData.profileUrl}
                     onChange={handleFormChange}
                     placeholder="https://..."
@@ -449,8 +492,10 @@ const CreativeContactSearch: React.FC = () => {
                 >
                   {isSending ? (
                     <>
-                      <MusicLoadingSpinner size="sm" />
-                      <span className="ml-2">Enviando...</span>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 mr-2 rounded-full bg-white animate-pulse"></div>
+                        <span>Enviando...</span>
+                      </div>
                     </>
                   ) : (
                     'Enviar Perfil'
