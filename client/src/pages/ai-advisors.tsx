@@ -9,7 +9,8 @@ import {
   Camera, 
   BriefcaseBusiness, 
   LucideIcon,
-  HelpCircle
+  HelpCircle,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -30,6 +31,7 @@ interface Advisor {
   icon: LucideIcon;
   phoneNumber: string;
   color: string;
+  animationDelay: number;
 }
 
 export default function AIAdvisorsPage() {
@@ -45,7 +47,8 @@ export default function AIAdvisorsPage() {
       description: "Expert in media relations, press releases, and public image management. Call to discuss publicity campaigns, media opportunities, or crisis management.",
       icon: Camera,
       phoneNumber: "+1-555-PUBLIC",
-      color: "from-rose-500 to-pink-600"
+      color: "from-rose-500 to-pink-600",
+      animationDelay: 0
     },
     {
       id: "manager",
@@ -54,7 +57,8 @@ export default function AIAdvisorsPage() {
       description: "Specializes in career planning, scheduling, and business development. Contact for touring strategies, performance opportunities, and career decisions.",
       icon: BriefcaseBusiness,
       phoneNumber: "+1-555-MANAGE",
-      color: "from-blue-500 to-indigo-600"
+      color: "from-blue-500 to-indigo-600",
+      animationDelay: 0.1
     },
     {
       id: "creative",
@@ -63,7 +67,8 @@ export default function AIAdvisorsPage() {
       description: "Helps with songwriting, composition, and creative direction. Call for inspiration, feedback on your work, or collaborative brainstorming.",
       icon: Music,
       phoneNumber: "+1-555-CREATE",
-      color: "from-amber-500 to-orange-600"
+      color: "from-amber-500 to-orange-600",
+      animationDelay: 0.2
     },
     {
       id: "video",
@@ -72,7 +77,8 @@ export default function AIAdvisorsPage() {
       description: "Expert in music video production, visual aesthetics, and storytelling. Reach out for concept development, production planning, or visual branding.",
       icon: Video,
       phoneNumber: "+1-555-VIDEO",
-      color: "from-violet-500 to-purple-600"
+      color: "from-violet-500 to-purple-600",
+      animationDelay: 0.3
     },
     {
       id: "fashion",
@@ -81,7 +87,8 @@ export default function AIAdvisorsPage() {
       description: "Specializes in artist image, stage attire, and visual branding. Contact for styling advice, photoshoot concepts, or brand partnerships.",
       icon: Palette,
       phoneNumber: "+1-555-STYLE",
-      color: "from-emerald-500 to-teal-600"
+      color: "from-emerald-500 to-teal-600",
+      animationDelay: 0.4
     },
     {
       id: "support",
@@ -90,7 +97,8 @@ export default function AIAdvisorsPage() {
       description: "Here to help with any questions about the platform, technical issues, or general assistance. Your go-to problem solver for anything Boostify-related.",
       icon: HelpCircle,
       phoneNumber: "+1-555-HELP",
-      color: "from-gray-500 to-slate-600"
+      color: "from-gray-500 to-slate-600",
+      animationDelay: 0.5
     }
   ];
 
@@ -109,59 +117,125 @@ export default function AIAdvisorsPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-[#0F0F13]">
+      {/* Floating particles for creative effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-orange-500/30"
+            initial={{ 
+              x: `${Math.random() * 100}vw`, 
+              y: `${Math.random() * 100}vh`,
+              opacity: Math.random() * 0.5 + 0.3
+            }}
+            animate={{ 
+              x: `${Math.random() * 100}vw`, 
+              y: `${Math.random() * 100}vh`,
+              opacity: [Math.random() * 0.5 + 0.3, 0.1, Math.random() * 0.5 + 0.3]
+            }}
+            transition={{ 
+              duration: Math.random() * 20 + 20,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            style={{ width: `${Math.random() * 4 + 1}px`, height: `${Math.random() * 4 + 1}px` }}
+          />
+        ))}
+      </div>
+
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-4xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative z-10 w-full max-w-5xl"
       >
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 md:p-8">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  Your AI Advisory Team
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-2">
-                  Expert guidance available 24/7 through personalized AI advisors
-                </p>
+        <div className="rounded-2xl overflow-hidden bg-[#16161A] border border-[#27272A]">
+          <div className="relative p-8 md:p-10">
+            {/* Header with gradient line */}
+            <div className="mb-12 mt-4">
+              <div className="h-1 w-20 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full mb-6"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <motion.h1 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300"
+                  >
+                    AI Advisory Team
+                  </motion.h1>
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="text-gray-400 mt-2"
+                  >
+                    Personalized expert guidance available 24/7
+                  </motion.p>
+                </div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.4 }}
+                >
+                  <Sparkles className="h-6 w-6 text-orange-500" />
+                </motion.div>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full"
-                onClick={() => setOpen(!open)}
-              >
-                <Phone className="h-5 w-5" />
-              </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Advisor cards with staggered animation */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {advisors.map((advisor) => (
                 <motion.div
                   key={advisor.id}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative group"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 + advisor.animationDelay }}
+                  whileHover={{ 
+                    y: -5,
+                    transition: { duration: 0.2 }
+                  }}
+                  className="group"
                 >
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" 
-                       style={{ backgroundImage: `linear-gradient(to right, var(--${advisor.color}))` }}></div>
-                  <div className="p-6 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-sm group-hover:shadow-md transition-all duration-300">
-                    <div className={`inline-flex p-3 rounded-full bg-gradient-to-br ${advisor.color} mb-4`}>
-                      <advisor.icon className="h-6 w-6 text-white" />
+                  <div className="relative overflow-hidden rounded-xl bg-[#1C1C24] border border-[#27272A]">
+                    {/* Gradient overlay that appears on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300" 
+                         style={{ backgroundImage: `linear-gradient(to bottom right, var(--${advisor.color}))` }}></div>
+                    
+                    {/* Subtle gradient line at top */}
+                    <div className="h-1 w-full bg-gradient-to-r opacity-80" 
+                         style={{ backgroundImage: `linear-gradient(to right, var(--${advisor.color}))` }}></div>
+                    
+                    <div className="p-6">
+                      <div className="flex items-center mb-4">
+                        <div className={`flex p-3 rounded-full bg-gradient-to-br ${advisor.color}`}>
+                          <advisor.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-lg font-bold text-white">{advisor.name}</h3>
+                          <p className="text-xs font-medium text-gray-400">{advisor.title}</p>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-400 text-sm mb-5 line-clamp-3">{advisor.description}</p>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full border border-[#27272A] text-white hover:bg-[#27272A] group-hover:border-opacity-0 group-hover:bg-gradient-to-r transition-all duration-300"
+                        style={{ 
+                          backgroundImage: `linear-gradient(to right, var(--${advisor.color}))`,
+                          opacity: 0.9,
+                          backgroundSize: '0 100%',
+                          backgroundRepeat: 'no-repeat',
+                          transition: 'background-size 0.3s ease'
+                        }}
+                        onClick={() => callAdvisor(advisor)}
+                      >
+                        <Phone className="h-4 w-4 mr-2" /> Contact Advisor
+                      </Button>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{advisor.name}</h3>
-                    <p className="text-sm font-medium text-primary mb-2">{advisor.title}</p>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{advisor.description}</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full group-hover:bg-primary group-hover:text-white transition-colors duration-300"
-                      onClick={() => callAdvisor(advisor)}
-                    >
-                      <Phone className="h-4 w-4 mr-2" /> Contact
-                    </Button>
                   </div>
                 </motion.div>
               ))}
@@ -171,9 +245,12 @@ export default function AIAdvisorsPage() {
       </motion.div>
 
       <Dialog open={selectedAdvisor !== null} onOpenChange={(open) => !open && setSelectedAdvisor(null)}>
-        <DialogContent className="sm:max-w-md" aria-describedby="advisor-dialog-description">
+        <DialogContent 
+          className="sm:max-w-md border-[#27272A] bg-[#16161A] text-white" 
+          aria-describedby="advisor-dialog-description"
+        >
           <DialogHeader>
-            <DialogTitle className="flex items-center">
+            <DialogTitle className="flex items-center text-white">
               {calling ? (
                 <span className="flex items-center">
                   <span className="animate-pulse mr-2">📞</span> 
@@ -183,27 +260,38 @@ export default function AIAdvisorsPage() {
                 <span>Connected with {selectedAdvisor?.name}</span>
               )}
             </DialogTitle>
-            <DialogDescription id="advisor-dialog-description">
+            <DialogDescription id="advisor-dialog-description" className="text-gray-400">
               {calling ? (
-                <div className="flex flex-col items-center justify-center py-4">
+                <div className="flex flex-col items-center justify-center py-6">
                   <div className="relative w-24 h-24 mb-4">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-primary/80 animate-pulse"></div>
-                    <div className="absolute inset-2 bg-background rounded-full flex items-center justify-center">
-                      <Phone className="h-8 w-8 text-primary animate-bounce" />
+                    <motion.div 
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-pink-500"
+                      animate={{ 
+                        scale: [1, 1.1, 1],
+                        opacity: [0.5, 0.8, 0.5]
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <div className="absolute inset-2 bg-[#16161A] rounded-full flex items-center justify-center">
+                      <Phone className="h-8 w-8 text-orange-500 animate-bounce" />
                     </div>
                   </div>
-                  <p>Connecting to your {selectedAdvisor?.title}...</p>
+                  <p className="text-gray-300">Connecting to your {selectedAdvisor?.title}...</p>
                 </div>
               ) : (
                 <div className="py-4">
                   <p>You're now connected with your {selectedAdvisor?.title?.toLowerCase() || "advisor"}. This AI advisor is ready to help with any questions or guidance you need.</p>
-                  <div className="flex items-center mt-4 p-3 bg-primary/10 rounded-lg">
-                    <div className="mr-3 bg-primary rounded-full p-2">
+                  <div className="flex items-center mt-4 p-4 bg-[#1C1C24] rounded-lg border border-[#27272A]">
+                    <div className="mr-3 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full p-2 flex-shrink-0">
                       {selectedAdvisor && <selectedAdvisor.icon className="h-4 w-4 text-white" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{selectedAdvisor?.name}</p>
-                      <p className="text-xs text-gray-500">AI {selectedAdvisor?.title}</p>
+                      <p className="text-sm font-medium text-white">{selectedAdvisor?.name}</p>
+                      <p className="text-xs text-gray-400">AI {selectedAdvisor?.title}</p>
                     </div>
                   </div>
                 </div>
@@ -212,8 +300,8 @@ export default function AIAdvisorsPage() {
           </DialogHeader>
           {!calling && (
             <div className="flex flex-col space-y-3">
-              <div className="bg-muted p-3 rounded-lg">
-                <p className="text-sm italic">This feature will connect to an AI agent trained specifically to provide expert advice in {selectedAdvisor?.title?.toLowerCase() || "advisor"} services.</p>
+              <div className="bg-[#1C1C24] p-3 rounded-lg border border-[#27272A]">
+                <p className="text-sm italic text-gray-400">This feature will connect to an AI agent trained specifically to provide expert advice in {selectedAdvisor?.title?.toLowerCase() || "advisor"} services.</p>
               </div>
             </div>
           )}
@@ -221,7 +309,8 @@ export default function AIAdvisorsPage() {
             {!calling && (
               <Button
                 type="button" 
-                variant="secondary"
+                variant="outline" 
+                className="border-orange-500/50 text-orange-500 hover:bg-orange-500/10"
                 onClick={() => setSelectedAdvisor(null)}
               >
                 End Call
