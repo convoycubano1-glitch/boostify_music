@@ -446,11 +446,35 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Generador de Contenido para Afiliados</h2>
-        <p className="text-muted-foreground">
-          Crea contenido persuasivo para promocionar productos como afiliado
-        </p>
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" /> 
+            Generador de Contenido para Afiliados
+          </h2>
+          <p className="text-muted-foreground">
+            Crea contenido persuasivo para promocionar productos y maximizar tus comisiones
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3 mt-2 md:mt-0">
+          <Badge variant="outline" className="px-3 py-1 flex items-center gap-1.5 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20">
+            <Wand2 className="h-3.5 w-3.5" />
+            {affiliateData?.level || "Basic"} Level
+          </Badge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                <AlertCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="max-w-xs">
+                Los afiliados de nivel Premium tienen acceso a tipos de contenido adicionales y personalización avanzada.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       <Tabs 
@@ -459,9 +483,15 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="generate">Generar Contenido</TabsTrigger>
-          <TabsTrigger value="history">Historial de Contenido</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-2">
+          <TabsTrigger value="generate" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Sparkles className="h-4 w-4" />
+            <span>Generar Contenido</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <FileText className="h-4 w-4" />
+            <span>Historial Guardado</span>
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="generate" className="space-y-4 pt-4">
