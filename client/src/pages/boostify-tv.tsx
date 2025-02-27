@@ -1,117 +1,115 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
-import { Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search } from "lucide-react";
+import { 
+  Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search, 
+  Share2, Facebook, Twitter, Copy, Instagram, Linkedin 
+} from "lucide-react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 interface VideoContent {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  youtubeId: string;
+  filePath: string;
+  thumbnailPath?: string;
   duration: string;
   views: number;
   category: "featured" | "live" | "videos" | "music";
 }
 
+// Videos from the client/public/assets/tv directory
 const videoContent: VideoContent[] = [
   {
-    id: 1,
-    title: "NPR Music Tiny Desk Concert - Anderson .Paak & The Free Nationals",
-    description: "Experience an intimate performance showcasing raw talent and musicianship",
-    youtubeId: "ferZnZ0_rSM",
-    duration: "15:32",
-    views: 45000000,
+    id: "1",
+    title: "Welcome to Boostify Music",
+    description: "An introduction to our innovative music platform and its features",
+    filePath: "/assets/tv/Welcome to Boostify Music.mp4",
+    duration: "2:15",
+    views: 45000,
     category: "featured"
   },
   {
-    id: 2,
-    title: "Inside the Recording Studio - The Making of a Hit Song",
-    description: "Behind the scenes look at professional music production",
-    youtubeId: "VqOgJrvnJvg",
-    duration: "8:45",
-    views: 2800000,
+    id: "2",
+    title: "Boostify YouTube Growth Suite",
+    description: "Learn how to grow your audience and reach on YouTube with our tools",
+    filePath: "/assets/tv/Boostify YouTube Growth Suite.mp4",
+    duration: "3:30",
+    views: 28000,
     category: "featured"
   },
   {
-    id: 3,
-    title: "Live from Madison Square Garden - Concert Highlights",
-    description: "Experience the energy of a sold-out arena performance",
-    youtubeId: "8e5TlqxhQ0k",
-    duration: "12:20",
-    views: 1500000,
-    category: "live"
-  },
-  {
-    id: 4,
-    title: "Artist Interview: Creative Process & Inspiration",
-    description: "In-depth conversation about music creation and artistry",
-    youtubeId: "gY7kEGrpYnY",
-    duration: "25:15",
-    views: 980000,
+    id: "3",
+    title: "Boostify Instagram Growth Suite",
+    description: "Strategies and tools to enhance your Instagram presence and engagement",
+    filePath: "/assets/tv/Boostify instagram Growth Suite.mp4",
+    duration: "3:10",
+    views: 15000,
     category: "videos"
   },
   {
-    id: 5,
-    title: "Official Music Video - 'Dynamite' by BTS",
-    description: "Watch the record-breaking music video that captivated millions",
-    youtubeId: "gdZLi9oWNZg",
-    duration: "3:43",
-    views: 1800000000,
-    category: "music"
-  },
-  {
-    id: 6,
-    title: "Studio Sessions: The Art of Mixing",
-    description: "Professional audio engineer reveals mixing techniques",
-    youtubeId: "TEjOdqZFvhY",
-    duration: "18:30",
-    views: 750000,
-    category: "featured"
-  },
-  {
-    id: 7,
-    title: "Acoustic Performance - MTV Unplugged",
-    description: "Stripped-down versions of popular hits",
-    youtubeId: "BHiu-c_kq8U",
-    duration: "22:15",
-    views: 2500000,
-    category: "live"
-  },
-  {
-    id: 8,
-    title: "Documentary: A Day in the Life of a Music Producer",
-    description: "Follow a top producer's creative process",
-    youtubeId: "q8e6TrT5x54",
-    duration: "32:10",
-    views: 1200000,
-    category: "videos"
-  },
-  {
-    id: 9,
-    title: "Live Looping Performance - Ed Sheeran",
-    description: "Watch how live looping creates a full band sound",
-    youtubeId: "DV0TJZ7Kp40",
-    duration: "14:25",
-    views: 3500000,
-    category: "featured"
-  },
-  {
-    id: 10,
-    title: "Songwriting Workshop with Industry Pros",
-    description: "Learn from successful songwriters about their craft",
-    youtubeId: "UJrSUHK9Luw",
-    duration: "45:00",
-    views: 890000,
+    id: "4",
+    title: "Legal Contract Management",
+    description: "How to manage your music contracts with our legal tools",
+    filePath: "/assets/tv/Legal Contract Management.mp4",
+    duration: "2:45",
+    views: 9800,
     category: "videos"
   }
 ];
 
 export default function BoostifyTvPage() {
   const [selectedTab, setSelectedTab] = useState("featured");
+  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+  
+  // Function to filter videos based on search term
+  const filteredVideos = videoContent.filter(video => 
+    video.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    video.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Function to share video
+  const shareVideo = (video: VideoContent, platform: string) => {
+    const videoUrl = window.location.origin + video.filePath;
+    const text = `Check out this video: ${video.title}`;
+    
+    switch(platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`, '_blank');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(videoUrl)}`, '_blank');
+        break;
+      case 'instagram':
+        toast({
+          title: "Instagram sharing",
+          description: "Copy the link to share on Instagram",
+        });
+        navigator.clipboard.writeText(videoUrl);
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`, '_blank');
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(videoUrl);
+        toast({
+          title: "Link copied!",
+          description: "Video link copied to clipboard",
+        });
+        break;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -119,12 +117,15 @@ export default function BoostifyTvPage() {
       <main className="flex-1 space-y-8 p-4 md:p-8 pt-20">
         {/* Hero Section with Featured Video */}
         <div className="relative w-full h-[50vh] overflow-hidden rounded-xl mb-8">
-          <iframe
-            className="absolute inset-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${videoContent[0].youtubeId}?autoplay=1&mute=1&loop=1&playlist=${videoContent[0].youtubeId}&controls=0`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+          <video
+            className="absolute inset-0 w-full h-full object-cover"
+            src={videoContent[0].filePath}
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls={false}
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
           <div className="relative h-full flex items-center justify-start px-4 md:px-12">
             <div className="max-w-2xl">
@@ -142,10 +143,16 @@ export default function BoostifyTvPage() {
                 <p className="text-base md:text-xl text-gray-200 mb-8">
                   Stream exclusive music content, live performances, and behind-the-scenes footage
                 </p>
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
                   <Button
                     size="lg"
                     className="bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={() => {
+                      const videoElement = document.getElementById('feature-video') as HTMLVideoElement;
+                      if (videoElement) {
+                        videoElement.play();
+                      }
+                    }}
                   >
                     <Play className="w-5 h-5 mr-2" />
                     Start Watching
@@ -154,6 +161,8 @@ export default function BoostifyTvPage() {
                     <Input
                       placeholder="Search videos..."
                       className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
                   </div>
@@ -170,39 +179,73 @@ export default function BoostifyTvPage() {
               <Star className="w-4 h-4 mr-2" />
               Featured
             </TabsTrigger>
-            <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
-              <Tv className="w-4 h-4 mr-2" />
-              Live
-            </TabsTrigger>
             <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500">
               <Film className="w-4 h-4 mr-2" />
               Videos
             </TabsTrigger>
-            <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
-              <Music2 className="w-4 h-4 mr-2" />
-              Music
-            </TabsTrigger>
+            {videoContent.some(v => v.category === "live") && (
+              <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
+                <Tv className="w-4 h-4 mr-2" />
+                Live
+              </TabsTrigger>
+            )}
+            {videoContent.some(v => v.category === "music") && (
+              <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
+                <Music2 className="w-4 h-4 mr-2" />
+                Music
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Content Sections */}
-          {["featured", "live", "videos", "music"].map((category) => (
+          {["featured", "videos", "live", "music"].map((category) => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {videoContent
+                {(searchTerm ? filteredVideos : videoContent)
                   .filter((video) => video.category === category)
                   .map((video) => (
                     <Card key={video.id} className="overflow-hidden group">
                       <div className="aspect-video relative">
-                        <iframe
-                          className="w-full h-full"
-                          src={`https://www.youtube.com/embed/${video.youtubeId}`}
-                          title={video.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
+                        <video
+                          className="w-full h-full object-cover"
+                          src={video.filePath}
+                          controls
+                          preload="metadata"
+                        />
                       </div>
                       <div className="p-4">
-                        <h3 className="font-semibold mb-2">{video.title}</h3>
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold">{video.title}</h3>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => shareVideo(video, 'facebook')}>
+                                <Facebook className="mr-2 h-4 w-4" />
+                                <span>Facebook</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => shareVideo(video, 'twitter')}>
+                                <Twitter className="mr-2 h-4 w-4" />
+                                <span>Twitter</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => shareVideo(video, 'instagram')}>
+                                <Instagram className="mr-2 h-4 w-4" />
+                                <span>Instagram</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => shareVideo(video, 'linkedin')}>
+                                <Linkedin className="mr-2 h-4 w-4" />
+                                <span>LinkedIn</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => shareVideo(video, 'copy')}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>Copy Link</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                         <p className="text-sm text-muted-foreground mb-4">
                           {video.description}
                         </p>
