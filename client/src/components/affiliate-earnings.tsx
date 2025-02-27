@@ -1,35 +1,16 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy, limit, Timestamp } from "firebase/firestore";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DollarSign, FileText, ArrowUpRight, Download, CreditCard, Calendar, Clock, Filter, ChevronDown, BarChart, LineChart } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -40,26 +21,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  BarChart,
-  BarChart3,
-  Download,
-  FileDown,
-  PieChart,
-  LineChart,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
-  HelpCircle,
-  ChevronRight,
-  Filter,
-  LayoutGrid,
-  List,
-  MoreHorizontal,
-  Info,
-  AlertCircle,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { CalendarIcon } from "@radix-ui/react-icons";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface AffiliateEarningsProps {
   affiliateData: any;
@@ -67,574 +45,568 @@ interface AffiliateEarningsProps {
 
 export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
   const { user } = useAuth() || {};
-  const [period, setPeriod] = useState("30days");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [filterStatus, setFilterStatus] = useState("all");
-
-  // Datos de ejemplo para estadísticas
-  const stats = {
-    totalEarnings: 1243.87,
-    pendingPayment: 432.15,
-    lastPayment: {
-      amount: 811.72,
-      date: "15 de enero, 2025",
-    },
-    monthlyEarnings: [
-      { month: "Ene", amount: 811.72 },
-      { month: "Feb", amount: 432.15 },
-      { month: "Mar", amount: 0 },
-      { month: "Abr", amount: 0 },
-      { month: "May", amount: 0 },
-      { month: "Jun", amount: 0 },
-    ],
-    conversionRate: 3.2,
-    clicksLastMonth: 2845,
-    salesLastMonth: 91,
-  };
-
-  // Consulta de transacciones del afiliado (simulada)
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
-    queryKey: ["affiliate-transactions", user?.uid, period],
+  const [activeTab, setActiveTab] = useState("overview");
+  const [filterPeriod, setFilterPeriod] = useState("all");
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  
+  // Consulta para obtener las transacciones de ganancias
+  const { data: earnings, isLoading: isLoadingEarnings } = useQuery({
+    queryKey: ["affiliate-earnings", user?.uid, filterPeriod],
     queryFn: async () => {
-      // En una implementación real, esto vendría de la base de datos
-      // Simulación de datos para la demo
-      return [
-        {
-          id: "tr1",
-          productId: "prod1",
-          productName: "Curso de Producción Musical",
-          amount: 49.99,
-          commission: 12.50,
-          status: "paid",
-          customerId: "cust123",
-          date: new Date(2025, 0, 15),
-        },
-        {
-          id: "tr2",
-          productId: "prod2",
-          productName: "Plugin de Masterización Avanzada",
-          amount: 149.99,
-          commission: 30.00,
-          status: "paid",
-          customerId: "cust456",
-          date: new Date(2025, 0, 18),
-        },
-        {
-          id: "tr3",
-          productId: "prod1",
-          productName: "Curso de Producción Musical",
-          amount: 199.99,
-          commission: 50.00,
-          status: "paid",
-          customerId: "cust789",
-          date: new Date(2025, 0, 22),
-        },
-        {
-          id: "tr4",
-          productId: "prod3",
-          productName: "Paquete de Distribución Musical",
-          amount: 99.99,
-          commission: 30.00,
-          status: "pending",
-          customerId: "cust101",
-          date: new Date(2025, 1, 5),
-        },
-        {
-          id: "tr5",
-          productId: "prod2",
-          productName: "Plugin de Masterización Avanzada",
-          amount: 149.99,
-          commission: 30.00,
-          status: "pending",
-          customerId: "cust102",
-          date: new Date(2025, 1, 8),
-        },
-        {
-          id: "tr6",
-          productId: "prod5",
-          productName: "Bundle de Samples Exclusivos",
-          amount: 49.99,
-          commission: 20.00,
-          status: "pending",
-          customerId: "cust103",
-          date: new Date(2025, 1, 10),
-        },
-        {
-          id: "tr7",
-          productId: "prod4",
-          productName: "Mentoría Personalizada",
-          amount: 299.99,
-          commission: 45.00,
-          status: "pending",
-          customerId: "cust104",
-          date: new Date(2025, 1, 15),
-        },
-        {
-          id: "tr8",
-          productId: "prod1",
-          productName: "Curso de Producción Musical",
-          amount: 199.99,
-          commission: 50.00,
-          status: "pending",
-          customerId: "cust105",
-          date: new Date(2025, 1, 18),
-        },
-      ];
+      if (!user?.uid) return [];
+      
+      const earningsRef = collection(db, "affiliateEarnings");
+      let q = query(earningsRef, where("affiliateId", "==", user.uid));
+      
+      // Aplicar filtros según el período seleccionado
+      if (filterPeriod !== "all") {
+        const now = new Date();
+        let startDate = new Date();
+        
+        switch (filterPeriod) {
+          case "today":
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "week":
+            startDate.setDate(now.getDate() - 7);
+            break;
+          case "month":
+            startDate.setMonth(now.getMonth() - 1);
+            break;
+          case "year":
+            startDate.setFullYear(now.getFullYear() - 1);
+            break;
+        }
+        
+        q = query(q, where("createdAt", ">=", Timestamp.fromDate(startDate)));
+      }
+      
+      q = query(q, orderBy("createdAt", "desc"));
+      
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+      }));
     },
+    enabled: !!user?.uid,
   });
 
-  // Consulta de pagos del afiliado (simulada)
-  const { data: payments = [], isLoading: isLoadingPayments } = useQuery({
+  // Consulta para obtener los pagos procesados
+  const { data: payments, isLoading: isLoadingPayments } = useQuery({
     queryKey: ["affiliate-payments", user?.uid],
     queryFn: async () => {
-      // En una implementación real, esto vendría de la base de datos
-      // Simulación de datos para la demo
-      return [
-        {
-          id: "pay1",
-          amount: 811.72,
-          method: "paypal",
-          status: "completed",
-          date: new Date(2025, 0, 15),
-          reference: "PAY-12345-ABCDE",
-        },
-      ];
+      if (!user?.uid) return [];
+      
+      const paymentsRef = collection(db, "affiliatePayments");
+      const q = query(paymentsRef, where("affiliateId", "==", user.uid), orderBy("createdAt", "desc"));
+      
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+        processedAt: doc.data().processedAt?.toDate?.() || null,
+      }));
     },
+    enabled: !!user?.uid,
   });
 
-  // Filtrar transacciones según el estado seleccionado
-  const filteredTransactions = filterStatus === "all" 
-    ? transactions 
-    : transactions.filter(tr => tr.status === filterStatus);
+  // Calcular las ganancias totales y pendientes
+  const totalEarnings = earnings?.reduce((sum, earning) => sum + (earning.amount || 0), 0) || 0;
+  const pendingPayoutAmount = affiliateData?.stats?.pendingPayment || 0;
+  const minimumPayoutThreshold = 50; // Umbral mínimo para solicitar pago
+  const payoutProgress = (pendingPayoutAmount / minimumPayoutThreshold) * 100;
 
-  // Formatear fecha
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  // Estadísticas de resumen
+  const earningStats = [
+    {
+      title: "Ganancias totales",
+      value: `$${totalEarnings.toFixed(2)}`,
+      icon: <DollarSign className="h-4 w-4 text-muted-foreground" />,
+      change: "+23.1%",
+    },
+    {
+      title: "Pedidos generados",
+      value: earnings?.length || 0,
+      icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+      change: "+12.5%",
+    },
+    {
+      title: "Comisión promedio",
+      value: `$${earnings && earnings.length > 0 ? (totalEarnings / earnings.length).toFixed(2) : "0.00"}`,
+      icon: <ArrowUpRight className="h-4 w-4 text-muted-foreground" />,
+      change: "+4.2%",
+    },
+    {
+      title: "Pagos recibidos",
+      value: `$${payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0).toFixed(2) || "0.00"}`,
+      icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
+      change: "+18.7%",
+    }
+  ];
 
-  // Formatear moneda
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  // Calcular la suma de comisiones pendientes
-  const pendingCommissionsTotal = transactions
-    .filter(tr => tr.status === "pending")
-    .reduce((sum, tr) => sum + tr.commission, 0);
-
-  // Calcular la suma de comisiones pagadas
-  const paidCommissionsTotal = transactions
-    .filter(tr => tr.status === "paid")
-    .reduce((sum, tr) => sum + tr.commission, 0);
-
-  // Calcular estadísticas por producto
-  const productStats = transactions.reduce((acc: any, tr) => {
-    if (!acc[tr.productId]) {
-      acc[tr.productId] = {
-        id: tr.productId,
-        name: tr.productName,
-        sales: 0,
-        commissions: 0,
+  // Agrupar ganancias por producto
+  const earningsByProduct = earnings?.reduce((acc, earning) => {
+    const productId = earning.productId;
+    if (!acc[productId]) {
+      acc[productId] = {
+        productId,
+        productName: earning.productName || "Desconocido",
+        count: 0,
+        total: 0,
       };
     }
-    
-    acc[tr.productId].sales += 1;
-    acc[tr.productId].commissions += tr.commission;
-    
+    acc[productId].count += 1;
+    acc[productId].total += earning.amount || 0;
     return acc;
   }, {});
 
-  // Convertir a array y ordenar por comisiones
-  const productStatsArray = Object.values(productStats)
-    .sort((a: any, b: any) => b.commissions - a.commissions);
+  // Convertir a array y ordenar por total
+  const topProducts = earningsByProduct ? 
+    Object.values(earningsByProduct)
+      .sort((a: any, b: any) => b.total - a.total)
+      .slice(0, 5) : 
+    [];
+
+  // Estados para simular datos de gráficos
+  const chartPeriods = ["7D", "30D", "3M", "6M", "1A", "MAX"];
+  const [chartPeriod, setChartPeriod] = useState("30D");
+
+  // Función para descargar el informe de ganancias
+  const downloadEarningsReport = () => {
+    if (!earnings || earnings.length === 0) return;
+    
+    // Crear contenido CSV
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Encabezados
+    csvContent += "Fecha,Pedido,Producto,Comisión,Estado\n";
+    
+    // Filas de datos
+    earnings.forEach(earning => {
+      const date = format(new Date(earning.createdAt), "dd/MM/yyyy");
+      const order = earning.orderId || "-";
+      const product = earning.productName || "Desconocido";
+      const amount = `$${earning.amount?.toFixed(2) || "0.00"}`;
+      const status = earning.status || "Procesado";
+      
+      csvContent += `${date},${order},${product},${amount},${status}\n`;
+    });
+    
+    // Crear enlace y activar descarga
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ganancias_afiliado_${format(new Date(), "dd-MM-yyyy")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-orange-500/20 to-orange-700/20 border-orange-200 dark:border-orange-900">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-orange-700 dark:text-orange-400 flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Ganancias totales
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-700 dark:text-orange-400">
-              {formatCurrency(stats.totalEarnings)}
-            </div>
-            <p className="text-xs text-orange-600/70 dark:text-orange-400/70 flex items-center mt-1">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              +15.3% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pago pendiente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(pendingCommissionsTotal)}</div>
-            <div className="mt-2">
-              <Progress value={
-                pendingCommissionsTotal >= 100 
-                  ? 100 
-                  : (pendingCommissionsTotal / 100) * 100
-              } />
-              <p className="text-xs text-muted-foreground mt-1">
-                {pendingCommissionsTotal >= 100 
-                  ? "Listo para cobrar" 
-                  : `${formatCurrency(100 - pendingCommissionsTotal)} para alcanzar el mínimo`}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Último pago
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.lastPayment.amount)}</div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center">
-              <Calendar className="h-3 w-3 mr-1" />
-              {stats.lastPayment.date}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tasa de conversión
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.conversionRate}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.salesLastMonth} ventas de {stats.clicksLastMonth} clics
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Ganancias</h2>
+          <p className="text-muted-foreground">
+            Realiza un seguimiento de tus comisiones y pagos como afiliado
+          </p>
+        </div>
+        <div className="flex items-center gap-2 mt-4 sm:mt-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtrar
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="end">
+              <div className="p-4 pb-0">
+                <h4 className="font-medium text-sm">Filtrar por período</h4>
+              </div>
+              <div className="grid gap-2 p-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant={filterPeriod === "today" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setFilterPeriod("today")}
+                  >
+                    Hoy
+                  </Button>
+                  <Button 
+                    variant={filterPeriod === "week" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setFilterPeriod("week")}
+                  >
+                    Últimos 7 días
+                  </Button>
+                  <Button 
+                    variant={filterPeriod === "month" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setFilterPeriod("month")}
+                  >
+                    Último mes
+                  </Button>
+                  <Button 
+                    variant={filterPeriod === "year" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setFilterPeriod("year")}
+                  >
+                    Último año
+                  </Button>
+                </div>
+                <div className="grid gap-2 mt-2">
+                  <Button 
+                    variant={filterPeriod === "all" ? "default" : "outline"}
+                    onClick={() => setFilterPeriod("all")}
+                  >
+                    Todo el historial
+                  </Button>
+                </div>
+                <div className="grid gap-2 mt-2">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="date">Fecha específica</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="date"
+                          variant={"outline"}
+                          className={`w-full justify-start text-left font-normal ${!date && "text-muted-foreground"}`}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? format(date, "PPP", { locale: es }) : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <CalendarComponent
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button 
+            variant="outline"
+            onClick={downloadEarningsReport}
+            disabled={!earnings || earnings.length === 0}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Descargar CSV
+          </Button>
+        </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {earningStats.map((stat, index) => (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                {stat.title}
+              </CardTitle>
+              {stat.icon}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-500">{stat.change}</span>{" "}
+                desde el mes pasado
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
       <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Rendimiento por mes</CardTitle>
+              <CardTitle>Saldo de ganancias</CardTitle>
               <CardDescription>
-                Visualización de tus ganancias mensuales
+                El umbral mínimo para solicitar un pago es de ${minimumPayoutThreshold}
               </CardDescription>
             </div>
-            <Select defaultValue={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Seleccionar período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30days">Últimos 30 días</SelectItem>
-                <SelectItem value="3months">Últimos 3 meses</SelectItem>
-                <SelectItem value="6months">Últimos 6 meses</SelectItem>
-                <SelectItem value="12months">Último año</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="text-right">
+              <div className="text-2xl font-bold">${pendingPayoutAmount.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">Disponible para pago</p>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="md:px-3 md:pb-3">
-            <div className="h-[240px] flex items-center justify-center gap-2">
-              <BarChart3 className="h-16 w-16 text-muted-foreground/40" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Gráfico de barras (placeholder)</span>
-                <span className="text-xs text-muted-foreground">Ganancias mensuales representadas visualmente</span>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Progreso hacia el próximo pago</span>
+                <span>${pendingPayoutAmount.toFixed(2)} / ${minimumPayoutThreshold}</span>
               </div>
+              <Progress value={payoutProgress} />
             </div>
-            
-            <div className="grid grid-cols-6 gap-2 mt-2">
-              {stats.monthlyEarnings.map((month) => (
-                <div key={month.month} className="text-center">
-                  <div className="text-xs font-medium">{month.month}</div>
-                  <div className="text-sm">{formatCurrency(month.amount)}</div>
-                </div>
-              ))}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {pendingPayoutAmount >= minimumPayoutThreshold
+                    ? "¡Pago disponible! Puedes solicitar tu pago ahora."
+                    : `Necesitas $${(minimumPayoutThreshold - pendingPayoutAmount).toFixed(2)} más para solicitar un pago.`}
+                </span>
+              </div>
+              <Button 
+                size="sm" 
+                disabled={pendingPayoutAmount < minimumPayoutThreshold}
+              >
+                Solicitar pago
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Transacciones</CardTitle>
+                <CardTitle>Rendimiento de ganancias</CardTitle>
                 <CardDescription>
-                  Historial de tus ventas y comisiones
+                  Historial de tus comisiones a lo largo del tiempo
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Select defaultValue={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[130px]">
-                    <SelectValue placeholder="Filtrar por estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="pending">Pendientes</SelectItem>
-                    <SelectItem value="paid">Pagados</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <div className="flex border rounded-md">
+              <div className="flex border rounded-md p-1 gap-1">
+                {chartPeriods.map(period => (
                   <Button 
-                    variant={viewMode === "grid" ? "default" : "ghost"} 
-                    size="icon"
-                    className="h-9 w-9"
-                    onClick={() => setViewMode("grid")}
+                    key={period}
+                    variant={chartPeriod === period ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setChartPeriod(period)}
                   >
-                    <LayoutGrid className="h-4 w-4" />
+                    {period}
                   </Button>
-                  <Button 
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="icon"
-                    className="h-9 w-9"
-                    onClick={() => setViewMode("list")}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
+                ))}
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {filteredTransactions.length === 0 ? (
-              <div className="text-center py-6">
-                <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                <h3 className="text-lg font-medium">No hay transacciones</h3>
-                <p className="text-sm text-muted-foreground">
-                  No se encontraron transacciones con los filtros actuales
-                </p>
-              </div>
-            ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredTransactions.map((transaction) => (
-                  <Card key={transaction.id} className="border shadow-none">
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-sm font-medium">
-                            {transaction.productName}
-                          </CardTitle>
-                          <CardDescription className="text-xs">
-                            {formatDate(transaction.date)}
-                          </CardDescription>
-                        </div>
-                        <Badge variant={transaction.status === "paid" ? "default" : "outline"}>
-                          {transaction.status === "paid" ? "Pagado" : "Pendiente"}
-                        </Badge>
+            {/* Aquí iría el componente de gráfico en una implementación real */}
+            <div className="h-[300px] w-full flex flex-col items-center justify-center">
+              <LineChart className="h-12 w-12 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Gráfico de rendimiento de ganancias (UI placeholder)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Productos más rentables</CardTitle>
+            <CardDescription>
+              Productos que generan más comisiones
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {isLoadingEarnings ? (
+                <div className="flex items-center justify-center h-[240px]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : topProducts.length > 0 ? (
+                topProducts.map((product: any, index: number) => (
+                  <div key={product.productId} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium text-sm truncate max-w-[180px]">
+                        {product.productName}
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-2">
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Venta:</span>{" "}
-                          {formatCurrency(transaction.amount)}
-                        </div>
-                        <div className="text-sm font-medium">
-                          <span className="text-muted-foreground">Comisión:</span>{" "}
-                          {formatCurrency(transaction.commission)}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
+                      <div className="font-medium">${product.total.toFixed(2)}</div>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full" 
+                        style={{ 
+                          width: `${(product.total / (topProducts[0]?.total || 1)) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{product.count} ventas</span>
+                      <span>${(product.total / product.count).toFixed(2)} prom.</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[240px] text-center">
+                  <BarChart className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-sm font-medium">Sin datos de productos</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tus estadísticas de productos aparecerán aquí cuando generes ventas
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="transactions" className="w-full">
+        <TabsList className="grid grid-cols-2 w-[400px]">
+          <TabsTrigger value="transactions">Historial de Comisiones</TabsTrigger>
+          <TabsTrigger value="payments">Pagos Recibidos</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="transactions" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Historial de comisiones</CardTitle>
+              <CardDescription>
+                Detalle de todas las comisiones generadas por tus enlaces de afiliado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[120px]">Fecha</TableHead>
+                      <TableHead>Pedido</TableHead>
                       <TableHead>Producto</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead className="text-right">Venta</TableHead>
                       <TableHead className="text-right">Comisión</TableHead>
                       <TableHead className="text-right">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{transaction.productName}</TableCell>
-                        <TableCell>{formatDate(transaction.date)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(transaction.amount)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(transaction.commission)}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={transaction.status === "paid" ? "default" : "outline"}>
-                            {transaction.status === "paid" ? "Pagado" : "Pendiente"}
-                          </Badge>
+                    {isLoadingEarnings ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          <div className="flex justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : earnings && earnings.length > 0 ? (
+                      earnings.map((earning: any) => (
+                        <TableRow key={earning.id}>
+                          <TableCell className="font-medium">
+                            {format(new Date(earning.createdAt), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            {earning.orderId || "-"}
+                          </TableCell>
+                          <TableCell>
+                            {earning.productName || "Desconocido"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ${earning.amount?.toFixed(2) || "0.00"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge 
+                              variant={earning.status === "pending" ? "outline" : "default"}
+                              className={earning.status === "pending" ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" : ""}
+                            >
+                              {earning.status === "pending" ? "Pendiente" : "Procesado"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          No hay comisiones registradas
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between border-t px-6 py-4">
-            <div className="text-xs text-muted-foreground">
-              Mostrando {filteredTransactions.length} transacciones de {transactions.length} totales
-            </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <FileDown className="h-3.5 w-3.5" />
-              Exportar CSV
-            </Button>
-          </CardFooter>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
-        <div className="space-y-4">
+        <TabsContent value="payments" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Productos populares</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle>Pagos recibidos</CardTitle>
               <CardDescription>
-                Tus productos con más ventas
+                Historial de pagos procesados a tu cuenta
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {productStatsArray.slice(0, 5).map((product: any) => (
-                <div key={product.id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">{product.name}</div>
-                      <div className="text-xs text-muted-foreground">{product.sales} ventas</div>
-                    </div>
-                    <div className="font-medium">{formatCurrency(product.commissions)}</div>
-                  </div>
-                  <Progress value={(product.commissions / (productStatsArray[0] as any).commissions) * 100} />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Próximo pago</CardTitle>
-              <CardDescription>
-                Detalles de tu próximo cobro
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <div className="text-sm text-muted-foreground">Cantidad</div>
-                  <div className="font-medium">{formatCurrency(pendingCommissionsTotal)}</div>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <div className="text-sm text-muted-foreground">Método</div>
-                  <div className="font-medium">
-                    {affiliateData?.paymentMethod === "paypal" ? "PayPal" : 
-                     affiliateData?.paymentMethod === "bank_transfer" ? "Transferencia bancaria" : 
-                     "Stripe"}
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <div className="text-sm text-muted-foreground">Fecha estimada</div>
-                  <div className="font-medium">
-                    {pendingCommissionsTotal >= 100 ? "Próximo ciclo de pagos" : "Pendiente de umbral mínimo"}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="rounded-md border p-3 bg-muted/30">
-                <div className="flex gap-2 text-sm">
-                  <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Política de pagos</p>
-                    <p className="text-muted-foreground text-xs mt-1">
-                      Los pagos se procesan los días 15 de cada mes para todas las comisiones acumuladas que superen los {formatCurrency(100)}.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                disabled={pendingCommissionsTotal < 100}
-              >
-                {pendingCommissionsTotal >= 100 ? "Solicitar pago ahora" : "Umbral mínimo no alcanzado"}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Historial de pagos</CardTitle>
-          <CardDescription>
-            Registro de todos los pagos recibidos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {payments.length === 0 ? (
-            <div className="text-center py-6">
-              <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-              <h3 className="text-lg font-medium">No hay pagos recibidos</h3>
-              <p className="text-sm text-muted-foreground">
-                Tus pagos aparecerán aquí una vez procesados
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Referencia</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Método</TableHead>
-                    <TableHead className="text-right">Cantidad</TableHead>
-                    <TableHead className="text-right">Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>{payment.reference}</TableCell>
-                      <TableCell>{formatDate(payment.date)}</TableCell>
-                      <TableCell className="capitalize">{payment.method}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(payment.amount)}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="default">
-                          {payment.status === "completed" ? "Completado" : payment.status}
-                        </Badge>
-                      </TableCell>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[120px]">Fecha</TableHead>
+                      <TableHead>ID de Pago</TableHead>
+                      <TableHead>Método</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-right">Estado</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="border-t p-4">
-          <div className="text-xs text-muted-foreground">
-            Los pagos pueden tardar hasta 24 horas en procesarse una vez emitidos.
-          </div>
-        </CardFooter>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoadingPayments ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          <div className="flex justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : payments && payments.length > 0 ? (
+                      payments.map((payment: any) => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-medium">
+                            {format(new Date(payment.createdAt), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            {payment.paymentId || payment.id.substring(0, 8)}
+                          </TableCell>
+                          <TableCell>
+                            {payment.method === "paypal" ? "PayPal" : 
+                             payment.method === "bank_transfer" ? "Transferencia bancaria" : 
+                             payment.method === "crypto" ? "Criptomoneda" : payment.method}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ${payment.amount?.toFixed(2) || "0.00"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge 
+                              variant={payment.status === "pending" ? "outline" : "default"}
+                              className={
+                                payment.status === "pending" ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" : 
+                                payment.status === "completed" ? "bg-green-500/10 text-green-600 border-green-500/20" : ""
+                              }
+                            >
+                              {payment.status === "pending" ? "Pendiente" : 
+                               payment.status === "processing" ? "Procesando" :
+                               payment.status === "completed" ? "Completado" : payment.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          No hay pagos registrados
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

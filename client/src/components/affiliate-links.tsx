@@ -1,465 +1,325 @@
-import React, { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { db, auth } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc, deleteDoc, DocumentData } from "firebase/firestore";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { AlertCircle, CheckCircle2, Loader2, Copy, Link, BarChart, Trash2, PlusCircle, ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
-  Copy,
-  ExternalLink,
-  Link as LinkIcon,
-  BarChart3,
-  Trash2,
-  Settings,
-  Edit,
-  PlusCircle,
-  Share2,
-  Clipboard,
-  ClipboardCheck,
-} from "lucide-react";
-
-// Esquema para validación del formulario de creación de enlaces
-const linkFormSchema = z.object({
-  productId: z.string({
-    required_error: "Por favor selecciona un producto",
-  }),
-  customName: z.string().optional(),
-  utmSource: z.string().default("affiliate"),
-  utmMedium: z.string().default("referral"),
-  utmCampaign: z.string().optional(),
-});
-
-type LinkFormValues = z.infer<typeof linkFormSchema>;
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 interface AffiliateLinksProps {
   affiliateData: any;
 }
 
+// Esquema de validación para la creación de un nuevo enlace
+const newLinkFormSchema = z.object({
+  productId: z.string({ required_error: "Selecciona un producto" }),
+  campaign: z.string().min(3, { message: "La campaña debe tener al menos 3 caracteres" }).max(50, { message: "La campaña no puede exceder los 50 caracteres" }).optional().or(z.literal("")),
+  utmSource: z.string().optional().or(z.literal("")),
+  utmMedium: z.string().optional().or(z.literal("")),
+  utmCampaign: z.string().optional().or(z.literal("")),
+});
+
+type NewLinkFormValues = z.infer<typeof newLinkFormSchema>;
+
 export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
   const { user } = useAuth() || {};
-  const { toast } = useToast();
-  const [selectedLink, setSelectedLink] = useState<DocumentData | null>(null);
-  const [showLinkDialog, setShowLinkDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const queryClient = useQueryClient();
+  const [isCreatingLink, setIsCreatingLink] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [selectedLink, setSelectedLink] = useState<any | null>(null);
+  const [sortColumn, setSortColumn] = useState<string>("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  // Formulario para crear/editar enlaces
-  const form = useForm<LinkFormValues>({
-    resolver: zodResolver(linkFormSchema),
+  // Inicializar useForm para el formulario de nuevo enlace
+  const form = useForm<NewLinkFormValues>({
+    resolver: zodResolver(newLinkFormSchema),
     defaultValues: {
       productId: "",
-      customName: "",
-      utmSource: "affiliate",
-      utmMedium: "referral",
+      campaign: "",
+      utmSource: "boostify_affiliate",
+      utmMedium: "affiliate",
       utmCampaign: "",
     },
   });
 
-  // Consulta de productos disponibles para afiliar
-  const { data: products = [] } = useQuery({
+  // Consulta para obtener los productos disponibles para afiliados
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["affiliate-products"],
     queryFn: async () => {
-      // Simulando una consulta a los productos disponibles
-      // En producción, esto vendría del backend
-      return [
-        {
-          id: "prod1",
-          name: "Curso de Producción Musical",
-          price: 199.99,
-          commissionRate: 25,
-          baseUrl: "/education?product=music-production-course",
-          category: "course",
-        },
-        {
-          id: "prod2",
-          name: "Plugin de Masterización Avanzada",
-          price: 149.99,
-          commissionRate: 20,
-          baseUrl: "/store?product=mastering-plugin",
-          category: "plugin",
-        },
-        {
-          id: "prod3",
-          name: "Paquete de Distribución Musical",
-          price: 99.99,
-          commissionRate: 30,
-          baseUrl: "/store?product=music-distribution",
-          category: "service",
-        },
-        {
-          id: "prod4",
-          name: "Mentoría Personalizada",
-          price: 299.99,
-          commissionRate: 15,
-          baseUrl: "/store?product=mentorship",
-          category: "service",
-        },
-        {
-          id: "prod5",
-          name: "Bundle de Samples Exclusivos",
-          price: 49.99,
-          commissionRate: 40,
-          baseUrl: "/store?product=samples-bundle",
-          category: "sample",
-        },
-      ];
+      const productsRef = collection(db, "affiliateProducts");
+      const querySnapshot = await getDocs(productsRef);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
     },
   });
 
-  // Consulta de enlaces del afiliado
-  const { 
-    data: affiliateLinks = [], 
-    isLoading: isLoadingLinks,
-    refetch: refetchLinks
-  } = useQuery({
+  // Consulta para obtener los enlaces de afiliado del usuario
+  const { data: affiliateLinks, isLoading: isLoadingLinks } = useQuery({
     queryKey: ["affiliate-links", user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
       
-      try {
-        const linksRef = collection(db, "affiliate_links");
-        const q = query(linksRef, where("userId", "==", user.uid));
-        const snapshot = await getDocs(q);
-        
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        }));
-      } catch (error) {
-        console.error("Error fetching affiliate links:", error);
-        return [];
-      }
+      const linksRef = collection(db, "affiliateLinks");
+      const q = query(linksRef, where("affiliateId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+      }));
     },
     enabled: !!user?.uid,
   });
 
-  // Filtrar enlaces según la pestaña activa
-  const filteredLinks = activeTab === "all" 
-    ? affiliateLinks 
-    : affiliateLinks.filter(link => {
-        const product = products.find(p => p.id === link.productId);
-        return product?.category === activeTab;
-      });
-
-  // Generar URL de afiliado
-  const generateAffiliateUrl = (baseUrl: string, referralCode: string, utmParams: Record<string, string>) => {
-    const siteUrl = window.location.origin;
-    let url = `${siteUrl}${baseUrl}`;
-    
-    // Añadir código de afiliado
-    url += (url.includes('?') ? '&' : '?') + `ref=${referralCode}`;
-    
-    // Añadir parámetros UTM
-    Object.entries(utmParams).forEach(([key, value]) => {
-      if (value) {
-        url += `&${key}=${encodeURIComponent(value)}`;
-      }
-    });
-    
-    return url;
-  };
-
-  // Crear un nuevo enlace de afiliado
+  // Mutación para crear un nuevo enlace de afiliado
   const createLinkMutation = useMutation({
-    mutationFn: async (data: LinkFormValues) => {
+    mutationFn: async (data: NewLinkFormValues) => {
       if (!user?.uid) throw new Error("Usuario no autenticado");
       
-      const product = products.find(p => p.id === data.productId);
-      if (!product) throw new Error("Producto no encontrado");
+      // Encontrar información del producto seleccionado
+      const selectedProduct = products?.find(p => p.id === data.productId);
+      if (!selectedProduct) throw new Error("Producto no encontrado");
       
-      const utmParams = {
-        utm_source: data.utmSource,
-        utm_medium: data.utmMedium,
-        utm_campaign: data.utmCampaign || `${product.name.toLowerCase().replace(/\s+/g, '-')}-campaign`,
-      };
+      // Crear enlace con parámetros de afiliado
+      let baseUrl = selectedProduct.url || `https://boostify.com/products/${selectedProduct.id}`;
       
-      const linkUrl = generateAffiliateUrl(
-        product.baseUrl, 
-        affiliateData.referralCode,
-        utmParams
-      );
+      // Asegurar que la URL base no tenga parámetros de consulta
+      const hasQueryParams = baseUrl.includes('?');
+      const baseUrlWithoutParams = hasQueryParams ? baseUrl.split('?')[0] : baseUrl;
       
+      // Construir los parámetros UTM
+      const queryParams = new URLSearchParams();
+      queryParams.append('ref', user.uid);
+      
+      if (data.utmSource) queryParams.append('utm_source', data.utmSource);
+      if (data.utmMedium) queryParams.append('utm_medium', data.utmMedium);
+      if (data.utmCampaign) queryParams.append('utm_campaign', data.utmCampaign);
+      if (data.campaign) queryParams.append('campaign', data.campaign);
+      
+      const fullUrl = `${baseUrlWithoutParams}?${queryParams.toString()}`;
+      
+      // Guardar el enlace en Firestore
       const linkData = {
-        userId: user.uid,
+        affiliateId: user.uid,
         productId: data.productId,
-        name: data.customName || product.name,
-        url: linkUrl,
-        commissionRate: product.commissionRate,
+        url: fullUrl,
+        campaign: data.campaign || "",
+        utmParams: {
+          source: data.utmSource || "",
+          medium: data.utmMedium || "",
+          campaign: data.utmCampaign || "",
+        },
         clicks: 0,
         conversions: 0,
         earnings: 0,
-        utmParams,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        isActive: true,
       };
       
-      const docRef = await addDoc(collection(db, "affiliate_links"), linkData);
+      const docRef = await addDoc(collection(db, "affiliateLinks"), linkData);
       return { id: docRef.id, ...linkData };
     },
     onSuccess: () => {
-      toast({
-        title: "Enlace creado",
-        description: "Tu enlace de afiliado ha sido creado exitosamente.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["affiliate-links", user?.uid] });
+      toast.success("Enlace de afiliado creado correctamente");
       form.reset();
-      setShowLinkDialog(false);
-      refetchLinks();
+      setIsDialogOpen(false);
     },
     onError: (error) => {
       console.error("Error al crear enlace:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el enlace. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      toast.error("Error al crear el enlace de afiliado");
     },
   });
 
-  // Actualizar un enlace existente
-  const updateLinkMutation = useMutation({
-    mutationFn: async (data: { linkId: string; updates: Partial<any> }) => {
-      const { linkId, updates } = data;
-      const linkRef = doc(db, "affiliate_links", linkId);
-      
-      await updateDoc(linkRef, {
-        ...updates,
-        updatedAt: serverTimestamp(),
-      });
-      
-      return { id: linkId, ...updates };
-    },
-    onSuccess: () => {
-      toast({
-        title: "Enlace actualizado",
-        description: "Los cambios se han guardado correctamente.",
-      });
-      setShowEditDialog(false);
-      refetchLinks();
-    },
-    onError: (error) => {
-      console.error("Error al actualizar enlace:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el enlace. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Eliminar un enlace
+  // Mutación para eliminar un enlace de afiliado
   const deleteLinkMutation = useMutation({
     mutationFn: async (linkId: string) => {
-      const linkRef = doc(db, "affiliate_links", linkId);
-      await deleteDoc(linkRef);
+      await deleteDoc(doc(db, "affiliateLinks", linkId));
       return linkId;
     },
-    onSuccess: () => {
-      toast({
-        title: "Enlace eliminado",
-        description: "El enlace ha sido eliminado correctamente.",
-      });
-      refetchLinks();
+    onSuccess: (linkId) => {
+      queryClient.invalidateQueries({ queryKey: ["affiliate-links", user?.uid] });
+      toast.success("Enlace de afiliado eliminado correctamente");
     },
     onError: (error) => {
       console.error("Error al eliminar enlace:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el enlace. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      toast.error("Error al eliminar el enlace de afiliado");
     },
   });
 
-  const onSubmit = (values: LinkFormValues) => {
-    createLinkMutation.mutate(values);
-  };
-
-  const handleEditLink = (link: DocumentData) => {
-    setSelectedLink(link);
-    const product = products.find(p => p.id === link.productId);
-    
-    form.reset({
-      productId: link.productId,
-      customName: link.name !== product?.name ? link.name : "",
-      utmSource: link.utmParams?.utm_source || "affiliate",
-      utmMedium: link.utmParams?.utm_medium || "referral",
-      utmCampaign: link.utmParams?.utm_campaign || "",
-    });
-    
-    setShowEditDialog(true);
-  };
-
-  const handleUpdateLink = () => {
-    if (!selectedLink) return;
-    
-    const formValues = form.getValues();
-    const product = products.find(p => p.id === formValues.productId);
-    
-    if (!product) {
-      toast({
-        title: "Error",
-        description: "Producto no encontrado",
-        variant: "destructive",
+  // Función para copiar un enlace al portapapeles
+  const copyLinkToClipboard = (url: string) => {
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast.success("Enlace copiado al portapapeles");
+      })
+      .catch(err => {
+        console.error("Error al copiar enlace:", err);
+        toast.error("Error al copiar enlace");
       });
-      return;
+  };
+
+  // Función para manejar la ordenación de la tabla
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
+
+  // Ordenar los enlaces según la columna y dirección seleccionadas
+  const sortedLinks = affiliateLinks ? [...affiliateLinks].sort((a, b) => {
+    let valueA, valueB;
+    
+    // Obtener los valores a comparar según la columna
+    if (sortColumn === "productId") {
+      const productA = products?.find(p => p.id === a.productId);
+      const productB = products?.find(p => p.id === b.productId);
+      valueA = productA?.name || "";
+      valueB = productB?.name || "";
+    } else if (sortColumn === "createdAt") {
+      valueA = new Date(a.createdAt).getTime();
+      valueB = new Date(b.createdAt).getTime();
+    } else if (["clicks", "conversions", "earnings"].includes(sortColumn)) {
+      valueA = a[sortColumn] || 0;
+      valueB = b[sortColumn] || 0;
+    } else {
+      valueA = a[sortColumn] || "";
+      valueB = b[sortColumn] || "";
     }
     
-    const utmParams = {
-      utm_source: formValues.utmSource,
-      utm_medium: formValues.utmMedium,
-      utm_campaign: formValues.utmCampaign || `${product.name.toLowerCase().replace(/\s+/g, '-')}-campaign`,
-    };
-    
-    const linkUrl = generateAffiliateUrl(
-      product.baseUrl, 
-      affiliateData.referralCode,
-      utmParams
-    );
-    
-    updateLinkMutation.mutate({
-      linkId: selectedLink.id,
-      updates: {
-        productId: formValues.productId,
-        name: formValues.customName || product.name,
-        url: linkUrl,
-        utmParams,
-      }
-    });
-  };
+    // Comparar según la dirección
+    if (sortDirection === "asc") {
+      return valueA > valueB ? 1 : -1;
+    } else {
+      return valueA < valueB ? 1 : -1;
+    }
+  }) : [];
 
-  const handleDeleteLink = (linkId: string) => {
-    deleteLinkMutation.mutate(linkId);
+  // Función para manejar la creación de un nuevo enlace
+  const onSubmit = (data: NewLinkFormValues) => {
+    setIsCreatingLink(true);
+    createLinkMutation.mutate(data);
   };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    
-    toast({
-      title: "Enlace copiado",
-      description: "El enlace se ha copiado al portapapeles.",
-    });
-    
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };
-
-  // Obtener estadísticas acumuladas
-  const totalClicks = affiliateLinks.reduce((sum, link) => sum + (link.clicks || 0), 0);
-  const totalConversions = affiliateLinks.reduce((sum, link) => sum + (link.conversions || 0), 0);
-  const totalEarnings = affiliateLinks.reduce((sum, link) => sum + (link.earnings || 0), 0);
-  const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks * 100).toFixed(2) : "0.00";
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Enlaces de afiliado</h2>
-          <p className="text-sm text-muted-foreground">
-            Crea y gestiona tus enlaces de afiliado para promocionar nuestros productos
+          <h2 className="text-2xl font-bold tracking-tight">Enlaces de Afiliado</h2>
+          <p className="text-muted-foreground">
+            Genera y gestiona tus enlaces de afiliado para promocionar productos
           </p>
         </div>
         
-        <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
               Crear nuevo enlace
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Crear enlace de afiliado</DialogTitle>
+              <DialogTitle>Crear nuevo enlace de afiliado</DialogTitle>
               <DialogDescription>
-                Selecciona un producto y personaliza tu enlace de afiliado
+                Selecciona un producto y personaliza tu enlace de afiliado.
               </DialogDescription>
             </DialogHeader>
             
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                 <FormField
                   control={form.control}
                   name="productId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Producto</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedProduct(value);
+                        }}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un producto" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name} - {product.commissionRate}% comisión
-                            </SelectItem>
-                          ))}
+                          <SelectGroup>
+                            <SelectLabel>Productos disponibles</SelectLabel>
+                            {isLoadingProducts ? (
+                              <div className="flex items-center justify-center p-2">
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Cargando productos...
+                              </div>
+                            ) : (
+                              products?.map((product: any) => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  {product.name} - {product.commissionRate}% comisión
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectGroup>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -469,400 +329,395 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                 
                 <FormField
                   control={form.control}
-                  name="customName"
+                  name="campaign"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre personalizado (opcional)</FormLabel>
+                      <FormLabel>Campaña (opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Oferta Black Friday" {...field} />
+                        <Input 
+                          placeholder="Nombre de tu campaña" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormDescription>
-                        Un nombre descriptivo para identificar este enlace
+                        Identifica esta campaña específica (ej. "Instagram Verano")
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                <div className="space-y-3">
-                  <div className="text-sm font-medium">Parámetros de seguimiento (opcionales)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="utmSource"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fuente (UTM Source)</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="utmMedium"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Medio (UTM Medium)</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="utmCampaign"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Campaña (UTM Campaign)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Opcional" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Parámetros UTM avanzados (opcionales)</h4>
+                  
+                  <FormField
+                    control={form.control}
+                    name="utmSource"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fuente (utm_source)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="boostify_affiliate" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="utmMedium"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Medio (utm_medium)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="affiliate" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="utmCampaign"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Campaña UTM (utm_campaign)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="summer_promo" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+                
+                <DialogFooter className="pt-4">
+                  <Button 
+                    type="submit" 
+                    disabled={createLinkMutation.isPending}
+                    className="w-full"
+                  >
+                    {createLinkMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creando enlace...
+                      </>
+                    ) : (
+                      "Crear enlace"
+                    )}
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={createLinkMutation.isPending}
-              >
-                {createLinkMutation.isPending ? "Creando..." : "Crear enlace"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Diálogo para editar enlaces */}
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar enlace de afiliado</DialogTitle>
-              <DialogDescription>
-                Modifica los detalles de tu enlace de afiliado
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="productId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Producto</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un producto" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name} - {product.commissionRate}% comisión
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="customName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre personalizado (opcional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: Oferta Black Friday" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Un nombre descriptivo para identificar este enlace
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="space-y-3">
-                  <div className="text-sm font-medium">Parámetros de seguimiento</div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="utmSource"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fuente (UTM Source)</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="utmMedium"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Medio (UTM Medium)</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="utmCampaign"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Campaña (UTM Campaign)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Opcional" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Form>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleUpdateLink}
-                disabled={updateLinkMutation.isPending}
-              >
-                {updateLinkMutation.isPending ? "Actualizando..." : "Guardar cambios"}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Enlaces totales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{affiliateLinks.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Enlaces activos de afiliado
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Clics totales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalClicks}</div>
-            <p className="text-xs text-muted-foreground">
-              Visitas generadas por tus enlaces
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Conversiones</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalConversions}</div>
-            <p className="text-xs text-muted-foreground">
-              Tasa de conversión: {conversionRate}%
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Ganancias</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalEarnings.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Comisiones acumuladas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="course">Cursos</TabsTrigger>
-          <TabsTrigger value="plugin">Plugins</TabsTrigger>
-          <TabsTrigger value="service">Servicios</TabsTrigger>
-          <TabsTrigger value="sample">Samples</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value={activeTab} className="m-0">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Tus enlaces de afiliado</CardTitle>
+          <CardDescription>
+            Gestiona y haz seguimiento de todos tus enlaces de promoción
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           {isLoadingLinks ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : filteredLinks.length === 0 ? (
-            <div className="text-center py-10 border rounded-lg bg-muted/20">
-              <LinkIcon className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-              <h3 className="text-lg font-medium">No hay enlaces aún</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {activeTab === "all" 
-                  ? "Aún no has creado ningún enlace de afiliado" 
-                  : `No tienes enlaces para productos en la categoría "${activeTab}"`}
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowLinkDialog(true)}
-                className="mx-auto"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Crear enlace
-              </Button>
+          ) : affiliateLinks && affiliateLinks.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">
+                      <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort("productId")}>
+                        Producto
+                        {sortColumn === "productId" && (
+                          <ChevronDown className={`h-4 w-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`} />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-1 cursor-pointer" onClick={() => handleSort("campaign")}>
+                        Campaña
+                        {sortColumn === "campaign" && (
+                          <ChevronDown className={`h-4 w-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`} />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center gap-1 cursor-pointer justify-center" onClick={() => handleSort("clicks")}>
+                        Clics
+                        {sortColumn === "clicks" && (
+                          <ChevronDown className={`h-4 w-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`} />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center gap-1 cursor-pointer justify-center" onClick={() => handleSort("conversions")}>
+                        Conversiones
+                        {sortColumn === "conversions" && (
+                          <ChevronDown className={`h-4 w-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`} />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex items-center gap-1 cursor-pointer justify-center" onClick={() => handleSort("earnings")}>
+                        Ganancias
+                        {sortColumn === "earnings" && (
+                          <ChevronDown className={`h-4 w-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`} />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedLinks.map((link) => {
+                    const product = products?.find(p => p.id === link.productId);
+                    return (
+                      <TableRow key={link.id}>
+                        <TableCell className="font-medium">
+                          {product?.name || "Producto desconocido"}
+                        </TableCell>
+                        <TableCell>
+                          {link.campaign ? (
+                            link.campaign
+                          ) : (
+                            <span className="text-muted-foreground text-sm italic">Sin campaña</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">{link.clicks || 0}</TableCell>
+                        <TableCell className="text-center">{link.conversions || 0}</TableCell>
+                        <TableCell className="text-center">${(link.earnings || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => copyLinkToClipboard(link.url)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>Copiar enlace</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => window.open(link.url, "_blank")}>
+                                <Link className="mr-2 h-4 w-4" />
+                                <span>Abrir enlace</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  if (confirm("¿Estás seguro de que quieres eliminar este enlace?")) {
+                                    deleteLinkMutation.mutate(link.id);
+                                  }
+                                }}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Eliminar</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredLinks.map((link) => {
-                const product = products.find(p => p.id === link.productId);
-                return (
-                  <Card key={link.id} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-base font-medium">
-                            {link.name}
-                          </CardTitle>
-                          <Badge variant="outline" className="ml-2">
-                            {product?.commissionRate || link.commissionRate}% comisión
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditLink(link)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar enlace?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. El enlace será eliminado permanentemente.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteLink(link.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="pb-3">
-                      <div className="relative">
-                        <Input 
-                          value={link.url} 
-                          readOnly 
-                          className="pr-20 text-xs bg-muted/20"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full"
-                          onClick={() => copyToClipboard(link.url)}
-                        >
-                          {copied ? (
-                            <ClipboardCheck className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Clipboard className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 mt-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold">{link.clicks || 0}</div>
-                          <p className="text-xs text-muted-foreground">Clics</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold">{link.conversions || 0}</div>
-                          <p className="text-xs text-muted-foreground">Conversiones</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold">${(link.earnings || 0).toFixed(2)}</div>
-                          <p className="text-xs text-muted-foreground">Ganancias</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                    
-                    <CardFooter className="pt-0 pb-3 flex justify-between">
-                      <div className="text-xs text-muted-foreground">
-                        Creado: {new Date(link.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="text-xs h-8">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Abrir
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs h-8">
-                          <Share2 className="h-3 w-3 mr-1" />
-                          Compartir
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs h-8">
-                          <BarChart3 className="h-3 w-3 mr-1" />
-                          Estadísticas
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                <Link className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-medium">No tienes enlaces de afiliado</h3>
+                <p className="text-sm text-muted-foreground">
+                  Crea tu primer enlace para comenzar a promocionar productos
+                </p>
+              </div>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                Crear primer enlace
+              </Button>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+        <CardFooter className="border-t px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="text-sm text-muted-foreground">
+            Total de enlaces: {affiliateLinks?.length || 0}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+              <span>Total de clics: {affiliateLinks?.reduce((sum, link) => sum + (link.clicks || 0), 0)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-green-500"></div>
+              <span>Conversiones: {affiliateLinks?.reduce((sum, link) => sum + (link.conversions || 0), 0)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-amber-500"></div>
+              <span>Ganancias totales: ${affiliateLinks?.reduce((sum, link) => sum + (link.earnings || 0), 0).toFixed(2)}</span>
+            </div>
+          </div>
+        </CardFooter>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Enlaces populares</CardTitle>
+            <CardDescription>
+              Tus enlaces con mejor rendimiento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingLinks ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : affiliateLinks && affiliateLinks.length > 0 ? (
+              <div className="space-y-4">
+                {[...affiliateLinks]
+                  .sort((a, b) => (b.conversions || 0) - (a.conversions || 0))
+                  .slice(0, 3)
+                  .map((link) => {
+                    const product = products?.find(p => p.id === link.productId);
+                    return (
+                      <div key={link.id} className="flex flex-col p-4 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{product?.name}</h4>
+                            <p className="text-sm text-muted-foreground truncate max-w-[220px]">
+                              {link.campaign || "Campaña sin nombre"}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="ml-auto">
+                            {product?.commissionRate}% comisión
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mt-3">
+                          <div className="flex flex-col items-center p-2 bg-muted rounded">
+                            <span className="text-sm font-medium">{link.clicks || 0}</span>
+                            <span className="text-xs text-muted-foreground">Clics</span>
+                          </div>
+                          <div className="flex flex-col items-center p-2 bg-muted rounded">
+                            <span className="text-sm font-medium">{link.conversions || 0}</span>
+                            <span className="text-xs text-muted-foreground">Conversiones</span>
+                          </div>
+                          <div className="flex flex-col items-center p-2 bg-muted rounded">
+                            <span className="text-sm font-medium">${(link.earnings || 0).toFixed(2)}</span>
+                            <span className="text-xs text-muted-foreground">Ganancia</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => copyLinkToClipboard(link.url)}
+                          >
+                            <Copy className="h-3.5 w-3.5 mr-1" />
+                            Copiar
+                          </Button>
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => window.open(link.url, "_blank")}
+                          >
+                            <Link className="h-3.5 w-3.5 mr-1" />
+                            Abrir
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-32 text-center space-y-2">
+                <BarChart className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Crea enlaces para ver estadísticas
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Productos recomendados</CardTitle>
+            <CardDescription>
+              Productos con altas tasas de conversión para promocionar
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : products && products.length > 0 ? (
+              <div className="space-y-4">
+                {products
+                  .sort((a, b) => b.commissionRate - a.commissionRate)
+                  .slice(0, 3)
+                  .map((product) => (
+                    <div key={product.id} className="flex flex-col p-4 border rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">{product.name}</h4>
+                        <Badge className="ml-auto bg-green-500/10 text-green-600 border-green-500/20">
+                          {product.commissionRate}% comisión
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                        {product.description}
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            form.setValue("productId", product.id);
+                            setSelectedProduct(product.id);
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                          Crear enlace
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-32 text-center space-y-2">
+                <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  No hay productos disponibles
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,1192 +1,1001 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { collection, getDocs, query, where, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-// Componentes UI
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from "firebase/firestore";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Sparkles, Copy, CheckCircle2, RotateCcw, Loader2, Save, Trash2, Download, Share2, SquarePen, Facebook, Instagram, Twitter, Youtube, ArrowRight, Wand2, Mail, Globe, FileText, Video, Link, AlertCircle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Clipboard,
-  ClipboardCheck,
-  Download,
-  Facebook,
-  Instagram,
-  Twitter,
-  Mail,
-  Share2,
-  FileText,
-  Image,
-  Sparkles,
-  Wand2,
-  Loader2,
-  BookOpen,
-  FileImage,
-  MessageSquare,
-  Hash,
-  Copy,
-  PlusCircle,
-  Star,
-  ArrowRight,
-  Trash2,
-} from "lucide-react";
-
-// Esquema para validar formulario de generación de contenido
-const contentFormSchema = z.object({
-  productId: z.string({
-    required_error: "Por favor selecciona un producto",
-  }),
-  contentType: z.enum(["post", "email", "banner", "review", "video_script"], {
-    required_error: "Por favor selecciona un tipo de contenido",
-  }),
-  platform: z.string().optional(),
-  tone: z.string().default("professional"),
-  length: z.enum(["short", "medium", "long"]).default("medium"),
-  keyPoints: z.string().optional(),
-  targetAudience: z.string().optional(),
-  includeEmojis: z.boolean().default(false),
-  includeCTA: z.boolean().default(true),
-  creative: z.number().min(0).max(100).default(50),
-});
-
-type ContentFormValues = z.infer<typeof contentFormSchema>;
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AffiliateContentGeneratorProps {
   affiliateData: any;
 }
 
+// Esquema de validación para el formulario de generación de contenido
+const contentFormSchema = z.object({
+  productId: z.string({ required_error: "Selecciona un producto" }),
+  contentType: z.string({ required_error: "Selecciona un tipo de contenido" }),
+  platform: z.string({ required_error: "Selecciona una plataforma" }),
+  tone: z.string().optional(),
+  additionalInfo: z.string().max(300, { message: "La información adicional no puede exceder los 300 caracteres" }).optional(),
+});
+
+type ContentFormValues = z.infer<typeof contentFormSchema>;
+
+// Esquema para guardar contenido generado
+const saveContentSchema = z.object({
+  title: z.string().min(3, { message: "El título debe tener al menos 3 caracteres" }).max(100),
+  tags: z.string().optional(),
+});
+
+type SaveContentValues = z.infer<typeof saveContentSchema>;
+
 export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGeneratorProps) {
   const { user } = useAuth() || {};
-  const { toast } = useToast();
-  const [generatedContent, setGeneratedContent] = useState<string>("");
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("generate");
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [contentHistory, setContentHistory] = useState<any[]>([]);
-  const [copiedContent, setCopiedContent] = useState(false);
-  const [activeTab, setActiveTab] = useState("generator");
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-
-  // Formulario para generar contenido
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [currentContentType, setCurrentContentType] = useState<string | null>(null);
+  const [currentPlatform, setCurrentPlatform] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  
+  // Inicializar useForm con el esquema de validación
   const form = useForm<ContentFormValues>({
     resolver: zodResolver(contentFormSchema),
     defaultValues: {
       productId: "",
-      contentType: "post",
-      platform: "instagram",
-      tone: "professional",
-      length: "medium",
-      keyPoints: "",
-      targetAudience: "",
-      includeEmojis: true,
-      includeCTA: true,
-      creative: 50,
+      contentType: "",
+      platform: "",
+      tone: "friendly",
+      additionalInfo: "",
     },
   });
 
-  // Consultar productos disponibles para afiliar
-  const { data: products = [] } = useQuery({
+  // Formulario para guardar contenido
+  const saveForm = useForm<SaveContentValues>({
+    resolver: zodResolver(saveContentSchema),
+    defaultValues: {
+      title: "",
+      tags: "",
+    },
+  });
+
+  // Consulta para obtener los productos disponibles para afiliados
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["affiliate-products"],
     queryFn: async () => {
-      // En una implementación real, esta información vendría de la base de datos
-      return [
-        {
-          id: "prod1",
-          name: "Curso de Producción Musical",
-          description: "Aprende a producir música profesional desde cero",
-          price: 199.99,
-          commissionRate: 25,
-          imageUrl: "/assets/course-thumbnail.jpg",
-          category: "course",
-        },
-        {
-          id: "prod2",
-          name: "Plugin de Masterización Avanzada",
-          description: "El mejor plugin para masterizar tus producciones",
-          price: 149.99,
-          commissionRate: 20,
-          imageUrl: "/assets/plugin-thumbnail.jpg",
-          category: "plugin",
-        },
-        {
-          id: "prod3",
-          name: "Paquete de Distribución Musical",
-          description: "Distribuye tu música en todas las plataformas",
-          price: 99.99,
-          commissionRate: 30,
-          imageUrl: "/assets/distribution-thumbnail.jpg",
-          category: "service",
-        },
-        {
-          id: "prod4",
-          name: "Mentoría Personalizada",
-          description: "Sesiones 1-a-1 con productores profesionales",
-          price: 299.99,
-          commissionRate: 15,
-          imageUrl: "/assets/mentorship-thumbnail.jpg",
-          category: "service",
-        },
-        {
-          id: "prod5",
-          name: "Bundle de Samples Exclusivos",
-          description: "1000+ samples de alta calidad para tus producciones",
-          price: 49.99,
-          commissionRate: 40,
-          imageUrl: "/assets/samples-thumbnail.jpg",
-          category: "sample",
-        },
-      ];
+      const productsRef = collection(db, "affiliateProducts");
+      const querySnapshot = await getDocs(productsRef);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
     },
   });
 
-  // Cargar historia de contenido generado
-  const { data: savedContent = [], refetch: refetchSavedContent } = useQuery({
-    queryKey: ["affiliate-content", user?.uid],
+  // Consulta para obtener el historial de contenido generado
+  const { data: contentHistory, isLoading: isLoadingContentHistory } = useQuery({
+    queryKey: ["affiliate-content-history", user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
       
-      try {
-        const contentRef = collection(db, "affiliate_content");
-        const q = query(contentRef, where("userId", "==", user.uid));
-        const snapshot = await getDocs(q);
-        
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        }));
-      } catch (error) {
-        console.error("Error fetching saved content:", error);
-        return [];
-      }
+      const contentRef = collection(db, "affiliateContent");
+      const q = query(
+        contentRef, 
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+      }));
     },
-    enabled: !!user?.uid,
+    enabled: !!user?.uid && activeTab === "history",
   });
 
-  // Plantillas predefinidas
-  const contentTemplates = [
-    {
-      id: "template1",
-      name: "Promoción Flash",
-      description: "Ideal para ofertas por tiempo limitado",
-      type: "post",
-      platform: "instagram",
-      template: "🔥 ¡OFERTA FLASH! 🔥\n\n¿Quieres mejorar tus habilidades musicales? Tenemos una oferta especial por tiempo limitado en [PRODUCTO].\n\nConsigue un [DESCUENTO]% de descuento usando mi código: [CODIGO]\n\n⏰ Solo por 48 horas ⏰\n\n#música #producciónmusical #oferta #limitada",
-      imageUrl: "/assets/template-flash.jpg",
-    },
-    {
-      id: "template2",
-      name: "Testimonial",
-      description: "Comparte tu experiencia con el producto",
-      type: "post",
-      platform: "facebook",
-      template: "Mi experiencia con [PRODUCTO] ha sido increíble. Después de [TIEMPO] utilizándolo, puedo decir que mi [BENEFICIO PRINCIPAL] ha mejorado enormemente.\n\nLo que más me gusta es [CARACTERÍSTICA], porque [RAZÓN].\n\nSi quieres probarlo tú mismo, puedes conseguirlo con un [DESCUENTO]% de descuento usando mi enlace: [ENLACE]\n\n¿Alguien más lo ha probado? ¡Comparte tu experiencia en los comentarios!",
-      imageUrl: "/assets/template-testimonial.jpg",
-    },
-    {
-      id: "template3",
-      name: "Tutorial Rápido",
-      description: "Demuestra un uso básico del producto",
-      type: "video_script",
-      platform: "youtube",
-      template: "## GUIÓN PARA TUTORIAL RÁPIDO\n\nINTRO (0:00-0:15)\n¡Hola a todos! En este video voy a mostraros cómo [BENEFICIO PRINCIPAL] utilizando [PRODUCTO].\n\nPRESENTACIÓN DEL PRODUCTO (0:15-0:45)\nEste es [PRODUCTO], una herramienta que os ayudará a [BENEFICIO]. Lo que lo hace especial es [CARACTERÍSTICA ÚNICA].\n\nTUTORIAL PASO A PASO (0:45-2:00)\n1. Primero, [PASO 1]\n2. Después, [PASO 2]\n3. Finalmente, [PASO 3]\n\nRESULTADOS (2:00-2:30)\nComo podéis ver, el resultado es [DESCRIPCIÓN DEL RESULTADO].\n\nOFERTA ESPECIAL (2:30-3:00)\nSi queréis conseguir [PRODUCTO], podéis usar mi código [CÓDIGO] para obtener un [DESCUENTO]% de descuento. El enlace está en la descripción.\n\nCIERRE (3:00-3:15)\nGracias por ver este tutorial. Si os ha gustado, no olvidéis darle like y suscribiros para más contenido como este.",
-      imageUrl: "/assets/template-tutorial.jpg",
-    },
-    {
-      id: "template4",
-      name: "Email Promocional",
-      description: "Para enviar a tu lista de suscriptores",
-      type: "email",
-      platform: "email",
-      template: "Asunto: [OFERTA ESPECIAL] para mejorar tu producción musical\n\nHola [NOMBRE],\n\nEspero que estés bien. Hoy quiero compartir contigo una herramienta que ha transformado mi forma de [ACTIVIDAD RELACIONADA].\n\n[PRODUCTO] es un [TIPO DE PRODUCTO] que te permite [BENEFICIO PRINCIPAL]. Desde que empecé a usarlo, he notado una gran mejora en [RESULTADO].\n\nLo mejor es que ahora mismo puedes conseguirlo con un [DESCUENTO]% de descuento usando mi código de afiliado: [CÓDIGO].\n\n👉 [ENLACE]\n\nEsta oferta solo estará disponible hasta el [FECHA], así que no esperes demasiado.\n\nSi tienes alguna pregunta sobre el producto, responde a este email y estaré encantado de ayudarte.\n\nUn saludo,\n[TU NOMBRE]",
-      imageUrl: "/assets/template-email.jpg",
-    },
-    {
-      id: "template5",
-      name: "Comparativa",
-      description: "Compara el producto con alternativas",
-      type: "post",
-      platform: "blog",
-      template: "# [PRODUCTO] vs. La Competencia: ¿Cuál es mejor para [ACTIVIDAD]?\n\nSi estás buscando un [TIPO DE PRODUCTO] para [ACTIVIDAD], probablemente te hayas encontrado con varias opciones. En este artículo, voy a comparar [PRODUCTO] con sus principales competidores.\n\n## Características principales\n\n### [PRODUCTO]\n- [CARACTERÍSTICA 1]\n- [CARACTERÍSTICA 2]\n- [CARACTERÍSTICA 3]\n- Precio: [PRECIO]\n\n### Competidor 1: [NOMBRE]\n- [CARACTERÍSTICA 1]\n- [CARACTERÍSTICA 2]\n- [CARACTERÍSTICA 3]\n- Precio: [PRECIO]\n\n### Competidor 2: [NOMBRE]\n- [CARACTERÍSTICA 1]\n- [CARACTERÍSTICA 2]\n- [CARACTERÍSTICA 3]\n- Precio: [PRECIO]\n\n## Conclusión\n\nAunque cada opción tiene sus ventajas, [PRODUCTO] destaca en [VENTAJA PRINCIPAL]. Si valoras [BENEFICIO], entonces [PRODUCTO] es tu mejor opción.\n\nActualmente puedes conseguir [PRODUCTO] con un [DESCUENTO]% de descuento usando mi enlace: [ENLACE]",
-      imageUrl: "/assets/template-comparison.jpg",
-    },
-  ];
-
-  // Mutación para generar contenido con IA
-  const generateContentMutation = useMutation({
-    mutationFn: async (data: ContentFormValues) => {
-      // En una implementación real, esta llamada iría a una API que utiliza OpenAI o similar
-      // Por ahora, simulamos una respuesta para demostración
+  // Mutación para guardar contenido generado
+  const saveContentMutation = useMutation({
+    mutationFn: async (data: SaveContentValues) => {
+      if (!user?.uid || !generatedContent || !currentContentType || !currentPlatform) {
+        throw new Error("Faltan datos necesarios");
+      }
       
-      const selectedProduct = products.find(p => p.id === data.productId);
-      if (!selectedProduct) throw new Error("Producto no encontrado");
+      const productId = form.getValues("productId");
+      const selectedProduct = products?.find(p => p.id === productId);
       
-      // Construir el prompt para la API de OpenAI/Claude
-      const prompt = `
-        Genera contenido promocional para el siguiente producto musical:
-        
-        Producto: ${selectedProduct.name}
-        Descripción: ${selectedProduct.description}
-        Precio: $${selectedProduct.price}
-        
-        Tipo de contenido: ${data.contentType}
-        Plataforma: ${data.platform || 'general'}
-        Tono: ${data.tone}
-        Longitud: ${data.length}
-        Puntos clave a incluir: ${data.keyPoints || 'No especificado'}
-        Audiencia objetivo: ${data.targetAudience || 'Músicos y productores'}
-        Incluir emojis: ${data.includeEmojis ? 'Sí' : 'No'}
-        Incluir llamada a la acción: ${data.includeCTA ? 'Sí' : 'No'}
-        Nivel de creatividad: ${data.creative}%
-        
-        El contenido debe incluir mi código de afiliado: ${affiliateData?.referralCode || 'AFILIADO10'}
-        
-        Genera un ${data.contentType} atractivo y persuasivo que destaque las características 
-        del producto y motive a la audiencia a realizar una compra utilizando mi enlace de afiliado.
-      `;
+      const contentData = {
+        userId: user.uid,
+        content: generatedContent,
+        title: data.title,
+        tags: data.tags ? data.tags.split(",").map(tag => tag.trim()) : [],
+        productId,
+        productName: selectedProduct?.name || "",
+        contentType: currentContentType,
+        platform: currentPlatform,
+        createdAt: serverTimestamp(),
+      };
       
-      // Simular llamada a la API (en producción, esto sería una llamada real)
-      return await apiRequest({
-        url: "/api/affiliates/generate-content",
-        method: "POST",
-        data: {
-          prompt,
-          model: "claude-3-haiku-20240307", // o "gpt-4" dependiendo de la implementación
-          userId: user?.uid,
-          productId: data.productId,
-          contentType: data.contentType,
-        },
-      })
-      .catch(error => {
-        console.error("Error calling generation API:", error);
-        
-        // Respuesta fallback para demo
-        return {
-          content: generateFallbackContent(selectedProduct, data),
-        };
-      });
+      const docRef = await addDoc(collection(db, "affiliateContent"), contentData);
+      return { id: docRef.id, ...contentData };
     },
-    onSuccess: (data) => {
-      setGeneratedContent(data.content);
-      toast({
-        title: "Contenido generado",
-        description: "El contenido se ha generado exitosamente.",
-      });
-      
-      // Guardar en Firestore
-      saveGeneratedContent(data.content, form.getValues());
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["affiliate-content-history", user?.uid] });
+      setShowSaveDialog(false);
+      setIsSaving(false);
+      saveForm.reset();
     },
     onError: (error) => {
-      console.error("Error al generar contenido:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo generar el contenido. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-      setIsGenerating(false);
+      console.error("Error al guardar contenido:", error);
+      setIsSaving(false);
     },
   });
-  
-  // Función para generar contenido de fallback (cuando la API falla o para demo)
-  const generateFallbackContent = (product: any, formData: ContentFormValues) => {
-    let content = "";
-    const referralCode = affiliateData?.referralCode || "AFILIADO10";
-    
-    switch (formData.contentType) {
+
+  // Tipos de contenido disponibles
+  const contentTypes = [
+    { value: "post", label: "Publicación", description: "Texto ideal para compartir en redes sociales" },
+    { value: "caption", label: "Descripción", description: "Texto corto para acompañar imágenes" },
+    { value: "email", label: "Email", description: "Formato para campañas de email marketing" },
+    { value: "article", label: "Artículo", description: "Contenido detallado para blogs o sitios web" },
+    { value: "video_script", label: "Guión de video", description: "Estructura para crear contenido en video" },
+  ];
+
+  // Plataformas disponibles según el tipo de contenido
+  const getPlatformsForContentType = (contentType: string) => {
+    switch (contentType) {
       case "post":
-        if (formData.platform === "instagram") {
-          content = `🎵 ¡ATENCIÓN MÚSICOS Y PRODUCTORES! 🎵
-
-¿Buscas llevar tu música al siguiente nivel? ${product.name} es la solución que necesitas.
-
-✅ ${product.description}
-✅ Ideal para ${formData.targetAudience || "todos los niveles"}
-✅ Precio especial: $${product.price}
-
-🔥 OFERTA EXCLUSIVA: Usa mi código "${referralCode}" y obtén un 10% de DESCUENTO.
-
-👉 Link en bio para más información
-👉 Oferta por tiempo limitado
-
-#música #producciónmusical #ofertas #tutorial #músicos`;
-        } else if (formData.platform === "facebook") {
-          content = `¡Gran noticia para los amantes de la música! 🎵
-
-He descubierto una herramienta increíble que ha transformado mi forma de producir música: ${product.name}.
-
-¿Qué hace que ${product.name} sea especial?
-• ${product.description}
-• Perfecto para ${formData.targetAudience || "músicos de todos los niveles"}
-• Interfaz intuitiva y resultados profesionales
-
-Desde que empecé a usarlo, he notado una gran mejora en mis producciones. La calidad del sonido es excepcional y el flujo de trabajo es mucho más eficiente.
-
-Si quieres probarlo tú mismo, puedes conseguirlo ahora con un descuento exclusivo usando mi código de afiliado: ${referralCode}
-
-👉 [ENLACE DE AFILIADO]
-
-¿Alguien más lo ha probado? ¡Comparte tu experiencia en los comentarios!`;
-        } else {
-          content = `# Transforma tu música con ${product.name}
-
-Si eres un músico o productor que busca mejorar la calidad de tus producciones, tengo una recomendación que podría cambiar tu juego: **${product.name}**.
-
-## ¿Por qué me encanta ${product.name}?
-
-${product.description}. He estado usándolo durante las últimas semanas y la diferencia en mis producciones es notable.
-
-### Características destacadas:
-- Calidad profesional
-- Fácil de usar
-- Resultados inmediatos
-- Excelente relación calidad-precio
-
-A $${product.price}, es una inversión que vale la pena para cualquier músico serio.
-
-**OFERTA ESPECIAL:** Usa mi código "${referralCode}" para obtener un 10% de descuento.
-
-[Consíguelo aquí →](enlace-afiliado)
-
-¿Has probado ${product.name}? Me encantaría saber tu opinión en los comentarios.`;
-        }
-        break;
-        
+        return [
+          { value: "facebook", label: "Facebook", icon: <Facebook className="h-4 w-4 mr-2" /> },
+          { value: "instagram", label: "Instagram", icon: <Instagram className="h-4 w-4 mr-2" /> },
+          { value: "twitter", label: "Twitter", icon: <Twitter className="h-4 w-4 mr-2" /> },
+        ];
+      case "caption":
+        return [
+          { value: "instagram", label: "Instagram", icon: <Instagram className="h-4 w-4 mr-2" /> },
+          { value: "youtube", label: "YouTube", icon: <Youtube className="h-4 w-4 mr-2" /> },
+        ];
       case "email":
-        content = `Asunto: Descubre el secreto para mejorar tu producción musical
-
-Hola [Nombre],
-
-Espero que este email te encuentre bien y que tus proyectos musicales estén avanzando.
-
-Quería compartir contigo una herramienta que ha transformado completamente mi proceso de producción: ${product.name}.
-
-${product.description}. Desde que empecé a usarlo, he notado una mejora significativa en la calidad de mis producciones, y el tiempo que ahorro es invaluable.
-
-Estas son algunas de las razones por las que me encanta:
-
-• Resultados profesionales sin complicaciones
-• Interfaz intuitiva, perfecta incluso si eres principiante
-• Soporte técnico excepcional
-• Actualizaciones regulares con nuevas funcionalidades
-
-Normalmente cuesta $${product.price}, pero como lector de mi newsletter, puedes conseguirlo con un 10% de descuento usando mi código: ${referralCode}
-
-👉 [ENLACE DE AFILIADO]
-
-Esta oferta es por tiempo limitado, así que no esperes demasiado si estás interesado.
-
-Si tienes alguna pregunta sobre ${product.name} o cómo lo utilizo en mi flujo de trabajo, no dudes en responder a este email. Estaré encantado de ayudarte.
-
-¡Feliz producción!
-
-[Tu nombre]
-
-P.D.: Si ya usas ${product.name}, me encantaría saber tu opinión. ¡Responde a este email y cuéntame tu experiencia!`;
-        break;
-        
+        return [
+          { value: "newsletter", label: "Newsletter", icon: <FileText className="h-4 w-4 mr-2" /> },
+          { value: "promotional", label: "Promocional", icon: <FileText className="h-4 w-4 mr-2" /> },
+        ];
+      case "article":
+        return [
+          { value: "blog", label: "Blog", icon: <FileText className="h-4 w-4 mr-2" /> },
+          { value: "website", label: "Sitio web", icon: <Globe className="h-4 w-4 mr-2" /> },
+        ];
       case "video_script":
-        content = `# GUIÓN: Cómo ${product.name} revolucionó mi producción musical
-
-## INTRO (0:00-0:30)
-¡Hola a todos! En el video de hoy voy a hablaros de una herramienta que ha cambiado completamente mi forma de producir música: ${product.name}.
-
-## PROBLEMA (0:30-1:00)
-Antes de descubrir este producto, me enfrentaba constantemente a [PROBLEMA COMÚN]. Estaba frustrado, perdía tiempo y mis producciones no sonaban como yo quería.
-
-## PRESENTACIÓN DEL PRODUCTO (1:00-1:30)
-Aquí es donde entra ${product.name}. Este ${product.category === 'plugin' ? 'plugin' : product.category === 'course' ? 'curso' : 'servicio'} te permite ${product.description}.
-
-## DEMOSTRACIÓN (1:30-3:00)
-Vamos a ver cómo funciona en la práctica. [MOSTRAR DEMOSTRACIÓN DEL PRODUCTO]
-
-## RESULTADOS Y BENEFICIOS (3:00-4:00)
-Desde que empecé a usar ${product.name}, he notado estos cambios en mis producciones:
-- Mejor calidad de sonido
-- Flujo de trabajo más eficiente
-- Más creatividad
-- Ahorro de tiempo
-
-## TESTIMONIOS (4:00-4:30)
-No soy el único que ha experimentado estos beneficios. Escuchad lo que dicen otros usuarios:
-[INCLUIR 2-3 TESTIMONIOS CORTOS]
-
-## OFERTA (4:30-5:00)
-Si queréis probarlo vosotros mismos, tengo una oferta especial para los seguidores de este canal. Usando mi código "${referralCode}", obtendréis un 10% de descuento.
-
-El enlace está en la descripción, pero esta oferta es por tiempo limitado, así que no esperéis demasiado.
-
-## CIERRE (5:00-5:30)
-¿Habéis probado ${product.name} o herramientas similares? Dejadme saber en los comentarios. Y como siempre, si os ha gustado el video, no olvidéis darle like y suscribiros para más contenido como este.
-
-¡Hasta la próxima!`;
-        break;
-        
-      case "banner":
-        content = `[DISEÑO DE BANNER PARA ${formData.platform?.toUpperCase() || 'REDES SOCIALES'}]
-
-ELEMENTOS PRINCIPALES:
-
-- IMAGEN DE FONDO: Productor musical o DJ en estudio con ${product.name} visible
-- TEXTO PRINCIPAL: "${product.name} - ${product.description}"
-- SUBTEXTO: "Eleva tu producción musical al siguiente nivel"
-- TEXTO CTA: "OBTÉN UN 10% DE DESCUENTO CON EL CÓDIGO: ${referralCode}"
-- BOTÓN: "COMPRAR AHORA" con enlace de afiliado
-- PALETA DE COLORES: Azul oscuro, naranja vibrante y blanco
-- LOGO: Logo de ${product.name} en la esquina inferior derecha
-- TU MARCA: Tu logo/nombre en la esquina inferior izquierda
-
-DIMENSIONES RECOMENDADAS:
-- Instagram Feed: 1080 x 1080 px
-- Facebook: 1200 x 628 px
-- Twitter: 1600 x 900 px
-- Banner web: 970 x 250 px
-
-NOTAS DE DISEÑO:
-- Usar tipografía moderna y legible
-- Mantener contraste entre texto y fondo
-- Incluir una imagen del producto en uso
-- Destacar el precio con tachado del precio original: "$${product.price}" y luego el precio con descuento
-- Añadir un pequeño indicador de "Tiempo limitado" para generar urgencia`;
-        break;
-        
-      case "review":
-        content = `# Reseña: ${product.name} - ¿Vale la pena?
-
-## Introducción
-
-Hoy quiero compartir mi experiencia con ${product.name}, un ${product.category === 'plugin' ? 'plugin' : product.category === 'course' ? 'curso' : 'servicio'} que he estado utilizando durante las últimas semanas. Para quienes no lo conozcan, ${product.description}.
-
-## Primeras impresiones
-
-Al abrir ${product.name} por primera vez, me sorprendió su interfaz limpia y organizada. No se siente abrumador como otras herramientas similares, lo que es un gran punto a favor para principiantes.
-
-## Características destacadas
-
-- **Característica 1**: Excelente calidad de [característica relevante]
-- **Característica 2**: Flujo de trabajo intuitivo que ahorra tiempo
-- **Característica 3**: Actualizaciones regulares con nuevas funcionalidades
-- **Característica 4**: Soporte técnico excepcional
-
-## Pros y contras
-
-### Pros:
-- Fácil de usar, incluso para principiantes
-- Resultados profesionales
-- Excelente relación calidad-precio
-- Comunidad activa de usuarios
-
-### Contras:
-- Requiere cierta curva de aprendizaje al principio
-- Algunas funciones avanzadas podrían estar mejor documentadas
-
-## Resultados reales
-
-Desde que empecé a usar ${product.name}, he notado una mejora significativa en [resultado relevante]. Mis [proyectos/canciones/producciones] suenan más profesionales y el tiempo que antes perdía en [problema común] ahora lo puedo dedicar a ser más creativo.
-
-## Comparación con alternativas
-
-He probado otras soluciones como [Competidor 1] y [Competidor 2], pero ${product.name} se destaca por su [ventaja principal].
-
-## Conclusión
-
-A $${product.price}, ${product.name} ofrece un valor excepcional. Si eres un [audiencia objetivo] que busca mejorar [beneficio principal], lo recomiendo encarecidamente.
-
-**Puntuación final: 4.5/5 estrellas**
-
-## Oferta especial
-
-Si quieres probarlo tú mismo, puedes conseguir un 10% de descuento usando mi código de afiliado: **${referralCode}**
-
-[Comprar ${product.name} con descuento →](enlace-afiliado)
-
-*Nota: Este artículo contiene enlaces de afiliado, lo que significa que puedo recibir una comisión si realizas una compra a través de ellos, sin costo adicional para ti.*`;
-        break;
+        return [
+          { value: "youtube", label: "YouTube", icon: <Youtube className="h-4 w-4 mr-2" /> },
+          { value: "tiktok", label: "TikTok", icon: <Video className="h-4 w-4 mr-2" /> },
+          { value: "instagram", label: "Instagram Reels", icon: <Instagram className="h-4 w-4 mr-2" /> },
+        ];
+      default:
+        return [];
     }
-    
-    return content;
   };
 
-  // Guardar contenido generado en Firestore
-  const saveGeneratedContent = async (content: string, formData: ContentFormValues) => {
-    if (!user?.uid) return;
+  // Tonos de contenido disponibles
+  const contentTones = [
+    { value: "friendly", label: "Amigable" },
+    { value: "professional", label: "Profesional" },
+    { value: "enthusiastic", label: "Entusiasta" },
+    { value: "informative", label: "Informativo" },
+    { value: "persuasive", label: "Persuasivo" },
+  ];
+
+  // Ver detalles de plataforma al cambiar tipo de contenido
+  const onContentTypeChange = (value: string) => {
+    setCurrentContentType(value);
+    form.setValue("platform", "");
+  };
+
+  // Manejar la generación de contenido
+  const onSubmit = async (data: ContentFormValues) => {
+    setIsGenerating(true);
+    setGenerationError(null);
     
     try {
-      const selectedProduct = products.find(p => p.id === formData.productId);
+      setCurrentContentType(data.contentType);
+      setCurrentPlatform(data.platform);
       
-      await addDoc(collection(db, "affiliate_content"), {
-        userId: user.uid,
-        content,
-        productId: formData.productId,
-        productName: selectedProduct?.name,
-        contentType: formData.contentType,
-        platform: formData.platform,
-        createdAt: serverTimestamp(),
-      });
+      // Buscar información del producto seleccionado
+      const selectedProduct = products?.find(p => p.id === data.productId);
       
-      refetchSavedContent();
-    } catch (error) {
-      console.error("Error saving generated content:", error);
+      if (!selectedProduct) {
+        throw new Error("Producto no encontrado");
+      }
+      
+      // En una implementación real, aquí se haría la llamada a una API de generación de contenido (OpenAI, etc.)
+      // Para simular una generación, usaremos contenido de ejemplo según el tipo
+      
+      let generatedText = '';
+      
+      // Simular tiempo de generación
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Ejemplos de contenido según el tipo y plataforma
+      switch (data.contentType) {
+        case "post":
+          if (data.platform === "instagram") {
+            generatedText = `✨ ¡Eleva tu música al siguiente nivel con ${selectedProduct.name}! ✨\n\nDescubrí la herramienta que está revolucionando la industria musical. Con ${selectedProduct.name} podés potenciar tu sonido de maneras que nunca imaginaste.\n\n¿Por qué elegir ${selectedProduct.name}?\n• Calidad profesional\n• Interfaz intuitiva\n• Resultados inmediatos\n\n¡No esperes más para dar el salto que tu carrera musical necesita! Hacé clic en el link de mi bio para conocer más y obtener un 15% de descuento exclusivo.\n\n#MúsicaProfesional #ProducciónMusical #ArtistasEmergentes #BoostifyMusic`;
+          } else if (data.platform === "facebook") {
+            generatedText = `¿Buscando mejorar tu producción musical? ${selectedProduct.name} es la respuesta que estabas esperando.\n\nComo productor, siempre estoy en busca de herramientas que realmente marquen la diferencia, y tengo que decir que ${selectedProduct.name} ha transformado completamente mi flujo de trabajo.\n\nLo que más me gusta:\n• La calidad de sonido es impecable\n• La facilidad de uso es sorprendente\n• El soporte técnico responde rápidamente\n\nSi estás en la industria musical y quieres llevar tus creaciones al siguiente nivel, te recomiendo 100% que pruebes ${selectedProduct.name}. ¡No te arrepentirás!\n\nHaz clic en mi enlace para obtener un 15% de descuento exclusivo: [ENLACE DE AFILIADO]`;
+          } else if (data.platform === "twitter") {
+            generatedText = `Acabo de descubrir ${selectedProduct.name} y ha cambiado completamente mi forma de producir música 🎵\n\nCalidad profesional sin complicaciones ✅\nInterfaz intuitiva ✅\nResultados inmediatos ✅\n\nObtén 15% OFF con mi código: [ENLACE] #MúsicaProfesional #ProducciónMusical`;
+          }
+          break;
+        
+        case "caption":
+          if (data.platform === "instagram") {
+            generatedText = `La herramienta que está revolucionando mi estudio 🎧 ${selectedProduct.name} ha elevado mis producciones a otro nivel. ¿Quieres saber cómo? Enlace en bio para 15% de descuento exclusivo ⬆️ #BoostifyMusic #ProducciónMusical`;
+          } else if (data.platform === "youtube") {
+            generatedText = `En este video te muestro cómo ${selectedProduct.name} transformó mi proceso creativo y mejoró dramáticamente la calidad de mis producciones. Si quieres probarlo tú mismo, encuentra mi enlace de descuento en la descripción para obtener un 15% OFF. ¡No olvides suscribirte para más consejos de producción musical!`;
+          }
+          break;
+        
+        case "email":
+          if (data.platform === "newsletter") {
+            generatedText = `Asunto: La herramienta secreta de los productores profesionales\n\nHola [Nombre],\n\nEspero que este email te encuentre bien y que tus proyectos musicales estén avanzando con éxito.\n\nHoy quiero compartir contigo un descubrimiento que ha transformado mi estudio y mi flujo de trabajo: ${selectedProduct.name}.\n\nDurante años, he probado decenas de herramientas para mejorar mi producción musical, pero ninguna ha tenido el impacto que ${selectedProduct.name} ha logrado en tan poco tiempo.\n\n¿Qué hace que ${selectedProduct.name} sea tan especial?\n\n1. Calidad profesional sin complicaciones\n2. Interfaz intuitiva que te permite centrarte en la creatividad\n3. Resultados inmediatos que elevan tus producciones\n\nNo se trata solo de otra herramienta más. ${selectedProduct.name} está diseñado específicamente para ayudarte a superar los obstáculos comunes en la producción musical y permitirte crear con libertad.\n\nComo lector de mi newsletter, quiero ofrecerte la oportunidad de probar ${selectedProduct.name} con un 15% de descuento exclusivo. Simplemente haz clic en el siguiente enlace:\n\n[ENLACE DE AFILIADO]\n\nEste descuento estará disponible solo por tiempo limitado, así que no pierdas la oportunidad.\n\n¿Preguntas sobre cómo utilizar ${selectedProduct.name} en tu flujo de trabajo? Responde a este email y estaré encantado de ayudarte.\n\nMusicalmente,\n[Tu nombre]\n\nP.D.: Si ya usas ${selectedProduct.name}, me encantaría conocer tu experiencia. ¡Comparte tus resultados!`;
+          } else if (data.platform === "promotional") {
+            generatedText = `Asunto: 🎵 15% OFF en ${selectedProduct.name} - Oferta exclusiva por tiempo limitado\n\nHola [Nombre],\n\n¿Estás buscando llevar tu producción musical al siguiente nivel?\n\n**PRESENTANDO ${selectedProduct.name.toUpperCase()}**\n\nLa herramienta que está revolucionando la industria musical ya está disponible con un descuento exclusivo para mis seguidores.\n\n${selectedProduct.name} te ofrece:\n\n✅ Calidad profesional en cada proyecto\n✅ Flujo de trabajo optimizado\n✅ Interfaz intuitiva\n✅ Soporte técnico premium\n\nPor tiempo limitado, puedes obtener ${selectedProduct.name} con un 15% de descuento utilizando mi enlace exclusivo:\n\n[BOTÓN: OBTENER MI 15% DE DESCUENTO]\n\nNo esperes más para transformar tu sonido. Esta oferta expira en 48 horas.\n\n¿Quieres ver ${selectedProduct.name} en acción? Visita mi canal de YouTube donde comparto tutoriales y consejos sobre cómo sacar el máximo provecho de esta increíble herramienta.\n\n¡Mejora tu sonido hoy mismo!\n\n[Tu nombre]\n\nP.D.: ¿Preguntas sobre ${selectedProduct.name}? Responde a este email y te ayudaré personalmente.`;
+          }
+          break;
+        
+        case "article":
+          if (data.platform === "blog") {
+            generatedText = `# Cómo ${selectedProduct.name} Está Revolucionando la Producción Musical\n\n## Introducción\n\nEn el competitivo mundo de la producción musical, mantenerse actualizado con las últimas herramientas y tecnologías es crucial para destacar. Entre las numerosas opciones disponibles, ${selectedProduct.name} ha emergido como un punto de inflexión para productores de todos los niveles. En este artículo, exploraremos por qué ${selectedProduct.name} está generando tanto revuelo en la industria y cómo puede transformar tu flujo de trabajo creativo.\n\n## ¿Qué es ${selectedProduct.name}?\n\n${selectedProduct.name} es una solución innovadora diseñada específicamente para abordar los desafíos comunes que enfrentan los productores musicales modernos. Combinando tecnología de vanguardia con una interfaz intuitiva, ofrece un conjunto de herramientas que optimizan cada fase del proceso de producción.\n\n## Características principales\n\n### Calidad profesional sin complicaciones\n\nA diferencia de otras herramientas que requieren una curva de aprendizaje pronunciada, ${selectedProduct.name} permite obtener resultados profesionales desde el primer uso. Su motor de procesamiento de audio de alta fidelidad garantiza que cada proyecto suene impecable, independientemente de tu nivel de experiencia técnica.\n\n### Flujo de trabajo optimizado\n\nUno de los aspectos más destacados de ${selectedProduct.name} es su capacidad para simplificar procesos complejos. La interfaz está diseñada meticulosamente para eliminar distracciones y permitirte centrarte en lo más importante: tu creatividad. Desde la conceptualización hasta la masterización, cada paso se ha optimizado para maximizar la eficiencia.\n\n### Compatibilidad versátil\n\n${selectedProduct.name} se integra perfectamente con las principales plataformas y DAWs del mercado, lo que facilita su incorporación a tu configuración actual. Esta compatibilidad universal elimina las barreras técnicas y te permite aprovechar sus beneficios sin tener que modificar radicalmente tu flujo de trabajo establecido.\n\n## Mi experiencia personal con ${selectedProduct.name}\n\nComo productor con más de 10 años de experiencia, he probado innumerables herramientas a lo largo de mi carrera. Sin embargo, pocas han tenido un impacto tan inmediato y significativo como ${selectedProduct.name}.\n\nLo que más me impresionó fue cómo transformó proyectos que parecían estancados en producciones vibrantes y dinámicas. El plugin de ${selectedProduct.name} para procesamiento de vocales, en particular, añadió una dimensión completamente nueva a mis mezclas que no había podido lograr con ninguna otra herramienta.\n\n## ¿Vale la pena la inversión?\n\nCualquier herramienta de producción representa una inversión, y es natural preguntarse si ${selectedProduct.name} justifica su precio. Basado en mi experiencia y en los resultados tangibles que he obtenido, puedo afirmar con confianza que ${selectedProduct.name} ofrece un valor excepcional.\n\nConsiderando el tiempo que ahorra, la calidad que aporta y la versatilidad que ofrece, ${selectedProduct.name} se amortiza rápidamente. Además, su equipo de desarrollo lanza actualizaciones regularmente, lo que significa que tu inversión continúa incrementando su valor con el tiempo.\n\n## Conclusión\n\nEn un mercado saturado de herramientas de producción musical, ${selectedProduct.name} logra destacar por su combinación única de simplicidad, potencia y versatilidad. Ya seas un productor novato buscando mejorar la calidad de tus creaciones o un profesional experimentado que busca optimizar su flujo de trabajo, ${selectedProduct.name} tiene algo valioso que ofrecer.\n\nSi estás listo para llevar tu producción musical al siguiente nivel, te recomiendo encarecidamente que pruebes ${selectedProduct.name}. Como lector de mi blog, puedes obtener un 15% de descuento utilizando el código exclusivo en el siguiente enlace: [ENLACE DE AFILIADO].\n\n¿Has probado ${selectedProduct.name} o tienes preguntas sobre cómo integrarlo en tu configuración? Comparte tus pensamientos en los comentarios a continuación, y estaré encantado de discutir más detalles o proporcionar consejos basados en mi experiencia.`;
+          } else if (data.platform === "website") {
+            generatedText = `# Potencia tu creatividad musical con ${selectedProduct.name}\n\n## La herramienta definitiva para productores y artistas\n\n${selectedProduct.name} representa un avance revolucionario en tecnología de producción musical, diseñado para eliminar barreras técnicas y permitir que tu creatividad fluya sin obstáculos. Desde estudios profesionales hasta configuraciones caseras, ${selectedProduct.name} está transformando cómo los músicos de todo el mundo crean y producen música de calidad profesional.\n\n## Características principales\n\n- **Interfaz intuitiva** que permite resultados profesionales sin necesidad de años de experiencia técnica\n- **Procesamiento de audio de alta fidelidad** que garantiza calidad excepcional en cada proyecto\n- **Plantillas personalizables** creadas por productores de renombre mundial\n- **Integración perfecta** con todas las principales estaciones de trabajo de audio digital\n- **Actualizaciones regulares** que añaden nuevas funcionalidades basadas en feedback de usuarios\n\n## Testimonios de profesionales\n\n> "${selectedProduct.name} ha transformado completamente mi flujo de trabajo. Lo que antes me tomaba horas, ahora puedo lograrlo en minutos con resultados superiores." - Alex Romero, Productor Ganador de Grammy\n\n> "Después de integrar ${selectedProduct.name} en mi estudio, la calidad de mis producciones dio un salto cualitativo que mis clientes notaron inmediatamente." - Sophia Chen, Ingeniera de Mezcla\n\n## Oferta especial para nuestros visitantes\n\nComo parte de nuestra colaboración con Boostify, ofrecemos a los visitantes de nuestra web un **15% de descuento** en la compra de ${selectedProduct.name}.\n\nPara aprovechar esta oferta exclusiva, simplemente haz clic en el botón a continuación y el descuento se aplicará automáticamente a tu compra.\n\n[BOTÓN: OBTENER MI 15% DE DESCUENTO]\n\n*Oferta válida hasta el 30 de julio de 2025*\n\n## Soporte técnico premium\n\nCada licencia de ${selectedProduct.name} incluye acceso a nuestro equipo de soporte técnico especializado, compuesto por productores e ingenieros experimentados que pueden ayudarte a maximizar el potencial de esta herramienta en tu configuración específica.\n\n## Garantía de satisfacción\n\nEstamos tan seguros de la calidad y el impacto positivo que ${selectedProduct.name} tendrá en tu producción musical que ofrecemos una garantía de devolución de dinero de 30 días. Prueba ${selectedProduct.name} sin riesgo y experimenta la diferencia por ti mismo.\n\n## Preguntas frecuentes\n\n**¿${selectedProduct.name} es compatible con mi DAW?**\nSí, ${selectedProduct.name} es compatible con todas las principales estaciones de trabajo de audio digital, incluyendo Logic Pro, Ableton Live, FL Studio, Pro Tools, Cubase, Studio One, y más.\n\n**¿Necesito equipo especializado para utilizar ${selectedProduct.name}?**\nNo, ${selectedProduct.name} está optimizado para funcionar eficientemente en configuraciones de estudio estándar. Consulta los requisitos mínimos del sistema en nuestra página de especificaciones técnicas.\n\n**¿Ofrecen descuentos para estudiantes?**\nSí, tenemos un programa educativo especial. Contacta con nuestro equipo de ventas para más información.\n\n**¿Puedo utilizar ${selectedProduct.name} en múltiples dispositivos?**\nCada licencia permite la instalación en hasta dos dispositivos simultáneamente.`;
+          }
+          break;
+        
+        case "video_script":
+          if (data.platform === "youtube") {
+            generatedText = `# GUIÓN: RESEÑA DE ${selectedProduct.name.toUpperCase()}\n\n## INTRO (0:00-0:30)\n\n[Música de introducción animada]\n\n¡Hola a todos! Bienvenidos a un nuevo video. Hoy les traigo algo que ha transformado completamente mi proceso de producción musical: ${selectedProduct.name}.\n\nSi eres productor, compositor o simplemente te apasiona la música, este video te interesa, porque vamos a explorar en profundidad una herramienta que está revolucionando la industria.\n\n## SECCIÓN 1: ¿QUÉ ES Y POR QUÉ LO NECESITAS? (0:30-2:00)\n\n[Mostrar el producto/interfaz en pantalla]\n\n${selectedProduct.name} es una solución innovadora diseñada específicamente para [describir funcionalidad principal]. A diferencia de otras herramientas similares, ofrece una combinación única de simplicidad y potencia que la hace accesible para principiantes pero suficientemente completa para profesionales.\n\nLo que realmente distingue a ${selectedProduct.name} es su capacidad para [destacar característica principal]. Esto significa que puedes [describir beneficio clave] sin necesidad de pasar horas ajustando configuraciones técnicas.\n\nDurante mis 10 años en la industria musical, he probado prácticamente todas las opciones disponibles, y puedo decirles con confianza que ${selectedProduct.name} representa un verdadero avance en [categoría del producto].\n\n## SECCIÓN 2: CARACTERÍSTICAS PRINCIPALES (2:00-5:00)\n\n[Demostración práctica de cada característica]\n\nVamos a explorar las características que hacen que ${selectedProduct.name} sea tan especial:\n\n1. **Interfaz intuitiva**: Lo primero que notarás es lo increíblemente fácil que es navegar por su interfaz. Todo está organizado lógicamente, lo que te permite centrarte en tu creatividad en lugar de pelear con la tecnología.\n\n2. **Calidad de sonido excepcional**: El motor de procesamiento de ${selectedProduct.name} ofrece resultados de calidad profesional desde el primer uso. Escuchen esta comparación antes y después...\n\n3. **Flujo de trabajo optimizado**: Con sus plantillas personalizables y atajos inteligentes, ${selectedProduct.name} reduce drásticamente el tiempo que pasas en tareas técnicas y te permite dedicar más tiempo a la creación.\n\n4. **Versatilidad**: Ya sea que trabajes en [género musical 1], [género musical 2] o incluso [género musical 3], ${selectedProduct.name} se adapta perfectamente a tus necesidades específicas.\n\n## SECCIÓN 3: DEMOSTRACIÓN PRÁCTICA (5:00-8:00)\n\n[Mostrar proyecto antes/después]\n\nAhora, permítanme mostrarles ${selectedProduct.name} en acción. Voy a tomar este proyecto en el que estaba trabajando la semana pasada y veremos cómo ${selectedProduct.name} transforma completamente el resultado final.\n\n[Demostración paso a paso de las funcionalidades clave]\n\n¿Notan la diferencia? Es realmente impresionante cómo ${selectedProduct.name} puede elevar la calidad de tus producciones con tan poco esfuerzo.\n\n## SECCIÓN 4: COMPARATIVA CON ALTERNATIVAS (8:00-9:30)\n\n[Mostrar tabla comparativa]\n\nMuchos me han preguntado cómo se compara ${selectedProduct.name} con [competidor 1] o [competidor 2]. He preparado esta comparativa para que puedan ver las diferencias clave:\n\n- En términos de usabilidad, ${selectedProduct.name} es claramente superior gracias a su interfaz optimizada.\n- La calidad del sonido está a la par con opciones mucho más costosas del mercado.\n- La relación calidad-precio es donde ${selectedProduct.name} realmente brilla, ofreciendo características premium a un precio accesible.\n\n## SECCIÓN 5: CONCLUSIÓN Y OFERTA ESPECIAL (9:30-10:30)\n\n[Resumen de puntos clave]\n\nEn resumen, ${selectedProduct.name} ha transformado completamente mi flujo de trabajo y la calidad de mis producciones. Si estás buscando mejorar tu sonido y optimizar tu proceso creativo, realmente no puedo recomendar esta herramienta lo suficiente.\n\nAhora, tengo buenas noticias para ustedes. Como espectador de mi canal, puedes obtener un 15% de descuento en ${selectedProduct.name} utilizando el código especial en el enlace de la descripción. Esta oferta es por tiempo limitado, así que no la dejes pasar.\n\n## OUTRO (10:30-11:00)\n\n[Música de cierre]\n\nEso es todo por hoy. Si tienes preguntas sobre ${selectedProduct.name} o quieres compartir tu experiencia con esta herramienta, déjalo en los comentarios. No olvides suscribirte para más contenido sobre producción musical y herramientas que pueden elevar tu creatividad.\n\n¡Gracias por ver y hasta la próxima!`;
+          } else if (data.platform === "tiktok") {
+            generatedText = `# GUIÓN TIKTOK: ${selectedProduct.name.toUpperCase()} REVIEW\n\n[Texto en pantalla: "La herramienta que está revolucionando la música 🎵"]\n\n¡Atención productores y artistas! 🔥 Descubrí algo que va a cambiar tu sonido para siempre.\n\n[Mostrar interfaz de ${selectedProduct.name}]\n\n${selectedProduct.name} es la nueva herramienta que todos los profesionales están usando para [beneficio principal].\n\n[Texto en pantalla: "Antes vs. Después"]\n\n[Reproducir clip de audio "antes"]\nEscuchen este beat sin procesar...\n\n[Reproducir clip de audio "después"]\n¡Y ahora con ${selectedProduct.name}! ¿Notan la diferencia? 🤯\n\n[Texto en pantalla: "Características principales"]\n\n✅ Interfaz súper intuitiva\n✅ Calidad profesional instantánea\n✅ Compatible con todas las DAWs\n\n[Mostrar rápidamente la herramienta en uso]\n\nLiteralmente me tomó 2 minutos mejorar completamente mi track con esta herramienta.\n\n[Texto en pantalla: "15% DE DESCUENTO"]\n\nLink en mi bio para probar ${selectedProduct.name} con 15% OFF 🔥\n\n#ProducciónMusical #HomeStudio #MúsicaProfesional`;
+          } else if (data.platform === "instagram") {
+            generatedText = `# GUIÓN REEL: DESCUBRE ${selectedProduct.name.toUpperCase()}\n\n[Texto en pantalla: "El secreto de los productores profesionales"]\n\n[Mirar a cámara con expresión de asombro]\n¿Querés saber qué están usando todos los productores top para conseguir ese sonido profesional? 👀\n\n[Mostrar ${selectedProduct.name} en pantalla]\nSe llama ${selectedProduct.name} y está cambiando las reglas del juego 🎮\n\n[Texto en pantalla: "Resultados inmediatos"]\n\n[Mostrar antes/después rápidamente]\nEscuchá la diferencia... ¡BRUTAL! 🔥\n\n[Mostrar uso rápido de la herramienta]\nEs súper fácil de usar. Literalmente arrastrás, soltás y ¡BOOM! Sonido profesional en segundos ⚡\n\n[Texto en pantalla: "¿Por qué lo necesitás?"]\n\n✅ Mejora la calidad instantáneamente\n✅ Ahorra horas de trabajo\n✅ Resultados de nivel profesional\n\n[Mirar a cámara]\nNo es casualidad que artistas como [Nombre] y [Nombre] lo estén usando en sus producciones.\n\n[Texto en pantalla: "15% DESCUENTO EXCLUSIVO"]\n\nLinkeo en historias para que lo pruebes con 15% OFF 🎁\n\n#ProducciónMusical #CalidadProfesional #EstudioEnCasa`;
+          }
+          break;
+        
+        default:
+          generatedText = "Lo siento, no se pudo generar contenido para la combinación seleccionada. Por favor, intenta con otro tipo de contenido o plataforma.";
+      }
+      
+      setGeneratedContent(generatedText);
+    } catch (err) {
+      console.error("Error al generar contenido:", err);
+      setGenerationError("Ha ocurrido un error al generar el contenido. Por favor, intenta nuevamente.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  // Funciones de utilidad
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedContent(true);
-    
-    toast({
-      title: "Contenido copiado",
-      description: "El contenido se ha copiado al portapapeles.",
-    });
-    
-    setTimeout(() => {
-      setCopiedContent(false);
-    }, 2000);
+  // Manejar el guardar contenido
+  const onSaveContent = (data: SaveContentValues) => {
+    setIsSaving(true);
+    saveContentMutation.mutate(data);
   };
 
-  const downloadAsText = (text: string, filename: string) => {
-    const element = document.createElement("a");
-    const file = new Blob([text], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = filename;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    
-    toast({
-      title: "Contenido descargado",
-      description: `Se ha descargado el archivo "${filename}".`,
-    });
-  };
-
-  const handleApplyTemplate = (template: any) => {
-    setSelectedTemplate(template);
-    
-    // Limpiar campos relacionados con el template
-    form.setValue("contentType", template.type as any);
-    form.setValue("platform", template.platform);
-    
-    // Mostrar el contenido del template
-    setGeneratedContent(template.template);
-  };
-
-  const onSubmit = (values: ContentFormValues) => {
-    setIsGenerating(true);
-    generateContentMutation.mutate(values);
-  };
-
-  const getContentTypeIcon = (type: string) => {
-    switch (type) {
-      case "post":
-        return <MessageSquare className="h-4 w-4" />;
-      case "email":
-        return <Mail className="h-4 w-4" />;
-      case "banner":
-        return <FileImage className="h-4 w-4" />;
-      case "review":
-        return <Star className="h-4 w-4" />;
-      case "video_script":
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <Image className="h-4 w-4" />;
+  // Copiar contenido al portapapeles
+  const copyToClipboard = () => {
+    if (generatedContent) {
+      navigator.clipboard.writeText(generatedContent)
+        .then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        })
+        .catch(err => {
+          console.error("Error al copiar al portapapeles:", err);
+        });
     }
   };
 
-  const getPlatformIcon = (platform: string) => {
+  // Regenerar contenido
+  const regenerateContent = () => {
+    form.handleSubmit(onSubmit)();
+  };
+
+  // Descargar contenido como archivo de texto
+  const downloadContent = () => {
+    if (generatedContent) {
+      const element = document.createElement("a");
+      const file = new Blob([generatedContent], {type: 'text/plain'});
+      element.href = URL.createObjectURL(file);
+      
+      // Crear nombre de archivo basado en tipo de contenido y plataforma
+      let contentTypeName = contentTypes.find(t => t.value === currentContentType)?.label || "Contenido";
+      let platformName = getPlatformsForContentType(currentContentType || "").find(p => p.value === currentPlatform)?.label || "General";
+      
+      element.download = `${contentTypeName}_${platformName}_${new Date().toISOString().slice(0,10)}.txt`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+  };
+
+  // Filtrar el historial por tipo de contenido
+  const [contentTypeFilter, setContentTypeFilter] = useState<string | null>(null);
+  
+  const filteredHistory = contentHistory ? 
+    contentTypeFilter ? 
+      contentHistory.filter(item => item.contentType === contentTypeFilter) : 
+      contentHistory : 
+    [];
+
+  // Componente para el icono de plataforma
+  const PlatformIcon = ({ platform }: { platform: string }) => {
     switch (platform) {
-      case "instagram":
-        return <Instagram className="h-4 w-4" />;
-      case "facebook":
+      case 'facebook':
         return <Facebook className="h-4 w-4" />;
-      case "twitter":
+      case 'instagram':
+        return <Instagram className="h-4 w-4" />;
+      case 'twitter':
         return <Twitter className="h-4 w-4" />;
-      case "email":
-        return <Mail className="h-4 w-4" />;
+      case 'youtube':
+        return <Youtube className="h-4 w-4" />;
       default:
-        return <Hash className="h-4 w-4" />;
+        return <Globe className="h-4 w-4" />;
     }
-  };
-
-  const getFormattedDate = (date: Date) => {
-    return new Date(date).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const deleteSavedContent = async (contentId: string) => {
-    // Esta funcionalidad requeriría implementación real con Firestore
-    toast({
-      title: "Contenido eliminado",
-      description: "El contenido ha sido eliminado de tu biblioteca.",
-    });
-    
-    // Actualizar la UI sin hacer la llamada real a la DB (en producción, esto sería una mutación real)
-    setContentHistory(contentHistory.filter(item => item.id !== contentId));
   };
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="generator">Generador de contenido</TabsTrigger>
-          <TabsTrigger value="templates">Plantillas</TabsTrigger>
-          <TabsTrigger value="saved">Mi contenido</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Generador de Contenido</h2>
+          <p className="text-muted-foreground">
+            Crea contenido promocional optimizado para diferentes plataformas
+          </p>
+        </div>
         
-        {/* Pestaña: Generador de contenido */}
-        <TabsContent value="generator" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generador de contenido IA</CardTitle>
-                  <CardDescription>
-                    Crea contenido promocional personalizado para tus enlaces de afiliado
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="productId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Producto</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona un producto" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {products.map((product) => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    {product.name}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="generate">Crear Contenido</TabsTrigger>
+            <TabsTrigger value="history">Historial</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <TabsContent value="generate" className="space-y-6 mt-0">
+        <Card>
+          <CardHeader>
+            <CardTitle>Generador de contenido para afiliados</CardTitle>
+            <CardDescription>
+              Crea contenido promocional personalizado para diferentes plataformas
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Form {...form}>
+              <form className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="productId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Producto a promocionar</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un producto" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Productos disponibles</SelectLabel>
+                                {isLoadingProducts ? (
+                                  <div className="flex items-center justify-center p-2">
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    Cargando productos...
+                                  </div>
+                                ) : (
+                                  products?.map((product: any) => (
+                                    <SelectItem key={product.id} value={product.id}>
+                                      {product.name}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="contentType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de contenido</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              onContentTypeChange(value);
+                            }} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona tipo de contenido" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Tipos de contenido</SelectLabel>
+                                {contentTypes.map((type) => (
+                                  <SelectItem key={type.value} value={type.value}>
+                                    <div className="flex flex-col">
+                                      <span>{type.label}</span>
+                                      <span className="text-xs text-muted-foreground">{type.description}</span>
+                                    </div>
                                   </SelectItem>
                                 ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="contentType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tipo de contenido</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona un tipo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="post">Post para redes sociales</SelectItem>
-                                <SelectItem value="email">Email promocional</SelectItem>
-                                <SelectItem value="banner">Banner publicitario</SelectItem>
-                                <SelectItem value="review">Reseña del producto</SelectItem>
-                                <SelectItem value="video_script">Guión para video</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      {form.watch("contentType") === "post" && (
-                        <FormField
-                          control={form.control}
-                          name="platform"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Plataforma</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona plataforma" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="instagram">Instagram</SelectItem>
-                                  <SelectItem value="facebook">Facebook</SelectItem>
-                                  <SelectItem value="twitter">Twitter</SelectItem>
-                                  <SelectItem value="blog">Blog</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      
-                      <FormField
-                        control={form.control}
-                        name="tone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tono</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona tono" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="professional">Profesional</SelectItem>
-                                <SelectItem value="casual">Casual</SelectItem>
-                                <SelectItem value="exciting">Emocionante</SelectItem>
-                                <SelectItem value="informative">Informativo</SelectItem>
-                                <SelectItem value="persuasive">Persuasivo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="length"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Longitud</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona longitud" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="short">Corto</SelectItem>
-                                <SelectItem value="medium">Medio</SelectItem>
-                                <SelectItem value="long">Largo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="keyPoints"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Puntos clave a incluir (opcional)</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Características o beneficios a destacar"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Separa los puntos con comas o líneas nuevas
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="targetAudience"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Audiencia objetivo (opcional)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Ej: Productores principiantes"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="includeEmojis"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                            <div className="space-y-0.5">
-                              <FormLabel>Incluir emojis</FormLabel>
-                              <FormDescription>
-                                Añadir emojis relevantes al contenido
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="includeCTA"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                            <div className="space-y-0.5">
-                              <FormLabel>Incluir llamada a la acción</FormLabel>
-                              <FormDescription>
-                                Añadir CTA con enlace de afiliado
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="creative"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nivel de creatividad: {field.value}%</FormLabel>
-                            <FormControl>
-                              <Slider
-                                min={0}
-                                max={100}
-                                step={5}
-                                defaultValue={[field.value]}
-                                onValueChange={(values) => field.onChange(values[0])}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Mayor creatividad = contenido más original pero menos predecible
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <Button type="submit" className="w-full" disabled={isGenerating}>
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                            Generando...
-                          </>
-                        ) : (
-                          <>
-                            <Wand2 className="mr-2 h-4 w-4" /> 
-                            Generar contenido
-                          </>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter>
-                  <p className="text-xs text-muted-foreground">
-                    El contenido generado se guardará automáticamente en tu biblioteca.
-                  </p>
-                </CardFooter>
-              </Card>
-              
-              {selectedTemplate && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Plantilla seleccionada</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge>{selectedTemplate.type}</Badge>
-                        <Badge variant="outline">{selectedTemplate.platform}</Badge>
-                      </div>
-                      <p className="text-sm font-medium">{selectedTemplate.name}</p>
-                      <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setSelectedTemplate(null)}
-                    >
-                      Descartar plantilla
-                    </Button>
-                  </CardFooter>
-                </Card>
-              )}
-            </div>
-            
-            <div className="lg:col-span-2">
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Contenido generado</span>
-                    {generatedContent && (
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={() => copyToClipboard(generatedContent)}
-                        >
-                          {copiedContent ? (
-                            <ClipboardCheck className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Clipboard className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={() => downloadAsText(
-                            generatedContent, 
-                            `contenido-afiliado-${new Date().toISOString().substring(0, 10)}.txt`
-                          )}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Personaliza el contenido según tus necesidades antes de utilizarlo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-[500px] md:h-[600px] lg:h-[700px]">
-                  {generatedContent ? (
-                    <Textarea
-                      value={generatedContent}
-                      onChange={(e) => setGeneratedContent(e.target.value)}
-                      className="h-full resize-none font-mono text-sm"
                     />
-                  ) : (
-                    <div className="flex h-full items-center justify-center border-2 border-dashed rounded-md">
-                      <div className="flex flex-col items-center justify-center text-center p-4">
-                        <Sparkles className="h-10 w-10 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-medium mb-2">
-                          Listo para generar contenido
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                          Completa el formulario y haz clic en "Generar contenido" 
-                          para crear promociones personalizadas para tus enlaces de afiliado
-                        </p>
-                        <div className="flex flex-wrap gap-2 justify-center">
-                          <Badge variant="outline">Posts para redes</Badge>
-                          <Badge variant="outline">Emails promocionales</Badge>
-                          <Badge variant="outline">Guiones para videos</Badge>
-                          <Badge variant="outline">Reseñas de productos</Badge>
-                          <Badge variant="outline">Banners</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter className="border-t p-4 gap-2">
-                  <p className="text-xs text-muted-foreground flex-1">
-                    Sustituye [VALORES] con tu información específica antes de publicar
-                  </p>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setGeneratedContent("")}
-                      disabled={!generatedContent}
-                    >
-                      Limpiar
-                    </Button>
-                    <Button 
-                      size="sm"
-                      disabled={!generatedContent}
-                      onClick={() => {
-                        saveGeneratedContent(generatedContent, form.getValues());
-                        toast({
-                          title: "Contenido guardado",
-                          description: "Se ha guardado en tu biblioteca de contenido",
-                        });
-                      }}
-                    >
-                      Guardar
-                    </Button>
+                    
+                    <FormField
+                      control={form.control}
+                      name="platform"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Plataforma</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            disabled={!form.watch("contentType")}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Primero elige un tipo de contenido" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Plataformas disponibles</SelectLabel>
+                                {form.watch("contentType") ? (
+                                  getPlatformsForContentType(form.watch("contentType")).map((platform) => (
+                                    <SelectItem key={platform.value} value={platform.value}>
+                                      <div className="flex items-center">
+                                        {platform.icon}
+                                        <span>{platform.label}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="placeholder" disabled>
+                                    Selecciona primero un tipo de contenido
+                                  </SelectItem>
+                                )}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </CardFooter>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-        
-        {/* Pestaña: Plantillas */}
-        <TabsContent value="templates" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contentTemplates.map((template) => (
-              <Card key={template.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    {getContentTypeIcon(template.type)}
-                    {template.name}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    {getPlatformIcon(template.platform)}
-                    {template.platform.charAt(0).toUpperCase() + template.platform.slice(1)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-sm">{template.description}</p>
-                </CardContent>
-                <CardFooter className="border-t pt-3">
+                  
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="tone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tono del contenido</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un tono" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Tonos disponibles</SelectLabel>
+                                {contentTones.map((tone) => (
+                                  <SelectItem key={tone.value} value={tone.value}>
+                                    {tone.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            El tono define cómo se comunica tu mensaje
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="additionalInfo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Información adicional (opcional)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Añade información específica que quieres incluir en el contenido..."
+                              className="min-h-[120px]" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Puedes incluir detalles específicos, características del producto o aspectos que quieras destacar
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                
+                <Button 
+                  type="button" 
+                  className="w-full flex items-center gap-2"
+                  disabled={isGenerating || !form.formState.isValid}
+                  onClick={form.handleSubmit(onSubmit)}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generando contenido...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4" />
+                      Generar contenido
+                    </>
+                  )}
+                </Button>
+                
+                {generationError && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{generationError}</AlertDescription>
+                  </Alert>
+                )}
+              </form>
+            </Form>
+            
+            {generatedContent && (
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Contenido generado</h3>
+                  <div className="flex items-center gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={copyToClipboard}
+                          >
+                            {isCopied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copiar al portapapeles</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={regenerateContent}
+                            disabled={isGenerating}
+                          >
+                            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Regenerar contenido</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={downloadContent}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Descargar como archivo</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Guardar contenido</DialogTitle>
+                          <DialogDescription>
+                            Guarda este contenido en tu biblioteca para usarlo más tarde.
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <Form {...saveForm}>
+                          <form onSubmit={saveForm.handleSubmit(onSaveContent)} className="space-y-4 py-4">
+                            <FormField
+                              control={saveForm.control}
+                              name="title"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Título</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Nombre para identificar este contenido" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={saveForm.control}
+                              name="tags"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Etiquetas (opcionales)</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="instagram, post, verano (separadas por comas)" 
+                                      {...field} 
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Añade etiquetas para organizar mejor tu contenido
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <DialogFooter className="pt-4">
+                              <Button 
+                                type="submit" 
+                                disabled={isSaving || !saveForm.formState.isValid}
+                                className="w-full"
+                              >
+                                {isSaving ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Guardando...
+                                  </>
+                                ) : (
+                                  "Guardar contenido"
+                                )}
+                              </Button>
+                            </DialogFooter>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {currentContentType && currentPlatform && (
+                      <>
+                        <Badge variant="outline" className="text-xs">
+                          {contentTypes.find(t => t.value === currentContentType)?.label || currentContentType}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {getPlatformsForContentType(currentContentType).find(p => p.value === currentPlatform)?.label || currentPlatform}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                  <Textarea 
+                    value={generatedContent} 
+                    readOnly 
+                    className="min-h-[400px] font-mono text-sm" 
+                  />
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="default" 
+                    className="gap-2"
+                    onClick={() => setShowSaveDialog(true)}
+                  >
+                    <Save className="h-4 w-4" />
+                    Guardar en mi biblioteca
+                  </Button>
+                  
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => handleApplyTemplate(template)}
+                    className="gap-2"
+                    onClick={copyToClipboard}
                   >
-                    Usar plantilla
+                    {isCopied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {isCopied ? "¡Copiado!" : "Copiar al portapapeles"}
                   </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        {/* Pestaña: Mi contenido */}
-        <TabsContent value="saved" className="space-y-6">
-          {savedContent.length === 0 ? (
-            <div className="text-center py-10 border rounded-lg bg-muted/20">
-              <BookOpen className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-              <h3 className="text-lg font-medium">No hay contenido guardado</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Genera y guarda contenido para verlo aquí
-              </p>
-              <Button 
-                variant="outline"
-                onClick={() => setActiveTab("generator")}
-                className="mx-auto"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Crear contenido
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {savedContent.map((item) => (
-                <Card key={item.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          {getContentTypeIcon(item.contentType)}
-                          {item.productName || "Contenido guardado"}
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-1 mt-1">
-                          {getPlatformIcon(item.platform || "default")}
-                          {item.platform && item.platform.charAt(0).toUpperCase() + item.platform.slice(1)}
-                          <span className="ml-2 text-xs">
-                            {getFormattedDate(item.createdAt)}
-                          </span>
-                        </CardDescription>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => deleteSavedContent(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="gap-2">
+                        <Share2 className="h-4 w-4" />
+                        Compartir
                       </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <div className="max-h-32 overflow-hidden text-sm text-muted-foreground border rounded-md p-3 bg-muted/10">
-                      <p className="whitespace-pre-line line-clamp-4">{item.content}</p>
-                      {item.content.length > 320 && (
-                        <div className="text-center mt-2">
-                          <span className="text-xs text-muted-foreground">...</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t pt-3 flex justify-between">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => copyToClipboard(item.content)}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copiar
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => {
-                        // Cargar el contenido en el editor
-                        setGeneratedContent(item.content);
-                        setActiveTab("generator");
-                        
-                        toast({
-                          title: "Contenido cargado",
-                          description: "El contenido se ha cargado en el editor",
-                        });
-                      }}
-                    >
-                      Editar
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Compartir contenido</DialogTitle>
+                        <DialogDescription>
+                          Comparte este contenido directamente en tus redes sociales
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-4 py-4">
+                        <Button variant="outline" className="w-full gap-2">
+                          <Facebook className="h-4 w-4" />
+                          Facebook
+                        </Button>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Twitter className="h-4 w-4" />
+                          Twitter
+                        </Button>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Instagram className="h-4 w-4" />
+                          Instagram
+                        </Button>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Mail className="h-4 w-4" />
+                          Email
+                        </Button>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="ghost" className="w-full gap-2">
+                          <Link className="h-4 w-4" />
+                          Copiar enlace
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={downloadContent}
+                  >
+                    <Download className="h-4 w-4" />
+                    Descargar
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={regenerateContent}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                    Regenerar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Consejos para promoción efectiva</CardTitle>
+            <CardDescription>
+              Maximiza el impacto de tu contenido promocional
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <SquarePen className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-medium">Personaliza el contenido</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Adapta el contenido generado a tu estilo personal y audiencia específica para mayor autenticidad.
+                </p>
+              </div>
+              
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <ArrowRight className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-medium">Incluye llamadas a la acción</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Asegúrate de incluir una clara dirección sobre qué acción quieres que tome tu audiencia.
+                </p>
+              </div>
+              
+              <div className="p-4 border rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-medium">Destaca beneficios clave</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Enfócate en cómo el producto resuelve problemas o mejora la vida de tu audiencia.
+                </p>
+              </div>
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="history" className="space-y-6 mt-0">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle>Tu biblioteca de contenido</CardTitle>
+              <CardDescription>
+                Contenido guardado para uso futuro
+              </CardDescription>
+            </div>
+            <Select onValueChange={(value) => setContentTypeFilter(value === "all" ? null : value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los tipos</SelectItem>
+                {contentTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {isLoadingContentHistory ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : filteredHistory.length > 0 ? (
+              <div className="space-y-4">
+                {filteredHistory.map((item: any) => (
+                  <div key={item.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-medium">{item.title}</h3>
+                          <div className="flex gap-1">
+                            <Badge variant="outline" className="text-xs">
+                              {contentTypes.find(t => t.value === item.contentType)?.label || item.contentType}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                              <PlatformIcon platform={item.platform} />
+                              <span>{getPlatformsForContentType(item.contentType || "").find(p => p.value === item.platform)?.label || item.platform}</span>
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Producto: {item.productName || "No especificado"}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <Textarea 
+                        value={item.content} 
+                        readOnly 
+                        className="min-h-[100px] max-h-[200px] text-sm"
+                      />
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {item.tags && item.tags.map((tag: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No hay contenido guardado</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                  Genera contenido para tus productos y guárdalo aquí para usarlo cuando lo necesites
+                </p>
+                <Button 
+                  className="mt-4"
+                  onClick={() => setActiveTab("generate")}
+                >
+                  Crear mi primer contenido
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
     </div>
   );
 }
