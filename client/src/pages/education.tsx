@@ -955,19 +955,19 @@ export default function EducationPage() {
         </Dialog>
 
         {/* Encabezado y botones */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Music Industry Education</h1>
-            <p className="text-gray-400 max-w-2xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <div className="w-full md:max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Music Industry Education</h1>
+            <p className="text-gray-400">
               Master the business of music with our expert-led courses. From production techniques to marketing strategies,
               our comprehensive curriculum will help you succeed in the music industry.
             </p>
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <Button 
               onClick={createSampleCourses} 
-              className="bg-orange-700 hover:bg-orange-800"
+              className="bg-orange-700 hover:bg-orange-800 w-full sm:w-auto"
               disabled={isGenerating || isRegeneratingImages}
             >
               {isGenerating ? (
@@ -976,7 +976,7 @@ export default function EducationPage() {
                   Generating courses...
                 </>
               ) : (
-                <>Generate Sample Courses</>
+                <><PlusCircle className="mr-2 h-4 w-4" />Generate Sample Courses</>
               )}
             </Button>
             
@@ -1074,7 +1074,7 @@ export default function EducationPage() {
                   setRegenerationProgress(0);
                 }
               }}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
               disabled={isGenerating || isRegeneratingImages}
             >
               {isRegeneratingImages ? (
@@ -1083,13 +1083,13 @@ export default function EducationPage() {
                   Regenerating images... {regenerationProgress}%
                 </>
               ) : (
-                <>Regenerate Images with AI</>
+                <><Play className="mr-2 h-4 w-4" />Regenerate Images with AI</>
               )}
             </Button>
             
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600">
+                <Button className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Course
                 </Button>
