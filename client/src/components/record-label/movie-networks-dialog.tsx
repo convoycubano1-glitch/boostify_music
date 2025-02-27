@@ -1,186 +1,581 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { apifyContactsService, Contact } from "@/lib/api/apify-contacts-service";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { 
+  ExternalLink, 
+  Search, 
+  Film, 
+  Music, 
+  Clapperboard,
+  Building2, 
+  TrendingUp,
+  MoveRight,
+  Award,
+  Globe,
+  AlertCircle,
+  MapPin,
+  Mail,
+  Phone,
+  Building,
+  Link
+} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
-export interface MovieNetworksDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+const movieNetworks = [
+  {
+    category: "Film Production Companies",
+    icon: <Clapperboard className="h-5 w-5 text-orange-500" />,
+    networks: [
+      { 
+        name: "Universal Pictures", 
+        url: "https://www.universalpictures.com",
+        description: "Major Hollywood studio with global distribution",
+        genres: ["Blockbuster", "Franchise", "Animation", "Horror"],
+        licensingFees: "Premium"
+      },
+      { 
+        name: "Paramount Pictures", 
+        url: "https://www.paramount.com",
+        description: "Historic Hollywood studio with diverse film productions",
+        genres: ["Action", "Drama", "Comedy", "Sci-Fi"],
+        licensingFees: "Premium"
+      },
+      { 
+        name: "Warner Bros.", 
+        url: "https://www.warnerbros.com",
+        description: "Major film and entertainment studio",
+        genres: ["Superheroes", "Fantasy", "Drama", "Animation"],
+        licensingFees: "Premium"
+      },
+      { 
+        name: "Sony Pictures", 
+        url: "https://www.sonypictures.com",
+        description: "Global entertainment company producing films",
+        genres: ["Action", "Animation", "Horror", "Drama"],
+        licensingFees: "Premium"
+      }
+    ]
+  },
+  {
+    category: "Music Licensing for Film",
+    icon: <Music className="h-5 w-5 text-orange-500" />,
+    networks: [
+      { 
+        name: "INDART MUSIC", 
+        url: "https://www.indartmusic.com",
+        description: "Specialized in independent artists and music for film",
+        genres: ["Indie", "Latin", "World Music", "Alternative"],
+        licensingFees: "Moderate"
+      },
+      { 
+        name: "Musicbed", 
+        url: "https://www.musicbed.com",
+        description: "High-quality music licensing platform for filmmakers",
+        genres: ["Cinematic", "Instrumental", "Indie", "Electronic"],
+        licensingFees: "Variable"
+      },
+      { 
+        name: "Music Supervisor", 
+        url: "https://www.musicsupervisor.com",
+        description: "Connecting filmmakers with music industry professionals",
+        genres: ["All Genres", "Film Score", "Theme Music"],
+        licensingFees: "Custom"
+      },
+      { 
+        name: "Epidemic Sound", 
+        url: "https://www.epidemicsound.com",
+        description: "Subscription-based music licensing for content creators",
+        genres: ["Production Music", "Mood-based", "Instrumental"],
+        licensingFees: "Subscription-based"
+      }
+    ]
+  },
+  {
+    category: "Independent Film Distributors",
+    icon: <Award className="h-5 w-5 text-orange-500" />,
+    networks: [
+      { 
+        name: "A24", 
+        url: "https://a24films.com",
+        description: "Independent entertainment company for groundbreaking films",
+        genres: ["Art House", "Horror", "Drama", "Indie"],
+        licensingFees: "Moderate to High"
+      },
+      { 
+        name: "Neon", 
+        url: "https://neonrated.com",
+        description: "Boutique film distributor focused on innovative content",
+        genres: ["Art House", "Foreign", "Documentary", "Experimental"],
+        licensingFees: "Moderate"
+      },
+      { 
+        name: "IFC Films", 
+        url: "https://www.ifcfilms.com",
+        description: "Leading distributor of independent and foreign films",
+        genres: ["Indie Drama", "Foreign", "Documentary", "Comedy"],
+        licensingFees: "Moderate"
+      },
+      { 
+        name: "Magnolia Pictures", 
+        url: "https://www.magnoliapictures.com",
+        description: "Distributor of independent and international films",
+        genres: ["Documentary", "Foreign", "Drama", "Genre Films"],
+        licensingFees: "Moderate"
+      }
+    ]
+  }
+];
+
+interface MovieContact {
+  name: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  title?: string;
+  company?: string;
+  address?: string;
+  extractedAt: Date;
 }
 
-export function MovieNetworksDialog({ open, onOpenChange }: MovieNetworksDialogProps) {
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<Contact[]>([]);
-  const [locality, setLocality] = useState("Los Angeles");
-  const [searchTerm, setSearchTerm] = useState("movie production companies");
+interface MovieNetworksDialogProps {
+  children: React.ReactNode;
+}
 
-  const handleSearch = async () => {
-    if (!locality) {
+export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
+  const { toast } = useToast();
+  const auth = useAuth();
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [apifyResults, setApifyResults] = useState<MovieContact[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [locality, setLocality] = useState("Los Angeles");
+  const [extractingContacts, setExtractingContacts] = useState(false);
+  const [loadedDynamicContacts, setLoadedDynamicContacts] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Simulated search animation
+  useEffect(() => {
+    if (open && isSearching) {
+      const timer = setTimeout(() => {
+        // Filter networks based on search query
+        const results = movieNetworks.flatMap(category => 
+          category.networks
+            .filter(network => 
+              network.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              network.genres.some(genre => genre.toLowerCase().includes(searchQuery.toLowerCase())) ||
+              network.description.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map(network => ({
+              ...network,
+              category: category.category
+            }))
+        );
+        
+        setSearchResults(results);
+        setIsSearching(false);
+      }, 1500); // Simulate search delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isSearching, searchQuery, open]);
+
+  // Focus search input when dialog opens
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
+  const handleSearch = () => {
+    setIsSearching(true);
+  };
+  
+  // Extract contacts using Apify
+  const handleExtractContacts = async () => {
+    if (!auth?.user) {
       toast({
         title: "Error",
-        description: "Please enter a location",
-        variant: "destructive",
+        description: "Debes iniciar sesión para usar esta función",
+        variant: "destructive"
       });
       return;
     }
 
-    setLoading(true);
-    setResults([]);
-
+    setExtractingContacts(true);
     try {
-      const response = await apifyContactsService.extractContacts({
-        searchTerm,
-        locality,
-        category: "movie",
-        maxPages: 2
+      const response = await fetch('/api/contacts/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.user.getIdToken()}`
+        },
+        body: JSON.stringify({
+          searchTerm: "Movie Production",
+          locality: locality,
+          maxPages: 1,
+          category: "movie"
+        })
       });
 
-      if (!response.success) {
-        throw new Error(response.message || "Failed to extract contacts");
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
-      setResults(response.contacts);
-      
-      toast({
-        title: "Success",
-        description: `Found ${response.contacts.length} movie industry contacts in ${locality}`,
-      });
+      // Extract data from the response
+      const data = await response.json() as { 
+        success: boolean; 
+        contacts: MovieContact[]; 
+        message?: string 
+      };
+
+      if (data.success) {
+        setApifyResults(data.contacts || []);
+        setLoadedDynamicContacts(true);
+        toast({
+          title: "Contactos extraídos",
+          description: `Se han encontrado ${data.contacts?.length || 0} contactos de cine en ${locality}`,
+        });
+      } else {
+        throw new Error(data.message || "Error extracting contacts");
+      }
     } catch (error) {
-      console.error("Error extracting movie networks:", error);
+      console.error("Error extracting contacts:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to extract contacts",
-        variant: "destructive",
+        description: "No pudimos extraer los contactos. Inténtalo más tarde.",
+        variant: "destructive"
       });
+
+      // Provide sample data for demonstration purposes if extraction fails
+      const sampleData: MovieContact[] = [
+        {
+          name: "Film Producer Contact",
+          email: "producer@filmstudio.com",
+          phone: "+1 (555) 321-7890",
+          title: "Music Supervisor",
+          company: "Hollywood Films",
+          website: "https://hollywoodfilms.com",
+          address: `789 Studio Way, ${locality}, CA`,
+          extractedAt: new Date()
+        },
+        {
+          name: "Film Licensing Manager",
+          email: "licensing@moviecompany.com",
+          phone: "+1 (555) 456-7890",
+          title: "Licensing Director",
+          company: "Silver Screen Productions",
+          website: "https://silverscreen.com",
+          address: `456 Cinema Blvd, ${locality}, CA`,
+          extractedAt: new Date()
+        }
+      ];
+      
+      setApifyResults(sampleData);
+      setLoadedDynamicContacts(true);
     } finally {
-      setLoading(false);
+      setExtractingContacts(false);
     }
   };
 
-  const handleSaveContact = async (contact: Contact) => {
-    try {
-      const response = await apifyContactsService.saveContact(contact);
-      
-      if (response.success) {
-        toast({
-          title: "Contact Saved",
-          description: `Added ${contact.name} to your contacts`,
-        });
-      } else {
-        throw new Error(response.message || "Failed to save contact");
-      }
-    } catch (error) {
-      console.error("Error saving contact:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save contact",
-        variant: "destructive",
-      });
+  // Reset search when dialog closes
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setTimeout(() => {
+        setSearchQuery("");
+        setSearchResults([]);
+        setIsSearching(false);
+        setSelectedCategory(null);
+      }, 300);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Movie Industry Networks</DialogTitle>
+          <DialogTitle>Movie Sync Licensing Directory</DialogTitle>
           <DialogDescription>
-            Find movie production companies, streaming platforms, and film distributors in your area.
+            License your music for films, documentaries, and other visual media
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col space-y-4 py-4">
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="location" className="text-sm font-medium">Location</label>
+        {/* Animated Search Bar */}
+        <div className="relative my-4">
+          <div className="relative">
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground transition-all duration-300 ${isSearching ? 'text-orange-500 animate-pulse' : ''}`} />
             <Input
-              id="location"
-              placeholder="City or region"
-              value={locality}
-              onChange={(e) => setLocality(e.target.value)}
-              disabled={loading}
+              ref={searchInputRef}
+              className="pl-10 pr-16 py-6 bg-background border-orange-500/30 focus:border-orange-500 transition-all"
+              placeholder="Buscar productoras, géneros..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
+            <AnimatePresence>
+              {searchQuery && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-8 px-2 text-xs bg-orange-500/10 hover:bg-orange-500/20 text-orange-500"
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                  >
+                    {isSearching ? 'Buscando...' : 'Buscar'}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="searchTerm" className="text-sm font-medium">Search Term</label>
-            <Input
-              id="searchTerm"
-              placeholder="e.g., movie production companies"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              disabled={loading}
+          {/* Search Animation */}
+          {isSearching && (
+            <motion.div 
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 1.5 }}
+              className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-orange-500 to-purple-500 w-full origin-left"
             />
+          )}
+        </div>
+        
+        {/* Apify Contact Extraction Section */}
+        <div className="mb-6 mt-2 border-t border-border pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Globe className="h-5 w-5 text-orange-500" />
+            <h3 className="font-semibold">Extraer contactos de cine en tiempo real</h3>
           </div>
-
-          <Button onClick={handleSearch} disabled={loading} className="w-full">
-            {loading ? <Spinner className="mr-2 h-4 w-4" /> : "Find Movie Networks"}
-          </Button>
-
-          {loading && (
-            <div className="flex justify-center items-center py-8">
-              <Spinner className="h-8 w-8" />
-              <span className="ml-2">Searching networks in {locality}...</span>
+          <p className="text-sm text-muted-foreground mb-4">
+            Usa nuestra tecnología de AI para extraer contactos de estudios de cine y productoras en cualquier localidad
+          </p>
+          
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label htmlFor="location" className="mb-1.5 block">Localidad</Label>
+              <Select 
+                value={locality} 
+                onValueChange={setLocality}
+              >
+                <SelectTrigger id="location" className="w-full">
+                  <SelectValue placeholder="Selecciona una localidad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Los Angeles">Los Angeles</SelectItem>
+                  <SelectItem value="New York">New York</SelectItem>
+                  <SelectItem value="Nashville">Nashville</SelectItem>
+                  <SelectItem value="Miami">Miami</SelectItem>
+                  <SelectItem value="Chicago">Chicago</SelectItem>
+                  <SelectItem value="Austin">Austin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
-
-          {!loading && results.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Results ({results.length})</h3>
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                {results.map((contact, index) => (
-                  <div key={index} className="border rounded-md p-4 flex flex-col space-y-2">
-                    <div className="flex justify-between">
-                      <h4 className="font-bold">{contact.name}</h4>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleSaveContact(contact)}
-                      >
-                        Save
-                      </Button>
-                    </div>
-                    {contact.title && <p className="text-sm text-muted-foreground">{contact.title}</p>}
-                    {contact.company && <p className="text-sm">{contact.company}</p>}
-                    {contact.address && <p className="text-sm">{contact.address}</p>}
-                    {contact.email && (
-                      <p className="text-sm">
-                        <a href={`mailto:${contact.email}`} className="text-blue-500 hover:underline">
-                          {contact.email}
-                        </a>
-                      </p>
-                    )}
-                    {contact.phone && <p className="text-sm">{contact.phone}</p>}
-                    {contact.website && (
-                      <p className="text-sm">
-                        <a 
-                          href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`} 
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
-                        >
-                          Website
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+            <div className="flex items-end">
+              <Button 
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                disabled={extractingContacts}
+                onClick={handleExtractContacts}
+              >
+                {extractingContacts ? (
+                  <>
+                    <span className="animate-pulse mr-2">Extrayendo...</span>
+                  </>
+                ) : (
+                  <>Extraer contactos de cine</>
+                )}
+              </Button>
             </div>
-          )}
-
-          {!loading && results.length === 0 && !loading && (
-            <div className="text-center py-8 text-muted-foreground">
-              No results yet. Try searching for movie industry contacts.
+          </div>
+          
+          {auth?.user ? null : (
+            <div className="p-3 bg-orange-500/10 rounded border border-orange-500/20 flex items-center gap-2 text-sm mb-4">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <span>Debes iniciar sesión para poder extraer contactos de estudios de cine</span>
             </div>
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-        </DialogFooter>
+        {/* Content with scroll area */}
+        <ScrollArea className="max-h-[60vh] pr-4">
+          {searchQuery && searchResults.length > 0 ? (
+            <div className="py-2">
+              <div className="flex items-center gap-2 mb-4">
+                <Film className="h-5 w-5 text-orange-500" />
+                <h3 className="font-semibold text-lg">Resultados de búsqueda</h3>
+              </div>
+              
+              <div className="grid gap-3">
+                {searchResults.map((network, idx) => (
+                  <motion.div
+                    key={`${network.name}-${idx}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="flex flex-col p-4 rounded-lg border border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/40 transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{network.name}</span>
+                        <span className="bg-orange-500/10 text-orange-700 dark:text-orange-300 text-xs px-2 py-0.5 rounded-full">
+                          {network.category}
+                        </span>
+                      </div>
+                      <a 
+                        href={network.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-500 hover:text-orange-600"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      <p className="mb-1">{network.description}</p>
+                      <div className="flex justify-between mt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {network.genres.slice(0, 3).map((genre: string) => (
+                            <span key={genre} className="bg-background/80 border border-border px-2 py-0.5 rounded text-xs">
+                              {genre}
+                            </span>
+                          ))}
+                          {network.genres.length > 3 && (
+                            <span className="bg-background/80 border border-border px-2 py-0.5 rounded text-xs">
+                              +{network.genres.length - 3} más
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs px-2 py-0.5 border border-orange-500/20 rounded ml-2">
+                          {network.licensingFees}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ) : searchQuery && isSearching ? (
+            <div className="py-8 flex flex-col items-center justify-center">
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="mb-4"
+              >
+                <Film className="h-10 w-10 text-orange-500" />
+              </motion.div>
+              <p className="text-muted-foreground">Buscando productoras de cine...</p>
+            </div>
+          ) : searchQuery && !isSearching && searchResults.length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <Building2 className="h-10 w-10 text-muted-foreground mb-4" />
+              <h3 className="font-medium text-lg mb-2">No se encontraron resultados</h3>
+              <p className="text-muted-foreground max-w-xs mx-auto">
+                No encontramos productoras o géneros que coincidan con tu búsqueda. Intenta con otros términos.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 py-2">
+              {movieNetworks.map((category) => (
+                <motion.div 
+                  key={category.category}
+                  initial={false}
+                  animate={selectedCategory === category.category ? { height: 'auto' } : { height: 'auto' }}
+                >
+                  <div 
+                    className="flex items-center gap-2 mb-3 cursor-pointer"
+                    onClick={() => setSelectedCategory(
+                      selectedCategory === category.category ? null : category.category
+                    )}
+                  >
+                    {category.icon}
+                    <h3 className="font-semibold text-lg">{category.category}</h3>
+                    <MoveRight className={`h-4 w-4 ml-auto transition-transform duration-300 ${
+                      selectedCategory === category.category ? 'rotate-90' : 'rotate-0'
+                    }`} />
+                  </div>
+                  
+                  <AnimatePresence>
+                    <motion.div 
+                      initial={{ opacity: 1, height: 'auto' }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="grid gap-3 overflow-hidden"
+                    >
+                      {category.networks.map((network, idx) => (
+                        <motion.div
+                          key={network.name}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                          className="flex flex-col p-4 rounded-lg border border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/40 transition-all"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{network.name}</span>
+                            <a 
+                              href={network.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-orange-500 hover:text-orange-600"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                          <div className="mt-2 text-sm text-muted-foreground">
+                            <p className="mb-1">{network.description}</p>
+                            <div className="flex justify-between mt-2">
+                              <div className="flex flex-wrap gap-1">
+                                {network.genres.slice(0, 3).map((genre) => (
+                                  <span key={genre} className="bg-background/80 border border-border px-2 py-0.5 rounded text-xs">
+                                    {genre}
+                                  </span>
+                                ))}
+                                {network.genres.length > 3 && (
+                                  <span className="bg-background/80 border border-border px-2 py-0.5 rounded text-xs">
+                                    +{network.genres.length - 3} más
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs px-2 py-0.5 border border-orange-500/20 rounded ml-2">
+                                {network.licensingFees}
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

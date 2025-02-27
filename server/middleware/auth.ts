@@ -45,16 +45,14 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           return res.status(401).json({ error: 'Invalid authentication token - missing UID' });
         }
         
-        // Creating a properly typed user object that matches Express.User requirements
-        const user = {
+        const user: AuthUser = {
           uid: decodedToken.uid,
-          id: decodedToken.uid, // Add id property that matches uid for compatibility
           email: decodedToken.email || null,
           role: decodedToken.role || 'artist',
           isAdmin: decodedToken.admin === true
         };
         
-        // Log to ensure the UID is present
+        // Log para asegurarnos que el UID está presente
         console.log('ID de usuario extraído del token:', decodedToken.uid);
         
         // Attach the user to the request
