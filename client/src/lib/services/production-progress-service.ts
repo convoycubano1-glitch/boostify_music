@@ -91,10 +91,10 @@ class ProductionProgressService {
   // Project methods
   async getProjects(userId: string): Promise<ProductionProject[]> {
     try {
+      // First try with simple query without ordering to avoid index requirements
       const projectsQuery = query(
         collection(db, this.projectsCollection),
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
+        where("userId", "==", userId)
       );
       
       const querySnapshot = await getDocs(projectsQuery);
@@ -265,8 +265,7 @@ class ProductionProgressService {
     try {
       const phasesQuery = query(
         collection(db, this.phasesCollection),
-        where("projectId", "==", projectId),
-        orderBy("createdAt", "asc")
+        where("projectId", "==", projectId)
       );
       
       const querySnapshot = await getDocs(phasesQuery);
@@ -383,8 +382,7 @@ class ProductionProgressService {
     try {
       const tasksQuery = query(
         collection(db, this.tasksCollection),
-        where("phaseId", "==", phaseId),
-        orderBy("createdAt", "asc")
+        where("phaseId", "==", phaseId)
       );
       
       const querySnapshot = await getDocs(tasksQuery);
@@ -467,8 +465,7 @@ class ProductionProgressService {
     try {
       const notesQuery = query(
         collection(db, this.notesCollection),
-        where("phaseId", "==", phaseId),
-        orderBy("createdAt", "desc")
+        where("phaseId", "==", phaseId)
       );
       
       const querySnapshot = await getDocs(notesQuery);
