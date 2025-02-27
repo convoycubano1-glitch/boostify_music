@@ -93,16 +93,16 @@ export default function FirestoreSocialPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Post creado",
-        description: "Tu post ha sido publicado correctamente",
+        title: "Post created",
+        description: "Your post has been published successfully",
       });
       setNewPostContent("");
       refetchPosts();
     },
     onError: (error) => {
       toast({
-        title: "Error al crear el post",
-        description: "Ha ocurrido un error al publicar tu post. Inténtalo de nuevo.",
+        title: "Error creating post",
+        description: "An error occurred while publishing your post. Please try again.",
         variant: "destructive",
       });
       console.error("Error creating post:", error);
@@ -224,14 +224,14 @@ export default function FirestoreSocialPage() {
               >
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
-              <span>{post.likes} Me gusta</span>
+              <span>{post.likes} Likes</span>
             </button>
             <button 
               className={INFO_GROUP_CLASS}
               onClick={() => setShowCommentInput(!showCommentInput)}
             >
               <MessageSquare className="w-5 h-5" />
-              <span>{post.comments?.length || 0} Comentarios</span>
+              <span>{post.comments?.length || 0} Comments</span>
             </button>
           </div>
 
@@ -240,15 +240,15 @@ export default function FirestoreSocialPage() {
               <Textarea
                 value={newCommentContent}
                 onChange={(e) => setNewCommentContent(e.target.value)}
-                placeholder="Escribe un comentario..."
+                placeholder="Write a comment..."
                 className="mb-2"
               />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setShowCommentInput(false)}>
-                  Cancelar
+                  Cancel
                 </Button>
                 <Button size="sm" onClick={handleComment}>
-                  Comentar
+                  Comment
                 </Button>
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function FirestoreSocialPage() {
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                       <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      <button>{comment.likes} Me gusta</button>
+                      <button>{comment.likes} Likes</button>
                     </div>
                   </div>
                 </div>
@@ -300,9 +300,9 @@ export default function FirestoreSocialPage() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Comunidad
+                Community
               </CardTitle>
-              <CardDescription>Miembros de la red social</CardDescription>
+              <CardDescription>Social network members</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -332,7 +332,7 @@ export default function FirestoreSocialPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-muted-foreground text-sm">Cargando usuarios...</div>
+                  <div className="text-muted-foreground text-sm">Loading users...</div>
                 )}
               </div>
             </CardContent>
@@ -350,11 +350,11 @@ export default function FirestoreSocialPage() {
                 </TabsTrigger>
                 <TabsTrigger value="personal" className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  Mi Perfil
+                  My Profile
                 </TabsTrigger>
                 <TabsTrigger value="saved" className="flex items-center gap-1">
                   <BookMarked className="w-4 h-4" />
-                  Guardados
+                  Saved
                 </TabsTrigger>
               </TabsList>
               <Link href="/firestore-social">
@@ -366,38 +366,38 @@ export default function FirestoreSocialPage() {
             </div>
 
             <TabsContent value="feed" className="mt-0">
-              {/* Crear nuevo post */}
+              {/* Create new post */}
               <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle className="text-lg">Crear nuevo post</CardTitle>
+                  <CardTitle className="text-lg">Create new post</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea
                     value={newPostContent}
                     onChange={(e) => setNewPostContent(e.target.value)}
-                    placeholder="¿Qué estás pensando sobre música hoy?"
+                    placeholder="What are you thinking about music today?"
                     className="mb-3"
                   />
                   <div className="flex justify-end">
                     <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>
-                      Publicar
+                      Post
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Lista de posts */}
+              {/* Posts list */}
               {posts ? (
                 posts.length > 0 ? (
                   posts.map((post) => <PostCard key={post.id} post={post} />)
                 ) : (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">No hay posts disponibles. ¡Sé el primero en publicar!</p>
+                    <p className="text-muted-foreground">No posts available. Be the first to post!</p>
                   </div>
                 )
               ) : (
                 <div className="text-center py-10">
-                  <p className="text-muted-foreground">Cargando posts...</p>
+                  <p className="text-muted-foreground">Loading posts...</p>
                 </div>
               )}
             </TabsContent>
@@ -405,11 +405,11 @@ export default function FirestoreSocialPage() {
             <TabsContent value="personal">
               <Card>
                 <CardHeader>
-                  <CardTitle>Mi Perfil</CardTitle>
-                  <CardDescription>Gestiona tu perfil y tus publicaciones</CardDescription>
+                  <CardTitle>My Profile</CardTitle>
+                  <CardDescription>Manage your profile and posts</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Funcionalidad de perfil en desarrollo.</p>
+                  <p>Profile functionality in development.</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -417,11 +417,11 @@ export default function FirestoreSocialPage() {
             <TabsContent value="saved">
               <Card>
                 <CardHeader>
-                  <CardTitle>Posts Guardados</CardTitle>
-                  <CardDescription>Publicaciones que has guardado para ver más tarde</CardDescription>
+                  <CardTitle>Saved Posts</CardTitle>
+                  <CardDescription>Posts you've saved for later</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Funcionalidad de guardados en desarrollo.</p>
+                  <p>Saved posts functionality in development.</p>
                 </CardContent>
               </Card>
             </TabsContent>
