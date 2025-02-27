@@ -36,7 +36,13 @@ export type IndustryContact = z.infer<typeof industryContactSchema>;
  */
 export function setupApifyRoutes(app: Express) {
   // Get Apify token from environment
-  const APIFY_TOKEN = process.env.APIFY_API_TOKEN || '';
+  const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+  
+  if (!APIFY_TOKEN) {
+    console.error('APIFY_API_TOKEN is not configured in environment variables');
+  } else {
+    console.log('APIFY_API_TOKEN is configured');
+  }
   
   // Initialize the ApifyClient
   const apifyClient = new ApifyClient({

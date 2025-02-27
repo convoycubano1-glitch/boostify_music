@@ -223,11 +223,15 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
 
     setExtractingContacts(true);
     try {
+      // Get a fresh token before each request
+      const token = await auth.user.getIdToken(true);
+      console.log("Got fresh token for Apify request");
+      
       const response = await fetch('/api/contacts/extract', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await auth.user.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           searchTerm: "Movie Production",
@@ -237,7 +241,10 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
         })
       });
 
+      // Handle HTTP errors
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API error (${response.status}): ${errorText}`);
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
@@ -245,7 +252,8 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
       const data = await response.json() as { 
         success: boolean; 
         contacts: MovieContact[]; 
-        message?: string 
+        message?: string,
+        error?: string
       };
 
       if (data.success) {

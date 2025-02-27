@@ -209,11 +209,15 @@ export function RadioNetworksDialog({ children }: RadioNetworksDialogProps) {
 
     setExtractingContacts(true);
     try {
+      // Get a fresh token before each request
+      const token = await auth.user.getIdToken(true);
+      console.log("Got fresh token for Apify request");
+      
       const response = await fetch('/api/contacts/extract', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await auth.user.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           searchTerm: "Radio Publishing",
@@ -223,7 +227,10 @@ export function RadioNetworksDialog({ children }: RadioNetworksDialogProps) {
         })
       });
 
+      // Handle HTTP errors
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API error (${response.status}): ${errorText}`);
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
@@ -231,7 +238,8 @@ export function RadioNetworksDialog({ children }: RadioNetworksDialogProps) {
       const data = await response.json() as { 
         success: boolean; 
         contacts: RadioContact[]; 
-        message?: string 
+        message?: string,
+        error?: string
       };
 
       if (data.success) {
