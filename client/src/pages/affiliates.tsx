@@ -28,6 +28,9 @@ import {
   FileText, 
   LifeBuoy, 
   Settings2,
+  Mail,
+  Video,
+  AlertCircle,
   Zap,
   Crown,
   Headphones as HeadphonesIcon
