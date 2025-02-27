@@ -12,7 +12,9 @@ import {
   HelpCircle,
   Sparkles,
   Scale,
-  Users2
+  Users2,
+  Search,
+  Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -40,6 +42,8 @@ export default function AIAdvisorsPage() {
   const [open, setOpen] = useState(false);
   const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
   const [calling, setCalling] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   const advisors: Advisor[] = [
     {
@@ -124,6 +128,35 @@ export default function AIAdvisorsPage() {
     }
   ];
 
+  // Define categories for filtering
+  const categories = [
+    { id: "all", name: "All Advisors" },
+    { id: "creative", name: "Creative" },
+    { id: "business", name: "Business" },
+    { id: "legal", name: "Legal" },
+    { id: "support", name: "Support" }
+  ];
+
+  // Filter advisors based on search query and category
+  const filteredAdvisors = advisors.filter(advisor => {
+    // Filter by search query
+    const matchesSearch = 
+      searchQuery === "" || 
+      advisor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      advisor.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      advisor.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filter by category
+    const matchesCategory = 
+      filterCategory === "all" ||
+      (filterCategory === "creative" && ["creative", "video", "fashion"].includes(advisor.id)) ||
+      (filterCategory === "business" && ["publicist", "manager", "community"].includes(advisor.id)) ||
+      (filterCategory === "legal" && advisor.id === "legal") ||
+      (filterCategory === "support" && advisor.id === "support");
+    
+    return matchesSearch && matchesCategory;
+  });
+
   const callAdvisor = (advisor: Advisor) => {
     setSelectedAdvisor(advisor);
     setCalling(true);
@@ -175,7 +208,7 @@ export default function AIAdvisorsPage() {
         <div className="rounded-2xl overflow-hidden bg-[#16161A] border border-[#27272A]">
           <div className="relative p-8 md:p-10">
             {/* Header with gradient line */}
-            <div className="mb-12 mt-4">
+            <div className="mb-6 mt-4">
               <div className="h-1 w-20 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full mb-6"></div>
               <div className="flex justify-between items-start">
                 <div>
@@ -206,14 +239,70 @@ export default function AIAdvisorsPage() {
               </div>
             </div>
 
+            {/* Search and filter bar */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="mb-8 flex flex-col md:flex-row gap-4"
+            >
+              {/* Search box */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-2 bg-[#1C1C24] border border-[#27272A] rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-white text-sm"
+                  placeholder="Search advisors by name, title or expertise..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Category filter buttons */}
+              <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+                {categories.map(category => (
+                  <Button
+                    key={category.id}
+                    size="sm"
+                    variant={filterCategory === category.id ? "default" : "outline"}
+                    className={
+                      filterCategory === category.id 
+                        ? "bg-orange-500 hover:bg-orange-600 text-white" 
+                        : "border-[#27272A] text-gray-300 hover:bg-[#27272A] hover:text-white"
+                    }
+                    onClick={() => setFilterCategory(category.id)}
+                  >
+                    {category.id === "all" && <Filter className="h-3.5 w-3.5 mr-1.5" />}
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Results count */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="mb-6 text-sm text-gray-400"
+            >
+              {filteredAdvisors.length === 0 ? (
+                <p>No advisors found matching your criteria. Try adjusting your search.</p>
+              ) : (
+                <p>Showing {filteredAdvisors.length} {filteredAdvisors.length === 1 ? 'advisor' : 'advisors'}</p>
+              )}
+            </motion.div>
+
             {/* Advisor cards with staggered animation */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {advisors.map((advisor) => (
+              {filteredAdvisors.map((advisor, index) => (
                 <motion.div
                   key={advisor.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 + advisor.animationDelay }}
+                  transition={{ duration: 0.5, delay: 0.5 + (index * 0.1) }}
                   whileHover={{ 
                     y: -5,
                     transition: { duration: 0.2 }
