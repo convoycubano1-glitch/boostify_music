@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Download, ExternalLink, Play, FileText, Image, Video, Zap, BookOpen, Calculator, ChevronRight } from "lucide-react";
+import { Download, ExternalLink, Play, FileText, Image, Video, Zap, BookOpen, Calculator, ChevronRight, Clock } from "lucide-react";
 import {
   Accordion,
   AccordionContent,

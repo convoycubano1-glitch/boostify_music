@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +72,7 @@ export function Header() {
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
+    { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
     { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
@@ -250,12 +251,12 @@ export function Header() {
                   key={item.name}
                   href={item.href}
                   className={`flex items-center whitespace-nowrap ${
-                    item.name === "Investors" ? "text-orange-500 font-medium" : "text-gray-300"
+                    item.name === "Investors" || item.name === "Affiliates" ? "text-orange-500 font-medium" : "text-gray-300"
                   } text-xs hover:text-orange-400 transition-colors`}
                 >
                   <item.icon 
                     className={`h-4 w-4 md:h-3.5 md:w-3.5 ${
-                      item.name === "Investors" 
+                      item.name === "Investors" || item.name === "Affiliates"
                         ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
                         : "text-gray-400"
                     }`} 

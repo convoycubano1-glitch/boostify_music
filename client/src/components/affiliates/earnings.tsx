@@ -435,7 +435,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
                       <TableCell className="capitalize">{payment.method}</TableCell>
                       <TableCell className="text-right">${payment.amount.toFixed(2)}</TableCell>
                       <TableCell>
-                        <Badge variant={payment.status === "paid" ? "success" : "warning"}>
+                        <Badge variant={payment.status === "paid" ? "secondary" : "outline"}>
                           {payment.status === "paid" ? "Pagado" : "Pendiente"}
                         </Badge>
                       </TableCell>
@@ -480,7 +480,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
                     <h3 className="font-medium">Monto estimado</h3>
                     <p className="text-3xl font-bold">${earningsOverview.pending.toFixed(2)}</p>
                   </div>
-                  <Badge variant={earningsOverview.pending >= 100 ? "success" : "outline"}>
+                  <Badge variant={earningsOverview.pending >= 100 ? "secondary" : "outline"}>
                     {earningsOverview.pending >= 100 ? "Aprobado" : "Pendiente"}
                   </Badge>
                 </div>
