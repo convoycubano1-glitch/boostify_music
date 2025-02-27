@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { db, auth } from "@lib/firebase";
+import { db, auth } from "../../firebase";
 import { collection, addDoc, getDocs, query, where, serverTimestamp, DocumentData } from "firebase/firestore";
 import { User } from "firebase/auth";
-import { getAuthToken } from "@lib/auth";
+import { getAuthToken } from "../../lib/auth";
 
 // Define contact schema
 export const contactSchema = z.object({
@@ -229,12 +229,27 @@ export async function getSavedContacts(user: User, category?: string): Promise<C
     
     return querySnapshot.docs.map(doc => {
       const data = doc.data();
-      // Convert Firebase Timestamp to Date
-      return {
-        ...data,
+      // Make sure we have all required fields and convert Firebase Timestamp to Date
+      const contact: Contact = {
+        name: data.name,
+        category: data.category || 'other',
         extractedAt: data.extractedAt?.toDate() || new Date(),
-        createdAt: data.createdAt?.toDate() || new Date(),
-      } as Contact;
+        // Optional fields
+        email: data.email,
+        phone: data.phone,
+        title: data.title,
+        company: data.company,
+        website: data.website,
+        address: data.address,
+        notes: data.notes,
+        instagram: data.instagram,
+        twitter: data.twitter,
+        linkedin: data.linkedin,
+        locality: data.locality,
+        // Add ID for reference
+        id: doc.id as any
+      };
+      return contact;
     });
   } catch (error) {
     console.error("Error getting saved contacts:", error);

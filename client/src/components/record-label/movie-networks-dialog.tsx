@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,12 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+} from "../../components/ui/dialog";
+import { ScrollArea } from "../../components/ui/scroll-area";
+import { Input } from "../../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Label } from "../../components/ui/label";
+import { Badge } from "../../components/ui/badge";
 import { 
   ExternalLink, 
   Search, 
@@ -28,16 +28,23 @@ import {
   Mail,
   Phone,
   Building,
-  Link,
+  Link as LinkIcon,
   Shield,
   AlertTriangle,
-  Info
+  Info,
+  Save,
+  Refresh
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { getAuthToken } from "@/lib/auth";
-import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
+import { getAuthToken } from "../../lib/auth";
+import { useAuth } from "../../hooks/use-auth";
+import { 
+  extractContacts, 
+  getExtractionLimits,
+  saveContact 
+} from "../../lib/api/apify-contacts-service";
 
 const movieNetworks = [
   {
