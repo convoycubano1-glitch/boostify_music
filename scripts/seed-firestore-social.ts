@@ -137,6 +137,7 @@ async function seedFirestoreSocialNetwork() {
         ? faker.person.fullName() 
         : fakerEN_US.person.fullName();
       
+      // Preparar datos del usuario, asegurando que no haya valores undefined
       const userData: Omit<SocialUser, 'id'> = {
         displayName: fullName,
         avatar: avatars[i % avatars.length],
@@ -146,7 +147,8 @@ async function seedFirestoreSocialNetwork() {
         interests: interests[Math.floor(Math.random() * interests.length)],
         language: isSpanish ? 'es' : 'en',
         isBot: isBot,
-        personality: isBot ? personalities[Math.floor(Math.random() * personalities.length)] : undefined,
+        // Si es bot, asignar personalidad, si no, dejar como string vacío (no undefined)
+        personality: isBot ? personalities[Math.floor(Math.random() * personalities.length)] : '',
         createdAt: new Date(),
         updatedAt: new Date()
       };

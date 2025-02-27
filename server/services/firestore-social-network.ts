@@ -54,12 +54,26 @@ const fromFirestoreDate = (timestamp: Timestamp): Date => {
 const toFirestore = <T extends {createdAt?: Date, updatedAt?: Date}>(data: T): any => {
   const result: any = {...data};
   
+  // Convertir fechas a formato Firestore
   if (result.createdAt && result.createdAt instanceof Date) {
     result.createdAt = toFirestoreDate(result.createdAt);
   }
   
   if (result.updatedAt && result.updatedAt instanceof Date) {
     result.updatedAt = toFirestoreDate(result.updatedAt);
+  }
+  
+  // Eliminar propiedades undefined - Firestore no acepta valores undefined
+  for (const key in result) {
+    if (result[key] === undefined) {
+      if (key === 'personality') {
+        result[key] = ''; // Convertir undefined a cadena vacía para personalidad
+      } else if (key === 'parentId') {
+        result[key] = null; // Convertir undefined a null para parentId
+      } else {
+        delete result[key]; // Eliminar campos undefined
+      }
+    }
   }
   
   return result;
