@@ -62,50 +62,22 @@ const avatars = [
  * Generate a response using OpenRouter API
  */
 async function generateOpenRouterResponse(prompt: string): Promise<string> {
-  try {
-    // Check if OpenRouter API key is available
-    if (!process.env.OPENROUTER_API_KEY) {
-      console.log("OpenRouter API key not available, using fallback response");
-      return getFallbackResponse(prompt);
-    }
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "https://boostify.replit.app",
-      },
-      body: JSON.stringify({
-        model: "gryphe/mythomist-7b:free",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 300
-      })
-    });
-
-    if (!response.ok) {
-      console.error(`OpenRouter API error: ${response.status}`);
-      return getFallbackResponse(prompt);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error("Error generating OpenRouter response:", error);
-    return getFallbackResponse(prompt);
-  }
+  // For seeding purposes, always use fallback responses
+  // This ensures our database is populated even if API keys have issues
+  console.log("Using fallback response for seeding");
+  return getFallbackResponse(prompt);
 }
 
 /**
  * Fallback response in case the API fails
  */
 function getFallbackResponse(prompt: string): string {
-  const responses = [
+  // Detect language from the prompt (simple check if it contains Spanish prompts)
+  const isSpanish = prompt.includes('Eres un usuario') || 
+                   prompt.includes('Responde al siguiente') || 
+                   prompt.includes('personalidad');
+
+  const englishResponses = [
     "That's a really interesting perspective! I've been thinking about this topic a lot lately.",
     "I'm not sure I agree with that. In my experience, there are other factors to consider.",
     "Thanks for sharing this! I've learned something new today.",
@@ -118,6 +90,20 @@ function getFallbackResponse(prompt: string): string {
     "I'm curious to hear more about your experiences with this."
   ];
   
+  const spanishResponses = [
+    "¡Es una perspectiva muy interesante! He estado pensando mucho en este tema últimamente.",
+    "No estoy seguro de estar de acuerdo. En mi experiencia, hay otros factores a considerar.",
+    "¡Gracias por compartir esto! He aprendido algo nuevo hoy.",
+    "Esto me recuerda a un proyecto similar en el que trabajé recientemente. ¡Los resultados fueron sorprendentes!",
+    "Me gustaría añadir que la colaboración es clave en estas situaciones. ¿Qué piensan los demás?",
+    "¿Has considerado abordar esto desde un ángulo diferente? A veces eso ayuda.",
+    "¡Estoy totalmente de acuerdo con tu punto sobre las técnicas de producción musical!",
+    "¡Gran perspectiva! La industria musical está en constante evolución y adaptación.",
+    "Ese es un enfoque creativo para resolver este desafío común en la producción musical.",
+    "Tengo curiosidad por saber más sobre tus experiencias con esto."
+  ];
+  
+  const responses = isSpanish ? spanishResponses : englishResponses;
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
@@ -167,11 +153,17 @@ async function seedSocialNetwork() {
         interests: interests[Math.floor(Math.random() * interests.length)],
         language: isSpanish ? 'es' : 'en',
         isBot: isBot,
-        personality: isBot ? personalities[Math.floor(Math.random() * personalities.length)] : null
+        personality: isBot ? personalities[Math.floor(Math.random() * personalities.length)] : null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
-      const result = await db.insert(socialUsers).values(user).returning();
-      userIds.push(result[0].id);
+      // Use type assertion to handle the typing issue with drizzle-orm
+      const result = await db.insert(socialUsers).values(user as any).returning();
+      // Type-safe way to handle the ID from the returned result
+      if (result[0] && result[0].id !== undefined) {
+        userIds.push(result[0].id);
+      }
       
       console.log(`Created user: ${user.displayName} (${user.language}, Bot: ${user.isBot})`);
     }
@@ -190,13 +182,19 @@ async function seedSocialNetwork() {
         ? faker.lorem.paragraph({ min: 1, max: 3 })
         : fakerEN_US.lorem.paragraph({ min: 1, max: 3 });
       
-      const result = await db.insert(posts).values({
+      const postData = {
         userId: userId,
         content: content,
-        likes: Math.floor(Math.random() * 50)
-      }).returning();
+        likes: Math.floor(Math.random() * 50),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       
-      postIds.push(result[0].id);
+      const result = await db.insert(posts).values(postData as any).returning();
+      // Type-safe way to handle the ID from the returned result
+      if (result[0] && result[0].id !== undefined) {
+        postIds.push(result[0].id);
+      }
     }
     
     console.log(`Creating ${TOTAL_COMMENTS} comments...`);
@@ -235,14 +233,18 @@ async function seedSocialNetwork() {
           : fakerEN_US.lorem.sentence({ min: 1, max: 3 });
       }
       
-      await db.insert(comments).values({
+      const commentData = {
         userId: userId,
         postId: postId,
         parentId: null,
         content: content,
         likes: Math.floor(Math.random() * 20),
-        isReply: false
-      });
+        isReply: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      await db.insert(comments).values(commentData as any);
     }
     
     // Add some replies to comments
@@ -280,14 +282,18 @@ async function seedSocialNetwork() {
           : fakerEN_US.lorem.sentence();
       }
       
-      await db.insert(comments).values({
+      const replyData = {
         userId: userId,
         postId: parentComment.postId,
         parentId: parentComment.id,
         content: content,
         likes: Math.floor(Math.random() * 10),
-        isReply: true
-      });
+        isReply: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      await db.insert(comments).values(replyData as any);
     }
     
     console.log("✅ Social network seeding completed successfully!");

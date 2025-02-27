@@ -123,11 +123,15 @@ router.post("/posts", async (req, res) => {
     const userId = req.query.userId || req.body.userId || 1; // Default to user ID 1
     
     // Crear el post
-    const [newPost] = await db.insert(socialPosts).values({
+    const postData = {
       userId: typeof userId === 'string' ? parseInt(userId) : userId,
       content,
-      likes: 0
-    }).returning();
+      likes: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [newPost] = await db.insert(socialPosts).values(postData as any).returning();
     
     // Obtener el usuario para incluirlo en la respuesta
     const [user] = await db
@@ -211,14 +215,18 @@ router.post("/posts/:id/comments", async (req, res) => {
     const userId = req.query.userId || req.body.userId || 1; // Default to user ID 1
     
     // Crear el comentario
-    const [newComment] = await db.insert(comments).values({
+    const commentData = {
       postId: parseInt(id),
       userId: typeof userId === 'string' ? parseInt(userId) : userId,
       content,
       likes: 0,
       isReply,
-      parentId: parentId ? parseInt(parentId) : null
-    }).returning();
+      parentId: parentId ? parseInt(parentId) : null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [newComment] = await db.insert(comments).values(commentData as any).returning();
     
     // Obtener el usuario para incluirlo en la respuesta
     const [user] = await db
@@ -279,18 +287,22 @@ async function generateBotResponses(post: any) {
       const botResponse = await openRouterService.generateResponse(
         prompt, 
         undefined, 
-        bot.language
+        bot.language || 'en'
       );
       
       // Crear el comentario
-      await db.insert(comments).values({
+      const botCommentData = {
         postId: post.id,
         userId: bot.id,
         content: botResponse,
         likes: Math.floor(Math.random() * 3), // 0-2 likes aleatorios
         isReply: false,
-        parentId: null
-      });
+        parentId: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      await db.insert(comments).values(botCommentData as any);
     }
   } catch (error) {
     console.error("Error generating bot responses:", error);
@@ -342,18 +354,22 @@ async function generateBotReplies(post: any, comment: any) {
     const botResponse = await openRouterService.generateResponse(
       prompt, 
       undefined, 
-      postUser.language
+      postUser.language || 'en'
     );
     
     // Crear la respuesta
-    await db.insert(comments).values({
+    const botReplyData = {
       postId: post.id,
       userId: postUser.id,
       content: botResponse,
       likes: Math.floor(Math.random() * 2), // 0-1 likes aleatorios
       isReply: true,
-      parentId: comment.id
-    });
+      parentId: comment.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    await db.insert(comments).values(botReplyData as any);
   } catch (error) {
     console.error("Error generating bot replies:", error);
   }

@@ -34,7 +34,7 @@ export class OpenRouterService {
    * Constructor del servicio OpenRouter
    */
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || "";
+    this.apiKey = process.env.VITE_OPENROUTER_API_KEY || "";
     this.baseUrl = "https://openrouter.ai/api/v1/chat/completions";
     this.defaultModel = "anthropic/claude-3-haiku";
     this.defaultParams = {
@@ -57,7 +57,9 @@ export class OpenRouterService {
    * @param language Idioma preferido (es o en)
    * @returns La respuesta generada por la IA
    */
-  async generateResponse(prompt: string, context: string = "", language: string = "en"): Promise<string> {
+  async generateResponse(prompt: string, context?: string, language: string = "en"): Promise<string> {
+    // Convert null to undefined to avoid type issues
+    context = context === null ? undefined : context;
     try {
       if (!this.apiKey) {
         return this.getFallbackResponse(language);
@@ -111,7 +113,7 @@ export class OpenRouterService {
    * Devuelve una respuesta alternativa en caso de que OpenRouter falle
    */
   private getFallbackResponse(language: string = "en"): string {
-    // Respuestas sencillas dependiendo del idioma
+    // Respuestas más naturales y variadas según el idioma
     const fallbackResponses = {
       es: [
         "Lo siento, no puedo responder ahora mismo. Intentémoslo más tarde.",
@@ -119,6 +121,16 @@ export class OpenRouterService {
         "Estoy procesando mucha información en este momento. Dame un momento para pensar.",
         "¡Qué interesante punto de vista! Me gustaría saber más sobre tu experiencia.",
         "Gracias por compartir. ¿Hay algo más en lo que pueda ayudarte?",
+        "¡Es una perspectiva muy interesante! He estado pensando mucho en este tema últimamente.",
+        "No estoy seguro de estar de acuerdo. En mi experiencia, hay otros factores a considerar.",
+        "¡Gracias por compartir esto! He aprendido algo nuevo hoy.",
+        "Esto me recuerda a un proyecto similar en el que trabajé recientemente. ¡Los resultados fueron sorprendentes!",
+        "Me gustaría añadir que la colaboración es clave en estas situaciones. ¿Qué piensan los demás?",
+        "¿Has considerado abordar esto desde un ángulo diferente? A veces eso ayuda.",
+        "¡Estoy totalmente de acuerdo con tu punto sobre las técnicas de producción musical!",
+        "¡Gran perspectiva! La industria musical está en constante evolución y adaptación.",
+        "Ese es un enfoque creativo para resolver este desafío común en la producción musical.",
+        "Tengo curiosidad por saber más sobre tus experiencias con esto."
       ],
       en: [
         "I'm sorry, I can't respond right now. Let's try again later.",
@@ -126,6 +138,16 @@ export class OpenRouterService {
         "I'm processing a lot of information right now. Give me a moment to think.",
         "What an interesting point of view! I'd like to know more about your experience.",
         "Thanks for sharing. Is there anything else I can help you with?",
+        "That's a really interesting perspective! I've been thinking about this topic a lot lately.",
+        "I'm not sure I agree with that. In my experience, there are other factors to consider.",
+        "Thanks for sharing this! I've learned something new today.",
+        "This reminds me of a similar project I worked on recently. The results were surprising!",
+        "I'd like to add that collaboration is key in these situations. What do others think?",
+        "Have you considered approaching this from a different angle? Sometimes that helps.",
+        "I totally agree with your point about music production techniques!",
+        "Great insight! The music industry is constantly evolving and adapting.",
+        "That's a creative approach to solving this common challenge in music production.",
+        "I'm curious to hear more about your experiences with this."
       ]
     };
 
