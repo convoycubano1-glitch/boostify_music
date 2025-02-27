@@ -295,14 +295,14 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
-              Crear nuevo enlace
+              Create new link
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Crear nuevo enlace de afiliado</DialogTitle>
+              <DialogTitle>Create new affiliate link</DialogTitle>
               <DialogDescription>
-                Selecciona un producto y personaliza tu enlace de afiliado.
+                Select a product and customize your affiliate link.
               </DialogDescription>
             </DialogHeader>
             
@@ -313,7 +313,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                   name="productId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Producto</FormLabel>
+                      <FormLabel>Product</FormLabel>
                       <Select 
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -323,21 +323,21 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un producto" />
+                            <SelectValue placeholder="Select a product" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectLabel>Productos disponibles</SelectLabel>
+                            <SelectLabel>Available products</SelectLabel>
                             {isLoadingProducts ? (
                               <div className="flex items-center justify-center p-2">
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Cargando productos...
+                                Loading products...
                               </div>
                             ) : (
                               products?.map((product) => (
                                 <SelectItem key={product.id} value={product.id}>
-                                  {product.name} - {product.commissionRate}% comisión
+                                  {product.name} - {product.commissionRate}% commission
                                 </SelectItem>
                               ))
                             )}
@@ -354,15 +354,15 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                   name="campaign"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Campaña (opcional)</FormLabel>
+                      <FormLabel>Campaign (optional)</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="Nombre de tu campaña" 
+                          placeholder="Your campaign name" 
                           {...field} 
                         />
                       </FormControl>
                       <FormDescription>
-                        Identifica esta campaña específica (ej. "Instagram Verano")
+                        Identify this specific campaign (e.g., "Instagram Summer")
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -378,10 +378,10 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     {createLinkMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creando enlace...
+                        Creating link...
                       </>
                     ) : (
-                      "Crear enlace"
+                      "Create link"
                     )}
                   </Button>
                 </DialogFooter>
@@ -393,28 +393,28 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Tus enlaces de afiliado</CardTitle>
+          <CardTitle>Your affiliate links</CardTitle>
           <CardDescription>
-            Gestiona y haz seguimiento de todos tus enlaces de promoción
+            Manage and track all your promotional links
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoadingLinks ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>Cargando enlaces...</span>
+              <span>Loading links...</span>
             </div>
           ) : affiliateLinks?.length === 0 ? (
             <div className="text-center py-8">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
                 <Link className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold">No tienes enlaces de afiliado</h3>
+              <h3 className="text-lg font-semibold">You don't have any affiliate links</h3>
               <p className="text-sm text-muted-foreground mt-2 mb-4 max-w-md mx-auto">
-                Crea tu primer enlace para comenzar a promocionar productos y ganar comisiones.
+                Create your first link to start promoting products and earning commissions.
               </p>
               <Button onClick={() => setIsDialogOpen(true)}>
-                Crear primer enlace
+                Create first link
               </Button>
             </div>
           ) : (
