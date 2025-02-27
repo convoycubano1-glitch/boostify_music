@@ -216,7 +216,7 @@ const CreativeContactSearch: React.FC = () => {
             whileTap={{ scale: 0.97 }}
           >
             {isSearching ? (
-              <MusicLoadingSpinner size="small" />
+              <MusicLoadingSpinner size="sm" />
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -449,7 +449,7 @@ const CreativeContactSearch: React.FC = () => {
                 >
                   {isSending ? (
                     <>
-                      <MusicLoadingSpinner size="small" />
+                      <MusicLoadingSpinner size="sm" />
                       <span className="ml-2">Enviando...</span>
                     </>
                   ) : (
