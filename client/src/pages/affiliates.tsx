@@ -356,7 +356,57 @@ export default function AffiliatesPage() {
                   <AffiliateEarnings affiliateData={mockAffiliateData} />
                 </TabsContent>
                 
-                <TabsContent value="content" className="space-y-4">
+                <TabsContent value="content" className="space-y-6">
+                  <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 rounded-lg border border-primary/10 shadow-sm mb-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div>
+                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                          Generador de Contenido
+                        </h2>
+                        <p className="text-muted-foreground mt-2">
+                          Crea contenido persuasivo para promocionar productos y aumentar tus ventas
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex flex-col items-center bg-background/80 p-5 rounded-lg border border-primary/10 shadow-sm">
+                        <div className="bg-primary/10 p-3 rounded-full mb-3">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="font-semibold mb-1">Publicaciones</h3>
+                        <p className="text-xs text-center text-muted-foreground">Crea publicaciones para blogs y redes sociales</p>
+                      </div>
+                      
+                      <div className="flex flex-col items-center bg-background/80 p-5 rounded-lg border border-primary/10 shadow-sm">
+                        <div className="bg-primary/10 p-3 rounded-full mb-3">
+                          <Mail className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="font-semibold mb-1">Emails</h3>
+                        <p className="text-xs text-center text-muted-foreground">Genera emails persuasivos para tus clientes</p>
+                      </div>
+                      
+                      <div className="flex flex-col items-center bg-background/80 p-5 rounded-lg border border-primary/10 shadow-sm">
+                        <div className="bg-primary/10 p-3 rounded-full mb-3">
+                          <Video className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="font-semibold mb-1">Guiones</h3>
+                        <p className="text-xs text-center text-muted-foreground">Crea guiones para videos promocionales</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 bg-primary/5 p-4 rounded-lg border border-primary/10 flex items-start gap-3">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <AlertCircle className="h-5 w-5 text-primary" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Los afiliados de nivel Premium tienen acceso a tipos de contenido adicionales y personalización avanzada.
+                        <Button variant="link" className="p-0 h-auto text-sm text-primary ml-1">Saber más</Button>
+                      </p>
+                    </div>
+                  </div>
+                  
                   <AffiliateContentGenerator affiliateData={mockAffiliateData} />
                 </TabsContent>
                 
