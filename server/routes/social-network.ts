@@ -29,7 +29,7 @@ router.get("/users/:id", async (req, res) => {
     const [user] = await db
       .select()
       .from(socialUsers)
-      .where(eq(socialUsers.id, id));
+      .where(eq(socialUsers.id, parseInt(id)));
     
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -120,11 +120,11 @@ router.post("/posts", async (req, res) => {
     // Obtener el usuario actual
     // Nota: En un sistema real, obtendríamos el usuario de la sesión
     // Por ahora, simplemente usamos un ID de usuario fijo
-    const userId = req.query.userId || req.body.userId || "user_1";
+    const userId = req.query.userId || req.body.userId || 1; // Default to user ID 1
     
     // Crear el post
     const [newPost] = await db.insert(socialPosts).values({
-      userId: userId as string,
+      userId: typeof userId === 'string' ? parseInt(userId) : userId,
       content,
       likes: 0
     }).returning();
@@ -133,7 +133,7 @@ router.post("/posts", async (req, res) => {
     const [user] = await db
       .select()
       .from(socialUsers)
-      .where(eq(socialUsers.id, userId as string));
+      .where(eq(socialUsers.id, newPost.userId));
     
     // Generar respuestas automatizadas de usuarios bot
     await generateBotResponses(newPost);
@@ -160,7 +160,7 @@ router.post("/posts/:id/like", async (req, res) => {
     const [post] = await db
       .select()
       .from(socialPosts)
-      .where(eq(socialPosts.id, id));
+      .where(eq(socialPosts.id, parseInt(id)));
     
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
@@ -174,7 +174,7 @@ router.post("/posts/:id/like", async (req, res) => {
     const [updatedPost] = await db
       .update(socialPosts)
       .set({ likes })
-      .where(eq(socialPosts.id, id))
+      .where(eq(socialPosts.id, parseInt(id)))
       .returning();
     
     res.json(updatedPost);
@@ -200,7 +200,7 @@ router.post("/posts/:id/comments", async (req, res) => {
     const [post] = await db
       .select()
       .from(socialPosts)
-      .where(eq(socialPosts.id, id));
+      .where(eq(socialPosts.id, parseInt(id)));
     
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
@@ -208,23 +208,23 @@ router.post("/posts/:id/comments", async (req, res) => {
     
     // Obtener el usuario actual
     // Nota: En un sistema real, obtendríamos el usuario de la sesión
-    const userId = req.query.userId || req.body.userId || "user_1";
+    const userId = req.query.userId || req.body.userId || 1; // Default to user ID 1
     
     // Crear el comentario
     const [newComment] = await db.insert(comments).values({
-      postId: id,
-      userId: userId as string,
+      postId: parseInt(id),
+      userId: typeof userId === 'string' ? parseInt(userId) : userId,
       content,
       likes: 0,
       isReply,
-      parentId
+      parentId: parentId ? parseInt(parentId) : null
     }).returning();
     
     // Obtener el usuario para incluirlo en la respuesta
     const [user] = await db
       .select()
       .from(socialUsers)
-      .where(eq(socialUsers.id, userId as string));
+      .where(eq(socialUsers.id, newComment.userId));
     
     // Generar respuestas automatizadas de usuarios bot a este comentario
     await generateBotReplies(post, newComment);

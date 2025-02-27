@@ -1,44 +1,41 @@
-import { pgTable, text, timestamp, integer, uuid, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Tabla de usuarios de la red social
 export const socialUsers = pgTable("social_users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  username: text("username").notNull().unique(),
-  displayName: text("display_name").notNull(),
+  id: integer("id").primaryKey().notNull(),
+  displayName: text("displayName").notNull(),
   avatar: text("avatar"),
   bio: text("bio"),
   language: text("language").default("en"),
-  isBot: boolean("is_bot").default(false),
+  isBot: boolean("isBot").default(false),
   personality: text("personality"),
   interests: text("interests").array(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 // Tabla de publicaciones
 export const posts = pgTable("social_posts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  id: integer("id").primaryKey().notNull(),
+  userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
-  mediaUrl: text("media_url"),
   likes: integer("likes").default(0),
-  shares: integer("shares").default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 // Tabla de comentarios
 export const comments = pgTable("social_comments", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-  userId: uuid("user_id").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  id: integer("id").primaryKey().notNull(),
+  postId: integer("postId").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   likes: integer("likes").default(0),
-  isReply: boolean("is_reply").default(false),
-  parentId: uuid("parent_id").references(() => comments.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isReply: boolean("isReply").default(false),
+  parentId: integer("parentId").references(() => comments.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 // Relaciones para usuarios
