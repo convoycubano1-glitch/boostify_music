@@ -122,18 +122,28 @@ export function Header() {
             <div className="flex items-center space-x-4">
               {/* Search - Removed */}
 
-              {/* International with icon */}
+              {/* International Icon */}
               <Link href="/boostify-international">
-                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Globe className="h-4 w-4" />
-                    <img 
-                      src="/assets/world-icon.svg" 
-                      alt="World Icon" 
-                      className="h-4 w-4" 
-                    />
-                  </div>
-                  <span className="hidden sm:inline">International</span>
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2">
+                  <Globe className="h-4 w-4" />
+                </Button>
+              </Link>
+              
+              {/* World Icon (Separate) */}
+              <Link href="/boostify-international">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2">
+                  <img 
+                    src="/assets/world-icon.svg" 
+                    alt="World Icon" 
+                    className="h-4 w-4" 
+                  />
+                </Button>
+              </Link>
+              
+              {/* International Text Link */}
+              <Link href="/boostify-international" className="hidden sm:block">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A]">
+                  <span>International</span>
                 </Button>
               </Link>
 
