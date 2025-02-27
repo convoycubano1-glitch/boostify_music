@@ -131,128 +131,114 @@ export function HiringSection() {
   };
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      {/* Job Descriptions Generator Card */}
-      <Card className="p-6 hover:shadow-lg transition-all">
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Template 1: Tour Staff */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <Users className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Tour Staff</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Job descriptions for essential tour personnel including technical, management, and support roles.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setPositions("Create detailed job descriptions for the following tour staff positions: Tour Manager (responsible for overall tour coordination), Front of House Sound Engineer (5+ years experience, knowledge of digital consoles), Monitor Engineer, Lighting Designer/Operator, Guitar/Backline Technician, Drum Technician, Stage Manager, and Tour Coordinator (logistics, accommodations, transportation).");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 2: Studio Team */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <FileText className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Studio Team</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Comprehensive job descriptions for recording studio personnel and production professionals.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setPositions("Generate detailed job descriptions for a professional recording studio team: Head Recording Engineer (10+ years experience with major label credits), Assistant Engineers (2), Pro Tools Operator/Editor (expert level with extensive plugin knowledge), Studio Manager, Booking Coordinator, Session Musicians Coordinator, and Maintenance Technician (experienced with vintage and modern recording equipment).");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 3: Event Production Team */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <ChevronRight className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Event Production</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Job descriptions for a complete event production team for concerts, festivals and special events.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setPositions("Create comprehensive job descriptions for the following event production positions: Production Manager, Stage Manager, FOH Audio Engineer, Monitor Engineer, Lighting Designer, Video Director, Backline Manager, Rigger, Set Construction Manager, Event Safety Officer, Artist Relations Coordinator, Catering Manager, and Volunteer Coordinator. Include experience requirements, responsibilities, and necessary certifications for each role.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+      </div>
+
+      {/* Custom Job Descriptions Creator */}
+      <Card className="p-6 hover:shadow-lg transition-all mt-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-4 bg-orange-500/10 rounded-xl">
             <Users className="h-8 w-8 text-orange-500" />
           </div>
           <div>
-            <h3 className="text-2xl font-semibold">Staff Management</h3>
+            <h3 className="text-2xl font-semibold">Custom Job Descriptions</h3>
             <p className="text-muted-foreground">
-              Generate job descriptions and requirements
+              Generate tailored job descriptions for any music industry position
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 mb-6">
-          {[
-            'Technical positions',
-            'Production roles',
-            'Event staff requirements'
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <ChevronRight className="h-5 w-5 text-orange-500" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-              <UserPlus className="mr-2 h-5 w-5" />
-              Create Job Descriptions
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Generate Job Descriptions</DialogTitle>
-              <DialogDescription>
-                Enter the positions you need to fill and their requirements to generate comprehensive job descriptions.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="positions">Position Details</Label>
-                <Textarea
-                  id="positions"
-                  placeholder="Enter positions (e.g., Sound Engineer, Stage Manager, etc.), experience level, and any specific requirements..."
-                  value={positions}
-                  onChange={(e) => setPositions(e.target.value)}
-                  className="min-h-[200px]"
-                />
-              </div>
-              {isPreviewMode && previewContent && (
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line overflow-auto max-h-[400px]">
-                    {previewContent}
-                  </div>
-                </div>
-              )}
-            </div>
-            <DialogFooter className="flex gap-2">
-              {!isPreviewMode ? (
-                <Button
-                  onClick={handlePreviewPositions}
-                  disabled={generatePreviewMutation.isPending || !positions.trim()}
-                  className="w-full"
-                >
-                  {generatePreviewMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Preview...
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview Descriptions
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsPreviewMode(false)}
-                    className="flex-1"
-                  >
-                    Edit Details
-                  </Button>
-                  <Button
-                    onClick={handleGeneratePositions}
-                    disabled={generateHiringMutation.isPending}
-                    className="flex-1"
-                  >
-                    {generateHiringMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      "Save Job Descriptions"
-                    )}
-                  </Button>
-                </>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className="w-full bg-orange-500 hover:bg-orange-600"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <UserPlus className="mr-2 h-5 w-5" />
+          Create Job Descriptions
+        </Button>
       </Card>
 
-      {/* Generated Job Descriptions Card */}
+      {/* My Job Descriptions */}
       <Card className="p-6 hover:shadow-lg transition-all">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-4 bg-orange-500/10 rounded-xl">
-            <FileText className="h-8 w-8 text-orange-500" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-semibold">Generated Descriptions</h3>
-            <p className="text-muted-foreground">
-              View and download your job descriptions
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-orange-500/10 rounded-xl">
+              <FileText className="h-8 w-8 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold">My Job Descriptions</h3>
+              <p className="text-muted-foreground">
+                View and download your saved job descriptions
+              </p>
+            </div>
           </div>
         </div>
 
@@ -262,37 +248,126 @@ export function HiringSection() {
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : hiringDocuments.length > 0 ? (
-            hiringDocuments.map((doc: HiringDocument) => (
-              <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="font-medium">Job Descriptions</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(doc.createdAt.toDate()).toLocaleDateString()}
-                    </p>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {hiringDocuments.map((doc: HiringDocument) => (
+                <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors border border-transparent hover:border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium">Job Descriptions</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(doc.createdAt.toDate()).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(doc)}
-                    className="hover:bg-orange-500/10"
-                  >
-                    <Download className="h-4 w-4" />
-                    <VisuallyHidden>Download Job Descriptions</VisuallyHidden>
-                  </Button>
+                  <div className="mt-2 mb-4">
+                    <p className="text-sm line-clamp-3">{doc.content}</p>
+                  </div>
+                  <div className="flex">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(doc)}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm line-clamp-3">{doc.content}</p>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No job descriptions generated yet
+            <div className="text-center text-muted-foreground py-8 border rounded-lg bg-muted/20">
+              <Users className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+              <p>No job descriptions generated yet</p>
+              <Button 
+                variant="link" 
+                onClick={() => setIsDialogOpen(true)}
+                className="mt-2"
+              >
+                Create your first job descriptions
+              </Button>
             </div>
           )}
         </div>
       </Card>
+
+      {/* Hiring Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Generate Job Descriptions</DialogTitle>
+            <DialogDescription>
+              Enter the positions you need to fill and their requirements to generate comprehensive job descriptions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="positions">Position Details</Label>
+              <Textarea
+                id="positions"
+                placeholder="Enter positions (e.g., Sound Engineer, Stage Manager, etc.), experience level, and any specific requirements..."
+                value={positions}
+                onChange={(e) => setPositions(e.target.value)}
+                className="min-h-[200px]"
+              />
+            </div>
+            {isPreviewMode && previewContent && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line max-h-[300px] overflow-y-auto">
+                  {previewContent}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            {!isPreviewMode ? (
+              <Button
+                onClick={handlePreviewPositions}
+                disabled={generatePreviewMutation.isPending || !positions.trim()}
+                className="w-full"
+              >
+                {generatePreviewMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview Descriptions
+                  </>
+                )}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsPreviewMode(false)}
+                  className="flex-1"
+                >
+                  Edit Details
+                </Button>
+                <Button
+                  onClick={handleGeneratePositions}
+                  disabled={generateHiringMutation.isPending}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                >
+                  {generateHiringMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Save Job Descriptions"
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

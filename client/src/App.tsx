@@ -98,6 +98,23 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
+const PageWrapper = ({ children }: { children: ReactNode }) => {
+  return (
+    <div className="pb-20">
+      {children}
+    </div>
+  );
+};
+
+// HOC para envolver componentes con el PageWrapper
+const withPageWrapper = (Component: React.ComponentType<any>) => {
+  return (props: any) => (
+    <PageWrapper>
+      <Component {...props} />
+    </PageWrapper>
+  );
+};
+
 const Router = () => {
   const [showRadio, setShowRadio] = useState(false);
 
@@ -107,56 +124,99 @@ const Router = () => {
     return () => window.removeEventListener('toggle-radio', handleToggleRadio);
   }, []);
 
+  // Aplicamos el HOC a todos los componentes de página
+  const WrappedHomePage = withPageWrapper(HomePage);
+  const WrappedTermsPage = withPageWrapper(TermsPage);
+  const WrappedPrivacyPage = withPageWrapper(PrivacyPage);
+  const WrappedCookiesPage = withPageWrapper(CookiesPage);
+  const WrappedProfilePage = withPageWrapper(ProfilePage);
+  const WrappedDashboardPage = withPageWrapper(DashboardPage);
+  const WrappedAdminPage = withPageWrapper(AdminPage);
+  const WrappedArtistDashboard = withPageWrapper(ArtistDashboard);
+  const WrappedSpotifyPage = withPageWrapper(SpotifyPage);
+  const WrappedContractsPage = withPageWrapper(ContractsPage);
+  const WrappedBoostifyInternationalPage = withPageWrapper(BoostifyInternationalPage);
+  const WrappedBoostifyTVPage = withPageWrapper(BoostifyTVPage);
+  const WrappedPRPage = withPageWrapper(PRPage);
+  const WrappedNewsPage = withPageWrapper(NewsPage);
+  const WrappedEventsPage = withPageWrapper(EventsPage);
+  const WrappedAnalyticsPage = withPageWrapper(AnalyticsPage);
+  const WrappedGlobalPage = withPageWrapper(GlobalPage);
+  const WrappedVideosPage = withPageWrapper(VideosPage);
+  const WrappedBlogPage = withPageWrapper(BlogPage);
+  const WrappedPromotionPage = withPageWrapper(PromotionPage);
+  const WrappedYoutubeViewsPage = withPageWrapper(YoutubeViewsPage);
+  const WrappedInstagramBoostPage = withPageWrapper(InstagramBoostPage);
+  const WrappedSettingsPage = withPageWrapper(SettingsPage);
+  const WrappedContactsPage = withPageWrapper(ContactsPage);
+  const WrappedMessagesPage = withPageWrapper(MessagesPage);
+  const WrappedManagerToolsPage = withPageWrapper(ManagerToolsPage);
+  const WrappedProducerToolsPage = withPageWrapper(ProducerToolsPage);
+  const WrappedMusicVideoCreator = withPageWrapper(MusicVideoCreator);
+  const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
+  const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
+  const WrappedArtistImageAdvisor = withPageWrapper(ArtistImageAdvisor);
+  const WrappedMerchandisePage = withPageWrapper(MerchandisePage);
+  const WrappedEcosystemPage = withPageWrapper(EcosystemPage);
+  const WrappedStorePage = withPageWrapper(StorePage);
+  const WrappedRealTimeTranslator = withPageWrapper(RealTimeTranslator);
+  const WrappedEducationPage = withPageWrapper(EducationPage);
+  const WrappedAchievementsPage = withPageWrapper(AchievementsPage);
+  const WrappedCourseDetailPage = withPageWrapper(CourseDetailPage);
+  const WrappedSmartCardsPage = withPageWrapper(SmartCardsPage);
+  const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
+  const WrappedNotFound = withPageWrapper(NotFound);
+
   return (
     <>
       <Switch>
         {/* Public routes */}
-        <Route path="/" component={HomePage} />
-        <Route path="/terms" component={TermsPage} />
-        <Route path="/privacy" component={PrivacyPage} />
-        <Route path="/cookies" component={CookiesPage} />
-        <Route path="/profile/:id" component={ProfilePage} />
+        <Route path="/" component={WrappedHomePage} />
+        <Route path="/terms" component={WrappedTermsPage} />
+        <Route path="/privacy" component={WrappedPrivacyPage} />
+        <Route path="/cookies" component={WrappedCookiesPage} />
+        <Route path="/profile/:id" component={WrappedProfilePage} />
 
         {/* Protected routes */}
-        <ProtectedRoute path="/dashboard" component={DashboardPage} />
-        <ProtectedRoute path="/admin" component={AdminPage} />
-        <ProtectedRoute path="/artist-dashboard" component={ArtistDashboard} />
-        <ProtectedRoute path="/spotify" component={SpotifyPage} />
-        <ProtectedRoute path="/contracts" component={ContractsPage} />
-        <ProtectedRoute path="/boostify-international" component={BoostifyInternationalPage} />
-        <ProtectedRoute path="/boostify-tv" component={BoostifyTVPage} />
-        <ProtectedRoute path="/pr" component={PRPage} />
-        <ProtectedRoute path="/news" component={NewsPage} />
-        <ProtectedRoute path="/events" component={EventsPage} />
-        <ProtectedRoute path="/analytics" component={AnalyticsPage} />
-        <ProtectedRoute path="/global" component={GlobalPage} />
-        <ProtectedRoute path="/videos" component={VideosPage} />
-        <ProtectedRoute path="/blog" component={BlogPage} />
-        <ProtectedRoute path="/promotion" component={PromotionPage} />
-        <ProtectedRoute path="/youtube-views" component={YoutubeViewsPage} />
-        <ProtectedRoute path="/instagram-boost" component={InstagramBoostPage} />
-        <ProtectedRoute path="/settings" component={SettingsPage} />
-        <ProtectedRoute path="/contacts" component={ContactsPage} />
-        <ProtectedRoute path="/messages" component={MessagesPage} />
-        <ProtectedRoute path="/manager-tools" component={ManagerToolsPage} />
-        <ProtectedRoute path="/producer-tools" component={ProducerToolsPage} />
-        <ProtectedRoute path="/music-video-creator" component={MusicVideoCreator} />
-        <ProtectedRoute path="/record-label-services" component={RecordLabelServices} />
-        <ProtectedRoute path="/ai-agents" component={AIAgentsPage} />
-        <ProtectedRoute path="/artist-image-advisor" component={ArtistImageAdvisor} />
-        <ProtectedRoute path="/merchandise" component={MerchandisePage} />
-        <ProtectedRoute path="/ecosystem" component={EcosystemPage} />
-        <ProtectedRoute path="/store" component={StorePage} />
-        <ProtectedRoute path="/translator" component={RealTimeTranslator} />
-        <ProtectedRoute path="/education" component={EducationPage} />
-        <ProtectedRoute path="/achievements" component={AchievementsPage} />
-        <ProtectedRoute path="/course/:id" component={CourseDetailPage} />
-        <ProtectedRoute path="/smart-cards" component={SmartCardsPage} />
-        <ProtectedRoute path="/profile" component={ProfilePage} />
-        <ProtectedRoute path="/investors-dashboard" component={InvestorsDashboard} />
+        <ProtectedRoute path="/dashboard" component={WrappedDashboardPage} />
+        <ProtectedRoute path="/admin" component={WrappedAdminPage} />
+        <ProtectedRoute path="/artist-dashboard" component={WrappedArtistDashboard} />
+        <ProtectedRoute path="/spotify" component={WrappedSpotifyPage} />
+        <ProtectedRoute path="/contracts" component={WrappedContractsPage} />
+        <ProtectedRoute path="/boostify-international" component={WrappedBoostifyInternationalPage} />
+        <ProtectedRoute path="/boostify-tv" component={WrappedBoostifyTVPage} />
+        <ProtectedRoute path="/pr" component={WrappedPRPage} />
+        <ProtectedRoute path="/news" component={WrappedNewsPage} />
+        <ProtectedRoute path="/events" component={WrappedEventsPage} />
+        <ProtectedRoute path="/analytics" component={WrappedAnalyticsPage} />
+        <ProtectedRoute path="/global" component={WrappedGlobalPage} />
+        <ProtectedRoute path="/videos" component={WrappedVideosPage} />
+        <ProtectedRoute path="/blog" component={WrappedBlogPage} />
+        <ProtectedRoute path="/promotion" component={WrappedPromotionPage} />
+        <ProtectedRoute path="/youtube-views" component={WrappedYoutubeViewsPage} />
+        <ProtectedRoute path="/instagram-boost" component={WrappedInstagramBoostPage} />
+        <ProtectedRoute path="/settings" component={WrappedSettingsPage} />
+        <ProtectedRoute path="/contacts" component={WrappedContactsPage} />
+        <ProtectedRoute path="/messages" component={WrappedMessagesPage} />
+        <ProtectedRoute path="/manager-tools" component={WrappedManagerToolsPage} />
+        <ProtectedRoute path="/producer-tools" component={WrappedProducerToolsPage} />
+        <ProtectedRoute path="/music-video-creator" component={WrappedMusicVideoCreator} />
+        <ProtectedRoute path="/record-label-services" component={WrappedRecordLabelServices} />
+        <ProtectedRoute path="/ai-agents" component={WrappedAIAgentsPage} />
+        <ProtectedRoute path="/artist-image-advisor" component={WrappedArtistImageAdvisor} />
+        <ProtectedRoute path="/merchandise" component={WrappedMerchandisePage} />
+        <ProtectedRoute path="/ecosystem" component={WrappedEcosystemPage} />
+        <ProtectedRoute path="/store" component={WrappedStorePage} />
+        <ProtectedRoute path="/translator" component={WrappedRealTimeTranslator} />
+        <ProtectedRoute path="/education" component={WrappedEducationPage} />
+        <ProtectedRoute path="/achievements" component={WrappedAchievementsPage} />
+        <ProtectedRoute path="/course/:id" component={WrappedCourseDetailPage} />
+        <ProtectedRoute path="/smart-cards" component={WrappedSmartCardsPage} />
+        <ProtectedRoute path="/profile" component={WrappedProfilePage} />
+        <ProtectedRoute path="/investors-dashboard" component={WrappedInvestorsDashboard} />
 
         {/* Catch all not found route */}
-        <Route component={NotFound} />
+        <Route component={WrappedNotFound} />
       </Switch>
       <BottomNav />
       {showRadio && <BoostifyRadio onClose={() => setShowRadio(false)} />}

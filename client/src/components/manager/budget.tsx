@@ -137,128 +137,114 @@ export function BudgetSection() {
   };
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      {/* Budget Generator Card */}
-      <Card className="p-6 hover:shadow-lg transition-all">
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Template 1: Tour Budget */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <DollarSign className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Tour Budget</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Comprehensive budget for multi-city tours including venue costs, travel, and personnel.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setDetails("Create a detailed budget for a 10-city North American tour for a 5-piece band with 3 crew members. Include venue fees, transportation (tour bus rental), accommodations, per diems, equipment rental, marketing expenses, merchandise production, and contingency funds.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 2: Music Video Budget */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <Calculator className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Music Video Budget</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Budget breakdown for professional music video production with full crew and equipment.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setDetails("Generate a detailed music video production budget with the following components: Pre-production (location scouting, casting, storyboarding), Production (director fee, cinematographer, camera equipment rental, lighting, crew, location fees, wardrobe, makeup, catering), and Post-production (editing, color grading, visual effects, music licensing). Budget should be for a professional-quality video with a 2-day shoot.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 3: Album Recording Budget */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <ChevronRight className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Album Recording</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Complete budget for studio album recording including production, mixing, and mastering costs.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setDetails("Create a comprehensive budget for recording a 10-track album. Include studio rental costs (15 days of recording), producer fees, session musicians, engineer fees, equipment rental, mixing costs (per track), mastering costs, album artwork design, and miscellaneous expenses like catering and transportation.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+      </div>
+
+      {/* Custom Budget Creator */}
+      <Card className="p-6 hover:shadow-lg transition-all mt-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-4 bg-orange-500/10 rounded-xl">
             <DollarSign className="h-8 w-8 text-orange-500" />
           </div>
           <div>
-            <h3 className="text-2xl font-semibold">Production Budget</h3>
+            <h3 className="text-2xl font-semibold">Custom Budget Plan</h3>
             <p className="text-muted-foreground">
-              Generate detailed project budgets
+              Generate detailed project budgets tailored to your specific needs
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 mb-6">
-          {[
-            'Equipment & Technical expenses',
-            'Staff & services costs',
-            'Venue & logistics breakdown'
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <ChevronRight className="h-5 w-5 text-orange-500" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-              <Calculator className="mr-2 h-5 w-5" />
-              Create Budget Plan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Generate Budget Plan</DialogTitle>
-              <DialogDescription>
-                Enter your project details to generate a comprehensive budget breakdown.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="details">Project Details</Label>
-                <Textarea
-                  id="details"
-                  placeholder="Enter project name, type, scale, duration, location, and special requirements..."
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  className="min-h-[200px]"
-                />
-              </div>
-              {isPreviewMode && previewContent && (
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line overflow-auto max-h-[400px]">
-                    {previewContent}
-                  </div>
-                </div>
-              )}
-            </div>
-            <DialogFooter className="flex gap-2">
-              {!isPreviewMode ? (
-                <Button
-                  onClick={handlePreviewBudget}
-                  disabled={generatePreviewMutation.isPending || !details.trim()}
-                  className="w-full"
-                >
-                  {generatePreviewMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Preview...
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview Budget
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsPreviewMode(false)}
-                    className="flex-1"
-                  >
-                    Edit Details
-                  </Button>
-                  <Button
-                    onClick={handleGenerateBudget}
-                    disabled={generateBudgetMutation.isPending}
-                    className="flex-1"
-                  >
-                    {generateBudgetMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      "Save Budget Plan"
-                    )}
-                  </Button>
-                </>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className="w-full bg-orange-500 hover:bg-orange-600"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <Calculator className="mr-2 h-5 w-5" />
+          Create Budget Plan
+        </Button>
       </Card>
 
-      {/* Generated Budgets Card */}
+      {/* My Budget Documents */}
       <Card className="p-6 hover:shadow-lg transition-all">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-4 bg-orange-500/10 rounded-xl">
-            <Calculator className="h-8 w-8 text-orange-500" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-semibold">Generated Budgets</h3>
-            <p className="text-muted-foreground">
-              View and download your budget documents
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-orange-500/10 rounded-xl">
+              <Calculator className="h-8 w-8 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold">My Budget Documents</h3>
+              <p className="text-muted-foreground">
+                View and download your saved budget plans
+              </p>
+            </div>
           </div>
         </div>
 
@@ -268,37 +254,126 @@ export function BudgetSection() {
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : budgetDocuments.length > 0 ? (
-            budgetDocuments.map((doc: BudgetDocument) => (
-              <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="font-medium">Budget Plan</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(doc.createdAt.toDate()).toLocaleDateString()}
-                    </p>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {budgetDocuments.map((doc: BudgetDocument) => (
+                <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors border border-transparent hover:border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium">Budget Plan</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(doc.createdAt.toDate()).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(doc)}
-                    className="hover:bg-orange-500/10"
-                  >
-                    <Download className="h-4 w-4" />
-                    <VisuallyHidden>Download Budget</VisuallyHidden>
-                  </Button>
+                  <div className="mt-2 mb-4">
+                    <p className="text-sm line-clamp-3">{doc.content}</p>
+                  </div>
+                  <div className="flex">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(doc)}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm line-clamp-3">{doc.content}</p>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No budget documents generated yet
+            <div className="text-center text-muted-foreground py-8 border rounded-lg bg-muted/20">
+              <Calculator className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+              <p>No budget documents generated yet</p>
+              <Button 
+                variant="link" 
+                onClick={() => setIsDialogOpen(true)}
+                className="mt-2"
+              >
+                Create your first budget plan
+              </Button>
             </div>
           )}
         </div>
       </Card>
+
+      {/* Budget Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Generate Budget Plan</DialogTitle>
+            <DialogDescription>
+              Enter your project details to generate a comprehensive budget breakdown.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="details">Project Details</Label>
+              <Textarea
+                id="details"
+                placeholder="Enter project name, type, scale, duration, location, and special requirements..."
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                className="min-h-[200px]"
+              />
+            </div>
+            {isPreviewMode && previewContent && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line max-h-[300px] overflow-y-auto">
+                  {previewContent}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            {!isPreviewMode ? (
+              <Button
+                onClick={handlePreviewBudget}
+                disabled={generatePreviewMutation.isPending || !details.trim()}
+                className="w-full"
+              >
+                {generatePreviewMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview Budget
+                  </>
+                )}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsPreviewMode(false)}
+                  className="flex-1"
+                >
+                  Edit Details
+                </Button>
+                <Button
+                  onClick={handleGenerateBudget}
+                  disabled={generateBudgetMutation.isPending}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                >
+                  {generateBudgetMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Save Budget Plan"
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -145,159 +145,130 @@ export function CalendarSection() {
   };
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      {/* Calendar Generator Card */}
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Template 1: Concert Tour Schedule */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <CalendarIcon className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Concert Tour</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Comprehensive day-by-day tour schedule with travel, sound checks, and performances.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setScheduleType("event");
+              setDetails("Create a detailed 10-day tour schedule for a 5-piece rock band touring the East Coast. Include daily timeline for travel between cities, hotel check-in/out times, venue load-in, sound check, doors open, show time, meet & greet sessions, and load-out times. The tour begins in Boston and ends in Miami, with shows in New York, Philadelphia, Baltimore, and Atlanta in between.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 2: Album Production Schedule */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Album Production</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Detailed project schedule for album recording, production, and release activities.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setScheduleType("project");
+              setDetails("Create a comprehensive 3-month album production schedule for a 10-track album. Include pre-production phase (song selection, arrangement finalization, demo recording), recording phase (tracking drums, bass, guitars, keyboards, vocals, additional instruments), post-production (editing, mixing, mastering), and release preparation (artwork creation, distribution setup, press kit development, and marketing activities). Include specific timelines and milestone dates for each phase.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 3: Music Video Production */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <ListTodo className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Music Video</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Complete production schedule for a music video from pre-production through final delivery.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setScheduleType("project");
+              setDetails("Generate a detailed 6-week music video production schedule. Include pre-production phase (concept development, location scouting, casting, crew hiring, shot list creation), production phase (detailed shooting schedule for a 2-day shoot across 3 locations with call times for crew, talent, and equipment), and post-production (editing timeline, VFX integration, color grading, client review cycles, and final delivery). Include specific deadlines for all deliverables.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+      </div>
+
+      {/* Current Calendar */}
       <Card className="p-6 hover:shadow-lg transition-all">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-4">
           <div className="p-4 bg-orange-500/10 rounded-xl">
-            <CalendarIcon className="h-8 w-8 text-orange-500" />
+            <CalendarIconFull className="h-8 w-8 text-orange-500" />
           </div>
           <div>
-            <h3 className="text-2xl font-semibold">Event Calendar</h3>
+            <h3 className="text-2xl font-semibold">Current Calendar</h3>
             <p className="text-muted-foreground">
               Plan and manage your event schedule
             </p>
           </div>
         </div>
 
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          className="rounded-md border mb-4"
-        />
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-orange-500 hover:bg-orange-600 mt-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            className="rounded-md border self-start"
+          />
+          
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Create Custom Schedule</h4>
+            <p className="text-muted-foreground mb-4">Generate a detailed schedule plan for any type of music industry event or project.</p>
+            <Button 
+              className="w-full bg-orange-500 hover:bg-orange-600"
+              onClick={() => setIsDialogOpen(true)}
+            >
               <Plus className="mr-2 h-5 w-5" />
               Generate Schedule Plan
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Generate Schedule Plan</DialogTitle>
-              <DialogDescription>
-                Enter details to generate a comprehensive schedule plan for your event or project.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Schedule Type</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <Button
-                      type="button"
-                      variant={scheduleType === "event" ? "default" : "outline"}
-                      className={scheduleType === "event" ? "bg-orange-500" : ""}
-                      onClick={() => setScheduleType("event")}
-                    >
-                      <CalendarIconFull className="mr-2 h-4 w-4" />
-                      Event
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={scheduleType === "project" ? "default" : "outline"}
-                      className={scheduleType === "project" ? "bg-orange-500" : ""}
-                      onClick={() => setScheduleType("project")}
-                    >
-                      <ListTodo className="mr-2 h-4 w-4" />
-                      Project
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="event-date">Date</Label>
-                  <Input
-                    id="event-date"
-                    type="date"
-                    className="mt-1"
-                    defaultValue={format(new Date(), "yyyy-MM-dd")}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="details">Schedule Details</Label>
-                <Textarea
-                  id="details"
-                  placeholder={scheduleType === "event" ? 
-                    "Enter event name, type, location, expected attendance, requirements..." : 
-                    "Enter project name, goals, team size, timeline requirements..."}
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  className="min-h-[200px]"
-                />
-              </div>
-              {isPreviewMode && previewContent && (
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line overflow-auto max-h-[400px]">
-                    {previewContent}
-                  </div>
-                </div>
-              )}
-            </div>
-            <DialogFooter className="flex gap-2">
-              {!isPreviewMode ? (
-                <Button
-                  onClick={handlePreviewSchedule}
-                  disabled={generatePreviewMutation.isPending || !details.trim()}
-                  className="w-full"
-                >
-                  {generatePreviewMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Preview...
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview Schedule
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsPreviewMode(false)}
-                    className="flex-1"
-                  >
-                    Edit Details
-                  </Button>
-                  <Button
-                    onClick={handleGenerateSchedule}
-                    disabled={generateCalendarMutation.isPending}
-                    className="flex-1"
-                  >
-                    {generateCalendarMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      "Save Schedule Plan"
-                    )}
-                  </Button>
-                </>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       </Card>
 
-      {/* Generated Schedules Card */}
+      {/* My Schedule Documents */}
       <Card className="p-6 hover:shadow-lg transition-all">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-4 bg-orange-500/10 rounded-xl">
-            <Clock className="h-8 w-8 text-orange-500" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-semibold">Generated Schedules</h3>
-            <p className="text-muted-foreground">
-              View and download your schedule plans
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-orange-500/10 rounded-xl">
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold">My Schedule Documents</h3>
+              <p className="text-muted-foreground">
+                View and download your saved schedule plans
+              </p>
+            </div>
           </div>
         </div>
 
@@ -307,37 +278,163 @@ export function CalendarSection() {
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : calendarDocuments.length > 0 ? (
-            calendarDocuments.map((doc: CalendarDocument) => (
-              <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="font-medium">Schedule Plan</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(doc.createdAt.toDate()).toLocaleDateString()}
-                    </p>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {calendarDocuments.map((doc: CalendarDocument) => (
+                <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors border border-transparent hover:border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium">Schedule Plan</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(doc.createdAt.toDate()).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(doc)}
-                    className="hover:bg-orange-500/10"
-                  >
-                    <Download className="h-4 w-4" />
-                    <VisuallyHidden>Download Schedule</VisuallyHidden>
-                  </Button>
+                  <div className="mt-2 mb-4">
+                    <p className="text-sm line-clamp-3">{doc.content}</p>
+                  </div>
+                  <div className="flex">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(doc)}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm line-clamp-3">{doc.content}</p>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No schedule plans generated yet
+            <div className="text-center text-muted-foreground py-8 border rounded-lg bg-muted/20">
+              <Clock className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+              <p>No schedule plans generated yet</p>
+              <Button 
+                variant="link" 
+                onClick={() => setIsDialogOpen(true)}
+                className="mt-2"
+              >
+                Create your first schedule plan
+              </Button>
             </div>
           )}
         </div>
       </Card>
+
+      {/* Schedule Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Generate Schedule Plan</DialogTitle>
+            <DialogDescription>
+              Enter details to generate a comprehensive schedule plan for your event or project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Schedule Type</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <Button
+                    type="button"
+                    variant={scheduleType === "event" ? "default" : "outline"}
+                    className={scheduleType === "event" ? "bg-orange-500" : ""}
+                    onClick={() => setScheduleType("event")}
+                  >
+                    <CalendarIconFull className="mr-2 h-4 w-4" />
+                    Event
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={scheduleType === "project" ? "default" : "outline"}
+                    className={scheduleType === "project" ? "bg-orange-500" : ""}
+                    onClick={() => setScheduleType("project")}
+                  >
+                    <ListTodo className="mr-2 h-4 w-4" />
+                    Project
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="event-date">Start Date</Label>
+                <Input
+                  id="event-date"
+                  type="date"
+                  className="mt-1"
+                  defaultValue={format(new Date(), "yyyy-MM-dd")}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="details">Schedule Details</Label>
+              <Textarea
+                id="details"
+                placeholder={scheduleType === "event" ? 
+                  "Enter event name, type, location, expected attendance, requirements..." : 
+                  "Enter project name, goals, team size, timeline requirements..."}
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                className="min-h-[200px]"
+              />
+            </div>
+            {isPreviewMode && previewContent && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line max-h-[300px] overflow-y-auto">
+                  {previewContent}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            {!isPreviewMode ? (
+              <Button
+                onClick={handlePreviewSchedule}
+                disabled={generatePreviewMutation.isPending || !details.trim()}
+                className="w-full"
+              >
+                {generatePreviewMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview Schedule
+                  </>
+                )}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsPreviewMode(false)}
+                  className="flex-1"
+                >
+                  Edit Details
+                </Button>
+                <Button
+                  onClick={handleGenerateSchedule}
+                  disabled={generateCalendarMutation.isPending}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                >
+                  {generateCalendarMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Save Schedule Plan"
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -60,7 +60,35 @@ export const managerToolsService = {
 
   async saveToFirestore(data: ManagerToolData) {
     try {
-      const docRef = await addDoc(collection(db, 'manager_tools'), {
+      // Use the specific collection based on the type
+      let collectionName = '';
+      switch (data.type) {
+        case 'technical':
+          collectionName = 'technical_rider';
+          break;
+        case 'requirements':
+          collectionName = 'requirements';
+          break;
+        case 'budget':
+          collectionName = 'budget';
+          break;
+        case 'logistics':
+          collectionName = 'logistics';
+          break;
+        case 'hiring':
+          collectionName = 'hiring';
+          break;
+        case 'calendar':
+          collectionName = 'calendar';
+          break;
+        case 'ai':
+          collectionName = 'ai_tools';
+          break;
+        default:
+          collectionName = 'manager_tools'; // fallback for unspecified types
+      }
+      
+      const docRef = await addDoc(collection(db, collectionName), {
         ...data,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -74,10 +102,37 @@ export const managerToolsService = {
 
   async getFromFirestore(userId: string, type: string) {
     try {
+      // Use the specific collection based on the type
+      let collectionName = '';
+      switch (type) {
+        case 'technical':
+          collectionName = 'technical_rider';
+          break;
+        case 'requirements':
+          collectionName = 'requirements';
+          break;
+        case 'budget':
+          collectionName = 'budget';
+          break;
+        case 'logistics':
+          collectionName = 'logistics';
+          break;
+        case 'hiring':
+          collectionName = 'hiring';
+          break;
+        case 'calendar':
+          collectionName = 'calendar';
+          break;
+        case 'ai':
+          collectionName = 'ai_tools';
+          break;
+        default:
+          collectionName = 'manager_tools'; // fallback for unspecified types
+      }
+      
       const q = query(
-        collection(db, 'manager_tools'),
-        where('userId', '==', userId),
-        where('type', '==', type)
+        collection(db, collectionName),
+        where('userId', '==', userId)
       );
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
@@ -109,6 +164,16 @@ export const managerToolsService = {
         case 'hiring':
           prompt = `Create detailed job descriptions and requirements for these positions: ${details}. Include responsibilities, qualifications, and experience needed.`;
           break;
+        case 'calendar':
+          // Calendar type contains event/project type in the details string
+          const parts = details.split(': ');
+          const scheduleType = parts[0]; // 'event' or 'project'
+          const scheduleDetails = parts.slice(1).join(': ');
+          prompt = `Create a ${scheduleType} schedule plan for: ${scheduleDetails}. Include timeline, key milestones, responsibilities, and detailed breakdown of activities. Format the response with clear sections and time-based organization.`;
+          break;
+        case 'ai':
+          prompt = `Provide AI assistant insights and recommendations for: ${details}. Include specific actionable steps, analysis, and expert industry knowledge.`;
+          break;
         default:
           prompt = `Provide expert recommendations and insights for: ${details}`;
       }
@@ -119,7 +184,8 @@ export const managerToolsService = {
         content,
         userId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        prompt: prompt // Save the prompt for reference
       });
     } catch (error) {
       console.error(`Error generating ${type} content:`, error);

@@ -131,128 +131,114 @@ export function LogisticsSection() {
   };
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      {/* Logistics Generator Card */}
-      <Card className="p-6 hover:shadow-lg transition-all">
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Template 1: Tour Logistics */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <Truck className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Tour Logistics</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Comprehensive logistics plan for multi-city tours including transportation, equipment, and timeline.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setDetails("Create a complete logistics plan for a 12-city North American tour with a 5-piece band and 4 crew members. The tour spans 3 weeks and requires transportation of musical equipment (drums, guitars, keyboards, amplifiers), lighting equipment, and merchandise. Include detailed transportation scheduling (flights, tour bus routes), equipment loading/unloading procedures, venue arrival times, and sound check scheduling.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 2: Festival Logistics */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <MapPin className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Festival Logistics</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Detailed logistics plan for participating in a major music festival with quick equipment changeovers.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setDetails("Create a logistics plan for a band performing at a major 3-day music festival with an allocated 45-minute set. Include detailed scheduling for equipment load-in, stage setup (30-minute changeover time), performance, and load-out. Address transportation of band and equipment to and from the festival grounds, backline sharing with other artists, and coordination with festival stage managers and sound engineers. Include contingency plans for weather-related delays.");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+
+        {/* Template 3: Video Shoot Logistics */}
+        <Card className="p-6 hover:shadow-lg transition-all">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="p-4 bg-orange-500/10 rounded-full mb-4">
+              <CalendarDays className="h-8 w-8 text-orange-500" />
+            </div>
+            <h3 className="text-xl font-semibold">Video Shoot</h3>
+            <p className="text-muted-foreground text-sm mt-2">
+              Complete logistics plan for a multi-location music video production with equipment and personnel.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              setDetails("Develop a comprehensive logistics plan for a 3-day music video shoot across 4 different locations in Los Angeles. The production includes a 6-person band, 15-person film crew, camera and lighting equipment, wardrobe, and props. Include detailed scheduling for each location, transportation between sites, equipment setup and breakdown, meals and craft services, talent call times, and contingency plans for potential issues (weather, location access, equipment failure).");
+              setIsDialogOpen(true);
+            }}
+          >
+            Use Template
+          </Button>
+        </Card>
+      </div>
+
+      {/* Custom Logistics Creator */}
+      <Card className="p-6 hover:shadow-lg transition-all mt-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-4 bg-orange-500/10 rounded-xl">
             <Truck className="h-8 w-8 text-orange-500" />
           </div>
           <div>
-            <h3 className="text-2xl font-semibold">Production Logistics</h3>
+            <h3 className="text-2xl font-semibold">Custom Logistics Plan</h3>
             <p className="text-muted-foreground">
-              Generate detailed logistics plans
+              Generate detailed logistics plans tailored to your specific needs
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 mb-6">
-          {[
-            'Transportation scheduling',
-            'Equipment handling plan',
-            'Timeline coordination'
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <ChevronRight className="h-5 w-5 text-orange-500" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-              <Truck className="mr-2 h-5 w-5" />
-              Create Logistics Plan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Generate Logistics Plan</DialogTitle>
-              <DialogDescription>
-                Enter event/tour details to generate a comprehensive logistics plan for smooth operations.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="details">Event/Tour Details</Label>
-                <Textarea
-                  id="details"
-                  placeholder="Enter event name, location, date, type, number of personnel, equipment needs, special requirements..."
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  className="min-h-[200px]"
-                />
-              </div>
-              {isPreviewMode && previewContent && (
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line overflow-auto max-h-[400px]">
-                    {previewContent}
-                  </div>
-                </div>
-              )}
-            </div>
-            <DialogFooter className="flex gap-2">
-              {!isPreviewMode ? (
-                <Button
-                  onClick={handlePreviewLogistics}
-                  disabled={generatePreviewMutation.isPending || !details.trim()}
-                  className="w-full"
-                >
-                  {generatePreviewMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Preview...
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview Plan
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsPreviewMode(false)}
-                    className="flex-1"
-                  >
-                    Edit Details
-                  </Button>
-                  <Button
-                    onClick={handleGenerateLogistics}
-                    disabled={generateLogisticsMutation.isPending}
-                    className="flex-1"
-                  >
-                    {generateLogisticsMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      "Save Logistics Plan"
-                    )}
-                  </Button>
-                </>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className="w-full bg-orange-500 hover:bg-orange-600"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <Truck className="mr-2 h-5 w-5" />
+          Create Logistics Plan
+        </Button>
       </Card>
 
-      {/* Generated Logistics Card */}
+      {/* My Logistics Documents */}
       <Card className="p-6 hover:shadow-lg transition-all">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-4 bg-orange-500/10 rounded-xl">
-            <MapPin className="h-8 w-8 text-orange-500" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-semibold">Generated Logistics</h3>
-            <p className="text-muted-foreground">
-              View and download your logistics plans
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-orange-500/10 rounded-xl">
+              <MapPin className="h-8 w-8 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold">My Logistics Documents</h3>
+              <p className="text-muted-foreground">
+                View and download your saved logistics plans
+              </p>
+            </div>
           </div>
         </div>
 
@@ -262,37 +248,126 @@ export function LogisticsSection() {
               <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : logisticsDocuments.length > 0 ? (
-            logisticsDocuments.map((doc: LogisticsDocument) => (
-              <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="font-medium">Logistics Plan</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(doc.createdAt.toDate()).toLocaleDateString()}
-                    </p>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {logisticsDocuments.map((doc: LogisticsDocument) => (
+                <div key={doc.id} className="p-4 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 transition-colors border border-transparent hover:border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium">Logistics Plan</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(doc.createdAt.toDate()).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(doc)}
-                    className="hover:bg-orange-500/10"
-                  >
-                    <Download className="h-4 w-4" />
-                    <VisuallyHidden>Download Logistics Plan</VisuallyHidden>
-                  </Button>
+                  <div className="mt-2 mb-4">
+                    <p className="text-sm line-clamp-3">{doc.content}</p>
+                  </div>
+                  <div className="flex">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(doc)}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm line-clamp-3">{doc.content}</p>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No logistics plans generated yet
+            <div className="text-center text-muted-foreground py-8 border rounded-lg bg-muted/20">
+              <Truck className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+              <p>No logistics plans generated yet</p>
+              <Button 
+                variant="link" 
+                onClick={() => setIsDialogOpen(true)}
+                className="mt-2"
+              >
+                Create your first logistics plan
+              </Button>
             </div>
           )}
         </div>
       </Card>
+
+      {/* Logistics Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Generate Logistics Plan</DialogTitle>
+            <DialogDescription>
+              Enter event/tour details to generate a comprehensive logistics plan for smooth operations.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="details">Event/Tour Details</Label>
+              <Textarea
+                id="details"
+                placeholder="Enter event name, location, date, type, number of personnel, equipment needs, special requirements..."
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                className="min-h-[200px]"
+              />
+            </div>
+            {isPreviewMode && previewContent && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line max-h-[300px] overflow-y-auto">
+                  {previewContent}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            {!isPreviewMode ? (
+              <Button
+                onClick={handlePreviewLogistics}
+                disabled={generatePreviewMutation.isPending || !details.trim()}
+                className="w-full"
+              >
+                {generatePreviewMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview Plan
+                  </>
+                )}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsPreviewMode(false)}
+                  className="flex-1"
+                >
+                  Edit Details
+                </Button>
+                <Button
+                  onClick={handleGenerateLogistics}
+                  disabled={generateLogisticsMutation.isPending}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                >
+                  {generateLogisticsMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Save Logistics Plan"
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
