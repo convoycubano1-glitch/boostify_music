@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 import AdminPage from "@/pages/admin";
 import AIAgentsPage from "@/pages/ai-agents";
+import AIAdvisorsPage from "@/pages/ai-advisors";
 import AnalyticsPage from "@/pages/analytics";
 import ArtistDashboard from "@/pages/artist-dashboard";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
@@ -156,6 +157,7 @@ const Router = () => {
   const WrappedMusicVideoCreator = withPageWrapper(MusicVideoCreator);
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
+  const WrappedAIAdvisorsPage = withPageWrapper(AIAdvisorsPage);
   const WrappedArtistImageAdvisor = withPageWrapper(ArtistImageAdvisor);
   const WrappedMerchandisePage = withPageWrapper(MerchandisePage);
   const WrappedEcosystemPage = withPageWrapper(EcosystemPage);
@@ -205,6 +207,7 @@ const Router = () => {
         <ProtectedRoute path="/music-video-creator" component={WrappedMusicVideoCreator} />
         <ProtectedRoute path="/record-label-services" component={WrappedRecordLabelServices} />
         <ProtectedRoute path="/ai-agents" component={WrappedAIAgentsPage} />
+        <ProtectedRoute path="/ai-advisors" component={WrappedAIAdvisorsPage} />
         <ProtectedRoute path="/artist-image-advisor" component={WrappedArtistImageAdvisor} />
         <ProtectedRoute path="/merchandise" component={WrappedMerchandisePage} />
         <ProtectedRoute path="/ecosystem" component={WrappedEcosystemPage} />
