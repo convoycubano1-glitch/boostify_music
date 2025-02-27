@@ -9,12 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from "@/hooks/use-toast";
 import { generateCourseContent, extendCourseContent, AdditionalCourseContent } from "@/lib/api/education-service";
 import { ImagePreloader } from "@/components/ui/image-preloader";
-import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, PlusCircle } from "lucide-react";
+import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, PlusCircle, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
 import { 
   collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc,
-  getDoc, setDoc, where, limit
+  getDoc, setDoc, where, limit, deleteDoc
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
@@ -58,6 +58,7 @@ export default function EducationPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [newCourse, setNewCourse] = useState<CourseFormData>({
     title: "",
     description: "",
@@ -287,6 +288,13 @@ export default function EducationPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
+      // Verificar si el usuario es administrador (convoycubano@gmail.com)
+      if (user && user.email === "convoycubano@gmail.com") {
+        setIsAdmin(true);
+        console.log("Usuario administrador autenticado");
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => unsubscribe();
@@ -480,18 +488,26 @@ export default function EducationPage() {
   };
 
   const handleCreateCourse = async () => {
-    // Temporalmente desactivamos la comprobación de autenticación para permitir crear cursos
-    // Solo con fines de prueba
     console.log("Authentication status:", isAuthenticated ? "Authenticated" : "Not authenticated");
+    console.log("Admin status:", isAdmin ? "Admin" : "Not admin");
     
-    // if (!isAuthenticated) {
-    //   toast({
-    //     title: "Error",
-    //     description: "You must be logged in to create a course",
-    //     variant: "destructive"
-    //   });
-    //   return;
-    // }
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para crear un curso",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast({
+        title: "Acceso denegado",
+        description: "Solo el administrador (convoycubano@gmail.com) puede crear cursos",
+        variant: "destructive"
+      });
+      return;
+    }
 
     if (!newCourse.title || !newCourse.description || !newCourse.category || !newCourse.level) {
       toast({
@@ -655,18 +671,26 @@ export default function EducationPage() {
   ];
 
   const createSampleCourses = async () => {
-    // Temporalmente desactivamos la comprobación de autenticación para permitir crear cursos de muestra
-    // Solo con fines de prueba
     console.log("Authentication status for sample courses:", isAuthenticated ? "Authenticated" : "Not authenticated");
+    console.log("Admin status for sample courses:", isAdmin ? "Admin" : "Not admin");
     
-    // if (!isAuthenticated) {
-    //   toast({
-    //     title: "Error",
-    //     description: "You must be logged in to create courses",
-    //     variant: "destructive"
-    //   });
-    //   return;
-    // }
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para crear cursos",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast({
+        title: "Acceso denegado",
+        description: "Solo el administrador (convoycubano@gmail.com) puede crear cursos de ejemplo",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsGenerating(true);
     let createdCount = 0;
@@ -768,6 +792,45 @@ export default function EducationPage() {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Función para eliminar un curso (solo para administrador)
+  const handleDeleteCourse = async (courseId: string) => {
+    // Verificar si el usuario es administrador
+    if (!isAdmin) {
+      toast({
+        title: "Acceso denegado",
+        description: "Solo el administrador (convoycubano@gmail.com) puede eliminar cursos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Confirmar con el usuario antes de eliminar
+      if (!confirm("¿Estás seguro de que quieres eliminar este curso? Esta acción no se puede deshacer.")) {
+        return;
+      }
+
+      // Eliminar el curso de Firestore
+      const courseRef = doc(db, 'courses', courseId);
+      await deleteDoc(courseRef);
+
+      // Actualizar el estado local eliminando el curso
+      setCourses(prev => prev.filter(course => course.id !== courseId));
+
+      toast({
+        title: "Éxito",
+        description: "Curso eliminado correctamente",
+      });
+    } catch (error: any) {
+      console.error('Error eliminando curso:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error al eliminar el curso. Por favor intenta de nuevo.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1258,7 +1321,7 @@ export default function EducationPage() {
                     </Button>
                   </div>
                   
-                  {/* Desktop only - Button to extend the course */}
+                  {/* Desktop only - Admin controls */}
                   <div className="flex mt-3 gap-2">
                     <Button 
                       className="flex-1 bg-orange-700 hover:bg-orange-800 text-xs md:text-sm"
@@ -1270,6 +1333,17 @@ export default function EducationPage() {
                       <span className="whitespace-nowrap">Extend Course</span>
                       <PlusCircle className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2" />
                     </Button>
+                    
+                    {/* Delete button - Only visible to admin */}
+                    {isAdmin && (
+                      <Button
+                        className="bg-red-600 hover:bg-red-700 text-xs md:text-sm px-2"
+                        onClick={() => handleDeleteCourse(course.id)}
+                      >
+                        <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="ml-1 whitespace-nowrap hidden md:inline">Delete</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
