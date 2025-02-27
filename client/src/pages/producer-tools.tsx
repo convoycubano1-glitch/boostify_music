@@ -21,7 +21,7 @@ import { BookingDialog } from "@/components/booking/booking-dialog";
 import { AddMusicianForm } from "@/components/booking/add-musician-form";
 import { FileExchangeHub } from "@/components/producer/FileExchangeHub";
 import { StudioVideoCall } from "@/components/producer/StudioVideoCall";
-import { ProductionProgress } from "@/components/producer/ProductionProgress";
+import { ProductionProgressContainer } from "@/components/producer/ProductionProgressContainer";
 import { VersionControl } from "@/components/producer/VersionControl";
 
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
@@ -627,7 +627,7 @@ export default function ProducerToolsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
             <FileExchangeHub />
             <StudioVideoCall />
-            <ProductionProgress />
+            <ProductionProgressContainer />
             <VersionControl />
           </div>
 

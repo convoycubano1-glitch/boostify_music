@@ -1,22 +1,20 @@
-import { db, auth } from "@/firebase";
 import { 
   collection, 
   doc, 
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  getDocs, 
-  getDoc, 
   query, 
   where, 
-  orderBy, 
+  getDocs, 
+  getDoc,
+  orderBy,
   serverTimestamp,
-  Timestamp,
-  writeBatch
+  Timestamp 
 } from "firebase/firestore";
-import { User } from "firebase/auth";
+import { db } from "@/lib/firebase";
 
-// Types definitions
+// Interfaces
 export interface ProductionProject {
   id: string;
   name: string;
@@ -83,492 +81,526 @@ export interface ProductionCollaborator {
   createdAt: Date;
 }
 
-// Service class
 class ProductionProgressService {
-  // Projects
+  private projectsCollection = "production_projects";
+  private phasesCollection = "production_phases";
+  private tasksCollection = "production_tasks";
+  private notesCollection = "production_notes";
+  private collaboratorsCollection = "production_collaborators";
+
+  // Project methods
   async getProjects(userId: string): Promise<ProductionProject[]> {
     try {
-      // Query for projects created by the user
-      const userProjectsQuery = query(
-        collection(db, "production_projects"),
+      const projectsQuery = query(
+        collection(db, this.projectsCollection),
         where("userId", "==", userId),
         orderBy("createdAt", "desc")
       );
       
-      // Query for projects where user is a collaborator
-      const collabProjectsQuery = query(
-        collection(db, "production_projects"),
-        where(`collaborators.${userId}`, "==", true),
-        orderBy("createdAt", "desc")
-      );
-      
-      // Fetch both sets of projects
-      const [userSnapshot, collabSnapshot] = await Promise.all([
-        getDocs(userProjectsQuery),
-        getDocs(collabProjectsQuery)
-      ]);
-      
-      // Combine projects, converting Firestore timestamps to Date objects
+      const querySnapshot = await getDocs(projectsQuery);
       const projects: ProductionProject[] = [];
       
-      userSnapshot.forEach(doc => {
+      querySnapshot.forEach((doc) => {
         const data = doc.data();
-        projects.push({
+        
+        // Convert Firestore timestamps to Date objects
+        const project: ProductionProject = {
           id: doc.id,
-          ...data,
-          startDate: data.startDate?.toDate(),
-          targetCompletionDate: data.targetCompletionDate?.toDate(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate()
-        } as ProductionProject);
-      });
-      
-      collabSnapshot.forEach(doc => {
-        // Only add if not already added (to avoid duplicates)
-        if (!projects.some(p => p.id === doc.id)) {
-          const data = doc.data();
-          projects.push({
-            id: doc.id,
-            ...data,
-            startDate: data.startDate?.toDate(),
-            targetCompletionDate: data.targetCompletionDate?.toDate(),
-            createdAt: data.createdAt?.toDate(),
-            updatedAt: data.updatedAt?.toDate()
-          } as ProductionProject);
-        }
+          name: data.name,
+          description: data.description,
+          startDate: data.startDate instanceof Timestamp ? data.startDate.toDate() : new Date(data.startDate),
+          targetCompletionDate: data.targetCompletionDate ? 
+            (data.targetCompletionDate instanceof Timestamp ? 
+              data.targetCompletionDate.toDate() : 
+              new Date(data.targetCompletionDate)
+            ) : undefined,
+          status: data.status,
+          currentPhaseId: data.currentPhaseId,
+          userId: data.userId,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
+          collaborators: data.collaborators
+        };
+        
+        projects.push(project);
       });
       
       return projects;
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error("Error getting projects:", error);
       throw error;
     }
   }
-  
+
   async getProjectById(projectId: string): Promise<ProductionProject | null> {
     try {
-      const docRef = doc(db, "production_projects", projectId);
-      const docSnap = await getDoc(docRef);
+      const projectDoc = doc(db, this.projectsCollection, projectId);
+      const projectSnapshot = await getDoc(projectDoc);
       
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          startDate: data.startDate?.toDate(),
-          targetCompletionDate: data.targetCompletionDate?.toDate(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate()
-        } as ProductionProject;
+      if (!projectSnapshot.exists()) {
+        return null;
       }
       
-      return null;
+      const data = projectSnapshot.data();
+      
+      const project: ProductionProject = {
+        id: projectSnapshot.id,
+        name: data.name,
+        description: data.description,
+        startDate: data.startDate instanceof Timestamp ? data.startDate.toDate() : new Date(data.startDate),
+        targetCompletionDate: data.targetCompletionDate ? 
+          (data.targetCompletionDate instanceof Timestamp ? 
+            data.targetCompletionDate.toDate() : 
+            new Date(data.targetCompletionDate)
+          ) : undefined,
+        status: data.status,
+        currentPhaseId: data.currentPhaseId,
+        userId: data.userId,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
+        collaborators: data.collaborators
+      };
+      
+      return project;
     } catch (error) {
-      console.error("Error fetching project:", error);
+      console.error(`Error getting project with ID ${projectId}:`, error);
       throw error;
     }
   }
-  
+
   async createProject(projectData: Omit<ProductionProject, "id" | "createdAt" | "updatedAt">): Promise<string> {
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("User not authenticated");
-      
-      const docRef = await addDoc(collection(db, "production_projects"), {
+      const now = new Date();
+      const projectToCreate = {
         ...projectData,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        createdAt: now,
+        updatedAt: now
+      };
       
+      const docRef = await addDoc(collection(db, this.projectsCollection), projectToCreate);
       return docRef.id;
     } catch (error) {
       console.error("Error creating project:", error);
       throw error;
     }
   }
-  
+
   async updateProject(projectId: string, updates: Partial<ProductionProject>): Promise<void> {
     try {
-      const docRef = doc(db, "production_projects", projectId);
-      await updateDoc(docRef, {
+      const projectRef = doc(db, this.projectsCollection, projectId);
+      
+      // Add updated timestamp
+      const updatedData = {
         ...updates,
-        updatedAt: serverTimestamp()
-      });
+        updatedAt: new Date()
+      };
+      
+      await updateDoc(projectRef, updatedData);
     } catch (error) {
-      console.error("Error updating project:", error);
+      console.error(`Error updating project with ID ${projectId}:`, error);
       throw error;
     }
   }
-  
+
   async deleteProject(projectId: string): Promise<void> {
     try {
-      // Get all phases for this project
-      const phasesQuery = query(
-        collection(db, "production_phases"),
-        where("projectId", "==", projectId)
-      );
-      const phasesSnapshot = await getDocs(phasesQuery);
+      // Delete related data first
+      await this.deleteRelatedData(projectId);
       
-      // Get all tasks for this project
-      const tasksQuery = query(
-        collection(db, "production_tasks"),
-        where("projectId", "==", projectId)
-      );
-      const tasksSnapshot = await getDocs(tasksQuery);
-      
-      // Get all notes for this project
-      const notesQuery = query(
-        collection(db, "production_notes"),
-        where("projectId", "==", projectId)
-      );
-      const notesSnapshot = await getDocs(notesQuery);
-      
-      // Get all collaborators for this project
-      const collabsQuery = query(
-        collection(db, "production_collaborators"),
-        where("projectId", "==", projectId)
-      );
-      const collabsSnapshot = await getDocs(collabsQuery);
-      
-      // Delete all related documents
-      const batch = writeBatch(db);
-      
-      phasesSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      tasksSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      notesSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      collabsSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      // Delete the project
-      const projectRef = doc(db, "production_projects", projectId);
-      batch.delete(projectRef);
-      
-      // Commit all deletions
-      await batch.commit();
+      // Then delete the project
+      const projectRef = doc(db, this.projectsCollection, projectId);
+      await deleteDoc(projectRef);
     } catch (error) {
-      console.error("Error deleting project:", error);
+      console.error(`Error deleting project with ID ${projectId}:`, error);
       throw error;
     }
   }
-  
-  // Phases
+
+  private async deleteRelatedData(projectId: string): Promise<void> {
+    try {
+      // Get all phases for the project
+      const phases = await this.getPhasesByProjectId(projectId);
+      
+      // Delete tasks, notes, and phases
+      for (const phase of phases) {
+        // Delete tasks
+        const tasksQuery = query(
+          collection(db, this.tasksCollection),
+          where("phaseId", "==", phase.id)
+        );
+        const taskSnapshot = await getDocs(tasksQuery);
+        const taskPromises = taskSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(taskPromises);
+        
+        // Delete notes
+        const notesQuery = query(
+          collection(db, this.notesCollection),
+          where("phaseId", "==", phase.id)
+        );
+        const notesSnapshot = await getDocs(notesQuery);
+        const notesPromises = notesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(notesPromises);
+        
+        // Delete the phase
+        const phaseRef = doc(db, this.phasesCollection, phase.id);
+        await deleteDoc(phaseRef);
+      }
+      
+      // Delete collaborators
+      const collaboratorsQuery = query(
+        collection(db, this.collaboratorsCollection),
+        where("projectId", "==", projectId)
+      );
+      const collaboratorsSnapshot = await getDocs(collaboratorsQuery);
+      const collaboratorPromises = collaboratorsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(collaboratorPromises);
+    } catch (error) {
+      console.error(`Error deleting related data for project ${projectId}:`, error);
+      throw error;
+    }
+  }
+
+  // Phase methods
   async getPhasesByProjectId(projectId: string): Promise<ProductionPhase[]> {
     try {
       const phasesQuery = query(
-        collection(db, "production_phases"),
+        collection(db, this.phasesCollection),
         where("projectId", "==", projectId),
-        orderBy("createdAt")
+        orderBy("createdAt", "asc")
       );
       
-      const snapshot = await getDocs(phasesQuery);
+      const querySnapshot = await getDocs(phasesQuery);
       const phases: ProductionPhase[] = [];
       
-      snapshot.forEach(doc => {
+      querySnapshot.forEach((doc) => {
         const data = doc.data();
-        phases.push({
+        
+        const phase: ProductionPhase = {
           id: doc.id,
-          ...data,
-          startDate: data.startDate?.toDate(),
-          completionDate: data.completionDate?.toDate(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate()
-        } as ProductionPhase);
+          projectId: data.projectId,
+          name: data.name,
+          status: data.status,
+          progress: data.progress,
+          eta: data.eta,
+          notes: data.notes,
+          startDate: data.startDate instanceof Timestamp ? data.startDate.toDate() : 
+            data.startDate ? new Date(data.startDate) : undefined,
+          completionDate: data.completionDate instanceof Timestamp ? data.completionDate.toDate() : 
+            data.completionDate ? new Date(data.completionDate) : undefined,
+          priority: data.priority,
+          dependencies: data.dependencies,
+          userId: data.userId,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
+          collaborators: data.collaborators
+        };
+        
+        phases.push(phase);
       });
       
       return phases;
     } catch (error) {
-      console.error("Error fetching phases:", error);
+      console.error(`Error getting phases for project ${projectId}:`, error);
       throw error;
     }
   }
-  
+
   async createPhase(phaseData: Omit<ProductionPhase, "id" | "createdAt" | "updatedAt">): Promise<string> {
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("User not authenticated");
-      
-      const docRef = await addDoc(collection(db, "production_phases"), {
+      const now = new Date();
+      const phaseToCreate = {
         ...phaseData,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        createdAt: now,
+        updatedAt: now
+      };
       
+      const docRef = await addDoc(collection(db, this.phasesCollection), phaseToCreate);
       return docRef.id;
     } catch (error) {
       console.error("Error creating phase:", error);
       throw error;
     }
   }
-  
+
   async updatePhase(phaseId: string, updates: Partial<ProductionPhase>): Promise<void> {
     try {
-      const docRef = doc(db, "production_phases", phaseId);
-      await updateDoc(docRef, {
+      const phaseRef = doc(db, this.phasesCollection, phaseId);
+      
+      // Add updated timestamp
+      const updatedData = {
         ...updates,
-        updatedAt: serverTimestamp()
-      });
+        updatedAt: new Date()
+      };
+      
+      await updateDoc(phaseRef, updatedData);
     } catch (error) {
-      console.error("Error updating phase:", error);
+      console.error(`Error updating phase with ID ${phaseId}:`, error);
       throw error;
     }
   }
-  
+
   async deletePhase(phaseId: string): Promise<void> {
     try {
-      // Get all tasks for this phase
+      // Delete related tasks and notes first
+      await this.deleteTasksAndNotesByPhaseId(phaseId);
+      
+      // Then delete the phase
+      const phaseRef = doc(db, this.phasesCollection, phaseId);
+      await deleteDoc(phaseRef);
+    } catch (error) {
+      console.error(`Error deleting phase with ID ${phaseId}:`, error);
+      throw error;
+    }
+  }
+
+  private async deleteTasksAndNotesByPhaseId(phaseId: string): Promise<void> {
+    try {
+      // Delete tasks
       const tasksQuery = query(
-        collection(db, "production_tasks"),
+        collection(db, this.tasksCollection),
         where("phaseId", "==", phaseId)
       );
-      const tasksSnapshot = await getDocs(tasksQuery);
+      const taskSnapshot = await getDocs(tasksQuery);
+      const taskPromises = taskSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(taskPromises);
       
-      // Get all notes for this phase
+      // Delete notes
       const notesQuery = query(
-        collection(db, "production_notes"),
+        collection(db, this.notesCollection),
         where("phaseId", "==", phaseId)
       );
       const notesSnapshot = await getDocs(notesQuery);
-      
-      // Delete all related documents
-      const batch = writeBatch(db);
-      
-      tasksSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      notesSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      
-      // Delete the phase
-      const phaseRef = doc(db, "production_phases", phaseId);
-      batch.delete(phaseRef);
-      
-      // Commit all deletions
-      await batch.commit();
+      const notesPromises = notesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(notesPromises);
     } catch (error) {
-      console.error("Error deleting phase:", error);
+      console.error(`Error deleting tasks and notes for phase ${phaseId}:`, error);
       throw error;
     }
   }
-  
-  // Tasks
+
+  // Task methods
   async getTasksByPhaseId(phaseId: string): Promise<ProductionTask[]> {
     try {
       const tasksQuery = query(
-        collection(db, "production_tasks"),
+        collection(db, this.tasksCollection),
         where("phaseId", "==", phaseId),
-        orderBy("createdAt")
+        orderBy("createdAt", "asc")
       );
       
-      const snapshot = await getDocs(tasksQuery);
+      const querySnapshot = await getDocs(tasksQuery);
       const tasks: ProductionTask[] = [];
       
-      snapshot.forEach(doc => {
+      querySnapshot.forEach((doc) => {
         const data = doc.data();
-        tasks.push({
+        
+        const task: ProductionTask = {
           id: doc.id,
-          ...data,
-          dueDate: data.dueDate?.toDate(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate()
-        } as ProductionTask);
+          phaseId: data.phaseId,
+          projectId: data.projectId,
+          name: data.name,
+          completed: data.completed,
+          assignedTo: data.assignedTo,
+          dueDate: data.dueDate instanceof Timestamp ? data.dueDate.toDate() : 
+            data.dueDate ? new Date(data.dueDate) : undefined,
+          notes: data.notes,
+          userId: data.userId,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt)
+        };
+        
+        tasks.push(task);
       });
       
       return tasks;
     } catch (error) {
-      console.error("Error fetching tasks:", error);
+      console.error(`Error getting tasks for phase ${phaseId}:`, error);
       throw error;
     }
   }
-  
+
   async createTask(taskData: Omit<ProductionTask, "id" | "createdAt" | "updatedAt">): Promise<string> {
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("User not authenticated");
-      
-      const docRef = await addDoc(collection(db, "production_tasks"), {
+      const now = new Date();
+      const taskToCreate = {
         ...taskData,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        createdAt: now,
+        updatedAt: now
+      };
       
+      const docRef = await addDoc(collection(db, this.tasksCollection), taskToCreate);
       return docRef.id;
     } catch (error) {
       console.error("Error creating task:", error);
       throw error;
     }
   }
-  
+
   async updateTask(taskId: string, updates: Partial<ProductionTask>): Promise<void> {
     try {
-      const docRef = doc(db, "production_tasks", taskId);
-      await updateDoc(docRef, {
+      const taskRef = doc(db, this.tasksCollection, taskId);
+      
+      // Add updated timestamp
+      const updatedData = {
         ...updates,
-        updatedAt: serverTimestamp()
-      });
+        updatedAt: new Date()
+      };
+      
+      await updateDoc(taskRef, updatedData);
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error(`Error updating task with ID ${taskId}:`, error);
       throw error;
     }
   }
-  
+
   async deleteTask(taskId: string): Promise<void> {
     try {
-      await deleteDoc(doc(db, "production_tasks", taskId));
+      const taskRef = doc(db, this.tasksCollection, taskId);
+      await deleteDoc(taskRef);
     } catch (error) {
-      console.error("Error deleting task:", error);
+      console.error(`Error deleting task with ID ${taskId}:`, error);
       throw error;
     }
   }
-  
-  // Notes
+
+  // Note methods
   async getNotesByPhaseId(phaseId: string): Promise<ProductionNote[]> {
     try {
       const notesQuery = query(
-        collection(db, "production_notes"),
+        collection(db, this.notesCollection),
         where("phaseId", "==", phaseId),
         orderBy("createdAt", "desc")
       );
       
-      const snapshot = await getDocs(notesQuery);
+      const querySnapshot = await getDocs(notesQuery);
       const notes: ProductionNote[] = [];
       
-      snapshot.forEach(doc => {
+      querySnapshot.forEach((doc) => {
         const data = doc.data();
-        notes.push({
+        
+        const note: ProductionNote = {
           id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate()
-        } as ProductionNote);
+          phaseId: data.phaseId,
+          projectId: data.projectId,
+          content: data.content,
+          createdBy: data.createdBy,
+          createdByName: data.createdByName,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt)
+        };
+        
+        notes.push(note);
       });
       
       return notes;
     } catch (error) {
-      console.error("Error fetching notes:", error);
+      console.error(`Error getting notes for phase ${phaseId}:`, error);
       throw error;
     }
   }
-  
+
   async createNote(noteData: Omit<ProductionNote, "id" | "createdAt">): Promise<string> {
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("User not authenticated");
-      
-      const docRef = await addDoc(collection(db, "production_notes"), {
+      const noteToCreate = {
         ...noteData,
-        createdBy: user.uid,
-        createdByName: user.displayName || "Unknown User",
-        createdAt: serverTimestamp()
-      });
+        createdAt: new Date()
+      };
       
+      const docRef = await addDoc(collection(db, this.notesCollection), noteToCreate);
       return docRef.id;
     } catch (error) {
       console.error("Error creating note:", error);
       throw error;
     }
   }
-  
+
   async deleteNote(noteId: string): Promise<void> {
     try {
-      await deleteDoc(doc(db, "production_notes", noteId));
+      const noteRef = doc(db, this.notesCollection, noteId);
+      await deleteDoc(noteRef);
     } catch (error) {
-      console.error("Error deleting note:", error);
+      console.error(`Error deleting note with ID ${noteId}:`, error);
       throw error;
     }
   }
-  
-  // Collaborators
+
+  // Collaborator methods
   async getCollaboratorsByProjectId(projectId: string): Promise<ProductionCollaborator[]> {
     try {
-      const collabsQuery = query(
-        collection(db, "production_collaborators"),
-        where("projectId", "==", projectId),
-        orderBy("createdAt")
+      const collaboratorsQuery = query(
+        collection(db, this.collaboratorsCollection),
+        where("projectId", "==", projectId)
       );
       
-      const snapshot = await getDocs(collabsQuery);
+      const querySnapshot = await getDocs(collaboratorsQuery);
       const collaborators: ProductionCollaborator[] = [];
       
-      snapshot.forEach(doc => {
+      querySnapshot.forEach((doc) => {
         const data = doc.data();
-        collaborators.push({
+        
+        const collaborator: ProductionCollaborator = {
           id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate()
-        } as ProductionCollaborator);
+          userId: data.userId,
+          projectId: data.projectId,
+          name: data.name,
+          role: data.role,
+          email: data.email,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt)
+        };
+        
+        collaborators.push(collaborator);
       });
       
       return collaborators;
     } catch (error) {
-      console.error("Error fetching collaborators:", error);
+      console.error(`Error getting collaborators for project ${projectId}:`, error);
       throw error;
     }
   }
-  
+
   async addCollaborator(collaboratorData: Omit<ProductionCollaborator, "id" | "createdAt">): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, "production_collaborators"), {
+      const collaboratorToCreate = {
         ...collaboratorData,
-        createdAt: serverTimestamp()
-      });
+        createdAt: new Date()
+      };
       
-      // Also update the project's collaborators map
-      const projectRef = doc(db, "production_projects", collaboratorData.projectId);
-      await updateDoc(projectRef, {
-        [`collaborators.${collaboratorData.userId}`]: true,
-        updatedAt: serverTimestamp()
-      });
-      
+      const docRef = await addDoc(collection(db, this.collaboratorsCollection), collaboratorToCreate);
       return docRef.id;
     } catch (error) {
       console.error("Error adding collaborator:", error);
       throw error;
     }
   }
-  
+
   async removeCollaborator(collaboratorId: string, projectId: string, userId: string): Promise<void> {
     try {
-      // Delete the collaborator document
-      await deleteDoc(doc(db, "production_collaborators", collaboratorId));
+      // Verify the user has permission to remove this collaborator
+      const projectRef = doc(db, this.projectsCollection, projectId);
+      const projectSnapshot = await getDoc(projectRef);
       
-      // Update the project's collaborators map
-      const projectRef = doc(db, "production_projects", projectId);
-      await updateDoc(projectRef, {
-        [`collaborators.${userId}`]: false,
-        updatedAt: serverTimestamp()
-      });
+      if (!projectSnapshot.exists() || projectSnapshot.data().userId !== userId) {
+        throw new Error("Unauthorized action");
+      }
+      
+      const collaboratorRef = doc(db, this.collaboratorsCollection, collaboratorId);
+      await deleteDoc(collaboratorRef);
     } catch (error) {
-      console.error("Error removing collaborator:", error);
+      console.error(`Error removing collaborator with ID ${collaboratorId}:`, error);
       throw error;
     }
   }
 
-  // Calculate phase completion percentage based on tasks
+  // Helper functions
   calculatePhaseCompletion(tasks: ProductionTask[]): number {
     if (tasks.length === 0) return 0;
     
     const completedTasks = tasks.filter(task => task.completed).length;
     return Math.round((completedTasks / tasks.length) * 100);
   }
-  
-  // Calculate overall project progress
+
   calculateProjectProgress(phases: ProductionPhase[]): number {
     if (phases.length === 0) return 0;
     
+    // Calculate weighted progress based on each phase
     const totalProgress = phases.reduce((sum, phase) => sum + phase.progress, 0);
     return Math.round(totalProgress / phases.length);
   }
