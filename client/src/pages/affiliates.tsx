@@ -17,12 +17,24 @@ import { Button } from "@/components/ui/button";
 import { CircleCheck, GraduationCap, LineChart, Rocket, Stars, Sparkles, Award, Users, DollarSign, Link, FileText, LifeBuoy, Settings2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Define AffiliateData type
+type AffiliateDataType = {
+  id: string;
+  level?: string;
+  stats?: {
+    totalClicks?: number;
+    totalSales?: number;
+    totalCommission?: number;
+  };
+  // Add other properties as needed
+};
+
 export default function AffiliatesPage() {
   const { user } = useAuth() || {};
   const [activeTab, setActiveTab] = useState("overview");
 
   // Query to check if the current user is an affiliate
-  const { data: affiliateData, isLoading: isLoadingAffiliateData } = useQuery({
+  const { data: affiliateData, isLoading: isLoadingAffiliateData } = useQuery<AffiliateDataType | null>({
     queryKey: ["affiliate", user?.uid],
     queryFn: async () => {
       if (!user?.uid) return null;
@@ -31,7 +43,7 @@ export default function AffiliatesPage() {
       const affiliateDoc = await getDoc(affiliateRef);
       
       if (affiliateDoc.exists()) {
-        return { ...affiliateDoc.data(), id: affiliateDoc.id };
+        return { ...affiliateDoc.data(), id: affiliateDoc.id } as AffiliateDataType;
       }
       
       return null;

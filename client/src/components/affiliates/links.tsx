@@ -52,7 +52,12 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { AlertCircle, CheckCircle2, Loader2, Copy, Link, BarChart, Trash2, PlusCircle, ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 
 interface AffiliateLinksProps {
-  affiliateData: any;
+  affiliateData: {
+    id: string;
+    level?: string;
+    name?: string;
+    links?: any[];
+  } | null;
 }
 
 // Validation schema for creating a new link

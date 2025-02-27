@@ -23,7 +23,17 @@ import {
 } from "@/components/ui/table";
 
 interface AffiliateEarningsProps {
-  affiliateData: any;
+  affiliateData: {
+    id: string;
+    level?: string;
+    stats?: {
+      totalClicks?: number;
+      conversions?: number;
+      earnings?: number;
+      pendingPayment?: number;
+    };
+    paymentHistory?: any[];
+  } | null;
 }
 
 export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {

@@ -13,7 +13,18 @@ import {
 import { CircularProgress } from "@/components/ui/circular-progress";
 
 interface AffiliateOverviewProps {
-  affiliateData: any;
+  affiliateData: {
+    id: string;
+    level?: string;
+    name?: string;
+    stats?: {
+      totalClicks?: number;
+      conversions?: number;
+      earnings?: number;
+      pendingPayment?: number;
+    };
+    links?: any[];
+  } | null;
 }
 
 export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
