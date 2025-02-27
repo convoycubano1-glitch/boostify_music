@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -13,11 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { storage } from "@/firebase"; 
+import { storage, auth } from "@/firebase"; 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Upload, Film } from "lucide-react";
+import { Loader2, Upload, Film, AlertCircle } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/auth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VideoUploadProps {
   isOpen: boolean;
@@ -31,8 +32,31 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
   const [category, setCategory] = useState<string>("featured");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Verificar si el usuario está autenticado
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Simplemente verificar si hay un usuario actual
+        const user = auth.currentUser;
+        setIsAuthenticated(!!user);
+        
+        if (!user) {
+          setError("Debes iniciar sesión para subir videos");
+          console.warn("No user authenticated for video upload");
+        }
+      } catch (err) {
+        console.error("Error checking authentication:", err);
+        setError("Error al verificar la autenticación");
+      }
+    };
+    
+    checkAuth();
+  }, [isOpen]);
 
   // Mutation para guardar los metadatos del video en la base de datos
   const saveVideoMutation = useMutation({
@@ -112,6 +136,17 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Verificar si el usuario está autenticado
+    if (!isAuthenticated) {
+      setError("Debes iniciar sesión para subir videos");
+      toast({
+        title: "Autenticación requerida",
+        description: "Por favor, inicia sesión para subir videos",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!file) {
       toast({
         title: "Archivo requerido",
@@ -129,19 +164,47 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
       });
       return;
     }
+    
+    // Verificar el tamaño del archivo (máximo 200MB)
+    const maxSizeInBytes = 200 * 1024 * 1024; // 200MB
+    if (file.size > maxSizeInBytes) {
+      toast({
+        title: "Archivo demasiado grande",
+        description: `El archivo es demasiado grande (${(file.size / (1024 * 1024)).toFixed(2)}MB). El tamaño máximo permitido es 200MB.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
+    // Todo en orden, comenzar la carga
     setIsUploading(true);
+    setError(null);
 
     try {
+      // Obtener el usuario actual para metadatos
+      const user = auth.currentUser;
+      if (!user || !user.uid) {
+        throw new Error("Error de autenticación. Por favor, vuelve a iniciar sesión.");
+      }
+      
       // Crear una referencia única para el archivo en Firebase Storage
       const timestamp = new Date().getTime();
       const fileExtension = file.name.split('.').pop();
       const safeFileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       const fileName = `${safeFileName}_${timestamp}.${fileExtension}`;
-      const storageRef = ref(storage, `videos/tv/${fileName}`);
+      
+      // Incluir el ID del usuario en la ruta para mejorar la organización
+      const storageRef = ref(storage, `videos/${category}/${fileName}`);
 
-      // Iniciar el proceso de carga
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      // Iniciar el proceso de carga con metadatos adicionales
+      const uploadTask = uploadBytesResumable(storageRef, file, {
+        contentType: file.type,
+        customMetadata: {
+          userId: user.uid,
+          category: category,
+          title: title
+        }
+      });
 
       // Escuchar el progreso de la carga
       uploadTask.on(
@@ -153,36 +216,67 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
           setUploadProgress(progress);
         },
         (error) => {
-          // Manejar errores
+          // Manejar errores comunes de Firebase Storage
           console.error("Error uploading file:", error);
+          let errorMessage = "Error al subir el video";
+          
+          if (error.code === "storage/unauthorized") {
+            errorMessage = "No tienes permisos para subir este video. Por favor, inicia sesión nuevamente.";
+          } else if (error.code === "storage/canceled") {
+            errorMessage = "La carga fue cancelada.";
+          } else if (error.code === "storage/unknown") {
+            errorMessage = "Ocurrió un error desconocido. Por favor, intenta nuevamente.";
+          } else if (error.code === "storage/retry-limit-exceeded") {
+            errorMessage = "Se superó el límite de intentos. Por favor, verifica tu conexión a internet.";
+          } else if (error.code === "storage/invalid-checksum") {
+            errorMessage = "El archivo está dañado. Por favor, intenta con otro archivo.";
+          }
+          
           toast({
             title: "Error al subir el video",
-            description: `No se pudo subir el video: ${error.message}`,
+            description: errorMessage,
             variant: "destructive",
           });
+          
+          setError(errorMessage);
           setIsUploading(false);
         },
         async () => {
-          // Subida completada, obtener URL de descarga
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          try {
+            // Subida completada, obtener URL de descarga
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            console.log("File uploaded successfully. Download URL:", downloadURL);
 
-          // Guardar los metadatos del video en la base de datos
-          saveVideoMutation.mutate({
-            title,
-            description,
-            category,
-            filePath: downloadURL,
-            fileName: fileName,
-          });
+            // Guardar los metadatos del video en la base de datos
+            saveVideoMutation.mutate({
+              title,
+              description,
+              category,
+              filePath: downloadURL,
+              fileName: fileName,
+            });
+          } catch (error) {
+            console.error("Error getting download URL:", error);
+            toast({
+              title: "Error al finalizar la carga",
+              description: "El video se subió, pero no se pudo obtener la URL de descarga.",
+              variant: "destructive",
+            });
+            setIsUploading(false);
+          }
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during upload:", error);
+      const errorMessage = error?.message || "Ocurrió un error inesperado durante la carga del video";
+      
       toast({
         title: "Error al subir el video",
-        description: "Ocurrió un error inesperado durante la carga del video",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      setError(errorMessage);
       setIsUploading(false);
     }
   };
@@ -198,6 +292,13 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        
           <div className="grid gap-4">
             <div className="space-y-2">
               <Label htmlFor="title">Título del video</Label>

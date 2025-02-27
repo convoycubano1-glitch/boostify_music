@@ -52,11 +52,12 @@ export async function getAuthToken(): Promise<string | null> {
     
     // Use retry mechanism for token refresh
     return await withRetry(() => currentUser.getIdToken(true));
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error getting auth token after retries:', error);
     
-    // Consider forcing a reauthentication if token refresh fails consistently
-    if (error.code === 'auth/network-request-failed') {
+    // Proper type checking for Firebase errors
+    if (error && typeof error === 'object' && 'code' in error && 
+        error.code === 'auth/network-request-failed') {
       console.warn('Network issues detected. The user may need to refresh the page or check connection.');
     }
     
