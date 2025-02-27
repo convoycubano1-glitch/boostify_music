@@ -51,7 +51,7 @@ const fromFirestoreDate = (timestamp: Timestamp): Date => {
 };
 
 // Función para convertir los datos al formato de Firestore
-const toFirestore = <T extends {createdAt?: Date, updatedAt?: Date}>(data: T): any => {
+const toFirestore = <T>(data: T): any => {
   const result: any = {...data};
   
   // Convertir fechas a formato Firestore
@@ -269,12 +269,43 @@ export class FirestoreSocialNetworkService {
   
   async getCommentsByPostId(postId: string): Promise<Comment[]> {
     try {
+      // Modificamos la consulta para no requerir un índice compuesto
+      // Primero obtenemos todos los comentarios del post sin ordenar
       const snapshot = await db.collection(COMMENTS_COLLECTION)
         .where('postId', '==', postId)
-        .orderBy('createdAt', 'asc')
         .get();
       
-      return snapshot.docs.map(doc => fromFirestore<Comment>(doc) as Comment);
+      // Convertimos los documentos a objetos Comment
+      const comments = snapshot.docs.map(doc => fromFirestore<Comment>(doc) as Comment);
+      
+      // Ordenamos en memoria por fecha de creación (ascendente)
+      return comments.sort((a, b) => {
+        // Manejo seguro de diferentes tipos de fecha
+        let timeA: number;
+        let timeB: number;
+        
+        if (a.createdAt instanceof Date) {
+          timeA = a.createdAt.getTime();
+        } else if (a.createdAt && typeof a.createdAt === 'object' && 'toDate' in a.createdAt) {
+          // Es un Timestamp de Firestore
+          timeA = a.createdAt.toDate().getTime();
+        } else {
+          // Intenta convertir a Date como último recurso
+          timeA = new Date(String(a.createdAt)).getTime();
+        }
+        
+        if (b.createdAt instanceof Date) {
+          timeB = b.createdAt.getTime();
+        } else if (b.createdAt && typeof b.createdAt === 'object' && 'toDate' in b.createdAt) {
+          // Es un Timestamp de Firestore
+          timeB = b.createdAt.toDate().getTime();
+        } else {
+          // Intenta convertir a Date como último recurso
+          timeB = new Date(String(b.createdAt)).getTime();
+        }
+        
+        return timeA - timeB;
+      });
     } catch (error) {
       console.error(`Error getting comments for post with ID ${postId}:`, error);
       throw error;
