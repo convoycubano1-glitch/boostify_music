@@ -1,6 +1,6 @@
 import express from 'express';
-import { auth } from '../middleware/auth';
-import { db } from '../config/firebase';
+import { authenticate } from '../middleware/auth';
+import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, limit, serverTimestamp } from 'firebase/firestore';
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -17,7 +17,7 @@ const PREMIUM_EXTRACTION_LIMIT = 500; // Premium users limit
  * Extract contacts using Apify API (with locality and category filters)
  * Requires authentication
  */
-router.post('/contacts/extract', auth, async (req, res) => {
+router.post('/contacts/extract', authenticate, async (req, res) => {
   try {
     const { uid } = req.user;
     const { searchTerm, locality, category, maxPages = 2 } = req.body;
@@ -134,7 +134,7 @@ router.post('/contacts/extract', auth, async (req, res) => {
  * Get user's contacts
  * Requires authentication
  */
-router.get('/contacts', auth, async (req, res) => {
+router.get('/contacts', authenticate, async (req, res) => {
   try {
     const { uid } = req.user;
     const { category } = req.query;
@@ -173,7 +173,7 @@ router.get('/contacts', auth, async (req, res) => {
  * Save a contact to the user's collection
  * Requires authentication
  */
-router.post('/contacts/save', auth, async (req, res) => {
+router.post('/contacts/save', authenticate, async (req, res) => {
   try {
     const { uid } = req.user;
     const { contact } = req.body;
@@ -209,7 +209,7 @@ router.post('/contacts/save', auth, async (req, res) => {
  * Get user's remaining extraction quota
  * Requires authentication
  */
-router.get('/extractions/remaining', auth, async (req, res) => {
+router.get('/extractions/remaining', authenticate, async (req, res) => {
   try {
     const { uid } = req.user;
     
