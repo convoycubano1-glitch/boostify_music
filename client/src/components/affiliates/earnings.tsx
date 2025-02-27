@@ -38,6 +38,7 @@ interface AffiliateEarningsProps {
 }
 
 export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
+  const { user } = useAuth() || {};
   // Datos de ejemplo para ganancias
   const earningsOverview = {
     total: affiliateData?.stats?.earnings || 0,

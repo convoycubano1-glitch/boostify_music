@@ -52,7 +52,30 @@ export default function AffiliatesPage() {
   });
 
   // Determine if we should show the registration form or the affiliate dashboard
-  const isAffiliate = !!affiliateData;
+  // Para pruebas, puedes cambiar esta línea a `true` para ver el dashboard
+  const isAffiliate = true; // !!affiliateData;
+  
+  // Datos de afiliado de prueba para el modo de desarrollo
+  const mockAffiliateData = {
+    id: user?.uid || "mock-user-123",
+    level: "Premium",
+    name: user?.displayName || "Usuario de Prueba",
+    stats: {
+      totalClicks: 3254,
+      conversions: 187,
+      earnings: 1256.75,
+      pendingPayment: 342.50
+    },
+    links: [
+      { id: "link1", name: "Enlace de promoción 1", url: "https://example.com/aff/1", clicks: 856, conversions: 45 },
+      { id: "link2", name: "Enlace de promoción 2", url: "https://example.com/aff/2", clicks: 542, conversions: 32 }
+    ],
+    paymentHistory: [
+      { id: "pay1", date: new Date(), amount: 287.75, status: "completed" },
+      { id: "pay2", date: new Date(), amount: 203.25, status: "completed" }
+    ],
+    savedContent: []
+  };
 
   // Benefits of the affiliate program
   const benefits = [
@@ -155,10 +178,10 @@ export default function AffiliatesPage() {
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="text-sm py-1 px-3 flex items-center gap-1">
                     <Award className="h-3.5 w-3.5 text-yellow-500" />
-                    <span>{affiliateData?.level || "Basic"} Level</span>
+                    <span>{mockAffiliateData.level || "Basic"} Level</span>
                   </Badge>
                   <Badge variant="secondary" className="text-sm py-1 px-3">
-                    ID: {user?.uid?.substring(0, 8)}
+                    ID: {user?.uid?.substring(0, 8) || "mock-123"}
                   </Badge>
                 </div>
               </div>
@@ -196,19 +219,19 @@ export default function AffiliatesPage() {
                 </TabsList>
                 
                 <TabsContent value="overview" className="space-y-4">
-                  <AffiliateOverview affiliateData={affiliateData} />
+                  <AffiliateOverview affiliateData={mockAffiliateData} />
                 </TabsContent>
                 
                 <TabsContent value="links" className="space-y-4">
-                  <AffiliateLinks affiliateData={affiliateData} />
+                  <AffiliateLinks affiliateData={mockAffiliateData} />
                 </TabsContent>
                 
                 <TabsContent value="earnings" className="space-y-4">
-                  <AffiliateEarnings affiliateData={affiliateData} />
+                  <AffiliateEarnings affiliateData={mockAffiliateData} />
                 </TabsContent>
                 
                 <TabsContent value="content" className="space-y-4">
-                  <AffiliateContentGenerator affiliateData={affiliateData} />
+                  <AffiliateContentGenerator affiliateData={mockAffiliateData} />
                 </TabsContent>
                 
                 <TabsContent value="resources" className="space-y-4">
