@@ -1,106 +1,147 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Post } from "@/lib/social/types";
-import { PostCard } from "./post-card";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState } from "react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Send } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { Send } from "lucide-react";
+import { PostCard } from "./post-card";
+import { MusicLoadingSpinner } from "@/components/ui/music-loading-spinner";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 
 export function PostFeed() {
-  const [newPost, setNewPost] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [newPostContent, setNewPostContent] = useState("");
 
-  const { data: posts, isLoading, error, refetch } = useQuery<Post[]>({
+  // Consulta de posts
+  const postsQuery = useQuery({
     queryKey: ["/api/social/posts"],
+    queryFn: async () => {
+      const response = await fetch("/api/social/posts");
+      if (!response.ok) {
+        throw new Error("Error al cargar las publicaciones");
+      }
+      return response.json();
+    },
   });
 
-  const handleSubmitPost = async () => {
-    if (!newPost.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      await apiRequest({
-        url: "/api/social/posts",
+  // Mutación para crear nuevo post
+  const createPostMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const response = await fetch("/api/social/posts", {
         method: "POST",
-        data: { content: newPost },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
       });
-      setNewPost("");
+      
+      if (!response.ok) {
+        throw new Error("Error al crear la publicación");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setNewPostContent("");
+      queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
       toast({
-        title: "Post created!",
-        description: "Your post has been published.",
+        title: "¡Publicación creada!",
+        description: "Tu publicación se ha creado correctamente",
       });
-      refetch();
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Could not create your post. Please try again.",
+        description: "No se pudo crear la publicación",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+      console.error(error);
+    },
+  });
+
+  const handleSubmitPost = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPostContent.trim()) return;
+    
+    createPostMutation.mutate(newPostContent);
   };
 
-  if (error) {
+  if (postsQuery.isLoading) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500">Error loading posts. Please try again later.</p>
+      <div className="flex justify-center items-center h-40">
+        <MusicLoadingSpinner />
       </div>
     );
   }
 
+  if (postsQuery.isError) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-destructive mb-4">
+          Error al cargar las publicaciones. Por favor, intenta de nuevo más tarde.
+        </p>
+        <Button onClick={() => postsQuery.refetch()}>
+          Reintentar
+        </Button>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Formulario para crear nueva publicación */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-4">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>ME</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2">
-              <Textarea
-                placeholder="What's on your mind?"
-                value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
-                className="min-h-[80px]"
-              />
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleSubmitPost}
-                  disabled={isSubmitting || !newPost.trim()}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Posting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" /> Post
-                    </>
-                  )}
-                </Button>
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmitPost}>
+            <Textarea
+              placeholder="Comparte tus pensamientos sobre música, arte o lo que te inspire..."
+              className="min-h-24 resize-none mb-3"
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
+            />
+            <CardFooter className="px-0 pt-0 pb-0 flex justify-between">
+              <div className="text-xs text-muted-foreground">
+                Las respuestas utilizan IA para generar interacciones similares a la vida real
               </div>
-            </div>
-          </div>
+              <Button
+                type="submit"
+                disabled={!newPostContent.trim() || createPostMutation.isPending}
+                className="ml-auto"
+              >
+                {createPostMutation.isPending ? (
+                  <MusicLoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Publicar
+              </Button>
+            </CardFooter>
+          </form>
         </CardContent>
       </Card>
 
-      {isLoading ? (
-        <div className="flex justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : posts && posts.length > 0 ? (
-        posts.map((post) => <PostCard key={post.id} post={post as any} />)
-      ) : (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">No posts yet. Be the first to post!</p>
-        </Card>
-      )}
+      {/* Lista de publicaciones */}
+      <div className="space-y-4">
+        {postsQuery.data && postsQuery.data.length > 0 ? (
+          postsQuery.data.map((post: any) => (
+            <PostCard key={post.id} post={post} />
+          ))
+        ) : (
+          <Card className="p-6 text-center">
+            <p className="text-muted-foreground">
+              No hay publicaciones disponibles. ¡Sé el primero en publicar algo!
+            </p>
+          </Card>
+        )}
+      </div>
+
+      {/* Botón para cargar más posts (simulación) */}
+      <div className="text-center mt-6">
+        <Button variant="outline" className="w-full">
+          Cargar más publicaciones
+        </Button>
+      </div>
     </div>
   );
 }

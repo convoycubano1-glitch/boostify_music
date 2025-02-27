@@ -1,136 +1,277 @@
-import { PostFeed } from "@/components/social/post-feed";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Search, Users, MessageSquare, Bell, Home } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Users, Music, Globe, Settings, Bell, MessageSquare, TrendingUp } from "lucide-react";
+import { PostFeed } from "@/components/social/post-feed";
+import { useQuery } from "@tanstack/react-query";
 
 export default function SocialNetworkPage() {
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("feed");
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Search",
-      description: "This feature is coming soon!",
-    });
+  // Consulta para obtener usuarios
+  const usersQuery = useQuery({
+    queryKey: ["/api/social/users"],
+    queryFn: async () => {
+      const response = await fetch("/api/social/users");
+      if (!response.ok) {
+        throw new Error("Error al cargar usuarios");
+      }
+      return response.json();
+    },
+  });
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Sidebar/Profile Column */}
-        <div className="md:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>My Profile</CardTitle>
-              <CardDescription>
-                Update your profile and manage your account
-              </CardDescription>
+    <div className="container py-8">
+      <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-8">
+        {/* Sidebar */}
+        <div className="lg:w-1/4">
+          <Card className="sticky top-20">
+            <CardHeader>
+              <CardTitle>Tu Comunidad</CardTitle>
+              <CardDescription>Conecta con otros artistas y profesionales de la música</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col space-y-4">
-                <Button className="w-full justify-start" variant="ghost">
-                  <Home className="mr-2 h-4 w-4" />
-                  Home
-                </Button>
-                <Button className="w-full justify-start" variant="ghost">
-                  <Users className="mr-2 h-4 w-4" />
-                  Friends
-                </Button>
-                <Button className="w-full justify-start" variant="ghost">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Messages
-                </Button>
-                <Button className="w-full justify-start" variant="ghost">
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
-                </Button>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium mb-3">Navegación</h3>
+                <div className="space-y-2">
+                  <Button 
+                    variant={activeTab === "feed" ? "default" : "ghost"} 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("feed")}
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    Feed Principal
+                  </Button>
+                  <Button 
+                    variant={activeTab === "trending" ? "default" : "ghost"} 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("trending")}
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Tendencias
+                  </Button>
+                  <Button 
+                    variant={activeTab === "artists" ? "default" : "ghost"} 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("artists")}
+                  >
+                    <Music className="mr-2 h-4 w-4" />
+                    Artistas
+                  </Button>
+                  <Button 
+                    variant={activeTab === "messages" ? "default" : "ghost"} 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("messages")}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Mensajes
+                  </Button>
+                  <Button 
+                    variant={activeTab === "notifications" ? "default" : "ghost"} 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("notifications")}
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    Notificaciones
+                  </Button>
+                  <Button 
+                    variant={activeTab === "settings" ? "default" : "ghost"} 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("settings")}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configuración
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Trending Topics</CardTitle>
-              <CardDescription>
-                Popular discussions in music education
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                <li>
-                  <a href="#" className="text-sm font-medium hover:underline">
-                    #MusicEducation
-                  </a>
-                  <p className="text-xs text-gray-500">1.2K posts</p>
-                </li>
-                <li>
-                  <a href="#" className="text-sm font-medium hover:underline">
-                    #ProductionTips
-                  </a>
-                  <p className="text-xs text-gray-500">876 posts</p>
-                </li>
-                <li>
-                  <a href="#" className="text-sm font-medium hover:underline">
-                    #HomeStudio
-                  </a>
-                  <p className="text-xs text-gray-500">543 posts</p>
-                </li>
-                <li>
-                  <a href="#" className="text-sm font-medium hover:underline">
-                    #SongwritingChallenge
-                  </a>
-                  <p className="text-xs text-gray-500">322 posts</p>
-                </li>
-                <li>
-                  <a href="#" className="text-sm font-medium hover:underline">
-                    #MusicTheory
-                  </a>
-                  <p className="text-xs text-gray-500">289 posts</p>
-                </li>
-              </ul>
+              <Separator />
+
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center">
+                  <Users className="mr-2 h-4 w-4" />
+                  Usuarios Sugeridos
+                </h3>
+                
+                <div className="space-y-3">
+                  {usersQuery.isLoading ? (
+                    <p className="text-muted-foreground text-sm">Cargando usuarios...</p>
+                  ) : usersQuery.isError ? (
+                    <p className="text-muted-foreground text-sm">Error al cargar usuarios</p>
+                  ) : (
+                    usersQuery.data?.slice(0, 5).map((user: any) => (
+                      <div key={user.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar || undefined} alt={user.displayName} />
+                            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{user.displayName}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                              {user.isBot ? "Asistente AI" : "Usuario"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          Seguir
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-sm font-medium mb-3">Temas Populares</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">#MúsicaIndependiente</Badge>
+                  <Badge variant="secondary">#ProducciónMusical</Badge>
+                  <Badge variant="secondary">#Boostify</Badge>
+                  <Badge variant="secondary">#ÉxitoMusical</Badge>
+                  <Badge variant="secondary">#MarketingMusical</Badge>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Feed Column */}
-        <div className="md:col-span-2 space-y-6">
-          <Card className="mb-4">
-            <CardContent className="p-4">
-              <form onSubmit={handleSearch} className="flex space-x-2">
-                <Input 
-                  placeholder="Search posts, people, or topics..."
-                  className="flex-1"
-                />
-                <Button type="submit">
-                  <Search className="h-4 w-4" />
+        {/* Main Content */}
+        <div className="lg:w-1/2">
+          {activeTab === "feed" && (
+            <div>
+              <Card className="mb-6">
+                <CardHeader className="pb-3">
+                  <CardTitle>Feed Social de Boostify</CardTitle>
+                  <CardDescription>
+                    Conéctate con otros artistas, productores y profesionales de la industria musical
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              
+              <PostFeed />
+            </div>
+          )}
+
+          {activeTab === "trending" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Tendencias</CardTitle>
+                <CardDescription>Descubre lo que está siendo tendencia en la comunidad musical</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Próximamente: Contenido de tendencias</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "artists" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Artistas</CardTitle>
+                <CardDescription>Descubre y conecta con artistas de tu género musical</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Próximamente: Directorio de artistas</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "messages" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Mensajes</CardTitle>
+                <CardDescription>Tus conversaciones con otros usuarios</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Próximamente: Sistema de mensajería</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "notifications" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Notificaciones</CardTitle>
+                <CardDescription>Mantente al día con la actividad de tu red</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Próximamente: Centro de notificaciones</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "settings" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuración</CardTitle>
+                <CardDescription>Personaliza tu experiencia en la red social</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Próximamente: Ajustes de la red social</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="lg:w-1/4">
+          <Card className="sticky top-20">
+            <CardHeader>
+              <CardTitle>Recursos Musicales</CardTitle>
+              <CardDescription>Herramientas y recursos para artistas</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-medium mb-2">Boostify Pro Tools</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Accede a herramientas profesionales de producción y marketing musical
+                </p>
+                <Button variant="default" className="w-full">
+                  Explorar Herramientas
                 </Button>
-              </form>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-medium mb-2">Conecta tu Spotify</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Comparte tu música y obtén análisis avanzados
+                </p>
+                <Button variant="outline" className="w-full">
+                  Conectar Cuenta
+                </Button>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-medium mb-2">Cursos de Educación Musical</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Mejora tus habilidades con cursos certificados
+                </p>
+                <Button variant="outline" className="w-full">
+                  Ver Cursos
+                </Button>
+              </div>
+              
+              <div className="text-xs text-center text-muted-foreground pt-4">
+                <p>© 2025 Boostify Social Network</p>
+                <p className="mt-1">Todos los derechos reservados</p>
+              </div>
             </CardContent>
           </Card>
-
-          <Tabs defaultValue="feed">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="feed">Feed</TabsTrigger>
-              <TabsTrigger value="trending">Trending</TabsTrigger>
-              <TabsTrigger value="following">Following</TabsTrigger>
-            </TabsList>
-            <TabsContent value="feed">
-              <PostFeed />
-            </TabsContent>
-            <TabsContent value="trending">
-              <Card className="p-8 text-center">
-                <p className="text-muted-foreground">Trending content coming soon!</p>
-              </Card>
-            </TabsContent>
-            <TabsContent value="following">
-              <Card className="p-8 text-center">
-                <p className="text-muted-foreground">Following feature coming soon!</p>
-              </Card>
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
     </div>

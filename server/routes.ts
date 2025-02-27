@@ -9,6 +9,7 @@ import { setupFilesRoutes } from "./routes/files";
 import { setupVideosRoutes } from "./routes/videos";
 import { setupEmailRoutes } from "./routes/email";
 import { setupApifyRoutes } from "./routes/apify";
+import { setupSocialNetworkRoutes } from "./routes/social-network";
 import { db } from "@db";
 import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments } from "@db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
@@ -70,6 +71,7 @@ export function registerRoutes(app: Express): Server {
   setupVideosRoutes(app);
   setupEmailRoutes(app);
   setupApifyRoutes(app);
+  setupSocialNetworkRoutes(app);
 
   // Register courses routes
   app.use(coursesRouter);
