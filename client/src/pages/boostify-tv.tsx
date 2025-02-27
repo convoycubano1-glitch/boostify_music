@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
-import { VideoUpload } from "@/components/video-upload";
+import { VideoUpload } from "@/components/affiliates/video-upload";
 import { useAuth } from "@/hooks/use-auth";
 
 interface VideoContent {
