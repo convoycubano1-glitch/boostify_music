@@ -2,170 +2,226 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Download, ExternalLink, Play, FileText, Image, Video, Zap, BookOpen, Calculator, ChevronRight, Clock } from "lucide-react";
+import { Download, ExternalLink, Play, FileText, Image, Video, Zap, BookOpen, Calculator, ChevronRight, Clock, Check, Gift, Star, Award, Search, Globe } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useState } from "react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function AffiliateResources() {
-  // Recursos para afiliados
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadComplete, setDownloadComplete] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<any>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  // Affiliate marketing resources
   const marketingResources = [
     {
       id: "res-1",
-      title: "Guía definitiva de marketing para afiliados musicales",
-      description: "Aprende estrategias probadas para promocionar productos musicales y maximizar tus conversiones.",
+      title: "Ultimate Music Affiliate Marketing Guide",
+      description: "Learn proven strategies to promote music products and maximize your conversions with this comprehensive guide.",
       type: "guide",
       format: "PDF",
       size: "4.2 MB",
-      lastUpdated: "25/01/2025",
+      lastUpdated: "Jan 25, 2025",
       thumbnail: "https://placehold.co/400x225",
+      featured: true,
     },
     {
       id: "res-2",
-      title: "Pack de banners para redes sociales",
-      description: "Colección de 20 banners optimizados para todas las plataformas sociales con espacio para tu enlace de afiliado.",
+      title: "Social Media Banner Pack",
+      description: "Collection of 20 optimized banners for all social platforms with space for your affiliate link. Perfect for promotions.",
       type: "graphics",
       format: "ZIP (PNG/JPG)",
       size: "15.8 MB",
-      lastUpdated: "12/02/2025",
+      lastUpdated: "Feb 12, 2025",
       thumbnail: "https://placehold.co/400x225",
     },
     {
       id: "res-3",
-      title: "Tutorial: Cómo optimizar la conversión en Instagram",
-      description: "Video tutorial paso a paso para crear campañas efectivas en Instagram que generen conversiones.",
+      title: "Tutorial: Instagram Conversion Optimization",
+      description: "Step-by-step video tutorial for creating effective Instagram campaigns that drive conversions for music products.",
       type: "video",
       format: "MP4",
       size: "85.3 MB",
-      lastUpdated: "05/02/2025",
+      lastUpdated: "Feb 05, 2025",
       thumbnail: "https://placehold.co/400x225",
+      duration: "28:45",
     },
     {
       id: "res-4",
-      title: "Plantillas de email marketing",
-      description: "10 plantillas HTML responsivas para tus campañas de email con bloques personalizables.",
+      title: "Email Marketing Templates",
+      description: "10 responsive HTML templates for your email campaigns with customizable blocks designed for music product promotion.",
       type: "template",
       format: "HTML/CSS",
       size: "2.1 MB",
-      lastUpdated: "18/02/2025",
+      lastUpdated: "Feb 18, 2025",
       thumbnail: "https://placehold.co/400x225",
+      featured: true,
     },
     {
       id: "res-5",
-      title: "Calculadora de ganancias para afiliados",
-      description: "Hoja de cálculo para proyectar tus ganancias basadas en tasas de conversión y tráfico.",
+      title: "Affiliate Earnings Calculator",
+      description: "Spreadsheet to project your earnings based on conversion rates, traffic volumes, and commission structures.",
       type: "tool",
       format: "XLSX",
       size: "1.3 MB",
-      lastUpdated: "01/02/2025",
+      lastUpdated: "Feb 01, 2025",
       thumbnail: "https://placehold.co/400x225",
     },
     {
       id: "res-6",
-      title: "Webinar: Estrategias avanzadas para afiliados",
-      description: "Sesión grabada con expertos compartiendo técnicas avanzadas para escalar tus ingresos de afiliado.",
+      title: "Webinar: Advanced Affiliate Strategies",
+      description: "Recorded session with experts sharing advanced techniques to scale your affiliate income in the music industry.",
       type: "webinar",
       format: "MP4",
       size: "320.5 MB",
-      lastUpdated: "10/01/2025",
+      lastUpdated: "Jan 10, 2025",
       thumbnail: "https://placehold.co/400x225",
+      duration: "1:15:30",
     },
   ];
 
+  // Product-specific resources
   const productResources = [
     {
       id: "prod-res-1",
-      title: "Kit de promoción - Curso de Producción Musical",
-      description: "Recursos completos para promocionar nuestro curso estrella de producción musical.",
+      title: "Promotion Kit - Music Production Masterclass",
+      description: "Complete resources for promoting our flagship music production course. Includes images, copy, and video testimonials.",
       type: "bundle",
-      format: "ZIP (varios)",
+      format: "ZIP (various)",
       size: "45.2 MB",
-      lastUpdated: "15/02/2025",
+      lastUpdated: "Feb 15, 2025",
       thumbnail: "https://placehold.co/400x225",
       productId: "prod1",
+      commissionRate: "30%",
     },
     {
       id: "prod-res-2",
-      title: "Imágenes promocionales - Plugin de Masterización",
-      description: "Pack de imágenes de alta calidad mostrando la interfaz y resultados del plugin.",
+      title: "Promo Images - Pro Mastering Plugin",
+      description: "High-quality image pack showcasing the interface and results of our professional mastering plugin.",
       type: "graphics",
       format: "ZIP (PNG)",
       size: "22.4 MB",
-      lastUpdated: "20/02/2025",
+      lastUpdated: "Feb 20, 2025",
       thumbnail: "https://placehold.co/400x225",
       productId: "prod2",
+      commissionRate: "25%",
     },
     {
       id: "prod-res-3",
-      title: "Demo y testimonios - Paquete de Distribución Musical",
-      description: "Video testimonial y demostración de nuestra plataforma de distribución musical.",
+      title: "Demo & Testimonials - Music Distribution Package",
+      description: "Video testimonial and demonstration of our music distribution platform with real success stories from artists.",
       type: "video",
       format: "MP4",
       size: "128.7 MB",
-      lastUpdated: "08/02/2025",
+      lastUpdated: "Feb 08, 2025",
       thumbnail: "https://placehold.co/400x225",
       productId: "prod3",
+      commissionRate: "35%",
+      duration: "12:45",
     },
     {
       id: "prod-res-4",
-      title: "Preguntas frecuentes - Curso de Marketing Musical",
-      description: "Documento con respuestas a las preguntas más frecuentes que hacen los potenciales clientes.",
+      title: "FAQ - Music Marketing Course",
+      description: "Document with answers to the most frequently asked questions by potential customers about our marketing course.",
       type: "document",
       format: "PDF",
       size: "1.8 MB",
-      lastUpdated: "22/02/2025",
+      lastUpdated: "Feb 22, 2025",
       thumbnail: "https://placehold.co/400x225",
       productId: "prod4",
+      commissionRate: "40%",
     },
   ];
 
+  // Educational resources
   const educationResources = [
     {
       id: "edu-1",
-      title: "Curso: Fundamentos del marketing de afiliados",
-      description: "Curso completo para dominar los fundamentos del marketing de afiliados en la industria musical.",
+      title: "Course: Affiliate Marketing Fundamentals",
+      description: "Complete course to master the fundamentals of affiliate marketing in the music industry.",
       lessons: 12,
-      duration: "3 horas",
-      level: "Principiante",
-      lastUpdated: "05/01/2025",
+      duration: "3 hours",
+      level: "Beginner",
+      lastUpdated: "Jan 05, 2025",
       thumbnail: "https://placehold.co/400x225",
+      certification: true,
     },
     {
       id: "edu-2",
-      title: "Taller: Copywriting para aumentar conversiones",
-      description: "Aprende técnicas de escritura persuasiva específicas para productos musicales y tecnología de audio.",
+      title: "Workshop: Copywriting for Conversions",
+      description: "Learn persuasive writing techniques specific to music products and audio technology promotion.",
       lessons: 5,
-      duration: "1.5 horas",
-      level: "Intermedio",
-      lastUpdated: "15/01/2025",
+      duration: "1.5 hours",
+      level: "Intermediate",
+      lastUpdated: "Jan 15, 2025",
       thumbnail: "https://placehold.co/400x225",
     },
     {
       id: "edu-3",
-      title: "Masterclass: SEO para afiliados musicales",
-      description: "Optimiza tu contenido para posicionarte en búsquedas relacionadas con producción y equipamiento musical.",
+      title: "Masterclass: SEO for Music Affiliates",
+      description: "Optimize your content to rank for searches related to music production and equipment.",
       lessons: 8,
-      duration: "2 horas",
-      level: "Avanzado",
-      lastUpdated: "20/01/2025",
+      duration: "2 hours",
+      level: "Advanced",
+      lastUpdated: "Jan 20, 2025",
       thumbnail: "https://placehold.co/400x225",
+      certification: true,
     },
     {
       id: "edu-4",
-      title: "Guía: Uso efectivo de redes sociales",
-      description: "Estrategias específicas para cada plataforma social que funcionan en el nicho de la música y audio.",
+      title: "Guide: Effective Social Media Strategy",
+      description: "Platform-specific strategies that work in the music and audio niche for maximum engagement.",
       lessons: 6,
-      duration: "1.8 horas",
-      level: "Intermedio",
-      lastUpdated: "10/02/2025",
+      duration: "1.8 hours",
+      level: "Intermediate",
+      lastUpdated: "Feb 10, 2025",
       thumbnail: "https://placehold.co/400x225",
     },
   ];
 
-  // Renderizar icono según el tipo de recurso
+  // Upcoming webinars
+  const upcomingWebinars = [
+    {
+      id: "webinar-1",
+      title: "SEO Strategies for Music Affiliates in 2025",
+      date: "Mar 15, 2025 - 6:00 PM GMT",
+      host: "Sarah Johnson",
+      hostTitle: "SEO Specialist",
+      description: "Learn the latest SEO techniques to help your music affiliate content rank higher and attract qualified traffic.",
+    },
+    {
+      id: "webinar-2",
+      title: "Creating Viral Content for Music Products",
+      date: "Mar 22, 2025 - 5:00 PM GMT",
+      host: "David Martinez",
+      hostTitle: "Content Marketing Expert",
+      description: "Discover proven formulas for creating content that gets shared widely and drives conversions for music products.",
+    },
+    {
+      id: "webinar-3",
+      title: "Panel: Affiliate Marketing Trends for 2025",
+      date: "Apr 05, 2025 - 4:30 PM GMT",
+      host: "Industry Panel",
+      hostTitle: "Various Experts",
+      description: "Panel with industry experts discussing new trends, tools, and strategies defining affiliate marketing this year.",
+    },
+  ];
+
+  // Render icon based on resource type
   const renderResourceIcon = (type: string) => {
     switch (type) {
       case 'guide':
@@ -187,41 +243,82 @@ export function AffiliateResources() {
     }
   };
 
-  // Preguntas frecuentes
+  // Simulate downloading a resource
+  const handleDownload = (resource: any) => {
+    setSelectedResource(resource);
+    setIsDownloading(true);
+    setDownloadProgress(0);
+    setDownloadComplete(false);
+    
+    // Simulate download progress
+    const interval = setInterval(() => {
+      setDownloadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setDownloadComplete(true);
+          setTimeout(() => {
+            setIsAlertOpen(true);
+          }, 500);
+          return 100;
+        }
+        return prev + Math.random() * 10;
+      });
+    }, 200);
+  };
+  
+  // Frequently asked questions
   const faqs = [
     {
-      question: "¿Cómo empiezo a promocionar productos como afiliado?",
-      answer: "Para comenzar, selecciona los productos que deseas promocionar en el panel de enlaces de afiliado. Crea un enlace único para cada producto y comienza a compartirlo en tus canales. Utiliza los recursos de marketing disponibles para crear contenido atractivo que destaque los beneficios del producto."
+      question: "How do I start promoting products as an affiliate?",
+      answer: "To get started, select the products you want to promote in the affiliate links panel. Create a unique link for each product and begin sharing it across your channels. Use the marketing resources available to create engaging content that highlights the product benefits."
     },
     {
-      question: "¿Cuándo y cómo recibo mis pagos?",
-      answer: "Los pagos se procesan mensualmente, el día 15, siempre que hayas alcanzado el umbral mínimo de $100. Recibirás el pago a través del método que hayas configurado en tu perfil (PayPal, transferencia bancaria o criptomonedas). Puedes ver tu historial de pagos y el próximo pago estimado en la sección de Ganancias."
+      question: "When and how do I receive my payments?",
+      answer: "Payments are processed monthly on the 15th, provided you've reached the minimum threshold of $100. You'll receive payment through the method you've configured in your profile (PayPal, bank transfer, or cryptocurrency). You can view your payment history and next estimated payment in the Earnings section."
     },
     {
-      question: "¿Cómo puedo aumentar mi tasa de conversión?",
-      answer: "Para mejorar tu tasa de conversión, considera estas estrategias: 1) Conoce a fondo los productos que promocionas, 2) Crea contenido genuino que muestre los beneficios reales, 3) Dirige tráfico cualificado a tus enlaces, 4) Utiliza el generador de contenido para crear textos persuasivos, 5) Analiza y optimiza tus campañas regularmente basándote en los datos de rendimiento."
+      question: "How can I increase my conversion rate?",
+      answer: "To improve your conversion rate, consider these strategies: 1) Know the products you're promoting thoroughly, 2) Create genuine content that showcases real benefits, 3) Drive qualified traffic to your links, 4) Use the content generator to create persuasive copy, 5) Regularly analyze and optimize your campaigns based on performance data."
     },
     {
-      question: "¿Puedo promocionar los productos en cualquier plataforma?",
-      answer: "Sí, puedes promocionar los productos en prácticamente cualquier plataforma online, incluyendo redes sociales, blogs, YouTube, email marketing, etc. Sin embargo, asegúrate de seguir las políticas de cada plataforma respecto a enlaces de afiliados. Algunas plataformas requieren divulgación explícita de relaciones de afiliado, mientras que otras pueden tener restricciones específicas."
+      question: "Can I promote products on any platform?",
+      answer: "Yes, you can promote products on virtually any online platform, including social media, blogs, YouTube, email marketing, etc. However, be sure to follow each platform's policies regarding affiliate links. Some platforms require explicit disclosure of affiliate relationships, while others may have specific restrictions."
     },
     {
-      question: "¿Tengo que pagar por los recursos de marketing?",
-      answer: "No, todos los recursos de marketing disponibles en esta sección son completamente gratuitos para nuestros afiliados. Puedes descargar y utilizar los materiales promocionales, guías, plantillas y herramientas sin costo adicional. Estos recursos están diseñados para ayudarte a tener éxito y maximizar tus ganancias."
+      question: "Do I have to pay for the marketing resources?",
+      answer: "No, all marketing resources available in this section are completely free for our affiliates. You can download and use promotional materials, guides, templates, and tools at no additional cost. These resources are designed to help you succeed and maximize your earnings."
     },
     {
-      question: "¿Cómo puedo saber qué productos son los más rentables para promocionar?",
-      answer: "En la sección de Ganancias puedes ver estadísticas detalladas sobre el rendimiento de cada producto, incluyendo tasas de conversión, comisiones y ganancias totales. Utiliza estos datos para identificar qué productos generan mejores resultados para tu audiencia específica. También recomendamos probar diferentes productos y analizar su rendimiento durante al menos 30 días."
+      question: "How can I know which products are most profitable to promote?",
+      answer: "In the Earnings section, you can see detailed statistics about each product's performance, including conversion rates, commissions, and total earnings. Use this data to identify which products generate the best results for your specific audience. We also recommend testing different products and analyzing their performance over at least a 30-day period."
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Recursos para Afiliados</h2>
-        <p className="text-muted-foreground">
-          Materiales y herramientas para maximizar tus conversiones
+      <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-6 rounded-lg">
+        <h2 className="text-2xl font-bold tracking-tight">Affiliate Resources</h2>
+        <p className="text-muted-foreground mt-1">
+          Tools and materials to maximize your conversions and boost earnings
         </p>
+        <div className="flex flex-wrap gap-3 mt-4">
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <FileText className="h-3.5 w-3.5" />
+            <span>20+ Marketing Materials</span>
+          </Badge>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Video className="h-3.5 w-3.5" />
+            <span>Educational Videos</span>
+          </Badge>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Calculator className="h-3.5 w-3.5" />
+            <span>Performance Tools</span>
+          </Badge>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Globe className="h-3.5 w-3.5" />
+            <span>Global Support</span>
+          </Badge>
+        </div>
       </div>
 
       <Tabs defaultValue="marketing" className="w-full">
