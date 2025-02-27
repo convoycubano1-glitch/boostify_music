@@ -122,14 +122,14 @@ export function Header() {
             <div className="flex items-center space-x-4">
               {/* Search - Removed */}
 
-              {/* Globe Icon - Decorative Only */}
-              <div className="flex items-center">
-                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 cursor-default">
+              {/* Globe Icon - Now navigates to International */}
+              <Link href="/boostify-international">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2">
                   <Globe className="h-4 w-4" />
                 </Button>
-              </div>
+              </Link>
               
-              {/* World Icon - With Navigation to International */}
+              {/* World Icon - With Navigation to Social Network */}
               <Link href="/social-network">
                 <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2">
                   <img 
@@ -140,7 +140,7 @@ export function Header() {
                 </Button>
               </Link>
               
-              {/* International Text Link to Same International Page */}
+              {/* International Text Link to International Page */}
               <Link href="/boostify-international" className="hidden sm:block">
                 <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A]">
                   <span>International</span>
