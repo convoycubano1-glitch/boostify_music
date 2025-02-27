@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import axios from "axios";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
 import { 
   Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search, 
-  Share2, Facebook, Twitter, Copy, Instagram, Linkedin, Loader2
+  Share2, Facebook, Twitter, Copy, Instagram, Linkedin, Loader2,
+  PlusCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,8 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
+import { VideoUpload } from "@/components/video-upload";
+import { useAuth } from "@/hooks/use-auth";
 
 interface VideoContent {
   id: string;
@@ -41,7 +44,9 @@ interface VideoResponse {
 export default function BoostifyTvPage() {
   const [selectedTab, setSelectedTab] = useState("featured");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Fetch videos from the API
   const { data, isLoading, isError } = useQuery<VideoResponse>({
@@ -178,111 +183,135 @@ export default function BoostifyTvPage() {
           </div>
         ) : (
           <>
-            {/* Content Navigation */}
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-              <TabsList className="flex flex-wrap gap-2">
-                <TabsTrigger value="featured" className="data-[state=active]:bg-orange-500">
-                  <Star className="w-4 h-4 mr-2" />
-                  Featured
-                </TabsTrigger>
-                <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500">
-                  <Film className="w-4 h-4 mr-2" />
-                  Videos
-                </TabsTrigger>
-                {processedVideos.some((v: VideoContent) => v.category === "live") && (
-                  <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
-                    <Tv className="w-4 h-4 mr-2" />
-                    Live
-                  </TabsTrigger>
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Video Library</h2>
+                
+                {/* Upload button for authenticated users */}
+                {user && (
+                  <Button
+                    onClick={() => setIsUploadDialogOpen(true)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Subir Video
+                  </Button>
                 )}
-                {processedVideos.some((v: VideoContent) => v.category === "music") && (
-                  <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
-                    <Music2 className="w-4 h-4 mr-2" />
-                    Music
+              </div>
+              
+              <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+                <TabsList className="flex flex-wrap gap-2 mb-6">
+                  <TabsTrigger value="featured" className="data-[state=active]:bg-orange-500">
+                    <Star className="w-4 h-4 mr-2" />
+                    Featured
                   </TabsTrigger>
-                )}
-              </TabsList>
+                  <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500">
+                    <Film className="w-4 h-4 mr-2" />
+                    Videos
+                  </TabsTrigger>
+                  {processedVideos.some((v: VideoContent) => v.category === "live") && (
+                    <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
+                      <Tv className="w-4 h-4 mr-2" />
+                      Live
+                    </TabsTrigger>
+                  )}
+                  {processedVideos.some((v: VideoContent) => v.category === "music") && (
+                    <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
+                      <Music2 className="w-4 h-4 mr-2" />
+                      Music
+                    </TabsTrigger>
+                  )}
+                </TabsList>
 
-              {/* Content Sections */}
-              {["featured", "videos", "live", "music"].map((category) => (
-                <TabsContent key={category} value={category}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {(searchTerm ? filteredVideos : processedVideos)
-                      .filter((video: VideoContent) => video.category === category)
-                      .map((video: VideoContent) => (
-                        <Card key={video.id} className="overflow-hidden group">
-                          <div className="aspect-video relative">
-                            <video
-                              className="w-full h-full object-cover"
-                              src={video.filePath}
-                              controls
-                              preload="auto"
-                              poster={video.thumbnailPath || "/assets/video-placeholder.jpg"}
-                              onError={(e) => {
-                                console.error(`Error loading video: ${video.filePath}`, e);
-                                // Try to reload once
-                                const target = e.target as HTMLVideoElement;
-                                if (!target.dataset.retried) {
-                                  target.dataset.retried = "true";
-                                  target.load();
-                                }
-                              }}
-                            />
-                          </div>
-                          <div className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-semibold">{video.title}</h3>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Share2 className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => shareVideo(video, 'facebook')}>
-                                    <Facebook className="mr-2 h-4 w-4" />
-                                    <span>Facebook</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => shareVideo(video, 'twitter')}>
-                                    <Twitter className="mr-2 h-4 w-4" />
-                                    <span>Twitter</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => shareVideo(video, 'instagram')}>
-                                    <Instagram className="mr-2 h-4 w-4" />
-                                    <span>Instagram</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => shareVideo(video, 'linkedin')}>
-                                    <Linkedin className="mr-2 h-4 w-4" />
-                                    <span>LinkedIn</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => shareVideo(video, 'copy')}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    <span>Copy Link</span>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                {/* Content Sections */}
+                {["featured", "videos", "live", "music"].map((category) => (
+                  <TabsContent key={category} value={category}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {(searchTerm ? filteredVideos : processedVideos)
+                        .filter((video: VideoContent) => video.category === category)
+                        .map((video: VideoContent) => (
+                          <Card key={video.id} className="overflow-hidden group">
+                            <div className="aspect-video relative">
+                              <video
+                                className="w-full h-full object-cover"
+                                src={video.filePath}
+                                controls
+                                preload="auto"
+                                poster={video.thumbnailPath || "/assets/video-placeholder.jpg"}
+                                onError={(e) => {
+                                  console.error(`Error loading video: ${video.filePath}`, e);
+                                  // Try to reload once
+                                  const target = e.target as HTMLVideoElement;
+                                  if (!target.dataset.retried) {
+                                    target.dataset.retried = "true";
+                                    target.load();
+                                  }
+                                }}
+                              />
                             </div>
-                            <p className="text-sm text-muted-foreground mb-4">
-                              {video.description}
-                            </p>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
-                                {video.duration}
-                              </span>
-                              <span className="flex items-center">
-                                <TrendingUp className="w-4 h-4 mr-1" />
-                                {video.views.toLocaleString()} views
-                              </span>
+                            <div className="p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-semibold">{video.title}</h3>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <Share2 className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => shareVideo(video, 'facebook')}>
+                                      <Facebook className="mr-2 h-4 w-4" />
+                                      <span>Facebook</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => shareVideo(video, 'twitter')}>
+                                      <Twitter className="mr-2 h-4 w-4" />
+                                      <span>Twitter</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => shareVideo(video, 'instagram')}>
+                                      <Instagram className="mr-2 h-4 w-4" />
+                                      <span>Instagram</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => shareVideo(video, 'linkedin')}>
+                                      <Linkedin className="mr-2 h-4 w-4" />
+                                      <span>LinkedIn</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => shareVideo(video, 'copy')}>
+                                      <Copy className="mr-2 h-4 w-4" />
+                                      <span>Copy Link</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-4">
+                                {video.description}
+                              </p>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center">
+                                  <Clock className="w-4 h-4 mr-1" />
+                                  {video.duration}
+                                </span>
+                                <span className="flex items-center">
+                                  <TrendingUp className="w-4 h-4 mr-1" />
+                                  {video.views.toLocaleString()} views
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        </Card>
-                      ))}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+                          </Card>
+                        ))}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </div>
           </>
+        )}
+        
+        {/* Video upload dialog */}
+        {isUploadDialogOpen && (
+          <VideoUpload
+            isOpen={isUploadDialogOpen}
+            onClose={() => setIsUploadDialogOpen(false)}
+          />
         )}
       </main>
     </div>

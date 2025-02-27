@@ -1,8 +1,6 @@
 import { Express, Request, Response } from "express";
-import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { getStorage, ref, deleteObject } from "firebase/storage";
-import { db as firebaseDb, storage } from "../firebase";
-import { authenticate } from "../middleware/auth";
+import { storage, db as firebaseDb } from "../firebase";
+import { authenticate, AuthUser } from "../middleware/auth";
 import { z } from "zod";
 
 // Esquema de validación para la creación de videos
@@ -21,7 +19,10 @@ export type VideoData = z.infer<typeof videoSchema>;
  * Configura las rutas relacionadas con videos
  */
 export function setupVideosRoutes(app: Express) {
-  // Endpoint para guardar metadatos de videos en Firestore
+  /**
+   * Endpoint para guardar metadatos de videos en Firestore
+   * Requiere autenticación
+   */
   app.post("/api/videos", authenticate, async (req: Request, res: Response) => {
     try {
       // Validar los datos de entrada
@@ -35,6 +36,13 @@ export function setupVideosRoutes(app: Express) {
         });
       }
       
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado",
+        });
+      }
+      
       const videoData = result.data;
       
       // Agregar campos adicionales
@@ -45,9 +53,8 @@ export function setupVideosRoutes(app: Express) {
         views: 0,
       };
       
-      // Guardar en Firestore
-      const videosCollection = collection(firebaseDb, "videos");
-      const docRef = await addDoc(videosCollection, videoEntry);
+      // Guardar en Firestore usando Admin SDK
+      const docRef = await firebaseDb.collection("videos").add(videoEntry);
       
       res.status(201).json({
         success: true,
@@ -64,29 +71,39 @@ export function setupVideosRoutes(app: Express) {
     }
   });
   
-  // Endpoint para eliminar un video
+  /**
+   * Endpoint para eliminar un video
+   * Requiere autenticación y solo permite eliminar videos propios o a administradores
+   */
   app.delete("/api/videos/:id", authenticate, async (req: Request, res: Response) => {
     try {
       const videoId = req.params.id;
       
-      // Obtener la información del video para verificar permisos y obtener ruta del archivo
-      const videosCollection = collection(firebaseDb, "videos");
-      const q = query(videosCollection, where("__name__", "==", videoId));
-      const querySnapshot = await getDocs(q);
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado",
+        });
+      }
       
-      if (querySnapshot.empty) {
+      // Obtener la información del video usando Admin SDK
+      const videoDoc = await firebaseDb.collection("videos").doc(videoId).get();
+      
+      if (!videoDoc.exists) {
         return res.status(404).json({
           success: false,
           message: "Video no encontrado",
         });
       }
       
-      const videoDoc = querySnapshot.docs[0];
-      const videoData = videoDoc.data();
+      const videoData = videoDoc.data() || {};
       
       // Verificar que el usuario tenga permisos para eliminar el video
       // (Si es el creador o un administrador)
-      if (videoData.userId !== req.user.uid && !req.user.isAdmin) {
+      const isOwner = videoData.userId === req.user.uid;
+      const isAdmin = req.user.isAdmin === true;
+      
+      if (!isOwner && !isAdmin) {
         return res.status(403).json({
           success: false,
           message: "No tienes permisos para eliminar este video",
@@ -96,8 +113,8 @@ export function setupVideosRoutes(app: Express) {
       // Si el video tiene un fileName, intentar eliminar el archivo de Storage
       if (videoData.fileName) {
         try {
-          const fileRef = ref(storage, `videos/tv/${videoData.fileName}`);
-          await deleteObject(fileRef);
+          const file = storage.bucket().file(`videos/tv/${videoData.fileName}`);
+          await file.delete();
         } catch (storageError) {
           console.error("Error al eliminar archivo de Storage:", storageError);
           // Continuamos incluso si hay error al eliminar el archivo
@@ -105,7 +122,7 @@ export function setupVideosRoutes(app: Express) {
       }
       
       // Eliminar el documento de Firestore
-      await deleteDoc(doc(firebaseDb, "videos", videoId));
+      await firebaseDb.collection("videos").doc(videoId).delete();
       
       res.json({
         success: true,

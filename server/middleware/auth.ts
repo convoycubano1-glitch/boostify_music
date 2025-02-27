@@ -1,24 +1,54 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../firebase';
+import { DecodedIdToken } from 'firebase-admin/auth';
 
+// Interface for the authenticated user
+export interface AuthUser {
+  uid: string;
+  email?: string | null;
+  role?: string;
+  isAdmin?: boolean;
+}
+
+// Explicitly define the user interface to match our AuthUser
+declare global {
+  namespace Express {
+    // This ensures our user property has the correct shape
+    interface User extends AuthUser {}
+  }
+}
+
+/**
+ * Middleware to authenticate users using Firebase Authentication
+ * Verifies the token from the Authorization header and attaches user data to the request
+ */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
-    // Check session first
-    if (req.isAuthenticated() && req.user) {
+    // Check if user is already authenticated via session
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       console.log('User authenticated via session:', req.user);
       return next();
     }
 
-    // Check Firebase token
+    // Check Firebase token from Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split('Bearer ')[1];
       try {
-        const decodedToken = await auth.verifyIdToken(token);
-        req.user = {
+        // Verify the token using Firebase Admin SDK
+        const decodedToken: DecodedIdToken = await auth.verifyIdToken(token);
+        
+        // Create a custom user object with necessary properties
+        const user: AuthUser = {
           uid: decodedToken.uid,
-          role: 'artist'
+          email: decodedToken.email || null,
+          role: decodedToken.role || 'artist',
+          isAdmin: decodedToken.admin === true
         };
+        
+        // Attach the user to the request
+        req.user = user;
+        
         console.log('User authenticated via Firebase token:', req.user);
         return next();
       } catch (error) {

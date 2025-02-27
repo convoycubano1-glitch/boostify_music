@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Header } from "@/components/layout/header";
 import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
 import { generateContract } from "@/lib/openai";
-import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "@/lib/firebase";
+import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "@/lib/contracts";
 import html2pdf from 'html2pdf.js';
 import {
   Dialog,

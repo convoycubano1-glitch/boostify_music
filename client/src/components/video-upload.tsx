@@ -17,7 +17,7 @@ import { storage } from "@/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Upload, Film } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { getAuthToken } from "@/lib/auth";
 
 interface VideoUploadProps {
   isOpen: boolean;
@@ -43,13 +43,25 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
       filePath: string;
       fileName: string;
     }) => {
-      return apiRequest('/api/videos', {
+      // Obtener el token de autenticación
+      const token = await getAuthToken();
+      
+      // Usando fetch con autenticación
+      const response = await fetch('/api/videos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(videoData),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Error al guardar el video');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -60,10 +72,10 @@ export function VideoUpload({ isOpen, onClose }: VideoUploadProps) {
       resetForm();
       onClose();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error al guardar el video",
-        description: `No se pudo guardar la información del video: ${error}`,
+        description: `No se pudo guardar la información del video: ${error.message}`,
         variant: "destructive",
       });
       setIsUploading(false);
