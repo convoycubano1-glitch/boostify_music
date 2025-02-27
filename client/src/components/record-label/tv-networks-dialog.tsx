@@ -264,14 +264,11 @@ export function TVNetworksDialog({ children }: TVNetworksDialogProps) {
               
               <div className="grid gap-3">
                 {searchResults.map((network, idx) => (
-                  <motion.a
+                  <motion.div
                     key={`${network.name}-${idx}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    href={network.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex flex-col p-4 rounded-lg border border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/40 transition-all"
                   >
                     <div className="flex items-center justify-between">
@@ -281,7 +278,14 @@ export function TVNetworksDialog({ children }: TVNetworksDialogProps) {
                           {network.category}
                         </span>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-orange-500" />
+                      <a 
+                        href={network.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-500 hover:text-orange-600"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
                     </div>
                     <div className="mt-2 text-sm text-muted-foreground">
                       <p className="mb-1">{network.description}</p>
@@ -303,7 +307,7 @@ export function TVNetworksDialog({ children }: TVNetworksDialogProps) {
                         </span>
                       </div>
                     </div>
-                  </motion.a>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -355,19 +359,23 @@ export function TVNetworksDialog({ children }: TVNetworksDialogProps) {
                       className="grid gap-3 overflow-hidden"
                     >
                       {category.networks.map((network, idx) => (
-                        <motion.a
+                        <motion.div
                           key={network.name}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.1 }}
-                          href={network.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="flex flex-col p-4 rounded-lg border border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/40 transition-all"
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{network.name}</span>
-                            <ExternalLink className="h-4 w-4 text-orange-500" />
+                            <a 
+                              href={network.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-orange-500 hover:text-orange-600"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
                           </div>
                           <div className="mt-2 text-sm text-muted-foreground">
                             <p className="mb-1">{network.description}</p>
@@ -389,7 +397,7 @@ export function TVNetworksDialog({ children }: TVNetworksDialogProps) {
                               </span>
                             </div>
                           </div>
-                        </motion.a>
+                        </motion.div>
                       ))}
                     </motion.div>
                   </AnimatePresence>
