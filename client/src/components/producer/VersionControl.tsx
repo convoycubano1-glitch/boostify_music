@@ -506,20 +506,20 @@ export function VersionControl() {
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h3 className="text-lg font-semibold">Version Control</h3>
           <p className="text-sm text-muted-foreground">
             Listen, compare, and approve different versions of your tracks
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col xs:flex-row items-center gap-2 w-full sm:w-auto">
           <Select
             value={selectedProject}
             onValueChange={setSelectedProject}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full xs:w-[180px]">
               <SelectValue placeholder="Select Project" />
             </SelectTrigger>
             <SelectContent>
@@ -530,7 +530,12 @@ export function VersionControl() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="default" size="sm" onClick={prepareUpload}>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={prepareUpload}
+            className="w-full xs:w-auto"
+          >
             <Upload className="w-4 h-4 mr-2" />
             Upload Version
           </Button>
@@ -546,12 +551,12 @@ export function VersionControl() {
           {/* Current playback */}
           {currentVersion && (
             <div className="bg-muted/30 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <div className="flex items-center gap-3">
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="h-10 w-10"
+                    className="h-10 w-10 flex-shrink-0"
                     onClick={togglePlay}
                   >
                     {isPlaying ? (
@@ -560,9 +565,9 @@ export function VersionControl() {
                       <Play className="h-5 w-5" />
                     )}
                   </Button>
-                  <div>
-                    <h4 className="text-sm font-medium">{currentVersion.name} - {currentVersion.trackName}</h4>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="overflow-hidden">
+                    <h4 className="text-sm font-medium truncate">{currentVersion.name} - {currentVersion.trackName}</h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                       <Clock className="h-3 w-3" />
                       <span>{currentVersion.duration}</span>
                       <Badge
@@ -571,51 +576,54 @@ export function VersionControl() {
                           currentVersion.status === "rejected" ? "destructive" :
                           "outline"
                         }
-                        className="ml-2"
+                        className="ml-0 sm:ml-2"
                       >
                         {currentVersion.status}
                       </Badge>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <span>{formatTime(currentTime)}</span>
                     <span>/</span>
                     <span>{formatTime(duration)}</span>
                   </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={toggleMute}>
-                          {isMuted ? (
-                            <VolumeX className="h-4 w-4" />
-                          ) : (
-                            <Volume2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{isMuted ? "Unmute" : "Mute"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <Slider
-                    value={[volume]}
-                    max={100}
-                    step={1}
-                    className="w-24"
-                    onValueChange={([value]) => setVolume(value)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={toggleMute}>
+                            {isMuted ? (
+                              <VolumeX className="h-4 w-4" />
+                            ) : (
+                              <Volume2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isMuted ? "Unmute" : "Mute"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Slider
+                      value={[volume]}
+                      max={100}
+                      step={1}
+                      className="w-20 sm:w-24"
+                      onValueChange={([value]) => setVolume(value)}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={skipBack}
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                   >
                     <SkipBack className="h-4 w-4" />
                   </Button>
@@ -630,6 +638,7 @@ export function VersionControl() {
                     variant="ghost"
                     size="icon"
                     onClick={skipForward}
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                   >
                     <SkipForward className="h-4 w-4" />
                   </Button>
@@ -657,12 +666,12 @@ export function VersionControl() {
                     currentVersion?.id === version.id ? 'border-primary' : 'border-border'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 flex-shrink-0"
                         onClick={() => {
                           selectVersion(version);
                           setIsPlaying(true);
@@ -670,9 +679,9 @@ export function VersionControl() {
                       >
                         <Play className="h-4 w-4" />
                       </Button>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-medium">{version.name}</h4>
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-medium truncate">{version.name}</h4>
                           <Badge
                             variant={
                               version.status === "approved" ? "default" :
@@ -683,7 +692,7 @@ export function VersionControl() {
                             {version.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           <Clock className="h-3 w-3" />
                           <span>{version.duration}</span>
                           <span className="mx-1">•</span>
@@ -691,7 +700,7 @@ export function VersionControl() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
                       <Button
                         variant={version.status === "approved" ? "default" : "outline"}
                         size="sm"
@@ -699,7 +708,7 @@ export function VersionControl() {
                         onClick={() => updateVersionStatus(version.id, "approved")}
                       >
                         <ThumbsUp className="h-3 w-3 mr-1" />
-                        Approve
+                        <span className="hidden xs:inline">Approve</span>
                       </Button>
                       <Button
                         variant={version.status === "rejected" ? "destructive" : "outline"}
@@ -708,7 +717,7 @@ export function VersionControl() {
                         onClick={() => updateVersionStatus(version.id, "rejected")}
                       >
                         <ThumbsDown className="h-3 w-3 mr-1" />
-                        Reject
+                        <span className="hidden xs:inline">Reject</span>
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
