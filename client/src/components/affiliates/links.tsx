@@ -116,7 +116,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
     },
   });
 
-  // Consulta para obtener los productos disponibles para afiliados
+  // Query to get products available to affiliates
   const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["affiliate-products"],
     queryFn: async () => {
@@ -130,7 +130,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
     },
   });
 
-  // Consulta para obtener los enlaces de afiliado del usuario
+  // Query to get the user's affiliate links
   const { data: affiliateLinks, isLoading: isLoadingLinks } = useQuery({
     queryKey: ["affiliate-links", user?.uid],
     queryFn: async () => {
@@ -149,19 +149,19 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
     enabled: !!user?.uid,
   });
 
-  // Mutación para crear un nuevo enlace de afiliado
+  // Mutation to create a new affiliate link
   const createLinkMutation = useMutation({
     mutationFn: async (data: NewLinkFormValues) => {
-      if (!user?.uid) throw new Error("Usuario no autenticado");
+      if (!user?.uid) throw new Error("User not authenticated");
       
-      // Encontrar información del producto seleccionado
+      // Find selected product information
       const selectedProduct = products?.find(p => p.id === data.productId);
-      if (!selectedProduct) throw new Error("Producto no encontrado");
+      if (!selectedProduct) throw new Error("Product not found");
       
-      // Crear enlace con parámetros de afiliado
+      // Create link with affiliate parameters
       let baseUrl = selectedProduct.url || `https://boostify.com/products/${selectedProduct.id}`;
       
-      // Asegurar que la URL base no tenga parámetros de consulta
+      // Ensure the base URL has no query parameters
       const hasQueryParams = baseUrl.includes('?');
       const baseUrlWithoutParams = hasQueryParams ? baseUrl.split('?')[0] : baseUrl;
       
@@ -424,7 +424,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                   <TableRow>
                     <TableHead className="cursor-pointer" onClick={() => handleSort("productId")}>
                       <div className="flex items-center">
-                        Producto
+                        Product
                         {sortColumn === "productId" && (
                           <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
                         )}
@@ -432,7 +432,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort("campaign")}>
                       <div className="flex items-center">
-                        Campaña
+                        Campaign
                         {sortColumn === "campaign" && (
                           <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
                         )}
@@ -440,7 +440,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     </TableHead>
                     <TableHead className="text-right cursor-pointer" onClick={() => handleSort("clicks")}>
                       <div className="flex items-center justify-end">
-                        Clics
+                        Clicks
                         {sortColumn === "clicks" && (
                           <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
                         )}
@@ -448,7 +448,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     </TableHead>
                     <TableHead className="text-right cursor-pointer" onClick={() => handleSort("conversions")}>
                       <div className="flex items-center justify-end">
-                        Conversiones
+                        Conversions
                         {sortColumn === "conversions" && (
                           <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
                         )}
@@ -456,13 +456,13 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     </TableHead>
                     <TableHead className="text-right cursor-pointer" onClick={() => handleSort("earnings")}>
                       <div className="flex items-center justify-end">
-                        Ganancias
+                        Earnings
                         {sortColumn === "earnings" && (
                           <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
                         )}
                       </div>
                     </TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -471,10 +471,10 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     return (
                       <TableRow key={link.id}>
                         <TableCell className="font-medium">
-                          {product?.name || "Producto desconocido"}
+                          {product?.name || "Unknown product"}
                         </TableCell>
                         <TableCell>
-                          {link.campaign || "Sin campaña"}
+                          {link.campaign || "No campaign"}
                         </TableCell>
                         <TableCell className="text-right">
                           {link.clicks || 0}
@@ -491,7 +491,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                               variant="outline"
                               size="sm"
                               onClick={() => copyLinkToClipboard(link.url)}
-                              title="Copiar enlace"
+                              title="Copy link"
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
@@ -499,11 +499,11 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                               variant="destructive"
                               size="sm"
                               onClick={() => {
-                                if (window.confirm("¿Estás seguro de eliminar este enlace? Esta acción no se puede deshacer.")) {
+                                if (window.confirm("Are you sure you want to delete this link? This action cannot be undone.")) {
                                   deleteLinkMutation.mutate(link.id);
                                 }
                               }}
-                              title="Eliminar enlace"
+                              title="Delete link"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -521,16 +521,16 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Productos disponibles para promocionar</CardTitle>
+          <CardTitle>Products available for promotion</CardTitle>
           <CardDescription>
-            Productos que puedes promocionar como afiliado de Boostify
+            Products you can promote as a Boostify affiliate
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoadingProducts ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>Cargando productos...</span>
+              <span>Loading products...</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -552,12 +552,12 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                   <CardHeader className="p-4">
                     <CardTitle className="text-lg">{product.name}</CardTitle>
                     <Badge variant="outline" className="ml-auto">
-                      {product.commissionRate}% comisión
+                      {product.commissionRate}% commission
                     </Badge>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {product.description || "Sin descripción"}
+                      {product.description || "No description"}
                     </p>
                   </CardContent>
                   <CardFooter className="p-4 pt-0 flex justify-end">
@@ -570,7 +570,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                       variant="outline"
                       size="sm"
                     >
-                      Crear enlace
+                      Create link
                     </Button>
                   </CardFooter>
                 </Card>
