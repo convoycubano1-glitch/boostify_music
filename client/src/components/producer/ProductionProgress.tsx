@@ -17,7 +17,10 @@ import {
   MoreVertical,
   ArrowDown,
   ArrowUp,
-  Save
+  Save,
+  Loader2,
+  Users,
+  User as UserIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,74 +61,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { db, auth, storage } from "@/firebase";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  serverTimestamp, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot 
-} from "firebase/firestore";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-
-interface ProductionPhase {
-  id: string;
-  name: string;
-  status: "completed" | "in-progress" | "pending" | "delayed";
-  progress: number;
-  eta?: string;
-  notes?: string[];
-  startDate?: Date;
-  completionDate?: Date;
-  tasks?: ProductionTask[];
-  assignedTo?: string[];
-  priority?: "low" | "medium" | "high";
-  dependencies?: string[]; // IDs of phases that must be completed first
-}
-
-interface ProductionTask {
-  id: string;
-  phaseId: string;
-  name: string;
-  completed: boolean;
-  assignedTo?: string;
-  dueDate?: Date;
-  notes?: string;
-}
-
-interface Note {
-  id: string;
-  phaseId: string;
-  content: string;
-  createdAt: Date;
-  createdBy: string;
-  createdByName: string;
-}
-
-interface Collaborator {
-  id: string;
-  name: string;
-  role: string;
-  email?: string;
-}
-
-interface ProductionProject {
-  id: string;
-  name: string;
-  description?: string;
-  startDate: Date;
-  targetCompletionDate?: Date;
-  status: "on-track" | "at-risk" | "delayed" | "completed";
-  phases: ProductionPhase[];
-  currentPhaseId?: string;
-}
+  productionProgressService, 
+  ProductionProject, 
+  ProductionPhase, 
+  ProductionTask, 
+  ProductionNote as Note,
+  ProductionCollaborator as Collaborator
+} from "@/lib/services/production-progress-service";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function ProductionProgress() {
   const { toast } = useToast();
