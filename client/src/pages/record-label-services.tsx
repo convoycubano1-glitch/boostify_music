@@ -499,7 +499,7 @@ export default function RecordLabelServices() {
                             { icon: FileText, text: "Analyze Contract" },
                             { icon: TrendingUp, text: "Market Analysis" },
                             { icon: Calculator, text: "Royalty Estimator" },
-                            { icon: Search, text: "Opportunity Finder" }
+                            { icon: Sparkles, text: "Opportunity Finder" }
                           ].map((action, index) => (
                             <Button key={index} variant="ghost" className="justify-start hover:bg-orange-500/10">
                               <action.icon className="mr-2 h-4 w-4" />
