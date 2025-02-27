@@ -79,35 +79,37 @@ export function setupApifyRoutes(app: Express) {
         }
       };
 
-      // Run the Actor and wait for it to finish
-      console.log(`Starting Apify actor run for search: ${searchTerm} in ${locality}`);
-      const run = await apifyClient.actor("tz3kMHJE4vTnNSEf1").call(input);
-      console.log(`Apify run completed, dataset ID: ${run.defaultDatasetId}`);
+      try {
+        // Run the Actor and wait for it to finish
+        console.log(`Starting Apify actor run for search: ${searchTerm} in ${locality}`);
+        const run = await apifyClient.actor("tz3kMHJE4vTnNSEf1").call(input);
+        console.log(`Apify run completed, dataset ID: ${run.defaultDatasetId}`);
 
-      // Fetch results from the run's dataset
-      const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
-      console.log(`Retrieved ${items.length} contacts from Apify`);
-      
-      // Process and save the results
-      const savedContacts = [];
-      
-      for (const item of items) {
-        try {
-          // Transform Apify data to our schema
-          const contact: IndustryContact = {
-            name: item.name || 'Unknown',
-            email: item.email || undefined,
-            phone: item.phone || undefined,
-            website: item.website || undefined,
-            title: item.jobTitle || item.title || undefined,
-            company: item.company || undefined,
-            address: item.address || undefined,
-            category,
-            locality,
-            notes: `Extracted from search: ${searchTerm}`,
-            extractedAt: new Date(),
-            userId
-          };
+        // Fetch results from the run's dataset
+        const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+        console.log(`Retrieved ${items.length} contacts from Apify`);
+        
+        // Process and save the results
+        const savedContacts = [];
+        
+        for (const item of items) {
+          try {
+            // Transform Apify data to our schema
+            const contact: IndustryContact = {
+              name: typeof item.name === 'string' ? item.name : 'Unknown',
+              email: typeof item.email === 'string' ? item.email : undefined,
+              phone: typeof item.phone === 'string' ? item.phone : undefined,
+              website: typeof item.website === 'string' ? item.website : undefined,
+              title: typeof item.jobTitle === 'string' ? item.jobTitle : 
+                    typeof item.title === 'string' ? item.title : undefined,
+              company: typeof item.company === 'string' ? item.company : undefined,
+              address: typeof item.address === 'string' ? item.address : undefined,
+              category,
+              locality,
+              notes: `Extracted from search: ${searchTerm}`,
+              extractedAt: new Date(),
+              userId
+            };
           
           // Save to database - using Firebase in this example
           // In a real app, you should use your database ORM
@@ -126,13 +128,21 @@ export function setupApifyRoutes(app: Express) {
         contacts: savedContacts 
       });
     } catch (error) {
-      console.error('Error in contact extraction:', error);
+      console.error('Error running Apify actor:', error);
       return res.status(500).json({ 
         success: false, 
-        message: 'Failed to extract contacts',
+        message: 'Failed to extract contacts from Apify',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
+  } catch (error) {
+    console.error('Error in contact extraction:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to extract contacts',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
   });
   
   /**
