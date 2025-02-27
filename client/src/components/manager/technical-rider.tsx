@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Upload, Download, Building2, Loader2, ChevronRight, Eye } from "lucide-react";
+import { FileText, Upload, Download, Building2, Loader2, Eye } from "lucide-react";
 import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { MdMusicNote, MdOutlineAudiotrack, MdLightbulb } from "react-icons/md";
 import { FiDownload, FiFilePlus } from "react-icons/fi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,18 +30,6 @@ export function TechnicalRiderSection() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [selectedRider, setSelectedRider] = useState<TechnicalRider | null>(null);
   const [activeTab, setActiveTab] = useState("generate");
-  const pdfRef = useRef<HTMLDivElement>(null);
-  
-  const { toPDF, targetRef } = useReactToPdf({
-    filename: 'technical-rider.pdf',
-    quality: 0.95,
-    onComplete: () => {
-      toast({
-        title: "Success",
-        description: "PDF exported successfully",
-      });
-    },
-  });
 
   const { data: technicalRiders = [], isLoading } = useQuery({
     queryKey: ['technical-riders', user?.uid],
@@ -154,18 +141,6 @@ export function TechnicalRiderSection() {
   
   const handleViewRider = (rider: TechnicalRider) => {
     setSelectedRider(rider);
-  };
-  
-  const handleExportPDF = () => {
-    if (targetRef.current) {
-      toPDF();
-    } else {
-      toast({
-        title: "Error",
-        description: "Could not create PDF, please try again",
-        variant: "destructive"
-      });
-    }
   };
 
   return (
@@ -331,18 +306,7 @@ export function TechnicalRiderSection() {
                         <Eye className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">View</span>
                       </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => {
-                          handleViewRider(rider);
-                          setTimeout(() => handleExportPDF(), 100);
-                        }}
-                        className="flex-1 bg-orange-500 hover:bg-orange-600"
-                      >
-                        <FilePdf className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">PDF</span>
-                      </Button>
+
                     </div>
                   </div>
                 ))}
@@ -364,23 +328,7 @@ export function TechnicalRiderSection() {
         </TabsContent>
       </Tabs>
       
-      {/* PDF Export Template (Hidden) */}
-      <div className="hidden">
-        <div ref={targetRef} className="p-8 bg-white max-w-4xl mx-auto">
-          {selectedRider && (
-            <>
-              <div className="mb-8 text-center border-b pb-4">
-                <h1 className="text-3xl font-bold text-orange-600">Technical Rider</h1>
-                <p className="text-gray-500 mt-2">Created: {new Date(selectedRider.createdAt.toDate()).toLocaleDateString()}</p>
-              </div>
-              <div className="whitespace-pre-line">{selectedRider.content}</div>
-              <div className="mt-8 pt-4 border-t text-center text-xs text-gray-500">
-                <p>Generated with Boostify Artist Tools</p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+
 
       {/* View Rider Dialog */}
       <Dialog open={!!selectedRider} onOpenChange={(open) => !open && setSelectedRider(null)}>
@@ -403,13 +351,6 @@ export function TechnicalRiderSection() {
             >
               <Download className="h-4 w-4 mr-2" />
               Download as Text
-            </Button>
-            <Button
-              onClick={handleExportPDF}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              <FilePdf className="h-4 w-4 mr-2" />
-              Export as PDF
             </Button>
           </DialogFooter>
         </DialogContent>
