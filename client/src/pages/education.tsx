@@ -76,12 +76,12 @@ export default function EducationPage() {
   const [regenerationProgress, setRegenerationProgress] = useState(0);
   const [showCategoryCarousel, setShowCategoryCarousel] = useState(true);
   
-  // Estado para las categorías de nivel con imágenes predefinidas de alta calidad
+  // State for level categories with predefined high-quality images
   type LevelImages = {
     Beginner: string;
     Intermediate: string;
     Advanced: string;
-    [key: string]: string; // Permitir índices de string adicionales
+    [key: string]: string; // Allow additional string indices
   };
   
   const [levelImages, setLevelImages] = useState<LevelImages>({
@@ -920,19 +920,19 @@ export default function EducationPage() {
         <Dialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Ampliar Curso</DialogTitle>
+              <DialogTitle>Extend Course</DialogTitle>
               <DialogDescription>
-                Generar contenido adicional para el curso "{selectedCourse?.title}". Esto agregará nuevas lecciones, recursos y temas avanzados al curso existente.
+                Generate additional content for "{selectedCourse?.title}". This will add new lessons, resources, and advanced topics to the existing course.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 my-4">
               <p className="text-sm text-gray-400">
-                Se utilizará inteligencia artificial para generar contenido adicional complementario al curso actual. El nuevo contenido incluirá:
+                Artificial intelligence will be used to generate additional complementary content for the current course. The new content will include:
               </p>
               <ul className="list-disc list-inside space-y-2 text-sm text-gray-400">
-                <li>5 lecciones adicionales con objetivos y aplicaciones prácticas</li>
-                <li>Recursos recomendados para profundizar en los temas</li>
-                <li>Temas avanzados relacionados con el contenido del curso</li>
+                <li>5 additional lessons with objectives and practical applications</li>
+                <li>Recommended resources to deepen your understanding</li>
+                <li>Advanced topics related to the course content</li>
               </ul>
             </div>
             <DialogFooter>
@@ -944,10 +944,10 @@ export default function EducationPage() {
                 {isExtendingCourse ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando contenido...
+                    Generating content...
                   </>
                 ) : (
-                  "Generar Contenido Adicional"
+                  "Generate Additional Content"
                 )}
               </Button>
             </DialogFooter>
