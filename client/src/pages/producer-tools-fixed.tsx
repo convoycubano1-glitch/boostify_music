@@ -27,8 +27,6 @@ import { StudioVideoCall } from "@/components/producer/StudioVideoCall";
 import { ProductionProgressContainer } from "@/components/producer/ProductionProgressContainer";
 import { VersionControl } from "@/components/producer/VersionControl";
 
-// Import any other necessary components and libraries
-
 // Define interfaces
 interface MusicianService {
   id: string;
@@ -52,9 +50,38 @@ interface ImageData {
   createdAt: Date;
 }
 
+async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
+  try {
+    console.log("Starting to fetch musician images from musician_images collection...");
+    const imagesRef = collection(db, "musician_images");
+    const querySnapshot = await getDocs(imagesRef);
+
+    console.log("Total documents found:", querySnapshot.size);
+
+    const images: { url: string; category: string; }[] = [];
+
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      console.log("Document data:", data);
+
+      // Verify required fields exist
+      if (data && data.url && data.category) {
+        images.push({
+          url: data.url,
+          category: data.category
+        });
+      }
+    });
+
+    return images;
+  } catch (error) {
+    console.error("Error fetching musician images:", error);
+    return [];
+  }
+}
+
 // Sample data
 const musicians: MusicianService[] = [
-  // A few sample musicians
   {
     id: "1",
     userId: "user-1",
@@ -99,435 +126,564 @@ const musicians: MusicianService[] = [
 // Utility function to save musician image
 async function saveMusicianImage(data: ImageData) {
   try {
-    await addDoc(collection(db, "musicianImages"), {
+    await addDoc(collection(db, "musician_images"), {
       ...data,
       createdAt: serverTimestamp()
     });
+    console.log("Musician image saved successfully");
   } catch (error) {
-    console.error("Error saving image to Firestore:", error);
+    console.error("Error saving musician image:", error);
+    throw error;
   }
 }
 
-// Main component
 export default function ProducerToolsPage() {
   const { toast } = useToast();
-  const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
-  const [isMastering, setIsMastering] = useState(false);
-  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
-  const [musicPrompt, setMusicPrompt] = useState("");
-  const [coverPrompt, setCoverPrompt] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
-  const [musiciansState, setMusiciansState] = useState(musicians);
-  const [isLoadingImages, setIsLoadingImages] = useState(false);
-  const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("ai-tools");
+  const [musicianImages, setMusicianImages] = useState<{ url: string; category: string; }[]>([]);
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
 
-  // Handle Mastering Track
-  const handleMasterTrack = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "Error",
-        description: "Please select an audio file to master",
-        variant: "destructive"
-      });
-      return;
-    }
+  // Function to toggle loading state for different operations
+  const toggleLoading = (operation: string, state: boolean) => {
+    setLoading(prev => ({ ...prev, [operation]: state }));
+  };
 
+  // Function to get musician images from Firestore
+  const getMusicianImages = async () => {
     try {
-      setIsMastering(true);
-      const result = await masterTrack(selectedFile);
+      const imagesRef = collection(db, "musician_images");
+      const q = query(imagesRef, orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      
+      const images: { url: string; category: string; }[] = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.url && data.category) {
+          images.push({
+            url: data.url,
+            category: data.category
+          });
+        }
+      });
+      
+      setMusicianImages(images);
+    } catch (error) {
+      console.error("Error fetching musician images:", error);
+    }
+  };
 
+  // Use React Query to fetch musician data
+  const { data: musicianServices, isLoading: loadingMusicians } = useQuery({
+    queryKey: ['musician-services'],
+    queryFn: async () => {
+      // In a real app, this would fetch from your API
+      return musicians;
+    }
+  });
+
+  // Effect to fetch musician images on component mount
+  useEffect(() => {
+    getMusicianImages();
+  }, []);
+
+  // AI Tools functions
+  const handleImageGeneration = async (category: string, prompt: string) => {
+    try {
+      toggleLoading(category, true);
       toast({
-        title: "Success",
-        description: "Track mastered successfully!"
+        title: "Generating image...",
+        description: "Please wait while we create your image.",
+        duration: 3000
       });
 
+      const result = await generateImageWithFal({ prompt });
+      
+      if (result && result.image_url) {
+        const imageData: ImageData = {
+          url: result.image_url,
+          requestId: result.request_id || "unknown",
+          prompt,
+          category,
+          createdAt: new Date()
+        };
+        
+        await saveMusicianImage(imageData);
+        await getMusicianImages();
+        
+        toast({
+          title: "Image generated successfully",
+          description: "Your image has been created and saved.",
+          variant: "success",
+          duration: 3000
+        });
+      } else {
+        throw new Error("No image URL in response");
+      }
+    } catch (error) {
+      console.error(`Error generating ${category} image:`, error);
+      toast({
+        title: "Image generation failed",
+        description: "There was an error creating your image. Please try again.",
+        variant: "destructive",
+        duration: 5000
+      });
+    } finally {
+      toggleLoading(category, false);
+    }
+  };
+
+  // Audio mastering function
+  const handleMasterTrack = async (file: File) => {
+    try {
+      toggleLoading("mastering", true);
+      toast({
+        title: "Processing audio",
+        description: "Your track is being mastered...",
+        duration: 3000
+      });
+
+      const result = await masterTrack(file);
+      
+      if (result && result.url) {
+        toast({
+          title: "Track mastered successfully",
+          description: "Your mastered track is ready for download.",
+          variant: "success",
+          duration: 3000
+        });
+        
+        // Download logic would go here
+      } else {
+        throw new Error("No URL in mastering response");
+      }
     } catch (error) {
       console.error("Error mastering track:", error);
       toast({
-        title: "Error",
-        description: "Failed to master track. Please try again.",
-        variant: "destructive"
+        title: "Mastering failed",
+        description: "There was an error processing your track. Please try again.",
+        variant: "destructive",
+        duration: 5000
       });
     } finally {
-      setIsMastering(false);
+      toggleLoading("mastering", false);
     }
   };
 
-  // Handle Generate Music
-  const handleGenerateMusic = async () => {
-    if (!musicPrompt) {
-      toast({
-        title: "Error",
-        description: "Please provide a description for the music you want to generate",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  // Music generation function
+  const handleGenerateMusic = async (prompt: string) => {
     try {
-      setIsGeneratingMusic(true);
-      const result = await generateMusic({
-        prompt: musicPrompt,
-        modelName: "chirp-v3.5",
-        title: "Generated Music",
-        tags: "ai generated"
+      toggleLoading("music", true);
+      toast({
+        title: "Generating music",
+        description: "Your music is being created...",
+        duration: 3000
       });
 
-      // Poll for status
-      const interval = setInterval(async () => {
-        const status = await checkGenerationStatus(result.taskId);
-        if (status.status === "completed") {
-          clearInterval(interval);
-          setIsGeneratingMusic(false);
-          toast({
-            title: "Success",
-            description: "Music generated successfully!"
-          });
-        }
-      }, 5000);
-
+      const result = await generateMusic({ prompt });
+      
+      if (result && result.task_id) {
+        // Poll for status
+        const intervalId = setInterval(async () => {
+          const status = await checkGenerationStatus(result.task_id);
+          if (status && status.state === "completed") {
+            clearInterval(intervalId);
+            toggleLoading("music", false);
+            toast({
+              title: "Music generated successfully",
+              description: "Your music is ready for playback.",
+              variant: "success",
+              duration: 3000
+            });
+            // Handle completed music (would be implemented in a real app)
+          } else if (status && status.state === "failed") {
+            clearInterval(intervalId);
+            toggleLoading("music", false);
+            throw new Error("Music generation failed");
+          }
+        }, 3000);
+      } else {
+        throw new Error("No task ID in response");
+      }
     } catch (error) {
       console.error("Error generating music:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate music. Please try again.",
-        variant: "destructive"
+        title: "Music generation failed",
+        description: "There was an error creating your music. Please try again.",
+        variant: "destructive",
+        duration: 5000
       });
-      setIsGeneratingMusic(false);
+      toggleLoading("music", false);
     }
   };
 
-  // Handle Generate Cover
-  const handleGenerateCover = async () => {
-    if (!coverPrompt) {
-      toast({
-        title: "Error",
-        description: "Please provide a description for the cover art",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsGeneratingCover(true);
-      const result = await generateImageWithFal({
-        prompt: coverPrompt,
-        negativePrompt: "low quality, blurry, distorted, deformed, unrealistic, cartoon, anime, illustration",
-        imageSize: "landscape_16_9"
-      });
-
-      if (result.data && result.data.images && result.data.images[0]) {
-        const imageUrl = result.data.images[0].url;
-        setGeneratedCoverUrl(imageUrl);
-
-        // Save to Firestore
-        await saveMusicianImage({
-          url: imageUrl,
-          requestId: result.requestId,
-          prompt: coverPrompt,
-          category: 'cover-art',
-          createdAt: new Date()
-        });
-
-        toast({
-          title: "Success",
-          description: "Cover art generated and saved successfully!"
-        });
-      } else {
-        throw new Error("Invalid response format from Fal.ai");
-      }
-
-    } catch (error) {
-      console.error("Error generating cover:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate cover art. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGeneratingCover(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-
-      {/* Hero Section with Video Background */}
-      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          poster="/assets/video-fallback.jpg"
-        >
-          <source src="/assets/Standard_Mode_Generated_Video (3).mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-black/50"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background"></div>
-
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-end pb-12 md:pb-12 pt-48 md:pt-96">
-          <div className="text-center md:text-left mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Your Creative Music Hub
-            </h1>
-            <p className="text-lg text-white/90 max-w-2xl">
-              Connect with musicians worldwide or use our AI tools to enhance your production workflow
-            </p>
-          </div>
+  // Render the musician cards
+  const renderMusicianServices = () => {
+    if (loadingMusicians) {
+      return (
+        <div className="flex justify-center items-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </div>
+      );
+    }
 
-      <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6">
-          {/* AI Tools Section - Redesigned with English text */}
-          <div className="mb-12 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-violet-500/5 to-blue-500/5 rounded-xl -z-10"></div>
-            <div className="absolute inset-0 bg-[url('https://fal.media/files/elephant/pA5H4n7Z5Mm3bLz74mUot_a051bbde5d634688bca0f16015321750.jpg')] bg-cover bg-center opacity-10 rounded-xl -z-20"></div>
-            
-            <div className="relative p-6 sm:p-8 rounded-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-8 w-1 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-transparent bg-clip-text">AI Production Tools</h2>
-                  </div>
-                  <p className="text-sm text-muted-foreground max-w-xl">
-                    Transform your music with cutting-edge AI technology. Our suite of professional tools helps you master, generate, and visualize your musical ideas effortlessly.
-                  </p>
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {musicianServices?.map(musician => (
+          <Card key={musician.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+            <div className="p-4">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="rounded-full bg-primary/10 p-2">
+                  {musician.instrument === "Guitar" ? (
+                    <Guitar className="h-5 w-5 text-primary" />
+                  ) : musician.instrument === "Drums" ? (
+                    <Drum className="h-5 w-5 text-primary" />
+                  ) : (
+                    <Music2 className="h-5 w-5 text-primary" />
+                  )}
                 </div>
-                <div className="bg-gradient-to-r from-orange-500/80 to-orange-600/80 rounded-lg px-4 py-2.5 text-xs md:text-sm text-white shadow-md">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    <span className="font-medium">Powered by Advanced AI</span>
-                  </div>
+                <div>
+                  <h3 className="font-semibold">{musician.title}</h3>
+                  <p className="text-sm text-muted-foreground">{musician.instrument}</p>
                 </div>
               </div>
               
-              <Tabs defaultValue="mastering" className="space-y-6">
-                <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-4 bg-white/10 backdrop-blur-sm p-1 rounded-lg border border-orange-500/20">
-                  <TabsTrigger value="mastering" className="flex-1 sm:flex-initial data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    <span className="hidden xs:inline">AI</span> Mastering
-                  </TabsTrigger>
-                  <TabsTrigger value="generation" className="flex-1 sm:flex-initial data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    <Music4 className="mr-2 h-4 w-4" />
-                    <span className="hidden xs:inline">Music</span> Generation
-                  </TabsTrigger>
-                  <TabsTrigger value="cover" className="flex-1 sm:flex-initial data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Cover Art
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Mastering Tab */}
-                <TabsContent value="mastering">
-                  <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
-                    <div className="w-full max-w-xl mx-auto space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
-                            <Wand2 className="h-5 w-5 text-orange-500" />
-                            AI Mastering
-                          </h2>
-                          <p className="text-sm text-muted-foreground">
-                            Enhance your audio quality with advanced AI technology
-                          </p>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-2 text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full">
-                          <span className="font-medium">Professional</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 bg-background/50 p-4 rounded-lg border border-border/50">
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="audio" className="flex items-center gap-2">
-                            <Upload className="h-4 w-4 text-orange-500" />
-                            Audio File
-                          </Label>
-                          <Input
-                            id="audio"
-                            type="file"
-                            accept="audio/*"
-                            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                            className="text-sm"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Supported formats: WAV, MP3, FLAC (maximum 20MB)
-                          </p>
-                        </div>
-
-                        <Button
-                          onClick={handleMasterTrack}
-                          disabled={isMastering || !selectedFile}
-                          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                        >
-                          {isMastering ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <Wand2 className="mr-2 h-4 w-4" />
-                              Master Track
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-
-                {/* Generation Tab */}
-                <TabsContent value="generation">
-                  <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
-                    <div className="w-full max-w-xl mx-auto space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
-                            <Music4 className="h-5 w-5 text-orange-500" />
-                            Music Generation
-                          </h2>
-                          <p className="text-sm text-muted-foreground">
-                            Describe the music you want to create and let AI generate it for you
-                          </p>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-2 text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full">
-                          <span className="font-medium">Premium</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 bg-background/50 p-4 rounded-lg border border-border/50">
-                        <div className="grid w-full gap-1.5">
-                          <Label htmlFor="prompt" className="flex items-center gap-2">
-                            <Music2 className="h-4 w-4 text-orange-500" />
-                            Description
-                          </Label>
-                          <Textarea
-                            id="prompt"
-                            placeholder="Example: A reggaeton track with piano melody and deep bass, tempo of 95 BPM..."
-                            value={musicPrompt}
-                            onChange={(e) => setMusicPrompt(e.target.value)}
-                            className="min-h-[120px] text-sm"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Include genre, instruments, tempo, and style for better results
-                          </p>
-                        </div>
-
-                        <Button
-                          onClick={handleGenerateMusic}
-                          disabled={isGeneratingMusic || !musicPrompt}
-                          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                        >
-                          {isGeneratingMusic ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Music4 className="mr-2 h-4 w-4" />
-                              Generate Music
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-
-                {/* Cover Art Tab */}
-                <TabsContent value="cover">
-                  <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
-                    <div className="w-full max-w-xl mx-auto space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
-                            <ImageIcon className="h-5 w-5 text-orange-500" />
-                            AI Cover Art
-                          </h2>
-                          <p className="text-sm text-muted-foreground">
-                            Create professional covers for your songs and albums
-                          </p>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-2 text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full">
-                          <span className="font-medium">Creative</span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-4 bg-background/50 p-4 rounded-lg border border-border/50">
-                          <div className="grid w-full gap-1.5">
-                            <Label htmlFor="coverPrompt" className="flex items-center gap-2">
-                              <ImageIcon className="h-4 w-4 text-orange-500" />
-                              Description
-                            </Label>
-                            <Textarea
-                              id="coverPrompt"
-                              placeholder="Example: Cover for an R&B album with neon colors, urban style, night atmosphere..."
-                              value={coverPrompt}
-                              onChange={(e) => setCoverPrompt(e.target.value)}
-                              className="min-h-[120px] text-sm"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Describe the style, color palette, and visual elements
-                            </p>
-                          </div>
-
-                          <Button
-                            onClick={handleGenerateCover}
-                            disabled={isGeneratingCover || !coverPrompt}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                          >
-                            {isGeneratingCover ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generating...
-                              </>
-                            ) : (
-                              <>
-                                <ImageIcon className="mr-2 h-4 w-4" />
-                                Generate Cover
-                              </>
-                            )}
-                          </Button>
-                        </div>
-
-                        {generatedCoverUrl ? (
-                          <div className="relative bg-background/50 rounded-lg border border-border/50 overflow-hidden">
-                            <img
-                              src={generatedCoverUrl}
-                              alt="Generated cover art"
-                              className="w-full h-full object-cover aspect-square"
-                            />
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white">
-                              <p className="text-xs font-medium">Generated Cover</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col justify-center items-center bg-background/50 rounded-lg border border-border/50 p-4 text-center gap-2 aspect-square">
-                            <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
-                            <p className="text-sm text-muted-foreground">
-                              Generated cover will appear here
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <p className="text-sm mb-4">{musician.description}</p>
+              
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                  <span className="text-sm font-medium">{musician.rating}</span>
+                  <span className="text-xs text-muted-foreground ml-1">({musician.totalReviews} reviews)</span>
+                </div>
+                <div className="font-bold">${musician.price}/hour</div>
+              </div>
+              
+              <BookingDialog musician={musician} trigger={
+                <Button className="w-full">Book Session</Button>
+              } />
             </div>
-          </div>
+          </Card>
+        ))}
+        
+        <Card className="flex flex-col items-center justify-center p-6 border-dashed shadow-md hover:shadow-lg transition-shadow">
+          <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+          <h3 className="font-semibold mb-2">Add Musician</h3>
+          <p className="text-sm text-center text-muted-foreground mb-4">
+            Add your profile or a collaborator to the marketplace
+          </p>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">Add New Profile</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Musician Profile</DialogTitle>
+                <DialogDescription>
+                  Create a new musician profile for the marketplace
+                </DialogDescription>
+              </DialogHeader>
+              <AddMusicianForm onClose={() => {}} onSuccess={() => {}} />
+            </DialogContent>
+          </Dialog>
+        </Card>
+      </div>
+    );
+  };
+
+  // Render the AI tools section with improved visual design
+  const renderAITools = () => {
+    return (
+      <div className="relative">
+        {/* Background image with overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-10 rounded-xl overflow-hidden"
+          style={{ backgroundImage: 'url(/assets/freepik__boostify_music_organe_abstract_icon.png)' }}
+        />
+        
+        <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+          {/* Image Generation Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/20 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-full bg-primary/20 p-2">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold">Album Art Generator</h3>
+              </div>
+              
+              <p className="text-sm mb-4">
+                Create professional album artwork using AI technology.
+              </p>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-primary hover:bg-primary/90">Create Album Art</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Generate Album Art</DialogTitle>
+                    <DialogDescription>
+                      Describe the album art you want to create
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="album-prompt">Description</Label>
+                      <Textarea 
+                        id="album-prompt" 
+                        placeholder="Describe the album art you want to create..." 
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => {
+                      const prompt = (document.getElementById("album-prompt") as HTMLTextAreaElement).value;
+                      if (prompt) {
+                        handleImageGeneration("album-art", prompt);
+                      }
+                    }}
+                    disabled={loading["album-art"]}
+                    className="w-full"
+                  >
+                    {loading["album-art"] ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Album Art"
+                    )}
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            </Card>
+          </motion.div>
+          
+          {/* Audio Mastering Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card className="p-6 bg-gradient-to-br from-blue-500/5 to-blue-500/20 backdrop-blur-sm border-2 border-blue-500/20 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-full bg-blue-500/20 p-2">
+                  <Wand2 className="h-5 w-5 text-blue-500" />
+                </div>
+                <h3 className="font-semibold">AI Mastering</h3>
+              </div>
+              
+              <p className="text-sm mb-4">
+                Professional-grade audio mastering using advanced AI.
+              </p>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">Master Track</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>AI Audio Mastering</DialogTitle>
+                    <DialogDescription>
+                      Upload your track for professional AI mastering
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="track-file">Upload Track</Label>
+                      <Input 
+                        id="track-file" 
+                        type="file" 
+                        accept="audio/*" 
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => {
+                      const fileInput = document.getElementById("track-file") as HTMLInputElement;
+                      if (fileInput.files && fileInput.files[0]) {
+                        handleMasterTrack(fileInput.files[0]);
+                      }
+                    }}
+                    disabled={loading["mastering"]}
+                    className="w-full"
+                  >
+                    {loading["mastering"] ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Master Track"
+                    )}
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            </Card>
+          </motion.div>
+          
+          {/* Music Generation Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="p-6 bg-gradient-to-br from-purple-500/5 to-purple-500/20 backdrop-blur-sm border-2 border-purple-500/20 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="rounded-full bg-purple-500/20 p-2">
+                  <Music4 className="h-5 w-5 text-purple-500" />
+                </div>
+                <h3 className="font-semibold">AI Music Creator</h3>
+              </div>
+              
+              <p className="text-sm mb-4">
+                Generate original music with advanced AI composition.
+              </p>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white">Create Music</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Generate AI Music</DialogTitle>
+                    <DialogDescription>
+                      Describe the music you want to create
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="music-prompt">Description</Label>
+                      <Textarea 
+                        id="music-prompt" 
+                        placeholder="Describe the music style, mood, tempo, instruments..." 
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => {
+                      const prompt = (document.getElementById("music-prompt") as HTMLTextAreaElement).value;
+                      if (prompt) {
+                        handleGenerateMusic(prompt);
+                      }
+                    }}
+                    disabled={loading["music"]}
+                    className="w-full"
+                  >
+                    {loading["music"] ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Music"
+                    )}
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            </Card>
+          </motion.div>
+          
+          {/* Generated Images Gallery */}
+          {musicianImages.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="col-span-1 md:col-span-3"
+            >
+              <Card className="p-6 bg-gradient-to-r from-background to-background/80 backdrop-blur-sm shadow-lg">
+                <h3 className="font-semibold mb-4">Your Generated Images</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {musicianImages.map((image, index) => (
+                    <div key={index} className="rounded-md overflow-hidden aspect-square shadow-md hover:shadow-lg transition-shadow">
+                      <img 
+                        src={image.url} 
+                        alt={`Generated ${image.category}`} 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+          )}
         </div>
-      </ScrollArea>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <div className="container mx-auto py-6">
+        <div className="flex flex-col space-y-2 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">AI Production Tools</h1>
+          <p className="text-muted-foreground">
+            Collaborate with musicians, generate AI content, and manage your production
+          </p>
+        </div>
+        
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="ai-tools" className="flex items-center">
+              <Zap className="h-4 w-4 mr-2" />
+              AI Tools
+            </TabsTrigger>
+            <TabsTrigger value="musicians" className="flex items-center">
+              <Music2 className="h-4 w-4 mr-2" />
+              Musicians
+            </TabsTrigger>
+            <TabsTrigger value="file-exchange" className="flex items-center">
+              <Upload className="h-4 w-4 mr-2" />
+              File Exchange
+            </TabsTrigger>
+            <TabsTrigger value="studio" className="flex items-center">
+              <Mic2 className="h-4 w-4 mr-2" />
+              Studio
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="flex items-center">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Projects
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="ai-tools" className="mt-6">
+            {renderAITools()}
+          </TabsContent>
+          
+          <TabsContent value="musicians" className="mt-6">
+            {renderMusicianServices()}
+          </TabsContent>
+          
+          <TabsContent value="file-exchange" className="mt-6">
+            <FileExchangeHub />
+          </TabsContent>
+          
+          <TabsContent value="studio" className="mt-6">
+            <StudioVideoCall />
+          </TabsContent>
+          
+          <TabsContent value="progress" className="mt-6 space-y-6">
+            <ProductionProgressContainer />
+            <VersionControl />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
