@@ -297,7 +297,7 @@ const CreativeContactSearch: React.FC = () => {
             transition={{ duration: 0.3 }}
           >
             <h3 className="text-xl font-semibold mb-4">Resultados de búsqueda</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {searchResults.map((contact) => (
                 <motion.div
                   key={contact.id}
@@ -308,21 +308,21 @@ const CreativeContactSearch: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-3 ${
                           contact.type === 'radio' ? 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600' : 
                           contact.type === 'tv' ? 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600' : 
                           'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600'
                         }`}>
                           {contact.type === 'radio' ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                           ) : contact.type === 'tv' ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
                           ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                             </svg>
                           )}
@@ -333,7 +333,7 @@ const CreativeContactSearch: React.FC = () => {
                         </div>
                       </div>
                       <div className="mt-3 flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        <span className={`text-xs px-2.5 py-1.5 rounded-full font-medium ${
                           contact.type === 'radio' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 
                           contact.type === 'tv' ? 'bg-purple-50 text-purple-700 border border-purple-200' : 
                           'bg-amber-50 text-amber-700 border border-amber-200'
@@ -341,13 +341,13 @@ const CreativeContactSearch: React.FC = () => {
                           {contact.type === 'radio' ? 'Radio' : 
                            contact.type === 'tv' ? 'Televisión' : 'Cine'}
                         </span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200">
+                        <span className="text-xs px-2.5 py-1.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200">
                           {contact.region}
                         </span>
                       </div>
                     </div>
                     <motion.button
-                      className="px-3 py-1.5 bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-medium rounded-md shadow-sm"
+                      className="px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-medium rounded-lg shadow-sm"
                       onClick={() => handleContactSelect(contact)}
                       whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(124, 58, 237, 0.2)" }}
                       whileTap={{ scale: 0.95 }}
@@ -465,7 +465,7 @@ const CreativeContactSearch: React.FC = () => {
                   <input
                     type="url"
                     name="songUrl"
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all"
                     value={formData.songUrl}
                     onChange={handleFormChange}
                     placeholder="https://..."
@@ -476,7 +476,7 @@ const CreativeContactSearch: React.FC = () => {
               <div className="mt-6 flex justify-end">
                 <motion.button
                   type="button"
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md mr-3"
+                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg mr-3 transition-all hover:bg-gray-200"
                   onClick={() => setShowForm(false)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -485,7 +485,7 @@ const CreativeContactSearch: React.FC = () => {
                 </motion.button>
                 <motion.button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-md flex items-center"
+                  className="px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
                   disabled={isSending}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
