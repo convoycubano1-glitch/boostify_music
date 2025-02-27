@@ -23,22 +23,49 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   return headers;
 }
 
+interface ApiRequestOptions {
+  url: string;
+  method: string;
+  data?: unknown;
+  headers?: HeadersInit;
+}
+
 export async function apiRequest(
-  method: string,
-  url: string,
+  options: ApiRequestOptions | string,
+  url?: string,
   data?: unknown | undefined,
-): Promise<Response> {
+): Promise<any> {
   const headers = await getAuthHeaders();
-
-  const res = await fetch(url, {
-    method,
-    headers: data ? { ...headers } : headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-
-  await throwIfResNotOk(res);
-  return res;
+  
+  // Handle both the new object-based API and the old string-based API
+  if (typeof options === 'object') {
+    // New API: options is an object with configuration
+    const { url, method, data: requestData, headers: customHeaders } = options;
+    const requestHeaders = { ...headers, ...customHeaders };
+    
+    const res = await fetch(url, {
+      method,
+      headers: requestHeaders,
+      body: requestData ? JSON.stringify(requestData) : undefined,
+      credentials: "include",
+    });
+    
+    await throwIfResNotOk(res);
+    return await res.json();
+  } else {
+    // Old API: options is the method, url is the URL
+    const method = options;
+    
+    const res = await fetch(url!, {
+      method,
+      headers: data ? { ...headers } : headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+    
+    await throwIfResNotOk(res);
+    return await res.json();
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

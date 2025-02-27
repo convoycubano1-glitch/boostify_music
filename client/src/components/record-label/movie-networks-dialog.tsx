@@ -223,22 +223,26 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
 
     setExtractingContacts(true);
     try {
-      const response = await apiRequest({
-        url: '/api/contacts/extract',
+      const response = await fetch('/api/contacts/extract', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.user.getIdToken()}`
         },
-        data: {
+        body: JSON.stringify({
           searchTerm: "Movie Production",
           locality: locality,
           maxPages: 1,
           category: "movie"
-        }
+        })
       });
 
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
       // Extract data from the response
-      const data = response as unknown as { 
+      const data = await response.json() as { 
         success: boolean; 
         contacts: MovieContact[]; 
         message?: string 
