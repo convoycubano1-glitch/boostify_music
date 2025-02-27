@@ -26,24 +26,25 @@ declare global {
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
     // Check if user is already authenticated via session
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      console.log('User authenticated via session:', req.user);
+    if (req.session && req.session.user) {
+      console.log('User authenticated via session:', req.session.user);
+      req.user = req.session.user;
       return next();
     }
-
+    
     // Check Firebase token from Authorization header
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split('Bearer ')[1];
+    
+    if (authHeader) {
+      // Handle both "Bearer token" and plain token formats
+      const token = authHeader.startsWith('Bearer ') 
+        ? authHeader.substring(7) 
+        : authHeader;
+      
       try {
-        // Verify the token using Firebase Admin SDK
+        console.log('Verifying Firebase token...');
         const decodedToken: DecodedIdToken = await auth.verifyIdToken(token);
-        
-        // Create a custom user object with necessary properties
-        if (!decodedToken.uid) {
-          console.error('Token decodificado sin UID válido:', decodedToken);
-          return res.status(401).json({ error: 'Invalid authentication token - missing UID' });
-        }
+        console.log('Token verified successfully for UID:', decodedToken.uid);
         
         const user: AuthUser = {
           uid: decodedToken.uid,
@@ -52,23 +53,34 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           isAdmin: decodedToken.admin === true
         };
         
-        // Log para asegurarnos que el UID está presente
-        console.log('ID de usuario extraído del token:', decodedToken.uid);
-        
-        // Attach the user to the request
         req.user = user;
         
-        console.log('User authenticated via Firebase token:', JSON.stringify(req.user));
+        // Also store in session for future requests
+        if (req.session) {
+          req.session.user = user;
+        }
+        
         return next();
       } catch (error) {
-        console.error('Error verifying Firebase token:', error);
+        console.error('Failed to verify Firebase token:', error);
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid authentication token', 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
       }
+    } else {
+      console.error('No authorization header found in request');
     }
-
-    console.log('Authentication failed - no valid session or token');
-    return res.status(401).json({ error: 'Authentication required' });
+    
+    // Neither session nor token authentication worked
+    return res.status(401).json({ success: false, message: 'User not authenticated' });
   } catch (error) {
-    console.error('Authentication middleware error:', error);
-    return res.status(500).json({ error: 'Internal server error during authentication' });
+    console.error('Authentication error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error during authentication',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
