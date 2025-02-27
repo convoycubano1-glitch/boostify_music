@@ -17,7 +17,7 @@ import { storage } from "@/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Upload, Film } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAuthToken } from "@/firebase";
+import { getAuthToken } from "@/lib/auth";
 
 interface VideoUploadProps {
   isOpen: boolean;
