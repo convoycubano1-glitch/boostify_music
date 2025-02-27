@@ -13,7 +13,7 @@ import { ServiceDialog } from "@/components/record-label/service-dialog";
 import {
   Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote,
   Radio, Tv, Film, FileText, Brain, Play, Volume2, Pen, Clock,
-  Mic2, Music4, Database, FilmIcon, TrendingUp, Calculator, Search,
+  Mic2, Music4, Database, FilmIcon, TrendingUp, Calculator,
   Badge, MapPin, Calendar, ChartBar, Users, Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -24,7 +24,6 @@ import { useToast } from "@/hooks/use-toast";
 import { RadioNetworksDialog } from "@/components/record-label/radio-networks-dialog";
 import { TVNetworksDialog } from "@/components/record-label/tv-networks-dialog";
 import { MovieNetworksDialog } from "@/components/record-label/movie-networks-dialog";
-import CreativeContactSearch from "@/components/record-label/creative-contact-search";
 import { VenuesCatalog } from "@/components/manager/venues-catalog";
 import { VenuesBooking } from "@/components/manager/venues-booking";
 import { VenuesReports } from "@/components/manager/venues-reports";
@@ -279,27 +278,7 @@ export default function RecordLabelServices() {
                 </motion.div>
               </div>
               
-              {/* Nueva sección de búsqueda creativa de contactos */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-gradient-to-br from-background to-orange-500/5 rounded-xl p-4 sm:p-6 shadow-md border border-orange-500/20 mb-8"
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-2xl">
-                    <Search className="h-8 w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-semibold">Búsqueda Creativa de Contactos</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Encuentra y conecta con contactos en la industria para promocionar tu música
-                    </p>
-                  </div>
-                </div>
-                
-                <CreativeContactSearch />
-              </motion.div>
+
             </TabsContent>
 
             {/* Movies Tab Content */}
