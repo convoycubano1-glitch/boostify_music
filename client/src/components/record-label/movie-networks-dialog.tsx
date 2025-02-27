@@ -33,7 +33,7 @@ import {
   AlertTriangle,
   Info,
   Save,
-  Refresh
+  RefreshCw
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -160,6 +160,13 @@ interface MovieContact {
   company?: string;
   address?: string;
   extractedAt: Date;
+  id?: string;
+  category?: string;
+  twitter?: string;
+  linkedin?: string;
+  instagram?: string;
+  locality?: string;
+  notes?: string;
 }
 
 interface MovieNetworksDialogProps {
