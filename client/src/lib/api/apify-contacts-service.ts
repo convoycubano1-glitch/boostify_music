@@ -5,6 +5,51 @@ import { User } from "firebase/auth";
 import { getAuthToken } from "../../lib/auth";
 import { ApifyClient } from "apify-client";
 
+/**
+ * Extract an email address from a text string
+ * @param text Text to search for an email address
+ * @returns First found email address or undefined if none found
+ */
+function extractEmailFromText(text: string): string | undefined {
+  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
+  const match = text.match(emailRegex);
+  return match ? match[0] : undefined;
+}
+
+/**
+ * Extract social media handles from text
+ * @param network Social network to extract (twitter, instagram, linkedin)
+ * @param text Text to search for social media handles
+ * @returns Handle for the specified network or undefined if none found
+ */
+function extractSocialFromText(network: string, text: string): string | undefined {
+  let regex;
+  let prefix;
+  
+  switch (network.toLowerCase()) {
+    case 'twitter':
+      // Look for twitter.com/username or @username
+      regex = /(?:twitter\.com\/|^|[^\w@])@?(\w{1,15})(?!\w)/i;
+      prefix = 'https://twitter.com/';
+      break;
+    case 'instagram':
+      // Look for instagram.com/username or @username
+      regex = /(?:instagram\.com\/|^|[^\w@])@?(\w{1,30})(?!\w)/i;
+      prefix = 'https://instagram.com/';
+      break;
+    case 'linkedin':
+      // Look for linkedin.com/in/username
+      regex = /linkedin\.com\/in\/([a-zA-Z0-9_-]+)/i;
+      prefix = 'https://linkedin.com/in/';
+      break;
+    default:
+      return undefined;
+  }
+  
+  const match = text.match(regex);
+  return match ? `${prefix}${match[1]}` : undefined;
+}
+
 // Define contact schema
 export const contactSchema = z.object({
   id: z.string().optional(),
@@ -124,16 +169,90 @@ export async function extractContactsWithApify(
     
     console.log(`Extracting contacts using Apify for "${searchTerm} ${category}" in ${locality}`);
     
-    // Start an actor run with the Google Maps with Contact Details actor
-    const actor = apifyClient.actor("lukaskrivka/google-maps-with-contact-details");
-    const runInfo = await actor.call({
-      language: "en",
-      locationQuery: locality,
-      maxCrawledPlacesPerSearch: maxResults,
-      searchStringsArray: [
-        `${searchTerm} ${category}`
-      ],
-      skipClosedPlaces: false
+    // Start an actor run with a Google SERP scraper actor
+    // First try the Google Maps With Contact Details actor
+    try {
+      const actor = apifyClient.actor("drobnikj/crawler-google-places");
+      const runInfo = await actor.call({
+        searchText: `${searchTerm} ${category}`,
+        location: locality,
+        maxPlacesPerSearch: maxResults,
+        language: "en",
+        includeWebsite: true,
+        includeOpeningHours: true,
+        includeAddress: true,
+        includeRating: true,
+        includePhoneNumber: true,
+        maxReviews: 0,
+        maxImages: 0,
+        extendedOutputInfo: true,
+        maxConcurrency: 5,
+        includeStatistics: true
+      });
+      
+      console.log(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
+      
+      // Get the dataset items
+      const { items } = await apifyClient.dataset(runInfo.defaultDatasetId).listItems();
+      console.log(`Retrieved ${items.length} contacts from Apify`);
+      
+      if (items.length > 0) {
+        // Process and format the contacts
+        const contacts: Contact[] = items.map((item: any) => {
+          // Extract contact information from the Apify result
+          // Google Places Crawler actor returns a different structure
+          const name = item.name || 'Unknown';
+          const website = item.url || '';
+          // Phone is often in the full page data
+          const phone = item.phoneNumber ? item.phoneNumber : undefined;
+          const allText = [
+            name,
+            item.address || '',
+            item.categories?.join(' ') || '',
+            item.description || '',
+            website
+          ].join(' ');
+          const email = extractEmailFromText(allText);
+          
+          return {
+            name: name,
+            category: category,
+            company: name,
+            website: website,
+            email: email,
+            phone: phone,
+            address: item.address || undefined,
+            locality: locality,
+            notes: item.description || "",
+            extractedAt: new Date(),
+            // Add social media if available
+            twitter: extractSocialFromText('twitter', allText),
+            linkedin: extractSocialFromText('linkedin', allText),
+            instagram: extractSocialFromText('instagram', allText)
+          };
+        });
+        
+        return contacts;
+      }
+      
+      // If no items were found, try the Google Search Scraper actor
+      console.log("No places found. Trying alternate actor...");
+    } catch (error) {
+      console.error("Error with Google Maps Scraper actor, trying fallback:", error);
+    }
+    
+    // Fallback to a basic Google Search scraper if the Google Maps actor fails
+    const fallbackActor = apifyClient.actor("apify/google-search-scraper");
+    const runInfo = await fallbackActor.call({
+      queries: [`${searchTerm} ${category} ${locality} contact info`],
+      maxPagesPerQuery: Math.ceil(maxResults / 10),
+      resultsPerPage: 10,
+      mobileResults: false,
+      languageCode: "en",
+      countryCode: "US",
+      includeUnfilteredResults: false,
+      saveHtml: false,
+      saveHtmlToKeyValueStore: false
     });
     
     console.log(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
