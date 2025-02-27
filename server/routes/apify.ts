@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { Express } from 'express';
 import { ApifyClient } from 'apify-client';
 import { authenticate } from '../middleware/auth';
-import { db } from '@db';
+import { db as drizzleDb } from '@db';
+import { db as firestoreDb } from '../firebase';
 import { z } from 'zod';
 
 // Define validation schema for request body
@@ -95,13 +96,14 @@ export function setupApifyRoutes(app: Express) {
         try {
           // Transform Apify data to our schema
           const contact: IndustryContact = {
-            name: item.name || 'Unknown',
-            email: item.email || undefined,
-            phone: item.phone || undefined,
-            website: item.website || undefined,
-            title: item.jobTitle || item.title || undefined,
-            company: item.company || undefined,
-            address: item.address || undefined,
+            name: typeof item.name === 'string' ? item.name : 'Unknown',
+            email: typeof item.email === 'string' ? item.email : undefined,
+            phone: typeof item.phone === 'string' ? item.phone : undefined,
+            website: typeof item.website === 'string' ? item.website : undefined,
+            title: typeof item.jobTitle === 'string' ? item.jobTitle : 
+                   typeof item.title === 'string' ? item.title : undefined,
+            company: typeof item.company === 'string' ? item.company : undefined,
+            address: typeof item.address === 'string' ? item.address : undefined,
             category,
             locality,
             notes: `Extracted from search: ${searchTerm}`,
@@ -109,12 +111,18 @@ export function setupApifyRoutes(app: Express) {
             userId
           };
           
-          // Save to database - using Firebase in this example
-          // In a real app, you should use your database ORM
-          // Replace this with your actual database save logic
-          
-          // For now, just add to the response array
-          savedContacts.push(contact);
+          // Save to Firestore
+          try {
+            const contactRef = await firestoreDb.collection('industry_contacts').add(contact);
+            console.log(`Saved contact to Firestore with ID: ${contactRef.id}`);
+            
+            // Add to the response array with the Firestore ID
+            savedContacts.push({ ...contact, id: contactRef.id });
+          } catch (firestoreError) {
+            console.error('Error saving contact to Firestore:', firestoreError);
+            // Still add to response array even if Firestore save fails
+            savedContacts.push(contact);
+          }
         } catch (error) {
           console.error('Error processing contact:', error);
         }
@@ -154,14 +162,43 @@ export function setupApifyRoutes(app: Express) {
         return res.status(400).json({ success: false, message: 'Invalid category' });
       }
       
-      // In a real app, you would fetch contacts from your database
-      // This is a placeholder - replace with your database query
-      const contacts: IndustryContact[] = []; // Replace with actual DB query
-      
-      return res.status(200).json({ 
-        success: true, 
-        contacts 
-      });
+      try {
+        // Build the Firestore query
+        let contactsQuery = db.collection('industry_contacts').where('userId', '==', userId);
+        
+        // Add category filter if provided
+        if (category) {
+          contactsQuery = contactsQuery.where('category', '==', category);
+        }
+        
+        // Execute the query
+        const snapshot = await contactsQuery.get();
+        
+        // Convert query results to contacts array
+        const contacts: IndustryContact[] = [];
+        snapshot.forEach(doc => {
+          const data = doc.data() as IndustryContact;
+          contacts.push({
+            ...data,
+            id: doc.id,
+            // Convert Firestore timestamp to Date if needed
+            extractedAt: data.extractedAt instanceof Date ? 
+              data.extractedAt : new Date(data.extractedAt.toDate())
+          });
+        });
+        
+        return res.status(200).json({ 
+          success: true, 
+          contacts 
+        });
+      } catch (dbError) {
+        console.error('Firestore query error:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error retrieving contacts from database',
+          error: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        });
+      }
     } catch (error) {
       console.error('Error fetching contacts:', error);
       return res.status(500).json({ 
