@@ -1,6 +1,5 @@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import { apiRequest } from "@/lib/queryClient";
 import { env } from "@/env";
 
 export const managerToolsService = {
@@ -8,22 +7,22 @@ export const managerToolsService = {
     try {
       console.log('Making request to OpenRouter with prompt:', prompt);
       
-      // Use the server-side endpoint instead of direct OpenRouter connection
-      const response = await apiRequest('/api/manager/generate-content', {
+      // Use window.fetch explicitly
+      const response = await window.fetch('/api/manager/generate-content', {
         method: 'POST',
         body: JSON.stringify({
           prompt,
           type
         }),
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('Error response from server:', errorData);
-        throw new Error(errorData.error || 'Failed to generate content');
+        throw new Error(errorData.error || `Failed to generate content: ${response.status}`);
       }
 
       const data = await response.json();
