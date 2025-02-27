@@ -50,6 +50,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
 import { CustomerServiceAgent } from "@/components/agents/customer-service-agent";
+import AffiliatesPage from "@/pages/affiliates";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -165,6 +166,7 @@ const Router = () => {
   const WrappedCourseDetailPage = withPageWrapper(CourseDetailPage);
   const WrappedSmartCardsPage = withPageWrapper(SmartCardsPage);
   const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
+  const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -214,6 +216,7 @@ const Router = () => {
         <ProtectedRoute path="/smart-cards" component={WrappedSmartCardsPage} />
         <ProtectedRoute path="/profile" component={WrappedProfilePage} />
         <ProtectedRoute path="/investors-dashboard" component={WrappedInvestorsDashboard} />
+        <ProtectedRoute path="/affiliates" component={WrappedAffiliatesPage} />
 
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
