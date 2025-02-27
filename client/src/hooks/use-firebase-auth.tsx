@@ -31,6 +31,41 @@ export function useFirebaseAuth() {
     return () => unsubscribe();
   }, []);
 
+  // Método alternativo para autenticación sin popup (Temporal)
+  const signInWithEmailTemporary = async () => {
+    try {
+      // Simulación de autenticación de un usuario (NO USAR EN PRODUCCIÓN)
+      // Esta es una solución temporal para evitar problemas con los popups bloqueados
+      console.log('Iniciando proceso de autenticación temporal...');
+      
+      // Simular usuario autenticado
+      const mockUser = {
+        uid: "temp-user-12345",
+        email: "demo@example.com",
+        displayName: "Demo User",
+        photoURL: null
+      };
+      
+      // No hacemos autenticación real en Firebase, solo simulamos el usuario para el propósito de demo
+      setUser(mockUser as unknown as User);
+      
+      toast({
+        title: "¡Bienvenido!",
+        description: `Has iniciado sesión como ${mockUser.email}`,
+      });
+      
+      return mockUser;
+    } catch (error: any) {
+      console.error('Error en autenticación temporal:', error);
+      toast({
+        title: "Error de inicio de sesión",
+        description: "No se pudo iniciar sesión. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const signInWithGoogle = async () => {
     try {
       console.log('Iniciando proceso de autenticación con Google...');
@@ -89,6 +124,7 @@ export function useFirebaseAuth() {
     user,
     loading,
     signInWithGoogle,
+    signInWithEmailTemporary,
     logout
   };
 }
