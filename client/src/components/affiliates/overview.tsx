@@ -136,23 +136,28 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Quick actions header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-primary/5 to-primary/10 p-4 rounded-lg">
+      {/* Cabecera de acciones rápidas */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 rounded-lg border border-primary/10 shadow-sm">
         <div>
-          <h2 className="text-xl font-semibold">Welcome back, {affiliateData?.name || "Affiliate"}!</h2>
-          <p className="text-sm text-muted-foreground">
-            Here's what's happening with your affiliate performance today.
+          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Award className="h-5 w-5 text-primary" />
+            ¡Bienvenido, {affiliateData?.name || "Afiliado"}!
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Aquí está el rendimiento de tus campañas de afiliados hoy.
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2">
+        <div className="flex flex-wrap items-center gap-3 mt-3 md:mt-0">
+          <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5">
             <Download className="h-4 w-4" />
-            <span>Download Report</span>
+            <span className="hidden sm:inline">Exportar Reporte</span>
+            <span className="sm:hidden">Exportar</span>
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2 bg-primary hover:bg-primary/90">
             <Share2 className="h-4 w-4" />
-            <span>Share Dashboard</span>
+            <span className="hidden sm:inline">Compartir Enlaces</span>
+            <span className="sm:hidden">Compartir</span>
           </Button>
         </div>
       </div>

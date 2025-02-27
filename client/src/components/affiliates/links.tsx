@@ -288,19 +288,22 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 rounded-lg border border-primary/10 shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Affiliate Links</h2>
-          <p className="text-muted-foreground">
-            Generate and manage your affiliate links to promote products
+          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Link2 className="h-5 w-5 text-primary" />
+            Enlaces de Afiliado
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Genera y gestiona tus enlaces de afiliado para promocionar productos
           </p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
               <PlusCircle className="h-4 w-4" />
-              Create new link
+              Crear nuevo enlace
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
