@@ -118,6 +118,7 @@ export default function BoostifyTvPage() {
         {/* Hero Section with Featured Video */}
         <div className="relative w-full h-[50vh] overflow-hidden rounded-xl mb-8">
           <video
+            id="feature-video"
             className="absolute inset-0 w-full h-full object-cover"
             src={videoContent[0].filePath}
             autoPlay
