@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { socialUsers, posts, comments } from '../db/schema';
+import { and, eq, desc, asc } from "drizzle-orm";
 import { faker } from '@faker-js/faker/locale/es';
 import { faker as fakerEN_US } from '@faker-js/faker/locale/en_US';
 
@@ -144,10 +145,18 @@ async function seedSocialNetwork() {
       const isSpanish = Math.random() > 0.5;
       const isBot = Math.random() < BOT_USERS_RATIO;
       
+      const fullName = isSpanish 
+        ? faker.person.fullName() 
+        : fakerEN_US.person.fullName();
+      
+      // Generar un username único basado en el nombre
+      const username = fullName.toLowerCase()
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z0-9.]/g, '')
+        + Math.floor(Math.random() * 100);
+      
       const user = {
-        displayName: isSpanish 
-          ? faker.person.fullName() 
-          : fakerEN_US.person.fullName(),
+        displayName: fullName,
         avatar: avatars[i % avatars.length],
         bio: isSpanish 
           ? faker.person.bio() 
@@ -171,7 +180,7 @@ async function seedSocialNetwork() {
     
     for (let i = 0; i < TOTAL_POSTS; i++) {
       const userId = userIds[Math.floor(Math.random() * userIds.length)];
-      const user = await db.select().from(socialUsers).where(socialUsers.id.eq(userId)).limit(1);
+      const user = await db.select().from(socialUsers).where(eq(socialUsers.id, userId)).limit(1);
       const isSpanish = user[0].language === 'es';
       
       const content = isSpanish
@@ -194,9 +203,9 @@ async function seedSocialNetwork() {
       const userId = userIds[Math.floor(Math.random() * userIds.length)];
       const postId = postIds[Math.floor(Math.random() * postIds.length)];
       
-      const user = await db.select().from(socialUsers).where(socialUsers.id.eq(userId)).limit(1);
-      const post = await db.select().from(posts).where(posts.id.eq(postId)).limit(1);
-      const postUser = await db.select().from(socialUsers).where(socialUsers.id.eq(post[0].userId)).limit(1);
+      const user = await db.select().from(socialUsers).where(eq(socialUsers.id, userId)).limit(1);
+      const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+      const postUser = await db.select().from(socialUsers).where(eq(socialUsers.id, post[0].userId)).limit(1);
       
       const isSpanish = user[0].language === 'es';
       const isBot = user[0].isBot;
@@ -240,8 +249,8 @@ async function seedSocialNetwork() {
       const userId = userIds[Math.floor(Math.random() * userIds.length)];
       const parentComment = allComments[Math.floor(Math.random() * allComments.length)];
       
-      const user = await db.select().from(socialUsers).where(socialUsers.id.eq(userId)).limit(1);
-      const commentUser = await db.select().from(socialUsers).where(socialUsers.id.eq(parentComment.userId)).limit(1);
+      const user = await db.select().from(socialUsers).where(eq(socialUsers.id, userId)).limit(1);
+      const commentUser = await db.select().from(socialUsers).where(eq(socialUsers.id, parentComment.userId)).limit(1);
       
       const isSpanish = user[0].language === 'es';
       const isBot = user[0].isBot;
