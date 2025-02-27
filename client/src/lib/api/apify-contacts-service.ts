@@ -1,174 +1,305 @@
-import { ApifyClient } from 'apify-client';
-import { db, auth } from '../../firebase';
-import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import { z } from 'zod';
+import { z } from "zod";
+import { db, auth } from "@lib/firebase";
+import { collection, addDoc, getDocs, query, where, serverTimestamp, DocumentData } from "firebase/firestore";
+import { User } from "firebase/auth";
+import { getAuthToken } from "@lib/auth";
 
-// Define the schema for industry contacts
-export const industryContactSchema = z.object({
-  id: z.string().optional(),
-  name: z.string(),
-  email: z.string().email().optional(),
+// Define contact schema
+export const contactSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email").optional(),
   phone: z.string().optional(),
-  website: z.string().url().optional().or(z.string()),
   title: z.string().optional(),
   company: z.string().optional(),
+  website: z.string().url().optional().or(z.string()),
   address: z.string().optional(),
-  category: z.enum(['radio', 'tv', 'movie', 'publishing', 'other']).default('other'),
-  locality: z.string().optional(),
   notes: z.string().optional(),
+  category: z.enum(["radio", "tv", "movie", "publishing", "other"]).default("other"),
+  instagram: z.string().optional(),
+  twitter: z.string().optional(),
+  linkedin: z.string().optional(),
+  locality: z.string().optional(),
   extractedAt: z.date().default(() => new Date()),
-  userId: z.string()
 });
 
-export type IndustryContact = z.infer<typeof industryContactSchema>;
+export type Contact = z.infer<typeof contactSchema>;
 
-// Get Apify token from environment
-const APIFY_TOKEN = process.env.APIFY_API_TOKEN || '';
-
-// Initialize the ApifyClient
-const apifyClient = new ApifyClient({
-  token: APIFY_TOKEN,
-});
+export const contactCategories = [
+  { value: "radio", label: "Radio" },
+  { value: "tv", label: "TV" },
+  { value: "movie", label: "Movie" },
+  { value: "publishing", label: "Publishing" },
+  { value: "other", label: "Other" }
+];
 
 /**
- * Extracts industry contacts using Apify web scraping
- * @param searchTerm What to search for (e.g., "Radio Publishing")
- * @param locality Location to search in (e.g., "Los Angeles")
- * @param maxPages Maximum number of pages to scrape
- * @param category Category to classify these contacts under
- * @returns Array of industry contacts
+ * Retrieves extraction limits for the current user
+ * @returns Promise containing remaining extractions and limit status
  */
-export async function extractIndustryContacts(
+export async function getExtractionLimits(): Promise<{ 
+  remaining: number; 
+  limitReached: boolean; 
+  isAdmin: boolean 
+}> {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+    
+    const response = await fetch('/api/contacts/limits', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error fetching extraction limits: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return {
+      remaining: data.remaining || 0,
+      limitReached: data.remaining <= 0,
+      isAdmin: data.isAdmin || false
+    };
+  } catch (error) {
+    console.error("Error getting extraction limits:", error);
+    return {
+      remaining: 0,
+      limitReached: true,
+      isAdmin: false
+    };
+  }
+}
+
+/**
+ * Extract contacts through the Apify API 
+ * @param searchTerm Term to search for
+ * @param locality Geographic location to search in
+ * @param category Category of contacts to search for
+ * @param maxPages Maximum number of pages to crawl (admin only)
+ * @returns Promise with extracted contacts
+ */
+export async function extractContacts(
   searchTerm: string,
   locality: string,
-  maxPages: number = 1,
-  category: 'radio' | 'tv' | 'movie' | 'publishing' | 'other' = 'other'
-): Promise<IndustryContact[]> {
+  category: "radio" | "tv" | "movie" | "publishing" | "other",
+  maxPages: number = 1
+): Promise<Contact[]> {
   try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-
-    // Prepare Actor input
-    const input = {
-      "search": searchTerm,
-      "locality": locality,
-      "maxPages": maxPages,
-      "proxyOptions": {
-        "useApifyProxy": true,
-        "apifyProxyGroups": [
-          "BUYPROXIES94952"
-        ]
-      }
-    };
-
-    // Run the Actor and wait for it to finish
-    const run = await apifyClient.actor("tz3kMHJE4vTnNSEf1").call(input);
-
-    // Fetch results from the run's dataset
-    const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
-    
-    // Process and validate the results
-    const contacts: IndustryContact[] = [];
-    
-    for (const item of items) {
-      try {
-        // Transform Apify data to our schema with proper string handling
-        const contact: IndustryContact = {
-          name: typeof item.name === 'string' ? item.name : 
-                typeof item.title === 'string' ? item.title : 'Unknown',
-          email: typeof item.email === 'string' ? item.email : undefined,
-          phone: typeof item.phone === 'string' ? item.phone : undefined,
-          website: typeof item.website === 'string' ? item.website : 
-                   typeof item.url === 'string' ? item.url : undefined,
-          title: typeof item.jobTitle === 'string' ? item.jobTitle : 
-                 typeof item.title === 'string' ? item.title : undefined,
-          company: typeof item.company === 'string' ? item.company : 
-                   typeof item.domain === 'string' ? item.domain : undefined,
-          address: typeof item.address === 'string' ? item.address : locality,
-          category,
-          locality,
-          notes: `Extracted from search: ${searchTerm}`,
-          extractedAt: new Date(),
-          userId: currentUser.uid
-        };
-        
-        // Validate with zod
-        const validatedContact = industryContactSchema.parse(contact);
-        contacts.push(validatedContact);
-        
-        // Save to Firestore
-        await saveContactToFirestore(validatedContact);
-      } catch (error) {
-        console.error('Error processing contact:', error);
-      }
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Not authenticated");
     }
     
-    return contacts;
+    const response = await fetch('/api/contacts/extract', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        searchTerm,
+        locality,
+        maxPages,
+        category
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error (${response.status}): ${errorText}`);
+      throw new Error(response.status === 429 
+        ? "Extraction limit reached" 
+        : `Error extracting contacts: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || "Error extracting contacts");
+    }
+    
+    return data.contacts.map((contact: any) => ({
+      ...contact,
+      extractedAt: new Date(contact.extractedAt)
+    }));
   } catch (error) {
-    console.error('Error extracting contacts with Apify:', error);
-    throw new Error('Failed to extract contacts. Please try again later.');
+    console.error("Error extracting contacts:", error);
+    throw error;
   }
 }
 
 /**
- * Saves a contact to Firestore
- * @param contact The industry contact to save
- * @returns Promise that resolves when the save is complete
+ * Gets search suggestions based on partial query
  */
-export async function saveContactToFirestore(contact: IndustryContact): Promise<void> {
+export async function searchContacts(category: string, query: string): Promise<Contact[]> {
+  if (!query || query.length < 2) return [];
+  
   try {
-    await addDoc(collection(db, 'industryContacts'), {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+    
+    const response = await fetch(`/api/contacts/search?category=${category}&query=${encodeURIComponent(query)}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error searching contacts: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.contacts.map((contact: any) => ({
       ...contact,
-      extractedAt: Timestamp.fromDate(contact.extractedAt)
+      extractedAt: new Date(contact.extractedAt)
+    }));
+  } catch (error) {
+    console.error("Error searching contacts:", error);
+    
+    // Fallback to local mock data if the API fails
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const mockContacts: Contact[] = [
+      {
+        name: "John Smith",
+        email: "john@example.com",
+        phone: "+1 555-123-4567",
+        title: "Music Director",
+        company: "KEXP Radio",
+        category: "radio" as const,
+        extractedAt: new Date()
+      },
+      {
+        name: "Sarah Johnson",
+        email: "sarah@example.com",
+        phone: "+1 555-234-5678",
+        title: "Licensing Manager",
+        company: "Universal Pictures",
+        category: "movie" as const,
+        extractedAt: new Date()
+      }
+    ];
+    
+    return mockContacts.filter(contact => 
+      contact.category === category && 
+      (contact.name.toLowerCase().includes(query.toLowerCase()) || 
+       contact.company?.toLowerCase().includes(query.toLowerCase()) ||
+       contact.title?.toLowerCase().includes(query.toLowerCase()))
+    );
+  }
+}
+
+/**
+ * Saves a contact to the user's database
+ * @param user Current Firebase user
+ * @param contact Contact to save
+ */
+export async function saveContact(user: User, contact: Contact): Promise<void> {
+  try {
+    await addDoc(collection(db, "contacts"), {
+      ...contact,
+      userId: user.uid,
+      createdAt: serverTimestamp()
     });
   } catch (error) {
-    console.error('Error saving contact to Firestore:', error);
-    throw new Error('Failed to save contact to database');
+    console.error("Error saving contact:", error);
+    throw new Error("Failed to save contact");
   }
 }
 
 /**
- * Gets saved industry contacts for a user
- * @param userId User ID to get contacts for
+ * Gets all contacts saved by the current user
+ * @param user Current Firebase user
  * @param category Optional category filter
- * @returns Promise with array of contacts
  */
-export async function getSavedContacts(
-  userId: string,
-  category?: 'radio' | 'tv' | 'movie' | 'publishing' | 'other'
-): Promise<IndustryContact[]> {
+export async function getSavedContacts(user: User, category?: string): Promise<Contact[]> {
   try {
-    let contactsQuery;
+    let q = query(collection(db, "contacts"), where("userId", "==", user.uid));
     
     if (category) {
-      contactsQuery = query(
-        collection(db, 'industryContacts'),
-        where('userId', '==', userId),
-        where('category', '==', category)
-      );
-    } else {
-      contactsQuery = query(
-        collection(db, 'industryContacts'),
-        where('userId', '==', userId)
-      );
+      q = query(q, where("category", "==", category));
     }
     
-    const snapshot = await getDocs(contactsQuery);
-    const contacts: IndustryContact[] = [];
+    const querySnapshot = await getDocs(q);
     
-    snapshot.forEach(doc => {
+    return querySnapshot.docs.map(doc => {
       const data = doc.data();
-      contacts.push({
+      // Convert Firebase Timestamp to Date
+      return {
         ...data,
-        extractedAt: data.extractedAt.toDate(),
-      } as IndustryContact);
+        extractedAt: data.extractedAt?.toDate() || new Date(),
+        createdAt: data.createdAt?.toDate() || new Date(),
+      } as Contact;
+    });
+  } catch (error) {
+    console.error("Error getting saved contacts:", error);
+    throw new Error("Failed to get saved contacts");
+  }
+}
+
+/**
+ * Check the status of an Apify web scraping run
+ * @param runId ID of the Apify run to check
+ */
+export async function checkApifyRun(runId: string): Promise<any> {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+    
+    const response = await fetch('/api/contacts/run-status', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ runId })
     });
     
-    return contacts;
+    if (!response.ok) {
+      throw new Error(`Failed to check run status: ${response.status}`);
+    }
+    
+    return await response.json();
   } catch (error) {
-    console.error('Error getting saved contacts:', error);
-    throw new Error('Failed to retrieve saved contacts');
+    console.error("Error checking Apify run:", error);
+    throw error;
+  }
+}
+
+/**
+ * Reset extraction limits (admin only)
+ */
+export async function resetExtractionLimits(userId?: string): Promise<boolean> {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+    
+    const response = await fetch('/api/contacts/reset-limits', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ userId })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to reset limits: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.success || false;
+  } catch (error) {
+    console.error("Error resetting extraction limits:", error);
+    return false;
   }
 }

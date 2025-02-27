@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { 
   ExternalLink, 
   Search, 
@@ -27,7 +28,10 @@ import {
   Mail,
   Phone,
   Building,
-  Link
+  Link,
+  Shield,
+  AlertTriangle,
+  Info
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -167,6 +171,10 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
   const [locality, setLocality] = useState("Los Angeles");
   const [extractingContacts, setExtractingContacts] = useState(false);
   const [loadedDynamicContacts, setLoadedDynamicContacts] = useState(false);
+  const [maxPages, setMaxPages] = useState(1);
+  const [extractionLimitReached, setExtractionLimitReached] = useState(false);
+  const [remainingExtractions, setRemainingExtractions] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Simulated search animation
@@ -210,12 +218,59 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
     setIsSearching(true);
   };
   
+  // Check user role when component mounts
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (auth?.user) {
+        // Check if user is admin via custom claim or role
+        try {
+          const token = await auth.user.getIdTokenResult(true);
+          setIsAdmin(token.claims.admin === true || token.claims.role === 'admin');
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+        }
+      }
+    };
+
+    if (open) {
+      checkUserRole();
+      
+      // Check remaining extractions
+      if (auth?.user) {
+        fetch('/api/contacts/limits', {
+          headers: {
+            'Authorization': `Bearer ${auth.user.getIdToken()}`
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setRemainingExtractions(data.remaining);
+            setExtractionLimitReached(data.remaining <= 0);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching extraction limits:", err);
+        });
+      }
+    }
+  }, [open, auth?.user]);
+
   // Extract contacts using Apify
   const handleExtractContacts = async () => {
     if (!auth?.user) {
       toast({
         title: "Error",
         description: "Debes iniciar sesión para usar esta función",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (extractionLimitReached && !isAdmin) {
+      toast({
+        title: "Límite alcanzado",
+        description: "Has alcanzado el límite de extracciones diarias. Prueba mañana o actualiza tu cuenta.",
         variant: "destructive"
       });
       return;
@@ -236,7 +291,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
         body: JSON.stringify({
           searchTerm: "Movie Production",
           locality: locality,
-          maxPages: 1,
+          maxPages: isAdmin ? maxPages : 1, // Only admins can use larger page values
           category: "movie"
         })
       });
@@ -245,6 +300,12 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`API error (${response.status}): ${errorText}`);
+        
+        // Handle specific error cases
+        if (response.status === 429) {
+          setExtractionLimitReached(true);
+          throw new Error("Has alcanzado el límite de extracciones diarias");
+        }
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
@@ -252,13 +313,21 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
       const data = await response.json() as { 
         success: boolean; 
         contacts: MovieContact[]; 
-        message?: string,
-        error?: string
+        message?: string;
+        error?: string;
+        remaining?: number;
       };
 
       if (data.success) {
         setApifyResults(data.contacts || []);
         setLoadedDynamicContacts(true);
+        
+        // Update remaining extractions if provided
+        if (data.remaining !== undefined) {
+          setRemainingExtractions(data.remaining);
+          setExtractionLimitReached(data.remaining <= 0);
+        }
+        
         toast({
           title: "Contactos extraídos",
           description: `Se han encontrado ${data.contacts?.length || 0} contactos de cine en ${locality}`,
@@ -270,7 +339,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
       console.error("Error extracting contacts:", error);
       toast({
         title: "Error",
-        description: "No pudimos extraer los contactos. Inténtalo más tarde.",
+        description: error instanceof Error ? error.message : "No pudimos extraer los contactos. Inténtalo más tarde.",
         variant: "destructive"
       });
 
@@ -409,7 +478,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
             <div className="flex items-end">
               <Button 
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                disabled={extractingContacts}
+                disabled={extractingContacts || (extractionLimitReached && !isAdmin)}
                 onClick={handleExtractContacts}
               >
                 {extractingContacts ? (
@@ -422,6 +491,78 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
               </Button>
             </div>
           </div>
+          
+          {/* Admin controls */}
+          {isAdmin && (
+            <div className="mb-4 p-3 bg-blue-500/10 rounded border border-blue-500/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-blue-500" />
+                  <span className="font-medium text-sm">Panel de administración</span>
+                </div>
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 text-xs border-blue-500/20">
+                  Admin
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                  <Label htmlFor="maxPages" className="text-xs mb-1 block">Páginas a extraer</Label>
+                  <Select 
+                    value={maxPages.toString()} 
+                    onValueChange={(value) => setMaxPages(parseInt(value))}
+                  >
+                    <SelectTrigger id="maxPages" className="h-8 text-sm">
+                      <SelectValue placeholder="Páginas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 página</SelectItem>
+                      <SelectItem value="2">2 páginas</SelectItem>
+                      <SelectItem value="3">3 páginas</SelectItem>
+                      <SelectItem value="5">5 páginas</SelectItem>
+                      <SelectItem value="10">10 páginas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col">
+                  <Label className="text-xs mb-1">Estado de límites</Label>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs h-8 border-blue-500/20 hover:bg-blue-500/10 w-full"
+                      onClick={() => setExtractionLimitReached(false)}
+                    >
+                      Reiniciar límites
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Extraction limit warning */}
+          {remainingExtractions !== null && !isAdmin && (
+            <div className={`p-3 rounded border flex items-center gap-2 text-sm mb-4 ${
+              extractionLimitReached 
+                ? 'bg-red-500/10 border-red-500/20 text-red-700' 
+                : 'bg-amber-500/10 border-amber-500/20 text-amber-700'
+            }`}>
+              {extractionLimitReached ? (
+                <>
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Has alcanzado el límite de extracciones diarias. Actualiza tu cuenta para continuar.</span>
+                </>
+              ) : (
+                <>
+                  <Info className="h-4 w-4" />
+                  <span>
+                    Te quedan <strong>{remainingExtractions}</strong> extracciones hoy.
+                  </span>
+                </>
+              )}
+            </div>
+          )}
           
           {auth?.user ? null : (
             <div className="p-3 bg-orange-500/10 rounded border border-orange-500/20 flex items-center gap-2 text-sm mb-4">
