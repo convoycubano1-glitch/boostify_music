@@ -232,26 +232,88 @@ export default function AffiliatesPage() {
           ) : (
             // If already an affiliate, show full dashboard
             <div>
-              <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight">Affiliate Dashboard</h1>
-                  <p className="text-muted-foreground">
-                    Welcome back! Track your performance and access all affiliate tools.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-sm py-1 px-3 flex items-center gap-1">
-                    <Award className="h-3.5 w-3.5 text-yellow-500" />
-                    <span>{mockAffiliateData.level || "Basic"} Level</span>
-                  </Badge>
-                  <Badge variant="secondary" className="text-sm py-1 px-3">
-                    ID: {user?.uid?.substring(0, 8) || "mock-123"}
-                  </Badge>
+              <div className="mb-8">
+                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-lg border border-primary/10 shadow-sm mb-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                      <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        Dashboard de Afiliados
+                      </h1>
+                      <p className="text-muted-foreground mt-2">
+                        ¡Bienvenido! Rastrea tu rendimiento y accede a todas las herramientas de afiliados.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
+                      <Badge variant="outline" className="text-sm py-2 px-4 flex items-center gap-2 border-primary/20 bg-primary/10 text-primary">
+                        <Award className="h-4 w-4 text-yellow-500" />
+                        <span>Nivel {mockAffiliateData.level || "Básico"}</span>
+                      </Badge>
+                      <Badge variant="secondary" className="text-sm py-2 px-4">
+                        ID: {user?.uid?.substring(0, 8) || "mock-123"}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 bg-background/80 p-4 rounded-lg border border-primary/5">
+                    <div className="flex flex-col items-center p-3 text-center">
+                      <div className="text-2xl font-bold text-primary">{mockAffiliateData.stats?.totalClicks?.toLocaleString() || "0"}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Clics Totales</div>
+                    </div>
+                    <div className="flex flex-col items-center p-3 text-center">
+                      <div className="text-2xl font-bold text-primary">{mockAffiliateData.stats?.conversions?.toLocaleString() || "0"}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Conversiones</div>
+                    </div>
+                    <div className="flex flex-col items-center p-3 text-center">
+                      <div className="text-2xl font-bold text-primary">${mockAffiliateData.stats?.earnings?.toLocaleString() || "0"}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Ganancias Totales</div>
+                    </div>
+                    <div className="flex flex-col items-center p-3 text-center">
+                      <div className="text-2xl font-bold text-primary">${mockAffiliateData.stats?.pendingPayment?.toLocaleString() || "0"}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Pago Pendiente</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid grid-cols-2 md:grid-cols-7 gap-2">
+              <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-8">
+                {/* Tabs para móvil: vista en forma de grid con 3 columnas */}
+                <TabsList className="grid grid-cols-3 md:hidden gap-3 mb-4">
+                  <TabsTrigger value="overview" className="flex flex-col items-center gap-2 py-3">
+                    <LineChart className="h-5 w-5" />
+                    <span className="text-xs">Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="links" className="flex flex-col items-center gap-2 py-3">
+                    <Link className="h-5 w-5" />
+                    <span className="text-xs">Links</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="earnings" className="flex flex-col items-center gap-2 py-3">
+                    <DollarSign className="h-5 w-5" />
+                    <span className="text-xs">Earnings</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsList className="grid grid-cols-4 md:hidden gap-3">
+                  <TabsTrigger value="content" className="flex flex-col items-center gap-2 py-3">
+                    <Sparkles className="h-5 w-5" />
+                    <span className="text-xs">Content</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="resources" className="flex flex-col items-center gap-2 py-3">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-xs">Resources</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="support" className="flex flex-col items-center gap-2 py-3">
+                    <LifeBuoy className="h-5 w-5" />
+                    <span className="text-xs">Support</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="settings" className="flex flex-col items-center gap-2 py-3">
+                    <Settings2 className="h-5 w-5" />
+                    <span className="text-xs">Settings</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Tabs para escritorio: vista en fila única */}
+                <TabsList className="hidden md:grid md:grid-cols-7 gap-2">
                   <TabsTrigger value="overview" className="flex items-center gap-1.5">
                     <LineChart className="h-4 w-4" />
                     <span>Overview</span>
