@@ -489,15 +489,15 @@ export function FileExchangeHub() {
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
         <div>
           <h3 className="text-lg font-semibold">Project Exchange Hub</h3>
           <p className="text-sm text-muted-foreground">
             Share ProTools, Cubase, and other DAW project files
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -505,6 +505,8 @@ export function FileExchangeHub() {
                   variant="outline" 
                   onClick={handleSyncClick}
                   disabled={syncStatus === "syncing"}
+                  className="w-full sm:w-auto"
+                  size="sm"
                 >
                   {syncStatus === "syncing" ? (
                     <RotateCw className="w-4 h-4 mr-2 animate-spin" />
@@ -527,6 +529,8 @@ export function FileExchangeHub() {
                   variant="outline" 
                   onClick={handleDownloadAll}
                   disabled={downloadingAll || allFiles.length === 0}
+                  className="w-full sm:w-auto"
+                  size="sm"
                 >
                   {downloadingAll ? (
                     <RotateCw className="w-4 h-4 mr-2 animate-spin" />
@@ -567,17 +571,21 @@ export function FileExchangeHub() {
             <h4 className="text-sm font-medium">Recent Uploads</h4>
             {uploads.map((upload, index) => (
               <div key={index} className="bg-muted/50 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{upload.fileName}</span>
-                    {upload.fileType && (
-                      <Badge variant="outline" className="text-xs">
-                        {upload.fileType}
-                      </Badge>
-                    )}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2 overflow-hidden w-full">
+                    <FolderOpen className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 flex-1">
+                      <span className="text-sm font-medium truncate">{upload.fileName}</span>
+                      {upload.fileType && (
+                        <Badge variant="outline" className="text-xs w-fit">
+                          {upload.fileType}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  {renderFileStatus(upload)}
+                  <div className="flex-shrink-0 self-end sm:self-auto">
+                    {renderFileStatus(upload)}
+                  </div>
                 </div>
                 <Progress value={upload.progress} className="h-1" />
               </div>
@@ -591,63 +599,77 @@ export function FileExchangeHub() {
             <h4 className="text-sm font-medium">All Project Files</h4>
             {allFiles.map((file) => (
               <div key={file.id} className="bg-muted/50 rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <span className="text-sm font-medium">{file.name}</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <FolderOpen className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-medium truncate block">{file.name}</span>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           {file.fileType}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {file.fileSize}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground truncate">
                           {formatDate(file.uploadDate)}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
+                  <div className="flex justify-end mt-2 sm:mt-0">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mr-2 h-8 sm:hidden"
+                      onClick={() => handleDownloadFile(file)}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      <span>Download</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="12" cy="5" r="1" />
+                            <circle cx="12" cy="19" r="1" />
+                          </svg>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem 
+                          onClick={() => handleDownloadFile(file)}
+                          className="hidden sm:flex"
                         >
-                          <circle cx="12" cy="12" r="1" />
-                          <circle cx="12" cy="5" r="1" />
-                          <circle cx="12" cy="19" r="1" />
-                        </svg>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleDownloadFile(file)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        <span>Download</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => {
-                          setFileToDelete(file);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                          <Download className="mr-2 h-4 w-4" />
+                          <span>Download</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="hidden sm:block" />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => {
+                            setFileToDelete(file);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </div>
             ))}
