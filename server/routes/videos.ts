@@ -56,24 +56,28 @@ export function setupVideosRoutes(app: Express) {
         });
       }
       
-      // Verificación adicional específica para el UID
-      if (!req.user.uid) {
-        console.error("Usuario autenticado pero sin UID válido:", req.user);
+      // El usuario puede tener la propiedad 'id' o 'uid' dependiendo de cómo se haya autenticado
+      // (session vs token), por lo que manejamos ambos casos
+      const userId = req.user.uid || req.user.id;
+      
+      // Verificación adicional específica para el ID de usuario
+      if (!userId) {
+        console.error("Usuario autenticado pero sin ID válido:", req.user);
         return res.status(401).json({
           success: false,
-          message: "Error de autenticación: UID de usuario no válido",
+          message: "Error de autenticación: ID de usuario no válido",
         });
       }
       
       const videoData = result.data;
       
-      // Agregamos un log adicional para verificar el valor exacto del UID antes de crear el objeto
-      console.log("Usando UID del usuario para el video:", req.user.uid);
+      // Agregamos un log adicional para verificar el valor exacto del ID antes de crear el objeto
+      console.log("Usando ID del usuario para el video:", userId);
       
       // Agregar campos adicionales
       const videoEntry = {
         ...videoData,
-        userId: req.user.uid, // Aseguramos que sea un string válido
+        userId: userId, // Usamos la variable que ya validamos
         createdAt: new Date(),
         views: 0,
       };
@@ -134,7 +138,8 @@ export function setupVideosRoutes(app: Express) {
       
       // Verificar que el usuario tenga permisos para eliminar el video
       // (Si es el creador o un administrador)
-      const isOwner = videoData.userId === req.user.uid;
+      const userId = req.user.uid || req.user.id;
+      const isOwner = videoData.userId === userId;
       const isAdmin = req.user.isAdmin === true;
       
       if (!isOwner && !isAdmin) {

@@ -4,7 +4,8 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 
 // Interface for the authenticated user
 export interface AuthUser {
-  uid: string;
+  uid?: string;   // Para autenticación Firebase
+  id?: string;    // Para autenticación de sesión
   email?: string | null;
   role?: string;
   isAdmin?: boolean;
