@@ -178,7 +178,7 @@ export default function MasterclassSection() {
     fetchMasterclasses();
   }, [toast]);
 
-  // Función para cargar los masterclases de ejemplo si no hay datos
+  // Function to load sample masterclasses if no data exists
   useEffect(() => {
     if (!isLoading && masterclasses.length === 0) {
       const sampleWithIds = sampleMasterclasses.map((masterclass, index) => ({
@@ -373,31 +373,31 @@ export default function MasterclassSection() {
               <div className="bg-orange-500 rounded-full p-2">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
-              <span className="text-orange-300 uppercase font-semibold tracking-wider text-sm">Aprende de los mejores</span>
+              <span className="text-orange-300 uppercase font-semibold tracking-wider text-sm">Learn from the best</span>
             </div>
             
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-              Masterclasses <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500">Exclusivas</span> de Artistas-Ingenieros
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500">Exclusive</span> Masterclasses by Artist-Engineers
             </h2>
             
             <p className="text-gray-300 text-lg max-w-2xl mb-8">
-              Perfecciona tus habilidades con las masterclasses más exclusivas del mercado. Aprende directamente de productores y artistas reconocidos a nivel mundial.
+              Perfect your skills with the most exclusive masterclasses in the market. Learn directly from internationally recognized producers and artists.
             </p>
             
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
                 <BookOpen className="h-4 w-4 text-orange-400" />
-                <span className="text-gray-200 text-sm">+50 Masterclasses disponibles</span>
+                <span className="text-gray-200 text-sm">+50 Available Masterclasses</span>
               </div>
               
               <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
                 <Users className="h-4 w-4 text-orange-400" />
-                <span className="text-gray-200 text-sm">+3,400 Estudiantes</span>
+                <span className="text-gray-200 text-sm">+3,400 Students</span>
               </div>
               
               <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
                 <Star className="h-4 w-4 text-orange-400" />
-                <span className="text-gray-200 text-sm">4.8 Calificación promedio</span>
+                <span className="text-gray-200 text-sm">4.8 Average Rating</span>
               </div>
             </div>
           </div>
@@ -407,46 +407,46 @@ export default function MasterclassSection() {
               <DialogTrigger asChild>
                 <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full py-6 text-lg shadow-lg shadow-orange-500/20 transition-all hover:shadow-xl hover:shadow-orange-500/40">
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Crear mi Masterclass
+                  Create My Masterclass
                 </Button>
               </DialogTrigger>
               
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Crear Nueva Masterclass</DialogTitle>
+                  <DialogTitle>Create New Masterclass</DialogTitle>
                   <DialogDescription>
-                    Comparte tu experiencia con la comunidad musical. Crea una masterclass para enseñar tus técnicas de producción y proceso creativo.
+                    Share your experience with the music community. Create a masterclass to teach your production techniques and creative process.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <label htmlFor="title" className="text-sm font-medium">Título de la Masterclass</label>
+                    <label htmlFor="title" className="text-sm font-medium">Masterclass Title</label>
                     <Input
                       id="title"
                       value={newMasterclass.title}
                       onChange={(e) => setNewMasterclass({ ...newMasterclass, title: e.target.value })}
-                      placeholder="ej., Técnicas Avanzadas de Producción EDM"
+                      placeholder="e.g., Advanced EDM Production Techniques"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <label htmlFor="description" className="text-sm font-medium">Descripción</label>
+                    <label htmlFor="description" className="text-sm font-medium">Description</label>
                     <Textarea
                       id="description"
                       value={newMasterclass.description}
                       onChange={(e) => setNewMasterclass({ ...newMasterclass, description: e.target.value })}
-                      placeholder="Describe lo que los estudiantes aprenderán en tu masterclass"
+                      placeholder="Describe what students will learn in your masterclass"
                       rows={4}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <label htmlFor="price" className="text-sm font-medium">Precio (USD)</label>
+                      <label htmlFor="price" className="text-sm font-medium">Price (USD)</label>
                       <Input
                         id="price"
                         type="number"
                         value={newMasterclass.price}
                         onChange={(e) => setNewMasterclass({ ...newMasterclass, price: Number(e.target.value) })}
-                        placeholder="Ingresa el precio"
+                        placeholder="Enter price"
                       />
                     </div>
                     <div className="grid gap-2">
