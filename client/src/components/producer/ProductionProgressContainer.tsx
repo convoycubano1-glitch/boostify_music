@@ -712,15 +712,15 @@ export function ProductionProgressContainer() {
   };
   
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
           <h3 className="text-lg font-semibold">Production Progress</h3>
           <p className="text-sm text-muted-foreground">
             Track your creative process and production timeline
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {!isLoadingProjects && projects.length > 0 && (
             <Select 
               value={currentProject?.id || ""} 
@@ -731,7 +731,7 @@ export function ProductionProgressContainer() {
                 }
               }}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Select a project" />
               </SelectTrigger>
               <SelectContent>
@@ -744,23 +744,27 @@ export function ProductionProgressContainer() {
             </Select>
           )}
           
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => setEditMode(!editMode)}
-          >
-            <Edit2 className="w-4 h-4 mr-1" />
-            {editMode ? "View Mode" : "Edit Mode"}
-          </Button>
-          
-          <Button 
-            size="sm" 
-            variant="default"
-            onClick={() => setShowNewProjectDialog(true)}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            New Project
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setEditMode(!editMode)}
+              className="flex-1 sm:flex-auto"
+            >
+              <Edit2 className="w-4 h-4 mr-1" />
+              {editMode ? "View Mode" : "Edit Mode"}
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant="default"
+              onClick={() => setShowNewProjectDialog(true)}
+              className="flex-1 sm:flex-auto"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              New Project
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -794,8 +798,8 @@ export function ProductionProgressContainer() {
         <div className="space-y-6">
           {/* Project info */}
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-md font-semibold">{currentProject.name}</h3>
                 {getStatusBadge(currentProject.status)}
               </div>
@@ -821,7 +825,7 @@ export function ProductionProgressContainer() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground text-xs">Start Date</p>
                 <p className="font-medium">{formatDate(currentProject.startDate)}</p>
@@ -843,7 +847,7 @@ export function ProductionProgressContainer() {
               </div>
             </div>
             {currentProject.description && (
-              <p className="text-sm mt-2">{currentProject.description}</p>
+              <p className="text-sm mt-3 text-muted-foreground">{currentProject.description}</p>
             )}
           </div>
           
@@ -893,8 +897,8 @@ export function ProductionProgressContainer() {
                   }`}
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {getStatusIcon(phase.status)}
                         <button 
                           className={`text-sm font-medium hover:text-primary transition-colors ${
@@ -906,26 +910,28 @@ export function ProductionProgressContainer() {
                         </button>
                         {phase.priority && getPriorityBadge(phase.priority)}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {phase.eta && (
-                          <span className="text-xs text-muted-foreground">
-                            ETA: {phase.eta}
-                          </span>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <Progress 
-                            value={phase.progress} 
-                            className="h-2 w-16" 
-                          />
-                          <span className="text-xs font-medium">
-                            {phase.progress}%
-                          </span>
+                      <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {phase.eta && (
+                            <span className="text-xs text-muted-foreground">
+                              ETA: {phase.eta}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Progress 
+                              value={phase.progress} 
+                              className="h-2 w-16" 
+                            />
+                            <span className="text-xs font-medium">
+                              {phase.progress}%
+                            </span>
+                          </div>
                         </div>
                         
                         {editMode && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -973,7 +979,7 @@ export function ProductionProgressContainer() {
                           <TabsContent value="tasks">
                             <div className="space-y-2">
                               {editMode && (
-                                <div className="flex gap-2 mb-4">
+                                <div className="flex flex-col xs:flex-row gap-2 mb-4">
                                   <Input
                                     placeholder="New task..."
                                     value={newTaskName}
@@ -984,6 +990,7 @@ export function ProductionProgressContainer() {
                                     size="sm"
                                     onClick={() => addTask(phase.id)}
                                     disabled={!newTaskName.trim()}
+                                    className="w-full xs:w-auto"
                                   >
                                     Add
                                   </Button>
@@ -1031,7 +1038,7 @@ export function ProductionProgressContainer() {
                           </TabsContent>
                           <TabsContent value="notes">
                             <div className="space-y-4">
-                              <div className="flex gap-2">
+                              <div className="flex flex-col xs:flex-row gap-2">
                                 <Textarea
                                   placeholder="Add a note..."
                                   value={noteInput}
@@ -1042,7 +1049,7 @@ export function ProductionProgressContainer() {
                                 <Button 
                                   onClick={() => addNote(phase.id)}
                                   disabled={!noteInput.trim()}
-                                  className="self-end"
+                                  className="self-end w-full xs:w-auto"
                                 >
                                   Add
                                 </Button>
