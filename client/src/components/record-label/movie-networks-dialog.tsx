@@ -297,8 +297,8 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
         // Import the extractContactsWithApify function from our service
         const { extractContactsWithApify } = await import("../../lib/api/apify-contacts-service");
         
-        // Prepare search term based on the selected category and locality
-        const searchTerm = "Movie Production";
+        // Prepare search term based on the user input or use a default value
+        const searchTerm = searchQuery || "Movie Production";
         
         // Extract contacts directly using Apify client
         const contacts = await extractContactsWithApify(
@@ -345,7 +345,7 @@ export function MovieNetworksDialog({ children }: MovieNetworksDialogProps) {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          searchTerm: "Movie Production",
+          searchTerm: searchQuery || "Movie Production",
           locality: locality,
           maxPages: isAdmin ? maxPages : 1, // Only admins can use larger page values
           category: "movie"
