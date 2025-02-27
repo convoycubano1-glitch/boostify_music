@@ -291,7 +291,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 rounded-lg border border-primary/10 shadow-sm">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Link2 className="h-5 w-5 text-primary" />
+            <Link className="h-5 w-5 text-primary" />
             Enlaces de Afiliado
           </h2>
           <p className="text-muted-foreground mt-1">

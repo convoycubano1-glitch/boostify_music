@@ -106,36 +106,83 @@ export default function AffiliatesPage() {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         {!isAffiliate && (
-          <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-primary/20 via-primary/10 to-background mb-8 p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div className="space-y-4">
-                <Badge className="bg-primary/20 text-primary hover:bg-primary/30 transition-colors">
-                  Now Available
-                </Badge>
-                <h1 className="text-4xl font-bold tracking-tight">Amplify Your Income with Boostify Affiliate Program</h1>
-                <p className="text-muted-foreground text-lg">
-                  Join our community of top-performing affiliates and earn generous commissions by promoting premium music education products.
-                </p>
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <Button className="gap-2" size="lg">
-                    <Sparkles className="h-5 w-5" /> Join Now
-                  </Button>
-                  <Button variant="outline" size="lg">
-                    Learn More
-                  </Button>
+          <>
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-primary/20 via-primary/10 to-background mb-8 p-8 border border-primary/10 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="space-y-6">
+                  <Badge className="bg-primary/20 text-primary hover:bg-primary/30 transition-colors py-2 px-4 text-base">
+                    Ahora Disponible
+                  </Badge>
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">Amplifica tus Ingresos con el Programa de Afiliados Boostify</h1>
+                  <p className="text-muted-foreground text-base md:text-lg">
+                    Únete a nuestra comunidad de afiliados de alto rendimiento y gana comisiones generosas promocionando productos premium de educación musical.
+                  </p>
+                  <div className="flex flex-wrap gap-6 pt-6">
+                    <Button className="gap-2 text-base py-6" size="lg">
+                      <Sparkles className="h-5 w-5" /> Unirse Ahora
+                    </Button>
+                    <Button variant="outline" className="text-base py-6" size="lg">
+                      Saber Más
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="hidden md:block relative h-64">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary/10 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <Sparkles className="h-16 w-16 text-primary mx-auto mb-4" />
-                    <p className="text-2xl font-bold">Earn up to 30%</p>
-                    <p className="text-lg">on every sale</p>
+                <div className="hidden md:block relative h-72">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary/10 rounded-lg flex items-center justify-center shadow-md">
+                    <div className="text-center p-6">
+                      <Sparkles className="h-16 w-16 text-primary mx-auto mb-4" />
+                      <p className="text-3xl font-bold">Gana hasta 30%</p>
+                      <p className="text-xl mt-2">en cada venta</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold mb-6">¿Por qué convertirte en afiliado de Boostify?</h2>
+              <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4 mt-8">
+                <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-b from-primary/5 to-transparent border border-primary/10">
+                  <div className="bg-primary/10 p-4 rounded-full mb-4">
+                    <DollarSign className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Comisiones Competitivas</h3>
+                  <p className="text-muted-foreground text-center">
+                    Gana hasta un 30% de comisión en cada venta realizada a través de tus enlaces de afiliado
+                  </p>
+                </div>
+                
+                <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-b from-primary/5 to-transparent border border-primary/10">
+                  <div className="bg-primary/10 p-4 rounded-full mb-4">
+                    <Zap className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Acceso Inmediato</h3>
+                  <p className="text-muted-foreground text-center">
+                    Comienza a promocionar de inmediato con recursos de marketing listos para usar
+                  </p>
+                </div>
+                
+                <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-b from-primary/5 to-transparent border border-primary/10">
+                  <div className="bg-primary/10 p-4 rounded-full mb-4">
+                    <Crown className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Contenido Premium</h3>
+                  <p className="text-muted-foreground text-center">
+                    Accede a contenido exclusivo y materiales promocionales diseñados para impulsar conversiones
+                  </p>
+                </div>
+                
+                <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-b from-primary/5 to-transparent border border-primary/10">
+                  <div className="bg-primary/10 p-4 rounded-full mb-4">
+                    <HeadphonesIcon className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Soporte Dedicado</h3>
+                  <p className="text-muted-foreground text-center">
+                    Recibe asistencia personalizada de nuestro equipo de afiliados para maximizar tus ganancias
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         <div className="flex flex-col gap-8">
