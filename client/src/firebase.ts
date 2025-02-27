@@ -19,5 +19,20 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+// Authentication helper
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return null;
+    }
+    
+    return await currentUser.getIdToken(true);
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+}
+
 export { auth, db, storage };
 export default app;
