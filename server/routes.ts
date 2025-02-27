@@ -64,6 +64,7 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);
+  setupVideosRoutes(app);
 
   // Register courses routes
   app.use(coursesRouter);
