@@ -1,142 +1,213 @@
-import { z } from 'zod';
-import { getAuthToken } from '@/lib/auth';
+import { z } from "zod";
+import { getAuthToken } from "@/lib/auth";
+import { User } from "firebase/auth";
 
+/**
+ * Schema for industry contacts
+ */
 export const contactSchema = z.object({
-  id: z.string().optional(),
   name: z.string(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  website: z.string().optional(),
+  category: z.enum(["radio", "tv", "movie", "publishing", "other"]),
   title: z.string().optional(),
   company: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().optional(),
   address: z.string().optional(),
   locality: z.string().optional(),
+  region: z.string().optional(),
+  country: z.string().optional(),
   notes: z.string().optional(),
-  category: z.enum(['radio', 'tv', 'movie', 'publishing', 'other']),
-  extractedAt: z.date(),
-  userId: z.string()
+  extractedAt: z.date().optional(),
+  linkedinUrl: z.string().optional(),
+  twitterUrl: z.string().optional()
 });
 
 export type Contact = z.infer<typeof contactSchema>;
 
+/**
+ * Common contact categories
+ */
 export const contactCategories = [
-  { value: 'radio', label: 'Radio Stations' },
-  { value: 'tv', label: 'TV Networks' },
-  { value: 'movie', label: 'Film Industry' },
-  { value: 'publishing', label: 'Publishing Houses' },
-  { value: 'other', label: 'Other Contacts' }
+  { value: "radio", label: "Radio Stations" },
+  { value: "tv", label: "TV Networks" },
+  { value: "movie", label: "Movie Industry" },
+  { value: "publishing", label: "Publishing Houses" },
+  { value: "other", label: "Other Contacts" }
 ];
 
-interface ExtractContactsParams {
+/**
+ * Parameters for contact extraction
+ */
+export interface ContactExtractParams {
   searchTerm: string;
   locality: string;
   category: 'radio' | 'tv' | 'movie' | 'publishing' | 'other';
   maxPages?: number;
 }
 
-interface GetContactsParams {
-  category?: 'radio' | 'tv' | 'movie' | 'publishing' | 'other';
-}
-
-interface ContactsResponse {
+/**
+ * Response for contacts retrieval
+ */
+export interface ContactsResponse {
   success: boolean;
   contacts: Contact[];
   message?: string;
 }
 
+/**
+ * Service class for handling contact extraction operations
+ */
 class ApifyContactsService {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = await getAuthToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    const defaultOptions: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    };
-
-    const response = await fetch(endpoint, {
-      ...defaultOptions,
-      ...options,
-      headers: {
-        ...defaultOptions.headers,
-        ...options.headers
-      }
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-      throw new Error(error.message || 'Request failed');
-    }
-
-    return response.json();
-  }
-
-  async extractContacts(params: ExtractContactsParams): Promise<ContactsResponse> {
+  /**
+   * Extract contacts using Apify based on search parameters
+   */
+  async extractContacts(params: ContactExtractParams): Promise<ContactsResponse> {
     try {
-      const response = await this.request<ContactsResponse>('/api/contacts/extract', {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch('/api/contacts/extract', {
         method: 'POST',
-        body: JSON.stringify({
-          searchTerm: params.searchTerm,
-          locality: params.locality,
-          category: params.category,
-          maxPages: params.maxPages || 2
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(params)
       });
-      
-      return response;
-    } catch (error) {
-      console.error('Error extracting contacts:', error);
-      
-      // Return a fallback empty response
-      return {
-        success: false,
-        contacts: [],
-        message: error instanceof Error ? error.message : 'Failed to extract contacts'
-      };
-    }
-  }
 
-  async getContacts(params: GetContactsParams = {}): Promise<ContactsResponse> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params.category) {
-        queryParams.append('category', params.category);
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          contacts: [],
+          message: errorData.message || `Error: ${response.status} ${response.statusText}`
+        };
       }
 
-      const endpoint = `/api/contacts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      const response = await this.request<ContactsResponse>(endpoint);
-      
-      return response;
+      return await response.json();
     } catch (error) {
-      console.error('Error getting contacts:', error);
-      
-      // Return a fallback empty response
+      console.error("Error extracting contacts:", error);
       return {
         success: false,
         contacts: [],
-        message: error instanceof Error ? error.message : 'Failed to retrieve contacts'
+        message: error instanceof Error ? error.message : "Unknown error occurred"
       };
     }
   }
 
-  async searchContacts(query: string, category?: string): Promise<Contact[]> {
+  /**
+   * Get all contacts for the current user, optionally filtered by category
+   */
+  async getContacts(options?: { category?: string }): Promise<ContactsResponse> {
     try {
-      const queryParams = new URLSearchParams({ q: query });
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const url = new URL('/api/contacts', window.location.origin);
+      if (options?.category) {
+        url.searchParams.append('category', options.category);
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          contacts: [],
+          message: errorData.message || `Error: ${response.status} ${response.statusText}`
+        };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error getting contacts:", error);
+      return {
+        success: false,
+        contacts: [],
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  }
+
+  /**
+   * Search for contacts by query and category (uses demo data)
+   */
+  async searchContacts(query: string, category?: string): Promise<ContactsResponse> {
+    try {
+      const url = new URL('/api/contacts/search', window.location.origin);
+      url.searchParams.append('q', query);
       if (category) {
-        queryParams.append('category', category);
+        url.searchParams.append('category', category);
       }
 
-      const endpoint = `/api/contacts/search?${queryParams.toString()}`;
-      const response = await this.request<{ contacts: Contact[] }>(endpoint);
-      
-      return response.contacts;
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          contacts: [],
+          message: errorData.message || `Error: ${response.status} ${response.statusText}`
+        };
+      }
+
+      return await response.json();
     } catch (error) {
-      console.error('Error searching contacts:', error);
-      return [];
+      console.error("Error searching contacts:", error);
+      return {
+        success: false,
+        contacts: [],
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  }
+
+  /**
+   * Save a contact to the user's collection
+   */
+  async saveContact(contact: Contact): Promise<ContactsResponse> {
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch('/api/contacts/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ contact })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          contacts: [],
+          message: errorData.message || `Error: ${response.status} ${response.statusText}`
+        };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error saving contact:", error);
+      return {
+        success: false,
+        contacts: [],
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
     }
   }
 }
