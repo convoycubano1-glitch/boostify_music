@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db";
-import { socialUsers, posts as socialPosts, comments } from "../db/schema";
+import { socialUsers, posts as socialPosts, comments } from "../db/social-network-schema";
 import { and, eq, desc, asc } from "drizzle-orm";
 import { openRouterService } from "../services/openrouter-service";
 

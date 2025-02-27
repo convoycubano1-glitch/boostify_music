@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { socialUsers, posts, comments } from '../db/schema';
+import { socialUsers, posts, comments } from '../db/social-network-schema';
 import { and, eq, desc, asc } from "drizzle-orm";
 import { faker } from '@faker-js/faker/locale/es';
 import { faker as fakerEN_US } from '@faker-js/faker/locale/en_US';
@@ -158,7 +158,14 @@ async function seedSocialNetwork() {
         ? faker.person.fullName() 
         : fakerEN_US.person.fullName();
       
+      // Generate a username from the full name
+      const username = fullName.toLowerCase()
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z0-9.]/g, '')
+        + Math.floor(Math.random() * 100);
+      
       const user = {
+        username: username,
         displayName: fullName,
         avatar: avatars[i % avatars.length],
         bio: isSpanish 
