@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
@@ -43,11 +43,35 @@ export default function BoostifyTvPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   
+  // Fetch videos from the API
+  const { data, isLoading, isError } = useQuery<VideoResponse>({
+    queryKey: ['/api/files/videos/tv'],
+    queryFn: async () => {
+      const response = await axios.get('/api/files/videos/tv');
+      return response.data;
+    }
+  });
+
+  // Assign categories to videos if not already assigned
+  const processedVideos = useMemo(() => {
+    if (!data?.videos) return [];
+    
+    return data.videos.map((video: VideoContent, index: number) => ({
+      ...video,
+      // Alternate between featured and videos categories if not already assigned
+      category: video.category || (index % 2 === 0 ? "featured" : "videos") as "featured" | "live" | "videos" | "music"
+    }));
+  }, [data?.videos]);
+  
   // Function to filter videos based on search term
-  const filteredVideos = videoContent.filter(video => 
-    video.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    video.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVideos = useMemo(() => {
+    if (!processedVideos.length) return [];
+    
+    return processedVideos.filter((video: VideoContent) => 
+      video.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      video.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [processedVideos, searchTerm]);
 
   // Function to share video
   const shareVideo = (video: VideoContent, platform: string) => {
@@ -87,16 +111,30 @@ export default function BoostifyTvPage() {
       <main className="flex-1 space-y-8 p-4 md:p-8 pt-20">
         {/* Hero Section with Featured Video */}
         <div className="relative w-full h-[50vh] overflow-hidden rounded-xl mb-8">
-          <video
-            id="feature-video"
-            className="absolute inset-0 w-full h-full object-cover"
-            src={videoContent[0].filePath}
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls={false}
-          />
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <Loader2 className="h-12 w-12 animate-spin text-orange-500" />
+            </div>
+          ) : isError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <p className="text-red-500">Error loading videos</p>
+            </div>
+          ) : processedVideos.length > 0 ? (
+            <video
+              id="feature-video"
+              className="absolute inset-0 w-full h-full object-cover"
+              src={processedVideos[0].filePath}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls={false}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <p className="text-white">No videos available</p>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
           <div className="relative h-full flex items-center justify-start px-4 md:px-12">
             <div className="max-w-2xl">
@@ -124,6 +162,7 @@ export default function BoostifyTvPage() {
                         videoElement.play();
                       }
                     }}
+                    disabled={isLoading || isError || processedVideos.length === 0}
                   >
                     <Play className="w-5 h-5 mr-2" />
                     Start Watching
@@ -143,100 +182,114 @@ export default function BoostifyTvPage() {
           </div>
         </div>
 
-        {/* Content Navigation */}
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="flex flex-wrap gap-2">
-            <TabsTrigger value="featured" className="data-[state=active]:bg-orange-500">
-              <Star className="w-4 h-4 mr-2" />
-              Featured
-            </TabsTrigger>
-            <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500">
-              <Film className="w-4 h-4 mr-2" />
-              Videos
-            </TabsTrigger>
-            {videoContent.some(v => v.category === "live") && (
-              <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
-                <Tv className="w-4 h-4 mr-2" />
-                Live
-              </TabsTrigger>
-            )}
-            {videoContent.some(v => v.category === "music") && (
-              <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
-                <Music2 className="w-4 h-4 mr-2" />
-                Music
-              </TabsTrigger>
-            )}
-          </TabsList>
+        {/* Loading state */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-500 mr-2" />
+            <p>Loading videos...</p>
+          </div>
+        ) : isError ? (
+          <div className="flex justify-center items-center py-12">
+            <p className="text-red-500">Error loading videos. Please try again later.</p>
+          </div>
+        ) : (
+          <>
+            {/* Content Navigation */}
+            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+              <TabsList className="flex flex-wrap gap-2">
+                <TabsTrigger value="featured" className="data-[state=active]:bg-orange-500">
+                  <Star className="w-4 h-4 mr-2" />
+                  Featured
+                </TabsTrigger>
+                <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500">
+                  <Film className="w-4 h-4 mr-2" />
+                  Videos
+                </TabsTrigger>
+                {processedVideos.some((v: VideoContent) => v.category === "live") && (
+                  <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
+                    <Tv className="w-4 h-4 mr-2" />
+                    Live
+                  </TabsTrigger>
+                )}
+                {processedVideos.some((v: VideoContent) => v.category === "music") && (
+                  <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
+                    <Music2 className="w-4 h-4 mr-2" />
+                    Music
+                  </TabsTrigger>
+                )}
+              </TabsList>
 
-          {/* Content Sections */}
-          {["featured", "videos", "live", "music"].map((category) => (
-            <TabsContent key={category} value={category}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(searchTerm ? filteredVideos : videoContent)
-                  .filter((video) => video.category === category)
-                  .map((video) => (
-                    <Card key={video.id} className="overflow-hidden group">
-                      <div className="aspect-video relative">
-                        <video
-                          className="w-full h-full object-cover"
-                          src={video.filePath}
-                          controls
-                          preload="metadata"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold">{video.title}</h3>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => shareVideo(video, 'facebook')}>
-                                <Facebook className="mr-2 h-4 w-4" />
-                                <span>Facebook</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => shareVideo(video, 'twitter')}>
-                                <Twitter className="mr-2 h-4 w-4" />
-                                <span>Twitter</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => shareVideo(video, 'instagram')}>
-                                <Instagram className="mr-2 h-4 w-4" />
-                                <span>Instagram</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => shareVideo(video, 'linkedin')}>
-                                <Linkedin className="mr-2 h-4 w-4" />
-                                <span>LinkedIn</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => shareVideo(video, 'copy')}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                <span>Copy Link</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {video.description}
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {video.duration}
-                          </span>
-                          <span className="flex items-center">
-                            <TrendingUp className="w-4 h-4 mr-1" />
-                            {video.views.toLocaleString()} views
-                          </span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+              {/* Content Sections */}
+              {["featured", "videos", "live", "music"].map((category) => (
+                <TabsContent key={category} value={category}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {(searchTerm ? filteredVideos : processedVideos)
+                      .filter((video: VideoContent) => video.category === category)
+                      .map((video: VideoContent) => (
+                        <Card key={video.id} className="overflow-hidden group">
+                          <div className="aspect-video relative">
+                            <video
+                              className="w-full h-full object-cover"
+                              src={video.filePath}
+                              controls
+                              preload="metadata"
+                            />
+                          </div>
+                          <div className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="font-semibold">{video.title}</h3>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Share2 className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => shareVideo(video, 'facebook')}>
+                                    <Facebook className="mr-2 h-4 w-4" />
+                                    <span>Facebook</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => shareVideo(video, 'twitter')}>
+                                    <Twitter className="mr-2 h-4 w-4" />
+                                    <span>Twitter</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => shareVideo(video, 'instagram')}>
+                                    <Instagram className="mr-2 h-4 w-4" />
+                                    <span>Instagram</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => shareVideo(video, 'linkedin')}>
+                                    <Linkedin className="mr-2 h-4 w-4" />
+                                    <span>LinkedIn</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => shareVideo(video, 'copy')}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    <span>Copy Link</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              {video.description}
+                            </p>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center">
+                                <Clock className="w-4 h-4 mr-1" />
+                                {video.duration}
+                              </span>
+                              <span className="flex items-center">
+                                <TrendingUp className="w-4 h-4 mr-1" />
+                                {video.views.toLocaleString()} views
+                              </span>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </>
+        )}
       </main>
     </div>
   );
