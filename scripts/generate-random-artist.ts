@@ -225,8 +225,8 @@ if (isMainModule) {
 }
 
 // Exportar funciones para uso en otros archivos
+// Nota: generateRandomArtist ya está exportado directamente arriba
 export {
-  generateRandomArtist,
   saveArtistToFirestore,
   main as generateArtist
 };

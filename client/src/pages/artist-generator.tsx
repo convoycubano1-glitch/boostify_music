@@ -242,13 +242,13 @@ export default function ArtistGeneratorPage() {
                             <User2Icon className="h-10 w-10 text-orange-500" />
                           </Avatar>
                           <div>
-                            <h3 className="text-2xl font-bold">{currentArtist.name}</h3>
+                            <h3 className="text-2xl font-bold">{currentArtist?.name || "Nombre no disponible"}</h3>
                             <div className="flex flex-wrap gap-2 mt-2">
-                              {currentArtist.music_genres.map((genre, i) => (
+                              {currentArtist?.music_genres?.map((genre, i) => (
                                 <Badge key={i} variant="outline" className="bg-orange-100/50">
                                   {genre}
                                 </Badge>
-                              ))}
+                              )) || <span className="text-muted-foreground">Géneros no disponibles</span>}
                             </div>
                           </div>
                         </div>
@@ -257,7 +257,8 @@ export default function ArtistGeneratorPage() {
                             variant="outline"
                             size="sm"
                             className="flex-shrink-0"
-                            onClick={() => handleCopyToClipboard(currentArtist.name, "Nombre copiado")}
+                            onClick={() => handleCopyToClipboard(currentArtist?.name || "", "Nombre copiado")}
+                            disabled={!currentArtist?.name}
                           >
                             <CopyIcon className="h-4 w-4 mr-2" />
                             Copiar nombre
@@ -267,6 +268,7 @@ export default function ArtistGeneratorPage() {
                             size="sm"
                             className="flex-shrink-0"
                             onClick={handleDownloadJson}
+                            disabled={!currentArtist}
                           >
                             <DownloadIcon className="h-4 w-4 mr-2" />
                             Descargar JSON
@@ -276,12 +278,13 @@ export default function ArtistGeneratorPage() {
 
                       <div className="mt-6">
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Biografía:</h4>
-                        <p className="text-sm">{currentArtist.biography}</p>
+                        <p className="text-sm">{currentArtist?.biography || "No hay biografía disponible"}</p>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="mt-2"
-                          onClick={() => handleCopyToClipboard(currentArtist.biography, "Biografía copiada")}
+                          onClick={() => handleCopyToClipboard(currentArtist?.biography || "", "Biografía copiada")}
+                          disabled={!currentArtist?.biography}
                         >
                           <CopyIcon className="h-3 w-3 mr-1" />
                           Copiar
@@ -294,23 +297,25 @@ export default function ArtistGeneratorPage() {
                             <AtSignIcon className="h-4 w-4 inline mr-1" /> Contacto:
                           </h4>
                           <p className="text-sm flex items-center">
-                            {currentArtist.management.email}
+                            {currentArtist?.management?.email || "Email no disponible"}
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0 ml-1"
-                              onClick={() => handleCopyToClipboard(currentArtist.management.email, "Email copiado")}
+                              onClick={() => handleCopyToClipboard(currentArtist?.management?.email || "", "Email copiado")}
+                              disabled={!currentArtist?.management?.email}
                             >
                               <CopyIcon className="h-3 w-3" />
                             </Button>
                           </p>
                           <p className="text-sm flex items-center">
-                            {currentArtist.management.phone}
+                            {currentArtist?.management?.phone || "Teléfono no disponible"}
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0 ml-1"
-                              onClick={() => handleCopyToClipboard(currentArtist.management.phone, "Teléfono copiado")}
+                              onClick={() => handleCopyToClipboard(currentArtist?.management?.phone || "", "Teléfono copiado")}
+                              disabled={!currentArtist?.management?.phone}
                             >
                               <CopyIcon className="h-3 w-3" />
                             </Button>
@@ -323,19 +328,20 @@ export default function ArtistGeneratorPage() {
                           </h4>
                           <p className="text-sm flex items-center">
                             <span className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded">
-                              {currentArtist.password.value}
+                              {currentArtist?.password?.value || "No disponible"}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0 ml-1"
-                              onClick={() => handleCopyToClipboard(currentArtist.password.value, "Contraseña copiada")}
+                              onClick={() => handleCopyToClipboard(currentArtist?.password?.value || "", "Contraseña copiada")}
+                              disabled={!currentArtist?.password?.value}
                             >
                               <CopyIcon className="h-3 w-3" />
                             </Button>
                           </p>
                           <p className="text-sm mt-1">
-                            Actualizada: {currentArtist.password.last_updated}
+                            Actualizada: {currentArtist?.password?.last_updated || "N/A"}
                           </p>
                         </div>
                       </div>
@@ -356,12 +362,13 @@ export default function ArtistGeneratorPage() {
                     <CardContent className="space-y-4">
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Descripción del Look:</h4>
-                        <p className="text-sm">{currentArtist.look.description}</p>
+                        <p className="text-sm">{currentArtist?.look?.description || "No hay descripción disponible"}</p>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="mt-1"
-                          onClick={() => handleCopyToClipboard(currentArtist.look.description, "Descripción copiada")}
+                          onClick={() => handleCopyToClipboard(currentArtist?.look?.description || "", "Descripción copiada")}
+                          disabled={!currentArtist?.look?.description}
                         >
                           <CopyIcon className="h-3 w-3 mr-1" />
                           Copiar
@@ -371,13 +378,14 @@ export default function ArtistGeneratorPage() {
                       <div className="mt-4">
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Paleta de Colores:</h4>
                         <div className="text-sm">
-                          {currentArtist.look.color_scheme}
+                          {currentArtist?.look?.color_scheme || "Paleta no disponible"}
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="mt-1"
-                          onClick={() => handleCopyToClipboard(currentArtist.look.color_scheme, "Paleta copiada")}
+                          onClick={() => handleCopyToClipboard(currentArtist?.look?.color_scheme || "", "Paleta copiada")}
+                          disabled={!currentArtist?.look?.color_scheme}
                         >
                           <CopyIcon className="h-3 w-3 mr-1" />
                           Copiar
@@ -386,8 +394,8 @@ export default function ArtistGeneratorPage() {
 
                       <div className="mt-4">
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">ID del Artista:</h4>
-                        <p className="text-sm font-mono">{currentArtist.id}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Firestore ID: {currentArtist.firestoreId || "N/A"}</p>
+                        <p className="text-sm font-mono">{currentArtist?.id || "ID no disponible"}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Firestore ID: {currentArtist?.firestoreId || "N/A"}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -400,69 +408,79 @@ export default function ArtistGeneratorPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Music2Icon className="mr-2 h-5 w-5 text-orange-500" />
-                      Álbum: {currentArtist.album.name}
+                      Álbum: {currentArtist?.album?.name || "Álbum sin nombre"}
                     </CardTitle>
                     <CardDescription className="flex items-center">
                       <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                      Fecha de lanzamiento: {currentArtist.album.release_date}
+                      Fecha de lanzamiento: {currentArtist?.album?.release_date || "Fecha no disponible"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                      <div>
-                        <h3 className="text-lg font-medium mb-2">Single Principal</h3>
-                        <div className="bg-orange-100/30 p-4 rounded-md">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-semibold">{currentArtist.album.single.title}</h4>
-                              <p className="text-sm text-muted-foreground">Duración: {currentArtist.album.single.duration}</p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCopyToClipboard(currentArtist.album.single.title, "Título de single copiado")}
-                            >
-                              <CopyIcon className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium mb-2">Canciones del Álbum</h3>
-                        <div className="space-y-2">
-                          {currentArtist.album.songs.map((song, index) => (
-                            <div 
-                              key={index}
-                              className="flex justify-between items-center p-3 rounded-md hover:bg-muted/50 transition-colors"
-                            >
+                      {currentArtist?.album?.single && (
+                        <div>
+                          <h3 className="text-lg font-medium mb-2">Single Principal</h3>
+                          <div className="bg-orange-100/30 p-4 rounded-md">
+                            <div className="flex justify-between items-center">
                               <div>
-                                <div className="flex items-center">
-                                  <span className="text-muted-foreground mr-3 w-6 text-center">{index + 1}</span>
-                                  <span className="font-medium">
-                                    {song.title}
-                                    {song.explicit && (
-                                      <span className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 rounded">
-                                        E
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                                <div className="flex text-xs text-muted-foreground ml-9 mt-0.5">
-                                  {song.composers.join(", ")} • {song.duration}
-                                </div>
+                                <h4 className="font-semibold">{currentArtist.album.single.title || "Sin título"}</h4>
+                                <p className="text-sm text-muted-foreground">Duración: {currentArtist.album.single.duration || "N/A"}</p>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleCopyToClipboard(song.title, "Título de canción copiado")}
+                                onClick={() => handleCopyToClipboard(currentArtist.album.single.title || "", "Título de single copiado")}
+                                disabled={!currentArtist.album.single.title}
                               >
                                 <CopyIcon className="h-4 w-4" />
                               </Button>
                             </div>
-                          ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {currentArtist?.album?.songs && currentArtist.album.songs.length > 0 ? (
+                        <div>
+                          <h3 className="text-lg font-medium mb-2">Canciones del Álbum</h3>
+                          <div className="space-y-2">
+                            {currentArtist.album.songs.map((song, index) => (
+                              <div 
+                                key={index}
+                                className="flex justify-between items-center p-3 rounded-md hover:bg-muted/50 transition-colors"
+                              >
+                                <div>
+                                  <div className="flex items-center">
+                                    <span className="text-muted-foreground mr-3 w-6 text-center">{index + 1}</span>
+                                    <span className="font-medium">
+                                      {song.title || "Sin título"}
+                                      {song.explicit && (
+                                        <span className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 rounded">
+                                          E
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex text-xs text-muted-foreground ml-9 mt-0.5">
+                                    {song.composers?.join(", ") || "Compositor desconocido"} • {song.duration || "N/A"}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleCopyToClipboard(song.title || "", "Título de canción copiado")}
+                                  disabled={!song.title}
+                                >
+                                  <CopyIcon className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-muted-foreground py-6">
+                          No hay canciones disponibles
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -481,59 +499,70 @@ export default function ArtistGeneratorPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div>
-                      <h3 className="text-sm font-medium mb-2 flex items-center">
-                        <SquareUserIcon className="h-4 w-4 mr-2 text-orange-500" />
-                        Look del Artista
-                      </h3>
-                      <div className="relative bg-muted p-4 rounded-md">
-                        <p className="text-sm">{currentArtist.image_prompts.artist_look}</p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleCopyToClipboard(currentArtist.image_prompts.artist_look, "Prompt de artista copiado")}
-                        >
-                          <CopyIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    {currentArtist?.image_prompts ? (
+                      <>
+                        <div>
+                          <h3 className="text-sm font-medium mb-2 flex items-center">
+                            <SquareUserIcon className="h-4 w-4 mr-2 text-orange-500" />
+                            Look del Artista
+                          </h3>
+                          <div className="relative bg-muted p-4 rounded-md">
+                            <p className="text-sm">{currentArtist.image_prompts.artist_look || "No hay prompt disponible"}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => handleCopyToClipboard(currentArtist.image_prompts.artist_look || "", "Prompt de artista copiado")}
+                              disabled={!currentArtist.image_prompts.artist_look}
+                            >
+                              <CopyIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
 
-                    <div>
-                      <h3 className="text-sm font-medium mb-2 flex items-center">
-                        <Music2Icon className="h-4 w-4 mr-2 text-orange-500" />
-                        Portada del Álbum
-                      </h3>
-                      <div className="relative bg-muted p-4 rounded-md">
-                        <p className="text-sm">{currentArtist.image_prompts.album_cover}</p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleCopyToClipboard(currentArtist.image_prompts.album_cover, "Prompt de portada copiado")}
-                        >
-                          <CopyIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                        <div>
+                          <h3 className="text-sm font-medium mb-2 flex items-center">
+                            <Music2Icon className="h-4 w-4 mr-2 text-orange-500" />
+                            Portada del Álbum
+                          </h3>
+                          <div className="relative bg-muted p-4 rounded-md">
+                            <p className="text-sm">{currentArtist.image_prompts.album_cover || "No hay prompt disponible"}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => handleCopyToClipboard(currentArtist.image_prompts.album_cover || "", "Prompt de portada copiado")}
+                              disabled={!currentArtist.image_prompts.album_cover}
+                            >
+                              <CopyIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
 
-                    <div>
-                      <h3 className="text-sm font-medium mb-2 flex items-center">
-                        <Share2Icon className="h-4 w-4 mr-2 text-orange-500" />
-                        Foto Promocional
-                      </h3>
-                      <div className="relative bg-muted p-4 rounded-md">
-                        <p className="text-sm">{currentArtist.image_prompts.promotional}</p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleCopyToClipboard(currentArtist.image_prompts.promotional, "Prompt promocional copiado")}
-                        >
-                          <CopyIcon className="h-4 w-4" />
-                        </Button>
+                        <div>
+                          <h3 className="text-sm font-medium mb-2 flex items-center">
+                            <Share2Icon className="h-4 w-4 mr-2 text-orange-500" />
+                            Foto Promocional
+                          </h3>
+                          <div className="relative bg-muted p-4 rounded-md">
+                            <p className="text-sm">{currentArtist.image_prompts.promotional || "No hay prompt disponible"}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => handleCopyToClipboard(currentArtist.image_prompts.promotional || "", "Prompt promocional copiado")}
+                              disabled={!currentArtist.image_prompts.promotional}
+                            >
+                              <CopyIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center text-muted-foreground py-6">
+                        No hay prompts de imagen disponibles
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -552,32 +581,40 @@ export default function ArtistGeneratorPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(currentArtist.social_media).map(([platform, data]) => (
-                          <div key={platform} className="flex items-center justify-between p-3 bg-muted/40 rounded-md">
-                            <div>
-                              <div className="font-medium capitalize mb-1">{platform}</div>
-                              <div className="text-sm text-muted-foreground">{data.handle}</div>
+                      {currentArtist?.social_media ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.entries(currentArtist.social_media).map(([platform, data]) => (
+                            <div key={platform} className="flex items-center justify-between p-3 bg-muted/40 rounded-md">
+                              <div>
+                                <div className="font-medium capitalize mb-1">{platform}</div>
+                                <div className="text-sm text-muted-foreground">{data.handle || "Sin usuario"}</div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCopyToClipboard(data.handle || "", `@${data.handle} copiado`)}
+                                  disabled={!data.handle}
+                                >
+                                  <CopyIcon className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCopyToClipboard(data.url || "", "URL copiada")}
+                                  disabled={!data.url}
+                                >
+                                  URL
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCopyToClipboard(data.handle, `@${data.handle} copiado`)}
-                              >
-                                <CopyIcon className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCopyToClipboard(data.url, "URL copiada")}
-                              >
-                                URL
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center text-muted-foreground py-6">
+                          No hay información de redes sociales disponible
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -585,7 +622,7 @@ export default function ArtistGeneratorPage() {
             </Tabs>
           )}
 
-          {savedArtists.length > 0 && (
+          {savedArtists && savedArtists.length > 0 && (
             <div className="mt-12">
               <h2 className="text-2xl font-bold mb-6">Artistas Generados ({savedArtists.length})</h2>
               <ScrollArea className="h-[300px] rounded-md border p-4">
@@ -597,13 +634,17 @@ export default function ArtistGeneratorPage() {
                           <User2Icon className="h-6 w-6 text-orange-500" />
                         </Avatar>
                         <div>
-                          <h3 className="font-medium">{artist.name}</h3>
+                          <h3 className="font-medium">{artist?.name || "Artista sin nombre"}</h3>
                           <div className="text-sm text-muted-foreground flex flex-wrap gap-1 mt-1">
-                            {artist.music_genres.map((genre, i) => (
-                              <span key={i} className="inline-block">
-                                {genre}{i < artist.music_genres.length - 1 ? "," : ""}
-                              </span>
-                            ))}
+                            {artist?.music_genres?.length ? (
+                              artist.music_genres.map((genre, i) => (
+                                <span key={i} className="inline-block">
+                                  {genre}{i < artist.music_genres.length - 1 ? "," : ""}
+                                </span>
+                              ))
+                            ) : (
+                              <span>Sin géneros musicales</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -623,7 +664,7 @@ export default function ArtistGeneratorPage() {
                             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
                             const linkElement = document.createElement('a');
                             linkElement.setAttribute('href', dataUri);
-                            linkElement.setAttribute('download', `${artist.name.replace(/\s+/g, '_')}_metadata.json`);
+                            linkElement.setAttribute('download', `${(artist?.name || 'artista').replace(/\s+/g, '_')}_metadata.json`);
                             document.body.appendChild(linkElement);
                             linkElement.click();
                             document.body.removeChild(linkElement);
