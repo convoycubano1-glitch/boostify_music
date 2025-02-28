@@ -290,7 +290,7 @@ export default function ArtistGeneratorPage() {
   const generateArtistMutation = useMutation({
     mutationFn: async () => {
       try {
-        const response = await fetch('/api/generate-artist', {
+        const response = await fetch('/api/artist-generator/generate-artist', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -448,7 +448,7 @@ export default function ArtistGeneratorPage() {
     mutationFn: async ({ field, artistId }: { field: string, artistId: string }) => {
       setIsRegenerating(field);
       try {
-        const response = await fetch('/api/regenerate-artist-field', {
+        const response = await fetch('/api/artist-generator/regenerate-artist-field', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -651,7 +651,7 @@ export default function ArtistGeneratorPage() {
   const deleteArtistMutation = useMutation({
     mutationFn: async (artistId: string) => {
       setIsDeleting(true);
-      const response = await fetch(`/api/delete-artist/${artistId}`, {
+      const response = await fetch(`/api/artist-generator/delete-artist/${artistId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -708,7 +708,7 @@ export default function ArtistGeneratorPage() {
   const deleteAllArtistsMutation = useMutation({
     mutationFn: async () => {
       setIsDeletingAll(true);
-      const response = await fetch(`/api/delete-all-artists`, {
+      const response = await fetch(`/api/artist-generator/delete-all-artists`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

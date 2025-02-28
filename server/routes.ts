@@ -56,6 +56,38 @@ export function registerRoutes(app: Express): Server {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Health check and status endpoints (no authentication required)
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
+  app.get('/api/status', (req, res) => {
+    // Check database connection if needed
+    const databaseStatus = db ? 'connected' : 'disconnected';
+    
+    // Basic system information
+    const status = {
+      server: {
+        status: 'ok',
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || '1.0.0',
+      },
+      database: {
+        status: databaseStatus
+      },
+      serviceStatus: {
+        firebase: !!process.env.VITE_FIREBASE_API_KEY ? 'configured' : 'not_configured',
+        stripe: !!process.env.STRIPE_SECRET_KEY ? 'configured' : 'not_configured',
+        openai: !!process.env.OPENAI_API_KEY ? 'configured' : 'not_configured',
+        apify: !!process.env.APIFY_API_TOKEN ? 'configured' : 'not_configured',
+      }
+    };
+    
+    res.status(200).json(status);
+  });
+
   // Register translation routes
   app.use('/api', translationRouter);
 
@@ -71,7 +103,7 @@ export function registerRoutes(app: Express): Server {
   app.use(generatedArtistsRouter);
 
   // Register artist generator routes (no authentication required)
-  app.use('/artist-generator', artistGeneratorRouter); // Added route registration
+  app.use('/api/artist-generator', artistGeneratorRouter); // La URL resultante será /api/artist-generator/generate-artist
 
   // Servicios que requieren autenticación
   setupAuth(app);
@@ -861,8 +893,10 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Root endpoint for deployment health checks
-  app.get('/', (req, res) => {
+  // Solo registramos el endpoint de API en /api/status para verificación de salud
+  // No definimos nada para la ruta raíz '/' para permitir que la configuración de Vite
+  // sirva la aplicación web (client/index.html)
+  app.get('/api/status', (req, res) => {
     res.status(200).json({
       status: "online",
       message: "Boostify Music API is running",

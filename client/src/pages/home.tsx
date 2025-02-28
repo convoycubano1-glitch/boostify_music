@@ -453,13 +453,12 @@ export default function HomePage() {
               {/* Video */}
               <div className="relative group">
                 <video
-                  className="w-full rounded-lg relative"
+                  className="w-full rounded-lg relative custom-video-player"
                   controls
                   autoPlay
                   loop
                   muted
                   controlsList="nodownload"
-                  className="custom-video-player"
                 >
                   <source src="/assets/indications/Welcome to Boostify Music 1.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
@@ -636,9 +635,9 @@ export default function HomePage() {
             <Link href="/artist-image-advisor">
               <motion.div
                 whileHover={{ scale: 1.02 }}
-                className="relative groupcursor-pointer"
+                className="relative group cursor-pointer"
               >
-                <div className="absolute inset0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg blur-xl group-hover:bg-orange-500/30 transition-all duration-300" />
                 <Card className="p-8 bg-black/50 backdrop-blur-sm border-orange-500/10 relative h-full overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
 

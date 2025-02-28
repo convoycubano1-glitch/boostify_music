@@ -259,9 +259,38 @@ if (process.env.NODE_ENV === "production") {
       });
     });
 
-    // Check for required environment variables
-    if (process.env.NODE_ENV === "production" && !process.env.OPENAI_API_KEY) {
-      log('⚠️ Warning: OPENAI_API_KEY environment variable is not set');
+    // Check for required environment variables in production
+    if (process.env.NODE_ENV === "production") {
+      // Critical environment variables
+      const criticalEnvVars = [
+        { name: 'OPENAI_API_KEY', description: 'OpenAI API access' },
+        { name: 'SESSION_SECRET', description: 'Secure session management' },
+        { name: 'DATABASE_URL', description: 'Database connection' }
+      ];
+      
+      // Warning for missing critical variables
+      criticalEnvVars.forEach(({name, description}) => {
+        if (!process.env[name]) {
+          log(`⚠️ Warning: ${name} environment variable is not set (${description})`);
+        } else {
+          log(`✅ ${name} is configured and ready for use`);
+        }
+      });
+      
+      // Check if running under PM2 (recommended for production)
+      if (process.env.PM2_HOME) {
+        log('✅ Running under PM2 process manager');
+        
+        // Log PM2 configuration if available
+        if (process.env.PM2_INSTANCES) {
+          log(`📊 PM2 Instances: ${process.env.PM2_INSTANCES}`);
+        }
+        if (process.env.PM2_EXEC_MODE) {
+          log(`📊 PM2 Execution Mode: ${process.env.PM2_EXEC_MODE}`);
+        }
+      } else {
+        log('⚠️ Not running under PM2. For production, it is recommended to use PM2 for process management');
+      }
     } else if (process.env.OPENAI_API_KEY) {
       log('✅ OPENAI_API_KEY is configured and ready for use');
     }
@@ -272,19 +301,35 @@ if (process.env.NODE_ENV === "production") {
       await setupVite(app, server);
     }
 
-    // Usar el puerto configurado o 5000 como fallback
-    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+    // Usar el puerto configurado, puerto de Replit, o 5000 como fallback
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 
+                (process.env.REPLIT_PORT ? parseInt(process.env.REPLIT_PORT, 10) : 5000);
     
-    // Iniciar el servidor en un puerto específico
+    // Determinar si estamos en un entorno de Replit
+    const isReplitEnv = !!process.env.REPL_SLUG || !!process.env.REPLIT_IDENTITY;
+    
+    // En producción, asegurarnos de que escuchamos en el puerto correcto
+    if (process.env.NODE_ENV === "production") {
+      log(`🚀 Iniciando servidor en modo producción en puerto ${PORT}`);
+    }
+    
+    // Iniciar el servidor en un puerto específico - siempre en 0.0.0.0 para asegurar accesibilidad externa
+    // El valor 0.0.0.0 hace que el servidor escuche en todas las interfaces de red (incluida localhost)
     server.listen(PORT, '0.0.0.0', () => {
       log(`✅ Server started on port ${PORT}`);
       log(`🌍 Environment: ${app.get("env")}`);
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ? 
         path.resolve(process.cwd(), 'dist', 'public') : 
         path.join(process.cwd(), 'client/public')}`);
-      log(`🔗 Access URL: ${process.env.REPL_SLUG ? 
-        `https://${process.env.REPL_SLUG}.replit.app` : 
-        `http://localhost:${PORT}`}`);
+      
+      // URL de acceso adaptada al entorno
+      const accessURL = isReplitEnv ? 
+        `https://${process.env.REPL_SLUG || 'your-replit'}.replit.app` : 
+        process.env.NODE_ENV === "production" ? 
+          `${process.env.APP_URL || 'https://your-app-domain.com'}` : 
+          `http://localhost:${PORT}`;
+      
+      log(`🔗 Access URL: ${accessURL}`);
     });
     
     // Manejar errores del servidor

@@ -40,7 +40,7 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
  * Endpoint para generar un artista aleatorio
  * Puede ser usado con o sin autenticación
  */
-router.post("/api/generate-artist", async (req: Request, res: Response) => {
+router.post("/generate-artist", async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud para generar artista aleatorio');
 
@@ -76,7 +76,7 @@ router.post("/api/generate-artist", async (req: Request, res: Response) => {
  * Endpoint para generar un artista aleatorio (requiere autenticación)
  * Versión protegida del endpoint anterior
  */
-router.post("/api/generate-artist/secure", authenticate, async (req: Request, res: Response) => {
+router.post("/generate-artist/secure", authenticate, async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud autenticada para generar artista aleatorio');
 
@@ -115,7 +115,7 @@ router.post("/api/generate-artist/secure", authenticate, async (req: Request, re
  * Endpoint para regenerar campos específicos de un artista
  * Tales como suscripción, compras de videos, o cursos
  */
-router.post("/api/regenerate-artist-field", async (req: Request, res: Response) => {
+router.post("/regenerate-artist-field", async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud para regenerar campo de artista');
 
@@ -263,7 +263,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
 /**
  * Endpoint para eliminar un artista
  */
-router.delete("/api/delete-artist/:id", async (req: Request, res: Response) => {
+router.delete("/delete-artist/:id", async (req: Request, res: Response) => {
   try {
     const artistId = req.params.id;
     console.log(`Recibida solicitud para eliminar artista con ID: ${artistId}`);
@@ -307,7 +307,7 @@ router.delete("/api/delete-artist/:id", async (req: Request, res: Response) => {
 /**
  * Endpoint para eliminar todos los artistas generados
  */
-router.delete("/api/delete-all-artists", async (req: Request, res: Response) => {
+router.delete("/delete-all-artists", async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud para eliminar todos los artistas');
 
