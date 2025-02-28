@@ -8,6 +8,7 @@ const router = Router();
 
 /**
  * Obtiene todos los artistas generados
+ * Esta ruta no requiere autenticación porque solo es para fines de análisis de datos
  * @route GET /api/artists/generated
  */
 router.get('/api/artists/generated', async (req: Request, res: Response) => {

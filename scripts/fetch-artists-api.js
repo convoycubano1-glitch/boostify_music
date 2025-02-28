@@ -2,7 +2,7 @@
  * Script para extraer y mostrar datos de artistas generados a través de la API
  * Usa las rutas del servidor para obtener los datos
  */
-const axios = require('axios');
+import axios from 'axios';
 
 // Configuración base
 const API_BASE_URL = 'http://localhost:5000';
