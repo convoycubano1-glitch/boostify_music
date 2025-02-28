@@ -15,7 +15,8 @@ import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowUpRight, DollarSign, FileVideo, GraduationCap } from 'lucide-react';
+import { ArrowUpRight, DollarSign, FileVideo, GraduationCap, ChartPieIcon, BarChart2 } from 'lucide-react';
+import ArtistAnalyticsTab from '../components/analytics/artist-analytics-tab';
 import {
   ImageIcon,
   Music2Icon,
@@ -809,6 +810,10 @@ export default function ArtistGeneratorPage() {
                 <TabsTrigger value="image">Imagen</TabsTrigger>
                 <TabsTrigger value="social">Social</TabsTrigger>
                 <TabsTrigger value="subscription">Suscripción</TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-1">
+                  <BarChart2 className="h-4 w-4" />
+                  <span>Análisis</span>
+                </TabsTrigger>
               </TabsList>
 
               {/* PERFIL */}
