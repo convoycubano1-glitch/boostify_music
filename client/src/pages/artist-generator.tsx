@@ -352,6 +352,9 @@ export default function ArtistGeneratorPage() {
         // Solo mantener los 10 más recientes
         setSavedArtists(prev => [newArtist, ...prev.slice(0, 9)]);
         
+        // Incrementar el contador total de artistas
+        setTotalArtistsCount(prevCount => prevCount + 1);
+        
         toast({
           title: "Artista generado con éxito",
           description: `${newArtist.name} ha sido creado y guardado en Firestore con ID: ${newArtist.firestoreId || 'N/A'}.`
@@ -666,6 +669,9 @@ export default function ArtistGeneratorPage() {
       // Eliminar el artista del estado local
       setSavedArtists(prev => prev.filter(artist => artist.firestoreId !== data.deletedId));
       
+      // Decrementar el contador total de artistas
+      setTotalArtistsCount(prevCount => Math.max(0, prevCount - 1));
+      
       // Si el artista actual es el que se eliminó, seleccionar otro
       if (currentArtist?.firestoreId === data.deletedId) {
         if (savedArtists.length > 1) {
@@ -719,6 +725,9 @@ export default function ArtistGeneratorPage() {
     onSuccess: (data) => {
       // Limpiar el estado local
       setSavedArtists([]);
+      
+      // Resetear el contador total de artistas a cero
+      setTotalArtistsCount(0);
       
       // Mostrar un artista placeholder
       setCurrentArtist(createEmptyArtist());
