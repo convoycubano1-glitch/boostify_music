@@ -31,7 +31,7 @@ function generateRandomDuration(): string {
  * Genera un artista aleatorio con todos los datos necesarios
  * @returns Datos del artista generado
  */
-function generateRandomArtist() {
+export function generateRandomArtist() {
   // Usar semilla aleatoria para tener consistencia por artista
   const seed = Math.floor(Math.random() * 10000);
   faker.seed(seed);

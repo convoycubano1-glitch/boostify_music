@@ -91,18 +91,31 @@ export default function ArtistGeneratorPage() {
         method: "POST",
         data: {}
       });
+      console.log("API response:", response);
       return response;
     },
-    onSuccess: (data) => {
-      const newArtist = data.data;
-      setCurrentArtist(newArtist);
-      // Guardar el artista en el arreglo de artistas guardados
-      setSavedArtists(prev => [...prev, newArtist]);
+    onSuccess: (response) => {
+      console.log("Mutation success, data:", response);
+      // Asegurarse de que tenemos datos y son del tipo correcto
+      if (response && response.data) {
+        const newArtist = response.data as ArtistData;
+        setCurrentArtist(newArtist);
+        // Guardar el artista en el arreglo de artistas guardados
+        setSavedArtists(prev => [...prev, newArtist]);
+        
+        toast({
+          title: "Artista generado con éxito",
+          description: `${newArtist.name} ha sido creado y guardado en Firestore con ID: ${newArtist.firestoreId || 'N/A'}.`
+        });
+      } else {
+        console.error("La respuesta no contiene datos de artista:", response);
+        toast({
+          title: "Error de datos",
+          description: "La respuesta no contiene un artista válido",
+          variant: "destructive"
+        });
+      }
       setIsLoading(false);
-      toast({
-        title: "Artista generado con éxito",
-        description: `${newArtist.name} ha sido creado y guardado en Firestore con ID: ${newArtist.firestoreId}.`
-      });
     },
     onError: (error) => {
       console.error("Error al generar artista:", error);
@@ -111,6 +124,7 @@ export default function ArtistGeneratorPage() {
         description: "No se pudo generar el artista aleatorio.",
         variant: "destructive"
       });
+      setIsLoading(false);
     }
   });
 
