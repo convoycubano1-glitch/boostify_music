@@ -302,11 +302,25 @@ export default function ArtistGeneratorPage() {
     },
     onError: (error) => {
       console.error("Error al generar artista:", error);
+      
+      let errorMessage = "No se pudo generar el artista aleatorio. Por favor, intenta nuevamente.";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message || errorMessage;
+      }
+      
       toast({
-        title: "Error",
-        description: "No se pudo generar el artista aleatorio. Por favor, intenta nuevamente.",
+        title: "Error de generación",
+        description: errorMessage,
         variant: "destructive"
       });
+      
+      // Si hay error, establecemos un artista vacío para evitar errores en la UI
+      const fallbackArtist = createEmptyArtist();
+      fallbackArtist.name = "Error de generación";
+      fallbackArtist.biography = "Ocurrió un error al generar este artista. Por favor, intenta nuevamente.";
+      setCurrentArtist(fallbackArtist);
+      
       setIsLoading(false);
     }
   });
