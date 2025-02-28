@@ -25,7 +25,7 @@ export default function AnalyticsDashboardPage() {
     async function fetchSummaryData() {
       try {
         // Obtener datos de artistas para generar resumen
-        const artistsCollection = collection(db, 'generated-artists');
+        const artistsCollection = collection(db, 'generated_artists');
         const artistsSnapshot = await getDocs(artistsCollection);
         const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,

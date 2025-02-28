@@ -27,7 +27,7 @@ export default function UserGrowthDashboard() {
     async function fetchUserData() {
       try {
         // Obtener datos de artistas
-        const artistsCollection = collection(db, 'generated-artists');
+        const artistsCollection = collection(db, 'generated_artists');
         const artistsSnapshot = await getDocs(artistsCollection);
         const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,
