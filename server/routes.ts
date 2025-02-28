@@ -863,10 +863,21 @@ export function registerRoutes(app: Express): Server {
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
-    res.json({
-      status: 'ok',
-      message: 'Server is running',
+    res.status(200).json({ 
+      status: "healthy",
+      environment: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString()
+    });
+  });
+
+  // Deployment verification endpoint
+  app.get("/api/deployment-info", (_req, res) => {
+    res.status(200).json({
+      status: "online",
+      version: "1.0.0",
+      environment: process.env.NODE_ENV || 'development',
+      timestamp: new Date().toISOString(),
+      serverPath: __dirname
     });
   });
 
