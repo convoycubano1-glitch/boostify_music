@@ -65,13 +65,15 @@ export function generateRandomArtist() {
   ];
   const selectedPlan = faker.helpers.arrayElement(SUBSCRIPTION_PLANS);
   
-  // Datos de videos generados - Asegurar que siempre tengan al menos 1 video
+  // Datos de videos generados - 30% probabilidad de tener videos
   const videoPrice = 199;
-  const videosGenerated = faker.number.int({ min: 1, max: 5 });
+  const hasVideos = faker.datatype.boolean(0.3); // 30% de probabilidad según lo solicitado
+  const videosGenerated = hasVideos ? faker.number.int({ min: 1, max: 5 }) : 0;
   const totalVideoSpend = videoPrice * videosGenerated;
   
-  // Datos de cursos comprados - Asegurar que siempre tengan al menos 1 curso
-  const coursesData = generateRandomCourses(faker, true); // Parámetro adicional para forzar cursos
+  // Datos de cursos comprados - 5% probabilidad de tener cursos
+  const hasCourses = faker.datatype.boolean(0.05); // 5% de probabilidad según lo solicitado
+  const coursesData = generateRandomCourses(faker, hasCourses); // Solo fuerza cursos si la probabilidad lo permite
   const totalCourseSpend = coursesData.reduce((total, course) => total + course.price, 0);
 
   // Generar título del álbum
@@ -223,13 +225,13 @@ export function generateRandomArtist() {
       videos: {
         count: videosGenerated,
         totalSpent: totalVideoSpend,
-        lastPurchase: faker.date.recent().toISOString().split('T')[0],
+        lastPurchase: videosGenerated > 0 ? faker.date.recent().toISOString().split('T')[0] : null,
         videos: videos
       },
       courses: {
         count: coursesData.length,
         totalSpent: totalCourseSpend,
-        lastPurchase: faker.date.recent().toISOString().split('T')[0],
+        lastPurchase: coursesData.length > 0 ? faker.date.recent().toISOString().split('T')[0] : null,
         courses: coursesData
       }
     }
@@ -245,9 +247,13 @@ export function generateRandomArtist() {
  * @returns Array de cursos comprados
  */
 function generateRandomCourses(faker: any, forceAtLeastOne: boolean = false) {
-  const courseCount = forceAtLeastOne 
-    ? faker.number.int({ min: 1, max: 3 }) 
-    : faker.number.int({ min: 0, max: 3 });
+  // Si no hay que forzar cursos, devolver un array vacío
+  if (!forceAtLeastOne) {
+    return [];
+  }
+
+  // Si forzamos cursos, generar entre 1 y 3 cursos
+  const courseCount = faker.number.int({ min: 1, max: 3 });
   const courses = [];
   
   const COURSE_TITLES = [
