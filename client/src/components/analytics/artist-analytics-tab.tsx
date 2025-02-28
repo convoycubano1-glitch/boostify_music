@@ -477,7 +477,7 @@ export default function ArtistAnalyticsTab() {
       <div className="space-y-6 mb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Análisis Detallado</h2>
-          <div className="text-sm px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+          <div className="text-sm px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-md font-medium">
             Actualizado: {new Date().toLocaleDateString()}
           </div>
         </div>
