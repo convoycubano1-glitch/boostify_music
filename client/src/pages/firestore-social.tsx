@@ -81,6 +81,19 @@ export default function FirestoreSocialPage() {
       }) as Promise<Post[]>;
     }
   });
+  
+  // Consulta para obtener posts guardados
+  const { data: savedPosts, refetch: refetchSavedPosts } = useQuery({
+    queryKey: ["/api/firestore-social/user/saved-posts"],
+    queryFn: async () => {
+      return apiRequest({ 
+        url: "/api/firestore-social/user/saved-posts", 
+        method: "GET",
+        data: { userId: user?.uid || "1" }
+      }) as Promise<Post[]>;
+    },
+    enabled: activeTab === "saved" // Solo se ejecuta cuando la pestaña "saved" está activa
+  });
 
   // Mutación para crear un nuevo post
   const createPostMutation = useMutation({
@@ -114,11 +127,57 @@ export default function FirestoreSocialPage() {
     mutationFn: async (postId: string) => {
       return apiRequest({
         url: `/api/firestore-social/posts/${postId}/like`,
-        method: "POST"
+        method: "POST",
+        data: { userId: user?.uid || "1" }
       }) as Promise<Post>;
     },
     onSuccess: () => {
       refetchPosts();
+      toast({
+        description: "Post liked successfully",
+        duration: 2000
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error liking post",
+        description: "An error occurred while liking the post. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error liking post:", error);
+    }
+  });
+  
+  // Mutación para guardar un post
+  const savePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      return apiRequest({
+        url: `/api/firestore-social/posts/${postId}/save`,
+        method: "POST",
+        data: { userId: user?.uid || "1" }
+      }) as Promise<{ success: boolean }>;
+    },
+    onSuccess: () => {
+      // Actualizar tanto la lista principal como la de posts guardados
+      refetchPosts();
+      
+      // Solo refrescar la lista de posts guardados si estamos en esa pestaña
+      if (activeTab === "saved") {
+        refetchSavedPosts();
+      }
+      
+      toast({
+        description: "Post saved successfully",
+        duration: 2000
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error saving post",
+        description: "An error occurred while saving the post. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error saving post:", error);
     }
   });
 
@@ -193,6 +252,12 @@ export default function FirestoreSocialPage() {
       }
     };
 
+    const handleSave = () => {
+      if (post.id) {
+        savePostMutation.mutate(post.id);
+      }
+    };
+
     const handleComment = () => {
       if (post.id && newCommentContent.trim()) {
         commentPostMutation.mutate({
@@ -204,11 +269,25 @@ export default function FirestoreSocialPage() {
       }
     };
 
+    // Formatear la fecha en un formato más amigable
+    const formatDate = (date: Date) => {
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 24) {
+        return diffInHours === 0 
+          ? 'Today' 
+          : `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+      } else {
+        return date.toLocaleDateString();
+      }
+    };
+
     return (
-      <Card className="mb-4">
+      <Card className="mb-4 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
           <div className="flex items-center">
-            <Avatar className="mr-2">
+            <Avatar className="mr-2 ring-2 ring-primary/10">
               <AvatarImage src={post.user?.avatar} />
               <AvatarFallback className={getAvatarColor(post.user?.displayName || "Usuario")}>{getInitials(post.user?.displayName || "Usuario")}</AvatarFallback>
             </Avatar>
@@ -218,10 +297,10 @@ export default function FirestoreSocialPage() {
                 {getBotBadge(post.user as SocialUser)}
               </div>
               <div className="text-xs text-muted-foreground">
-                {new Date(post.createdAt).toLocaleDateString()}
+                {formatDate(new Date(post.createdAt))}
               </div>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
               <span className={`${LANGUAGE_BADGE_CLASS} ${
                 post.user?.language === 'es' 
                   ? 'bg-orange-100 text-orange-800' 
@@ -233,29 +312,39 @@ export default function FirestoreSocialPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">{post.content}</p>
-          <div className="flex items-center gap-4 text-sm mb-4">
-            <button 
-              className={`${INFO_GROUP_CLASS} ${post.isLiked ? 'text-red-500' : ''}`}
-              onClick={handleLike}
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24" 
-                fill={post.isLiked ? "currentColor" : "none"}
-                stroke="currentColor"
-                className="w-5 h-5"
+          <p className="mb-4 text-base">{post.content}</p>
+          <div className="flex items-center justify-between text-sm mb-4 border-t border-b py-2">
+            <div className="flex items-center gap-4">
+              <button 
+                className={`${INFO_GROUP_CLASS} ${post.isLiked ? 'text-red-500 font-medium' : ''} transition-colors hover:text-red-400`}
+                onClick={handleLike}
               >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-              <span>{post.likes} Likes</span>
-            </button>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill={post.isLiked ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                  strokeWidth={post.isLiked ? "0" : "2"}
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+                <span>{post.likes} Likes</span>
+              </button>
+              <button 
+                className={`${INFO_GROUP_CLASS} hover:text-primary/80 transition-colors`}
+                onClick={() => setShowCommentInput(!showCommentInput)}
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>{post.comments?.length || 0} Comments</span>
+              </button>
+            </div>
             <button 
-              className={INFO_GROUP_CLASS}
-              onClick={() => setShowCommentInput(!showCommentInput)}
+              className={`${INFO_GROUP_CLASS} ${post.isSaved ? 'text-primary font-medium' : ''} hover:text-primary/80 transition-colors`}
+              onClick={handleSave}
             >
-              <MessageSquare className="w-5 h-5" />
-              <span>{post.comments?.length || 0} Comments</span>
+              <BookMarked className="w-5 h-5" />
+              <span>{post.isSaved ? 'Saved' : 'Save'}</span>
             </button>
           </div>
 
@@ -265,13 +354,13 @@ export default function FirestoreSocialPage() {
                 value={newCommentContent}
                 onChange={(e) => setNewCommentContent(e.target.value)}
                 placeholder="Write a comment..."
-                className="mb-2"
+                className="mb-2 focus-visible:ring-primary/50"
               />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setShowCommentInput(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleComment}>
+                <Button size="sm" onClick={handleComment} disabled={!newCommentContent.trim()}>
                   Comment
                 </Button>
               </div>
@@ -279,9 +368,9 @@ export default function FirestoreSocialPage() {
           )}
 
           {post.comments && post.comments.length > 0 && (
-            <div className="space-y-3 mt-4 border-t pt-3">
+            <div className="space-y-3 mt-4 pt-1">
               {post.comments.map((comment) => (
-                <div key={comment.id} className="flex items-start gap-2">
+                <div key={comment.id} className="flex items-start gap-2 animate-in fade-in-50 duration-300">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={comment.user?.avatar} />
                     <AvatarFallback className={getAvatarColor(comment.user?.displayName || "Usuario")}>{getInitials(comment.user?.displayName || "Usuario")}</AvatarFallback>
@@ -295,8 +384,8 @@ export default function FirestoreSocialPage() {
                       <p className="text-sm">{comment.content}</p>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      <button>{comment.likes} Likes</button>
+                      <span>{formatDate(new Date(comment.createdAt))}</span>
+                      <button className="hover:text-primary transition-colors">{comment.likes} Likes</button>
                     </div>
                   </div>
                 </div>
@@ -439,15 +528,43 @@ export default function FirestoreSocialPage() {
             </TabsContent>
 
             <TabsContent value="saved">
-              <Card>
+              <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle>Saved Posts</CardTitle>
-                  <CardDescription>Posts you've saved for later</CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookMarked className="w-5 h-5" />
+                    Saved Posts
+                  </CardTitle>
+                  <CardDescription>Posts you've saved for later reference</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p>Saved posts functionality in development.</p>
-                </CardContent>
               </Card>
+
+              {/* Lista de posts guardados */}
+              {savedPosts ? (
+                savedPosts.length > 0 ? (
+                  savedPosts.map((post) => <PostCard key={post.id} post={post} />)
+                ) : (
+                  <div className="text-center py-10 bg-muted/20 rounded-lg">
+                    <BookMarked className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground">No saved posts yet.</p>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Start saving posts you'd like to refer back to later.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-4"
+                      onClick={() => setActiveTab("feed")}
+                    >
+                      Browse feed
+                    </Button>
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 bg-muted/20 rounded-lg">
+                  <div className="animate-pulse h-8 w-8 rounded-full bg-muted mb-4"></div>
+                  <p className="text-muted-foreground">Loading saved posts...</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

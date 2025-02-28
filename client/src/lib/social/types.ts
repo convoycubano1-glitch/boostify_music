@@ -36,6 +36,7 @@ export interface Post {
   content: string;
   likes: number;
   isLiked?: boolean;
+  isSaved?: boolean;
   comments?: Comment[];
   createdAt: string;
   updatedAt: string;
