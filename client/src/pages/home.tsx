@@ -12,13 +12,10 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Footer } from "@/components/layout/footer";
-import backgroundVideo from "../images/videos/Standard_Mode_Generated_Video.mp4";
-import bostifyVideo from "../images/videos/bostify.mp4";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect } from "react";
 import { SuperAgent } from "@/components/agents/super-agent";
-import welcomeVideo from "/assets/indications/Welcome to Boostify Music.mp4";
 
 /* =============================
    VARIANTES PARA ANIMACIONES
@@ -539,7 +536,7 @@ export default function HomePage() {
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          src="/assets/Standard_Mode_Generated_Video (4).mp4"
+          src="/assets/Standard_Mode_Generated_Video (9).mp4"
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
