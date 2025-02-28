@@ -228,11 +228,60 @@ export async function generateRandomArtist() {
   const hairColor = faker.helpers.arrayElement(['negro', 'castaño oscuro', 'castaño claro', 'rubio', 'pelirrojo', 'gris', 'teñido de azul', 'teñido de verde', 'teñido de morado', 'teñido de rosa']);
   const bodyType = faker.helpers.arrayElement(['delgado', 'atlético', 'musculoso', 'robusto', 'curvilíneo']);
 
-  // Descripción detallada del look
-  const detailedLookDescription = `${gender} ${age} de ${height}cm de altura con complexión ${bodyType}. Tiene ojos ${eyeColor}, piel ${skinTone} y ${facialFeatures.join(', ')}. Su cabello es ${hairColor} con estilo ${selectedHairStyle}. Suele lucir ${selectedAccessory} como accesorio distintivo. Viste con estilo ${selectedFashion} usando principalmente colores ${selectedColors.join(', ')} que reflejan su identidad musical. Su presencia escénica es ${faker.helpers.arrayElement(['magnética', 'intensa', 'relajada', 'enigmática', 'extravagante', 'minimalista'])}.`;
+  // Generar descripciones con OpenRouter para mayor diversidad
+  // Preparamos primero las descripciones locales como respaldo
+  const defaultLookDescription = `${gender} ${age} de ${height}cm de altura con complexión ${bodyType}. Tiene ojos ${eyeColor}, piel ${skinTone} y ${facialFeatures.join(', ')}. Su cabello es ${hairColor} con estilo ${selectedHairStyle}. Suele lucir ${selectedAccessory} como accesorio distintivo. Viste con estilo ${selectedFashion} usando principalmente colores ${selectedColors.join(', ')} que reflejan su identidad musical. Su presencia escénica es ${faker.helpers.arrayElement(['magnética', 'intensa', 'relajada', 'enigmática', 'extravagante', 'minimalista'])}.`;
 
-  // Generar biografía basada en los géneros y estilo
-  const biography = `${artistName} es un${gender === 'Mujer' ? 'a' : ''} talentoso${gender === 'Mujer' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
+  const defaultBiography = `${artistName} es un${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} talentoso${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
+
+  // Intentar generar descripciones con OpenRouter para mayor diversidad
+  let detailedLookDescription = defaultLookDescription;
+  let biography = defaultBiography;
+  
+  // Prompt para la descripción física
+  const lookPrompt = `Genera una descripción física detallada y creativa para un artista musical con estas características:
+- Género: ${gender}
+- Edad: ${age}
+- Altura: ${height}cm
+- Complexión: ${bodyType}
+- Ojos: ${eyeColor}
+- Piel: ${skinTone}
+- Cabello: ${hairColor}, estilo ${selectedHairStyle}
+- Estilo de moda: ${selectedFashion}
+- Accesorios: ${selectedAccessory}
+- Colores preferidos: ${selectedColors.join(', ')}
+- Música: ${selectedGenres.join(', ')}
+
+Escribe en tercera persona, entre 100-150 palabras, destacando rasgos únicos y apariencia escénica. Usa lenguaje vívido y descriptivo que capture la esencia visual del artista.`;
+
+  // Prompt para la biografía
+  const bioPrompt = `Genera una biografía creativa para ${artistName}, un artista musical con estas características:
+- Género: ${gender}
+- Edad: ${age}
+- Géneros musicales: ${selectedGenres.join(', ')}
+- Ciudad de origen: ${faker.location.city()}, ${faker.location.country()}
+- Estilo visual: ${selectedFashion}, con colores ${selectedColors.join(', ')}
+- Temas explorados: ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}
+
+Escribe en tercera persona, entre 100-150 palabras, destacando su historia personal, influencias, logros y estilo musical único. Usa un tono que refleje su género musical.`;
+
+  try {
+    // Intentar obtener descripciones de OpenRouter
+    const lookDescriptionAI = await generateAIDescription(lookPrompt);
+    const biographyAI = await generateAIDescription(bioPrompt);
+    
+    // Usar las descripciones de AI si las recibimos correctamente
+    if (lookDescriptionAI && lookDescriptionAI.length > 50) {
+      detailedLookDescription = lookDescriptionAI;
+    }
+    
+    if (biographyAI && biographyAI.length > 50) {
+      biography = biographyAI;
+    }
+  } catch (error) {
+    console.warn('Error al generar descripciones con OpenRouter, usando descripciones locales.', error);
+    // Mantenemos las descripciones por defecto
+  }
 
   // Generar videos 
   const videos = generateRandomVideos(faker, videosGenerated);
@@ -404,7 +453,7 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
 async function main() {
   try {
     console.log('Generando artista aleatorio...');
-    const artistData = generateRandomArtist();
+    const artistData = await generateRandomArtist();
     console.log('Datos del artista generados:', JSON.stringify(artistData, null, 2));
     
     console.log('Guardando artista en Firestore...');

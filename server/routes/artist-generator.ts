@@ -38,7 +38,7 @@ router.post("/api/generate-artist", async (req: Request, res: Response) => {
     console.log('Recibida solicitud para generar artista aleatorio');
     
     // Generar datos del artista aleatorio
-    const artistData = generateRandomArtist();
+    const artistData = await generateRandomArtist();
     console.log('Artista generado exitosamente:', artistData.name);
     
     // Guardar artista en Firestore
@@ -75,8 +75,8 @@ router.post("/api/generate-artist/secure", authenticate, async (req: Request, re
     console.log(`Solicitud de usuario: ${userId}`);
     
     // Generar datos del artista aleatorio
-    const artistData = generateRandomArtist();
-    console.log('Artista generado exitosamente');
+    const artistData = await generateRandomArtist();
+    console.log('Artista generado exitosamente:', artistData.name);
     
     // Guardar artista en Firestore, incluyendo referencia al usuario que lo generó
     const artistDataWithUser = {
