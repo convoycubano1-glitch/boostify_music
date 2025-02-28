@@ -6,6 +6,7 @@
 import { db } from '../server/firebase';
 import { Timestamp } from 'firebase-admin/firestore';
 import { faker } from '@faker-js/faker';
+import axios from 'axios';
 
 /**
  * Genera un ID único con prefijo
@@ -28,10 +29,60 @@ function generateRandomDuration(): string {
 }
 
 /**
+ * Genera una descripción artística usando OpenRouter
+ * @param prompt El prompt para generar la descripción
+ * @returns Descripción generada o descripción de fallback si hay error
+ */
+async function generateAIDescription(prompt: string): Promise<string> {
+  try {
+    const openRouterKey = process.env.VITE_OPENROUTER_API_KEY || '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';
+    
+    if (!openRouterKey) {
+      console.warn('No se encontró la API key de OpenRouter, usando descripción generada localmente');
+      return '';
+    }
+    
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'openai/gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'Eres un experto en describir artistas musicales con detalles físicos, estilísticos y de personalidad. Genera descripciones realistas, diversas y detalladas.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 250
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${openRouterKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (response.data && response.data.choices && response.data.choices.length > 0) {
+      return response.data.choices[0].message.content.trim();
+    } else {
+      console.warn('Respuesta vacía de OpenRouter, usando descripción generada localmente');
+      return '';
+    }
+  } catch (error) {
+    console.error('Error al generar descripción con OpenRouter:', error);
+    return '';
+  }
+}
+
+/**
  * Genera un artista aleatorio con todos los datos necesarios
  * @returns Datos del artista generado
  */
-export function generateRandomArtist() {
+export async function generateRandomArtist() {
   // Usar semilla aleatoria para tener consistencia por artista
   const seed = Math.floor(Math.random() * 10000);
   faker.seed(seed);
@@ -118,16 +169,40 @@ export function generateRandomArtist() {
   ];
   const selectedColors = faker.helpers.arrayElements(colors, faker.number.int({ min: 2, max: 4 }));
   
-  // Características físicas detalladas
-  const gender = faker.person.gender() === 'female' ? 'Mujer' : 'Hombre';
-  const age = faker.helpers.arrayElement(['joven (20-30 años)', 'de mediana edad (30-45 años)', 'maduro (45-60 años)']);
-  const height = faker.number.int({ min: 160, max: 190 });
-  const eyeColor = faker.helpers.arrayElement(['marrón oscuro', 'marrón claro', 'verde', 'azul', 'avellana', 'gris']);
-  const skinTone = faker.helpers.arrayElement(['clara', 'media', 'morena', 'oscura', 'olivácea']);
+  // Características físicas detalladas con mayor diversidad
+  // Expandir opciones de género
+  const genderOptions = faker.helpers.arrayElement([
+    { value: 'Mujer', probability: 0.45 },
+    { value: 'Hombre', probability: 0.45 },
+    { value: 'No binario', probability: 0.05 },
+    { value: 'Género fluido', probability: 0.05 }
+  ]);
+  const gender = genderOptions.value;
+  
+  // Expandir opciones de edad para incluir adolescentes y personas mayores
+  const ageOptions = faker.helpers.arrayElement([
+    { value: 'adolescente (14-19 años)', probability: 0.15 },
+    { value: 'joven (20-30 años)', probability: 0.4 },
+    { value: 'de mediana edad (30-45 años)', probability: 0.3 },
+    { value: 'maduro (45-60 años)', probability: 0.1 },
+    { value: 'senior (60+ años)', probability: 0.05 }
+  ]);
+  const age = ageOptions.value;
+  
+  // Ajustar altura según edad
+  const isAdolescent = age.includes('adolescente');
+  const height = faker.number.int({ 
+    min: isAdolescent ? 150 : 160, 
+    max: isAdolescent ? 185 : 190 
+  });
+  
+  const eyeColor = faker.helpers.arrayElement(['marrón oscuro', 'marrón claro', 'verde', 'azul', 'avellana', 'gris', 'ámbar', 'heterocromía (ojos de diferente color)']);
+  const skinTone = faker.helpers.arrayElement(['clara', 'media', 'morena', 'oscura', 'olivácea', 'bronceada', 'pálida']);
   const facialFeatures = faker.helpers.arrayElements([
     'rasgos angulosos', 'rasgos suaves', 'pómulos pronunciados', 'mandíbula definida',
     'rostro ovalado', 'rostro redondo', 'cejas expresivas', 'labios gruesos', 'labios finos',
-    'mirada penetrante', 'expresión serena', 'sonrisa carismática'
+    'mirada penetrante', 'expresión serena', 'sonrisa carismática', 'mirada intensa',
+    'nariz respingada', 'nariz aguileña', 'hoyuelos', 'pecas', 'lunar distintivo'
   ], { min: 2, max: 4 });
   
   // Generar descripción del estilo visual
