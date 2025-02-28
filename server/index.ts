@@ -14,6 +14,21 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Health check endpoint para monitoreo
+app.get('/api/health', (req, res) => {
+  const healthData = {
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    build: {
+      version: process.env.npm_package_version || 'unknown',
+      nodeVersion: process.version
+    }
+  };
+  res.status(200).json(healthData);
+});
+
 // Basic request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -56,13 +71,12 @@ if (process.env.NODE_ENV === "production") {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Application</title>
+  <title>Boostify Music</title>
+  <link rel="stylesheet" href="/index.css">
 </head>
 <body>
   <div id="root"></div>
-  <script>
-    window.location.href = '/api/health';
-  </script>
+  <script type="module" src="/index.js"></script>
 </body>
 </html>`;
       fs.writeFileSync(indexPath, minimalHtml);
@@ -74,12 +88,74 @@ if (process.env.NODE_ENV === "production") {
   }
 
   // Log directory contents for debugging
-  const files = fs.readdirSync(distPath);
-  log(`📁 Files in dist/public: ${files.join(', ')}`);
+  try {
+    const files = fs.readdirSync(distPath);
+    log(`📁 Files in dist/public: ${files.join(', ')}`);
+  } catch (error) {
+    log(`⚠️ Could not read dist/public directory: ${error}`);
+  }
 
-  // Serve static files in this order:
+  // Serve static files with improved configuration:
 
-  // 1. Serve assets with caching
+  // 1. First serve index.html for the root path specifically
+  app.get('/', (req, res) => {
+    log(`📄 Serving index.html for root path`);
+    try {
+      if (fs.existsSync(indexPath)) {
+        // Importante: Establece los headers adecuados para evitar problemas de caché
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
+        // Usa res.sendFile con opciones para un path absoluto
+        res.sendFile(indexPath, { 
+          maxAge: 0,
+          root: '/' // Asegura que el path sea interpretado como absoluto
+        });
+      } else {
+        log(`⚠️ Warning: index.html not found at ${indexPath}, sending fallback HTML`);
+        // HTML compatible para producción con scripts esenciales
+        res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boostify Music</title>
+  <!-- Meta tags para evitar cache -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <!-- Carga directa de scripts en caso de que el bundling falle -->
+  <script>
+    // Script para debug en producción
+    console.log("Initializing application in production mode");
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error("Application error:", message, "at", source, lineno, colno);
+      document.getElementById('root').innerHTML = '<div style="padding:20px;"><h2>Application Error</h2><p>Please reload the page. If the problem persists, contact support.</p><pre>' + message + '</pre></div>';
+    };
+  </script>
+</head>
+<body>
+  <div id="root">
+    <div style="display:flex;justify-content:center;align-items:center;height:100vh;">
+      <div style="text-align:center;">
+        <h2>Loading Boostify Music...</h2>
+        <p>Please wait while we set up the application</p>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/assets/index.js"></script>
+</body>
+</html>`);
+      }
+    } catch (error) {
+      log(`❌ Error serving index.html: ${error}`);
+      res.status(500).send('Internal Server Error. Please try again later.');
+    }
+  });
+
+  // 2. Serve assets with caching
   app.use('/assets', (req, res, next) => {
     log(`🎨 Asset request: ${req.path}`);
     next();
@@ -88,13 +164,14 @@ if (process.env.NODE_ENV === "production") {
     etag: true
   }));
 
-  // 2. Serve other static files
+  // 3. Serve other static files
   app.use(express.static(distPath, {
-    index: false // Important: don't serve index.html automatically
+    index: false // Don't serve index.html automatically for other paths
   }));
 
-  // 3. Handle SPA routes
+  // 4. Handle all other routes for SPA
   app.get('*', (req, res, next) => {
+    // Skip API routes
     if (req.path.startsWith('/api')) {
       log(`👉 API request, passing to next handler: ${req.path}`);
       return next();
@@ -102,39 +179,55 @@ if (process.env.NODE_ENV === "production") {
 
     log(`📄 Serving index.html for SPA route: ${req.path}`);
 
-    // Read and serve index.html manually
+    // Send the index.html for all other routes to support client-side routing
     try {
-      const indexContent = fs.readFileSync(indexPath, 'utf8');
-      
-      // Verificar si hay contenido en index.html
-      if (!indexContent || indexContent.trim() === '') {
-        log(`⚠️ Warning: Empty index.html content`);
-        // Proporcionar un index.html mínimo si está vacío
+      if (fs.existsSync(indexPath)) {
+        // Importante: Establece los headers adecuados para evitar problemas de caché
         res.setHeader('Content-Type', 'text/html');
-        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
+        // Usa res.sendFile con opciones para un path absoluto
+        res.sendFile(indexPath, { 
+          maxAge: 0,
+          root: '/' // Asegura que el path sea interpretado como absoluto
+        });
+      } else {
+        log(`⚠️ Warning: index.html not found at ${indexPath}, sending fallback HTML`);
+        // HTML compatible para producción con scripts esenciales
         res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Boostify Music</title>
+  <!-- Meta tags para evitar cache -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <!-- Carga directa de scripts en caso de que el bundling falle -->
   <script>
-    // Redirigir a la raíz si la página está vacía
-    window.onload = function() {
-      if (document.body.innerHTML.trim() === '') {
-        window.location.href = '/';
-      }
+    // Script para debug en producción
+    console.log("Initializing application in production mode (SPA route)");
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error("Application error:", message, "at", source, lineno, colno);
+      document.getElementById('root').innerHTML = '<div style="padding:20px;"><h2>Application Error</h2><p>Please reload the page or return to <a href="/">home</a>.</p><pre>' + message + '</pre></div>';
     };
   </script>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div style="display:flex;justify-content:center;align-items:center;height:100vh;">
+      <div style="text-align:center;">
+        <h2>Loading Boostify Music...</h2>
+        <p>Please wait while we set up the application</p>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/assets/index.js"></script>
 </body>
 </html>`);
-      } else {
-        res.setHeader('Content-Type', 'text/html');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.send(indexContent);
       }
     } catch (error) {
       log(`❌ Error serving index.html: ${error}`);
@@ -179,13 +272,12 @@ if (process.env.NODE_ENV === "production") {
       await setupVite(app, server);
     }
 
-    // Use environment PORT or fallback to 0 (to automatically find an available port)
-    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 
-                 process.env.NODE_ENV === "production" ? 5000 : 0;
+    // Use environment PORT or fallback to 5000
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
-    server.listen(PORT, '0.0.0.0', () => {
-      const address = server.address();
-      const actualPort = typeof address === 'object' && address ? address.port : PORT;
+    server.listen(PORT, () => {
+      // Puerto fijo para compatibilidad con Replit
+      const actualPort = PORT;
       
       log(`✅ Server started on port ${actualPort}`);
       log(`🌍 Environment: ${app.get("env")}`);
