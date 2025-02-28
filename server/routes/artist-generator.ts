@@ -19,8 +19,15 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
     // Usar la API de Firebase Admin correctamente
     const docRef = await db.collection('generated_artists').add({
       ...artistData,
-      createdAt: Timestamp.now()
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
     });
+    
+    // Actualizar el documento recién creado para incluir su propio firestoreId
+    await docRef.update({
+      firestoreId: docRef.id
+    });
+    
     console.log(`Artista guardado con ID: ${docRef.id}`);
     return docRef.id;
   } catch (error) {
