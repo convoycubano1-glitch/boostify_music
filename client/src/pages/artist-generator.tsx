@@ -804,7 +804,7 @@ export default function ArtistGeneratorPage() {
 
           {currentArtist && (
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto mb-8">
+              <TabsList className="grid grid-cols-6 w-full max-w-4xl mx-auto mb-8">
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
                 <TabsTrigger value="music">Música</TabsTrigger>
                 <TabsTrigger value="image">Imagen</TabsTrigger>
@@ -1525,6 +1525,11 @@ export default function ArtistGeneratorPage() {
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
+
+              {/* ANALÍTICA */}
+              <TabsContent value="analytics" className="space-y-6">
+                <ArtistAnalyticsTab />
               </TabsContent>
             </Tabs>
           )}

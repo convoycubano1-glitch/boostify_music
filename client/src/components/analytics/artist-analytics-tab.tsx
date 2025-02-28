@@ -387,52 +387,36 @@ export default function ArtistAnalyticsTab() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium">Suscripciones</CardTitle>
-            <Music className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Distribución de Planes</CardTitle>
+            <CreditCard className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-2">{summary.activeSubscriptions}</div>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Basic</span>
-                  <span className="font-medium">{summary.subscriptionDistribution.Basic}</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Básico</p>
+                  <p className="text-sm text-muted-foreground">${"59.99"}/mes</p>
                 </div>
-                <div className="h-1 w-full bg-muted overflow-hidden rounded-full">
-                  <div 
-                    className="h-full bg-primary" 
-                    style={{ 
-                      width: `${(summary.subscriptionDistribution.Basic / Math.max(1, summary.activeSubscriptions)) * 100}%` 
-                    }}
-                  />
+                <div className="text-primary font-medium">
+                  {summary.subscriptionDistribution.Basic} usuarios
                 </div>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Pro</span>
-                  <span className="font-medium">{summary.subscriptionDistribution.Pro}</span>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Pro</p>
+                  <p className="text-sm text-muted-foreground">${"99.99"}/mes</p>
                 </div>
-                <div className="h-1 w-full bg-muted overflow-hidden rounded-full">
-                  <div 
-                    className="h-full bg-green-500" 
-                    style={{ 
-                      width: `${(summary.subscriptionDistribution.Pro / Math.max(1, summary.activeSubscriptions)) * 100}%` 
-                    }}
-                  />
+                <div className="text-primary font-medium">
+                  {summary.subscriptionDistribution.Pro} usuarios
                 </div>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Enterprise</span>
-                  <span className="font-medium">{summary.subscriptionDistribution.Enterprise}</span>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Enterprise</p>
+                  <p className="text-sm text-muted-foreground">${"149.99"}/mes</p>
                 </div>
-                <div className="h-1 w-full bg-muted overflow-hidden rounded-full">
-                  <div 
-                    className="h-full bg-amber-500" 
-                    style={{ 
-                      width: `${(summary.subscriptionDistribution.Enterprise / Math.max(1, summary.activeSubscriptions)) * 100}%` 
-                    }}
-                  />
+                <div className="text-primary font-medium">
+                  {summary.subscriptionDistribution.Enterprise} usuarios
                 </div>
               </div>
             </div>
@@ -441,20 +425,23 @@ export default function ArtistAnalyticsTab() {
         
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium">Videos Vendidos</CardTitle>
+            <CardTitle className="text-sm font-medium">Videos</CardTitle>
             <FileVideo className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-2">{summary.productDistribution.Videos}</div>
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">Total vendido</div>
-              <div className="text-xl font-semibold">
-                {formatCurrency(summary.productDistribution.Videos * 199)}
+            <div className="text-3xl font-bold">
+              {summary.productDistribution.Videos}
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Ingresos Totales</p>
+                <p className="text-2xl font-semibold">
+                  {formatCurrency(summary.productDistribution.Videos * 199)}
+                </p>
               </div>
-              <div className="flex items-center text-xs">
-                <div className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full px-2 py-0.5">
-                  {((summary.productDistribution.Videos / Math.max(1, summary.totalArtists)) * 100).toFixed(0)}% de usuarios
-                </div>
+              <div className="text-muted-foreground text-sm">
+                <p>Precio por video</p>
+                <p className="font-medium">$199.00</p>
               </div>
             </div>
           </CardContent>
@@ -462,20 +449,24 @@ export default function ArtistAnalyticsTab() {
         
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium">Cursos Vendidos</CardTitle>
+            <CardTitle className="text-sm font-medium">Cursos</CardTitle>
             <GraduationCap className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-2">{summary.productDistribution.Cursos}</div>
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">Total vendido</div>
-              <div className="text-xl font-semibold">
-                {formatCurrency(summary.productDistribution.Cursos * 225)}
+            <div className="text-3xl font-bold">
+              {summary.productDistribution.Cursos}
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Ingresos Totales</p>
+                <p className="text-2xl font-semibold">
+                  {/* Precio promedio $225 (entre $149 y $299) */}
+                  {formatCurrency(summary.productDistribution.Cursos * 225)}
+                </p>
               </div>
-              <div className="flex items-center text-xs">
-                <div className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full px-2 py-0.5">
-                  {((summary.productDistribution.Cursos / Math.max(1, summary.totalArtists)) * 100).toFixed(0)}% de usuarios
-                </div>
+              <div className="text-muted-foreground text-sm">
+                <p>Precio promedio</p>
+                <p className="font-medium">$149-$299</p>
               </div>
             </div>
           </CardContent>
