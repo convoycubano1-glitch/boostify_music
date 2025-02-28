@@ -861,6 +861,15 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Root endpoint for deployment health checks
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      status: "online",
+      message: "Boostify Music API is running",
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.status(200).json({ 
