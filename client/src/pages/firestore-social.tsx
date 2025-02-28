@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Music } from "lucide-react";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Zap, TrendingUp, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,9 @@ import { useToast } from "@/hooks/use-toast";
 // Constantes para estilos reutilizables
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
 const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm";
+
+// Constantes para gradientes
+const GRADIENT_TEXT = "bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 font-bold";
 
 // Interfaces para los tipos de datos
 interface SocialUser {
@@ -60,6 +63,18 @@ export default function FirestoreSocialPage() {
   const [activeTab, setActiveTab] = React.useState("feed");
   const [newPostContent, setNewPostContent] = React.useState("");
   const { toast } = useToast();
+
+  // Referencia para el video de fondo
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Asegurarse de que el video se reproduce automáticamente cuando se carga
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.error("Video autoplay failed:", error);
+      });
+    }
+  }, []);
 
   // Consulta para obtener usuarios
   const { data: users } = useQuery({
@@ -237,7 +252,7 @@ export default function FirestoreSocialPage() {
     return (
       <div className="flex items-center gap-1 ml-2">
         <Sparkles className="w-3 h-3 text-yellow-500" />
-        <span className="text-xs font-medium">IA</span>
+        <span className="text-xs font-medium">AI</span>
       </div>
     );
   };
@@ -290,7 +305,7 @@ export default function FirestoreSocialPage() {
           <div className="flex items-center">
             <Avatar className="mr-2 ring-2 ring-primary/10">
               <AvatarImage src={post.user?.avatar} />
-              <AvatarFallback className={getAvatarColor(post.user?.displayName || "Usuario")}>{getInitials(post.user?.displayName || "Usuario")}</AvatarFallback>
+              <AvatarFallback className={getAvatarColor(post.user?.displayName || "User")}>{getInitials(post.user?.displayName || "User")}</AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center">
@@ -374,7 +389,7 @@ export default function FirestoreSocialPage() {
                 <div key={comment.id} className="flex items-start gap-2 animate-in fade-in-50 duration-300">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={comment.user?.avatar} />
-                    <AvatarFallback className={getAvatarColor(comment.user?.displayName || "Usuario")}>{getInitials(comment.user?.displayName || "Usuario")}</AvatarFallback>
+                    <AvatarFallback className={getAvatarColor(comment.user?.displayName || "User")}>{getInitials(comment.user?.displayName || "User")}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="bg-muted rounded-lg p-2">
@@ -406,179 +421,221 @@ export default function FirestoreSocialPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      {/* Logo y título */}
-      <div className="flex items-center justify-center mb-6">
-        <div className="flex items-center gap-2 bg-gradient-to-r from-primary/80 to-primary p-3 rounded-xl shadow-md">
-          <Music className="h-8 w-8 text-white" />
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-bold text-white">MusicSocial</h1>
-            <p className="text-xs text-white/80">Comunidad para artistas y fanáticos de la música</p>
+    <div className="relative min-h-screen">
+      {/* Video de fondo con overlay */}
+      <div className="fixed inset-0 w-full h-full z-0 overflow-hidden">
+        <video 
+          ref={videoRef}
+          className="absolute min-w-full min-h-full object-cover opacity-20"
+          autoPlay 
+          loop 
+          muted
+          playsInline
+        >
+          <source src="/assets/Standard_Mode_Generated_Video (9).mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-background z-0"></div>
+      </div>
+
+      {/* Header moderno con SVG logo y texto con gradiente */}
+      <header className="relative z-10 pt-8 pb-6 mb-4 backdrop-blur-sm bg-background/30">
+        <div className="container mx-auto">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-4 mb-4">
+              <img src="/assets/boostify-logo.svg" alt="Boostify Logo" className="w-16 h-16" />
+              <div>
+                <h1 className={`text-3xl md:text-4xl font-bold ${GRADIENT_TEXT}`}>
+                  Boostify Social
+                </h1>
+                <p className="text-muted-foreground">Connect with musicians worldwide</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-orange-500" />
+                <span className="text-sm">Trending Now</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-orange-500" />
+                <span className="text-sm">Top Artists</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-orange-500" />
+                <span className="text-sm">Notifications</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar */}
-        <div className="w-full md:w-1/4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Community
-              </CardTitle>
-              <CardDescription>Social network members</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {users ? (
-                  users.map((socialUser: SocialUser) => (
-                    <div key={socialUser.id} className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={socialUser.avatar} />
-                        <AvatarFallback className={getAvatarColor(socialUser.displayName)}>{getInitials(socialUser.displayName)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium truncate">{socialUser.displayName}</span>
-                          {getBotBadge(socialUser)}
+      </header>
+
+      <div className="container relative z-10 mx-auto pb-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <div className="w-full md:w-1/4">
+            <Card className="backdrop-blur-sm bg-card/90">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Community
+                </CardTitle>
+                <CardDescription>Social network members</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {users ? (
+                    users.map((socialUser: SocialUser) => (
+                      <div key={socialUser.id} className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={socialUser.avatar} />
+                          <AvatarFallback className={getAvatarColor(socialUser.displayName)}>{getInitials(socialUser.displayName)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium truncate">{socialUser.displayName}</span>
+                            {getBotBadge(socialUser)}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {socialUser.bio?.substring(0, 30)}...
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {socialUser.bio?.substring(0, 30)}...
-                        </p>
+                        <span className={`${LANGUAGE_BADGE_CLASS} ${
+                          socialUser.language === 'es' 
+                            ? 'bg-orange-100 text-orange-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {socialUser.language === 'es' ? 'ES' : 'EN'}
+                        </span>
                       </div>
-                      <span className={`${LANGUAGE_BADGE_CLASS} ${
-                        socialUser.language === 'es' 
-                          ? 'bg-orange-100 text-orange-800' 
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {socialUser.language === 'es' ? 'ES' : 'EN'}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-muted-foreground text-sm">Loading users...</div>
-                )}
+                    ))
+                  ) : (
+                    <div className="text-muted-foreground text-sm">Loading users...</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="flex items-center justify-between mb-4">
+                <TabsList className="backdrop-blur-sm bg-background/70">
+                  <TabsTrigger value="feed" className="flex items-center gap-1">
+                    <Globe className="w-4 h-4" />
+                    Feed
+                  </TabsTrigger>
+                  <TabsTrigger value="personal" className="flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    My Profile
+                  </TabsTrigger>
+                  <TabsTrigger value="saved" className="flex items-center gap-1">
+                    <BookMarked className="w-4 h-4" />
+                    Saved
+                  </TabsTrigger>
+                </TabsList>
+                <Link href="/firestore-social">
+                  <Button variant="outline" size="sm" className="flex items-center gap-1 backdrop-blur-sm bg-background/60">
+                    <BadgeInfo className="w-4 h-4" />
+                    Info
+                  </Button>
+                </Link>
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
-                <TabsTrigger value="feed" className="flex items-center gap-1">
-                  <Globe className="w-4 h-4" />
-                  Feed
-                </TabsTrigger>
-                <TabsTrigger value="personal" className="flex items-center gap-1">
-                  <User className="w-4 h-4" />
-                  My Profile
-                </TabsTrigger>
-                <TabsTrigger value="saved" className="flex items-center gap-1">
-                  <BookMarked className="w-4 h-4" />
-                  Saved
-                </TabsTrigger>
-              </TabsList>
-              <Link href="/firestore-social">
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <BadgeInfo className="w-4 h-4" />
-                  Info
-                </Button>
-              </Link>
-            </div>
+              <TabsContent value="feed" className="mt-0">
+                {/* Create new post */}
+                <Card className="mb-6 backdrop-blur-sm bg-card/90">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Create new post</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      placeholder="What's on your mind about music today?"
+                      className="mb-3"
+                    />
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={handleCreatePost} 
+                        disabled={!newPostContent.trim()}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                      >
+                        Post
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <TabsContent value="feed" className="mt-0">
-              {/* Create new post */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">Create new post</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
-                    placeholder="What are you thinking about music today?"
-                    className="mb-3"
-                  />
-                  <div className="flex justify-end">
-                    <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>
-                      Post
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Posts list */}
-              {posts ? (
-                posts.length > 0 ? (
-                  posts.map((post) => <PostCard key={post.id} post={post} />)
+                {/* Posts list */}
+                {posts ? (
+                  posts.length > 0 ? (
+                    posts.map((post) => <PostCard key={post.id} post={post} />)
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-muted-foreground">No posts available. Be the first to post!</p>
+                    </div>
+                  )
                 ) : (
                   <div className="text-center py-10">
-                    <p className="text-muted-foreground">No posts available. Be the first to post!</p>
+                    <p className="text-muted-foreground">Loading posts...</p>
                   </div>
-                )
-              ) : (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground">Loading posts...</p>
-                </div>
-              )}
-            </TabsContent>
+                )}
+              </TabsContent>
 
-            <TabsContent value="personal">
-              <Card>
-                <CardHeader>
-                  <CardTitle>My Profile</CardTitle>
-                  <CardDescription>Manage your profile and posts</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Profile functionality in development.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
+              <TabsContent value="personal">
+                <Card className="backdrop-blur-sm bg-card/90">
+                  <CardHeader>
+                    <CardTitle>My Profile</CardTitle>
+                    <CardDescription>Manage your profile and posts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Profile functionality in development.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="saved">
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookMarked className="w-5 h-5" />
-                    Saved Posts
-                  </CardTitle>
-                  <CardDescription>Posts you've saved for later reference</CardDescription>
-                </CardHeader>
-              </Card>
+              <TabsContent value="saved">
+                <Card className="mb-6 backdrop-blur-sm bg-card/90">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookMarked className="w-5 h-5" />
+                      Saved Posts
+                    </CardTitle>
+                    <CardDescription>Posts you've saved for later reference</CardDescription>
+                  </CardHeader>
+                </Card>
 
-              {/* Lista de posts guardados */}
-              {savedPosts ? (
-                savedPosts.length > 0 ? (
-                  savedPosts.map((post) => <PostCard key={post.id} post={post} />)
+                {/* Lista de posts guardados */}
+                {savedPosts ? (
+                  savedPosts.length > 0 ? (
+                    savedPosts.map((post) => <PostCard key={post.id} post={post} />)
+                  ) : (
+                    <div className="text-center py-10 backdrop-blur-sm bg-card/30 rounded-lg">
+                      <BookMarked className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                      <p className="text-muted-foreground">No saved posts yet.</p>
+                      <p className="text-muted-foreground text-sm mt-1">
+                        Start saving posts you'd like to refer back to later.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-4"
+                        onClick={() => setActiveTab("feed")}
+                      >
+                        Browse feed
+                      </Button>
+                    </div>
+                  )
                 ) : (
-                  <div className="text-center py-10 bg-muted/20 rounded-lg">
-                    <BookMarked className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground">No saved posts yet.</p>
-                    <p className="text-muted-foreground text-sm mt-1">
-                      Start saving posts you'd like to refer back to later.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-4"
-                      onClick={() => setActiveTab("feed")}
-                    >
-                      Browse feed
-                    </Button>
+                  <div className="flex flex-col items-center justify-center py-10 backdrop-blur-sm bg-card/30 rounded-lg">
+                    <div className="animate-pulse h-8 w-8 rounded-full bg-muted mb-4"></div>
+                    <p className="text-muted-foreground">Loading saved posts...</p>
                   </div>
-                )
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 bg-muted/20 rounded-lg">
-                  <div className="animate-pulse h-8 w-8 rounded-full bg-muted mb-4"></div>
-                  <p className="text-muted-foreground">Loading saved posts...</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
     </div>
