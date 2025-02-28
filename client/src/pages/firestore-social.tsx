@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked } from "lucide-react";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Music } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,11 +47,12 @@ interface Post {
   userId: string;
   content: string;
   likes: number;
+  isLiked?: boolean;
+  isSaved?: boolean;
   createdAt: Date;
   updatedAt: Date;
   user?: SocialUser;
   comments?: Comment[];
-  isLiked?: boolean;
 }
 
 export default function FirestoreSocialPage() {
@@ -406,6 +407,17 @@ export default function FirestoreSocialPage() {
 
   return (
     <div className="container mx-auto py-6">
+      {/* Logo y título */}
+      <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center gap-2 bg-gradient-to-r from-primary/80 to-primary p-3 rounded-xl shadow-md">
+          <Music className="h-8 w-8 text-white" />
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold text-white">MusicSocial</h1>
+            <p className="text-xs text-white/80">Comunidad para artistas y fanáticos de la música</p>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
         <div className="w-full md:w-1/4">
