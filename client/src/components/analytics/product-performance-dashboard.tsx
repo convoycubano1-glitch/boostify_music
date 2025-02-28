@@ -1,911 +1,834 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, Scatter, ScatterChart, ZAxis,
-  Treemap, Sankey, Layer, Rectangle
-} from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  BarChart, Bar, 
+  LineChart, Line, 
+  PieChart, Pie, Cell,
+  AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ScatterChart, Scatter,
+  ComposedChart
+} from 'recharts';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase';
 
-// Colores para gráficos
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
-const PRODUCT_COLORS = {
-  'Suscripciones': '#4f46e5',
-  'Cursos': '#06b6d4',
-  'Videos': '#10b981',
-};
+// Colores para los gráficos
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF'];
 
 export default function ProductPerformanceDashboard() {
-  const [artistData, setArtistData] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('subscriptions');
+  const [productsData, setProductsData] = useState<any[]>([]);
+  const [subscriptionMetrics, setSubscriptionMetrics] = useState<any>({});
+  const [videoMetrics, setVideoMetrics] = useState<any>({});
+  const [courseMetrics, setCourseMetrics] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>('overview');
-  const [analysisTimeframe, setAnalysisTimeframe] = useState<string>('month');
-  
-  // Estados para métricas calculadas
-  const [productRevenue, setProductRevenue] = useState<any[]>([]);
-  const [courseData, setCourseData] = useState<any[]>([]);
-  const [videoData, setVideoData] = useState<any[]>([]);
-  const [subscriptionData, setSubscriptionData] = useState<any[]>([]);
-  const [productPerformance, setProductPerformance] = useState<any[]>([]);
-  const [productTrends, setProductTrends] = useState<any[]>([]);
-  const [crossSellData, setCrossSellData] = useState<any[]>([]);
-  
-  // Carga de datos de artistas desde Firestore
+
   useEffect(() => {
-    async function fetchArtists() {
+    async function fetchProductData() {
       try {
+        // Obtener datos de artistas
         const artistsCollection = collection(db, 'generated-artists');
         const artistsSnapshot = await getDocs(artistsCollection);
-        const artistsList = artistsSnapshot.docs.map(doc => ({
+        const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
         
-        setArtistData(artistsList);
-        calculateMetrics(artistsList);
+        setProductsData(artists);
+        
+        // Procesar métricas de suscripción
+        const subscriptionPlans = {
+          'Basic': 0,
+          'Pro': 0,
+          'Enterprise': 0
+        };
+        
+        // Contador de videos y cursos
+        let totalVideoCount = 0;
+        let totalVideoPurchaseValue = 0;
+        let totalCourseCount = 0;
+        let totalCoursePurchaseValue = 0;
+        
+        artists.forEach(artist => {
+          // Contar por tipo de suscripción
+          if (artist.subscription?.plan) {
+            subscriptionPlans[artist.subscription.plan]++;
+          }
+          
+          // Contar videos
+          if (artist.purchases?.videos?.videos) {
+            totalVideoCount += artist.purchases.videos.videos.length;
+            totalVideoPurchaseValue += artist.purchases.videos.totalSpent || 0;
+          }
+          
+          // Contar cursos
+          if (artist.purchases?.courses?.courses) {
+            totalCourseCount += artist.purchases.courses.courses.length;
+            totalCoursePurchaseValue += artist.purchases.courses.totalSpent || 0;
+          }
+        });
+        
+        // Calcular ratios y métricas
+        const totalUsers = artists.length;
+        const totalSubscribers = subscriptionPlans.Basic + subscriptionPlans.Pro + subscriptionPlans.Enterprise;
+        const subscriberRatio = totalUsers > 0 ? (totalSubscribers / totalUsers) * 100 : 0;
+        
+        // Métricas de suscripción
+        setSubscriptionMetrics({
+          totalUsers: totalUsers,
+          totalSubscribers: totalSubscribers,
+          subscriberRatio: subscriberRatio,
+          plans: subscriptionPlans,
+          planRatios: {
+            'Basic': totalSubscribers > 0 ? (subscriptionPlans.Basic / totalSubscribers) * 100 : 0,
+            'Pro': totalSubscribers > 0 ? (subscriptionPlans.Pro / totalSubscribers) * 100 : 0,
+            'Enterprise': totalSubscribers > 0 ? (subscriptionPlans.Enterprise / totalSubscribers) * 100 : 0
+          }
+        });
+        
+        // Métricas de videos
+        setVideoMetrics({
+          totalCount: totalVideoCount,
+          totalPurchaseValue: totalVideoPurchaseValue,
+          avgPrice: totalVideoCount > 0 ? totalVideoPurchaseValue / totalVideoCount : 0,
+          purchaseRate: totalUsers > 0 ? (artists.filter(a => a.purchases?.videos?.videos?.length > 0).length / totalUsers) * 100 : 0,
+          avgVideosPerBuyer: artists.filter(a => a.purchases?.videos?.videos?.length > 0).length > 0 
+            ? totalVideoCount / artists.filter(a => a.purchases?.videos?.videos?.length > 0).length 
+            : 0
+        });
+        
+        // Métricas de cursos
+        setCourseMetrics({
+          totalCount: totalCourseCount,
+          totalPurchaseValue: totalCoursePurchaseValue,
+          avgPrice: totalCourseCount > 0 ? totalCoursePurchaseValue / totalCourseCount : 0,
+          purchaseRate: totalUsers > 0 ? (artists.filter(a => a.purchases?.courses?.courses?.length > 0).length / totalUsers) * 100 : 0,
+          avgCoursesPerBuyer: artists.filter(a => a.purchases?.courses?.courses?.length > 0).length > 0 
+            ? totalCourseCount / artists.filter(a => a.purchases?.courses?.courses?.length > 0).length 
+            : 0
+        });
+        
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching artists:', error);
+        console.error("Error al cargar datos de productos:", error);
         setLoading(false);
       }
     }
     
-    fetchArtists();
+    fetchProductData();
   }, []);
-  
-  // Cálculo de métricas de productos basadas en los datos de artistas
-  const calculateMetrics = (artists: any[]) => {
-    // Recopilar datos de cursos
-    const courses: Record<string, number> = {};
-    let totalCourseRevenue = 0;
-    let coursePurchases = 0;
+
+  // Función para generar datos históricos de suscripciones (simulados)
+  const generateSubscriptionHistoryData = () => {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     
-    // Recopilar datos de videos
-    const videos: Record<string, number> = {};
-    let totalVideoRevenue = 0;
-    let videoPurchases = 0;
+    // Obtener valores actuales
+    const currentBasic = subscriptionMetrics.plans?.Basic || 0;
+    const currentPro = subscriptionMetrics.plans?.Pro || 0;
+    const currentEnterprise = subscriptionMetrics.plans?.Enterprise || 0;
     
-    // Recopilar datos de suscripciones
-    const subscriptions: Record<string, number> = { 'Basic': 0, 'Pro': 0, 'Enterprise': 0 };
-    const subscriptionRevenue: Record<string, number> = { 'Basic': 0, 'Pro': 0, 'Enterprise': 0 };
+    // Factores de crecimiento mensual aproximados
+    const basicGrowthFactor = 1.15;  // 15% mensual para Basic
+    const proGrowthFactor = 1.18;    // 18% mensual para Pro
+    const enterpriseGrowthFactor = 1.10;  // 10% mensual para Enterprise
     
-    // Procesar datos de artistas
-    artists.forEach(artist => {
-      // Cursos
-      if (artist.purchases && artist.purchases.courses && artist.purchases.courses.courses) {
-        const artistCourses = artist.purchases.courses.courses;
-        coursePurchases += artistCourses.length;
-        totalCourseRevenue += artist.purchases.courses.totalSpent || 0;
+    // Generar historia simulada con crecimiento progresivo inverso
+    const historyData = [];
+    
+    for (let i = 0; i < months.length; i++) {
+      const isLastMonth = i === months.length - 1;
+      
+      // Calcular valores pasados basados en crecimiento inverso
+      const basicCount = isLastMonth 
+        ? currentBasic 
+        : Math.round(currentBasic / Math.pow(basicGrowthFactor, months.length - 1 - i));
         
-        // Contar ocurrencias de cada curso
-        artistCourses.forEach((course: any) => {
-          if (course.title) {
-            courses[course.title] = (courses[course.title] || 0) + 1;
-          }
-        });
-      }
-      
-      // Videos
-      if (artist.purchases && artist.purchases.videos && artist.purchases.videos.videos) {
-        const artistVideos = artist.purchases.videos.videos;
-        videoPurchases += artistVideos.length;
-        totalVideoRevenue += artist.purchases.videos.totalSpent || 0;
+      const proCount = isLastMonth 
+        ? currentPro 
+        : Math.round(currentPro / Math.pow(proGrowthFactor, months.length - 1 - i));
         
-        // Contar ocurrencias de cada tipo de video
-        artistVideos.forEach((video: any) => {
-          if (video.type) {
-            videos[video.type] = (videos[video.type] || 0) + 1;
-          }
-        });
-      }
+      const enterpriseCount = isLastMonth 
+        ? currentEnterprise 
+        : Math.round(currentEnterprise / Math.pow(enterpriseGrowthFactor, months.length - 1 - i));
       
-      // Suscripciones
-      if (artist.subscription && artist.subscription.plan) {
-        const plan = artist.subscription.plan;
-        const price = artist.subscription.price || 0;
-        
-        subscriptions[plan] = (subscriptions[plan] || 0) + 1;
-        subscriptionRevenue[plan] = (subscriptionRevenue[plan] || 0) + price;
-      }
-    });
-    
-    // Formatear datos para gráficos
-    const productRevenueData = [
-      { 
-        name: 'Suscripciones', 
-        value: Object.values(subscriptionRevenue).reduce((a, b) => a + b, 0),
-        users: Object.values(subscriptions).reduce((a, b) => a + b, 0)
-      },
-      { 
-        name: 'Cursos', 
-        value: totalCourseRevenue,
-        users: coursePurchases
-      },
-      { 
-        name: 'Videos', 
-        value: totalVideoRevenue,
-        users: videoPurchases
-      }
-    ];
-    
-    // Formatear datos de cursos
-    const coursesData = Object.keys(courses).map(title => ({
-      name: title,
-      value: courses[title],
-      revenue: courses[title] * (Math.floor(Math.random() * 100) + 150) // Simular precios entre $150-$250
-    })).sort((a, b) => b.value - a.value);
-    
-    // Formatear datos de videos
-    const videosData = Object.keys(videos).map(type => ({
-      name: type,
-      value: videos[type],
-      revenue: videos[type] * 199 // Precio fijo de $199
-    })).sort((a, b) => b.value - a.value);
-    
-    // Formatear datos de suscripciones
-    const subscriptionsData = Object.keys(subscriptions).map(plan => ({
-      name: plan,
-      value: subscriptions[plan],
-      revenue: subscriptionRevenue[plan]
-    })).sort((a, b) => b.value - a.value);
-    
-    // Generar datos de rendimiento y tendencias
-    const performanceData = generatePerformanceData(productRevenueData);
-    const trendData = generateTrendData();
-    
-    // Generar datos de cross-selling
-    const crossSell = generateCrossSellData(artists);
-    
-    // Actualizar estados
-    setProductRevenue(productRevenueData);
-    setCourseData(coursesData);
-    setVideoData(videosData);
-    setSubscriptionData(subscriptionsData);
-    setProductPerformance(performanceData);
-    setProductTrends(trendData);
-    setCrossSellData(crossSell);
-  };
-  
-  // Generar datos de rendimiento simulados
-  const generatePerformanceData = (baseData: any[]) => {
-    const metrics = ['Ingresos', 'Margen', 'Conversión', 'Retención', 'Satisfacción'];
-    
-    return baseData.map(product => {
-      const performanceData: Record<string, any> = { name: product.name };
-      
-      metrics.forEach(metric => {
-        // Generar valores simulados para cada métrica (escala 0-100)
-        // Diferentes productos tendrán diferentes fortalezas
-        const baseValue = 50 + Math.random() * 30;
-        
-        // Añadir variaciones basadas en producto y métrica
-        let modifier = 0;
-        
-        if (product.name === 'Suscripciones') {
-          if (metric === 'Retención' || metric === 'Ingresos') modifier = 15;
-          else if (metric === 'Margen') modifier = 20;
-        } else if (product.name === 'Cursos') {
-          if (metric === 'Satisfacción' || metric === 'Margen') modifier = 15;
-          else if (metric === 'Conversión') modifier = 10;
-        } else if (product.name === 'Videos') {
-          if (metric === 'Conversión') modifier = 15;
-        }
-        
-        // Valor final con variación aleatoria
-        performanceData[metric] = Math.min(100, Math.max(10, 
-          baseValue + modifier + (Math.random() * 10 - 5)
-        ));
-      });
-      
-      return performanceData;
-    });
-  };
-  
-  // Generar datos de tendencias simulados
-  const generateTrendData = () => {
-    const months = 12;
-    const data = [];
-    
-    // Obtener fecha actual
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    
-    for (let i = 0; i < months; i++) {
-      // Calcular mes actual (0-11)
-      const month = (currentMonth - months + i + 1 + 12) % 12;
-      const date = new Date(currentDate.getFullYear(), month, 1);
-      
-      // Factores estacionales para simular tendencias
-      // Más suscripciones en enero, más cursos en septiembre, etc.
-      const seasonFactor = {
-        Suscripciones: month === 0 ? 1.3 : month === 6 ? 1.2 : 1,
-        Cursos: month === 8 ? 1.3 : month === 1 ? 1.2 : 1,
-        Videos: month === 10 ? 1.25 : month === 5 ? 1.15 : 1
-      };
-      
-      // Factores de crecimiento general con el tiempo
-      const growthFactor = 1 + (0.05 * i / months);
-      
-      // Base con crecimiento linear + variabilidad
-      const baseSubs = 8000 * growthFactor * (0.9 + Math.random() * 0.2);
-      const baseCourses = 5000 * growthFactor * (0.85 + Math.random() * 0.3);
-      const baseVideos = 4000 * growthFactor * (0.8 + Math.random() * 0.4);
-      
-      // Aplicar factores estacionales
-      data.push({
-        name: date.toLocaleDateString('default', { month: 'short' }),
-        Suscripciones: Math.round(baseSubs * seasonFactor.Suscripciones),
-        Cursos: Math.round(baseCourses * seasonFactor.Cursos),
-        Videos: Math.round(baseVideos * seasonFactor.Videos)
+      historyData.push({
+        name: months[i],
+        'Basic': basicCount,
+        'Pro': proCount,
+        'Enterprise': enterpriseCount,
+        'Total': basicCount + proCount + enterpriseCount
       });
     }
     
-    return data;
+    return historyData;
   };
-  
-  // Generar datos de cross-selling/up-selling
-  const generateCrossSellData = (artists: any[]) => {
-    // Contadores para análisis de cross-selling
-    const combos: Record<string, number> = {
-      'Suscripciones+Cursos': 0,
-      'Suscripciones+Videos': 0,
-      'Cursos+Videos': 0,
-      'Todos': 0,
-      'Solo Suscripciones': 0,
-      'Solo Cursos': 0,
-      'Solo Videos': 0,
-      'Ninguno': 0
-    };
+
+  // Función para generar datos de ventas de productos por mes (simulados)
+  const generateProductSalesData = () => {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     
-    // Analizar patrones de compra
-    artists.forEach(artist => {
-      const hasSub = artist.subscription && artist.subscription.plan;
-      const hasCourses = artist.purchases?.courses?.courses?.length > 0;
-      const hasVideos = artist.purchases?.videos?.videos?.length > 0;
+    // Obtener valores actuales totales
+    const totalVideos = videoMetrics.totalCount || 0;
+    const totalCourses = courseMetrics.totalCount || 0;
+    
+    // Factores de crecimiento mensual aproximados
+    const videoGrowthFactor = 1.20;  // 20% mensual para videos
+    const courseGrowthFactor = 1.15; // 15% mensual para cursos
+    
+    // Distribuir ventas a lo largo del año con algo de variabilidad
+    const salesData = [];
+    
+    let cumulativeVideos = 0;
+    let cumulativeCourses = 0;
+    
+    for (let i = 0; i < months.length; i++) {
+      // Añadir variabilidad
+      const videoVariability = 0.8 + Math.random() * 0.4; // Entre 80% y 120% del crecimiento base
+      const courseVariability = 0.8 + Math.random() * 0.4; // Entre 80% y 120% del crecimiento base
       
-      if (hasSub && hasCourses && hasVideos) {
-        combos['Todos']++;
-      } else if (hasSub && hasCourses) {
-        combos['Suscripciones+Cursos']++;
-      } else if (hasSub && hasVideos) {
-        combos['Suscripciones+Videos']++;
-      } else if (hasCourses && hasVideos) {
-        combos['Cursos+Videos']++;
-      } else if (hasSub) {
-        combos['Solo Suscripciones']++;
-      } else if (hasCourses) {
-        combos['Solo Cursos']++;
-      } else if (hasVideos) {
-        combos['Solo Videos']++;
-      } else {
-        combos['Ninguno']++;
-      }
-    });
+      // Calcular ventas mensuales con crecimiento progresivo
+      const videosInMonth = i === 0 
+        ? Math.max(1, Math.round(totalVideos * 0.02)) 
+        : Math.round((cumulativeVideos * (videoGrowthFactor - 1)) * videoVariability);
+        
+      const coursesInMonth = i === 0 
+        ? Math.max(1, Math.round(totalCourses * 0.03)) 
+        : Math.round((cumulativeCourses * (courseGrowthFactor - 1)) * courseVariability);
+      
+      // Ajustar último mes para cuadrar con totales actuales
+      const isLastMonth = i === months.length - 1;
+      const adjustedVideosInMonth = isLastMonth 
+        ? Math.max(0, totalVideos - cumulativeVideos) 
+        : videosInMonth;
+        
+      const adjustedCoursesInMonth = isLastMonth 
+        ? Math.max(0, totalCourses - cumulativeCourses) 
+        : coursesInMonth;
+      
+      cumulativeVideos += adjustedVideosInMonth;
+      cumulativeCourses += adjustedCoursesInMonth;
+      
+      salesData.push({
+        name: months[i],
+        'Videos': adjustedVideosInMonth,
+        'Cursos': adjustedCoursesInMonth,
+        'Total Ventas': adjustedVideosInMonth + adjustedCoursesInMonth
+      });
+    }
     
-    // Formatear para TreeMap
-    const data = Object.keys(combos).map(combo => ({
-      name: combo,
-      value: combos[combo],
-      percentage: (combos[combo] / artists.length * 100).toFixed(1)
-    }));
-    
-    return data;
+    return salesData;
   };
-  
+
+  // Función para generar datos de rendimiento por producto (simulados)
+  const generateProductPerformanceData = () => {
+    return [
+      { name: 'Suscripción Basic', rating: 4.2, price: 59.99, popularity: 85 },
+      { name: 'Suscripción Pro', rating: 4.6, price: 99.99, popularity: 75 },
+      { name: 'Suscripción Enterprise', rating: 4.8, price: 149.99, popularity: 65 },
+      { name: 'Videos Musicales', rating: 4.7, price: 199, popularity: 80 },
+      { name: 'Cursos Básicos', rating: 4.5, price: 149, popularity: 70 },
+      { name: 'Cursos Avanzados', rating: 4.9, price: 299, popularity: 60 }
+    ];
+  };
+
+  // Función para generar proyecciones de ventas (simuladas)
+  const generateSalesProjections = () => {
+    // Valores actuales como punto de partida
+    const totalSubscriptionValue = 
+      (subscriptionMetrics.plans?.Basic || 0) * 59.99 +
+      (subscriptionMetrics.plans?.Pro || 0) * 99.99 +
+      (subscriptionMetrics.plans?.Enterprise || 0) * 149.99;
+    
+    const totalVideoValue = videoMetrics.totalPurchaseValue || 0;
+    const totalCourseValue = courseMetrics.totalPurchaseValue || 0;
+    
+    // Tasas de crecimiento anuales
+    const subscriptionGrowthRate = 1.40; // 40% anual
+    const videoGrowthRate = 1.35; // 35% anual
+    const courseGrowthRate = 1.50; // 50% anual
+    
+    return [
+      {
+        year: '2025',
+        Suscripciones: Math.round(totalSubscriptionValue),
+        Videos: Math.round(totalVideoValue),
+        Cursos: Math.round(totalCourseValue)
+      },
+      {
+        year: '2026',
+        Suscripciones: Math.round(totalSubscriptionValue * subscriptionGrowthRate),
+        Videos: Math.round(totalVideoValue * videoGrowthRate),
+        Cursos: Math.round(totalCourseValue * courseGrowthRate)
+      },
+      {
+        year: '2027',
+        Suscripciones: Math.round(totalSubscriptionValue * subscriptionGrowthRate * subscriptionGrowthRate),
+        Videos: Math.round(totalVideoValue * videoGrowthRate * videoGrowthRate),
+        Cursos: Math.round(totalCourseValue * courseGrowthRate * courseGrowthRate)
+      },
+      {
+        year: '2028',
+        Suscripciones: Math.round(totalSubscriptionValue * Math.pow(subscriptionGrowthRate, 3)),
+        Videos: Math.round(totalVideoValue * Math.pow(videoGrowthRate, 3)),
+        Cursos: Math.round(totalCourseValue * Math.pow(courseGrowthRate, 3))
+      },
+      {
+        year: '2029',
+        Suscripciones: Math.round(totalSubscriptionValue * Math.pow(subscriptionGrowthRate, 4)),
+        Videos: Math.round(totalVideoValue * Math.pow(videoGrowthRate, 4)),
+        Cursos: Math.round(totalCourseValue * Math.pow(courseGrowthRate, 4))
+      }
+    ];
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD'
     }).format(value);
   };
-  
+
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Cargando datos de productos...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-xl">Cargando datos de productos...</div>
+      </div>
+    );
   }
-  
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Rendimiento de Productos</h2>
-      
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(productRevenue.reduce((sum, item) => sum + item.value, 0))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +{Math.round(5 + Math.random() * 10)}% vs mes anterior
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Suscripciones Activas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {subscriptionData.reduce((sum, item) => sum + item.value, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +{Math.round(3 + Math.random() * 8)} nuevas suscripciones
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Cursos Vendidos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {courseData.reduce((sum, item) => sum + item.value, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {courseData.length} cursos diferentes
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Videos Vendidos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {videoData.reduce((sum, item) => sum + item.value, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {videoData.length} tipos de videos
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold">Rendimiento de Productos</h2>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="overview">Visión General</TabsTrigger>
-            <TabsTrigger value="details">Detalles</TabsTrigger>
-            <TabsTrigger value="trends">Tendencias</TabsTrigger>
-          </TabsList>
-          
-          <Select value={analysisTimeframe} onValueChange={setAnalysisTimeframe}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Período de análisis" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Último Mes</SelectItem>
-              <SelectItem value="quarter">Último Trimestre</SelectItem>
-              <SelectItem value="year">Último Año</SelectItem>
-              <SelectItem value="all">Todo el Histórico</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="subscriptions">Suscripciones</TabsTrigger>
+          <TabsTrigger value="products">Videos y Cursos</TabsTrigger>
+          <TabsTrigger value="projections">Proyecciones</TabsTrigger>
+        </TabsList>
         
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Gráfico de ingresos por producto */}
+        <TabsContent value="subscriptions" className="py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Ingresos por Producto</CardTitle>
-                <CardDescription>Distribución de ingresos por línea de producto</CardDescription>
+                <CardTitle>Distribución de Suscripciones</CardTitle>
+                <CardDescription>Porcentaje por tipo de plan</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={productRevenue}
+                      data={[
+                        { name: 'Basic', value: subscriptionMetrics.plans?.Basic || 0 },
+                        { name: 'Pro', value: subscriptionMetrics.plans?.Pro || 0 },
+                        { name: 'Enterprise', value: subscriptionMetrics.plans?.Enterprise || 0 }
+                      ]}
                       cx="50%"
                       cy="50%"
                       labelLine={true}
-                      outerRadius={80}
+                      outerRadius={120}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      label={({ name, value, percent }) => 
+                        `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
                     >
-                      {productRevenue.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={PRODUCT_COLORS[entry.name as keyof typeof PRODUCT_COLORS] || COLORS[index % COLORS.length]} 
-                        />
+                      {[
+                        { name: 'Basic', value: 0 },
+                        { name: 'Pro', value: 0 },
+                        { name: 'Enterprise', value: 0 }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            
-            {/* Cuadro comparativo con métricas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Métricas de Rendimiento</CardTitle>
-                <CardDescription>Comparativa entre productos (escala 0-100)</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart outerRadius={90} data={productPerformance}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="name" />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                    {['Ingresos', 'Margen', 'Conversión', 'Retención', 'Satisfacción'].map((dataKey, index) => (
-                      <Radar
-                        key={dataKey}
-                        name={dataKey}
-                        dataKey={dataKey}
-                        stroke={COLORS[index % COLORS.length]}
-                        fill={COLORS[index % COLORS.length]}
-                        fillOpacity={0.1}
-                      />
-                    ))}
-                    <Legend />
                     <Tooltip />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            
-            {/* Gráfico de cross-selling */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Análisis de Cross-Selling</CardTitle>
-                <CardDescription>Combinaciones de productos por cliente</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <Treemap
-                    data={crossSellData}
-                    dataKey="value"
-                    ratio={4/3}
-                    stroke="#fff"
-                    fill="#8884d8"
-                    content={(props: any) => {
-                      const { x, y, width, height, name, value, percentage } = props;
-                      return (
-                        <g>
-                          <rect
-                            x={x}
-                            y={y}
-                            width={width}
-                            height={height}
-                            style={{
-                              fill: COLORS[props.index % COLORS.length],
-                              stroke: '#fff',
-                              strokeWidth: 2,
-                              strokeOpacity: 1,
-                            }}
-                          />
-                          {width > 50 && height > 30 && (
-                            <>
-                              <text
-                                x={x + width / 2}
-                                y={y + height / 2 - 10}
-                                textAnchor="middle"
-                                fill="#fff"
-                                fontSize={14}
-                              >
-                                {name}
-                              </text>
-                              <text
-                                x={x + width / 2}
-                                y={y + height / 2 + 10}
-                                textAnchor="middle"
-                                fill="#fff"
-                                fontSize={12}
-                              >
-                                {percentage}%
-                              </text>
-                            </>
-                          )}
-                        </g>
-                      );
-                    }}
-                  />
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="details" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Detalle de suscripciones */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Planes de Suscripción</CardTitle>
-                <CardDescription>Distribución de planes activos</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={subscriptionData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    layout="vertical"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" />
-                    <Tooltip formatter={(value) => [`${value} usuarios`, 'Cantidad']} />
-                    <Bar dataKey="value" fill="#4f46e5">
-                      {subscriptionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {subscriptionData.map((data, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div 
-                          className="w-3 h-3 rounded-full mr-2"
-                          style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                        ></div>
-                        <span>{data.name}</span>
-                      </div>
-                      <span className="font-medium">{formatCurrency(data.revenue)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Detalle de cursos */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Cursos Populares</CardTitle>
-                <CardDescription>Top cursos por número de ventas</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={courseData.slice(0, 5)}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    layout="vertical"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={120} />
-                    <Tooltip formatter={(value) => [`${value} ventas`, 'Cantidad']} />
-                    <Bar dataKey="value" fill="#06b6d4">
-                      {courseData.slice(0, 5).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {courseData.slice(0, 5).map((data, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div 
-                          className="w-3 h-3 rounded-full mr-2"
-                          style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                        ></div>
-                        <span className="truncate max-w-[150px]">{data.name}</span>
-                      </div>
-                      <span className="font-medium">{formatCurrency(data.revenue)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Detalle de videos */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tipos de Videos</CardTitle>
-                <CardDescription>Distribución por tipo de video</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={videoData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => 
-                        percent > 0.05 ? `${name}: ${(percent * 100).toFixed(0)}%` : ""
-                      }
-                    >
-                      {videoData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={COLORS[index % COLORS.length]} 
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} videos`, 'Cantidad']} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {videoData.map((data, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div 
-                          className="w-3 h-3 rounded-full mr-2"
-                          style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                        ></div>
-                        <span>{data.name}</span>
-                      </div>
-                      <span className="font-medium">{formatCurrency(data.revenue)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Tabla comparativa */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Comparativa de Productos</CardTitle>
-              <CardDescription>Métricas clave por línea de producto</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full overflow-auto">
-                <table className="w-full caption-bottom text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="h-12 px-4 text-left align-middle font-medium">Producto</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium">Ventas</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium">Ingresos</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium">Precio Medio</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium">Margen</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium">Conversión</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium">Valoración</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {productRevenue.map((product, i) => {
-                      // Generar datos simulados para la tabla
-                      const avgPrice = product.value / Math.max(1, product.users);
-                      const margin = 40 + Math.random() * 30;
-                      const conversion = 5 + Math.random() * 15;
-                      const rating = 3.5 + Math.random() * 1.5;
-                      
-                      return (
-                        <tr key={i} className="border-b">
-                          <td className="p-4 align-middle font-medium">{product.name}</td>
-                          <td className="p-4 align-middle">{product.users}</td>
-                          <td className="p-4 align-middle">{formatCurrency(product.value)}</td>
-                          <td className="p-4 align-middle">{formatCurrency(avgPrice)}</td>
-                          <td className="p-4 align-middle">{margin.toFixed(1)}%</td>
-                          <td className="p-4 align-middle">{conversion.toFixed(1)}%</td>
-                          <td className="p-4 align-middle">{rating.toFixed(1)}/5.0</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="trends" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            {/* Gráfico de tendencias de ingresos */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendencias de Ingresos</CardTitle>
-                <CardDescription>Últimos 12 meses por línea de producto</CardDescription>
-              </CardHeader>
-              <CardContent className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={productTrends}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="Suscripciones" 
-                      stroke="#4f46e5" 
-                      activeDot={{ r: 8 }}
-                      strokeWidth={2}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="Cursos" 
-                      stroke="#06b6d4" 
-                      activeDot={{ r: 8 }}
-                      strokeWidth={2}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="Videos" 
-                      stroke="#10b981" 
-                      activeDot={{ r: 8 }}
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
             </Card>
             
-            {/* Gráfico de área acumulada */}
             <Card>
               <CardHeader>
-                <CardTitle>Ingresos Acumulados</CardTitle>
-                <CardDescription>Contribución de cada producto al total</CardDescription>
+                <CardTitle>Evolución de Suscripciones</CardTitle>
+                <CardDescription>Crecimiento mensual por tipo de plan</CardDescription>
               </CardHeader>
-              <CardContent className="h-96">
+              <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={productTrends}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    data={generateSubscriptionHistoryData()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
+                    <defs>
+                      <linearGradient id="colorBasic" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorPro" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorEnterprise" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ffc658" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#ffc658" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Tooltip />
                     <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="Suscripciones" 
-                      stackId="1"
-                      stroke="#4f46e5" 
-                      fill="#4f46e5" 
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="Cursos" 
-                      stackId="1"
-                      stroke="#06b6d4" 
-                      fill="#06b6d4" 
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="Videos" 
-                      stackId="1"
-                      stroke="#10b981" 
-                      fill="#10b981" 
-                    />
+                    <Area type="monotone" dataKey="Basic" stroke="#8884d8" fillOpacity={1} fill="url(#colorBasic)" />
+                    <Area type="monotone" dataKey="Pro" stroke="#82ca9d" fillOpacity={1} fill="url(#colorPro)" />
+                    <Area type="monotone" dataKey="Enterprise" stroke="#ffc658" fillOpacity={1} fill="url(#colorEnterprise)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
             
-            {/* Gráfico de burbujas para análisis de productos */}
             <Card>
               <CardHeader>
-                <CardTitle>Análisis de Portafolio de Productos</CardTitle>
-                <CardDescription>Volumen vs. Rentabilidad vs. Crecimiento</CardDescription>
+                <CardTitle>Métricas de Conversión</CardTitle>
+                <CardDescription>Tasas de adopción de suscripciones</CardDescription>
               </CardHeader>
-              <CardContent className="h-96">
+              <CardContent className="h-80">
+                <div className="h-full flex flex-col justify-center">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-xl text-muted-foreground mb-2">Tasa de Suscripción</div>
+                      <div className="text-5xl font-bold">
+                        {subscriptionMetrics.subscriberRatio?.toFixed(1)}%
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        {subscriptionMetrics.totalSubscribers} de {subscriptionMetrics.totalUsers} usuarios
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-xl text-muted-foreground mb-2">Preferencia de Plan</div>
+                      <div className="w-full mt-4">
+                        <div className="flex justify-between mb-1">
+                          <span>Basic</span>
+                          <span>{subscriptionMetrics.planRatios?.Basic.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full" 
+                            style={{ width: `${subscriptionMetrics.planRatios?.Basic}%` }}
+                          ></div>
+                        </div>
+                        
+                        <div className="flex justify-between mb-1 mt-4">
+                          <span>Pro</span>
+                          <span>{subscriptionMetrics.planRatios?.Pro.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ width: `${subscriptionMetrics.planRatios?.Pro}%` }}
+                          ></div>
+                        </div>
+                        
+                        <div className="flex justify-between mb-1 mt-4">
+                          <span>Enterprise</span>
+                          <span>{subscriptionMetrics.planRatios?.Enterprise.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-yellow-500 h-2 rounded-full" 
+                            style={{ width: `${subscriptionMetrics.planRatios?.Enterprise}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Valor Generado</CardTitle>
+                <CardDescription>Ingresos totales por suscripciones</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <div className="h-full flex flex-col justify-center">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-xl text-muted-foreground mb-2">Ingresos Mensuales</div>
+                      <div className="text-4xl font-bold">
+                        {formatCurrency(
+                          (subscriptionMetrics.plans?.Basic || 0) * 59.99 +
+                          (subscriptionMetrics.plans?.Pro || 0) * 99.99 +
+                          (subscriptionMetrics.plans?.Enterprise || 0) * 149.99
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Actualmente activos
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-xl text-muted-foreground mb-2">Distribución de Ingresos</div>
+                      <div className="w-full space-y-4 mt-2">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span>Basic</span>
+                            <span>{formatCurrency((subscriptionMetrics.plans?.Basic || 0) * 59.99)}</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full" 
+                              style={{ 
+                                width: `${
+                                  ((subscriptionMetrics.plans?.Basic || 0) * 59.99) / 
+                                  ((subscriptionMetrics.plans?.Basic || 0) * 59.99 +
+                                  (subscriptionMetrics.plans?.Pro || 0) * 99.99 +
+                                  (subscriptionMetrics.plans?.Enterprise || 0) * 149.99) * 100
+                                }%` 
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span>Pro</span>
+                            <span>{formatCurrency((subscriptionMetrics.plans?.Pro || 0) * 99.99)}</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full" 
+                              style={{ 
+                                width: `${
+                                  ((subscriptionMetrics.plans?.Pro || 0) * 99.99) / 
+                                  ((subscriptionMetrics.plans?.Basic || 0) * 59.99 +
+                                  (subscriptionMetrics.plans?.Pro || 0) * 99.99 +
+                                  (subscriptionMetrics.plans?.Enterprise || 0) * 149.99) * 100
+                                }%` 
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span>Enterprise</span>
+                            <span>{formatCurrency((subscriptionMetrics.plans?.Enterprise || 0) * 149.99)}</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-yellow-500 h-2 rounded-full" 
+                              style={{ 
+                                width: `${
+                                  ((subscriptionMetrics.plans?.Enterprise || 0) * 149.99) / 
+                                  ((subscriptionMetrics.plans?.Basic || 0) * 59.99 +
+                                  (subscriptionMetrics.plans?.Pro || 0) * 99.99 +
+                                  (subscriptionMetrics.plans?.Enterprise || 0) * 149.99) * 100
+                                }%` 
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="products" className="py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ventas de Productos</CardTitle>
+                <CardDescription>Evolución mensual de ventas</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={generateProductSalesData()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="Videos" fill="#8884d8" />
+                    <Bar dataKey="Cursos" fill="#82ca9d" />
+                    <Line type="monotone" dataKey="Total Ventas" stroke="#ff7300" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Métricas de Productos</CardTitle>
+                <CardDescription>Comparativa entre videos y cursos</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <div className="h-full flex flex-col justify-center space-y-6">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{videoMetrics.totalCount || 0}</div>
+                      <div className="text-sm text-muted-foreground">Videos Comprados</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{courseMetrics.totalCount || 0}</div>
+                      <div className="text-sm text-muted-foreground">Cursos Comprados</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Tasa de Compra (Videos)</span>
+                        <span>{videoMetrics.purchaseRate?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full" 
+                          style={{ width: `${videoMetrics.purchaseRate || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Tasa de Compra (Cursos)</span>
+                        <span>{courseMetrics.purchaseRate?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{ width: `${courseMetrics.purchaseRate || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-lg font-semibold mb-1">{formatCurrency(videoMetrics.avgPrice || 0)}</div>
+                      <div className="text-xs text-muted-foreground">Precio promedio por video</div>
+                    </div>
+                    
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-lg font-semibold mb-1">{formatCurrency(courseMetrics.avgPrice || 0)}</div>
+                      <div className="text-xs text-muted-foreground">Precio promedio por curso</div>
+                    </div>
+                    
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-lg font-semibold mb-1">{videoMetrics.avgVideosPerBuyer?.toFixed(1)}</div>
+                      <div className="text-xs text-muted-foreground">Videos por comprador</div>
+                    </div>
+                    
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-lg font-semibold mb-1">{courseMetrics.avgCoursesPerBuyer?.toFixed(1)}</div>
+                      <div className="text-xs text-muted-foreground">Cursos por comprador</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Rendimiento de Productos</CardTitle>
+                <CardDescription>Análisis comparativo de productos</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                   >
-                    <CartesianGrid />
+                    <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       type="number" 
-                      dataKey="volume" 
-                      name="Volumen" 
-                      unit="%" 
-                      domain={[0, 100]}
-                      label={{ value: 'Volumen de Ventas (%)', position: 'bottom', offset: 0 }}
+                      dataKey="price" 
+                      name="Precio" 
+                      unit="$"
+                      domain={[0, 350]}
                     />
                     <YAxis 
                       type="number" 
-                      dataKey="margin" 
-                      name="Margen" 
+                      dataKey="popularity" 
+                      name="Popularidad" 
                       unit="%" 
                       domain={[0, 100]}
-                      label={{ value: 'Margen (%)', angle: -90, position: 'left' }}
-                    />
-                    <ZAxis 
-                      type="number" 
-                      dataKey="growth" 
-                      range={[50, 800]} 
-                      name="Crecimiento" 
-                      unit="%" 
                     />
                     <Tooltip 
-                      formatter={(value, name) => [
-                        name === 'Crecimiento' ? `${value}% anual` : `${value}%`, 
-                        name
-                      ]} 
-                      cursor={{ strokeDasharray: '3 3' }}
+                      cursor={{ strokeDasharray: '3 3' }} 
+                      formatter={(value, name) => {
+                        if (name === 'Precio') return [`${value}$`, name];
+                        if (name === 'Popularidad') return [`${value}%`, name];
+                        return [value, name];
+                      }}
                     />
                     <Legend />
                     <Scatter 
                       name="Productos" 
-                      data={[
-                        { 
-                          name: 'Suscripciones', 
-                          volume: 70, 
-                          margin: 80, 
-                          growth: 25,
-                          color: '#4f46e5'
-                        },
-                        { 
-                          name: 'Cursos', 
-                          volume: 55, 
-                          margin: 65, 
-                          growth: 35,
-                          color: '#06b6d4'
-                        },
-                        { 
-                          name: 'Videos', 
-                          volume: 40, 
-                          margin: 50, 
-                          growth: 45,
-                          color: '#10b981'
-                        },
-                        { 
-                          name: 'Planes Enterprise', 
-                          volume: 15, 
-                          margin: 90, 
-                          growth: 20,
-                          color: '#eab308'
-                        },
-                        { 
-                          name: 'Merchandising', 
-                          volume: 20, 
-                          margin: 40, 
-                          growth: 15,
-                          color: '#ec4899'
-                        }
-                      ]} 
+                      data={generateProductPerformanceData()} 
                       fill="#8884d8"
-                      shape={(props: any) => {
-                        const { cx, cy, r, name, color } = props;
-                        return (
-                          <g>
-                            <circle 
-                              cx={cx} 
-                              cy={cy} 
-                              r={r} 
-                              stroke={color} 
-                              strokeWidth={2} 
-                              fill={color} 
-                              fillOpacity={0.3}
-                            />
-                            <text 
-                              x={cx} 
-                              y={cy - r - 5} 
-                              textAnchor="middle" 
-                              fill={color}
-                              fontSize={12}
-                              fontWeight={500}
-                            >
-                              {name}
-                            </text>
-                          </g>
-                        );
-                      }}
-                    />
+                    >
+                      {generateProductPerformanceData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Scatter>
                   </ScatterChart>
                 </ResponsiveContainer>
               </CardContent>
-              <CardContent className="pt-0">
-                <div className="text-sm text-muted-foreground">
-                  <p>La gráfica muestra la relación entre volumen de ventas, margen de beneficio y crecimiento (tamaño de burbuja).</p>
-                  <p>Los productos ideales están en la esquina superior derecha con burbujas grandes (alto volumen, alto margen, alto crecimiento).</p>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Ingresos por Producto</CardTitle>
+                <CardDescription>Distribución de ingresos no recurrentes</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { 
+                          name: 'Videos', 
+                          value: videoMetrics.totalPurchaseValue || 0 
+                        },
+                        { 
+                          name: 'Cursos', 
+                          value: courseMetrics.totalPurchaseValue || 0 
+                        }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, value, percent }) => 
+                        `${name}: ${formatCurrency(value)} (${(percent * 100).toFixed(0)}%)`}
+                    >
+                      <Cell fill="#0088FE" />
+                      <Cell fill="#00C49F" />
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="projections" className="py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Proyección de Ingresos</CardTitle>
+                <CardDescription>Proyección a 5 años por línea de producto</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={generateSalesProjections()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis tickFormatter={(value) => `$${(value/1000).toLocaleString()}k`} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Legend />
+                    <Bar dataKey="Suscripciones" stackId="a" fill="#8884d8" />
+                    <Bar dataKey="Videos" stackId="a" fill="#82ca9d" />
+                    <Bar dataKey="Cursos" stackId="a" fill="#ffc658" />
+                    <Line 
+                      type="monotone" 
+                      dataKey={(dataPoint) => 
+                        dataPoint.Suscripciones + dataPoint.Videos + dataPoint.Cursos} 
+                      name="Total" 
+                      stroke="#ff7300" 
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Crecimiento por Producto</CardTitle>
+                <CardDescription>Tendencia de crecimiento por tipo de producto</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={generateSalesProjections()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis tickFormatter={(value) => `$${(value/1000).toLocaleString()}k`} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Legend />
+                    <Line type="monotone" dataKey="Suscripciones" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="Videos" stroke="#82ca9d" />
+                    <Line type="monotone" dataKey="Cursos" stroke="#ffc658" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Tabla de Proyecciones por Producto</CardTitle>
+                <CardDescription>Desglose detallado de ingresos proyectados por año</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left px-4 py-2">Año</th>
+                        <th className="text-right px-4 py-2">Suscripciones</th>
+                        <th className="text-right px-4 py-2">Crecimiento</th>
+                        <th className="text-right px-4 py-2">Videos</th>
+                        <th className="text-right px-4 py-2">Crecimiento</th>
+                        <th className="text-right px-4 py-2">Cursos</th>
+                        <th className="text-right px-4 py-2">Crecimiento</th>
+                        <th className="text-right px-4 py-2">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {generateSalesProjections().map((projection, index) => {
+                        const prevYear = index > 0 ? generateSalesProjections()[index - 1] : null;
+                        return (
+                          <tr key={index} className="border-b hover:bg-muted/50">
+                            <td className="px-4 py-2 font-medium">{projection.year}</td>
+                            <td className="text-right px-4 py-2">{formatCurrency(projection.Suscripciones)}</td>
+                            <td className="text-right px-4 py-2 text-green-600">
+                              {prevYear ? `+${Math.round((projection.Suscripciones / prevYear.Suscripciones - 1) * 100)}%` : '-'}
+                            </td>
+                            <td className="text-right px-4 py-2">{formatCurrency(projection.Videos)}</td>
+                            <td className="text-right px-4 py-2 text-green-600">
+                              {prevYear ? `+${Math.round((projection.Videos / prevYear.Videos - 1) * 100)}%` : '-'}
+                            </td>
+                            <td className="text-right px-4 py-2">{formatCurrency(projection.Cursos)}</td>
+                            <td className="text-right px-4 py-2 text-green-600">
+                              {prevYear ? `+${Math.round((projection.Cursos / prevYear.Cursos - 1) * 100)}%` : '-'}
+                            </td>
+                            <td className="text-right px-4 py-2 font-bold">
+                              {formatCurrency(projection.Suscripciones + projection.Videos + projection.Cursos)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p>
+                    Nota: Estas proyecciones se basan en tasas de crecimiento estimadas de 40% para suscripciones, 
+                    35% para videos y 50% para cursos. Los resultados reales pueden variar significativamente.
+                  </p>
                 </div>
               </CardContent>
             </Card>
