@@ -189,7 +189,9 @@ function generateRandomArtist() {
  */
 async function saveArtistToFirestore(artistData: any): Promise<string> {
   try {
-    const artistsCollection = collection(db, 'generated_artists');
+    // Corregimos la forma de obtener la referencia a la colección
+    // usando el método correcto para Firebase v9 (módulo ESM)
+    const artistsCollection = collection(db as any, 'generated_artists');
     const docRef = await addDoc(artistsCollection, {
       ...artistData,
       createdAt: Timestamp.now()
@@ -223,7 +225,10 @@ async function main() {
 }
 
 // Ejecutar el script si es llamado directamente
-if (require.main === module) {
+// Usando la forma de módulos ES para detectar si es el archivo principal
+// En lugar de require.main === module que es específico de CommonJS
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
   main()
     .then(() => {
       console.log('Proceso completado exitosamente.');

@@ -12,10 +12,15 @@ import {
   CircleDollarSign, 
   Brain,
   Gamepad2,
-  Settings
+  Settings,
+  Sparkles
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Footer() {
+  const { user } = useAuth();
+  const isAdmin = user?.email === "convoycubano@gmail.com";
+  
   return (
     <footer className="relative border-t bg-gradient-to-b from-background to-background/80 backdrop-blur-xl">
       <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
@@ -191,6 +196,14 @@ export function Footer() {
                   Cookies
                 </Button>
               </Link>
+              {isAdmin && (
+                <Link href="/artist-generator">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-orange-500">
+                    <Sparkles className="h-4 w-4" />
+                    Artist Generator
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
