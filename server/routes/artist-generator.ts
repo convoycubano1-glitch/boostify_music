@@ -1,9 +1,9 @@
 /**
  * Rutas para la generación de artistas aleatorios
  */
-import { Router, Request, Response } from "express";
-import { generateRandomArtist, saveArtistToFirestore } from "../../scripts/generate-random-artist";
-import { authenticate } from "../middleware/auth";
+import { Router, Request, Response } from 'express';
+import { authenticate } from '../middleware/auth';
+import { generateRandomArtist, saveArtistToFirestore } from '../../scripts/generate-random-artist';
 
 const router = Router();
 
@@ -13,42 +13,26 @@ const router = Router();
  */
 router.post("/api/generate-artist", async (req: Request, res: Response) => {
   try {
-    console.log("Generando artista aleatorio...");
+    console.log('Recibida solicitud para generar artista aleatorio');
+    
+    // Generar datos del artista aleatorio
     const artistData = generateRandomArtist();
+    console.log('Artista generado exitosamente');
     
-    // Si hay un usuario autenticado, asociamos el artista a su cuenta
-    let userId = null;
-    if (req.headers.authorization) {
-      try {
-        const user = (req as any).user;
-        if (user && user.uid) {
-          userId = user.uid;
-        }
-      } catch (error) {
-        console.log("No hay usuario autenticado o el token es inválido");
-      }
-    }
-    
-    // Guardar el artista en Firestore
-    console.log("Guardando artista en Firestore...");
+    // Guardar artista en Firestore
     const firestoreId = await saveArtistToFirestore(artistData);
+    console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
     
-    // Devolver los datos generados
+    // Devolver respuesta con datos del artista y su ID en Firestore
     res.status(200).json({
-      success: true,
-      message: "Artista generado exitosamente",
-      data: {
-        ...artistData,
-        firestoreId,
-        userId
-      }
+      ...artistData,
+      firestoreId
     });
   } catch (error) {
-    console.error("Error al generar artista:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al generar artista",
-      error: error instanceof Error ? error.message : "Error desconocido"
+    console.error('Error generando artista aleatorio:', error);
+    res.status(500).json({ 
+      error: 'Error al generar artista aleatorio',
+      details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 });
@@ -59,36 +43,35 @@ router.post("/api/generate-artist", async (req: Request, res: Response) => {
  */
 router.post("/api/generate-artist/secure", authenticate, async (req: Request, res: Response) => {
   try {
-    console.log("Generando artista aleatorio (secure)...");
+    console.log('Recibida solicitud autenticada para generar artista aleatorio');
+    
+    // Obtener ID del usuario autenticado
+    const userId = req.user?.uid || req.user?.id;
+    console.log(`Solicitud de usuario: ${userId}`);
+    
+    // Generar datos del artista aleatorio
     const artistData = generateRandomArtist();
+    console.log('Artista generado exitosamente');
     
-    // Obtener el usuario autenticado
-    const user = (req as any).user;
-    const userId = user.uid;
-    
-    // Guardar el artista en Firestore
-    console.log("Guardando artista en Firestore...");
-    const firestoreId = await saveArtistToFirestore({
+    // Guardar artista en Firestore, incluyendo referencia al usuario que lo generó
+    const artistDataWithUser = {
       ...artistData,
-      userId // Asociar explícitamente con el usuario autenticado
-    });
+      generatedBy: userId
+    };
     
-    // Devolver los datos generados
+    const firestoreId = await saveArtistToFirestore(artistDataWithUser);
+    console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
+    
+    // Devolver respuesta con datos del artista y su ID en Firestore
     res.status(200).json({
-      success: true,
-      message: "Artista generado exitosamente",
-      data: {
-        ...artistData,
-        firestoreId,
-        userId
-      }
+      ...artistDataWithUser,
+      firestoreId
     });
   } catch (error) {
-    console.error("Error al generar artista:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al generar artista",
-      error: error instanceof Error ? error.message : "Error desconocido"
+    console.error('Error generando artista aleatorio (ruta segura):', error);
+    res.status(500).json({ 
+      error: 'Error al generar artista aleatorio',
+      details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 });

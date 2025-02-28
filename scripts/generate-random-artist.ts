@@ -4,7 +4,7 @@
  */
 
 import { db } from '../server/firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, getFirestore } from 'firebase/firestore';
 import { faker } from '@faker-js/faker';
 
 /**
@@ -175,7 +175,7 @@ function generateRandomArtist() {
     },
     management: {
       email: `management@${artistName.toLowerCase().replace(/\s+/g, '')}.com`,
-      phone: faker.phone.number({ format: '+## ### ### ###', style: 'international' })
+      phone: faker.phone.number()
     }
   };
 
