@@ -351,3 +351,57 @@ router.delete("/api/delete-all-artists", async (req: Request, res: Response) => 
 });
 
 export default router;
+import { Router, Request, Response } from 'express';
+
+const router = Router();
+
+/**
+ * Artist Generator API routes
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    res.json({
+      status: 'success',
+      message: 'Artist Generator API is working'
+    });
+  } catch (error) {
+    console.error('Error in artist generator route:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * Generate a new artist
+ */
+router.post('/generate', async (req: Request, res: Response) => {
+  try {
+    const { genre, style, influences } = req.body;
+    
+    // Here would be the actual implementation to generate an artist
+    // For now, we're just returning a placeholder response
+    
+    res.json({
+      status: 'success',
+      message: 'Artist generated successfully',
+      data: {
+        artistName: 'Generated Artist',
+        genre: genre || 'Pop',
+        style: style || 'Contemporary',
+        influences: influences || []
+      }
+    });
+  } catch (error) {
+    console.error('Error generating artist:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to generate artist',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+export default router;

@@ -24,12 +24,12 @@ import { insertBookingSchema } from "./db/schema";
 import translationRouter from './routes/translation';
 import managerRouter from './routes/manager';
 import artistRouter from './routes/artist';
-import artistGeneratorRouter from './routes/artist-generator';
+import artistGeneratorRouter from './routes/artist-generator'; // Added import
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
-import { authenticate } from './middleware/auth'; // Fixed import path
+import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 
 
@@ -66,13 +66,13 @@ export function registerRoutes(app: Express): Server {
   setupOpenAIRoutes(app);
   setupEducationRoutes(app);
   setupFilesRoutes(app);
-  
+
   // Register generated artists routes (no authentication required)
   app.use(generatedArtistsRouter);
-  
+
   // Register artist generator routes (no authentication required)
-  app.use(artistGeneratorRouter);
-  
+  app.use('/artist-generator', artistGeneratorRouter); // Added route registration
+
   // Servicios que requieren autenticación
   setupAuth(app);
   setupSpotifyRoutes(app);
@@ -81,16 +81,16 @@ export function registerRoutes(app: Express): Server {
   setupEmailRoutes(app);
   setupApifyRoutes(app);
   setupSocialNetworkRoutes(app);
-  
+
   // Usar Firestore para la red social
   app.use('/api/firestore-social', firestoreSocialNetworkRouter);
-  
+
   // Register courses routes
   app.use(coursesRouter);
 
   // Register achievements routes
   app.use(achievementsRouter);
-  
+
   // Register investors routes
   app.use('/api/investors', investorsRouter);
 
@@ -859,6 +859,15 @@ export function registerRoutes(app: Express): Server {
       console.error('Error completing course:', error);
       res.status(500).json({ error: 'Failed to complete course' });
     }
+  });
+
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      message: 'Server is running',
+      timestamp: new Date().toISOString()
+    });
   });
 
   const httpServer = createServer(app);

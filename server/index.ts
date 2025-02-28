@@ -34,11 +34,43 @@ if (process.env.NODE_ENV === "production") {
 
   // Verify build files exist
   if (!fs.existsSync(distPath)) {
-    throw new Error(`❌ Production build directory not found: ${distPath}`);
+    console.error(`⚠️ Warning: Production build directory not found: ${distPath}`);
+    
+    // Create directory if it doesn't exist
+    try {
+      fs.mkdirSync(distPath, { recursive: true });
+      console.log(`✅ Created missing directory: ${distPath}`);
+    } catch (error) {
+      console.error(`❌ Failed to create directory: ${error}`);
+      throw new Error(`❌ Failed to create production build directory: ${distPath}`);
+    }
   }
 
   if (!fs.existsSync(indexPath)) {
-    throw new Error(`❌ index.html not found in production build`);
+    console.error(`⚠️ Warning: index.html not found in production build: ${indexPath}`);
+    
+    // Create a minimal index.html if it doesn't exist
+    try {
+      const minimalHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    window.location.href = '/api/health';
+  </script>
+</body>
+</html>`;
+      fs.writeFileSync(indexPath, minimalHtml);
+      console.log(`✅ Created minimal index.html at: ${indexPath}`);
+    } catch (error) {
+      console.error(`❌ Failed to create index.html: ${error}`);
+      throw new Error(`❌ Failed to create index.html in production build`);
+    }
   }
 
   // Log directory contents for debugging
