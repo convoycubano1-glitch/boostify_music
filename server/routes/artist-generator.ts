@@ -22,12 +22,12 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     });
-    
+
     // Actualizar el documento recién creado para incluir su propio firestoreId
     await docRef.update({
       firestoreId: docRef.id
     });
-    
+
     console.log(`Artista guardado con ID: ${docRef.id}`);
     return docRef.id;
   } catch (error) {
@@ -43,24 +43,24 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
 router.post("/api/generate-artist", async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud para generar artista aleatorio');
-    
+
     // Generar datos del artista aleatorio
     const artistData = await generateRandomArtist();
     console.log('Artista generado exitosamente:', artistData.name);
-    
+
     // Guardar artista en Firestore
     const firestoreId = await saveArtistToFirestore(artistData);
     console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
-    
+
     // Añadir el ID de Firestore al objeto de artista y actualizar el documento con ese ID
     const completeArtistData = {
       ...artistData,
       firestoreId
     };
-    
+
     // Actualizar el documento para incluir firestoreId
     await db.collection('generated_artists').doc(firestoreId).update({ firestoreId });
-    
+
     // Devolver respuesta con datos completos del artista
     res.status(200).json(completeArtistData);
   } catch (error) {
@@ -79,24 +79,24 @@ router.post("/api/generate-artist", async (req: Request, res: Response) => {
 router.post("/api/generate-artist/secure", authenticate, async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud autenticada para generar artista aleatorio');
-    
+
     // Obtener ID del usuario autenticado
     const userId = req.user?.uid || req.user?.id;
     console.log(`Solicitud de usuario: ${userId}`);
-    
+
     // Generar datos del artista aleatorio
     const artistData = await generateRandomArtist();
     console.log('Artista generado exitosamente:', artistData.name);
-    
+
     // Guardar artista en Firestore, incluyendo referencia al usuario que lo generó
     const artistDataWithUser = {
       ...artistData,
       generatedBy: userId
     };
-    
+
     const firestoreId = await saveArtistToFirestore(artistDataWithUser);
     console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
-    
+
     // Devolver respuesta con datos del artista y su ID en Firestore
     res.status(200).json({
       ...artistDataWithUser,
@@ -118,11 +118,11 @@ router.post("/api/generate-artist/secure", authenticate, async (req: Request, re
 router.post("/api/regenerate-artist-field", async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud para regenerar campo de artista');
-    
+
     // Obtener campo y ID del artista
     const { field, artistId } = req.body;
     console.log(`Campo a regenerar: ${field}, Artista ID: ${artistId}`);
-    
+
     // Validar campo
     const validFields = ['subscription', 'videos', 'courses', 'biography', 'look'];
     if (!validFields.includes(field)) {
@@ -131,10 +131,10 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
         details: `El campo debe ser uno de: ${validFields.join(', ')}`
       });
     }
-    
+
     // Si es subscription, videos, o courses, generar datos nuevos
     let updatedData: any = {};
-    
+
     if (field === 'subscription') {
       // Datos del plan de suscripción
       const SUBSCRIPTION_PLANS = [
@@ -143,7 +143,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
         { name: "Enterprise", price: 149.99 }
       ];
       const selectedPlan = SUBSCRIPTION_PLANS[Math.floor(Math.random() * SUBSCRIPTION_PLANS.length)];
-      
+
       updatedData.subscription = {
         plan: selectedPlan.name,
         price: selectedPlan.price,
@@ -157,7 +157,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
       const videoPrice = 199;
       const videosGenerated = Math.floor(Math.random() * 5) + 1;
       const totalVideoSpend = videoPrice * videosGenerated;
-      
+
       // Generar videos
       const videos = [];
       const VIDEO_TYPES = [
@@ -167,7 +167,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
         "Lyric video",
         "Behind the scenes"
       ];
-      
+
       for (let i = 0; i < videosGenerated; i++) {
         const videoId = `VID-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
         videos.push({
@@ -180,7 +180,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
           price: videoPrice
         });
       }
-      
+
       // Actualizar datos de compras
       updatedData.purchases = {
         videos: {
@@ -196,7 +196,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
       const courseCount = Math.floor(Math.random() * 3) + 1;
       const courses = [];
       let totalSpent = 0;
-      
+
       const COURSE_TITLES = [
         "Producción Musical Avanzada",
         "Marketing Digital para Músicos",
@@ -208,7 +208,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
         "Armonía y Teoría Musical",
         "Creación de Beats"
       ];
-      
+
       for (let i = 0; i < courseCount; i++) {
         const price = Math.floor(Math.random() * 150) + 149; // 149-299
         totalSpent += price;
@@ -221,7 +221,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
           completed: Math.random() > 0.6
         });
       }
-      
+
       // Actualizar datos de compras
       updatedData.purchases = {
         courses: {
@@ -232,9 +232,9 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
         }
       };
     }
-    
+
     console.log(`Datos regenerados para el campo ${field}:`, updatedData);
-    
+
     // Si hay ID de artista en Firestore, actualizar documento
     if (artistId) {
       const docRef = db.collection('generated_artists').doc(artistId);
@@ -244,7 +244,7 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
       });
       console.log(`Artista actualizado en Firestore con ID: ${artistId}`);
     }
-    
+
     // Devolver respuesta con datos regenerados
     res.status(200).json({
       success: true,
@@ -267,29 +267,29 @@ router.delete("/api/delete-artist/:id", async (req: Request, res: Response) => {
   try {
     const artistId = req.params.id;
     console.log(`Recibida solicitud para eliminar artista con ID: ${artistId}`);
-    
+
     if (!artistId) {
       return res.status(400).json({
         error: 'ID de artista no proporcionado',
         details: 'Se requiere un ID de artista válido para eliminar'
       });
     }
-    
+
     // Verificar que el artista existe
     const artistRef = db.collection('generated_artists').doc(artistId);
     const artistDoc = await artistRef.get();
-    
+
     if (!artistDoc.exists) {
       return res.status(404).json({
         error: 'Artista no encontrado',
         details: `No se encontró un artista con ID: ${artistId}`
       });
     }
-    
+
     // Eliminar el artista
     await artistRef.delete();
     console.log(`Artista eliminado con ID: ${artistId}`);
-    
+
     res.status(200).json({
       success: true,
       message: `Artista con ID ${artistId} eliminado correctamente`,
@@ -310,11 +310,11 @@ router.delete("/api/delete-artist/:id", async (req: Request, res: Response) => {
 router.delete("/api/delete-all-artists", async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud para eliminar todos los artistas');
-    
+
     // Obtener todos los documentos en la colección
     const artistsRef = db.collection('generated_artists');
     const snapshot = await artistsRef.get();
-    
+
     if (snapshot.empty) {
       return res.status(200).json({
         success: true,
@@ -322,20 +322,20 @@ router.delete("/api/delete-all-artists", async (req: Request, res: Response) => 
         count: 0
       });
     }
-    
+
     // Eliminar cada documento en un batch
     const batch = db.batch();
     let count = 0;
-    
+
     snapshot.forEach((doc) => {
       batch.delete(doc.ref);
       count++;
     });
-    
+
     // Ejecutar el batch
     await batch.commit();
     console.log(`${count} artistas eliminados correctamente`);
-    
+
     res.status(200).json({
       success: true,
       message: `${count} artistas eliminados correctamente`,
@@ -353,12 +353,12 @@ router.delete("/api/delete-all-artists", async (req: Request, res: Response) => 
 export default router;
 import { Router, Request, Response } from 'express';
 
-const router = Router();
+const artistRouter = Router();
 
 /**
  * Artist Generator API routes
  */
-router.get('/', async (req: Request, res: Response) => {
+artistRouter.get('/', async (req: Request, res: Response) => {
   try {
     res.json({
       status: 'success',
@@ -377,13 +377,13 @@ router.get('/', async (req: Request, res: Response) => {
 /**
  * Generate a new artist
  */
-router.post('/generate', async (req: Request, res: Response) => {
+artistRouter.post('/generate', async (req: Request, res: Response) => {
   try {
     const { genre, style, influences } = req.body;
-    
+
     // Here would be the actual implementation to generate an artist
     // For now, we're just returning a placeholder response
-    
+
     res.json({
       status: 'success',
       message: 'Artist generated successfully',
@@ -404,4 +404,4 @@ router.post('/generate', async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+export default artistRouter;
