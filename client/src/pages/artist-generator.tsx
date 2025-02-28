@@ -10,6 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 import {
   ImageIcon,
   Music2Icon,
@@ -82,6 +85,91 @@ export default function ArtistGeneratorPage() {
   const [currentArtist, setCurrentArtist] = useState<ArtistData | null>(null);
   const [savedArtists, setSavedArtists] = useState<ArtistData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Función para crear un artista vacío/placeholder cuando no hay datos
+  const createEmptyArtist = (): ArtistData => {
+    return {
+      id: "placeholder",
+      name: "Artista de Ejemplo",
+      biography: "Por favor, genera un nuevo artista usando el botón 'Generar Artista Aleatorio'",
+      album: {
+        id: "placeholder-album",
+        name: "Álbum de Ejemplo",
+        release_date: "2025",
+        songs: [],
+        single: {
+          title: "Single de Ejemplo",
+          duration: "0:00"
+        }
+      },
+      look: {
+        description: "Sin descripción disponible",
+        color_scheme: "Sin paleta de colores definida"
+      },
+      music_genres: ["Ejemplo"],
+      image_prompts: {
+        artist_look: "Genera un artista para ver prompts de imagen",
+        album_cover: "Genera un artista para ver prompts de álbum",
+        promotional: "Genera un artista para ver prompts promocionales"
+      },
+      social_media: {
+        twitter: { handle: "ejemplo", url: "" },
+        instagram: { handle: "ejemplo", url: "" },
+        tiktok: { handle: "ejemplo", url: "" },
+        youtube: { handle: "ejemplo", url: "" },
+        spotify: { handle: "ejemplo", url: "" }
+      },
+      password: {
+        value: "",
+        last_updated: ""
+      },
+      management: {
+        email: "",
+        phone: ""
+      }
+    };
+  };
+  
+  // Efecto para cargar los artistas guardados al montar el componente
+  useEffect(() => {
+    const loadSavedArtists = async () => {
+      try {
+        const artistsRef = collection(db, "generated_artists");
+        const q = query(artistsRef, orderBy("createdAt", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+        
+        const artists: ArtistData[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          artists.push({
+            ...data,
+            firestoreId: doc.id,
+          } as ArtistData);
+        });
+        
+        setSavedArtists(artists);
+        
+        // Si hay artistas, establecer el primero como actual
+        if (artists.length > 0) {
+          setCurrentArtist(artists[0]);
+        } else {
+          // Si no hay artistas, usar un placeholder
+          setCurrentArtist(createEmptyArtist());
+        }
+      } catch (error) {
+        console.error("Error loading saved artists:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los artistas guardados.",
+          variant: "destructive",
+        });
+        // Si hay error, también creamos un placeholder para evitar errores de UI
+        setCurrentArtist(createEmptyArtist());
+      }
+    };
+
+    loadSavedArtists();
+  }, [toast]);
 
   // Mutación para generar un artista aleatorio
   const generateArtistMutation = useMutation({
@@ -97,11 +185,44 @@ export default function ArtistGeneratorPage() {
     onSuccess: (response) => {
       console.log("Mutation success, data:", response);
       // Asegurarse de que tenemos datos y son del tipo correcto
-      if (response && response.data) {
+      if (response && response.data && response.data.name) {
         const newArtist = response.data as ArtistData;
+        
+        // Validar estructura mínima requerida
+        if (!newArtist.album) newArtist.album = { 
+          id: `fallback-${Date.now()}`, 
+          name: "Álbum sin título", 
+          release_date: new Date().getFullYear().toString(),
+          songs: [],
+          single: { title: "Single sin título", duration: "0:00" }
+        };
+        
+        if (!newArtist.look) newArtist.look = {
+          description: "Sin descripción disponible",
+          color_scheme: "Sin información de colores"
+        };
+        
+        if (!newArtist.image_prompts) newArtist.image_prompts = {
+          artist_look: "Imagen de artista no disponible",
+          album_cover: "Portada de álbum no disponible",
+          promotional: "Imagen promocional no disponible"
+        };
+        
+        if (!newArtist.music_genres) newArtist.music_genres = ["Sin género"];
+        
+        if (!newArtist.social_media) newArtist.social_media = {
+          twitter: { handle: "", url: "" },
+          instagram: { handle: "", url: "" },
+          tiktok: { handle: "", url: "" },
+          youtube: { handle: "", url: "" },
+          spotify: { handle: "", url: "" }
+        };
+        
         setCurrentArtist(newArtist);
+        
         // Guardar el artista en el arreglo de artistas guardados
-        setSavedArtists(prev => [...prev, newArtist]);
+        // Solo mantener los 10 más recientes
+        setSavedArtists(prev => [newArtist, ...prev.slice(0, 9)]);
         
         toast({
           title: "Artista generado con éxito",
@@ -121,7 +242,7 @@ export default function ArtistGeneratorPage() {
       console.error("Error al generar artista:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar el artista aleatorio.",
+        description: "No se pudo generar el artista aleatorio. Por favor, intenta nuevamente.",
         variant: "destructive"
       });
       setIsLoading(false);
