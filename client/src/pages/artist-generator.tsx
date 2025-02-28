@@ -451,6 +451,11 @@ export default function ArtistGeneratorPage() {
       // Solo implementaremos la regeneración simulada (sin backend real)
       if (!currentArtist) return;
       
+      toast({
+        title: "Campo actualizado",
+        description: `Se ha regenerado el campo ${field} con éxito`,
+      });
+      
       // Crear una copia del artista actual para modificar
       const updatedArtist = { ...currentArtist };
       
@@ -618,7 +623,7 @@ export default function ArtistGeneratorPage() {
     
     regenerateFieldMutation.mutate({ 
       field, 
-      artistId: currentArtist.id 
+      artistId: currentArtist.firestoreId || currentArtist.id
     });
   };
 
