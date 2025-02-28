@@ -11,6 +11,7 @@ import AdminPage from "@/pages/admin";
 import AIAgentsPage from "@/pages/ai-agents";
 import AIAdvisorsPage from "@/pages/ai-advisors";
 import AnalyticsPage from "@/pages/analytics";
+import AnalyticsDashboardPage from "@/pages/analytics-dashboard";
 import ArtistDashboard from "@/pages/artist-dashboard";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
 import ArtistGeneratorPage from "@/pages/artist-generator";
@@ -146,6 +147,7 @@ const Router = () => {
   const WrappedNewsPage = withPageWrapper(NewsPage);
   const WrappedEventsPage = withPageWrapper(EventsPage);
   const WrappedAnalyticsPage = withPageWrapper(AnalyticsPage);
+  const WrappedAnalyticsDashboardPage = withPageWrapper(AnalyticsDashboardPage);
   const WrappedGlobalPage = withPageWrapper(GlobalPage);
   const WrappedVideosPage = withPageWrapper(VideosPage);
   const WrappedBlogPage = withPageWrapper(BlogPage);
@@ -199,6 +201,7 @@ const Router = () => {
         <ProtectedRoute path="/news" component={WrappedNewsPage} />
         <ProtectedRoute path="/events" component={WrappedEventsPage} />
         <ProtectedRoute path="/analytics" component={WrappedAnalyticsPage} />
+        <ProtectedRoute path="/analytics-dashboard" component={WrappedAnalyticsDashboardPage} />
         <ProtectedRoute path="/global" component={WrappedGlobalPage} />
         <ProtectedRoute path="/videos" component={WrappedVideosPage} />
         <ProtectedRoute path="/blog" component={WrappedBlogPage} />
