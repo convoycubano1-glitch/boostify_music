@@ -137,6 +137,7 @@ export default function ArtistGeneratorPage() {
   const { toast } = useToast();
   const [currentArtist, setCurrentArtist] = useState<ArtistData | null>(null);
   const [savedArtists, setSavedArtists] = useState<ArtistData[]>([]);
+  const [totalArtistsCount, setTotalArtistsCount] = useState(0); // Contador total de artistas en Firestore
   const [isLoading, setIsLoading] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null); // Rastrea qué campo está siendo regenerado
   const [isDeleting, setIsDeleting] = useState(false); // Estado para el borrado
@@ -192,10 +193,19 @@ export default function ArtistGeneratorPage() {
       try {
         console.log("Cargando artistas desde Firestore...");
         const artistsRef = collection(db, "generated_artists");
+        
+        // Primero obtenemos el conteo total de artistas en Firestore
+        const countQuery = query(artistsRef);
+        const countSnapshot = await getDocs(countQuery);
+        const totalCount = countSnapshot.size;
+        setTotalArtistsCount(totalCount);
+        console.log(`Total de artistas en Firestore: ${totalCount}`);
+        
+        // Luego obtenemos solo los 10 más recientes para mostrar en la lista
         const q = query(artistsRef, orderBy("createdAt", "desc"), limit(10));
         const querySnapshot = await getDocs(q);
         
-        console.log(`Encontrados ${querySnapshot.size} artistas`);
+        console.log(`Cargados ${querySnapshot.size} artistas recientes de un total de ${totalCount}`);
         
         const artists: ArtistData[] = [];
         querySnapshot.forEach((doc) => {
@@ -1536,7 +1546,7 @@ export default function ArtistGeneratorPage() {
 
           {savedArtists && savedArtists.length > 0 && (
             <div className="mt-12">
-              <h2 className="text-2xl font-bold mb-6">Artistas Generados ({savedArtists.length})</h2>
+              <h2 className="text-2xl font-bold mb-6">Artistas Generados ({totalArtistsCount})</h2>
               <ScrollArea className="h-[300px] rounded-md border p-4">
                 <div className="space-y-6">
                   {savedArtists.map((artist, index) => (
