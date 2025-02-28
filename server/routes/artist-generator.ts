@@ -101,4 +101,153 @@ router.post("/api/generate-artist/secure", authenticate, async (req: Request, re
   }
 });
 
+/**
+ * Endpoint para regenerar campos específicos de un artista
+ * Tales como suscripción, compras de videos, o cursos
+ */
+router.post("/api/regenerate-artist-field", async (req: Request, res: Response) => {
+  try {
+    console.log('Recibida solicitud para regenerar campo de artista');
+    
+    // Obtener campo y ID del artista
+    const { field, artistId } = req.body;
+    console.log(`Campo a regenerar: ${field}, Artista ID: ${artistId}`);
+    
+    // Validar campo
+    const validFields = ['subscription', 'videos', 'courses', 'biography', 'look'];
+    if (!validFields.includes(field)) {
+      return res.status(400).json({ 
+        error: 'Campo no válido',
+        details: `El campo debe ser uno de: ${validFields.join(', ')}`
+      });
+    }
+    
+    // Si es subscription, videos, o courses, generar datos nuevos
+    let updatedData: any = {};
+    
+    if (field === 'subscription') {
+      // Datos del plan de suscripción
+      const SUBSCRIPTION_PLANS = [
+        { name: "Basic", price: 59.99 },
+        { name: "Pro", price: 99.99 },
+        { name: "Enterprise", price: 149.99 }
+      ];
+      const selectedPlan = SUBSCRIPTION_PLANS[Math.floor(Math.random() * SUBSCRIPTION_PLANS.length)];
+      
+      updatedData.subscription = {
+        plan: selectedPlan.name,
+        price: selectedPlan.price,
+        status: ['active', 'trial', 'expired'][Math.floor(Math.random() * 3)],
+        startDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
+        renewalDate: new Date(Date.now() + Math.random() * 10000000000).toISOString().split('T')[0]
+      };
+    } 
+    else if (field === 'videos') {
+      // Datos de videos generados
+      const videoPrice = 199;
+      const videosGenerated = Math.floor(Math.random() * 5) + 1;
+      const totalVideoSpend = videoPrice * videosGenerated;
+      
+      // Generar videos
+      const videos = [];
+      const VIDEO_TYPES = [
+        "Visualizador de audio",
+        "Video musical completo",
+        "Teaser promocional",
+        "Lyric video",
+        "Behind the scenes"
+      ];
+      
+      for (let i = 0; i < videosGenerated; i++) {
+        const videoId = `VID-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        videos.push({
+          id: videoId,
+          title: `Video Musical ${i+1}`,
+          type: VIDEO_TYPES[Math.floor(Math.random() * VIDEO_TYPES.length)],
+          duration: `${Math.floor(Math.random() * 4) + 1}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
+          creationDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
+          resolution: ["720p", "1080p", "4K"][Math.floor(Math.random() * 3)],
+          price: videoPrice
+        });
+      }
+      
+      // Actualizar datos de compras
+      updatedData.purchases = {
+        videos: {
+          count: videosGenerated,
+          totalSpent: totalVideoSpend,
+          lastPurchase: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
+          videos: videos
+        }
+      };
+    } 
+    else if (field === 'courses') {
+      // Datos de cursos
+      const courseCount = Math.floor(Math.random() * 3) + 1;
+      const courses = [];
+      let totalSpent = 0;
+      
+      const COURSE_TITLES = [
+        "Producción Musical Avanzada",
+        "Marketing Digital para Músicos",
+        "Composición para Bandas Sonoras",
+        "Técnicas Vocales Profesionales",
+        "Distribución Musical en la Era Digital",
+        "Masterización de Audio",
+        "Estrategias de Lanzamiento Musical",
+        "Armonía y Teoría Musical",
+        "Creación de Beats"
+      ];
+      
+      for (let i = 0; i < courseCount; i++) {
+        const price = Math.floor(Math.random() * 150) + 149; // 149-299
+        totalSpent += price;
+        courses.push({
+          id: `CRS-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+          title: COURSE_TITLES[Math.floor(Math.random() * COURSE_TITLES.length)],
+          price: price,
+          purchaseDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
+          progress: Math.floor(Math.random() * 101),
+          completed: Math.random() > 0.6
+        });
+      }
+      
+      // Actualizar datos de compras
+      updatedData.purchases = {
+        courses: {
+          count: courseCount,
+          totalSpent: totalSpent,
+          lastPurchase: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
+          courses: courses
+        }
+      };
+    }
+    
+    console.log(`Datos regenerados para el campo ${field}:`, updatedData);
+    
+    // Si hay ID de artista en Firestore, actualizar documento
+    if (artistId) {
+      const docRef = db.collection('generated_artists').doc(artistId);
+      await docRef.update({
+        ...updatedData,
+        updatedAt: Timestamp.now()
+      });
+      console.log(`Artista actualizado en Firestore con ID: ${artistId}`);
+    }
+    
+    // Devolver respuesta con datos regenerados
+    res.status(200).json({
+      success: true,
+      field,
+      ...updatedData
+    });
+  } catch (error) {
+    console.error('Error regenerando campo de artista:', error);
+    res.status(500).json({ 
+      error: 'Error al regenerar campo de artista',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
 export default router;

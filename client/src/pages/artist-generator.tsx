@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -30,7 +30,18 @@ import {
   SparklesIcon,
   SquareUserIcon,
   UserCircle2Icon,
-  Share2Icon
+  Share2Icon,
+  BadgeDollarSign,
+  CreditCard,
+  Video,
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  ShoppingBag,
+  FileText,
+  BarChart3,
+  RotateCcw
 } from "lucide-react";
 
 interface ArtistData {
@@ -121,6 +132,7 @@ export default function ArtistGeneratorPage() {
   const [currentArtist, setCurrentArtist] = useState<ArtistData | null>(null);
   const [savedArtists, setSavedArtists] = useState<ArtistData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState<string | null>(null); // Rastrea qué campo está siendo regenerado
   
   // Función para crear un artista vacío/placeholder cuando no hay datos
   const createEmptyArtist = (): ArtistData => {
@@ -407,6 +419,205 @@ export default function ArtistGeneratorPage() {
     toast({
       title: "Archivo descargado",
       description: `Metadatos de ${currentArtist.name} guardados como JSON`
+    });
+  };
+
+  // Función para regenerar campos específicos del artista
+  const regenerateFieldMutation = useMutation({
+    mutationFn: async ({ field, artistId }: { field: string, artistId: string }) => {
+      setIsRegenerating(field);
+      try {
+        const response = await fetch('/api/regenerate-artist-field', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ field, artistId }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return { field, data };
+      } catch (error) {
+        console.error(`Error regenerando ${field}:`, error);
+        throw error;
+      }
+    },
+    onSuccess: ({ field, data }) => {
+      // Solo implementaremos la regeneración simulada (sin backend real)
+      if (!currentArtist) return;
+      
+      // Crear una copia del artista actual para modificar
+      const updatedArtist = { ...currentArtist };
+      
+      // Actualizar según el campo
+      switch (field) {
+        case 'biography':
+          updatedArtist.biography = data.biography || `Nueva biografía generada para ${updatedArtist.name}`;
+          break;
+        case 'look':
+          updatedArtist.look = {
+            description: data.look?.description || `Nuevo look detallado para ${updatedArtist.name}`,
+            color_scheme: data.look?.color_scheme || updatedArtist.look.color_scheme
+          };
+          break;
+        case 'subscription':
+          const plans = [
+            { name: "Basic", price: 59.99 },
+            { name: "Pro", price: 99.99 },
+            { name: "Enterprise", price: 149.99 }
+          ];
+          const randomPlan = plans[Math.floor(Math.random() * plans.length)];
+          
+          updatedArtist.subscription = {
+            plan: randomPlan.name,
+            price: randomPlan.price,
+            status: ['active', 'trial', 'expired'][Math.floor(Math.random() * 3)] as 'active' | 'trial' | 'expired',
+            startDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
+            renewalDate: new Date(Date.now() + Math.random() * 10000000000).toISOString().split('T')[0]
+          };
+          break;
+        case 'videos':
+          const videoCount = Math.floor(Math.random() * 5) + 1;
+          const videos = [];
+          const videoPrice = 199;
+          
+          for (let i = 0; i < videoCount; i++) {
+            videos.push({
+              id: `VID-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+              title: `Video Musical ${i+1}`,
+              type: ["Visualizador de audio", "Video musical completo", "Teaser promocional", "Lyric video", "Behind the scenes"][Math.floor(Math.random() * 5)],
+              duration: `${Math.floor(Math.random() * 4) + 1}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
+              creationDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
+              resolution: ["720p", "1080p", "4K"][Math.floor(Math.random() * 3)],
+              price: videoPrice
+            });
+          }
+          
+          if (!updatedArtist.purchases) {
+            updatedArtist.purchases = {
+              videos: {
+                count: videoCount,
+                totalSpent: videoCount * videoPrice,
+                lastPurchase: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
+                videos: videos
+              },
+              courses: {
+                count: 0,
+                totalSpent: 0,
+                lastPurchase: null,
+                courses: []
+              }
+            };
+          } else {
+            updatedArtist.purchases.videos = {
+              count: videoCount,
+              totalSpent: videoCount * videoPrice,
+              lastPurchase: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
+              videos: videos
+            };
+          }
+          break;
+        case 'courses':
+          const courseCount = Math.floor(Math.random() * 3) + 1;
+          const courses = [];
+          let totalSpent = 0;
+          
+          const COURSE_TITLES = [
+            "Producción Musical Avanzada",
+            "Marketing Digital para Músicos",
+            "Composición para Bandas Sonoras",
+            "Técnicas Vocales Profesionales",
+            "Distribución Musical en la Era Digital",
+            "Masterización de Audio",
+            "Estrategias de Lanzamiento Musical",
+            "Armonía y Teoría Musical",
+            "Creación de Beats"
+          ];
+          
+          for (let i = 0; i < courseCount; i++) {
+            const price = Math.floor(Math.random() * 150) + 149; // 149-299
+            totalSpent += price;
+            courses.push({
+              id: `CRS-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+              title: COURSE_TITLES[Math.floor(Math.random() * COURSE_TITLES.length)],
+              price: price,
+              purchaseDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
+              progress: Math.floor(Math.random() * 101),
+              completed: Math.random() > 0.6
+            });
+          }
+          
+          if (!updatedArtist.purchases) {
+            updatedArtist.purchases = {
+              videos: {
+                count: 0,
+                totalSpent: 0,
+                lastPurchase: null,
+                videos: []
+              },
+              courses: {
+                count: courseCount,
+                totalSpent: totalSpent,
+                lastPurchase: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
+                courses: courses
+              }
+            };
+          } else {
+            updatedArtist.purchases.courses = {
+              count: courseCount,
+              totalSpent: totalSpent,
+              lastPurchase: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
+              courses: courses
+            };
+          }
+          break;
+        default:
+          console.log(`Campo desconocido: ${field}`);
+      }
+      
+      // Actualizar el artista en el estado y en el array de artistas guardados
+      setCurrentArtist(updatedArtist);
+      setSavedArtists(prev => prev.map(artist => 
+        artist.id === updatedArtist.id ? updatedArtist : artist
+      ));
+      
+      toast({
+        title: "Campo regenerado",
+        description: `Se ha actualizado el campo "${field}" exitosamente`
+      });
+      
+      setIsRegenerating(null);
+    },
+    onError: (error, variables) => {
+      console.error(`Error en regeneración de campo ${variables.field}:`, error);
+      
+      let errorMessage = `No se pudo regenerar el campo "${variables.field}". Por favor, intenta nuevamente.`;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      toast({
+        title: "Error de regeneración",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      setIsRegenerating(null);
+    }
+  });
+
+  // Manejador para regenerar un campo específico
+  const handleRegenerateField = (field: string) => {
+    if (!currentArtist) return;
+    
+    regenerateFieldMutation.mutate({ 
+      field, 
+      artistId: currentArtist.id 
     });
   };
 
@@ -852,6 +1063,301 @@ export default function ArtistGeneratorPage() {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+              
+              {/* SUSCRIPCIÓN */}
+              <TabsContent value="subscription" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Información del plan de suscripción */}
+                  <Card className="md:col-span-1">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <BadgeDollarSign className="mr-2 h-5 w-5 text-orange-500" />
+                        Plan de Suscripción
+                      </CardTitle>
+                      <CardDescription>
+                        Detalles del plan contratado
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {currentArtist?.subscription ? (
+                        <>
+                          <div className="bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-950/50 dark:to-orange-900/30 p-4 rounded-lg text-center mb-4">
+                            <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                              {currentArtist.subscription.plan}
+                            </span>
+                            <span className="block text-sm text-muted-foreground mt-1">
+                              ${currentArtist.subscription.price.toFixed(2)} / mes
+                            </span>
+                          </div>
+                          
+                          <div className="mt-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Estado</span>
+                              <Badge 
+                                variant={
+                                  currentArtist.subscription.status === 'active' ? 'default' : 
+                                  currentArtist.subscription.status === 'trial' ? 'outline' : 'destructive'
+                                }
+                              >
+                                {currentArtist.subscription.status === 'active' ? 'Activo' : 
+                                 currentArtist.subscription.status === 'trial' ? 'Prueba' : 'Expirado'}
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Fecha de inicio</span>
+                              <span className="text-sm">
+                                {currentArtist.subscription.startDate}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Próxima renovación</span>
+                              <span className="text-sm">
+                                {currentArtist.subscription.renewalDate}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-4"
+                            onClick={() => handleRegenerateField('subscription')}
+                            disabled={isRegenerating === 'subscription'}
+                          >
+                            {isRegenerating === 'subscription' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCwIcon className="h-4 w-4 mr-2" />
+                            )}
+                            Regenerar Plan
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="text-center py-8">
+                          <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                          <p className="text-muted-foreground">No hay información de suscripción disponible.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => handleRegenerateField('subscription')}
+                            disabled={isRegenerating === 'subscription'}
+                          >
+                            {isRegenerating === 'subscription' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <SparklesIcon className="h-4 w-4 mr-2" />
+                            )}
+                            Generar Plan
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Historial de videos generados */}
+                  <Card className="md:col-span-1">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Video className="mr-2 h-5 w-5 text-orange-500" />
+                        Videos Generados
+                      </CardTitle>
+                      <CardDescription>
+                        Historial de videos creados
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {currentArtist?.purchases?.videos && currentArtist.purchases.videos.count > 0 ? (
+                        <>
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="font-medium">Total Generados</span>
+                            <Badge variant="secondary">{currentArtist.purchases.videos.count}</Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="font-medium">Inversión Total</span>
+                            <span className="font-medium text-orange-600 dark:text-orange-400">
+                              ${currentArtist.purchases.videos.totalSpent.toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <span className="text-sm font-medium block mb-2">Último pago</span>
+                            <span className="text-sm text-muted-foreground">
+                              {currentArtist.purchases.videos.lastPurchase || 'N/A'}
+                            </span>
+                          </div>
+                          
+                          <ScrollArea className="h-[200px] rounded-md border p-2">
+                            <div className="space-y-3">
+                              {currentArtist.purchases.videos.videos.map((video, index) => (
+                                <div key={video.id} className="flex items-start gap-2 pb-2 border-b last:border-0">
+                                  <div className="bg-orange-100 dark:bg-orange-900/30 p-1 rounded">
+                                    <Video className="h-4 w-4 text-orange-500" />
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between">
+                                      <p className="text-sm font-medium">{video.title}</p>
+                                      <span className="text-xs font-medium">${video.price}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                      <span>{video.type}</span>
+                                      <span>{video.resolution}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                      <span>{video.duration}</span>
+                                      <span>{video.creationDate}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-4"
+                            onClick={() => handleRegenerateField('videos')}
+                            disabled={isRegenerating === 'videos'}
+                          >
+                            {isRegenerating === 'videos' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCwIcon className="h-4 w-4 mr-2" />
+                            )}
+                            Regenerar Videos
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Video className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                          <p className="text-muted-foreground">No hay videos generados.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => handleRegenerateField('videos')}
+                            disabled={isRegenerating === 'videos'}
+                          >
+                            {isRegenerating === 'videos' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <SparklesIcon className="h-4 w-4 mr-2" />
+                            )}
+                            Generar Videos
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Cursos comprados */}
+                  <Card className="md:col-span-1">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <BookOpen className="mr-2 h-5 w-5 text-orange-500" />
+                        Cursos Adquiridos
+                      </CardTitle>
+                      <CardDescription>
+                        Historial educativo
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {currentArtist?.purchases?.courses && currentArtist.purchases.courses.count > 0 ? (
+                        <>
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="font-medium">Total Cursos</span>
+                            <Badge variant="secondary">{currentArtist.purchases.courses.count}</Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="font-medium">Inversión Total</span>
+                            <span className="font-medium text-orange-600 dark:text-orange-400">
+                              ${currentArtist.purchases.courses.totalSpent.toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <span className="text-sm font-medium block mb-2">Última compra</span>
+                            <span className="text-sm text-muted-foreground">
+                              {currentArtist.purchases.courses.lastPurchase || 'N/A'}
+                            </span>
+                          </div>
+                          
+                          <ScrollArea className="h-[200px] rounded-md border p-2">
+                            <div className="space-y-3">
+                              {currentArtist.purchases.courses.courses.map((course) => (
+                                <div key={course.id} className="flex items-start gap-2 pb-2 border-b last:border-0">
+                                  <div className="bg-orange-100 dark:bg-orange-900/30 p-1 rounded">
+                                    {course.completed ? (
+                                      <CheckCircle2 className="h-4 w-4 text-orange-500" />
+                                    ) : (
+                                      <Clock className="h-4 w-4 text-orange-500" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between">
+                                      <p className="text-sm font-medium">{course.title}</p>
+                                      <span className="text-xs font-medium">${course.price}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      <span>Comprado: {course.purchaseDate}</span>
+                                    </div>
+                                    <div className="w-full mt-1">
+                                      <div className="flex justify-between text-xs mb-1">
+                                        <span>Progreso</span>
+                                        <span>{course.progress}%</span>
+                                      </div>
+                                      <Progress value={course.progress} className="h-1.5" />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-4"
+                            onClick={() => handleRegenerateField('courses')}
+                            disabled={isRegenerating === 'courses'}
+                          >
+                            {isRegenerating === 'courses' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCwIcon className="h-4 w-4 mr-2" />
+                            )}
+                            Regenerar Cursos
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="text-center py-8">
+                          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                          <p className="text-muted-foreground">No hay cursos adquiridos.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => handleRegenerateField('courses')}
+                            disabled={isRegenerating === 'courses'}
+                          >
+                            {isRegenerating === 'courses' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <SparklesIcon className="h-4 w-4 mr-2" />
+                            )}
+                            Generar Cursos
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           )}
