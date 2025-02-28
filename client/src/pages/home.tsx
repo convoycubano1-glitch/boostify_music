@@ -459,11 +459,7 @@ export default function HomePage() {
                   loop
                   muted
                   controlsList="nodownload"
-                  style={{
-                    '--webkit-media-controls-timeline-container': {
-                      display: 'none',
-                    }
-                  }}
+                  className="custom-video-player"
                 >
                   <source src="/assets/indications/Welcome to Boostify Music 1.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
