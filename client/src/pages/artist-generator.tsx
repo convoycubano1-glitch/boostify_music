@@ -134,26 +134,75 @@ export default function ArtistGeneratorPage() {
   useEffect(() => {
     const loadSavedArtists = async () => {
       try {
+        console.log("Cargando artistas desde Firestore...");
         const artistsRef = collection(db, "generated_artists");
         const q = query(artistsRef, orderBy("createdAt", "desc"), limit(10));
         const querySnapshot = await getDocs(q);
         
+        console.log(`Encontrados ${querySnapshot.size} artistas`);
+        
         const artists: ArtistData[] = [];
         querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          artists.push({
-            ...data,
-            firestoreId: doc.id,
-          } as ArtistData);
+          try {
+            const data = doc.data();
+            
+            // Asegurarnos de que los datos tienen la estructura correcta
+            const artist: ArtistData = {
+              id: data.id || `fallback-${doc.id}`,
+              name: data.name || "Artista sin nombre",
+              biography: data.biography || "Sin biografía disponible",
+              album: data.album || { 
+                id: `fallback-${Date.now()}`, 
+                name: "Álbum sin título", 
+                release_date: new Date().getFullYear().toString(),
+                songs: [],
+                single: { title: "Single sin título", duration: "0:00" }
+              },
+              look: data.look || {
+                description: "Sin descripción disponible",
+                color_scheme: "Sin información de colores"
+              },
+              music_genres: data.music_genres || ["Sin género"],
+              image_prompts: data.image_prompts || {
+                artist_look: "Imagen de artista no disponible",
+                album_cover: "Portada de álbum no disponible",
+                promotional: "Imagen promocional no disponible"
+              },
+              social_media: data.social_media || {
+                twitter: { handle: "", url: "" },
+                instagram: { handle: "", url: "" },
+                tiktok: { handle: "", url: "" },
+                youtube: { handle: "", url: "" },
+                spotify: { handle: "", url: "" }
+              },
+              password: data.password || {
+                value: "password123",
+                last_updated: new Date().toISOString().split('T')[0]
+              },
+              management: data.management || {
+                email: `management@${data.name?.toLowerCase().replace(/\s+/g, '')}.com` || "management@example.com",
+                phone: "555-123-4567"
+              },
+              firestoreId: doc.id
+            };
+            
+            artists.push(artist);
+          } catch (err) {
+            console.error(`Error procesando documento ${doc.id}:`, err);
+          }
         });
+        
+        console.log(`Procesados ${artists.length} artistas correctamente`);
         
         setSavedArtists(artists);
         
         // Si hay artistas, establecer el primero como actual
         if (artists.length > 0) {
+          console.log("Estableciendo artista actual:", artists[0].name);
           setCurrentArtist(artists[0]);
         } else {
           // Si no hay artistas, usar un placeholder
+          console.log("No hay artistas guardados, usando placeholder");
           setCurrentArtist(createEmptyArtist());
         }
       } catch (error) {
@@ -174,19 +223,32 @@ export default function ArtistGeneratorPage() {
   // Mutación para generar un artista aleatorio
   const generateArtistMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest({
-        url: "/api/generate-artist",
-        method: "POST",
-        data: {}
-      });
-      console.log("API response:", response);
-      return response;
+      try {
+        const response = await fetch('/api/generate-artist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("API response:", data);
+        return data;
+      } catch (error) {
+        console.error("Error en fetch:", error);
+        throw error;
+      }
     },
-    onSuccess: (response) => {
-      console.log("Mutation success, data:", response);
+    onSuccess: (data) => {
+      console.log("Mutation success, data:", data);
       // Asegurarse de que tenemos datos y son del tipo correcto
-      if (response && response.data && response.data.name) {
-        const newArtist = response.data as ArtistData;
+      if (data && data.name) {
+        const newArtist = data as ArtistData;
         
         // Validar estructura mínima requerida
         if (!newArtist.album) newArtist.album = { 
@@ -229,7 +291,7 @@ export default function ArtistGeneratorPage() {
           description: `${newArtist.name} ha sido creado y guardado en Firestore con ID: ${newArtist.firestoreId || 'N/A'}.`
         });
       } else {
-        console.error("La respuesta no contiene datos de artista:", response);
+        console.error("La respuesta no contiene datos de artista:", data);
         toast({
           title: "Error de datos",
           description: "La respuesta no contiene un artista válido",
