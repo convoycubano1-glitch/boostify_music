@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { GeneratedArtist } from '../../types/artist';
 
 // Colores para los gráficos
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF'];

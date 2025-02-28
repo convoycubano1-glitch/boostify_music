@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ArrowUpRight, Users, DollarSign, CreditCard, TrendingUp, Music, FileVideo, GraduationCap } from 'lucide-react';
+import { GeneratedArtist } from '../../types/artist';
 
 // Colores para gráficos
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -53,7 +54,7 @@ export default function ArtistAnalyticsTab() {
         const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }));
+        })) as GeneratedArtist[];
         
         // Calcular métricas
         const artistCount = artists.length;
@@ -70,7 +71,7 @@ export default function ArtistAnalyticsTab() {
         let videoCount = 0;
         let courseCount = 0;
         
-        artists.forEach((artist: any) => {
+        artists.forEach((artist: GeneratedArtist) => {
           // Suscripciones
           if (artist.subscription?.plan) {
             totalRevenue += artist.subscription.price || 0;

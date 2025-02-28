@@ -27,10 +27,10 @@ export default function FinanceDashboard() {
         const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }));
+        })) as GeneratedArtist[];
         
         // Procesar datos de suscripciones
-        const subscriptionCounts = {
+        const subscriptionCounts: {[key: string]: number} = {
           'Basic': 0,
           'Pro': 0,
           'Enterprise': 0
@@ -42,7 +42,7 @@ export default function FinanceDashboard() {
         let totalVideoRevenue = 0;
         let totalCourseRevenue = 0;
         
-        artists.forEach(artist => {
+        artists.forEach((artist: GeneratedArtist) => {
           if (artist.subscription?.plan) {
             subscriptionCounts[artist.subscription.plan]++;
             
