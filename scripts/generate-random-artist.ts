@@ -169,13 +169,11 @@ export async function generateRandomArtist() {
   ];
   const selectedColors = faker.helpers.arrayElements(colors, faker.number.int({ min: 2, max: 4 }));
   
-  // Características físicas detalladas con mayor diversidad
-  // Expandir opciones de género
+  // Características físicas detalladas
+  // Solo opciones de género binario (hombre/mujer) según lo solicitado
   const genderOptions = faker.helpers.arrayElement([
-    { value: 'Mujer', probability: 0.45 },
-    { value: 'Hombre', probability: 0.45 },
-    { value: 'No binario', probability: 0.05 },
-    { value: 'Género fluido', probability: 0.05 }
+    { value: 'Mujer', probability: 0.5 },
+    { value: 'Hombre', probability: 0.5 }
   ]);
   const gender = genderOptions.value;
   
@@ -232,7 +230,7 @@ export async function generateRandomArtist() {
   // Preparamos primero las descripciones locales como respaldo
   const defaultLookDescription = `${gender} ${age} de ${height}cm de altura con complexión ${bodyType}. Tiene ojos ${eyeColor}, piel ${skinTone} y ${facialFeatures.join(', ')}. Su cabello es ${hairColor} con estilo ${selectedHairStyle}. Suele lucir ${selectedAccessory} como accesorio distintivo. Viste con estilo ${selectedFashion} usando principalmente colores ${selectedColors.join(', ')} que reflejan su identidad musical. Su presencia escénica es ${faker.helpers.arrayElement(['magnética', 'intensa', 'relajada', 'enigmática', 'extravagante', 'minimalista'])}.`;
 
-  const defaultBiography = `${artistName} es un${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} talentoso${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : gender === 'No binario' || gender === 'Género fluido' ? 'x' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
+  const defaultBiography = `${artistName} es un${gender === 'Mujer' ? 'a' : ''} talentoso${gender === 'Mujer' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
 
   // Intentar generar descripciones con OpenRouter para mayor diversidad
   let detailedLookDescription = defaultLookDescription;
