@@ -5,9 +5,8 @@
 
 import { db } from '../server/firebase';
 import { Timestamp } from 'firebase-admin/firestore';
-import { firestoreSocialNetworkService } from '../server/services/firestore-social-network';
 
-// Contenido musical de alta calidad en inglés para los posts
+// Contenido musical de alta calidad para posts en inglés
 const englishMusicPosts = [
   "Just finished recording a new track! The mixing process took longer than expected, but the final result sounds incredible. Can't wait to share it with all of you next week.",
   
@@ -30,7 +29,7 @@ const englishMusicPosts = [
   "After years of producing electronic music, I've started to incorporate more live instruments into my tracks. The organic textures add so much depth and emotion."
 ];
 
-// Contenido musical de alta calidad en inglés para los comentarios
+// Contenido para comentarios en inglés
 const englishMusicComments = [
   "I completely agree! Your insights on music production are spot on.",
   
@@ -42,120 +41,160 @@ const englishMusicComments = [
   
   "I've been struggling with this exact issue! Thanks for sharing your experience.",
   
-  "This reminds me of a technique I learned at a production workshop last month. Total game-changer.",
-  
-  "What VST plugins are you using these days? Always looking for recommendations!",
-  
-  "Your approach to music marketing is so refreshing compared to what I usually see.",
-  
-  "I'd love to collaborate on something. Your style would complement my production perfectly.",
-  
-  "Do you have any tips for someone just starting out with music production? Your work is inspiring."
+  "This reminds me of a technique I learned at a production workshop last month. Total game-changer."
 ];
 
+// Función para eliminar todos los posts y comentarios
 async function deleteAllPostsAndComments() {
-  console.log("🚮 Eliminando todos los posts y comentarios existentes...");
+  console.log("🧹 Eliminando contenido existente...");
   
-  // Eliminar todos los comentarios primero
+  // Borrar todos los comentarios
   const commentsSnapshot = await db.collection('social_comments').get();
   const commentDeletions = commentsSnapshot.docs.map(doc => 
     db.collection('social_comments').doc(doc.id).delete()
   );
-  
   await Promise.all(commentDeletions);
-  console.log(`Eliminados ${commentsSnapshot.size} comentarios.`);
+  console.log(`✅ Eliminados ${commentsSnapshot.size} comentarios.`);
   
-  // Luego eliminar todos los posts
+  // Borrar todos los posts
   const postsSnapshot = await db.collection('social_posts').get();
   const postDeletions = postsSnapshot.docs.map(doc => 
     db.collection('social_posts').doc(doc.id).delete()
   );
-  
   await Promise.all(postDeletions);
-  console.log(`Eliminados ${postsSnapshot.size} posts.`);
+  console.log(`✅ Eliminados ${postsSnapshot.size} posts.`);
 }
 
+// Función para crear nuevos posts y comentarios
 async function createNewPostsAndComments() {
-  console.log("🆕 Creando nuevos posts con contenido de calidad en inglés...");
+  console.log("🔄 Obteniendo usuarios existentes...");
   
-  // Obtener todos los usuarios
+  // Obtener todos los usuarios existentes
   const usersSnapshot = await db.collection('social_users').get();
-  const users = usersSnapshot.docs.map(doc => ({ 
-    id: doc.id, 
-    ...doc.data() 
+  const users = usersSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
   }));
   
-  // Filtrar solo usuarios humanos (no bots) para posts principales
-  const humanUsers = users.filter(user => !user.isBot);
-  
-  // Filtrar usuarios bot para comentarios
-  const botUsers = users.filter(user => user.isBot);
-  
-  // Crear posts
-  const createdPosts = [];
-  
-  for (let i = 0; i < 10; i++) {
-    // Seleccionar un usuario humano aleatorio para cada post
-    const userIndex = Math.floor(Math.random() * humanUsers.length);
-    const user = humanUsers[userIndex];
-    
-    const postData = {
-      userId: user.id,
-      content: englishMusicPosts[i % englishMusicPosts.length],
-      likes: Math.floor(Math.random() * 10),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    const newPost = await firestoreSocialNetworkService.createPost(postData);
-    console.log(`Creado nuevo post por ${user.displayName} (ID: ${newPost.id})`);
-    createdPosts.push(newPost);
+  if (users.length === 0) {
+    console.log("❌ No se encontraron usuarios en la base de datos.");
+    return;
   }
   
-  console.log(`✅ Creados ${createdPosts.length} nuevos posts!`);
+  console.log(`✅ Encontrados ${users.length} usuarios.`);
   
-  // Crear comentarios para cada post
-  console.log("💬 Creando comentarios en inglés con contenido significativo...");
+  // Separar usuarios en bots y humanos
+  const humanUsers = users.filter(user => !user.isBot);
+  const botUsers = users.filter(user => user.isBot);
   
-  for (const post of createdPosts) {
-    // Crear 1-3 comentarios por post
-    const numComments = Math.floor(Math.random() * 3) + 1;
+  console.log(`📊 Usuarios humanos: ${humanUsers.length}, Usuarios bots: ${botUsers.length}`);
+  
+  // Crear posts para cada usuario humano
+  console.log("📝 Creando nuevos posts...");
+  const createdPosts = [];
+  
+  for (const user of humanUsers) {
+    // Cada usuario humano crea 1-3 posts
+    const postCount = Math.floor(Math.random() * 3) + 1;
     
-    for (let i = 0; i < numComments; i++) {
-      // Seleccionar un usuario bot aleatorio para cada comentario
-      const botIndex = Math.floor(Math.random() * botUsers.length);
-      const bot = botUsers[botIndex];
+    for (let i = 0; i < postCount; i++) {
+      // Seleccionar un post aleatorio
+      const postContent = englishMusicPosts[Math.floor(Math.random() * englishMusicPosts.length)];
       
-      const commentData = {
-        userId: bot.id,
-        postId: post.id,
-        content: englishMusicComments[i % englishMusicComments.length],
-        likes: Math.floor(Math.random() * 5),
-        isReply: false,
-        parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Crear post
+      const postRef = db.collection('social_posts').doc();
+      const now = new Date();
+      const randomDaysAgo = Math.floor(Math.random() * 14); // hasta 14 días atrás
+      const postDate = new Date(now.getTime() - (randomDaysAgo * 24 * 60 * 60 * 1000));
+      
+      const postData = {
+        userId: user.id,
+        content: postContent,
+        likes: Math.floor(Math.random() * 20),
+        createdAt: Timestamp.fromDate(postDate),
+        updatedAt: Timestamp.fromDate(postDate)
       };
       
-      const newComment = await firestoreSocialNetworkService.createComment(commentData);
-      console.log(`Creado nuevo comentario por ${bot.displayName} en el post ${post.id}`);
+      await postRef.set(postData);
+      createdPosts.push({
+        id: postRef.id,
+        ...postData
+      });
+      
+      console.log(`✅ Post creado para ${user.displayName}`);
     }
   }
   
-  console.log("✅ Proceso completado! Los posts y comentarios han sido recreados con contenido de calidad.");
+  console.log(`✅ Creados ${createdPosts.length} posts.`);
+  
+  // Crear comentarios en los posts
+  console.log("💬 Creando comentarios en los posts...");
+  let commentCount = 0;
+  
+  for (const post of createdPosts) {
+    // Cada post recibe 2-5 comentarios
+    const numComments = Math.floor(Math.random() * 4) + 2;
+    
+    // Mezclar usuarios bots y humanos para comentar
+    const availableCommenters = [...users].sort(() => 0.5 - Math.random());
+    
+    for (let i = 0; i < numComments; i++) {
+      if (i >= availableCommenters.length) break;
+      
+      const commenter = availableCommenters[i];
+      
+      // Verificar que el comentarista no sea el autor del post
+      if (commenter.id === post.userId) continue;
+      
+      // Seleccionar un comentario aleatorio
+      const commentContent = englishMusicComments[Math.floor(Math.random() * englishMusicComments.length)];
+      
+      // Crear el comentario
+      const commentRef = db.collection('social_comments').doc();
+      const postDate = post.createdAt.toDate();
+      const now = new Date();
+      
+      // Fecha aleatoria entre la fecha del post y ahora
+      const randomTimeOffset = Math.floor(Math.random() * (now.getTime() - postDate.getTime()));
+      const commentDate = new Date(postDate.getTime() + randomTimeOffset);
+      
+      const commentData = {
+        userId: commenter.id,
+        postId: post.id,
+        content: commentContent,
+        likes: Math.floor(Math.random() * 10),
+        isReply: false,
+        parentId: null,
+        createdAt: Timestamp.fromDate(commentDate),
+        updatedAt: Timestamp.fromDate(commentDate)
+      };
+      
+      await commentRef.set(commentData);
+      commentCount++;
+      
+      console.log(`✅ Comentario creado por ${commenter.displayName}`);
+    }
+  }
+  
+  console.log(`✅ Creados ${commentCount} comentarios.`);
 }
 
-// Ejecutar el script
+// Función principal
 async function main() {
   try {
+    // Eliminar todo el contenido existente
     await deleteAllPostsAndComments();
+    
+    // Crear nuevo contenido
     await createNewPostsAndComments();
-    console.log("✅ Script finalizado correctamente.");
+    
+    console.log("🎉 Contenido recreado exitosamente!");
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error al ejecutar el script:", error);
+    console.error("❌ Error:", error);
     process.exit(1);
   }
 }
 
+// Ejecutar función principal
 main();
