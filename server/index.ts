@@ -237,6 +237,9 @@ if (process.env.NODE_ENV === "production") {
 
 } else {
   log('🛠 Running in development mode');
+  
+  // En modo desarrollo, NO definas una ruta específica para '/', deja que Vite la maneje
+  // Solo habilita servir archivos estáticos desde la carpeta de cliente
   app.use(express.static(path.join(process.cwd(), 'client/public')));
 }
 

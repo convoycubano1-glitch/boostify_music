@@ -913,10 +913,13 @@ export function registerRoutes(app: Express): Server {
     });
   });
   
-  // Root endpoint for deployment health checks
-  app.get('/', (req, res) => {
-    res.status(200).send('Service is running!');
-  });
+  // Root endpoint for deployment health checks (solo para entorno de producción)
+  // En desarrollo, dejamos que Vite se encargue de la ruta principal
+  if (process.env.NODE_ENV === 'production') {
+    app.get('/', (req, res) => {
+      res.status(200).send('Service is running!');
+    });
+  }
 
   // Deployment verification endpoint
   app.get("/api/deployment-info", (_req, res) => {
