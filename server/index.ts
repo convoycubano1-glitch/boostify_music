@@ -272,26 +272,28 @@ if (process.env.NODE_ENV === "production") {
       await setupVite(app, server);
     }
 
-    // Use environment PORT or fallback to 5000
+    // Usar el puerto configurado o 5000 como fallback
     const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
-
-    server.listen(PORT, () => {
-      // Puerto fijo para compatibilidad con Replit
-      const actualPort = PORT;
-      
-      log(`✅ Server started on port ${actualPort}`);
+    
+    // Iniciar el servidor en un puerto específico
+    server.listen(PORT, '0.0.0.0', () => {
+      log(`✅ Server started on port ${PORT}`);
       log(`🌍 Environment: ${app.get("env")}`);
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ? 
         path.resolve(process.cwd(), 'dist', 'public') : 
         path.join(process.cwd(), 'client/public')}`);
       log(`🔗 Access URL: ${process.env.REPL_SLUG ? 
         `https://${process.env.REPL_SLUG}.replit.app` : 
-        `http://localhost:${actualPort}`}`);
+        `http://localhost:${PORT}`}`);
     });
-
+    
+    // Manejar errores del servidor
     server.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
-        log(`❌ Error: Port ${PORT} is already in use`);
+        log(`❌ Error: Port ${PORT} is already in use. Please kill any processes using this port and try again.`);
+        log('💡 Tip: You can find and kill the process using this port with:');
+        log(`   lsof -i :${PORT} | grep LISTEN     # Find process ID (PID)`);
+        log('   kill -9 <PID>                  # Kill the process');
       } else {
         log(`❌ Server error: ${error.message}`);
       }
