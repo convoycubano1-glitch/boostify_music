@@ -912,6 +912,11 @@ export function registerRoutes(app: Express): Server {
       timestamp: new Date().toISOString()
     });
   });
+  
+  // Root endpoint for deployment health checks
+  app.get('/', (req, res) => {
+    res.status(200).send('Service is running!');
+  });
 
   // Deployment verification endpoint
   app.get("/api/deployment-info", (_req, res) => {
