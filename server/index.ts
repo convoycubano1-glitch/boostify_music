@@ -166,23 +166,35 @@ if (process.env.NODE_ENV === "production") {
       });
     });
 
+    // Check for required environment variables
+    if (process.env.NODE_ENV === "production" && !process.env.OPENAI_API_KEY) {
+      log('⚠️ Warning: OPENAI_API_KEY environment variable is not set');
+    } else if (process.env.OPENAI_API_KEY) {
+      log('✅ OPENAI_API_KEY is configured and ready for use');
+    }
+
     // Setup Vite in development
     if (process.env.NODE_ENV !== "production") {
       log('🛠 Setting up Vite development server');
       await setupVite(app, server);
     }
 
-    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+    // Use environment PORT or fallback to 0 (to automatically find an available port)
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 
+                 process.env.NODE_ENV === "production" ? 5000 : 0;
 
-    server.listen(PORT, () => {
-      log(`✅ Server started on port ${PORT}`);
+    server.listen(PORT, '0.0.0.0', () => {
+      const address = server.address();
+      const actualPort = typeof address === 'object' && address ? address.port : PORT;
+      
+      log(`✅ Server started on port ${actualPort}`);
       log(`🌍 Environment: ${app.get("env")}`);
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ? 
         path.resolve(process.cwd(), 'dist', 'public') : 
         path.join(process.cwd(), 'client/public')}`);
       log(`🔗 Access URL: ${process.env.REPL_SLUG ? 
         `https://${process.env.REPL_SLUG}.replit.app` : 
-        `http://localhost:${PORT}`}`);
+        `http://localhost:${actualPort}`}`);
     });
 
     server.on('error', (error: any) => {
