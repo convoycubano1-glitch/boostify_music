@@ -134,6 +134,8 @@ export default function ArtistGeneratorPage() {
   const [savedArtists, setSavedArtists] = useState<ArtistData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null); // Rastrea qué campo está siendo regenerado
+  const [isDeleting, setIsDeleting] = useState(false); // Estado para el borrado
+  const [isDeletingAll, setIsDeletingAll] = useState(false); // Estado para borrado masivo
   
   // Función para crear un artista vacío/placeholder cuando no hay datos
   const createEmptyArtist = (): ArtistData => {
@@ -645,7 +647,7 @@ export default function ArtistGeneratorPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <div className="lg:col-span-3 flex justify-center">
+            <div className="lg:col-span-3 flex justify-center space-x-4">
               <Button 
                 size="lg"
                 onClick={handleGenerateArtist}
@@ -658,6 +660,21 @@ export default function ArtistGeneratorPage() {
                   <SparklesIcon className="h-5 w-5 mr-2 group-hover:rotate-45 transition-transform" />
                 )}
                 Generar Artista Aleatorio
+              </Button>
+              
+              <Button 
+                variant="destructive"
+                size="lg"
+                onClick={handleDeleteAllArtists}
+                className="hover:shadow-xl group"
+                disabled={isDeletingAll}
+              >
+                {isDeletingAll ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : (
+                  <TrashIcon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                )}
+                Borrar Todos
               </Button>
             </div>
           </div>

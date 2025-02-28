@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 
 const router = Router();
 
@@ -245,6 +245,96 @@ router.post("/api/regenerate-artist-field", async (req: Request, res: Response) 
     console.error('Error regenerando campo de artista:', error);
     res.status(500).json({ 
       error: 'Error al regenerar campo de artista',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para eliminar un artista
+ */
+router.delete("/api/delete-artist/:id", async (req: Request, res: Response) => {
+  try {
+    const artistId = req.params.id;
+    console.log(`Recibida solicitud para eliminar artista con ID: ${artistId}`);
+    
+    if (!artistId) {
+      return res.status(400).json({
+        error: 'ID de artista no proporcionado',
+        details: 'Se requiere un ID de artista válido para eliminar'
+      });
+    }
+    
+    // Verificar que el artista existe
+    const artistRef = db.collection('generated_artists').doc(artistId);
+    const artistDoc = await artistRef.get();
+    
+    if (!artistDoc.exists) {
+      return res.status(404).json({
+        error: 'Artista no encontrado',
+        details: `No se encontró un artista con ID: ${artistId}`
+      });
+    }
+    
+    // Eliminar el artista
+    await artistRef.delete();
+    console.log(`Artista eliminado con ID: ${artistId}`);
+    
+    res.status(200).json({
+      success: true,
+      message: `Artista con ID ${artistId} eliminado correctamente`,
+      deletedId: artistId
+    });
+  } catch (error) {
+    console.error('Error eliminando artista:', error);
+    res.status(500).json({
+      error: 'Error al eliminar artista',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para eliminar todos los artistas generados
+ */
+router.delete("/api/delete-all-artists", async (req: Request, res: Response) => {
+  try {
+    console.log('Recibida solicitud para eliminar todos los artistas');
+    
+    // Obtener todos los documentos en la colección
+    const artistsRef = db.collection('generated_artists');
+    const snapshot = await artistsRef.get();
+    
+    if (snapshot.empty) {
+      return res.status(200).json({
+        success: true,
+        message: 'No hay artistas para eliminar',
+        count: 0
+      });
+    }
+    
+    // Eliminar cada documento en un batch
+    const batch = db.batch();
+    let count = 0;
+    
+    snapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      count++;
+    });
+    
+    // Ejecutar el batch
+    await batch.commit();
+    console.log(`${count} artistas eliminados correctamente`);
+    
+    res.status(200).json({
+      success: true,
+      message: `${count} artistas eliminados correctamente`,
+      count
+    });
+  } catch (error) {
+    console.error('Error eliminando todos los artistas:', error);
+    res.status(500).json({
+      error: 'Error al eliminar todos los artistas',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
