@@ -24,6 +24,7 @@ import { insertBookingSchema } from "./db/schema";
 import translationRouter from './routes/translation';
 import managerRouter from './routes/manager';
 import artistRouter from './routes/artist';
+import artistGeneratorRouter from './routes/artist-generator';
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
 import investorsRouter from './routes/investors';
@@ -59,6 +60,7 @@ export function registerRoutes(app: Express): Server {
 
   app.use('/api/manager', managerRouter);
   app.use('/api/artist', artistRouter);
+  app.use(artistGeneratorRouter);
 
   // Configurar las rutas que NO requieren autenticación primero
   setupOpenAIRoutes(app);
