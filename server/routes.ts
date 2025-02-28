@@ -68,6 +68,9 @@ export function registerRoutes(app: Express): Server {
   setupEducationRoutes(app);
   setupFilesRoutes(app);
   
+  // Register generated artists routes (no authentication required)
+  app.use(generatedArtistsRouter);
+  
   // Servicios que requieren autenticación
   setupAuth(app);
   setupSpotifyRoutes(app);
@@ -79,9 +82,6 @@ export function registerRoutes(app: Express): Server {
   
   // Usar Firestore para la red social
   app.use('/api/firestore-social', firestoreSocialNetworkRouter);
-
-  // Register generated artists routes
-  app.use(generatedArtistsRouter);
   
   // Register courses routes
   app.use(coursesRouter);
