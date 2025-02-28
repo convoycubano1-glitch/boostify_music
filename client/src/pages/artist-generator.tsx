@@ -42,7 +42,9 @@ import {
   ShoppingBag,
   FileText,
   BarChart3,
-  RotateCcw
+  RotateCcw,
+  Trash as TrashIcon,
+  Trash2 as Trash2Icon
 } from "lucide-react";
 
 interface ArtistData {
@@ -628,6 +630,124 @@ export default function ArtistGeneratorPage() {
       artistId: currentArtist.firestoreId || currentArtist.id
     });
   };
+  
+  // Mutación para eliminar un artista específico
+  const deleteArtistMutation = useMutation({
+    mutationFn: async (artistId: string) => {
+      setIsDeleting(true);
+      const response = await fetch(`/api/delete-artist/${artistId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: (data) => {
+      // Eliminar el artista del estado local
+      setSavedArtists(prev => prev.filter(artist => artist.firestoreId !== data.deletedId));
+      
+      // Si el artista actual es el que se eliminó, seleccionar otro
+      if (currentArtist?.firestoreId === data.deletedId) {
+        if (savedArtists.length > 1) {
+          // Seleccionar el siguiente artista disponible
+          const nextArtist = savedArtists.find(artist => artist.firestoreId !== data.deletedId);
+          setCurrentArtist(nextArtist || createEmptyArtist());
+        } else {
+          // Si no hay más artistas, mostrar el placeholder
+          setCurrentArtist(createEmptyArtist());
+        }
+      }
+      
+      toast({
+        title: "Artista eliminado",
+        description: `El artista ha sido eliminado correctamente.`
+      });
+      
+      setIsDeleting(false);
+    },
+    onError: (error) => {
+      console.error("Error al eliminar artista:", error);
+      
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el artista. Por favor, intenta nuevamente.",
+        variant: "destructive"
+      });
+      
+      setIsDeleting(false);
+    }
+  });
+  
+  // Mutación para eliminar todos los artistas
+  const deleteAllArtistsMutation = useMutation({
+    mutationFn: async () => {
+      setIsDeletingAll(true);
+      const response = await fetch(`/api/delete-all-artists`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: (data) => {
+      // Limpiar el estado local
+      setSavedArtists([]);
+      
+      // Mostrar un artista placeholder
+      setCurrentArtist(createEmptyArtist());
+      
+      toast({
+        title: "Artistas eliminados",
+        description: `Se han eliminado ${data.count} artistas correctamente.`
+      });
+      
+      setIsDeletingAll(false);
+    },
+    onError: (error) => {
+      console.error("Error al eliminar todos los artistas:", error);
+      
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar todos los artistas. Por favor, intenta nuevamente.",
+        variant: "destructive"
+      });
+      
+      setIsDeletingAll(false);
+    }
+  });
+  
+  // Función para manejar la eliminación de un artista
+  const handleDeleteArtist = (artistId: string) => {
+    if (!artistId) {
+      toast({
+        title: "Error",
+        description: "No se puede eliminar el artista sin un ID válido",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    deleteArtistMutation.mutate(artistId);
+  };
+  
+  // Función para manejar la eliminación de todos los artistas
+  const handleDeleteAllArtists = () => {
+    deleteAllArtistsMutation.mutate();
+  };
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
@@ -864,6 +984,23 @@ export default function ArtistGeneratorPage() {
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">ID del Artista:</h4>
                         <p className="text-sm font-mono">{currentArtist?.id || "ID no disponible"}</p>
                         <p className="text-xs text-muted-foreground mt-1">Firestore ID: {currentArtist?.firestoreId || "N/A"}</p>
+                        
+                        {currentArtist?.firestoreId && currentArtist.id !== "placeholder" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="mt-3 w-full"
+                            onClick={() => handleDeleteArtist(currentArtist.firestoreId!)}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Trash2Icon className="h-4 w-4 mr-2" />
+                            )}
+                            Eliminar este artista
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
