@@ -145,11 +145,28 @@ export default function FirestoreSocialPage() {
       .toUpperCase();
   };
   
-  // Función para generar un avatar usando DiceBear
-  const generateAvatar = (name: string) => {
-    // Generar una semilla basada en el nombre para mantener consistencia
-    const seed = name.toLowerCase().replace(/\s+/g, '');
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+  // Función para generar un color de avatar consistente basado en el nombre
+  const getAvatarColor = (name: string) => {
+    // Lista de colores para avatares
+    const colors = [
+      "bg-red-500",
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-yellow-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500", 
+      "bg-orange-500",
+      "bg-cyan-500"
+    ];
+    
+    // Convertir el nombre a un número usando la suma de los códigos de carácter
+    const sum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
+    // Usar el módulo para elegir un color del array
+    const colorIndex = sum % colors.length;
+    return colors[colorIndex];
   };
 
   // Identificar si es un bot y obtener su insignia
