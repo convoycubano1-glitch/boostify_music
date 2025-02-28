@@ -7,7 +7,7 @@ import UserGrowthDashboard from '../components/analytics/user-growth-dashboard';
 import ProductPerformanceDashboard from '../components/analytics/product-performance-dashboard';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function AnalyticsDashboardPage() {
   const [activeTab, setActiveTab] = useState<string>('overview');
