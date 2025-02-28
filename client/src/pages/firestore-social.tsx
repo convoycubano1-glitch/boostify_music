@@ -144,6 +144,13 @@ export default function FirestoreSocialPage() {
       .join("")
       .toUpperCase();
   };
+  
+  // Función para generar un avatar usando DiceBear
+  const generateAvatar = (name: string) => {
+    // Generar una semilla basada en el nombre para mantener consistencia
+    const seed = name.toLowerCase().replace(/\s+/g, '');
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+  };
 
   // Identificar si es un bot y obtener su insignia
   const getBotBadge = (user?: SocialUser | null) => {
@@ -186,7 +193,7 @@ export default function FirestoreSocialPage() {
           <div className="flex items-center">
             <Avatar className="mr-2">
               <AvatarImage src={post.user?.avatar} />
-              <AvatarFallback>{getInitials(post.user?.displayName || "Usuario")}</AvatarFallback>
+              <AvatarFallback className={getAvatarColor(post.user?.displayName || "Usuario")}>{getInitials(post.user?.displayName || "Usuario")}</AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center">
@@ -260,7 +267,7 @@ export default function FirestoreSocialPage() {
                 <div key={comment.id} className="flex items-start gap-2">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={comment.user?.avatar} />
-                    <AvatarFallback>{getInitials(comment.user?.displayName || "Usuario")}</AvatarFallback>
+                    <AvatarFallback className={getAvatarColor(comment.user?.displayName || "Usuario")}>{getInitials(comment.user?.displayName || "Usuario")}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="bg-muted rounded-lg p-2">
@@ -311,7 +318,7 @@ export default function FirestoreSocialPage() {
                     <div key={socialUser.id} className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={socialUser.avatar} />
-                        <AvatarFallback>{getInitials(socialUser.displayName)}</AvatarFallback>
+                        <AvatarFallback className={getAvatarColor(socialUser.displayName)}>{getInitials(socialUser.displayName)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
