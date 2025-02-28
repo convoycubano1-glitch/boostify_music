@@ -28,6 +28,7 @@ import artistGeneratorRouter from './routes/artist-generator';
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
 import investorsRouter from './routes/investors';
+import generatedArtistsRouter from './routes/generated-artists';
 import { authenticate } from './middleware/auth'; // Fixed import path
 import { awardCourseCompletionAchievement } from './achievements';
 
@@ -79,6 +80,9 @@ export function registerRoutes(app: Express): Server {
   // Usar Firestore para la red social
   app.use('/api/firestore-social', firestoreSocialNetworkRouter);
 
+  // Register generated artists routes
+  app.use(generatedArtistsRouter);
+  
   // Register courses routes
   app.use(coursesRouter);
 

@@ -2,7 +2,6 @@
  * Rutas para obtener y gestionar artistas generados
  */
 import { Request, Response, Router } from 'express';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const router = Router();
@@ -13,8 +12,8 @@ const router = Router();
  */
 router.get('/api/artists/generated', async (req: Request, res: Response) => {
   try {
-    const artistsCollection = collection(db, 'generated-artists');
-    const artistsSnapshot = await getDocs(artistsCollection);
+    const artistsCollection = db.collection('generated-artists');
+    const artistsSnapshot = await artistsCollection.get();
     
     if (artistsSnapshot.empty) {
       return res.json([]);
@@ -39,10 +38,10 @@ router.get('/api/artists/generated', async (req: Request, res: Response) => {
 router.get('/api/artists/generated/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const artistRef = doc(db, 'generated-artists', id);
-    const artistDoc = await getDoc(artistRef);
+    const artistRef = db.collection('generated-artists').doc(id);
+    const artistDoc = await artistRef.get();
     
-    if (!artistDoc.exists()) {
+    if (!artistDoc.exists) {
       return res.status(404).json({ error: 'Artista no encontrado' });
     }
     
