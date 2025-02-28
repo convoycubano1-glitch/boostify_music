@@ -87,6 +87,9 @@ export function registerRoutes(app: Express): Server {
   
   // Register investors routes
   app.use('/api/investors', investorsRouter);
+  
+  // Register artist generator routes
+  app.use(artistGeneratorRouter);
 
 
   // AI Campaign Suggestions Route

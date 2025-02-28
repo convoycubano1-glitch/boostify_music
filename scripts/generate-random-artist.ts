@@ -4,7 +4,7 @@
  */
 
 import { db } from '../server/firebase';
-import { collection, addDoc, Timestamp, getFirestore } from 'firebase/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { faker } from '@faker-js/faker';
 
 /**
@@ -182,26 +182,10 @@ function generateRandomArtist() {
   return artistData;
 }
 
-/**
- * Guarda un artista generado en Firestore
- * @param artistData Datos del artista a guardar
- * @returns ID del documento creado
- */
+// Esta implementación ha sido migrada al archivo server/routes/artist-generator.ts
+// Mantenemos la firma de la función para compatibilidad
 async function saveArtistToFirestore(artistData: any): Promise<string> {
-  try {
-    // Corregimos la forma de obtener la referencia a la colección
-    // usando el método correcto para Firebase v9 (módulo ESM)
-    const artistsCollection = collection(db as any, 'generated_artists');
-    const docRef = await addDoc(artistsCollection, {
-      ...artistData,
-      createdAt: Timestamp.now()
-    });
-    console.log(`Artista guardado con ID: ${docRef.id}`);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error al guardar artista en Firestore:', error);
-    throw error;
-  }
+  throw new Error('Esta función ha sido migrada al archivo server/routes/artist-generator.ts');
 }
 
 /**

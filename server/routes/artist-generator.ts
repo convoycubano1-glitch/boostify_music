@@ -3,9 +3,31 @@
  */
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
-import { generateRandomArtist, saveArtistToFirestore } from '../../scripts/generate-random-artist';
+import { generateRandomArtist } from '../../scripts/generate-random-artist';
+import { db } from '../firebase';
+import { Timestamp } from 'firebase-admin/firestore';;
 
 const router = Router();
+
+/**
+ * Guarda un artista generado en Firestore
+ * @param artistData Datos del artista a guardar
+ * @returns ID del documento creado
+ */
+async function saveArtistToFirestore(artistData: any): Promise<string> {
+  try {
+    // Usar la API de Firebase Admin correctamente
+    const docRef = await db.collection('generated_artists').add({
+      ...artistData,
+      createdAt: Timestamp.now()
+    });
+    console.log(`Artista guardado con ID: ${docRef.id}`);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error al guardar artista en Firestore:', error);
+    throw error;
+  }
+}
 
 /**
  * Endpoint para generar un artista aleatorio
