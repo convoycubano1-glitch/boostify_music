@@ -19,7 +19,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A259FF'];
 
 export default function ProductPerformanceDashboard() {
   const [activeTab, setActiveTab] = useState('subscriptions');
-  const [productsData, setProductsData] = useState<any[]>([]);
+  const [productsData, setProductsData] = useState<GeneratedArtist[]>([]);
   const [subscriptionMetrics, setSubscriptionMetrics] = useState<any>({});
   const [videoMetrics, setVideoMetrics] = useState<any>({});
   const [courseMetrics, setCourseMetrics] = useState<any>({});
@@ -34,12 +34,12 @@ export default function ProductPerformanceDashboard() {
         const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }));
+        })) as GeneratedArtist[];
         
         setProductsData(artists);
         
         // Procesar métricas de suscripción
-        const subscriptionPlans = {
+        const subscriptionPlans: {[key: string]: number} = {
           'Basic': 0,
           'Pro': 0,
           'Enterprise': 0
@@ -51,7 +51,7 @@ export default function ProductPerformanceDashboard() {
         let totalCourseCount = 0;
         let totalCoursePurchaseValue = 0;
         
-        artists.forEach(artist => {
+        artists.forEach((artist: GeneratedArtist) => {
           // Contar por tipo de suscripción
           if (artist.subscription?.plan) {
             subscriptionPlans[artist.subscription.plan]++;
@@ -93,9 +93,9 @@ export default function ProductPerformanceDashboard() {
           totalCount: totalVideoCount,
           totalPurchaseValue: totalVideoPurchaseValue,
           avgPrice: totalVideoCount > 0 ? totalVideoPurchaseValue / totalVideoCount : 0,
-          purchaseRate: totalUsers > 0 ? (artists.filter(a => a.purchases?.videos?.videos?.length > 0).length / totalUsers) * 100 : 0,
-          avgVideosPerBuyer: artists.filter(a => a.purchases?.videos?.videos?.length > 0).length > 0 
-            ? totalVideoCount / artists.filter(a => a.purchases?.videos?.videos?.length > 0).length 
+          purchaseRate: totalUsers > 0 ? (artists.filter(a => (a.purchases?.videos?.videos?.length || 0) > 0).length / totalUsers) * 100 : 0,
+          avgVideosPerBuyer: artists.filter(a => (a.purchases?.videos?.videos?.length || 0) > 0).length > 0 
+            ? totalVideoCount / artists.filter(a => (a.purchases?.videos?.videos?.length || 0) > 0).length 
             : 0
         });
         
@@ -104,9 +104,9 @@ export default function ProductPerformanceDashboard() {
           totalCount: totalCourseCount,
           totalPurchaseValue: totalCoursePurchaseValue,
           avgPrice: totalCourseCount > 0 ? totalCoursePurchaseValue / totalCourseCount : 0,
-          purchaseRate: totalUsers > 0 ? (artists.filter(a => a.purchases?.courses?.courses?.length > 0).length / totalUsers) * 100 : 0,
-          avgCoursesPerBuyer: artists.filter(a => a.purchases?.courses?.courses?.length > 0).length > 0 
-            ? totalCourseCount / artists.filter(a => a.purchases?.courses?.courses?.length > 0).length 
+          purchaseRate: totalUsers > 0 ? (artists.filter(a => (a.purchases?.courses?.courses?.length || 0) > 0).length / totalUsers) * 100 : 0,
+          avgCoursesPerBuyer: artists.filter(a => (a.purchases?.courses?.courses?.length || 0) > 0).length > 0 
+            ? totalCourseCount / artists.filter(a => (a.purchases?.courses?.courses?.length || 0) > 0).length 
             : 0
         });
         
