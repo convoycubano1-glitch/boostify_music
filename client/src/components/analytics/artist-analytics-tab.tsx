@@ -583,63 +583,45 @@ export default function ArtistAnalyticsTab() {
             </div>
             
             <div className="mt-6 pt-6 border-t">
-              <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Proyección de ROI por Segmento
-              </h3>
+              <h3 className="text-lg font-medium mb-4">Proyección de ROI por Segmento</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-l-4 border-l-blue-500 overflow-hidden">
-                  <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/30 dark:to-transparent">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-blue-500" />
-                      Suscripciones
-                    </CardTitle>
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Suscripciones</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 rounded">
-                        {(summary.growthRate * 1.1).toFixed(1)}% ROI
-                      </span>
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {(summary.growthRate * 1.1).toFixed(1)}% ROI
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Retorno sobre inversión para adquisición de usuarios
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-l-4 border-l-green-500 overflow-hidden">
-                  <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-transparent dark:from-green-950/30 dark:to-transparent">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <FileVideo className="h-4 w-4 text-green-500" />
-                      Videos
-                    </CardTitle>
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Videos</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded">
-                        {(summary.growthRate * 0.9).toFixed(1)}% ROI
-                      </span>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {(summary.growthRate * 0.9).toFixed(1)}% ROI
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Retorno sobre inversión en infraestructura
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-l-4 border-l-amber-500 overflow-hidden">
-                  <CardHeader className="pb-2 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/30 dark:to-transparent">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-amber-500" />
-                      Cursos
-                    </CardTitle>
+                <Card className="border-l-4 border-l-amber-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Cursos</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      <span className="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 rounded">
-                        {(summary.growthRate * 1.3).toFixed(1)}% ROI
-                      </span>
+                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                      {(summary.growthRate * 1.3).toFixed(1)}% ROI
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Retorno sobre inversión en contenido educativo
                     </p>
                   </CardContent>
