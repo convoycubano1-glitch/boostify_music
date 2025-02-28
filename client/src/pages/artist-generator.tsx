@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ArrowUpRight, DollarSign, FileVideo, GraduationCap } from 'lucide-react';
 import {
   ImageIcon,
   Music2Icon,
