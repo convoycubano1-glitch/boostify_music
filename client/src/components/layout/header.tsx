@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,14 +129,17 @@ export function Header() {
                 </Button>
               </Link>
               
-              {/* Social Network Icon (Firestore) */}
+              {/* Social Network Icon (Firestore) - Now using MessageSquare */}
               <Link href="/firestore-social">
-                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2">
-                  <img 
-                    src="/assets/world-icon.svg" 
-                    alt="Social Network" 
-                    className="h-4 w-4 filter hue-rotate-60" 
-                  />
+                <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2 relative group">
+                  <MessageSquare className="h-5 w-5 text-orange-400" />
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                  </span>
+                  <span className="absolute hidden group-hover:block -bottom-10 left-1/2 -translate-x-1/2 bg-black px-2 py-1 rounded text-xs">
+                    Social Network
+                  </span>
                 </Button>
               </Link>
               
