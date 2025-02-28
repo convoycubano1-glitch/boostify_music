@@ -45,11 +45,14 @@ router.post("/api/generate-artist", async (req: Request, res: Response) => {
     const firestoreId = await saveArtistToFirestore(artistData);
     console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
     
-    // Añadir el ID de Firestore al objeto de artista
+    // Añadir el ID de Firestore al objeto de artista y actualizar el documento con ese ID
     const completeArtistData = {
       ...artistData,
       firestoreId
     };
+    
+    // Actualizar el documento para incluir firestoreId
+    await db.collection('generated_artists').doc(firestoreId).update({ firestoreId });
     
     // Devolver respuesta con datos completos del artista
     res.status(200).json(completeArtistData);

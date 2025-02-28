@@ -61,7 +61,6 @@ export function registerRoutes(app: Express): Server {
 
   app.use('/api/manager', managerRouter);
   app.use('/api/artist', artistRouter);
-  app.use(artistGeneratorRouter);
 
   // Configurar las rutas que NO requieren autenticación primero
   setupOpenAIRoutes(app);
@@ -70,6 +69,9 @@ export function registerRoutes(app: Express): Server {
   
   // Register generated artists routes (no authentication required)
   app.use(generatedArtistsRouter);
+  
+  // Register artist generator routes (no authentication required)
+  app.use(artistGeneratorRouter);
   
   // Servicios que requieren autenticación
   setupAuth(app);
@@ -91,9 +93,6 @@ export function registerRoutes(app: Express): Server {
   
   // Register investors routes
   app.use('/api/investors', investorsRouter);
-  
-  // Register artist generator routes
-  app.use(artistGeneratorRouter);
 
 
   // AI Campaign Suggestions Route
