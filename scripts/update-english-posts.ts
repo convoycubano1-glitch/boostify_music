@@ -1,5 +1,30 @@
 import { firestoreSocialNetworkService, Post } from '../server/services/firestore-social-network.ts';
 import { db } from '../server/firebase.ts';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, query, where, updateDoc, doc, Timestamp } from 'firebase/firestore';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+// Initialize Firebase with config from environment
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID,
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+console.log("Firebase initialized with config:", {
+  projectId: firebaseConfig.projectId,
+  apiKey: firebaseConfig.apiKey ? "[FOUND]" : "[MISSING]",
+  authDomain: firebaseConfig.authDomain ? "[FOUND]" : "[MISSING]",
+});
 
 // High-quality English content for posts about music
 const englishMusicPosts = [
@@ -49,36 +74,55 @@ async function updateEnglishPosts() {
   try {
     console.log("🔄 Starting update of English language posts...");
     
-    // Get all posts
-    const posts = await firestoreSocialNetworkService.getAllPosts();
+    const firestore = getFirestore();
     
-    // Filter English posts (by checking if user's language is 'en')
-    const englishPosts: Post[] = [];
+    // Step 1: Get all users with English language
+    const usersRef = collection(firestore, 'social_users');
+    const enUsersQuery = query(usersRef, where('language', '==', 'en'));
+    const enUsersSnapshot = await getDocs(enUsersQuery);
     
-    for (const post of posts) {
-      // Get user details to check language
-      const user = await firestoreSocialNetworkService.getUserById(post.userId);
-      if (user && user.language === 'en') {
-        englishPosts.push(post);
-      }
-    }
+    const englishUserIds: string[] = [];
+    enUsersSnapshot.forEach(userDoc => {
+      englishUserIds.push(userDoc.id);
+    });
     
-    console.log(`Found ${englishPosts.length} English posts to update`);
+    console.log(`Found ${englishUserIds.length} English-speaking users`);
     
-    // Update each English post with new music-related content
+    // Step 2: Find all posts by these English users
+    const postsRef = collection(firestore, 'social_posts');
     let updatedCount = 0;
-    for (let i = 0; i < englishPosts.length; i++) {
-      const post = englishPosts[i];
-      const musicContent = englishMusicPosts[i % englishMusicPosts.length];
+    
+    // For each English user, get and update their posts
+    for (const userId of englishUserIds) {
+      const userPostsQuery = query(postsRef, where('userId', '==', userId));
+      const userPostsSnapshot = await getDocs(userPostsQuery);
       
-      // Use direct Firestore update to avoid issues
-      if (post.id) {
-        await db.collection('social_posts').doc(post.id).update({
-          content: musicContent,
-          updatedAt: new Date()
-        });
-        updatedCount++;
-        console.log(`Updated post ${post.id} with new music content`);
+      console.log(`Found ${userPostsSnapshot.size} posts for user ${userId}`);
+      
+      // Update each post with a meaningful music content
+      let i = 0;
+      for (const postDoc of userPostsSnapshot.docs) {
+        const musicContent = englishMusicPosts[updatedCount % englishMusicPosts.length];
+        
+        // Finding Latin placeholder text
+        const currentContent = postDoc.data().content || '';
+        if (currentContent.includes('Est ') || 
+            currentContent.includes('Lorem ') || 
+            currentContent.includes('apostolus') ||
+            currentContent.includes('ratione') ||
+            currentContent.includes('paulatim')) {
+          
+          // Update the post with meaningful content
+          const postRef = doc(firestore, 'social_posts', postDoc.id);
+          await updateDoc(postRef, {
+            content: musicContent,
+            updatedAt: Timestamp.now()
+          });
+          
+          console.log(`Updated post ${postDoc.id} with new music content`);
+          updatedCount++;
+        }
+        i++;
       }
     }
     
