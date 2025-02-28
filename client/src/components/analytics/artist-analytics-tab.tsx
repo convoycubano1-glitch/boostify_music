@@ -492,94 +492,109 @@ export default function ArtistAnalyticsTab() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-l-4 border-l-blue-500">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <DollarSign className="h-4 w-4 text-orange-500" />
+              <div className="rounded-lg border bg-card text-card-foreground shadow overflow-hidden">
+                <div className="border-b bg-blue-50 dark:bg-blue-900/50 px-6 py-3">
+                  <h4 className="text-base font-medium flex items-center gap-2 text-blue-800 dark:text-blue-100">
+                    <DollarSign className="h-4 w-4" />
                     Métricas Clave
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h4>
+                </div>
+                <div className="p-5">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tasa de conversión a suscripciones</span>
-                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-sm font-medium">Tasa de conversión a suscripciones</span>
+                      </div>
+                      <div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded font-semibold text-sm">
                         {((summary.activeSubscriptions / Math.max(1, summary.totalArtists)) * 100).toFixed(1)}%
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Valor promedio por artista</span>
-                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-sm font-medium">Valor promedio por artista</span>
+                      </div>
+                      <div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded font-semibold text-sm">
                         {formatCurrency(summary.totalRevenue / Math.max(1, summary.totalArtists))}
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Retención estimada</span>
-                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-sm font-medium">Retención estimada</span>
+                      </div>
+                      <div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded font-semibold text-sm">
                         {(75 + Math.random() * 15).toFixed(1)}%
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Proyección anual</span>
-                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                    <div className="flex justify-between items-center py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-sm font-medium">Proyección anual</span>
+                      </div>
+                      <div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-3 py-1 rounded font-semibold text-sm">
                         {formatCurrency(summary.totalRevenue * 12 * (1 + summary.growthRate/100))}
-                      </span>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
               
-              <Card className="border-l-4 border-l-green-500">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <ArrowUpRight className="h-4 w-4 text-green-500" />
+              <div className="rounded-lg border bg-card text-card-foreground shadow overflow-hidden">
+                <div className="border-b bg-green-50 dark:bg-green-900/50 px-6 py-3">
+                  <h4 className="text-base font-medium flex items-center gap-2 text-green-800 dark:text-green-100">
+                    <ArrowUpRight className="h-4 w-4" />
                     Oportunidades de Crecimiento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h4>
+                </div>
+                <div className="p-5">
                   <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div className="flex items-start gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="h-4 w-4 text-green-600 dark:text-green-300" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Aumento de conversión Enterprise</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Incremento potencial de <span className="px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded font-medium">
+                        <p className="text-sm font-medium">Aumento de conversión Enterprise</p>
+                        <div className="mt-1 flex items-center">
+                          <span className="text-xs mr-2">Incremento potencial</span>
+                          <span className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 px-2 py-1 rounded font-semibold text-xs">
                             {formatCurrency(summary.subscriptionDistribution.Pro * 0.2 * (149.99 - 99.99))}
                           </span>
-                        </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div className="flex items-start gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                        <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-300" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Mayor penetración de cursos</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Incremento potencial de <span className="px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded font-medium">
+                        <p className="text-sm font-medium">Mayor penetración de cursos</p>
+                        <div className="mt-1 flex items-center">
+                          <span className="text-xs mr-2">Incremento potencial</span>
+                          <span className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 px-2 py-1 rounded font-semibold text-xs">
                             {formatCurrency(summary.totalArtists * 0.1 * 225)}
                           </span>
-                        </p>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                        <FileVideo className="h-4 w-4 text-green-600 dark:text-green-300" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Expansión de videos premium</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Incremento potencial de <span className="px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded font-medium">
+                        <p className="text-sm font-medium">Expansión de videos premium</p>
+                        <div className="mt-1 flex items-center">
+                          <span className="text-xs mr-2">Incremento potencial</span>
+                          <span className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 px-2 py-1 rounded font-semibold text-xs">
                             {formatCurrency(summary.totalArtists * 0.15 * 199)}
                           </span>
-                        </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
             
             <div className="mt-6 pt-6 border-t">
