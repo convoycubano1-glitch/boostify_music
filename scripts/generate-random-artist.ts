@@ -122,8 +122,8 @@ export async function generateRandomArtist() {
   const videosGenerated = hasVideos ? faker.number.int({ min: 1, max: 5 }) : 0;
   const totalVideoSpend = videoPrice * videosGenerated;
   
-  // Datos de cursos comprados - 5% probabilidad de tener cursos
-  const hasCourses = faker.datatype.boolean(0.05); // 5% de probabilidad según lo solicitado
+  // Datos de cursos comprados - 15% probabilidad de tener cursos
+  const hasCourses = faker.datatype.boolean(0.15); // 15% de probabilidad según lo solicitado
   const coursesData = generateRandomCourses(faker, hasCourses); // Solo fuerza cursos si la probabilidad lo permite
   const totalCourseSpend = coursesData.reduce((total, course) => total + course.price, 0);
 
@@ -177,18 +177,15 @@ export async function generateRandomArtist() {
   ]);
   const gender = genderOptions.value;
   
-  // Expandir opciones de edad para incluir adolescentes y personas mayores
+  // Restringir la edad entre 18 y 35 años según lo solicitado
   const ageOptions = faker.helpers.arrayElement([
-    { value: 'adolescente (14-19 años)', probability: 0.15 },
-    { value: 'joven (20-30 años)', probability: 0.4 },
-    { value: 'de mediana edad (30-45 años)', probability: 0.3 },
-    { value: 'maduro (45-60 años)', probability: 0.1 },
-    { value: 'senior (60+ años)', probability: 0.05 }
+    { value: 'joven (18-25 años)', probability: 0.6 },
+    { value: 'adulto joven (26-35 años)', probability: 0.4 }
   ]);
   const age = ageOptions.value;
   
-  // Ajustar altura según edad
-  const isAdolescent = age.includes('adolescente');
+  // Ajustar altura según rango de edad (todos los artistas son adultos jóvenes 18-35 años)
+  const isAdolescent = false; // Ya no hay adolescentes con el nuevo rango de edad
   const height = faker.number.int({ 
     min: isAdolescent ? 150 : 160, 
     max: isAdolescent ? 185 : 190 
