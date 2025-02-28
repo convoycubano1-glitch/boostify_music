@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
-import { Timestamp } from 'firebase-admin/firestore';;
+import { Timestamp } from 'firebase-admin/firestore';
 
 const router = Router();
 

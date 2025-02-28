@@ -57,7 +57,7 @@ export function generateRandomArtist() {
     ? `${faker.person.firstName()} ${faker.person.lastName()}`
     : faker.word.words({ count: { min: 1, max: 3 } }).replace(/^\w/, c => c.toUpperCase());
 
-  // Datos del plan de suscripción
+  // Datos del plan de suscripción - Siempre generamos un plan
   const SUBSCRIPTION_PLANS = [
     { name: "Basic", price: 59.99 },
     { name: "Pro", price: 99.99 },
@@ -65,15 +65,13 @@ export function generateRandomArtist() {
   ];
   const selectedPlan = faker.helpers.arrayElement(SUBSCRIPTION_PLANS);
   
-  // Datos de videos generados
-  const hasGeneratedVideos = faker.datatype.boolean(0.7); // 70% de probabilidad
+  // Datos de videos generados - Asegurar que siempre tengan al menos 1 video
   const videoPrice = 199;
-  const videosGenerated = hasGeneratedVideos ? faker.number.int({ min: 1, max: 5 }) : 0;
+  const videosGenerated = faker.number.int({ min: 1, max: 5 });
   const totalVideoSpend = videoPrice * videosGenerated;
   
-  // Datos de cursos comprados
-  const hasPurchasedCourses = faker.datatype.boolean(0.6); // 60% de probabilidad
-  const coursesData = generateRandomCourses(faker);
+  // Datos de cursos comprados - Asegurar que siempre tengan al menos 1 curso
+  const coursesData = generateRandomCourses(faker, true); // Parámetro adicional para forzar cursos
   const totalCourseSpend = coursesData.reduce((total, course) => total + course.price, 0);
 
   // Generar título del álbum
@@ -159,8 +157,8 @@ export function generateRandomArtist() {
   // Generar biografía basada en los géneros y estilo
   const biography = `${artistName} es un${gender === 'Mujer' ? 'a' : ''} talentoso${gender === 'Mujer' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
 
-  // Generar videos aleatorios si tiene videos
-  const videos = hasGeneratedVideos ? generateRandomVideos(faker, videosGenerated) : [];
+  // Generar videos 
+  const videos = generateRandomVideos(faker, videosGenerated);
 
   // Construir el objeto completo del artista
   const artistData = {
@@ -225,13 +223,13 @@ export function generateRandomArtist() {
       videos: {
         count: videosGenerated,
         totalSpent: totalVideoSpend,
-        lastPurchase: hasGeneratedVideos ? faker.date.recent().toISOString().split('T')[0] : null,
+        lastPurchase: faker.date.recent().toISOString().split('T')[0],
         videos: videos
       },
       courses: {
         count: coursesData.length,
         totalSpent: totalCourseSpend,
-        lastPurchase: hasPurchasedCourses ? faker.date.recent().toISOString().split('T')[0] : null,
+        lastPurchase: faker.date.recent().toISOString().split('T')[0],
         courses: coursesData
       }
     }
@@ -243,10 +241,13 @@ export function generateRandomArtist() {
 /**
  * Genera datos de cursos aleatorios
  * @param faker Instancia de Faker
+ * @param forceAtLeastOne Si es true, garantiza al menos un curso
  * @returns Array de cursos comprados
  */
-function generateRandomCourses(faker: any) {
-  const courseCount = faker.number.int({ min: 0, max: 3 });
+function generateRandomCourses(faker: any, forceAtLeastOne: boolean = false) {
+  const courseCount = forceAtLeastOne 
+    ? faker.number.int({ min: 1, max: 3 }) 
+    : faker.number.int({ min: 0, max: 3 });
   const courses = [];
   
   const COURSE_TITLES = [
