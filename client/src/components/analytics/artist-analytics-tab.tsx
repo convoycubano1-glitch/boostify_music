@@ -492,122 +492,154 @@ export default function ArtistAnalyticsTab() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
-                <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-orange-500" />
-                  Métricas Clave
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-800">
-                    <span className="text-sm font-medium">Tasa de conversión a suscripciones</span>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">
-                      {((summary.activeSubscriptions / Math.max(1, summary.totalArtists)) * 100).toFixed(1)}%
-                    </span>
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <DollarSign className="h-4 w-4 text-orange-500" />
+                    Métricas Clave
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tasa de conversión a suscripciones</span>
+                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                        {((summary.activeSubscriptions / Math.max(1, summary.totalArtists)) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Valor promedio por artista</span>
+                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                        {formatCurrency(summary.totalRevenue / Math.max(1, summary.totalArtists))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Retención estimada</span>
+                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                        {(75 + Math.random() * 15).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Proyección anual</span>
+                      <span className="font-medium px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                        {formatCurrency(summary.totalRevenue * 12 * (1 + summary.growthRate/100))}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-800">
-                    <span className="text-sm font-medium">Valor promedio por artista</span>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">
-                      {formatCurrency(summary.totalRevenue / Math.max(1, summary.totalArtists))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-800">
-                    <span className="text-sm font-medium">Retención estimada</span>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">
-                      {(75 + Math.random() * 15).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Proyección anual</span>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">
-                      {formatCurrency(summary.totalRevenue * 12 * (1 + summary.growthRate/100))}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
               
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
-                <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                  <ArrowUpRight className="h-4 w-4 text-green-500" />
-                  Oportunidades de Crecimiento
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 pb-2 border-b border-gray-200 dark:border-gray-800">
-                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
-                    <div>
-                      <p className="text-sm font-medium">Aumento de conversión Enterprise</p>
-                      <p className="text-xs text-muted-foreground">
-                        Incremento potencial de <span className="text-green-600 dark:text-green-400 font-medium">
-                          {formatCurrency(summary.subscriptionDistribution.Pro * 0.2 * (149.99 - 99.99))}
-                        </span>
-                      </p>
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <ArrowUpRight className="h-4 w-4 text-green-500" />
+                    Oportunidades de Crecimiento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Aumento de conversión Enterprise</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Incremento potencial de <span className="px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded font-medium">
+                            {formatCurrency(summary.subscriptionDistribution.Pro * 0.2 * (149.99 - 99.99))}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Mayor penetración de cursos</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Incremento potencial de <span className="px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded font-medium">
+                            {formatCurrency(summary.totalArtists * 0.1 * 225)}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Expansión de videos premium</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Incremento potencial de <span className="px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded font-medium">
+                            {formatCurrency(summary.totalArtists * 0.15 * 199)}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 pb-2 border-b border-gray-200 dark:border-gray-800">
-                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
-                    <div>
-                      <p className="text-sm font-medium">Mayor penetración de cursos</p>
-                      <p className="text-xs text-muted-foreground">
-                        Incremento potencial de <span className="text-green-600 dark:text-green-400 font-medium">
-                          {formatCurrency(summary.totalArtists * 0.1 * 225)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
-                    <div>
-                      <p className="text-sm font-medium">Expansión de videos premium</p>
-                      <p className="text-xs text-muted-foreground">
-                        Incremento potencial de <span className="text-green-600 dark:text-green-400 font-medium">
-                          {formatCurrency(summary.totalArtists * 0.15 * 199)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
             
             <div className="mt-6 pt-6 border-t">
-              <h3 className="text-lg font-medium mb-4">Proyección de ROI por Segmento</h3>
+              <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Proyección de ROI por Segmento
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-l-4 border-l-blue-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium">Suscripciones</CardTitle>
+                <Card className="border-l-4 border-l-blue-500 overflow-hidden">
+                  <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/30 dark:to-transparent">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-blue-500" />
+                      Suscripciones
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {(summary.growthRate * 1.1).toFixed(1)}% ROI
+                    <div className="text-2xl font-bold">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 rounded">
+                        {(summary.growthRate * 1.1).toFixed(1)}% ROI
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                       Retorno sobre inversión para adquisición de usuarios
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-l-4 border-l-green-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium">Videos</CardTitle>
+                <Card className="border-l-4 border-l-green-500 overflow-hidden">
+                  <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-transparent dark:from-green-950/30 dark:to-transparent">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <FileVideo className="h-4 w-4 text-green-500" />
+                      Videos
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {(summary.growthRate * 0.9).toFixed(1)}% ROI
+                    <div className="text-2xl font-bold">
+                      <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded">
+                        {(summary.growthRate * 0.9).toFixed(1)}% ROI
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                       Retorno sobre inversión en infraestructura
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-l-4 border-l-amber-500">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium">Cursos</CardTitle>
+                <Card className="border-l-4 border-l-amber-500 overflow-hidden">
+                  <CardHeader className="pb-2 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/30 dark:to-transparent">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-amber-500" />
+                      Cursos
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                      {(summary.growthRate * 1.3).toFixed(1)}% ROI
+                    <div className="text-2xl font-bold">
+                      <span className="px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 rounded">
+                        {(summary.growthRate * 1.3).toFixed(1)}% ROI
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                       Retorno sobre inversión en contenido educativo
                     </p>
                   </CardContent>
