@@ -77,22 +77,20 @@ router.get('/api/artists/generated/:id', async (req: Request, res: Response) => 
       });
     }
     
-    // Intento 3: Buscar por ID prefijo (ART-XXXXX)
-    if (id.startsWith('ART-')) {
-      console.log(`Buscando por ID con prefijo: ${id}`);
-      const queryByPrefixId = await db.collection('generated_artists')
-        .where('id', '==', id)
-        .limit(1)
-        .get();
-        
-      if (!queryByPrefixId.empty) {
-        const doc = queryByPrefixId.docs[0];
-        console.log(`Artista encontrado con prefijo ID: ${id}`);
-        return res.json({
-          id: doc.id,
-          ...doc.data()
-        });
-      }
+    // Intento 3: Buscar por campo 'id' (ART-XXXXX)
+    console.log(`Buscando por campo id: ${id}`);
+    const queryByPrefixId = await db.collection('generated_artists')
+      .where('id', '==', id)
+      .limit(1)
+      .get();
+      
+    if (!queryByPrefixId.empty) {
+      const doc = queryByPrefixId.docs[0];
+      console.log(`Artista encontrado con campo id: ${id}`);
+      return res.json({
+        id: doc.id,
+        ...doc.data()
+      });
     }
     
     // No se encontró el artista

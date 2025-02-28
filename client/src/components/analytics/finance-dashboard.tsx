@@ -21,7 +21,7 @@ export default function FinanceDashboard() {
     async function fetchFinancialData() {
       try {
         // Obtener datos de artistas para generar información financiera
-        const artistsCollection = collection(db, 'generated-artists');
+        const artistsCollection = collection(db, 'generated_artists');
         const artistsSnapshot = await getDocs(artistsCollection);
         const artists = artistsSnapshot.docs.map(doc => ({
           id: doc.id,
