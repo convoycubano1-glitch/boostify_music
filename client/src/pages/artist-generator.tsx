@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
@@ -98,9 +98,10 @@ export default function ArtistGeneratorPage() {
       setCurrentArtist(newArtist);
       // Guardar el artista en el arreglo de artistas guardados
       setSavedArtists(prev => [...prev, newArtist]);
+      setIsLoading(false);
       toast({
         title: "Artista generado con éxito",
-        description: `${newArtist.name} ha sido creado y guardado en Firestore.`
+        description: `${newArtist.name} ha sido creado y guardado en Firestore con ID: ${newArtist.firestoreId}.`
       });
     },
     onError: (error) => {
@@ -117,6 +118,13 @@ export default function ArtistGeneratorPage() {
     setIsLoading(true);
     generateArtistMutation.mutate();
   };
+
+  // Actualizar el estado de carga cuando la mutación completa
+  useEffect(() => {
+    if (!generateArtistMutation.isPending) {
+      setIsLoading(false);
+    }
+  }, [generateArtistMutation.isPending]);
 
   const handleCopyToClipboard = (text: string, description: string) => {
     navigator.clipboard.writeText(text)
