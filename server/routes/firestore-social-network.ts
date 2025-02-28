@@ -98,7 +98,11 @@ router.post("/posts", async (req, res) => {
 router.post("/posts/:id/like", async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedPost = await firestoreSocialNetworkService.incrementPostLikes(id);
+    // Obtener el usuario actual
+    // Nota: En un sistema real, obtendríamos el usuario de la sesión
+    const userId = req.query.userId || req.body.userId || "1"; // Default to user ID 1
+    
+    const updatedPost = await firestoreSocialNetworkService.incrementPostLikes(id, userId as string);
     
     if (!updatedPost) {
       return res.status(404).json({ error: "Post not found" });
@@ -108,6 +112,45 @@ router.post("/posts/:id/like", async (req, res) => {
   } catch (error) {
     console.error("Error liking post:", error);
     res.status(500).json({ error: "Error liking post" });
+  }
+});
+
+/**
+ * Guardar un post para ver más tarde
+ */
+router.post("/posts/:id/save", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Obtener el usuario actual
+    const userId = req.query.userId || req.body.userId || "1"; // Default to user ID 1
+    
+    const success = await firestoreSocialNetworkService.savePost(id, userId as string);
+    
+    if (!success) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    
+    res.json({ success: true, message: "Post saved successfully" });
+  } catch (error) {
+    console.error("Error saving post:", error);
+    res.status(500).json({ error: "Error saving post" });
+  }
+});
+
+/**
+ * Obtener los posts guardados por el usuario
+ */
+router.get("/user/saved-posts", async (req, res) => {
+  try {
+    // Obtener el usuario actual
+    const userId = req.query.userId || "1"; // Default to user ID 1
+    
+    const savedPosts = await firestoreSocialNetworkService.getSavedPosts(userId as string);
+    
+    res.json(savedPosts);
+  } catch (error) {
+    console.error("Error getting saved posts:", error);
+    res.status(500).json({ error: "Error getting saved posts" });
   }
 });
 

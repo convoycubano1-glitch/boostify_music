@@ -16,6 +16,8 @@ export interface SocialUser {
   language: 'en' | 'es';
   isBot: boolean;
   personality?: string;
+  savedPosts?: string[]; // Array de IDs de posts guardados
+  likedPosts?: string[]; // Array de IDs de posts a los que dio like
   createdAt: Date | Timestamp;
   updatedAt: Date | Timestamp;
 }
@@ -25,6 +27,8 @@ export interface Post {
   userId: string;
   content: string;
   likes: number;
+  likedBy?: string[]; // Array de IDs de usuarios que dieron like
+  savedBy?: string[]; // Array de IDs de usuarios que guardaron el post
   createdAt: Date | Timestamp;
   updatedAt: Date | Timestamp;
 }
@@ -207,13 +211,39 @@ export class FirestoreSocialNetworkService {
     }
   }
   
-  async incrementPostLikes(id: string): Promise<Post | null> {
+  async incrementPostLikes(id: string, userId: string = "1"): Promise<Post | null> {
     try {
+      // 1. Obtener el post actual
+      const postDoc = await db.collection(POSTS_COLLECTION).doc(id).get();
+      const post = fromFirestore<Post>(postDoc);
+      
+      if (!post) {
+        throw new Error(`Post with ID ${id} not found`);
+      }
+      
+      // 2. Verificar si el usuario ya dio like
+      const likedBy = post.likedBy || [];
+      const alreadyLiked = likedBy.includes(userId);
+      
+      // Si ya dio like, no hacer nada
+      if (alreadyLiked) {
+        return post;
+      }
+      
+      // 3. Actualizar el post - incrementar likes y añadir userId
       await db.collection(POSTS_COLLECTION).doc(id).update({
         likes: FieldValue.increment(1),
+        likedBy: FieldValue.arrayUnion(userId),
         updatedAt: toFirestoreDate(new Date())
       });
       
+      // 4. Actualizar el usuario - añadir el post a sus likedPosts
+      await db.collection(USERS_COLLECTION).doc(userId).update({
+        likedPosts: FieldValue.arrayUnion(id),
+        updatedAt: toFirestoreDate(new Date())
+      });
+      
+      // Obtener el post actualizado
       const updatedDoc = await db.collection(POSTS_COLLECTION).doc(id).get();
       return fromFirestore<Post>(updatedDoc);
     } catch (error) {
@@ -222,9 +252,101 @@ export class FirestoreSocialNetworkService {
     }
   }
   
-  async getPostsWithDetails(): Promise<any[]> {
+  // Nuevo método para guardar posts
+  async savePost(postId: string, userId: string = "1"): Promise<boolean> {
+    try {
+      // 1. Verificar si el post existe
+      const postDoc = await db.collection(POSTS_COLLECTION).doc(postId).get();
+      if (!postDoc.exists) {
+        throw new Error(`Post with ID ${postId} not found`);
+      }
+      
+      // 2. Actualizar el usuario - añadir el post a sus savedPosts
+      await db.collection(USERS_COLLECTION).doc(userId).update({
+        savedPosts: FieldValue.arrayUnion(postId),
+        updatedAt: toFirestoreDate(new Date())
+      });
+      
+      // 3. Actualizar el post - añadir el usuario a savedBy
+      await db.collection(POSTS_COLLECTION).doc(postId).update({
+        savedBy: FieldValue.arrayUnion(userId),
+        updatedAt: toFirestoreDate(new Date())
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error saving post with ID ${postId}:`, error);
+      throw error;
+    }
+  }
+  
+  // Nuevo método para obtener los posts guardados de un usuario
+  async getSavedPosts(userId: string): Promise<any[]> {
+    try {
+      // 1. Obtener el usuario
+      const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+      const user = fromFirestore<SocialUser>(userDoc);
+      
+      if (!user) {
+        throw new Error(`User with ID ${userId} not found`);
+      }
+      
+      // 2. Obtener los IDs de los posts guardados
+      const savedPostIds = user.savedPosts || [];
+      
+      if (savedPostIds.length === 0) {
+        return [];
+      }
+      
+      // 3. Obtener los posts guardados
+      const savedPosts = await Promise.all(
+        savedPostIds.map(async (postId) => {
+          const post = await this.getPostById(postId);
+          if (!post) return null;
+          
+          // Obtener el usuario que publicó el post
+          const postUser = await this.getUserById(post.userId);
+          
+          // Obtener los comentarios
+          const comments = await this.getCommentsByPostId(postId);
+          
+          // Obtener usuarios para cada comentario
+          const commentsWithUsers = await Promise.all(
+            comments.map(async (comment) => {
+              const commentUser = await this.getUserById(comment.userId);
+              return {
+                ...comment,
+                user: commentUser
+              };
+            })
+          );
+          
+          return {
+            ...post,
+            user: postUser,
+            comments: commentsWithUsers,
+            isLiked: (user.likedPosts || []).includes(postId),
+            isSaved: true
+          };
+        })
+      );
+      
+      // Filtrar los posts nulos (pueden haber sido eliminados)
+      return savedPosts.filter(post => post !== null);
+    } catch (error) {
+      console.error(`Error getting saved posts for user with ID ${userId}:`, error);
+      throw error;
+    }
+  }
+  
+  async getPostsWithDetails(currentUserId: string = "1"): Promise<any[]> {
     try {
       const posts = await this.getAllPosts();
+      
+      // Obtener el usuario actual
+      const currentUser = await this.getUserById(currentUserId);
+      const userLikedPosts = currentUser?.likedPosts || [];
+      const userSavedPosts = currentUser?.savedPosts || [];
       
       // Obtener detalles completos para cada post
       const postsWithDetails = await Promise.all(
@@ -246,14 +368,16 @@ export class FirestoreSocialNetworkService {
             })
           );
           
-          // Determinar si el usuario dio like (simulado)
-          const isLiked = Math.random() > 0.5;
+          // Determinar si el usuario dio like o guardó el post (datos reales)
+          const isLiked = userLikedPosts.includes(post.id as string);
+          const isSaved = userSavedPosts.includes(post.id as string);
           
           return {
             ...post,
             user,
             comments: commentsWithUsers,
-            isLiked
+            isLiked,
+            isSaved
           };
         })
       );
