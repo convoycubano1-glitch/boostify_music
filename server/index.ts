@@ -105,9 +105,37 @@ if (process.env.NODE_ENV === "production") {
     // Read and serve index.html manually
     try {
       const indexContent = fs.readFileSync(indexPath, 'utf8');
-      res.setHeader('Content-Type', 'text/html');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.send(indexContent);
+      
+      // Verificar si hay contenido en index.html
+      if (!indexContent || indexContent.trim() === '') {
+        log(`⚠️ Warning: Empty index.html content`);
+        // Proporcionar un index.html mínimo si está vacío
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boostify Music</title>
+  <script>
+    // Redirigir a la raíz si la página está vacía
+    window.onload = function() {
+      if (document.body.innerHTML.trim() === '') {
+        window.location.href = '/';
+      }
+    };
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>`);
+      } else {
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.send(indexContent);
+      }
     } catch (error) {
       log(`❌ Error serving index.html: ${error}`);
       next(error);
@@ -144,9 +172,9 @@ if (process.env.NODE_ENV === "production") {
       await setupVite(app, server);
     }
 
-    const PORT = 5000;
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, () => {
       log(`✅ Server started on port ${PORT}`);
       log(`🌍 Environment: ${app.get("env")}`);
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ? 
