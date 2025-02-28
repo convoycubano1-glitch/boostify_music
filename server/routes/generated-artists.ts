@@ -13,10 +13,17 @@ const router = Router();
  */
 router.get('/api/artists/generated', async (req: Request, res: Response) => {
   try {
-    const artistsCollection = db.collection('generated-artists');
+    // Log para depuración
+    console.log('Accediendo a la ruta /api/artists/generated');
+    
+    const artistsCollection = db.collection('generated_artists');
+    console.log('Obteniendo colección generated_artists');
+    
     const artistsSnapshot = await artistsCollection.get();
+    console.log(`Artistas encontrados: ${artistsSnapshot.size}`);
     
     if (artistsSnapshot.empty) {
+      console.log('No se encontraron artistas generados');
       return res.json([]);
     }
     
@@ -25,6 +32,7 @@ router.get('/api/artists/generated', async (req: Request, res: Response) => {
       ...doc.data()
     }));
     
+    console.log(`Devolviendo ${artists.length} artistas`);
     return res.json(artists);
   } catch (error) {
     console.error('Error al obtener artistas generados:', error);
@@ -39,7 +47,8 @@ router.get('/api/artists/generated', async (req: Request, res: Response) => {
 router.get('/api/artists/generated/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const artistRef = db.collection('generated-artists').doc(id);
+    console.log(`Buscando artista con ID: ${id}`);
+    const artistRef = db.collection('generated_artists').doc(id);
     const artistDoc = await artistRef.get();
     
     if (!artistDoc.exists) {
