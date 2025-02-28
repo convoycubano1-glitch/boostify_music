@@ -77,6 +77,42 @@ interface ArtistData {
     email: string;
     phone: string;
   };
+  subscription?: {
+    plan: string;
+    price: number;
+    status: 'active' | 'trial' | 'expired';
+    startDate: string;
+    renewalDate: string;
+  };
+  purchases?: {
+    videos: {
+      count: number;
+      totalSpent: number;
+      lastPurchase: string | null;
+      videos: {
+        id: string;
+        title: string;
+        type: string;
+        duration: string;
+        creationDate: string;
+        resolution: string;
+        price: number;
+      }[];
+    };
+    courses: {
+      count: number;
+      totalSpent: number;
+      lastPurchase: string | null;
+      courses: {
+        id: string;
+        title: string;
+        price: number;
+        purchaseDate: string;
+        progress: number;
+        completed: boolean;
+      }[];
+    };
+  };
   firestoreId?: string;
 }
 
@@ -411,11 +447,12 @@ export default function ArtistGeneratorPage() {
 
           {currentArtist && (
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto mb-8">
+              <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto mb-8">
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
                 <TabsTrigger value="music">Música</TabsTrigger>
                 <TabsTrigger value="image">Imagen</TabsTrigger>
                 <TabsTrigger value="social">Social</TabsTrigger>
+                <TabsTrigger value="subscription">Suscripción</TabsTrigger>
               </TabsList>
 
               {/* PERFIL */}

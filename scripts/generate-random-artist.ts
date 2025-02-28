@@ -57,6 +57,25 @@ export function generateRandomArtist() {
     ? `${faker.person.firstName()} ${faker.person.lastName()}`
     : faker.word.words({ count: { min: 1, max: 3 } }).replace(/^\w/, c => c.toUpperCase());
 
+  // Datos del plan de suscripción
+  const SUBSCRIPTION_PLANS = [
+    { name: "Basic", price: 59.99 },
+    { name: "Pro", price: 99.99 },
+    { name: "Enterprise", price: 149.99 }
+  ];
+  const selectedPlan = faker.helpers.arrayElement(SUBSCRIPTION_PLANS);
+  
+  // Datos de videos generados
+  const hasGeneratedVideos = faker.datatype.boolean(0.7); // 70% de probabilidad
+  const videoPrice = 199;
+  const videosGenerated = hasGeneratedVideos ? faker.number.int({ min: 1, max: 5 }) : 0;
+  const totalVideoSpend = videoPrice * videosGenerated;
+  
+  // Datos de cursos comprados
+  const hasPurchasedCourses = faker.datatype.boolean(0.6); // 60% de probabilidad
+  const coursesData = generateRandomCourses(faker);
+  const totalCourseSpend = coursesData.reduce((total, course) => total + course.price, 0);
+
   // Generar título del álbum
   const albumTitle = faker.music.songName();
 
@@ -99,6 +118,18 @@ export function generateRandomArtist() {
   ];
   const selectedColors = faker.helpers.arrayElements(colors, faker.number.int({ min: 2, max: 4 }));
   
+  // Características físicas detalladas
+  const gender = faker.person.gender() === 'female' ? 'Mujer' : 'Hombre';
+  const age = faker.helpers.arrayElement(['joven (20-30 años)', 'de mediana edad (30-45 años)', 'maduro (45-60 años)']);
+  const height = faker.number.int({ min: 160, max: 190 });
+  const eyeColor = faker.helpers.arrayElement(['marrón oscuro', 'marrón claro', 'verde', 'azul', 'avellana', 'gris']);
+  const skinTone = faker.helpers.arrayElement(['clara', 'media', 'morena', 'oscura', 'olivácea']);
+  const facialFeatures = faker.helpers.arrayElements([
+    'rasgos angulosos', 'rasgos suaves', 'pómulos pronunciados', 'mandíbula definida',
+    'rostro ovalado', 'rostro redondo', 'cejas expresivas', 'labios gruesos', 'labios finos',
+    'mirada penetrante', 'expresión serena', 'sonrisa carismática'
+  ], { min: 2, max: 4 });
+  
   // Generar descripción del estilo visual
   const fashionStyles = [
     'minimalista', 'elegante', 'urbano', 'vintage', 'futurista',
@@ -119,11 +150,17 @@ export function generateRandomArtist() {
   const selectedFashion = faker.helpers.arrayElement(fashionStyles);
   const selectedAccessory = faker.helpers.arrayElement(accessories);
   const selectedHairStyle = faker.helpers.arrayElement(hairStyles);
+  const hairColor = faker.helpers.arrayElement(['negro', 'castaño oscuro', 'castaño claro', 'rubio', 'pelirrojo', 'gris', 'teñido de azul', 'teñido de verde', 'teñido de morado', 'teñido de rosa']);
+  const bodyType = faker.helpers.arrayElement(['delgado', 'atlético', 'musculoso', 'robusto', 'curvilíneo']);
 
-  const fashionDescription = `Estilo ${selectedFashion} con ${selectedHairStyle}, ${selectedAccessory} y ropa que refleja su identidad musical.`;
+  // Descripción detallada del look
+  const detailedLookDescription = `${gender} ${age} de ${height}cm de altura con complexión ${bodyType}. Tiene ojos ${eyeColor}, piel ${skinTone} y ${facialFeatures.join(', ')}. Su cabello es ${hairColor} con estilo ${selectedHairStyle}. Suele lucir ${selectedAccessory} como accesorio distintivo. Viste con estilo ${selectedFashion} usando principalmente colores ${selectedColors.join(', ')} que reflejan su identidad musical. Su presencia escénica es ${faker.helpers.arrayElement(['magnética', 'intensa', 'relajada', 'enigmática', 'extravagante', 'minimalista'])}.`;
 
   // Generar biografía basada en los géneros y estilo
-  const biography = `${artistName} es un${faker.person.gender() === 'female' ? 'a' : ''} talentoso${faker.person.gender() === 'female' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${faker.person.gender() === 'female' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${faker.person.gender() === 'female' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
+  const biography = `${artistName} es un${gender === 'Mujer' ? 'a' : ''} talentoso${gender === 'Mujer' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
+
+  // Generar videos aleatorios si tiene videos
+  const videos = hasGeneratedVideos ? generateRandomVideos(faker, videosGenerated) : [];
 
   // Construir el objeto completo del artista
   const artistData = {
@@ -138,14 +175,14 @@ export function generateRandomArtist() {
       single: single
     },
     look: {
-      description: fashionDescription,
+      description: detailedLookDescription,
       color_scheme: selectedColors.join(', ')
     },
     music_genres: selectedGenres,
     image_prompts: {
-      artist_look: `${faker.person.gender() === 'female' ? 'Mujer' : 'Hombre'} ${faker.helpers.arrayElement(['joven', 'maduro', 'de mediana edad'])} con ${selectedHairStyle}, ${selectedAccessory}, estilo ${selectedFashion}, colores predominantes ${selectedColors.slice(0, 2).join(' y ')}, ambiente de ${faker.helpers.arrayElement(['estudio', 'escenario', 'urbano', 'natural', 'futurista'])}`,
+      artist_look: `${gender} ${age} con ${selectedHairStyle} ${hairColor}, ${selectedAccessory}, estilo ${selectedFashion}, complexión ${bodyType}, ojos ${eyeColor}, piel ${skinTone}, ${facialFeatures[0]}, colores predominantes ${selectedColors.slice(0, 2).join(' y ')}, ambiente de ${faker.helpers.arrayElement(['estudio', 'escenario', 'urbano', 'natural', 'futurista'])}`,
       album_cover: `Portada de álbum de ${selectedGenres.join(' y ')}, estética ${selectedFashion}, colores ${selectedColors.join(', ')}, concepto visual que representa ${faker.helpers.arrayElement(['emociones intensas', 'paisajes abstractos', 'simbolismo minimalista', 'collage fotográfico', 'ilustración digital'])}`,
-      promotional: `${faker.person.gender() === 'female' ? 'Artista femenina' : 'Artista masculino'} en pose ${faker.helpers.arrayElement(['natural', 'dinámica', 'pensativa', 'artística', 'poderosa'])}, ambiente ${faker.helpers.arrayElement(['urbano', 'de estudio', 'escénico', 'natural', 'abstracto'])}, iluminación ${faker.helpers.arrayElement(['cálida', 'fría', 'de alto contraste', 'dramática', 'suave'])}`
+      promotional: `${gender} en pose ${faker.helpers.arrayElement(['natural', 'dinámica', 'pensativa', 'artística', 'poderosa'])}, ambiente ${faker.helpers.arrayElement(['urbano', 'de estudio', 'escénico', 'natural', 'abstracto'])}, iluminación ${faker.helpers.arrayElement(['cálida', 'fría', 'de alto contraste', 'dramática', 'suave'])}`
     },
     social_media: {
       twitter: {
@@ -174,12 +211,103 @@ export function generateRandomArtist() {
       last_updated: new Date().toISOString().split('T')[0]
     },
     management: {
-      email: `management@${artistName.toLowerCase().replace(/\s+/g, '')}.com`,
-      phone: faker.phone.number()
+      email: "info@boostifymusic.com",
+      phone: "+14707983684"
+    },
+    subscription: {
+      plan: selectedPlan.name,
+      price: selectedPlan.price,
+      status: faker.helpers.arrayElement(['active', 'trial', 'expired']),
+      startDate: faker.date.past().toISOString().split('T')[0],
+      renewalDate: faker.date.future().toISOString().split('T')[0]
+    },
+    purchases: {
+      videos: {
+        count: videosGenerated,
+        totalSpent: totalVideoSpend,
+        lastPurchase: hasGeneratedVideos ? faker.date.recent().toISOString().split('T')[0] : null,
+        videos: videos
+      },
+      courses: {
+        count: coursesData.length,
+        totalSpent: totalCourseSpend,
+        lastPurchase: hasPurchasedCourses ? faker.date.recent().toISOString().split('T')[0] : null,
+        courses: coursesData
+      }
     }
   };
 
   return artistData;
+}
+
+/**
+ * Genera datos de cursos aleatorios
+ * @param faker Instancia de Faker
+ * @returns Array de cursos comprados
+ */
+function generateRandomCourses(faker: any) {
+  const courseCount = faker.number.int({ min: 0, max: 3 });
+  const courses = [];
+  
+  const COURSE_TITLES = [
+    "Producción Musical Avanzada",
+    "Marketing Digital para Músicos",
+    "Composición para Bandas Sonoras",
+    "Técnicas Vocales Profesionales",
+    "Distribución Musical en la Era Digital",
+    "Masterización de Audio",
+    "Estrategias de Lanzamiento Musical",
+    "Armonía y Teoría Musical",
+    "Creación de Beats"
+  ];
+  
+  for (let i = 0; i < courseCount; i++) {
+    const price = faker.number.int({ min: 149, max: 299 });
+    const title = faker.helpers.arrayElement(COURSE_TITLES);
+    
+    courses.push({
+      id: generateId("CRS"),
+      title,
+      price,
+      purchaseDate: faker.date.past().toISOString().split('T')[0],
+      progress: faker.number.int({ min: 0, max: 100 }),
+      completed: faker.datatype.boolean(0.4) // 40% de probabilidad que esté completado
+    });
+  }
+  
+  return courses;
+}
+
+/**
+ * Genera datos de videos aleatorios
+ * @param faker Instancia de Faker
+ * @param count Cantidad de videos
+ * @returns Array de videos generados
+ */
+function generateRandomVideos(faker: any, count: number) {
+  const videos = [];
+  
+  const VIDEO_TYPES = [
+    "Visualizador de audio",
+    "Video musical completo",
+    "Teaser promocional",
+    "Lyric video",
+    "Behind the scenes"
+  ];
+  
+  for (let i = 0; i < count; i++) {
+    videos.push({
+      id: generateId("VID"),
+      title: faker.music.songName(),
+      type: faker.helpers.arrayElement(VIDEO_TYPES),
+      duration: `${faker.number.int({ min: 1, max: 5 })}:${faker.number.int({ min: 0, max: 59 }).toString().padStart(2, '0')}`,
+      creationDate: faker.date.past().toISOString().split('T')[0],
+      resolution: faker.helpers.arrayElement(["720p", "1080p", "4K"]),
+      price: 199
+    });
+  }
+  
+  return videos;
 }
 
 // Esta implementación ha sido migrada al archivo server/routes/artist-generator.ts
