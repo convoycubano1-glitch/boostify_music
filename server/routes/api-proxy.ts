@@ -56,24 +56,20 @@ router.post('/fal/generate-image', async (req, res) => {
     const { prompt, negativePrompt, imageSize, imageCount } = req.body;
     
     if (!prompt) {
-      // Error de validación con estructura fallback
-      return res.json({
-        fallback: {
-          images: ['https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'],
-          request_id: 'fallback-validation-error'
-        },
-        error_info: 'Prompt is required'
+      // Retornar un error claro sin fallback a Unsplash
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'Prompt is required',
+        success: false
       });
     }
 
     if (!FAL_API_KEY) {
-      // Error de API key con estructura fallback
-      return res.json({
-        fallback: {
-          images: ['https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'],
-          request_id: 'fallback-no-api-key'
-        },
-        error_info: 'FAL_API_KEY is not configured'
+      // Retornar un error claro sin fallback a Unsplash
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'FAL_API_KEY is not configured',
+        success: false
       });
     }
 
@@ -105,25 +101,21 @@ router.post('/fal/generate-image', async (req, res) => {
     } catch (apiError: any) {
       console.error('Error calling Fal.ai API:', apiError.message);
       
-      // Error de API con estructura fallback
-      return res.json({
-        fallback: {
-          images: ['https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'],
-          request_id: 'fallback-api-error'
-        },
-        error_info: apiError.message
+      // Error de API sin fallback a Unsplash
+      return res.status(500).json({
+        error: 'API_ERROR',
+        message: apiError.message,
+        success: false
       });
     }
   } catch (error: any) {
     console.error('Unexpected error in Fal.ai proxy:', error);
     
-    // Error inesperado con estructura fallback
-    return res.json({
-      fallback: {
-        images: ['https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'],
-        request_id: 'fallback-unexpected-error'
-      },
-      error_info: error.message || 'Unexpected error'
+    // Error inesperado sin fallback a Unsplash
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Unexpected error',
+      success: false
     });
   }
 });
@@ -164,24 +156,22 @@ router.post('/freepik/generate-image', async (req, res) => {
     }
     
     if (!prompt) {
-      // Enviamos una respuesta de fallback inmediata para mantener una estructura consistente
+      // Enviamos una respuesta de error con status 400
       console.log('Error: Prompt vacío en solicitud a Freepik');
-      return res.status(200).json({
-        id: 'fallback-freepik-validation-error',
-        images: [{ url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }],
-        fallback: true,
-        error_info: 'Prompt is required'
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'Prompt is required',
+        success: false
       });
     }
 
     if (!FREEPIK_API_KEY) {
-      // Si no hay API key, devolver inmediatamente la respuesta de fallback
+      // Si no hay API key, retornar error con status 500
       console.log('Error: No se encontró FREEPIK_API_KEY');
-      return res.status(200).json({
-        id: 'fallback-freepik-no-api-key',
-        images: [{ url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }],
-        fallback: true,
-        error_info: 'FREEPIK_API_KEY is not configured'
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'FREEPIK_API_KEY is not configured',
+        success: false
       });
     }
 
@@ -230,23 +220,21 @@ router.post('/freepik/generate-image', async (req, res) => {
         throw new Error('Missing task_id in Freepik response');
       }
     } catch (apiError: any) {
-      // En caso de error en la API, registramos y devolvemos un fallback
+      // En caso de error en la API, retornamos un error
       console.error('Error llamando a la API de Freepik:', apiError.message);
-      return res.status(200).json({
-        id: 'fallback-freepik-api-error',
-        images: [{ url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }],
-        fallback: true,
-        error_info: apiError.message || 'Error calling Freepik API'
+      return res.status(500).json({
+        error: 'API_ERROR',
+        message: apiError.message || 'Error calling Freepik API',
+        success: false
       });
     }
   } catch (error: any) {
-    // Si ocurre cualquier error, devolvemos una respuesta fallback
+    // Si ocurre cualquier error, retornamos un error
     console.error('Error inesperado en Freepik proxy:', error.message);
-    return res.status(200).json({
-      id: 'fallback-freepik-error',
-      images: [{ url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }],
-      fallback: true,
-      error_info: error.message || 'Error inesperado'
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Error inesperado',
+      success: false
     });
   }
 });
@@ -270,22 +258,20 @@ router.post('/kling/generate-image', async (req, res) => {
     } = req.body;
     
     if (!prompt) {
-      // Incluso los errores de validación deberían usar código 200 con mensaje de error
-      return res.json({ 
-        data: [{ url: 'https://images.unsplash.com/photo-1639762681057-408e52192e55' }],
-        id: 'fallback-kling-validation-error',
-        fallback: true,
-        error_info: 'Prompt is required'
+      // Retornamos un error con código 400
+      return res.status(400).json({ 
+        error: 'VALIDATION_ERROR',
+        message: 'Prompt is required',
+        success: false
       });
     }
 
-    // Si no hay API key, devolver inmediatamente la respuesta de fallback
+    // Si no hay API key, retornamos un error con código 500
     if (!KLING_API_KEY) {
-      return res.json({
-        data: [{ url: 'https://images.unsplash.com/photo-1639762681057-408e52192e55' }],
-        id: 'fallback-kling-no-api-key',
-        fallback: true,
-        error_info: 'KLING_API_KEY is not configured'
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'KLING_API_KEY is not configured',
+        success: false
       });
     }
 
@@ -318,25 +304,23 @@ router.post('/kling/generate-image', async (req, res) => {
         id: response.data.id
       });
     } catch (apiError: any) {
-      // Si la solicitud a la API externa falla, registramos el error pero devolvemos un fallback
+      // Si la solicitud a la API externa falla, retornamos un error con status 500
       console.error('Error calling Kling API:', apiError.message);
       
-      return res.json({
-        data: [{ url: 'https://images.unsplash.com/photo-1639762681057-408e52192e55' }],
-        id: 'fallback-kling-api-error',
-        fallback: true,
-        error_info: apiError.message
+      return res.status(500).json({
+        error: 'API_ERROR',
+        message: apiError.message,
+        success: false
       });
     }
   } catch (error: any) {
     console.error('Unexpected error in Kling proxy:', error);
     
-    // Aunque haya un error inesperado, seguimos devolviendo una respuesta exitosa con fallback
-    return res.json({
-      data: [{ url: 'https://images.unsplash.com/photo-1639762681057-408e52192e55' }],
-      id: 'fallback-kling-unexpected-error',
-      fallback: true,
-      error_info: error.message || 'Unexpected error'
+    // Para errores inesperados, retornamos un error con status 500
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Unexpected error',
+      success: false
     });
   }
 });
@@ -576,18 +560,18 @@ router.get('/freepik/task/:taskId', async (req, res) => {
     const { taskId } = req.params;
     
     if (!taskId) {
-      return res.json({
-        fallback: true,
-        error_info: 'Task ID is required',
-        status: 'error'
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'Task ID is required',
+        success: false
       });
     }
 
     if (!FREEPIK_API_KEY) {
-      return res.json({
-        fallback: true,
-        error_info: 'FREEPIK_API_KEY is not configured',
-        status: 'error'
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'FREEPIK_API_KEY is not configured',
+        success: false
       });
     }
 
@@ -647,25 +631,21 @@ router.get('/freepik/task/:taskId', async (req, res) => {
     } catch (apiError: any) {
       console.error('Error checking Freepik task status:', apiError.message);
       
-      return res.json({
-        data: {
-          task_id: taskId,
-          status: 'FAILED'
-        },
-        fallback: true,
-        error_info: apiError.message
+      return res.status(500).json({
+        error: 'API_ERROR',
+        message: `Error checking Freepik task status: ${apiError.message}`,
+        success: false,
+        task_id: taskId
       });
     }
   } catch (error: any) {
     console.error('Unexpected error checking Freepik task status:', error);
     
-    return res.json({
-      data: {
-        task_id: req.params.taskId || 'unknown',
-        status: 'FAILED'
-      },
-      fallback: true,
-      error_info: error.message || 'Unexpected error'
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Unexpected error checking Freepik task status',
+      success: false,
+      task_id: req.params.taskId || 'unknown'
     });
   }
 });

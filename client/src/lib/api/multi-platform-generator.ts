@@ -11,6 +11,9 @@ import {
   FreepikGenerationOptions
 } from './freepik-service';
 
+// Import Freepik storage service
+import { freepikStorageService } from './freepik-storage-service';
+
 import { 
   GenerateImageParams,
   VideoGenerationParams,
@@ -91,13 +94,10 @@ async function generateWithFal(params: Omit<GenerateImageParams, 'apiProvider'>)
     throw new Error('Failed to generate image with Fal.ai');
   } catch (error) {
     console.error('Error generating image with Fal.ai:', error);
-    // Proporcionar un fallback para garantizar que siempre se devuelve algo
-    return {
-      url: 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a',
-      provider: 'fal (error fallback)',
-      prompt: params.prompt,
-      createdAt: new Date()
-    };
+    
+    // No usamos fallback automático, solo informamos del error
+    console.log('Error en la generación de imagen con Fal.ai, se recomienda usar Freepik directamente');
+    throw new Error('Image generation with Fal.ai failed. Please try again with Freepik.');
   }
 }
 
@@ -234,14 +234,33 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
       if (response.data && response.data.task_id) {
         // Para la primera llamada, no tenemos URL todavía, así que devolvemos un task_id
         // que se puede usar para verificar el estado más adelante
-        return {
+        const imageResult: ImageResult = {
           url: '', // URL estará vacía inicialmente
-          provider: `freepik-${freepikModel} (processing)`,
+          provider: `freepik-${freepikModel}`,
           taskId: response.data.task_id,
           status: 'IN_PROGRESS',
           prompt: params.prompt,
           createdAt: new Date()
         };
+        
+        // Check if we already have this task ID in Firestore
+        const existingImage = await freepikStorageService.findImageByTaskId(response.data.task_id);
+        if (existingImage && existingImage.url) {
+          console.log('Found existing Freepik image in Firestore for task ID:', response.data.task_id);
+          return existingImage;
+        }
+        
+        // No existing image found, store the pending task
+        try {
+          const firestoreId = await freepikStorageService.saveImage(imageResult);
+          return {
+            ...imageResult,
+            firestoreId
+          };
+        } catch (storageError) {
+          console.error('Error saving Freepik task to Firestore:', storageError);
+          return imageResult;
+        }
       }
 
       throw new Error(`Failed to start image generation with Freepik (${freepikModel})`);
@@ -289,13 +308,8 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
     throw new Error('Failed to generate image with Freepik');
   } catch (error) {
     console.error('Error generating image with Freepik server proxy:', error);
-    // Fallback garantizado
-    return {
-      url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1',
-      provider: 'freepik (error fallback)',
-      prompt: params.prompt,
-      createdAt: new Date()
-    };
+    // Throw error - no fallback to Unsplash
+    throw new Error('Image generation with Freepik failed. Please try again later.');
   }
 }
 
@@ -341,13 +355,8 @@ async function generateWithKling(params: Omit<GenerateImageParams, 'apiProvider'
     throw new Error('Failed to generate image with Kling');
   } catch (error) {
     console.error('Error generating image with Kling:', error);
-    // Fallback garantizado
-    return {
-      url: 'https://images.unsplash.com/photo-1639762681057-408e52192e55',
-      provider: 'kling (error fallback)',
-      prompt: params.prompt,
-      createdAt: new Date()
-    };
+    // No usamos fallback automático, solo informamos del error
+    throw new Error('Image generation with Kling failed. Please use Freepik directly for better results.');
   }
 }
 
@@ -473,17 +482,46 @@ function enhancePrompt(originalPrompt: string): string {
  * @param params Generation parameters including provider selection
  * @returns Promise with generated image result
  */
+/**
+ * Generates an image using Freepik exclusively
+ * This implementation explicitly uses Freepik as the sole provider
+ * and ensures Firestore integration for storage
+ * 
+ * @param params Generation parameters
+ * @returns Promise with the generated image result
+ */
 export async function generateImage(params: GenerateImageParams): Promise<ImageResult> {
-  switch (params.apiProvider) {
-    case 'fal':
-      return generateWithFal(params);
-    case 'freepik':
-      return generateWithFreepik(params);
-    case 'kling':
-      return generateWithKling(params);
-    default:
-      return generateWithFal(params);
+  // Force 'freepik' as the only valid provider
+  const freepikParams = {
+    ...params,
+    apiProvider: 'freepik' as ApiProvider
+  };
+  
+  console.log('Using Freepik exclusively for image generation');
+  
+  // First check if we already have similar images in Firestore for the same prompt
+  try {
+    const existingImages = await freepikStorageService.getImages();
+    
+    // Look for completed images with the same or very similar prompt
+    const similarImage = existingImages.find(img => 
+      img.status === 'COMPLETED' && 
+      img.url && 
+      img.prompt && 
+      img.prompt.toLowerCase().includes(params.prompt.toLowerCase().slice(0, 15))
+    );
+    
+    if (similarImage) {
+      console.log('Found similar existing Freepik image in Firestore:', similarImage);
+      return similarImage;
+    }
+  } catch (error) {
+    console.error('Error searching existing images in Firestore:', error);
+    // Continue with generation if search fails
   }
+  
+  // Generate new image with Freepik
+  return generateWithFreepik(freepikParams);
 }
 
 /**
@@ -520,11 +558,19 @@ export async function saveGeneratedContent(
     
     // Usamos las funciones específicas de cada tipo de contenido
     if (contentType === 'image') {
-      // Importamos dinámicamente para evitar dependencias circulares
-      const { saveGeneratedImage } = await import('./generated-images-service');
-      return await saveGeneratedImage(result as ImageResult);
+      // Check if this is a Freepik image
+      if (result.provider === 'freepik' || result.provider?.startsWith('freepik-')) {
+        // Use our specialized Freepik storage service
+        console.log('Using dedicated Freepik storage service for image');
+        return await freepikStorageService.saveImage(result as ImageResult);
+      } else {
+        // Use general storage for non-Freepik images (should not happen with our implementation)
+        console.warn('Using general storage for non-Freepik image');
+        const { saveGeneratedImage } = await import('./generated-images-service');
+        return await saveGeneratedImage(result as ImageResult);
+      }
     } else {
-      // Importamos dinámicamente para evitar dependencias circulares
+      // For videos, use the standard video storage
       const { saveGeneratedVideo } = await import('./generated-images-service');
       return await saveGeneratedVideo(result as VideoResult);
     }
@@ -543,6 +589,18 @@ export async function saveGeneratedContent(
  */
 export async function checkTaskStatus(taskId: string, provider: string): Promise<ImageResult | VideoResult | null> {
   try {
+    // First check in Firestore for Freepik images
+    if (provider === 'freepik' || provider.startsWith('freepik-')) {
+      // Try to find the existing image in Firestore
+      const existingImage = await freepikStorageService.findImageByTaskId(taskId);
+      
+      // If the image is already completed in Firestore, return it directly
+      if (existingImage && existingImage.url && existingImage.status === 'COMPLETED') {
+        console.log('Found completed Freepik image in Firestore:', existingImage);
+        return existingImage;
+      }
+    }
+    
     // Determinar si se debe usar la API directa o el proxy del servidor
     const shouldUseDirectApi = useDirectApi[provider as keyof typeof useDirectApi] && hasApiKey(provider);
 
@@ -562,7 +620,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
           
           console.log("Freepik direct API URL:", imageUrl);
           
-          return {
+          const completedImage: ImageResult = {
             url: imageUrl,
             provider: 'freepik',
             taskId: taskId,
@@ -570,6 +628,18 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
             prompt: '',  // No tenemos el prompt en esta respuesta
             createdAt: new Date()
           };
+          
+          // Store completed image in Firestore for future reference
+          try {
+            const firestoreId = await freepikStorageService.saveImage(completedImage);
+            return {
+              ...completedImage,
+              firestoreId
+            };
+          } catch (storageError) {
+            console.error('Error saving completed Freepik image to Firestore:', storageError);
+            return completedImage;
+          }
         } else if (response.data.status === 'FAILED') {
           throw new Error('Task failed at Freepik');
         } else {
@@ -626,6 +696,20 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
                 result.url = freepikData.generated[0];
               }
               console.log("Freepik image URL:", result.url);
+              
+              // If we have a URL, store in Firestore
+              if (result.url) {
+                // Update completed image status
+                result.status = 'COMPLETED';
+                
+                // Store in Firestore for persistence and future retrieval
+                try {
+                  const firestoreId = await freepikStorageService.saveImage(result);
+                  result.firestoreId = firestoreId;
+                } catch (storageError) {
+                  console.error('Error saving Freepik proxy image to Firestore:', storageError);
+                }
+              }
             }
           } else if (provider === 'kling' && response.data.data) {
             result.url = response.data.data[0]?.url || '';
