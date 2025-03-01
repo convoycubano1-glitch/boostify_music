@@ -1,4 +1,29 @@
 import axios from 'axios';
+import { freepikService } from './freepik-service';
+
+// Configuración para determinar si usar API directa o proxy de servidor
+const useDirectApi = {
+  freepik: false, // Usar proxy del servidor debido a restricciones CORS
+  fal: false,     // Seguir usando proxy para Fal por ahora
+  kling: false,   // Seguir usando proxy para Kling por ahora
+  luma: false,    // Seguir usando proxy para Luma por ahora
+};
+
+// Verificar si las claves API están disponibles en el cliente
+function hasApiKey(provider: string): boolean {
+  switch (provider) {
+    case 'freepik':
+      return !!import.meta.env.VITE_FREEPIK_KEY;
+    case 'fal':
+      return !!import.meta.env.VITE_FAL_KEY;
+    case 'kling':
+      return !!import.meta.env.VITE_KLING_API_KEY;
+    case 'luma':
+      return !!import.meta.env.VITE_LUMA_API_KEY;
+    default:
+      return false;
+  }
+}
 
 export interface GenerateImageParams {
   prompt: string;
@@ -6,6 +31,8 @@ export interface GenerateImageParams {
   imageSize?: string;
   apiProvider: 'fal' | 'luma' | 'freepik' | 'kling';
   imageCount?: number;
+  useDirectApi?: boolean; // Opción para forzar uso directo de API
+  aspectRatio?: string;   // Proporción de aspecto para la imagen
 }
 
 export interface GenerateVideoParams {
@@ -13,6 +40,7 @@ export interface GenerateVideoParams {
   duration?: number;
   apiProvider: 'luma' | 'kling';
   style?: string;
+  useDirectApi?: boolean; // Opción para forzar uso directo de API
 }
 
 export interface ImageResult {
@@ -21,6 +49,8 @@ export interface ImageResult {
   requestId?: string;
   prompt: string;
   createdAt: Date;
+  taskId?: string;      // ID para verificar estado de tareas asíncronas
+  status?: string;      // Estado de la tarea asíncrona
 }
 
 export interface VideoResult {
@@ -29,6 +59,8 @@ export interface VideoResult {
   requestId?: string;
   prompt: string;
   createdAt: Date;
+  taskId?: string;      // ID para verificar estado de tareas asíncronas
+  status?: string;      // Estado de la tarea asíncrona
 }
 
 /**
@@ -86,19 +118,90 @@ async function generateWithFal(params: Omit<GenerateImageParams, 'apiProvider'>)
 }
 
 /**
- * Generate image using Freepik API through our server proxy
+ * Generate image using Freepik API directly or through server proxy
  * @param params Image generation parameters
  * @returns Promise with generated image result
  */
 async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvider'>): Promise<ImageResult> {
+  // Determinar si se debe usar la API directa o el proxy del servidor
+  const shouldUseDirectApi = (params.useDirectApi !== undefined) 
+    ? params.useDirectApi 
+    : (useDirectApi.freepik && hasApiKey('freepik'));
+
+  // Si tenemos la clave API y está configurado para usar API directo
+  if (shouldUseDirectApi) {
+    try {
+      console.log('Using direct Freepik API integration');
+      
+      // Convertir el aspect_ratio a formato de Freepik
+      let aspect_ratio: 'square_1_1' | 'classic_4_3' | 'traditional_3_4' | 'widescreen_16_9' | 
+                        'social_story_9_16' | 'smartphone_horizontal_20_9' | 'smartphone_vertical_9_20' | 
+                        'standard_3_2' | 'portrait_2_3' | 'horizontal_2_1' | 'vertical_1_2' | 
+                        'social_5_4' | 'social_post_4_5' = 'square_1_1'; // Default
+      
+      if (params.aspectRatio) {
+        // Mapeo de formatos comunes
+        const aspectRatioMap: Record<string, 'square_1_1' | 'classic_4_3' | 'traditional_3_4' | 'widescreen_16_9' | 
+                                           'social_story_9_16' | 'smartphone_horizontal_20_9' | 'smartphone_vertical_9_20' | 
+                                           'standard_3_2' | 'portrait_2_3' | 'horizontal_2_1' | 'vertical_1_2' | 
+                                           'social_5_4' | 'social_post_4_5'> = {
+          '1:1': 'square_1_1',
+          '4:3': 'classic_4_3',
+          '3:4': 'traditional_3_4',
+          '16:9': 'widescreen_16_9',
+          '9:16': 'social_story_9_16',
+          '3:2': 'standard_3_2',
+          '2:3': 'portrait_2_3',
+          '2:1': 'horizontal_2_1',
+          '1:2': 'vertical_1_2',
+          '5:4': 'social_5_4',
+          '4:5': 'social_post_4_5'
+        };
+        
+        // Si el formato existe en el mapa, usa ese, de lo contrario usa el default
+        if (params.aspectRatio in aspectRatioMap) {
+          aspect_ratio = aspectRatioMap[params.aspectRatio as keyof typeof aspectRatioMap];
+        }
+      }
+      
+      // Usar nuestro servicio de cliente directo
+      const response = await freepikService.generateImage({
+        prompt: params.prompt,
+        aspect_ratio: aspect_ratio,
+        resolution: (params.imageSize === 'large') ? '4k' : '2k'
+      });
+
+      // La respuesta de Freepik es asíncrona, devuelve un task_id
+      if (response.data && response.data.task_id) {
+        // Para la primera llamada, no tenemos URL todavía, así que devolvemos un task_id
+        // que se puede usar para verificar el estado más adelante
+        return {
+          url: '', // URL estará vacía inicialmente
+          provider: 'freepik (processing)',
+          taskId: response.data.task_id,
+          status: 'IN_PROGRESS',
+          prompt: params.prompt,
+          createdAt: new Date()
+        };
+      }
+
+      throw new Error('Failed to start image generation with Freepik');
+    } catch (error) {
+      console.error('Error generating image with direct Freepik API:', error);
+      // Si falla la API directa, intentamos con el proxy del servidor
+      console.log('Falling back to server proxy for Freepik');
+    }
+  }
+
+  // Si no podemos usar la API directa o falló, usamos el proxy del servidor
   try {
-    // Utilizar el proxy del servidor en lugar de llamar directamente a Freepik
+    // Utilizar el proxy del servidor
     const response = await axios.post(
       '/api/proxy/freepik/generate-image',
       {
         prompt: params.prompt,
         negativePrompt: params.negativePrompt || '',
-        aspectRatio: '1:1',
+        aspectRatio: params.aspectRatio || '1:1',
         count: params.imageCount || 1
       }
     );
@@ -126,7 +229,7 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
 
     throw new Error('Failed to generate image with Freepik');
   } catch (error) {
-    console.error('Error generating image with Freepik:', error);
+    console.error('Error generating image with Freepik server proxy:', error);
     // Fallback garantizado
     return {
       url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1',
@@ -361,10 +464,100 @@ export async function saveGeneratedContent(
 }
 
 /**
+ * Verifica el estado de una tarea asíncrona y obtiene el resultado cuando está listo
+ * @param taskId ID de la tarea a verificar
+ * @param provider Proveedor de la API utilizada
+ * @returns Promise con el resultado de la tarea
+ */
+export async function checkTaskStatus(taskId: string, provider: string): Promise<ImageResult | VideoResult | null> {
+  try {
+    // Determinar si se debe usar la API directa o el proxy del servidor
+    const shouldUseDirectApi = useDirectApi[provider as keyof typeof useDirectApi] && hasApiKey(provider);
+
+    if (provider === 'freepik' && shouldUseDirectApi) {
+      // Usar API directa para Freepik
+      const response = await freepikService.checkTaskStatus(taskId);
+      
+      if (response.data) {
+        if (response.data.status === 'COMPLETED' && response.data.generated && response.data.generated.length > 0) {
+          return {
+            url: response.data.generated[0].url,
+            provider: 'freepik',
+            taskId: taskId,
+            status: 'COMPLETED',
+            prompt: '',  // No tenemos el prompt en esta respuesta
+            createdAt: new Date()
+          };
+        } else if (response.data.status === 'FAILED') {
+          throw new Error('Task failed at Freepik');
+        } else {
+          // Todavía en progreso
+          return {
+            url: '',
+            provider: 'freepik (processing)',
+            taskId: taskId,
+            status: response.data.status,
+            prompt: '',
+            createdAt: new Date()
+          };
+        }
+      }
+    } else {
+      // Usar proxy del servidor para otros proveedores o si no hay clave API
+      const endpoint = `/api/proxy/${provider}/task-status/${taskId}`;
+      const response = await axios.get(endpoint);
+      
+      if (response.data) {
+        if (response.data.status === 'COMPLETED' || response.data.status === 'completed') {
+          // El formato de la respuesta depende del proveedor
+          let result: ImageResult | VideoResult = {
+            url: '',
+            provider,
+            taskId,
+            status: 'COMPLETED',
+            prompt: '',
+            createdAt: new Date()
+          };
+          
+          // Tratar diferentes formatos de respuesta según el proveedor
+          if (provider === 'freepik' && response.data.generated) {
+            result.url = response.data.generated[0]?.url || '';
+          } else if (provider === 'kling' && response.data.data) {
+            result.url = response.data.data[0]?.url || '';
+          } else if ((provider === 'luma' || provider === 'kling') && response.data.output) {
+            result.url = response.data.output.url || '';
+          }
+          
+          return result;
+        } else if (response.data.status === 'FAILED' || response.data.status === 'failed') {
+          throw new Error(`Task failed at ${provider}`);
+        } else {
+          // Todavía en progreso
+          return {
+            url: '',
+            provider: `${provider} (processing)`,
+            taskId: taskId,
+            status: response.data.status,
+            prompt: '',
+            createdAt: new Date()
+          };
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error checking task status for ${provider}:`, error);
+    return null;
+  }
+}
+
+/**
  * Multi-platform content generator service
  */
 export const multiPlatformGenerator = {
   generateImage,
   generateVideo,
-  saveGeneratedContent
+  saveGeneratedContent,
+  checkTaskStatus
 };
