@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -43,22 +43,34 @@ const generateImage = async (prompt: string, provider: string): Promise<ImageRes
     // Extrae la URL de la imagen de la respuesta
     let imageUrl = '';
     
+    // Imprimir la respuesta completa para diagnóstico
+    console.log("Respuesta completa:", JSON.stringify(data));
+    
     // Estructura de fallback específica con la que estamos trabajando:
     // {"id":"fallback-freepik-no-api-key","images":[{"url":"https://..."}],"fallback":true,"error_info":"..."}
     // O: {"fallback":{"images":["https://..."],"request_id":"..."},"error_info":"..."}
+    // O: {"data":[{"url":"https://..."}],"id":"fallback-kling-api-error","fallback":true,"error_info":"..."}
     
     if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+      // Estructura: { images: [{ url: "..." }] }
       if (typeof data.images[0] === 'string') {
         imageUrl = data.images[0];
       } else if (data.images[0] && data.images[0].url) {
         imageUrl = data.images[0].url;
       }
+      console.log("URL extraída de data.images:", imageUrl);
     } else if (data.fallback && data.fallback.images && Array.isArray(data.fallback.images)) {
+      // Estructura: { fallback: { images: ["..."] } }
       imageUrl = data.fallback.images[0];
+      console.log("URL extraída de data.fallback.images:", imageUrl);
     } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+      // Estructura: { data: [{ url: "..." }] }
       if (data.data[0] && data.data[0].url) {
         imageUrl = data.data[0].url;
+      } else if (typeof data.data[0] === 'string') {
+        imageUrl = data.data[0];
       }
+      console.log("URL extraída de data.data:", imageUrl);
     }
     
     // Si no podemos extraer la URL de la imagen, lanzamos un error para usar el fallback local
@@ -114,18 +126,28 @@ const generateVideo = async (prompt: string, provider: string): Promise<VideoRes
     // Extrae la URL del video de la respuesta
     let videoUrl = '';
     
+    // Imprimir la respuesta completa para diagnóstico
+    console.log("Respuesta completa de video:", JSON.stringify(data));
+    
     // Estructura de respuesta de video esperada:
     // {"id":"fallback-luma-no-api-key-1740811810955","output":{"url":"https://..."},"fallback":true,"error_info":"..."}
     
     if (data.output && data.output.url) {
       // Estructura estándar que devuelve el servidor para videos
       videoUrl = data.output.url;
+      console.log("URL de video extraída de data.output.url:", videoUrl);
     } else if (data.data && data.data.url) {
       // Posible estructura alternativa
       videoUrl = data.data.url;
+      console.log("URL de video extraída de data.data.url:", videoUrl);
     } else if (data.url) {
       // Estructura simple directa
       videoUrl = data.url;
+      console.log("URL de video extraída de data.url:", videoUrl);
+    } else if (data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].url) {
+      // Estructura array de datos
+      videoUrl = data.data[0].url;
+      console.log("URL de video extraída de data.data[0].url:", videoUrl);
     }
     
     // Si no podemos extraer la URL del video, lanzamos un error para usar el fallback local
@@ -153,16 +175,38 @@ const generateVideo = async (prompt: string, provider: string): Promise<VideoRes
   }
 };
 
+// Componente principal para probar generación de imágenes y videos
 export default function ImageGeneratorSimplePage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'image' | 'video'>('image');
   const [imagePrompt, setImagePrompt] = useState('');
   const [videoPrompt, setVideoPrompt] = useState('');
-  const [imageProvider, setImageProvider] = useState('fal');
+  const [imageProvider, setImageProvider] = useState('freepik');
   const [videoProvider, setVideoProvider] = useState('luma');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [generatedVideos, setGeneratedVideos] = useState<VideoResult[]>([]);
+  
+  // Cargar una imagen inicial para demostrar que el sistema funciona
+  useEffect(() => {
+    // Solo cargar si no hay imágenes generadas aún
+    if (generatedImages.length === 0) {
+      const loadInitialImage = async () => {
+        try {
+          console.log("Cargando imagen inicial...");
+          // Usar freepik como proveedor por defecto para el ejemplo inicial
+          const result = await generateImage("perro jugando en la playa", "freepik");
+          setGeneratedImages([result]);
+          
+          console.log("Imagen inicial cargada:", result);
+        } catch (error) {
+          console.error("Error al cargar imagen inicial:", error);
+        }
+      };
+      
+      loadInitialImage();
+    }
+  }, []);
 
   // Handle image generation
   const handleImageGenerate = async () => {
