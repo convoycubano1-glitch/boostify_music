@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +24,10 @@ import {
   FilmIcon, 
   PictureInPicture2, 
   CirclePlay,
-  Loader2
+  Loader2,
+  Save,
+  CheckCircle,
+  CloudUpload
 } from 'lucide-react';
 import { 
   generateImage, 
@@ -34,6 +37,7 @@ import {
   VideoResult 
 } from '@/lib/api/multi-platform-generator';
 import { FreepikModel } from '@/lib/api/freepik-service';
+import { saveGeneratedImage, getGeneratedImages, saveGeneratedVideo, getGeneratedVideos } from '@/lib/api/generated-images-service';
 
 // Form validation schemas
 const imageFormSchema = z.object({
@@ -177,6 +181,39 @@ export default function ImageGeneratorPage() {
     }
   };
 
+  // Load saved images and videos from Firestore when component mounts
+  useEffect(() => {
+    async function loadSavedMedia() {
+      try {
+        // Load images
+        const savedImages = await getGeneratedImages();
+        if (savedImages.length > 0) {
+          setGeneratedImages(prev => {
+            // Combine with any existing images, avoiding duplicates by URL
+            const existingUrls = new Set(prev.map(img => img.url));
+            const newImages = savedImages.filter(img => !existingUrls.has(img.url));
+            return [...prev, ...newImages];
+          });
+        }
+        
+        // Load videos
+        const savedVideos = await getGeneratedVideos();
+        if (savedVideos.length > 0) {
+          setGeneratedVideos(prev => {
+            // Combine with any existing videos, avoiding duplicates by URL
+            const existingUrls = new Set(prev.map(vid => vid.url));
+            const newVideos = savedVideos.filter(vid => !existingUrls.has(vid.url));
+            return [...prev, ...newVideos];
+          });
+        }
+      } catch (error) {
+        console.error('Error loading saved media:', error);
+      }
+    }
+    
+    loadSavedMedia();
+  }, []);
+  
   // Handle image selection
   const handleImageSelect = (image: ImageResult) => {
     setSelectedImage(image);
@@ -187,6 +224,55 @@ export default function ImageGeneratorPage() {
   const handleVideoSelect = (video: VideoResult) => {
     setSelectedVideo(video);
     setShowDetailDialog(true);
+  };
+  
+  // Save image to Firestore
+  const handleSaveToFirestore = async (content: ImageResult | VideoResult, type: 'image' | 'video') => {
+    try {
+      let firestoreId: string;
+      
+      if (type === 'image') {
+        firestoreId = await saveGeneratedImage(content as ImageResult);
+        toast({
+          title: 'Image saved to your collection',
+          description: 'Your image has been saved to your personal collection in the cloud.',
+          variant: 'success',
+        });
+      } else {
+        firestoreId = await saveGeneratedVideo(content as VideoResult);
+        toast({
+          title: 'Video saved to your collection',
+          description: 'Your video has been saved to your personal collection in the cloud.',
+          variant: 'success',
+        });
+      }
+      
+      // Update the content with the Firestore ID
+      if (type === 'image') {
+        setGeneratedImages(prev => 
+          prev.map(item => 
+            item.url === content.url 
+              ? { ...item, firestoreId } 
+              : item
+          )
+        );
+      } else {
+        setGeneratedVideos(prev => 
+          prev.map(item => 
+            item.url === content.url 
+              ? { ...item, firestoreId } 
+              : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error(`Error saving ${type} to Firestore:`, error);
+      toast({
+        title: `Failed to save ${type}`,
+        description: `There was a problem saving your ${type} to the cloud.`,
+        variant: 'destructive',
+      });
+    }
   };
 
   // Download content
@@ -615,7 +701,7 @@ export default function ImageGeneratorPage() {
                             alt={`Generated image ${index + 1}`} 
                             className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                             <Button 
                               variant="secondary" 
                               size="sm"
@@ -626,6 +712,27 @@ export default function ImageGeneratorPage() {
                             >
                               <Download className="h-4 w-4 mr-1" />
                               Download
+                            </Button>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveToFirestore(image, 'image');
+                              }}
+                              disabled={!!image.firestoreId}
+                            >
+                              {image.firestoreId ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
+                                  Saved
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4 mr-1" />
+                                  Save
+                                </>
+                              )}
                             </Button>
                           </div>
                           <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center">
@@ -660,7 +767,7 @@ export default function ImageGeneratorPage() {
                             className="w-full h-40 object-cover"
                             controls
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                             <Button 
                               variant="secondary" 
                               size="sm"
@@ -671,6 +778,27 @@ export default function ImageGeneratorPage() {
                             >
                               <Download className="h-4 w-4 mr-1" />
                               Download
+                            </Button>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveToFirestore(video, 'video');
+                              }}
+                              disabled={!!video.firestoreId}
+                            >
+                              {video.firestoreId ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
+                                  Saved
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4 mr-1" />
+                                  Save
+                                </>
+                              )}
                             </Button>
                           </div>
                           <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center">
@@ -766,23 +894,63 @@ export default function ImageGeneratorPage() {
           <DialogFooter>
             <div className="flex gap-2">
               {activeTab === 'image' && selectedImage && (
-                <Button 
-                  variant="outline"
-                  onClick={() => handleDownload(selectedImage.url, 'image')}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleDownload(selectedImage.url, 'image')}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleSaveToFirestore(selectedImage, 'image')}
+                    disabled={!!selectedImage.firestoreId}
+                  >
+                    {selectedImage.firestoreId ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <CloudUpload className="h-4 w-4 mr-2" />
+                        Save to Collection
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
 
               {activeTab === 'video' && selectedVideo && (
-                <Button 
-                  variant="outline"
-                  onClick={() => handleDownload(selectedVideo.url, 'video')}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleDownload(selectedVideo.url, 'video')}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleSaveToFirestore(selectedVideo, 'video')}
+                    disabled={!!selectedVideo.firestoreId}
+                  >
+                    {selectedVideo.firestoreId ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <CloudUpload className="h-4 w-4 mr-2" />
+                        Save to Collection
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
 
               <Button

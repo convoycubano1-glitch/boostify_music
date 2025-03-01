@@ -150,6 +150,7 @@ export interface ImageResult {
   status?: string;
   prompt: string;
   createdAt: Date;
+  firestoreId?: string; // ID de referencia en Firestore cuando se guarda
 }
 
 /**
@@ -163,4 +164,5 @@ export interface VideoResult {
   status?: string;
   prompt: string;
   createdAt: Date;
+  firestoreId?: string; // ID de referencia en Firestore cuando se guarda
 }
