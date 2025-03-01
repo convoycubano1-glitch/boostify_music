@@ -29,6 +29,7 @@ import {
   CheckCircle,
   CloudUpload
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { 
   generateImage, 
   generateVideo, 
@@ -68,6 +69,7 @@ export default function ImageGeneratorPage() {
   const [selectedImage, setSelectedImage] = useState<ImageResult | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoResult | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [progressMessage, setProgressMessage] = useState<string>('');
 
   // Image generation form
   const imageForm = useForm<ImageFormValues>({
@@ -97,6 +99,7 @@ export default function ImageGeneratorPage() {
   const onImageSubmit = async (values: ImageFormValues) => {
     try {
       setIsGenerating(true);
+      setProgressMessage('Preparing your request...');
       
       // Create toast notification
       toast({
@@ -114,11 +117,36 @@ export default function ImageGeneratorPage() {
         freepikModel: values.apiProvider === 'freepik' ? values.freepikModel : undefined,
       });
 
-      // Save the generated image (could be to Firestore or similar)
-      await saveGeneratedContent(result, 'image');
+      // Verificar que la URL exista
+      if (!result || !result.url) {
+        console.error('Image generation returned invalid result:', result);
+        throw new Error('Generated image URL is missing');
+      }
+      
+      console.log('Image generated successfully:', result);
 
-      // Update the state with the new image
+      // Actualizar inmediatamente el estado con la nueva imagen para mostrarla
       setGeneratedImages(prev => [result, ...prev]);
+      
+      // Intentar guardar la imagen después de haberla mostrado
+      try {
+        const firestoreId = await saveGeneratedContent(result, 'image');
+        
+        // Actualizar la imagen en el estado con su ID
+        if (firestoreId) {
+          setGeneratedImages(prev => 
+            prev.map(item => 
+              item.url === result.url 
+                ? { ...item, firestoreId } 
+                : item
+            )
+          );
+        }
+      } catch (saveError) {
+        console.error('Error saving image to storage:', saveError);
+        // No mostramos error aquí para no interrumpir la experiencia del usuario
+        // La imagen ya está en la pantalla
+      }
 
       // Show success notification
       toast({
@@ -126,6 +154,9 @@ export default function ImageGeneratorPage() {
         description: 'Your image is ready to view and download.',
         variant: 'success',
       });
+      
+      // Reset the progress message
+      setProgressMessage('');
     } catch (error) {
       console.error('Error generating image:', error);
       toast({
@@ -142,6 +173,7 @@ export default function ImageGeneratorPage() {
   const onVideoSubmit = async (values: VideoFormValues) => {
     try {
       setIsGenerating(true);
+      setProgressMessage('Preparing your video request...');
       
       // Create toast notification
       toast({
@@ -157,11 +189,36 @@ export default function ImageGeneratorPage() {
         style: values.style,
       });
 
-      // Save the generated video
-      await saveGeneratedContent(result, 'video');
+      // Verificar que la URL exista
+      if (!result || !result.url) {
+        console.error('Video generation returned invalid result:', result);
+        throw new Error('Generated video URL is missing');
+      }
+      
+      console.log('Video generated successfully:', result);
 
-      // Update the state with the new video
+      // Actualizar inmediatamente el estado con el nuevo video para mostrarlo
       setGeneratedVideos(prev => [result, ...prev]);
+      
+      // Intentar guardar el video después de haberlo mostrado
+      try {
+        const firestoreId = await saveGeneratedContent(result, 'video');
+        
+        // Actualizar el video en el estado con su ID
+        if (firestoreId) {
+          setGeneratedVideos(prev => 
+            prev.map(item => 
+              item.url === result.url 
+                ? { ...item, firestoreId } 
+                : item
+            )
+          );
+        }
+      } catch (saveError) {
+        console.error('Error saving video to storage:', saveError);
+        // No mostramos error aquí para no interrumpir la experiencia del usuario
+        // El video ya está en la pantalla
+      }
 
       // Show success notification
       toast({
@@ -169,6 +226,9 @@ export default function ImageGeneratorPage() {
         description: 'Your video is ready to view and download.',
         variant: 'success',
       });
+      
+      // Reset the progress message
+      setProgressMessage('');
     } catch (error) {
       console.error('Error generating video:', error);
       toast({
@@ -184,35 +244,60 @@ export default function ImageGeneratorPage() {
   // Load saved images and videos from Firestore when component mounts
   useEffect(() => {
     async function loadSavedMedia() {
+      // Cargar imágenes guardadas (de Firestore y/o localStorage)
       try {
-        // Load images
         const savedImages = await getGeneratedImages();
         if (savedImages.length > 0) {
-          setGeneratedImages(prev => {
-            // Combine with any existing images, avoiding duplicates by URL
-            const existingUrls = new Set(prev.map(img => img.url));
-            const newImages = savedImages.filter(img => !existingUrls.has(img.url));
-            return [...prev, ...newImages];
-          });
+          console.log(`Cargadas ${savedImages.length} imágenes guardadas`);
+          console.log('Imágenes obtenidas:', savedImages);
+          
+          // Actualizar el estado directamente con todas las imágenes para evitar problemas de sincronización
+          setGeneratedImages(savedImages);
+          
+          // Mostrar un mensaje informativo si hay imágenes
+          if (savedImages.length > 0) {
+            toast({
+              title: 'Imágenes cargadas',
+              description: `Se cargaron ${savedImages.length} imágenes guardadas.`,
+              variant: 'default',
+            });
+          }
         }
-        
-        // Load videos
+      } catch (error) {
+        console.error('Error getting generated images:', error);
+        // No mostrar notificación de error para evitar abrumar al usuario
+      }
+
+      // Cargar videos guardados (de Firestore y/o localStorage)
+      try {
         const savedVideos = await getGeneratedVideos();
         if (savedVideos.length > 0) {
+          console.log(`Cargados ${savedVideos.length} videos guardados`);
+          
           setGeneratedVideos(prev => {
             // Combine with any existing videos, avoiding duplicates by URL
             const existingUrls = new Set(prev.map(vid => vid.url));
             const newVideos = savedVideos.filter(vid => !existingUrls.has(vid.url));
             return [...prev, ...newVideos];
           });
+          
+          // Mostrar un mensaje informativo si hay videos
+          if (savedVideos.length > 0) {
+            toast({
+              title: 'Videos cargados',
+              description: `Se cargaron ${savedVideos.length} videos guardados.`,
+              variant: 'default',
+            });
+          }
         }
       } catch (error) {
-        console.error('Error loading saved media:', error);
+        console.error('Error getting generated videos:', error);
+        // No mostrar notificación de error para evitar abrumar al usuario
       }
     }
     
     loadSavedMedia();
-  }, []);
+  }, [toast]);
   
   // Handle image selection
   const handleImageSelect = (image: ImageResult) => {
@@ -226,28 +311,44 @@ export default function ImageGeneratorPage() {
     setShowDetailDialog(true);
   };
   
-  // Save image to Firestore
+  // Save content to persistent storage (Firestore with localStorage fallback)
   const handleSaveToFirestore = async (content: ImageResult | VideoResult, type: 'image' | 'video') => {
+    // Primero verificamos si ya está guardado para evitar operaciones duplicadas
+    if (content.firestoreId) {
+      toast({
+        title: `${type === 'image' ? 'Image' : 'Video'} already saved`,
+        description: `This ${type} is already in your collection.`,
+        variant: 'default',
+      });
+      return;
+    }
+    
     try {
       let firestoreId: string;
+      let storageLocation: string;
       
+      // Intentar guardar el contenido (Firestore con fallback a localStorage)
       if (type === 'image') {
         firestoreId = await saveGeneratedImage(content as ImageResult);
+        storageLocation = firestoreId.startsWith('local_') ? 'device' : 'cloud';
+        
         toast({
-          title: 'Image saved to your collection',
-          description: 'Your image has been saved to your personal collection in the cloud.',
+          title: 'Image saved successfully',
+          description: `Your image has been saved to your ${storageLocation === 'cloud' ? 'cloud' : 'local device'} collection.`,
           variant: 'success',
         });
       } else {
         firestoreId = await saveGeneratedVideo(content as VideoResult);
+        storageLocation = firestoreId.startsWith('local_') ? 'device' : 'cloud';
+        
         toast({
-          title: 'Video saved to your collection',
-          description: 'Your video has been saved to your personal collection in the cloud.',
+          title: 'Video saved successfully',
+          description: `Your video has been saved to your ${storageLocation === 'cloud' ? 'cloud' : 'local device'} collection.`,
           variant: 'success',
         });
       }
       
-      // Update the content with the Firestore ID
+      // Actualizar la interfaz con el nuevo ID
       if (type === 'image') {
         setGeneratedImages(prev => 
           prev.map(item => 
@@ -265,11 +366,24 @@ export default function ImageGeneratorPage() {
           )
         );
       }
+      
+      // Mensaje adicional si se usó almacenamiento local
+      if (storageLocation === 'device') {
+        console.log(`${type} saved to localStorage instead of Firestore due to permission issues`);
+      }
     } catch (error) {
-      console.error(`Error saving ${type} to Firestore:`, error);
+      console.error(`Error saving ${type}:`, error);
+      
+      // Mensaje de error más específico
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isPermissionError = errorMessage.includes('permission-denied') || 
+                               errorMessage.includes('PERMISSION_DENIED');
+      
       toast({
-        title: `Failed to save ${type}`,
-        description: `There was a problem saving your ${type} to the cloud.`,
+        title: `Could not save ${type}`,
+        description: isPermissionError 
+          ? `Permission denied. Try logging in or check your account permissions.` 
+          : `There was a problem saving your ${type}. Please try again.`,
         variant: 'destructive',
       });
     }
@@ -526,6 +640,22 @@ export default function ImageGeneratorPage() {
                           </>
                         )}
                       </Button>
+                      
+                      {/* Progress indicator for image generation */}
+                      {isGenerating && activeTab === 'image' && (
+                        <div className="mt-4 p-4 bg-muted rounded-md">
+                          <div className="flex items-center space-x-3">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Generating your image...</p>
+                              {progressMessage && (
+                                <p className="text-xs text-muted-foreground">{progressMessage}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Progress className="mt-2" value={progressMessage ? 75 : 30} />
+                        </div>
+                      )}
                     </form>
                   </Form>
                 </CardContent>
@@ -657,6 +787,22 @@ export default function ImageGeneratorPage() {
                           </>
                         )}
                       </Button>
+                      
+                      {/* Progress indicator for video generation */}
+                      {isGenerating && activeTab === 'video' && (
+                        <div className="mt-4 p-4 bg-muted rounded-md">
+                          <div className="flex items-center space-x-3">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Generating your video...</p>
+                              {progressMessage && (
+                                <p className="text-xs text-muted-foreground">{progressMessage}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Progress className="mt-2" value={progressMessage ? 75 : 30} />
+                        </div>
+                      )}
                     </form>
                   </Form>
                 </CardContent>
@@ -696,11 +842,23 @@ export default function ImageGeneratorPage() {
                           className="relative group cursor-pointer overflow-hidden rounded-lg"
                           onClick={() => handleImageSelect(image)}
                         >
-                          <img 
-                            src={image.url} 
-                            alt={`Generated image ${index + 1}`} 
-                            className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
+                          {/* Agregar fallback de imagen */}
+                          {image.url ? (
+                            <img 
+                              src={image.url} 
+                              alt={`Generated image ${index + 1}`} 
+                              className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
+                              onError={(e) => {
+                                console.error(`Error loading image: ${image.url}`);
+                                // Establecer una imagen de fallback
+                                e.currentTarget.src = 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-40 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                              <ImageIcon className="h-10 w-10 text-gray-400" />
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                             <Button 
                               variant="secondary" 

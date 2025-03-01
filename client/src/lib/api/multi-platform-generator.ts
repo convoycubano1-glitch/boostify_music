@@ -513,12 +513,25 @@ export async function saveGeneratedContent(
   contentType: 'image' | 'video'
 ): Promise<string> {
   try {
-    // Implementation to save to Firestore would go here
-    // For this example, we'll just return a mock ID
-    return `generated-${contentType}-${Date.now()}`;
+    // Si el resultado ya tiene un ID, simplemente lo devolvemos
+    if ('firestoreId' in result && result.firestoreId) {
+      return result.firestoreId;
+    }
+    
+    // Usamos las funciones específicas de cada tipo de contenido
+    if (contentType === 'image') {
+      // Importamos dinámicamente para evitar dependencias circulares
+      const { saveGeneratedImage } = await import('./generated-images-service');
+      return await saveGeneratedImage(result as ImageResult);
+    } else {
+      // Importamos dinámicamente para evitar dependencias circulares
+      const { saveGeneratedVideo } = await import('./generated-images-service');
+      return await saveGeneratedVideo(result as VideoResult);
+    }
   } catch (error) {
     console.error(`Error saving generated ${contentType}:`, error);
-    throw error;
+    // Devolvemos un ID temporal en caso de error para que la UI siga funcionando
+    return `generated-${contentType}-${Date.now()}`;
   }
 }
 
