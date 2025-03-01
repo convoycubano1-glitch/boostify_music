@@ -7,18 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ImageIcon, VideoIcon, Loader2 } from 'lucide-react';
 
-// Interfaces simplificadas
-interface ImageResult {
-  url: string;
-  provider: string;
-}
-
-interface VideoResult {
-  url: string;
-  provider: string;
-}
-
-import { generateImage as apiGenerateImage, generateVideo as apiGenerateVideo } from '@/lib/api/multi-platform-generator';
+import { 
+  generateImage as apiGenerateImage, 
+  generateVideo as apiGenerateVideo,
+  ImageResult,
+  VideoResult
+} from '@/lib/api/multi-platform-generator';
+import { ApiProvider } from '@/lib/types/model-types';
 
 // Función para generar imágenes usando el servicio multi-plataforma
 const generateImage = async (prompt: string, provider: string): Promise<ImageResult> => {
@@ -29,13 +24,15 @@ const generateImage = async (prompt: string, provider: string): Promise<ImageRes
     // Utilizamos el servicio real
     const result = await apiGenerateImage({
       prompt,
-      apiProvider: provider as 'fal' | 'freepik' | 'kling',
+      apiProvider: provider as ApiProvider,
       imageSize: 'medium'
     });
     
     return {
       url: result.url,
-      provider: result.provider
+      provider: result.provider,
+      prompt: result.prompt,
+      createdAt: result.createdAt
     };
   } catch (error) {
     console.error('Error in image generation:', error);
@@ -46,7 +43,9 @@ const generateImage = async (prompt: string, provider: string): Promise<ImageRes
         : provider === 'freepik'
           ? 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9'
           : 'https://images.unsplash.com/photo-1583309219098-8e07ec313fd7',
-      provider: `${provider} (fallback)`
+      provider: `${provider} (fallback)`,
+      prompt,
+      createdAt: new Date()
     };
   }
 };
@@ -58,15 +57,19 @@ const generateVideo = async (prompt: string, provider: string): Promise<VideoRes
     await new Promise(resolve => setTimeout(resolve, 1200));
     
     // Utilizamos el servicio real
+    // Filtramos solo los proveedores de video válidos
+    const videoProvider = provider === 'luma' || provider === 'kling' ? provider : 'luma';
     const result = await apiGenerateVideo({
       prompt,
-      apiProvider: provider as 'luma' | 'kling',
+      apiProvider: videoProvider as 'luma' | 'kling',
       duration: 5
     });
     
     return {
       url: result.url,
-      provider: result.provider
+      provider: result.provider,
+      prompt: result.prompt,
+      createdAt: result.createdAt
     };
   } catch (error) {
     console.error('Error in video generation:', error);
@@ -75,7 +78,9 @@ const generateVideo = async (prompt: string, provider: string): Promise<VideoRes
       url: provider === 'luma' 
         ? 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
         : 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      provider: `${provider} (fallback)`
+      provider: `${provider} (fallback)`,
+      prompt,
+      createdAt: new Date()
     };
   }
 };

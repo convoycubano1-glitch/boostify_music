@@ -361,8 +361,8 @@ export default function ImageGeneratorPage() {
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value={FreepikModel.MYSTIC}>Mystic</SelectItem>
-                                  <SelectItem value={FreepikModel.IMAGEN}>Imagen3</SelectItem>
-                                  <SelectItem value={FreepikModel.CLASSIC_FAST}>Classic Fast</SelectItem>
+                                  <SelectItem value={FreepikModel.IMAGEN3}>Imagen3</SelectItem>
+                                  <SelectItem value={FreepikModel.CLASSIC}>Classic</SelectItem>
                                   <SelectItem value={FreepikModel.FLUX_DEV}>Flux Dev</SelectItem>
                                 </SelectContent>
                               </Select>

@@ -1,5 +1,27 @@
 import axios from 'axios';
-import { freepikService, FreepikModel } from './freepik-service';
+import { 
+  freepikService, 
+  FreepikModel, 
+  FreepikAspectRatio, 
+  FreepikBaseOptions,
+  FreepikMysticOptions,
+  FreepikImagen3Options,
+  FreepikClassicOptions,
+  FreepikFluxDevOptions,
+  FreepikGenerationOptions
+} from './freepik-service';
+
+import { 
+  GenerateImageParams,
+  VideoGenerationParams,
+  ImageResult as ImportedImageResult,
+  VideoResult as ImportedVideoResult, 
+  ApiProvider
+} from '../types/model-types';
+
+// Re-export these interfaces so they can be imported from this module
+export type ImageResult = ImportedImageResult;
+export type VideoResult = ImportedVideoResult;
 
 // Configuración para determinar si usar API directa o proxy de servidor
 const useDirectApi = {
@@ -23,45 +45,6 @@ function hasApiKey(provider: string): boolean {
     default:
       return false;
   }
-}
-
-export interface GenerateImageParams {
-  prompt: string;
-  negativePrompt?: string;
-  imageSize?: string;
-  apiProvider: 'fal' | 'luma' | 'freepik' | 'kling';
-  imageCount?: number;
-  useDirectApi?: boolean; // Opción para forzar uso directo de API
-  aspectRatio?: string;   // Proporción de aspecto para la imagen
-  freepikModel?: FreepikModel; // Modelo específico de Freepik a utilizar
-}
-
-export interface GenerateVideoParams {
-  prompt: string;
-  duration?: number;
-  apiProvider: 'luma' | 'kling';
-  style?: string;
-  useDirectApi?: boolean; // Opción para forzar uso directo de API
-}
-
-export interface ImageResult {
-  url: string;
-  provider: string;
-  requestId?: string;
-  prompt: string;
-  createdAt: Date;
-  taskId?: string;      // ID para verificar estado de tareas asíncronas
-  status?: string;      // Estado de la tarea asíncrona
-}
-
-export interface VideoResult {
-  url: string;
-  provider: string;
-  requestId?: string;
-  prompt: string;
-  createdAt: Date;
-  taskId?: string;      // ID para verificar estado de tareas asíncronas
-  status?: string;      // Estado de la tarea asíncrona
 }
 
 /**
@@ -179,47 +162,69 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
       
       switch (freepikModel) {
         case FreepikModel.IMAGEN3:
-          modelOptions = {
+          // Create a correctly typed Imagen3 options object
+          const imagen3Options: FreepikImagen3Options = {
             ...baseOptions,
             num_images: params.imageCount || 1,
-            styling: {
-              style: params.prompt.includes('style: ') ? params.prompt.split('style: ')[1].split(',')[0] : undefined,
-            },
+            // Extract style from prompt if present using style_preset instead of styling object
+            style_preset: params.prompt.includes('style: ') ? params.prompt.split('style: ')[1].split(',')[0] : undefined,
             person_generation: 'allow_all',
             safety_settings: 'block_none'
           };
+          
+          modelOptions = imagen3Options;
           break;
           
         case FreepikModel.CLASSIC:
-          modelOptions = {
+          // Create correctly typed Classic options object
+          const classicOptions: FreepikClassicOptions = {
             ...baseOptions,
             negative_prompt: params.negativePrompt,
             guidance_scale: 1.2,
             num_images: params.imageCount || 1,
             seed: Math.floor(Math.random() * 1000000)
           };
+          
+          modelOptions = classicOptions;
           break;
           
         case FreepikModel.FLUX_DEV:
-          modelOptions = {
+          // Make sure resolution value follows type constraints
+          const fluxResolution: 'high' | 'medium' | 'low' = 
+            params.imageSize === 'large' ? 'high' : 
+            params.imageSize === 'small' ? 'low' : 'medium';
+            
+          // Create correctly typed FluxDev options object
+          const fluxDevOptions: FreepikFluxDevOptions = {
             ...baseOptions,
-            styling: {
-              style: params.prompt.includes('style: ') ? params.prompt.split('style: ')[1].split(',')[0] : undefined,
-            },
+            resolution: fluxResolution,
+            // Extract style from prompt if present
+            style_preset: params.prompt.includes('style: ') ? params.prompt.split('style: ')[1].split(',')[0] : undefined,
             seed: Math.floor(Math.random() * 100000000) + 1
           };
+          
+          modelOptions = fluxDevOptions;
           break;
           
         default: // MYSTIC
-          modelOptions = {
+          // Convert general imageSize to Mystic-specific resolution
+          const mysticResolution: '4k' | '2k' = (params.imageSize === 'large') ? '4k' : '2k';
+          
+          // Ensure engine value is correctly typed
+          const mysticEngine: 'automatic' | 'magnific_illusio' | 'magnific_sharpy' | 'magnific_sparkle' = 'automatic';
+          
+          // Create correctly typed Mystic options object
+          const mysticOptions: FreepikMysticOptions = {
             ...baseOptions,
-            resolution: (params.imageSize === 'large') ? '4k' : '2k',
+            resolution: mysticResolution,
             realism: true,
             creative_detailing: 33,
-            engine: 'automatic',
+            engine: mysticEngine,
             fixed_generation: false,
             filter_nsfw: true
           };
+          
+          modelOptions = mysticOptions;
       }
       
       // Usar nuestro servicio de cliente directo con el modelo seleccionado
@@ -351,7 +356,7 @@ async function generateWithKling(params: Omit<GenerateImageParams, 'apiProvider'
  * @param params Video generation parameters
  * @returns Promise with generated video result
  */
-async function generateVideoWithLuma(params: Omit<GenerateVideoParams, 'apiProvider'>): Promise<VideoResult> {
+async function generateVideoWithLuma(params: Omit<VideoGenerationParams, 'apiProvider'>): Promise<VideoResult> {
   try {
     // Utilizar el proxy del servidor en lugar de llamar directamente a Luma
     const response = await axios.post(
@@ -403,7 +408,7 @@ async function generateVideoWithLuma(params: Omit<GenerateVideoParams, 'apiProvi
  * @param params Video generation parameters
  * @returns Promise with generated video result
  */
-async function generateVideoWithKling(params: Omit<GenerateVideoParams, 'apiProvider'>): Promise<VideoResult> {
+async function generateVideoWithKling(params: Omit<VideoGenerationParams, 'apiProvider'>): Promise<VideoResult> {
   try {
     // Utilizar el proxy del servidor en lugar de llamar directamente a Kling
     const response = await axios.post(
@@ -486,7 +491,7 @@ export async function generateImage(params: GenerateImageParams): Promise<ImageR
  * @param params Generation parameters including provider selection
  * @returns Promise with generated video result
  */
-export async function generateVideo(params: GenerateVideoParams): Promise<VideoResult> {
+export async function generateVideo(params: VideoGenerationParams): Promise<VideoResult> {
   switch (params.apiProvider) {
     case 'luma':
       return generateVideoWithLuma(params);
