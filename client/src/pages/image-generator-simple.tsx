@@ -18,32 +18,66 @@ interface VideoResult {
   provider: string;
 }
 
-// Función simulada para generar imágenes
+import { generateImage as apiGenerateImage, generateVideo as apiGenerateVideo } from '@/lib/api/multi-platform-generator';
+
+// Función para generar imágenes usando el servicio multi-plataforma
 const generateImage = async (prompt: string, provider: string): Promise<ImageResult> => {
-  // Simulamos una llamada a la API
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Retorna una URL de imagen según el proveedor
-  return {
-    url: provider === 'fal' 
-      ? 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'
-      : 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9',
-    provider
-  };
+  try {
+    // Simulamos una pequeña demora para la UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Utilizamos el servicio real
+    const result = await apiGenerateImage({
+      prompt,
+      apiProvider: provider as 'fal' | 'freepik' | 'kling',
+      imageSize: 'medium'
+    });
+    
+    return {
+      url: result.url,
+      provider: result.provider
+    };
+  } catch (error) {
+    console.error('Error in image generation:', error);
+    // Fallback en caso de error
+    return {
+      url: provider === 'fal' 
+        ? 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'
+        : provider === 'freepik'
+          ? 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9'
+          : 'https://images.unsplash.com/photo-1583309219098-8e07ec313fd7',
+      provider: `${provider} (fallback)`
+    };
+  }
 };
 
-// Función simulada para generar videos
+// Función para generar videos usando el servicio multi-plataforma
 const generateVideo = async (prompt: string, provider: string): Promise<VideoResult> => {
-  // Simulamos una llamada a la API
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Retorna una URL de video según el proveedor
-  return {
-    url: provider === 'luma' 
-      ? 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-      : 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    provider
-  };
+  try {
+    // Simulamos una pequeña demora para la UX
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    
+    // Utilizamos el servicio real
+    const result = await apiGenerateVideo({
+      prompt,
+      apiProvider: provider as 'luma' | 'kling',
+      duration: 5
+    });
+    
+    return {
+      url: result.url,
+      provider: result.provider
+    };
+  } catch (error) {
+    console.error('Error in video generation:', error);
+    // Fallback en caso de error
+    return {
+      url: provider === 'luma' 
+        ? 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+        : 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      provider: `${provider} (fallback)`
+    };
+  }
 };
 
 export default function ImageGeneratorSimplePage() {

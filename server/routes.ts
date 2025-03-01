@@ -29,6 +29,7 @@ import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
+import apiProxyRouter from './routes/api-proxy'; // Importamos el router de proxy para APIs externas
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 
@@ -104,6 +105,9 @@ export function registerRoutes(app: Express): Server {
 
   // Register artist generator routes (no authentication required)
   app.use('/api/artist-generator', artistGeneratorRouter); // La URL resultante será /api/artist-generator/generate-artist
+
+  // Registrar el router de proxy API (sin autenticación)
+  app.use('/api/proxy', apiProxyRouter);
 
   // Servicios que requieren autenticación
   setupAuth(app);

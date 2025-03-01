@@ -32,34 +32,22 @@ export interface VideoResult {
 }
 
 /**
- * Generate image using Fal.ai
+ * Generate image using Fal.ai through our server proxy
  * @param params Image generation parameters
  * @returns Promise with generated image result
  */
 async function generateWithFal(params: Omit<GenerateImageParams, 'apiProvider'>): Promise<ImageResult> {
   try {
-    const FAL_API_KEY = import.meta.env.VITE_FAL_API_KEY;
-    
-    if (!FAL_API_KEY) {
-      throw new Error('FAL_API_KEY is not configured');
-    }
-
     const enhancedPrompt = enhancePrompt(params.prompt);
     
+    // Utilizar el proxy del servidor en lugar de llamar directamente a Fal.ai
     const response = await axios.post(
-      'https://api.fal.ai/v1/p/stable-diffusion-xl',
+      '/api/proxy/fal/generate-image',
       {
         prompt: enhancedPrompt,
-        negative_prompt: params.negativePrompt || 'blurry, bad quality, distorted, disfigured',
-        height: params.imageSize === 'large' ? 1024 : 768,
-        width: params.imageSize === 'large' ? 1024 : 768,
-        num_images: params.imageCount || 1
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Key ${FAL_API_KEY}`
-        }
+        negativePrompt: params.negativePrompt || 'blurry, bad quality, distorted, disfigured',
+        imageSize: params.imageSize || 'medium',
+        imageCount: params.imageCount || 1
       }
     );
 
@@ -73,40 +61,45 @@ async function generateWithFal(params: Omit<GenerateImageParams, 'apiProvider'>)
       };
     }
 
+    // Si no hay imágenes pero hay un fallback, utiliza el fallback
+    if (response.data && response.data.fallback && response.data.fallback.images) {
+      return {
+        url: response.data.fallback.images[0],
+        provider: 'fal (fallback)',
+        requestId: response.data.fallback.request_id || '',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+    }
+
     throw new Error('Failed to generate image with Fal.ai');
   } catch (error) {
     console.error('Error generating image with Fal.ai:', error);
-    throw error;
+    // Proporcionar un fallback para garantizar que siempre se devuelve algo
+    return {
+      url: 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a',
+      provider: 'fal (error fallback)',
+      prompt: params.prompt,
+      createdAt: new Date()
+    };
   }
 }
 
 /**
- * Generate image using Freepik API
+ * Generate image using Freepik API through our server proxy
  * @param params Image generation parameters
  * @returns Promise with generated image result
  */
 async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvider'>): Promise<ImageResult> {
   try {
-    const FREEPIK_API_KEY = import.meta.env.VITE_FREEPIK_API_KEY;
-    
-    if (!FREEPIK_API_KEY) {
-      throw new Error('FREEPIK_API_KEY is not configured');
-    }
-
-    // Note: This is a simplified implementation as Freepik's actual AI generation
-    // endpoint might differ - adjust as needed based on their API docs
+    // Utilizar el proxy del servidor en lugar de llamar directamente a Freepik
     const response = await axios.post(
-      'https://api.freepik.com/v1/images/generate',
+      '/api/proxy/freepik/generate-image',
       {
         prompt: params.prompt,
-        negative_prompt: params.negativePrompt || '',
+        negativePrompt: params.negativePrompt || '',
+        aspectRatio: '1:1',
         count: params.imageCount || 1
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${FREEPIK_API_KEY}`
-        }
       }
     );
 
@@ -114,7 +107,18 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
       return {
         url: response.data.images[0].url,
         provider: 'freepik',
-        requestId: response.data.request_id || '',
+        requestId: response.data.id || '',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+    }
+
+    // Si no hay imágenes pero hay un fallback, utiliza el fallback
+    if (response.data && response.data.fallback && response.data.fallback.images) {
+      return {
+        url: response.data.fallback.images[0].url,
+        provider: 'freepik (fallback)',
+        requestId: response.data.fallback.id || '',
         prompt: params.prompt,
         createdAt: new Date()
       };
@@ -123,10 +127,10 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
     throw new Error('Failed to generate image with Freepik');
   } catch (error) {
     console.error('Error generating image with Freepik:', error);
-    // For demo purposes, return a placeholder
+    // Fallback garantizado
     return {
       url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1',
-      provider: 'freepik',
+      provider: 'freepik (error fallback)',
       prompt: params.prompt,
       createdAt: new Date()
     };
@@ -134,32 +138,20 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
 }
 
 /**
- * Generate image using Kling AI
+ * Generate image using Kling AI through our server proxy
  * @param params Image generation parameters
  * @returns Promise with generated image result
  */
 async function generateWithKling(params: Omit<GenerateImageParams, 'apiProvider'>): Promise<ImageResult> {
   try {
-    const KLING_API_KEY = import.meta.env.VITE_KLING_API_KEY;
-    
-    if (!KLING_API_KEY) {
-      throw new Error('KLING_API_KEY is not configured');
-    }
-
-    // Example implementation - adjust based on actual Kling API
+    // Utilizar el proxy del servidor en lugar de llamar directamente a Kling
     const response = await axios.post(
-      'https://api.kling.ai/v1/images/generations',
+      '/api/proxy/kling/generate-image',
       {
         prompt: params.prompt,
         negative_prompt: params.negativePrompt || '',
         size: params.imageSize || 'medium',
         n: params.imageCount || 1
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${KLING_API_KEY}`
-        }
       }
     );
 
@@ -173,13 +165,24 @@ async function generateWithKling(params: Omit<GenerateImageParams, 'apiProvider'
       };
     }
 
+    // Si no hay imágenes pero hay un fallback, utiliza el fallback
+    if (response.data && response.data.fallback && response.data.fallback.data) {
+      return {
+        url: response.data.fallback.data[0].url,
+        provider: 'kling (fallback)',
+        requestId: response.data.fallback.id || '',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+    }
+
     throw new Error('Failed to generate image with Kling');
   } catch (error) {
     console.error('Error generating image with Kling:', error);
-    // For demo purposes, return a placeholder
+    // Fallback garantizado
     return {
       url: 'https://images.unsplash.com/photo-1639762681057-408e52192e55',
-      provider: 'kling',
+      provider: 'kling (error fallback)',
       prompt: params.prompt,
       createdAt: new Date()
     };
@@ -187,37 +190,24 @@ async function generateWithKling(params: Omit<GenerateImageParams, 'apiProvider'
 }
 
 /**
- * Generate video using Luma API
+ * Generate video using Luma API through our server proxy
  * @param params Video generation parameters
  * @returns Promise with generated video result
  */
 async function generateVideoWithLuma(params: Omit<GenerateVideoParams, 'apiProvider'>): Promise<VideoResult> {
   try {
-    const LUMA_API_KEY = import.meta.env.VITE_LUMA_API_KEY;
-    
-    if (!LUMA_API_KEY) {
-      throw new Error('LUMA_API_KEY is not configured');
-    }
-
-    // Implementation for Luma video generation
+    // Utilizar el proxy del servidor en lugar de llamar directamente a Luma
     const response = await axios.post(
-      'https://api.luma.ai/v1/videos/generate',
+      '/api/proxy/luma/generate-video',
       {
         prompt: params.prompt,
         duration: params.duration || 5,
         style: params.style || 'cinematic'
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LUMA_API_KEY}`
-        }
       }
     );
 
     if (response.data && response.data.id) {
-      // For real implementation, you'd typically poll for the result
-      // This is a simplified version
+      // Si tenemos respuesta con ID y posiblemente URL
       return {
         url: response.data.output?.url || 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
         provider: 'luma',
@@ -227,13 +217,24 @@ async function generateVideoWithLuma(params: Omit<GenerateVideoParams, 'apiProvi
       };
     }
 
+    // Si no hay ID pero hay un fallback, utiliza el fallback
+    if (response.data && response.data.fallback) {
+      return {
+        url: response.data.fallback.output?.url || 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        provider: 'luma (fallback)',
+        requestId: response.data.fallback.id || '',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+    }
+
     throw new Error('Failed to generate video with Luma');
   } catch (error) {
     console.error('Error generating video with Luma:', error);
-    // For demo purposes, return a placeholder
+    // Fallback garantizado para demos
     return {
       url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      provider: 'luma',
+      provider: 'luma (error fallback)',
       prompt: params.prompt,
       createdAt: new Date()
     };
@@ -241,31 +242,19 @@ async function generateVideoWithLuma(params: Omit<GenerateVideoParams, 'apiProvi
 }
 
 /**
- * Generate video using Kling API
+ * Generate video using Kling API through our server proxy
  * @param params Video generation parameters
  * @returns Promise with generated video result
  */
 async function generateVideoWithKling(params: Omit<GenerateVideoParams, 'apiProvider'>): Promise<VideoResult> {
   try {
-    const KLING_API_KEY = import.meta.env.VITE_KLING_API_KEY;
-    
-    if (!KLING_API_KEY) {
-      throw new Error('KLING_API_KEY is not configured');
-    }
-
-    // Example implementation for Kling video generation
+    // Utilizar el proxy del servidor en lugar de llamar directamente a Kling
     const response = await axios.post(
-      'https://api.kling.ai/v1/videos/generations',
+      '/api/proxy/kling/generate-video',
       {
         prompt: params.prompt,
         duration: params.duration || 5,
         style: params.style || 'realistic'
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${KLING_API_KEY}`
-        }
       }
     );
 
@@ -279,13 +268,24 @@ async function generateVideoWithKling(params: Omit<GenerateVideoParams, 'apiProv
       };
     }
 
+    // Si no hay ID pero hay un fallback, utiliza el fallback
+    if (response.data && response.data.fallback) {
+      return {
+        url: response.data.fallback.output?.url || 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        provider: 'kling (fallback)',
+        requestId: response.data.fallback.id || '',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+    }
+
     throw new Error('Failed to generate video with Kling');
   } catch (error) {
     console.error('Error generating video with Kling:', error);
-    // For demo purposes, return a placeholder
+    // Fallback garantizado para demos
     return {
       url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      provider: 'kling',
+      provider: 'kling (error fallback)',
       prompt: params.prompt,
       createdAt: new Date()
     };
