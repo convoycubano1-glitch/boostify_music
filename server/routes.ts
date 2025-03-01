@@ -893,9 +893,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Solo registramos el endpoint de API en /api/status para verificación de salud
-  // No definimos nada para la ruta raíz '/' para permitir que la configuración de Vite
-  // sirva la aplicación web (client/index.html)
+  // Endpoint de API para verificación de salud sin interferir con el enrutamiento de frontend
+  // Importante: SOLO definimos endpoints que comiencen con '/api' para evitar conflictos
   app.get('/api/status', (req, res) => {
     res.status(200).json({
       status: "online",
@@ -913,13 +912,9 @@ export function registerRoutes(app: Express): Server {
     });
   });
   
-  // Root endpoint for deployment health checks (solo para entorno de producción)
-  // En desarrollo, dejamos que Vite se encargue de la ruta principal
-  if (process.env.NODE_ENV === 'production') {
-    app.get('/', (req, res) => {
-      res.status(200).send('Service is running!');
-    });
-  }
+  // Eliminamos completamente el manejador de ruta raíz '/'
+  // Esto permite que Vite se encargue correctamente de servir la aplicación frontend
+  // en modo desarrollo, y en producción se manejará a través de la configuración en server/index.ts
 
   // Deployment verification endpoint
   app.get("/api/deployment-info", (_req, res) => {

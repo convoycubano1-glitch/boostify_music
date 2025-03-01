@@ -238,9 +238,13 @@ if (process.env.NODE_ENV === "production") {
 } else {
   log('🛠 Running in development mode');
   
-  // En modo desarrollo, NO definas una ruta específica para '/', deja que Vite la maneje
-  // Solo habilita servir archivos estáticos desde la carpeta de cliente
+  // En modo desarrollo, dejamos que el middleware de Vite maneje todas las rutas de frontend
+  // Importante: No definimos manejadores específicos para rutas frontend como '/'
+  // Los archivos estáticos se sirven automáticamente
   app.use(express.static(path.join(process.cwd(), 'client/public')));
+  
+  // Agregamos un diagnóstico para depurar el manejo de rutas
+  log('🔍 Vite manejará las rutas frontend en modo desarrollo');
 }
 
 (async () => {
@@ -298,10 +302,25 @@ if (process.env.NODE_ENV === "production") {
       log('✅ OPENAI_API_KEY is configured and ready for use');
     }
 
-    // Setup Vite in development
+    // Setup Vite in development - IMPORTANTE: Esto debe ir DESPUÉS de registrar las rutas de API
+    // pero ANTES de cualquier middleware que maneje todas las rutas (como '*')
     if (process.env.NODE_ENV !== "production") {
       log('🛠 Setting up Vite development server');
+      
+      // Diagnóstico adicional para identificar el orden de inicialización
+      log('📌 Configurando Vite para manejar rutas frontend como "/"');
+      
+      // Configuramos Vite con mayor prioridad para rutas no-API
       await setupVite(app, server);
+      
+      // Agregamos un middleware de último recurso para debugging
+      app.use('*', (req, res, next) => {
+        // Solo para rutas que no sean API y que Vite no haya manejado
+        if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
+          log(`⚠️ Ruta no manejada por Vite: ${req.method} ${req.path}`);
+        }
+        next();
+      });
     }
 
     // Usar el puerto configurado, puerto de Replit, o 5000 como fallback
