@@ -15,70 +15,138 @@ import {
 } from '@/lib/api/multi-platform-generator';
 import { ApiProvider } from '@/lib/types/model-types';
 
-// Función para generar imágenes usando el servicio multi-plataforma
+// Función para generar imágenes - enfoque simplificado usando imágenes predefinidas
 const generateImage = async (prompt: string, provider: string): Promise<ImageResult> => {
   try {
-    // Simulamos una pequeña demora para la UX
-    await new Promise(resolve => setTimeout(resolve, 800));
+    console.log(`Generando imagen con prompt: "${prompt}" usando ${provider}`);
     
-    // Utilizamos el servicio real
-    const result = await apiGenerateImage({
-      prompt,
-      apiProvider: provider as ApiProvider,
-      imageSize: 'medium'
+    // Llamamos a la API real que hemos implementado en el backend
+    const endpoint = `/api/proxy/${provider}/generate-image`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
     });
     
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${await response.text()}`);
+    }
+    
+    const data = await response.json();
+    console.log('API response:', data);
+    
+    // Verificar si estamos recibiendo una respuesta fallback del servidor
+    const isFallback = data.fallback === true;
+    
+    // Extrae la URL de la imagen de la respuesta
+    let imageUrl = '';
+    
+    // Estructura de fallback específica con la que estamos trabajando:
+    // {"id":"fallback-freepik-no-api-key","images":[{"url":"https://..."}],"fallback":true,"error_info":"..."}
+    // O: {"fallback":{"images":["https://..."],"request_id":"..."},"error_info":"..."}
+    
+    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+      if (typeof data.images[0] === 'string') {
+        imageUrl = data.images[0];
+      } else if (data.images[0] && data.images[0].url) {
+        imageUrl = data.images[0].url;
+      }
+    } else if (data.fallback && data.fallback.images && Array.isArray(data.fallback.images)) {
+      imageUrl = data.fallback.images[0];
+    } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+      if (data.data[0] && data.data[0].url) {
+        imageUrl = data.data[0].url;
+      }
+    }
+    
+    // Si no podemos extraer la URL de la imagen, lanzamos un error para usar el fallback local
+    if (!imageUrl) {
+      console.error('No se pudo extraer URL de la imagen de la respuesta:', data);
+      throw new Error('Could not extract image URL from API response');
+    }
+    
     return {
-      url: result.url,
-      provider: result.provider,
-      prompt: result.prompt,
-      createdAt: result.createdAt
+      url: imageUrl,
+      provider: isFallback ? `${provider} (fallback)` : provider,
+      requestId: data.id || 'unknown',
+      prompt: prompt,
+      createdAt: new Date()
     };
   } catch (error) {
     console.error('Error in image generation:', error);
-    // Fallback en caso de error
+    // Fallback local garantizado en caso de error en la llamada a la API
     return {
-      url: provider === 'fal' 
-        ? 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a'
-        : provider === 'freepik'
-          ? 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9'
-          : 'https://images.unsplash.com/photo-1583309219098-8e07ec313fd7',
-      provider: `${provider} (fallback)`,
+      url: 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a',
+      provider: `${provider} (local fallback)`,
       prompt,
       createdAt: new Date()
     };
   }
 };
 
-// Función para generar videos usando el servicio multi-plataforma
+// Función para generar videos - enfoque simplificado usando videos predefinidos
 const generateVideo = async (prompt: string, provider: string): Promise<VideoResult> => {
   try {
-    // Simulamos una pequeña demora para la UX
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    console.log(`Generando video con prompt: "${prompt}" usando ${provider}`);
     
-    // Utilizamos el servicio real
-    // Filtramos solo los proveedores de video válidos
-    const videoProvider = provider === 'luma' || provider === 'kling' ? provider : 'luma';
-    const result = await apiGenerateVideo({
-      prompt,
-      apiProvider: videoProvider as 'luma' | 'kling',
-      duration: 5
+    // Llamamos a la API real que hemos implementado en el backend
+    const endpoint = `/api/proxy/${provider}/generate-video`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
     });
     
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${await response.text()}`);
+    }
+    
+    const data = await response.json();
+    console.log('API response for video:', data);
+    
+    // Verificar si estamos recibiendo una respuesta fallback del servidor
+    const isFallback = data.fallback === true;
+    
+    // Extrae la URL del video de la respuesta
+    let videoUrl = '';
+    
+    // Estructura de respuesta de video esperada:
+    // {"id":"fallback-luma-no-api-key-1740811810955","output":{"url":"https://..."},"fallback":true,"error_info":"..."}
+    
+    if (data.output && data.output.url) {
+      // Estructura estándar que devuelve el servidor para videos
+      videoUrl = data.output.url;
+    } else if (data.data && data.data.url) {
+      // Posible estructura alternativa
+      videoUrl = data.data.url;
+    } else if (data.url) {
+      // Estructura simple directa
+      videoUrl = data.url;
+    }
+    
+    // Si no podemos extraer la URL del video, lanzamos un error para usar el fallback local
+    if (!videoUrl) {
+      console.error('No se pudo extraer URL del video de la respuesta:', data);
+      throw new Error('Could not extract video URL from API response');
+    }
+    
     return {
-      url: result.url,
-      provider: result.provider,
-      prompt: result.prompt,
-      createdAt: result.createdAt
+      url: videoUrl,
+      provider: isFallback ? `${provider} (fallback)` : provider,
+      requestId: data.id || 'unknown',
+      prompt: prompt,
+      createdAt: new Date()
     };
   } catch (error) {
     console.error('Error in video generation:', error);
-    // Fallback en caso de error
+    // Fallback local garantizado en caso de error en la llamada a la API
     return {
-      url: provider === 'luma' 
-        ? 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-        : 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      provider: `${provider} (fallback)`,
+      url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      provider: `${provider} (local fallback)`,
       prompt,
       createdAt: new Date()
     };

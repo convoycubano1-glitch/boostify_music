@@ -13,19 +13,25 @@ app.use(cors());
 
 // Middleware para configurar encabezados de seguridad (CSP)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  // Configura la política de seguridad de contenido para permitir eval y otras operaciones necesarias
+  // Configuración CSP actualizada para permitir más orígenes y recursos
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "img-src 'self' data: https: blob:; " +
+    "img-src 'self' data: https: blob: *; " + // Permitir todas las imágenes
     "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.kling.ai wss://*.firebaseio.com; " +
-    "media-src 'self' https: blob:; " +
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.kling.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com *; " + // Ampliar connect-src
+    "media-src 'self' https: blob: *; " + // Ampliar media-src
     "worker-src 'self' blob:; " +
     "frame-src 'self';"
   );
+  
+  // Agregar cabeceras CORS para evitar problemas de CORB
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+  
   next();
 });
 
