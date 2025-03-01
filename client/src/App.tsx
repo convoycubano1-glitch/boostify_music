@@ -26,6 +26,8 @@ import EcosystemPage from "@/pages/ecosystem";
 import EventsPage from "@/pages/events";
 import GlobalPage from "@/pages/global";
 import HomePage from "@/pages/home";
+import ImageGeneratorPage from "@/pages/image-generator";
+import ImageGeneratorSimplePage from "@/pages/image-generator-simple";
 import InstagramBoostPage from "@/pages/instagram-boost";
 import ManagerToolsPage from "@/pages/manager-tools";
 import MerchandisePage from "@/pages/merchandise";
@@ -177,6 +179,8 @@ const Router = () => {
   const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
   const WrappedSocialNetworkPage = withPageWrapper(SocialNetworkPage);
   const WrappedFirestoreSocialPage = withPageWrapper(FirestoreSocialPage);
+  const WrappedImageGeneratorPage = withPageWrapper(ImageGeneratorPage);
+  const WrappedImageGeneratorSimplePage = withPageWrapper(ImageGeneratorSimplePage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -232,7 +236,9 @@ const Router = () => {
         <ProtectedRoute path="/affiliates" component={WrappedAffiliatesPage} />
         <ProtectedRoute path="/social-network" component={WrappedSocialNetworkPage} />
         <ProtectedRoute path="/firestore-social" component={WrappedFirestoreSocialPage} />
-
+        <ProtectedRoute path="/image-generator" component={WrappedImageGeneratorPage} />
+        <Route path="/image-generator-simple" component={WrappedImageGeneratorSimplePage} />
+        
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
       </Switch>
