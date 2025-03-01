@@ -306,3 +306,83 @@ export async function getGeneratedVideos(): Promise<VideoResult[]> {
     return dateB.getTime() - dateA.getTime();
   });
 }
+
+/**
+ * Guarda contenido multimedia (imágenes o videos) en localStorage
+ * Útil para el almacenamiento temporal o cuando Firestore no está disponible
+ * 
+ * @param type Tipo de contenido ('image' o 'video')
+ * @param items Array de elementos a guardar
+ * @returns true si el guardado fue exitoso
+ */
+export function saveMediaToLocalStorage(type: 'image' | 'video', items: (ImageResult | VideoResult)[]): boolean {
+  try {
+    if (!items || items.length === 0) return true; // Nada que guardar
+    
+    const storageKey = type === 'image' ? LOCAL_STORAGE_IMAGES_KEY : LOCAL_STORAGE_VIDEOS_KEY;
+    
+    // Obtener elementos existentes
+    let savedItems: any[] = [];
+    const savedItemsStr = localStorage.getItem(storageKey);
+    if (savedItemsStr) {
+      savedItems = JSON.parse(savedItemsStr);
+    }
+    
+    // Para cada nuevo elemento
+    for (const item of items) {
+      // Verificar si ya existe (por URL)
+      const existingIndex = savedItems.findIndex(saved => saved.url === item.url);
+      
+      if (existingIndex >= 0) {
+        // Actualizar en lugar de duplicar
+        savedItems[existingIndex] = {
+          ...savedItems[existingIndex],
+          ...item,
+          // Preservar firestoreId si existe
+          firestoreId: savedItems[existingIndex].firestoreId || item.firestoreId
+        };
+      } else {
+        // Añadir con un ID local si no tiene firestoreId
+        const itemToSave = {
+          ...item,
+          firestoreId: item.firestoreId || generateLocalId()
+        };
+        savedItems.push(itemToSave);
+      }
+    }
+    
+    // Guardar en localStorage
+    localStorage.setItem(storageKey, JSON.stringify(savedItems));
+    return true;
+  } catch (error) {
+    console.error(`Error saving ${type} to localStorage:`, error);
+    return false;
+  }
+}
+
+/**
+ * Guarda un único elemento multimedia en Firestore con fallback a localStorage
+ * @param content Contenido multimedia (imagen o video)
+ * @param type Tipo de contenido ('image' o 'video')
+ * @returns ID del documento creado (en Firestore o localStorage)
+ */
+export async function saveGeneratedContent(content: ImageResult | VideoResult, type: 'image' | 'video'): Promise<string> {
+  try {
+    if (type === 'image') {
+      return await saveGeneratedImage(content as ImageResult);
+    } else {
+      return await saveGeneratedVideo(content as VideoResult);
+    }
+  } catch (error) {
+    console.error(`Error saving ${type}:`, error);
+    
+    // Fallback a localStorage en caso de error
+    const success = saveMediaToLocalStorage(type, [content]);
+    if (success && content.firestoreId) {
+      return content.firestoreId;
+    }
+    
+    // Si todo falla, devolvemos un ID temporal
+    return 'temp_' + Date.now();
+  }
+}

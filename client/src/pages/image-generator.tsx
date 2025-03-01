@@ -34,11 +34,19 @@ import {
   generateImage, 
   generateVideo, 
   saveGeneratedContent,
+  checkTaskStatus,
+  multiPlatformGenerator,
   ImageResult,
   VideoResult 
 } from '@/lib/api/multi-platform-generator';
 import { FreepikModel } from '@/lib/api/freepik-service';
-import { saveGeneratedImage, getGeneratedImages, saveGeneratedVideo, getGeneratedVideos } from '@/lib/api/generated-images-service';
+import { 
+  saveGeneratedImage, 
+  getGeneratedImages, 
+  saveGeneratedVideo, 
+  getGeneratedVideos,
+  saveMediaToLocalStorage
+} from '@/lib/api/generated-images-service';
 
 // Form validation schemas
 const imageFormSchema = z.object({
@@ -117,13 +125,41 @@ export default function ImageGeneratorPage() {
         freepikModel: values.apiProvider === 'freepik' ? values.freepikModel : undefined,
       });
 
-      // Verificar que la URL exista
-      if (!result || !result.url) {
-        console.error('Image generation returned invalid result:', result);
-        throw new Error('Generated image URL is missing');
+      console.log('Resultado de generación:', result);
+      
+      // Verificar si es una tarea asíncrona (como en el caso de Freepik)
+      if (result.taskId && (!result.url || result.url === '') && result.status !== 'FAILED') {
+        console.log('Tarea de generación iniciada, esperando resultados...', result);
+        
+        // Es una tarea pendiente, actualizar el mensaje de estado
+        setProgressMessage(`Generando imagen con ${result.provider}. Esto puede tardar unos segundos...`);
+        
+        // Agregar la imagen en estado "pendiente" a la cola
+        setGeneratedImages(prev => [{
+          ...result,
+          status: 'IN_PROGRESS',
+        }, ...prev]);
+        
+        // Mostrar notificación de que la tarea se inició
+        toast({
+          title: 'Generación iniciada',
+          description: 'La imagen se está generando. Se actualizará automáticamente cuando esté lista.',
+          variant: 'default',
+        });
+        
+        // No continuamos con el resto del proceso, ya que la verificación periódica
+        // se encargará de actualizar la imagen cuando esté lista
+        setIsGenerating(false);
+        return;
       }
       
-      console.log('Image generated successfully:', result);
+      // Si no tenemos URL (pero no es una tarea pendiente), es un error
+      if (!result || !result.url) {
+        console.error('Error en generación de imagen:', result);
+        throw new Error('La URL de la imagen generada no está disponible');
+      }
+      
+      console.log('Imagen generada con éxito:', result);
 
       // Actualizar inmediatamente el estado con la nueva imagen para mostrarla
       setGeneratedImages(prev => [result, ...prev]);
@@ -241,6 +277,98 @@ export default function ImageGeneratorPage() {
     }
   };
 
+  // Verificar periódicamente el estado de tareas pendientes
+  useEffect(() => {
+    // Función para verificar tareas pendientes
+    async function checkPendingTasks() {
+      // Filtrar imágenes en proceso
+      const pendingImages = generatedImages.filter(img => 
+        img.status === 'IN_PROGRESS' || 
+        img.status === 'processing' ||
+        (typeof img.provider === 'string' && img.provider.includes('processing')));
+      
+      if (pendingImages.length > 0) {
+        console.log(`Verificando ${pendingImages.length} tareas pendientes...`);
+        
+        for (const pendingImg of pendingImages) {
+          if (pendingImg.taskId) {
+            try {
+              // Determinar el proveedor basado en la cadena del proveedor
+              const provider = pendingImg.provider.includes('freepik') 
+                ? 'freepik' 
+                : (pendingImg.provider.includes('kling') ? 'kling' : 'fal');
+              
+              console.log(`Verificando tarea ${pendingImg.taskId} de ${provider}...`);
+              
+              // Verificar estado actual
+              const result = await multiPlatformGenerator.checkTaskStatus(
+                pendingImg.taskId, 
+                provider
+              );
+              
+              if (result && result.url) {
+                console.log('Imagen generada con éxito:', result);
+                
+                // Actualizar en el estado
+                setGeneratedImages(prev => 
+                  prev.map(img => img.taskId === pendingImg.taskId 
+                    ? {
+                        ...img,
+                        url: result.url,
+                        status: 'COMPLETED',
+                        provider: provider // Sin "(processing)"
+                      } 
+                    : img
+                  )
+                );
+                
+                // Notificar al usuario
+                toast({
+                  title: '¡Imagen generada!',
+                  description: 'Tu imagen ha sido generada con éxito.',
+                  variant: 'default',
+                });
+                
+                // Guardar en localStorage
+                const updatedImage = {
+                  ...pendingImg,
+                  url: result.url, 
+                  status: 'COMPLETED',
+                  provider: provider
+                };
+                saveMediaToLocalStorage('image', [updatedImage]);
+              } 
+              else if (result && (result.status === 'FAILED' || result.status === 'failed')) {
+                console.error('La generación falló:', pendingImg.taskId);
+                
+                // Marcar como fallida
+                setGeneratedImages(prev => 
+                  prev.map(img => img.taskId === pendingImg.taskId 
+                    ? {
+                        ...img,
+                        status: 'FAILED',
+                        provider: `${provider} (error)`
+                      } 
+                    : img
+                  )
+                );
+              }
+            } catch (error) {
+              console.error('Error al verificar tarea:', error);
+            }
+          }
+        }
+      }
+    }
+    
+    // Ejecutar la verificación inicialmente y cada 5 segundos
+    checkPendingTasks();
+    const intervalId = setInterval(checkPendingTasks, 5000);
+    
+    // Limpiar el intervalo al desmontar
+    return () => clearInterval(intervalId);
+  }, [generatedImages, toast]);
+  
   // Load saved images and videos from Firestore when component mounts
   useEffect(() => {
     async function loadSavedMedia() {
@@ -850,8 +978,8 @@ export default function ImageGeneratorPage() {
                               className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
                               onError={(e) => {
                                 console.error(`Error loading image: ${image.url}`);
-                                // Establecer una imagen de fallback
-                                e.currentTarget.src = 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a';
+                                // Establecer una imagen de fallback local
+                                e.currentTarget.src = '/assets/freepik__boostify_music_organe_abstract_icon.png';
                               }}
                             />
                           ) : (
@@ -998,6 +1126,10 @@ export default function ImageGeneratorPage() {
                   src={selectedImage.url} 
                   alt="Generated image" 
                   className="max-w-full max-h-[400px] rounded-lg object-contain"
+                  onError={(e) => {
+                    console.error(`Error loading detail image: ${selectedImage.url}`);
+                    e.currentTarget.src = '/assets/freepik__boostify_music_organe_abstract_icon.png';
+                  }}
                 />
               </div>
               <div className="space-y-4">
