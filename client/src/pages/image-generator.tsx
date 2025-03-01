@@ -33,6 +33,7 @@ import {
   ImageResult,
   VideoResult 
 } from '@/lib/api/multi-platform-generator';
+import { FreepikModel } from '@/lib/api/freepik-service';
 
 // Form validation schemas
 const imageFormSchema = z.object({
@@ -41,6 +42,7 @@ const imageFormSchema = z.object({
   apiProvider: z.enum(['fal', 'freepik', 'kling']),
   imageSize: z.enum(['small', 'medium', 'large']).default('medium'),
   imageCount: z.number().min(1).max(4).default(1),
+  freepikModel: z.nativeEnum(FreepikModel).optional(),
 });
 
 const videoFormSchema = z.object({
@@ -72,6 +74,7 @@ export default function ImageGeneratorPage() {
       apiProvider: 'fal',
       imageSize: 'medium',
       imageCount: 1,
+      freepikModel: FreepikModel.MYSTIC,
     },
   });
 
@@ -104,6 +107,7 @@ export default function ImageGeneratorPage() {
         apiProvider: values.apiProvider,
         imageSize: values.imageSize,
         imageCount: values.imageCount,
+        freepikModel: values.apiProvider === 'freepik' ? values.freepikModel : undefined,
       });
 
       // Save the generated image (could be to Firestore or similar)
@@ -337,6 +341,39 @@ export default function ImageGeneratorPage() {
                           </FormItem>
                         )}
                       />
+
+                      {/* Conditional Freepik model selection */}
+                      {imageForm.watch('apiProvider') === 'freepik' && (
+                        <FormField
+                          control={imageForm.control}
+                          name="freepikModel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Freepik Model</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select model" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value={FreepikModel.MYSTIC}>Mystic</SelectItem>
+                                  <SelectItem value={FreepikModel.IMAGEN}>Imagen3</SelectItem>
+                                  <SelectItem value={FreepikModel.CLASSIC_FAST}>Classic Fast</SelectItem>
+                                  <SelectItem value={FreepikModel.FLUX_DEV}>Flux Dev</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                Each model has different strengths and styles
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
                       <div className="grid grid-cols-2 gap-4">
                         <FormField

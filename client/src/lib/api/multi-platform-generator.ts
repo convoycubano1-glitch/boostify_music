@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { freepikService } from './freepik-service';
+import { freepikService, FreepikModel } from './freepik-service';
 
 // Configuración para determinar si usar API directa o proxy de servidor
 const useDirectApi = {
@@ -33,6 +33,7 @@ export interface GenerateImageParams {
   imageCount?: number;
   useDirectApi?: boolean; // Opción para forzar uso directo de API
   aspectRatio?: string;   // Proporción de aspecto para la imagen
+  freepikModel?: FreepikModel; // Modelo específico de Freepik a utilizar
 }
 
 export interface GenerateVideoParams {
@@ -164,12 +165,65 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
         }
       }
       
-      // Usar nuestro servicio de cliente directo
-      const response = await freepikService.generateImage({
+      // Determinar el modelo a utilizar
+      const freepikModel = params.freepikModel || FreepikModel.MYSTIC;
+      
+      // Preparar opciones base para todos los modelos
+      const baseOptions = {
         prompt: params.prompt,
-        aspect_ratio: aspect_ratio,
-        resolution: (params.imageSize === 'large') ? '4k' : '2k'
-      });
+        aspect_ratio
+      };
+      
+      // Personalizar opciones según el modelo seleccionado
+      let modelOptions;
+      
+      switch (freepikModel) {
+        case FreepikModel.IMAGEN3:
+          modelOptions = {
+            ...baseOptions,
+            num_images: params.imageCount || 1,
+            styling: {
+              style: params.prompt.includes('style: ') ? params.prompt.split('style: ')[1].split(',')[0] : undefined,
+            },
+            person_generation: 'allow_all',
+            safety_settings: 'block_none'
+          };
+          break;
+          
+        case FreepikModel.CLASSIC:
+          modelOptions = {
+            ...baseOptions,
+            negative_prompt: params.negativePrompt,
+            guidance_scale: 1.2,
+            num_images: params.imageCount || 1,
+            seed: Math.floor(Math.random() * 1000000)
+          };
+          break;
+          
+        case FreepikModel.FLUX_DEV:
+          modelOptions = {
+            ...baseOptions,
+            styling: {
+              style: params.prompt.includes('style: ') ? params.prompt.split('style: ')[1].split(',')[0] : undefined,
+            },
+            seed: Math.floor(Math.random() * 100000000) + 1
+          };
+          break;
+          
+        default: // MYSTIC
+          modelOptions = {
+            ...baseOptions,
+            resolution: (params.imageSize === 'large') ? '4k' : '2k',
+            realism: true,
+            creative_detailing: 33,
+            engine: 'automatic',
+            fixed_generation: false,
+            filter_nsfw: true
+          };
+      }
+      
+      // Usar nuestro servicio de cliente directo con el modelo seleccionado
+      const response = await freepikService.generateImage(modelOptions, freepikModel);
 
       // La respuesta de Freepik es asíncrona, devuelve un task_id
       if (response.data && response.data.task_id) {
@@ -177,7 +231,7 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
         // que se puede usar para verificar el estado más adelante
         return {
           url: '', // URL estará vacía inicialmente
-          provider: 'freepik (processing)',
+          provider: `freepik-${freepikModel} (processing)`,
           taskId: response.data.task_id,
           status: 'IN_PROGRESS',
           prompt: params.prompt,
@@ -185,7 +239,7 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
         };
       }
 
-      throw new Error('Failed to start image generation with Freepik');
+      throw new Error(`Failed to start image generation with Freepik (${freepikModel})`);
     } catch (error) {
       console.error('Error generating image with direct Freepik API:', error);
       // Si falla la API directa, intentamos con el proxy del servidor
