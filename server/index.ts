@@ -11,6 +11,24 @@ const app = express();
 // Enable CORS for development
 app.use(cors());
 
+// Middleware para configurar encabezados de seguridad (CSP)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Configura la política de seguridad de contenido para permitir eval y otras operaciones necesarias
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "img-src 'self' data: https: blob:; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.kling.ai wss://*.firebaseio.com; " +
+    "media-src 'self' https: blob:; " +
+    "worker-src 'self' blob:; " +
+    "frame-src 'self';"
+  );
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
