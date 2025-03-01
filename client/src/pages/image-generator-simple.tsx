@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ImageIcon, VideoIcon, Loader2 } from 'lucide-react';
+import { ImageIcon, VideoIcon, Loader2, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 import { 
   generateImage as apiGenerateImage, 
@@ -15,10 +17,22 @@ import {
 } from '@/lib/api/multi-platform-generator';
 import { ApiProvider } from '@/lib/types/model-types';
 
-// Función para generar imágenes - enfoque simplificado usando imágenes predefinidas
-const generateImage = async (prompt: string, provider: string): Promise<ImageResult> => {
+interface AsyncTaskStatus {
+  id: string;
+  provider: string;
+  prompt: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result?: ImageResult | VideoResult;
+  error?: string;
+  type: 'image' | 'video';
+  startTime: Date;
+}
+
+// Función para iniciar generación de imágenes 
+const startImageGeneration = async (prompt: string, provider: string): Promise<AsyncTaskStatus> => {
   try {
-    console.log(`Generando imagen con prompt: "${prompt}" usando ${provider}`);
+    console.log(`Iniciando generación de imagen con prompt: "${prompt}" usando ${provider}`);
     
     // Llamamos a la API real que hemos implementado en el backend
     const endpoint = `/api/proxy/${provider}/generate-image`;
@@ -39,69 +53,96 @@ const generateImage = async (prompt: string, provider: string): Promise<ImageRes
     
     // Verificar si estamos recibiendo una respuesta fallback del servidor
     const isFallback = data.fallback === true;
+
+    // Extraer el ID de la tarea o generar uno si no existe
+    const taskId = data.task_id || data.id || `${provider}-${Date.now()}`;
     
-    // Extrae la URL de la imagen de la respuesta
-    let imageUrl = '';
-    
-    // Imprimir la respuesta completa para diagnóstico
-    console.log("Respuesta completa:", JSON.stringify(data));
-    
-    // Estructura de fallback específica con la que estamos trabajando:
-    // {"id":"fallback-freepik-no-api-key","images":[{"url":"https://..."}],"fallback":true,"error_info":"..."}
-    // O: {"fallback":{"images":["https://..."],"request_id":"..."},"error_info":"..."}
-    // O: {"data":[{"url":"https://..."}],"id":"fallback-kling-api-error","fallback":true,"error_info":"..."}
-    
-    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-      // Estructura: { images: [{ url: "..." }] }
-      if (typeof data.images[0] === 'string') {
-        imageUrl = data.images[0];
-      } else if (data.images[0] && data.images[0].url) {
-        imageUrl = data.images[0].url;
+    // Si es una respuesta fallback o ya tenemos la URL, creamos una tarea completada
+    if (isFallback || (data.images && Array.isArray(data.images) && data.images.length > 0)) {
+      // Hay una URL directa disponible, lo tratamos como una tarea completada
+      let imageUrl = '';
+      
+      if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+        // Estructura: { images: [{ url: "..." }] }
+        if (typeof data.images[0] === 'string') {
+          imageUrl = data.images[0];
+        } else if (data.images[0] && data.images[0].url) {
+          imageUrl = data.images[0].url;
+        }
+      } else if (data.fallback && data.fallback.images && Array.isArray(data.fallback.images)) {
+        // Estructura: { fallback: { images: ["..."] } }
+        imageUrl = data.fallback.images[0];
+      } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+        // Estructura: { data: [{ url: "..." }] }
+        if (data.data[0] && data.data[0].url) {
+          imageUrl = data.data[0].url;
+        } else if (typeof data.data[0] === 'string') {
+          imageUrl = data.data[0];
+        }
       }
-      console.log("URL extraída de data.images:", imageUrl);
-    } else if (data.fallback && data.fallback.images && Array.isArray(data.fallback.images)) {
-      // Estructura: { fallback: { images: ["..."] } }
-      imageUrl = data.fallback.images[0];
-      console.log("URL extraída de data.fallback.images:", imageUrl);
-    } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-      // Estructura: { data: [{ url: "..." }] }
-      if (data.data[0] && data.data[0].url) {
-        imageUrl = data.data[0].url;
-      } else if (typeof data.data[0] === 'string') {
-        imageUrl = data.data[0];
+      
+      if (!imageUrl && isFallback) {
+        // Fallback garantizado para el caso de error
+        imageUrl = 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a';
       }
-      console.log("URL extraída de data.data:", imageUrl);
+      
+      if (imageUrl) {
+        return {
+          id: taskId,
+          provider,
+          prompt,
+          status: 'completed',
+          progress: 100,
+          result: {
+            url: imageUrl,
+            provider: isFallback ? `${provider} (fallback)` : provider,
+            requestId: taskId,
+            prompt,
+            createdAt: new Date()
+          },
+          type: 'image',
+          startTime: new Date()
+        };
+      }
     }
     
-    // Si no podemos extraer la URL de la imagen, lanzamos un error para usar el fallback local
-    if (!imageUrl) {
-      console.error('No se pudo extraer URL de la imagen de la respuesta:', data);
-      throw new Error('Could not extract image URL from API response');
-    }
-    
+    // Si llegamos aquí, es una tarea asíncrona
     return {
-      url: imageUrl,
-      provider: isFallback ? `${provider} (fallback)` : provider,
-      requestId: data.id || 'unknown',
-      prompt: prompt,
-      createdAt: new Date()
+      id: taskId,
+      provider,
+      prompt,
+      status: 'pending',
+      progress: 0,
+      type: 'image',
+      startTime: new Date()
     };
   } catch (error) {
-    console.error('Error in image generation:', error);
-    // Fallback local garantizado en caso de error en la llamada a la API
+    console.error('Error iniciando generación de imagen:', error);
+    
+    // Fallback garantizado en caso de error
     return {
-      url: 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a',
-      provider: `${provider} (local fallback)`,
+      id: `${provider}-error-${Date.now()}`,
+      provider,
       prompt,
-      createdAt: new Date()
+      status: 'failed',
+      progress: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      type: 'image',
+      startTime: new Date(),
+      result: {
+        url: 'https://images.unsplash.com/photo-1580927752452-89d86da3fa0a',
+        provider: `${provider} (local fallback)`,
+        prompt,
+        createdAt: new Date()
+      }
     };
   }
 };
 
-// Función para generar videos - enfoque simplificado usando videos predefinidos
-const generateVideo = async (prompt: string, provider: string): Promise<VideoResult> => {
+// Función para iniciar generación de videos
+const startVideoGeneration = async (prompt: string, provider: string): Promise<AsyncTaskStatus> => {
   try {
-    console.log(`Generando video con prompt: "${prompt}" usando ${provider}`);
+    console.log(`Iniciando generación de video con prompt: "${prompt}" usando ${provider}`);
     
     // Llamamos a la API real que hemos implementado en el backend
     const endpoint = `/api/proxy/${provider}/generate-video`;
@@ -123,54 +164,265 @@ const generateVideo = async (prompt: string, provider: string): Promise<VideoRes
     // Verificar si estamos recibiendo una respuesta fallback del servidor
     const isFallback = data.fallback === true;
     
-    // Extrae la URL del video de la respuesta
-    let videoUrl = '';
+    // Extraer el ID de la tarea o generar uno si no existe
+    const taskId = data.id || `${provider}-${Date.now()}`;
     
-    // Imprimir la respuesta completa para diagnóstico
-    console.log("Respuesta completa de video:", JSON.stringify(data));
-    
-    // Estructura de respuesta de video esperada:
-    // {"id":"fallback-luma-no-api-key-1740811810955","output":{"url":"https://..."},"fallback":true,"error_info":"..."}
-    
-    if (data.output && data.output.url) {
-      // Estructura estándar que devuelve el servidor para videos
-      videoUrl = data.output.url;
-      console.log("URL de video extraída de data.output.url:", videoUrl);
-    } else if (data.data && data.data.url) {
-      // Posible estructura alternativa
-      videoUrl = data.data.url;
-      console.log("URL de video extraída de data.data.url:", videoUrl);
-    } else if (data.url) {
-      // Estructura simple directa
-      videoUrl = data.url;
-      console.log("URL de video extraída de data.url:", videoUrl);
-    } else if (data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].url) {
-      // Estructura array de datos
-      videoUrl = data.data[0].url;
-      console.log("URL de video extraída de data.data[0].url:", videoUrl);
+    // Si es una respuesta fallback o ya tenemos la URL, creamos una tarea completada
+    if (isFallback || data.output?.url || data.url) {
+      let videoUrl = '';
+      
+      if (data.output && data.output.url) {
+        videoUrl = data.output.url;
+      } else if (data.data && data.data.url) {
+        videoUrl = data.data.url;
+      } else if (data.url) {
+        videoUrl = data.url;
+      } else if (data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].url) {
+        videoUrl = data.data[0].url;
+      }
+      
+      if (!videoUrl && isFallback) {
+        // Fallback garantizado para el caso de error
+        videoUrl = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+      }
+      
+      if (videoUrl) {
+        return {
+          id: taskId,
+          provider,
+          prompt,
+          status: 'completed',
+          progress: 100,
+          result: {
+            url: videoUrl,
+            provider: isFallback ? `${provider} (fallback)` : provider,
+            requestId: taskId,
+            prompt,
+            createdAt: new Date()
+          },
+          type: 'video',
+          startTime: new Date()
+        };
+      }
     }
     
-    // Si no podemos extraer la URL del video, lanzamos un error para usar el fallback local
-    if (!videoUrl) {
-      console.error('No se pudo extraer URL del video de la respuesta:', data);
-      throw new Error('Could not extract video URL from API response');
-    }
-    
+    // Si llegamos aquí, es una tarea asíncrona
     return {
-      url: videoUrl,
-      provider: isFallback ? `${provider} (fallback)` : provider,
-      requestId: data.id || 'unknown',
-      prompt: prompt,
-      createdAt: new Date()
+      id: taskId,
+      provider,
+      prompt,
+      status: 'pending',
+      progress: 0,
+      type: 'video',
+      startTime: new Date()
     };
   } catch (error) {
-    console.error('Error in video generation:', error);
-    // Fallback local garantizado en caso de error en la llamada a la API
+    console.error('Error iniciando generación de video:', error);
+    
+    // Fallback garantizado en caso de error
     return {
-      url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      provider: `${provider} (local fallback)`,
+      id: `${provider}-error-${Date.now()}`,
+      provider,
       prompt,
-      createdAt: new Date()
+      status: 'failed',
+      progress: 0,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      type: 'video',
+      startTime: new Date(),
+      result: {
+        url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        provider: `${provider} (local fallback)`,
+        prompt,
+        createdAt: new Date()
+      }
+    };
+  }
+};
+
+// Función para verificar el estado de una tarea de generación de imagen
+const checkImageTaskStatus = async (taskId: string, provider: string): Promise<{
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result?: ImageResult;
+  error?: string;
+}> => {
+  try {
+    console.log(`Verificando estado de tarea de imagen ${taskId} en ${provider}`);
+    
+    const endpoint = `/api/proxy/${provider}/task/${taskId}`;
+    const response = await fetch(endpoint);
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${await response.text()}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Estado de tarea ${taskId}:`, data);
+    
+    // Verificar si es una respuesta fallback
+    const isFallback = data.fallback === true;
+    
+    // Extraer estado según el formato de respuesta
+    let status: string = '';
+    let generated: any[] = [];
+    let errorInfo: string | undefined;
+    
+    if (data.data) {
+      // Formato estándar: { data: { status: '...', generated: [...] } }
+      status = data.data.status;
+      generated = data.data.generated || [];
+      errorInfo = data.error_info;
+    } else if (data.status) {
+      // Formato simple: { status: '...', images: [...] }
+      status = data.status;
+      generated = data.images || [];
+      errorInfo = data.error_info;
+    }
+    
+    // Normalizar estado para nuestro sistema
+    let normalizedStatus: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+    let progress = 0;
+    let result: ImageResult | undefined;
+    
+    if (status) {
+      // Convertir variaciones de estado a nuestro formato
+      if (status.toUpperCase() === 'IN_PROGRESS' || status.toLowerCase() === 'processing' || status.toLowerCase() === 'pending') {
+        normalizedStatus = 'processing';
+        progress = 50; // Aproximación
+      } else if (status.toUpperCase() === 'COMPLETED' || status.toLowerCase() === 'completed' || status.toLowerCase() === 'success') {
+        normalizedStatus = 'completed';
+        progress = 100;
+        
+        // Extraer URL de la imagen si está disponible
+        if (generated && generated.length > 0) {
+          let imageUrl = '';
+          if (typeof generated[0] === 'string') {
+            imageUrl = generated[0];
+          } else if (generated[0] && generated[0].url) {
+            imageUrl = generated[0].url;
+          }
+          
+          if (imageUrl) {
+            result = {
+              url: imageUrl,
+              provider,
+              requestId: taskId,
+              prompt: '',  // No tenemos el prompt original aquí
+              createdAt: new Date()
+            };
+          }
+        }
+      } else if (status.toLowerCase().includes('fail') || status.toLowerCase() === 'error') {
+        normalizedStatus = 'failed';
+        progress = 100;
+      }
+    }
+    
+    return {
+      status: normalizedStatus,
+      progress,
+      result,
+      error: errorInfo
+    };
+  } catch (error) {
+    console.error(`Error verificando estado de tarea ${taskId}:`, error);
+    return {
+      status: 'failed',
+      progress: 0,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
+
+// Función para verificar el estado de una tarea de generación de video
+const checkVideoTaskStatus = async (taskId: string, provider: string): Promise<{
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result?: VideoResult;
+  error?: string;
+}> => {
+  try {
+    console.log(`Verificando estado de tarea de video ${taskId} en ${provider}`);
+    
+    const endpoint = `/api/proxy/${provider}/video/${taskId}`;
+    const response = await fetch(endpoint);
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${await response.text()}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Estado de tarea de video ${taskId}:`, data);
+    
+    // Verificar si es una respuesta fallback
+    const isFallback = data.fallback === true;
+    
+    // Extraer estado según el formato de respuesta
+    let status: string = '';
+    let videoUrl: string = '';
+    let errorInfo: string | undefined;
+    
+    if (data.status) {
+      status = data.status;
+      
+      // Extraer URL del video según el formato específico del proveedor
+      if (provider === 'luma') {
+        // Formatos de Luma: { status: '...', output: { url: '...' } }
+        if (data.output && data.output.url) {
+          videoUrl = data.output.url;
+        }
+      } else if (provider === 'kling') {
+        // Formatos de Kling: { status: '...', url: '...' }
+        if (data.url) {
+          videoUrl = data.url;
+        }
+      }
+      
+      errorInfo = data.error_info;
+    }
+    
+    // Normalizar estado para nuestro sistema
+    let normalizedStatus: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+    let progress = 0;
+    let result: VideoResult | undefined;
+    
+    if (status) {
+      // Convertir variaciones de estado a nuestro formato
+      if (status.toLowerCase() === 'pending' || status.toLowerCase() === 'processing' || status.toLowerCase() === 'in_progress') {
+        normalizedStatus = 'processing';
+        progress = 50; // Aproximación
+      } else if (status.toLowerCase() === 'completed' || status.toLowerCase() === 'success') {
+        normalizedStatus = 'completed';
+        progress = 100;
+        
+        // Crear resultado si tenemos una URL de video
+        if (videoUrl) {
+          result = {
+            url: videoUrl,
+            provider,
+            requestId: taskId,
+            prompt: '',  // No tenemos el prompt original aquí
+            createdAt: new Date()
+          };
+        }
+      } else if (status.toLowerCase().includes('fail') || status.toLowerCase() === 'error') {
+        normalizedStatus = 'failed';
+        progress = 100;
+      }
+    }
+    
+    return {
+      status: normalizedStatus,
+      progress,
+      result,
+      error: errorInfo
+    };
+  } catch (error) {
+    console.error(`Error verificando estado de tarea de video ${taskId}:`, error);
+    return {
+      status: 'failed',
+      progress: 0,
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 };
@@ -187,6 +439,168 @@ export default function ImageGeneratorSimplePage() {
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [generatedVideos, setGeneratedVideos] = useState<VideoResult[]>([]);
   
+  // Estado para tareas asíncronas
+  const [tasks, setTasks] = useState<AsyncTaskStatus[]>([]);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
+  // Función para verificar el estado de las tareas activas
+  useEffect(() => {
+    // Solo verificar las tareas si hay alguna pendiente o en proceso
+    const hasPendingTasks = tasks.some(task => 
+      task.status === 'pending' || task.status === 'processing'
+    );
+    
+    if (!hasPendingTasks || isCheckingStatus) return;
+    
+    const checkStatus = async () => {
+      setIsCheckingStatus(true);
+      
+      try {
+        // Crear una copia de tareas para actualizar
+        const updatedTasks = [...tasks];
+        let hasUpdates = false;
+        
+        // Verificar cada tarea pendiente o en proceso
+        for (let i = 0; i < updatedTasks.length; i++) {
+          const task = updatedTasks[i];
+          
+          if (task.status !== 'pending' && task.status !== 'processing') continue;
+          
+          if (task.type === 'image') {
+            // Verificar estado de tarea de imagen
+            const statusResult = await checkImageTaskStatus(task.id, task.provider);
+            
+            // Actualizar la tarea con el nuevo estado
+            const newTaskState = {
+              ...task,
+              status: statusResult.status,
+              progress: statusResult.progress,
+              error: statusResult.error,
+              result: statusResult.result ? {
+                ...statusResult.result,
+                prompt: task.prompt  // Preservar el prompt original
+              } : task.result
+            };
+            
+            // Verificar si hay cambios significativos
+            const statusChanged = newTaskState.status !== task.status;
+            const progressChanged = newTaskState.progress !== task.progress;
+            
+            // Solo actualizar si hubo cambios
+            if (statusChanged || progressChanged) {
+              updatedTasks[i] = newTaskState;
+              hasUpdates = true;
+              
+              // Notificar sobre cambios de estado importantes
+              if (statusChanged) {
+                if (newTaskState.status === 'completed') {
+                  toast({
+                    title: 'Generation completed',
+                    description: `Your ${task.type} has been generated successfully!`,
+                    variant: 'success',
+                  });
+                  
+                  // Si se completó y hay un resultado, agregarlo a las imágenes/videos generados
+                  if (newTaskState.result && task.type === 'image') {
+                    const imageResult: ImageResult = {
+                      ...newTaskState.result,
+                      prompt: task.prompt
+                    };
+                    setGeneratedImages(prev => [imageResult, ...prev]);
+                  }
+                } else if (newTaskState.status === 'failed') {
+                  toast({
+                    title: 'Generation failed',
+                    description: newTaskState.error || `Failed to generate your ${task.type}`,
+                    variant: 'destructive',
+                  });
+                } else if (newTaskState.status === 'processing' && task.status === 'pending') {
+                  // Cambio de pendiente a procesando
+                  toast({
+                    title: 'Processing started',
+                    description: `Your ${task.type} is now being processed...`,
+                  });
+                }
+              }
+            }
+          } else if (task.type === 'video') {
+            // Verificar estado de tarea de video
+            const statusResult = await checkVideoTaskStatus(task.id, task.provider);
+            
+            // Actualizar la tarea con el nuevo estado
+            const newTaskState = {
+              ...task,
+              status: statusResult.status,
+              progress: statusResult.progress,
+              error: statusResult.error,
+              result: statusResult.result ? {
+                ...statusResult.result,
+                prompt: task.prompt  // Preservar el prompt original
+              } : task.result
+            };
+            
+            // Verificar si hay cambios significativos
+            const statusChanged = newTaskState.status !== task.status;
+            const progressChanged = newTaskState.progress !== task.progress;
+            
+            // Solo actualizar si hubo cambios
+            if (statusChanged || progressChanged) {
+              updatedTasks[i] = newTaskState;
+              hasUpdates = true;
+              
+              // Notificar sobre cambios de estado importantes
+              if (statusChanged) {
+                if (newTaskState.status === 'completed') {
+                  toast({
+                    title: 'Video generation completed',
+                    description: `Your video has been generated successfully!`,
+                    variant: 'success',
+                  });
+                  
+                  // Si se completó y hay un resultado, agregarlo a los videos generados
+                  if (newTaskState.result && task.type === 'video') {
+                    const videoResult: VideoResult = {
+                      ...newTaskState.result,
+                      prompt: task.prompt
+                    };
+                    setGeneratedVideos(prev => [videoResult, ...prev]);
+                  }
+                } else if (newTaskState.status === 'failed') {
+                  toast({
+                    title: 'Video generation failed',
+                    description: newTaskState.error || `Failed to generate your video`,
+                    variant: 'destructive',
+                  });
+                } else if (newTaskState.status === 'processing' && task.status === 'pending') {
+                  // Cambio de pendiente a procesando
+                  toast({
+                    title: 'Video processing started',
+                    description: `Your video is now being processed. This may take several minutes...`,
+                  });
+                }
+              }
+            }
+          }
+        }
+        
+        // Actualizar estado si hubo cambios
+        if (hasUpdates) {
+          setTasks(updatedTasks);
+        }
+      } catch (error) {
+        console.error('Error checking task status:', error);
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+    
+    // Verificar estado cada 3 segundos
+    const intervalId = setInterval(checkStatus, 3000);
+    
+    // Limpiar intervalo al desmontar
+    return () => clearInterval(intervalId);
+  }, [tasks, isCheckingStatus, toast]);
+
   // Cargar una imagen inicial para demostrar que el sistema funciona
   useEffect(() => {
     // Solo cargar si no hay imágenes generadas aún
@@ -195,10 +609,17 @@ export default function ImageGeneratorSimplePage() {
         try {
           console.log("Cargando imagen inicial...");
           // Usar freepik como proveedor por defecto para el ejemplo inicial
-          const result = await generateImage("perro jugando en la playa", "freepik");
-          setGeneratedImages([result]);
+          const task = await startImageGeneration("perro jugando en la playa", "freepik");
           
-          console.log("Imagen inicial cargada:", result);
+          // Si la tarea ya está completada (fallback), agregar la imagen directamente
+          if (task.status === 'completed' && task.result) {
+            setGeneratedImages([task.result as ImageResult]);
+            console.log("Imagen inicial cargada:", task.result);
+          } else {
+            // De lo contrario, agregar la tarea para monitoreo
+            setTasks(prev => [...prev, task]);
+            console.log("Tarea de imagen inicial iniciada:", task);
+          }
         } catch (error) {
           console.error("Error al cargar imagen inicial:", error);
         }
@@ -223,18 +644,30 @@ export default function ImageGeneratorSimplePage() {
       setIsGenerating(true);
       
       toast({
-        title: 'Generating image',
+        title: 'Starting image generation',
         description: `Using ${imageProvider} to create your vision...`,
       });
 
-      const result = await generateImage(imagePrompt, imageProvider);
-      setGeneratedImages(prev => [result, ...prev]);
-
-      toast({
-        title: 'Image generated successfully',
-        description: 'Your image is ready to view',
-        variant: 'success',
-      });
+      const task = await startImageGeneration(imagePrompt, imageProvider);
+      
+      // Si la tarea ya está completada (fallback), agregar la imagen directamente
+      if (task.status === 'completed' && task.result) {
+        setGeneratedImages(prev => [task.result as ImageResult, ...prev]);
+        
+        toast({
+          title: 'Image generated successfully',
+          description: 'Your image is ready to view',
+          variant: 'success',
+        });
+      } else {
+        // De lo contrario, agregar la tarea para monitoreo
+        setTasks(prev => [...prev, task]);
+        
+        toast({
+          title: 'Generation in progress',
+          description: 'Your image is being generated. This may take a minute.',
+        });
+      }
     } catch (error) {
       console.error('Error generating image:', error);
       toast({
@@ -262,18 +695,30 @@ export default function ImageGeneratorSimplePage() {
       setIsGenerating(true);
       
       toast({
-        title: 'Generating video',
+        title: 'Starting video generation',
         description: `Using ${videoProvider} to create your video...`,
       });
 
-      const result = await generateVideo(videoPrompt, videoProvider);
-      setGeneratedVideos(prev => [result, ...prev]);
-
-      toast({
-        title: 'Video generated successfully',
-        description: 'Your video is ready to view',
-        variant: 'success',
-      });
+      const task = await startVideoGeneration(videoPrompt, videoProvider);
+      
+      // Si la tarea ya está completada (fallback), agregar el video directamente
+      if (task.status === 'completed' && task.result) {
+        setGeneratedVideos(prev => [task.result as VideoResult, ...prev]);
+        
+        toast({
+          title: 'Video generated successfully',
+          description: 'Your video is ready to view',
+          variant: 'success',
+        });
+      } else {
+        // De lo contrario, agregar la tarea para monitoreo
+        setTasks(prev => [...prev, task]);
+        
+        toast({
+          title: 'Generation in progress',
+          description: 'Your video is being generated. This may take a few minutes.',
+        });
+      }
     } catch (error) {
       console.error('Error generating video:', error);
       toast({
@@ -454,8 +899,56 @@ export default function ImageGeneratorSimplePage() {
               </CardHeader>
               
               <CardContent>
+                {/* Tasks in progress */}
+                {tasks.some(task => 
+                  (task.status === 'pending' || task.status === 'processing') && 
+                  (activeTab === 'image' ? task.type === 'image' : task.type === 'video')
+                ) && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-4">Tasks in Progress</h3>
+                    <div className="space-y-4">
+                      {tasks
+                        .filter(task => 
+                          (task.status === 'pending' || task.status === 'processing') && 
+                          (activeTab === 'image' ? task.type === 'image' : task.type === 'video')
+                        )
+                        .map((task, index) => (
+                          <div key={index} className="border rounded-lg p-4 bg-muted/30">
+                            <div className="flex justify-between items-center mb-2">
+                              <div className="flex items-center">
+                                {task.status === 'pending' ? (
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin text-yellow-500" />
+                                ) : (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-500" />
+                                )}
+                                <span className="font-medium">
+                                  {task.type === 'image' ? 'Image' : 'Video'} Generation
+                                </span>
+                              </div>
+                              <Badge variant={task.status === 'pending' ? 'outline' : 'default'}>
+                                {task.status === 'pending' ? 'Queued' : 'Processing'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2 truncate">
+                              {task.prompt}
+                            </p>
+                            <div className="space-y-1">
+                              <Progress value={task.progress} className="h-2" />
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Using {task.provider}</span>
+                                <span>
+                                  {Math.floor((Date.now() - task.startTime.getTime()) / 1000)}s elapsed
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                
                 <TabsContent value="image" className="mt-0">
-                  {generatedImages.length === 0 ? (
+                  {generatedImages.length === 0 && !tasks.some(t => t.type === 'image' && (t.status === 'pending' || t.status === 'processing')) ? (
                     <div className="text-center py-12">
                       <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
                       <h3 className="mt-2 text-sm font-semibold">No images yet</h3>

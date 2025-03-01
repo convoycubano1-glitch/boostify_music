@@ -185,17 +185,60 @@ router.post('/freepik/generate-image', async (req, res) => {
       });
     }
 
-    // Para propósitos de desarrollo, siempre utilizamos un fallback para garantizar que la prueba funcione
-    // En un entorno de producción, esta lógica sería reemplazada por la llamada real a la API
-    
-    console.log('Devolviendo imagen de fallback para Freepik (simulación)');
-    return res.status(200).json({
-      id: 'simulated-freepik-task-id',
-      images: [
-        { url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }
-      ],
-      prompt: prompt
-    });
+    // Ahora que tenemos la clave API configurada, llamamos directamente a la API de Freepik
+    try {
+      console.log('Realizando llamada real a la API de Freepik Mystic');
+      
+      // Construir los headers para la API
+      const headers = {
+        'X-Freepik-API-Key': FREEPIK_API_KEY,
+        'Content-Type': 'application/json'
+      };
+      
+      // Llamar a la API para iniciar la generación (proceso asíncrono)
+      const response = await axios.post(
+        'https://api.freepik.com/v1/ai/mystic',
+        {
+          prompt: prompt,
+          aspect_ratio: aspect_ratio,
+          realism: true,
+          creative_detailing: 33,
+          engine: 'automatic',
+          fixed_generation: false,
+          filter_nsfw: true
+        },
+        { headers }
+      );
+      
+      // Verificar la respuesta y extraer el task_id
+      // La respuesta de Freepik puede tener el task_id en data.task_id o en data.data.task_id
+      const taskId = 
+        (response.data && response.data.task_id) ? response.data.task_id : 
+        (response.data && response.data.data && response.data.data.task_id) ? response.data.data.task_id : 
+        null;
+        
+      if (taskId) {
+        // Devolver el task_id para que el cliente pueda verificar el estado
+        console.log('Generación iniciada exitosamente en Freepik, task_id:', taskId);
+        return res.status(200).json({
+          task_id: taskId,
+          status: 'processing'
+        });
+      } else {
+        // Si no hay task_id, algo salió mal
+        console.error('Respuesta de Freepik no contiene task_id:', response.data);
+        throw new Error('Missing task_id in Freepik response');
+      }
+    } catch (apiError: any) {
+      // En caso de error en la API, registramos y devolvemos un fallback
+      console.error('Error llamando a la API de Freepik:', apiError.message);
+      return res.status(200).json({
+        id: 'fallback-freepik-api-error',
+        images: [{ url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }],
+        fallback: true,
+        error_info: apiError.message || 'Error calling Freepik API'
+      });
+    }
   } catch (error: any) {
     // Si ocurre cualquier error, devolvemos una respuesta fallback
     console.error('Error inesperado en Freepik proxy:', error.message);
@@ -341,46 +384,47 @@ router.post('/luma/generate-video', async (req, res) => {
     }
 
     try {
-      // En una implementación real, aquí se haría la llamada a la API de Luma
-      /*
+      // Ahora que tenemos la clave API, hacemos una llamada real a la API de Luma
+      console.log('Realizando llamada real a la API de Luma para generar video');
+      
+      // Preparar los parámetros para la API
+      const apiParams = {
+        prompt,
+        duration,
+        style,
+        aspect_ratio: aspectRatio,
+        seed
+      };
+      
+      console.log('Parámetros para API de Luma:', apiParams);
+      
       const response = await axios.post(
-        'https://api.lumalabs.ai/video',
-        {
-          prompt,
-          duration,
-          style,
-          aspect_ratio: aspectRatio, 
-          seed,
-          webhook_url: 'https://your-webhook-url.com' // Opcional, para recibir notificaciones
-        },
+        'https://api.lumalabs.ai/v1/video',
+        apiParams,
         {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${LUMA_API_KEY}`
           },
-          timeout: 15000 // Timeout ampliado para generación de video
+          timeout: 20000 // Timeout ampliado para generación de video
         }
       );
       
+      console.log('Respuesta de API de Luma:', response.data);
+      
       // La respuesta inicial tiene un ID que se debe utilizar para verificar el estado
-      const videoId = response.data.id;
-      
-      // Para verificar el estado: GET https://api.lumalabs.ai/video/{id}
-      // La respuesta tendrá algo como:
-      // { id: 'xxx', status: 'completed', output: { url: '...' } }
-      // Donde status puede ser: 'pending', 'processing', 'completed', 'failed'
-      */
-      
-      // Por ahora, para propósitos de simulación, retornamos un ID simulado y un video de muestra
-      const mockResponse = {
-        id: `luma-${Date.now()}`,
-        status: 'completed',
-        output: {
-          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-        }
-      };
-
-      return res.json(mockResponse);
+      if (response.data && response.data.id) {
+        // Retornar el ID para que el cliente pueda verificar el estado
+        return res.json({
+          id: response.data.id,
+          status: response.data.status || 'pending',
+          output: response.data.output || null
+        });
+      } else {
+        // Si no hay ID, algo salió mal con la API
+        console.error('Respuesta de Luma no contiene ID:', response.data);
+        throw new Error('Missing ID in Luma response');
+      }
     } catch (apiError: any) {
       console.error('Error calling Luma API:', apiError.message);
       
@@ -457,45 +501,44 @@ router.post('/kling/generate-video', async (req, res) => {
     }
 
     try {
-      // En una implementación real, aquí se haría la llamada a la API de Kling
-      /*
+      // Ahora que tenemos la clave API, vamos a usar la API real de Kling para videos
+      console.log('Realizando llamada real a la API de Kling para generación de video');
+      
+      const apiParams = {
+        prompt,
+        duration,
+        style,
+        width,
+        height,
+        fps
+      };
+      
+      console.log('Parámetros para API de Kling Videos:', apiParams);
+      
       const response = await axios.post(
         'https://api.kling.ai/v1/videos/generations',
-        {
-          prompt,
-          duration,
-          style,
-          width,
-          height,
-          fps,
-          webhook_url: 'https://your-webhook-url.com' // Opcional, para notificaciones
-        },
+        apiParams,
         {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${KLING_API_KEY}`
           },
-          timeout: 15000 // Timeout más largo porque la generación de video toma tiempo
+          timeout: 20000 // Timeout más largo porque la generación de video toma tiempo
         }
       );
       
+      console.log('Respuesta de API de Kling para videos:', response.data);
+      
       // La respuesta inicial solo contiene un ID de tarea
-      // Habría que consultar periódicamente el estado con otro endpoint
-      const taskId = response.data.id;
-      
-      // Para verificar el estado: GET /v1/videos/generations/{id}
-      // Cuando esté listo: { status: 'completed', output: { url: '...' } }
-      */
-      
-      // Por ahora, para propósitos de simulación, retornamos un ID simulado y un video de muestra
-      const mockResponse = {
-        id: `kling-video-${Date.now()}`,
-        output: {
-          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-        }
-      };
-
-      return res.json(mockResponse);
+      if (response.data && response.data.id) {
+        return res.json({
+          id: response.data.id,
+          status: 'processing'
+        });
+      } else {
+        console.error('Respuesta de Kling no contiene ID:', response.data);
+        throw new Error('Missing ID in Kling response');
+      }
     } catch (apiError: any) {
       console.error('Error calling Kling Video API:', apiError.message);
       
@@ -549,36 +592,44 @@ router.get('/freepik/task/:taskId', async (req, res) => {
     }
 
     try {
-      // En una implementación real, se verificaría el estado con la API de Freepik
-      /*
+      // Ahora que tenemos la clave API, llamamos directamente a la API de Freepik para verificar el estado
+      console.log('Verificando estado de tarea en Freepik, task_id:', taskId);
+      
       const response = await axios.get(
         `https://api.freepik.com/v1/ai/mystic/${taskId}`,
         {
           headers: {
-            'x-freepik-api-key': FREEPIK_API_KEY
+            'X-Freepik-API-Key': FREEPIK_API_KEY
           },
-          timeout: 5000
+          timeout: 10000
         }
       );
-
-      return res.json(response.data);
-      */
       
-      // Simulación de respuesta para propósitos de demostración
-      // Los estados posibles son: IN_PROGRESS, COMPLETED, FAILED
-      const mockStatus = Math.random() > 0.2 ? 'COMPLETED' : 'IN_PROGRESS';
+      console.log('Respuesta de verificación de estado de Freepik:', response.data);
       
-      const mockResponse = {
-        data: {
-          generated: mockStatus === 'COMPLETED' ? [
-            { url: 'https://images.unsplash.com/photo-1668442814520-77dbda47aae1' }
-          ] : [],
-          task_id: taskId,
-          status: mockStatus
-        }
-      };
-
-      return res.json(mockResponse);
+      // Verificar si la respuesta tiene el formato esperado (puede estar anidado en data)
+      const responseData = response.data.data || response.data;
+      
+      if (responseData && responseData.status) {
+        // Formatear la respuesta de manera consistente
+        const status = responseData.status;
+        const responseTaskId = responseData.task_id || req.params.taskId;
+        
+        const result = {
+          data: {
+            generated: status === 'COMPLETED' && responseData.generated ? 
+              responseData.generated.map((img: any) => ({ url: img.url })) : [],
+            task_id: responseTaskId,
+            status: status
+          }
+        };
+        
+        return res.json(result);
+      } else {
+        // Si la respuesta no tiene el formato esperado, lanzar un error
+        console.error('Respuesta de Freepik no tiene el formato esperado:', response.data);
+        throw new Error('Invalid response format from Freepik');
+      }
     } catch (apiError: any) {
       console.error('Error checking Freepik task status:', apiError.message);
       
@@ -629,34 +680,31 @@ router.get('/kling/video/:taskId', async (req, res) => {
     }
 
     try {
-      // En una implementación real, se verificaría el estado con la API de Kling
-      /*
+      // Ahora que tenemos la API key, se verificará el estado con la API de Kling
+      console.log('Verificando estado de video en Kling, task_id:', taskId);
+      
       const response = await axios.get(
         `https://api.kling.ai/v1/videos/generations/${taskId}`,
         {
           headers: {
             'Authorization': `Bearer ${KLING_API_KEY}`
           },
-          timeout: 5000
+          timeout: 10000
         }
       );
-
-      return res.json(response.data);
-      */
       
-      // Simulación de respuesta para propósitos de demostración
-      // Los estados posibles son: pending, processing, completed, failed
-      const mockStatus = Math.random() > 0.2 ? 'completed' : 'processing';
+      console.log('Respuesta de verificación de estado de Kling:', response.data);
       
-      const mockResponse = {
-        id: taskId,
-        status: mockStatus,
-        output: mockStatus === 'completed' ? {
-          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-        } : null
-      };
-
-      return res.json(mockResponse);
+      // Verificar si la respuesta tiene el formato esperado
+      if (response.data && response.data.status) {
+        // Los estados posibles son: pending, processing, completed, failed
+        // Mantenemos la misma estructura que la API devuelve
+        return res.json(response.data);
+      } else {
+        // Si la respuesta no tiene el formato esperado, lanzamos un error
+        console.error('Respuesta de Kling no tiene el formato esperado:', response.data);
+        throw new Error('Invalid response format from Kling');
+      }
     } catch (apiError: any) {
       console.error('Error checking Kling video task status:', apiError.message);
       
@@ -703,34 +751,31 @@ router.get('/luma/video/:taskId', async (req, res) => {
     }
 
     try {
-      // En una implementación real, se verificaría el estado con la API de Luma
-      /*
+      // Ahora que tenemos la API key, se verificará el estado con la API de Luma
+      console.log('Verificando estado de video en Luma, task_id:', taskId);
+      
       const response = await axios.get(
-        `https://api.lumalabs.ai/video/${taskId}`,
+        `https://api.lumalabs.ai/v1/video/${taskId}`,
         {
           headers: {
             'Authorization': `Bearer ${LUMA_API_KEY}`
           },
-          timeout: 5000
+          timeout: 10000
         }
       );
-
-      return res.json(response.data);
-      */
       
-      // Simulación de respuesta para propósitos de demostración
-      // Los estados posibles son: pending, processing, completed, failed
-      const mockStatus = Math.random() > 0.2 ? 'completed' : 'processing';
+      console.log('Respuesta de verificación de estado de Luma:', response.data);
       
-      const mockResponse = {
-        id: taskId,
-        status: mockStatus,
-        output: mockStatus === 'completed' ? {
-          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-        } : null
-      };
-
-      return res.json(mockResponse);
+      // Verificar si la respuesta tiene el formato esperado
+      if (response.data && response.data.status) {
+        // Los estados posibles son: pending, processing, completed, failed
+        // Mantenemos la misma estructura que la API devuelve
+        return res.json(response.data);
+      } else {
+        // Si la respuesta no tiene el formato esperado, lanzamos un error
+        console.error('Respuesta de Luma no tiene el formato esperado:', response.data);
+        throw new Error('Invalid response format from Luma');
+      }
     } catch (apiError: any) {
       console.error('Error checking Luma video task status:', apiError.message);
       
