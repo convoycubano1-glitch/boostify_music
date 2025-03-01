@@ -552,8 +552,18 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       
       if (response.data) {
         if (response.data.status === 'COMPLETED' && response.data.generated && response.data.generated.length > 0) {
+          // Verificar el formato de los datos generados
+          let imageUrl = '';
+          if (typeof response.data.generated[0] === 'string') {
+            imageUrl = response.data.generated[0];
+          } else if (response.data.generated[0] && response.data.generated[0].url) {
+            imageUrl = response.data.generated[0].url;
+          }
+          
+          console.log("Freepik direct API URL:", imageUrl);
+          
           return {
-            url: response.data.generated[0].url,
+            url: imageUrl,
             provider: 'freepik',
             taskId: taskId,
             status: 'COMPLETED',
@@ -576,7 +586,14 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       }
     } else {
       // Usar proxy del servidor para otros proveedores o si no hay clave API
-      const endpoint = `/api/proxy/${provider}/task-status/${taskId}`;
+      // Determinar el endpoint correcto según el proveedor
+      let endpoint;
+      if (provider === 'freepik') {
+        endpoint = `/api/proxy/freepik/task/${taskId}`;
+      } else {
+        endpoint = `/api/proxy/${provider}/task-status/${taskId}`;
+      }
+      console.log(`Verificando estado de tarea con ${provider} usando: ${endpoint}`);
       const response = await axios.get(endpoint);
       
       if (response.data) {
@@ -592,8 +609,24 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
           };
           
           // Tratar diferentes formatos de respuesta según el proveedor
-          if (provider === 'freepik' && response.data.generated) {
-            result.url = response.data.generated[0]?.url || '';
+          if (provider === 'freepik') {
+            // Manejo especial para Freepik, que puede tener la respuesta anidada en data
+            const freepikData = response.data.data || response.data;
+            if (freepikData.generated && freepikData.generated.length > 0) {
+              // Si es un string, usarlo directamente
+              if (typeof freepikData.generated[0] === 'string') {
+                result.url = freepikData.generated[0];
+              } 
+              // Si es un objeto con url, usar esa propiedad
+              else if (freepikData.generated[0] && freepikData.generated[0].url) {
+                result.url = freepikData.generated[0].url;
+              }
+              // Si no se cumple ninguna de las anteriores, usar el valor tal cual (podría ser una URL)
+              else if (freepikData.generated[0]) {
+                result.url = freepikData.generated[0];
+              }
+              console.log("Freepik image URL:", result.url);
+            }
           } else if (provider === 'kling' && response.data.data) {
             result.url = response.data.data[0]?.url || '';
           } else if ((provider === 'luma' || provider === 'kling') && response.data.output) {

@@ -615,10 +615,24 @@ router.get('/freepik/task/:taskId', async (req, res) => {
         const status = responseData.status;
         const responseTaskId = responseData.task_id || req.params.taskId;
         
+        // Verificar el formato exacto de responseData.generated para adaptarlo
+        let generatedContent = [];
+        if (status === 'COMPLETED' && responseData.generated) {
+          // Puede ser un array de strings o un array de objetos con url
+          if (typeof responseData.generated[0] === 'string') {
+            generatedContent = responseData.generated; // Ya es un array de strings
+          } else if (responseData.generated[0] && responseData.generated[0].url) {
+            generatedContent = responseData.generated.map((img: any) => img.url);
+          } else {
+            generatedContent = responseData.generated; // Mantener formato original
+          }
+        }
+        
+        console.log('Imagen generada en Freepik:', generatedContent);
+        
         const result = {
           data: {
-            generated: status === 'COMPLETED' && responseData.generated ? 
-              responseData.generated.map((img: any) => ({ url: img.url })) : [],
+            generated: generatedContent,
             task_id: responseTaskId,
             status: status
           }
