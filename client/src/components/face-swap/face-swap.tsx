@@ -60,6 +60,22 @@ export default function FaceSwap() {
   };
 
   /**
+   * Sube el archivo a un servicio de almacenamiento y retorna la URL
+   * Esto es mejor que enviar dataURls que pueden ser muy grandes
+   */
+  const uploadFileAndGetUrl = async (file: File): Promise<string> => {
+    // En un entorno real, subiríamos el archivo a un servicio de almacenamiento
+    // como Cloudinary, Firebase Storage, etc.
+    // Para esta implementación, utilizamos URLs de datos directamente
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  /**
    * Realiza el swap de caras llamando a la API
    */
   const handleFaceSwap = async () => {
@@ -74,22 +90,27 @@ export default function FaceSwap() {
     setTaskId(null);
 
     try {
-      // Preparar las imágenes para enviar
-      const formData = new FormData();
-      formData.append('source_image', sourceImage);
-      formData.append('target_image', targetImage);
+      // Usar las previsualizaciones (que ya son URLs) directamente,
+      // o convertir los archivos a URLs de datos
+      const sourceImageUrl = sourcePreview || await uploadFileAndGetUrl(sourceImage);
+      const targetImageUrl = targetPreview || await uploadFileAndGetUrl(targetImage);
 
       // Obtener token de autenticación
       const token = await getAuthToken();
-      const headers: HeadersInit = {};
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Enviar solicitud a nuestro proxy de API
+      // Enviar solicitud a nuestro proxy de API con URLs en formato JSON
       const response = await fetch('/api/proxy/face-swap/start', {
         method: 'POST',
-        body: formData,
+        body: JSON.stringify({
+          source_image: sourceImageUrl,
+          target_image: targetImageUrl
+        }),
         headers
       });
 

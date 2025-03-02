@@ -7,7 +7,7 @@
  * - Gestión de errores y respuestas de fallback
  */
 
-import { Router, Request } from 'express';
+import express, { Router, Request, Response } from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { log } from '../vite';
@@ -1441,83 +1441,74 @@ router.get('/status', (req, res) => {
 
 /**
  * Proxy para Face Swap - Endpoint para iniciar el proceso
- * Este endpoint adapta nuestra API interna al endpoint de PiAPI
+ * Implementación REAL usando el endpoint de PiAPI para face-swap
  */
 router.post('/proxy/face-swap/start', async (req: Request, res) => {
-  // Tipamos req como RequestWithFiles dentro de la función para evitar errores de tipado
-  const typedReq = req as unknown as RequestWithFiles;
   try {
     console.log('Recibida solicitud para iniciar face swap');
     
-    // Extraer las imágenes del form data o del body
-    let sourceImageData = req.body.source_image;
-    let targetImageData = req.body.target_image;
+    // Obtener imágenes del body
+    const { source_image, target_image, swap_image } = req.body;
     
-    // Si hay archivos, extraerlos
-    if (typedReq.files) {
-      const sourceImageFile = typedReq.files['source_image'];
-      const targetImageFile = typedReq.files['target_image'];
-      
-      if (sourceImageFile) {
-        if (Array.isArray(sourceImageFile)) {
-          sourceImageData = sourceImageFile[0].data.toString('base64');
-        } else {
-          sourceImageData = sourceImageFile.data.toString('base64');
-        }
-      }
-      
-      if (targetImageFile) {
-        if (Array.isArray(targetImageFile)) {
-          targetImageData = targetImageFile[0].data.toString('base64');
-        } else {
-          targetImageData = targetImageFile.data.toString('base64');
-        }
-      }
-    }
+    // Determinar qué variables usar (permitir ambas nomenclaturas)
+    const swapImageUrl = source_image || swap_image;
+    const targetImageUrl = target_image;
     
     // Verificar que tenemos ambas imágenes
-    if (!sourceImageData || !targetImageData) {
+    if (!swapImageUrl || !targetImageUrl) {
       return res.status(400).json({
         success: false,
-        error: 'Se requieren ambas imágenes (origen y destino)'
+        error: 'Se requieren dos URLs de imágenes (source_image/swap_image y target_image)'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
       });
     }
     
-    // En un entorno real, llamaríamos al endpoint de PiAPI
     try {
-      // Dado que no tenemos un servicio de PiAPI en este entorno, vamos a simular la respuesta
-      // En un entorno real, esta sería la llamada:
-      // const internalResponse = await axios.post('https://api.piapi.ai/api/face_swap/v1/async', {
-      //   swap_image: sourceImageData,
-      //   target_image: targetImageData,
-      //   result_type: 'url'
-      // }, {
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${PIAPI_API_KEY}`
-      //   }
-      // });
+      console.log('Llamando a PiAPI para face swap con imágenes:', { swapImageUrl, targetImageUrl });
       
-      // Simulamos la respuesta con un taskId único
-      const simulatedTaskId = `simulated-face-swap-${Date.now()}`;
+      // Llamada real a la API de PiAPI para face swap
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', {
+        model: "Qubico/image-toolkit",
+        task_type: "face-swap",
+        input: {
+          target_image: targetImageUrl,
+          swap_image: swapImageUrl
+        }
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': PIAPI_API_KEY
+        }
+      });
+      
+      console.log('Respuesta de PiAPI:', response.data);
+      
+      // Extraer el taskId de la respuesta
+      const taskId = response.data?.data?.task_id;
+      
+      if (!taskId) {
+        throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
+      }
       
       return res.json({
         success: true,
-        taskId: simulatedTaskId,
-        status: 'processing',
-        simulated: true
+        taskId: taskId,
+        status: 'processing'
       });
     } catch (internalError: any) {
-      console.error('Error llamando al endpoint interno:', internalError.message);
+      console.error('Error llamando al endpoint de PiAPI:', internalError.message);
+      console.error('Detalles completos del error:', internalError.response?.data || internalError);
       
-      // Generar un ID de tarea simulada para casos de error
-      const simulatedTaskId = `simulated-face-swap-error-${Date.now()}`;
-      
-      return res.json({
-        success: true,
-        taskId: simulatedTaskId,
-        status: 'processing',
-        simulated: true
+      return res.status(500).json({
+        success: false,
+        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI'
       });
     }
   } catch (error: any) {
@@ -1533,6 +1524,7 @@ router.post('/proxy/face-swap/start', async (req: Request, res) => {
 
 /**
  * Proxy para Face Swap - Endpoint para verificar el estado del proceso
+ * Implementación REAL usando el endpoint de PiAPI para verificar el estado
  */
 router.get('/proxy/face-swap/status', async (req, res) => {
   try {
@@ -1544,57 +1536,69 @@ router.get('/proxy/face-swap/status', async (req, res) => {
         error: 'Se requiere el ID de la tarea'
       });
     }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
     
-    // En un entorno real, llamaríamos al endpoint de PiAPI
     try {
-      // Simulamos la verificación de estado
-      // En un entorno real, esta sería la llamada:
-      // const internalResponse = await axios.get(`https://api.piapi.ai/api/face_swap/v1/async/${taskId}`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${PIAPI_API_KEY}`
-      //   }
-      // });
+      console.log('Verificando estado de tarea de PiAPI:', taskId);
       
-      // Simulamos una respuesta según el ID de la tarea
-      // Si el ID contiene 'error', simulamos un error
-      // Si no, simulamos un proceso exitoso después de algunas verificaciones
+      // Llamada real a la API de PiAPI para verificar estado
+      const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
+        headers: {
+          'x-api-key': PIAPI_API_KEY
+        }
+      });
       
-      const taskIdStr = taskId as string;
-      const taskCreationTime = parseInt(taskIdStr.split('-').pop() || '0');
-      const elapsedTime = Date.now() - taskCreationTime;
+      console.log('Respuesta de status de PiAPI:', response.data);
       
-      // Simulamos un tiempo de procesamiento de 5 segundos
-      if (taskIdStr.includes('error')) {
-        // Simulamos un error
-        return res.json({
-          status: 'failed',
-          errorMessage: 'Error simulado en el procesamiento de face swap',
-          success: false
-        });
-      } else if (elapsedTime < 5000) {
-        // Simulamos procesamiento en curso
-        const progress = Math.min(99, Math.floor((elapsedTime / 5000) * 100));
-        return res.json({
-          status: 'processing',
-          progress,
-          success: true
-        });
-      } else {
-        // Simulamos procesamiento completado
+      // Extraer el estado de la respuesta
+      const status = response.data?.data?.status?.toLowerCase() || 'processing';
+      
+      // Si la tarea está completada, obtenemos la URL del resultado
+      if (status === 'completed') {
+        const resultUrl = response.data?.data?.output?.image_url || response.data?.data?.output?.result_url;
+        
+        if (!resultUrl) {
+          throw new Error('No se encontró la URL del resultado en la respuesta de PiAPI');
+        }
+        
         return res.json({
           status: 'completed',
-          url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=500',
+          url: resultUrl,
+          success: true
+        });
+      } 
+      // Si la tarea falló, devolvemos un error
+      else if (status === 'failed') {
+        const errorMessage = response.data?.data?.error?.message || 'Error desconocido en el procesamiento';
+        
+        return res.json({
+          status: 'failed',
+          errorMessage: errorMessage,
+          success: false
+        });
+      } 
+      // Si la tarea sigue en proceso, devolvemos el estado
+      else {
+        return res.json({
+          status: 'processing',
+          progress: 50, // PiAPI no proporciona progreso exacto
           success: true
         });
       }
     } catch (internalError: any) {
-      console.error('Error llamando al endpoint interno de status:', internalError.message);
+      console.error('Error llamando al endpoint de PiAPI para status:', internalError.message);
+      console.error('Detalles completos del error:', internalError.response?.data || internalError);
       
-      // Para errores internos, simular procesamiento
-      return res.json({
-        status: 'processing',
-        progress: 50,
-        success: true
+      return res.status(500).json({
+        success: false,
+        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado'
       });
     }
   } catch (error: any) {

@@ -107,7 +107,7 @@ export function registerRoutes(app: Express): Server {
   app.use('/api/artist-generator', artistGeneratorRouter); // La URL resultante será /api/artist-generator/generate-artist
 
   // Registrar el router de proxy API (sin autenticación)
-  app.use('/api/proxy', apiProxyRouter);
+  app.use('/api', apiProxyRouter);
 
   // Servicios que requieren autenticación
   setupAuth(app);
