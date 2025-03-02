@@ -24,6 +24,7 @@ import CookiesPage from "@/pages/cookies";
 import DashboardPage from "@/pages/dashboard";
 import EcosystemPage from "@/pages/ecosystem";
 import EventsPage from "@/pages/events";
+import FaceSwapPage from "@/pages/face-swap";
 import GlobalPage from "@/pages/global";
 import HomePage from "@/pages/home";
 import ImageGeneratorPage from "@/pages/image-generator";
@@ -181,6 +182,7 @@ const Router = () => {
   const WrappedFirestoreSocialPage = withPageWrapper(FirestoreSocialPage);
   const WrappedImageGeneratorPage = withPageWrapper(ImageGeneratorPage);
   const WrappedImageGeneratorSimplePage = withPageWrapper(ImageGeneratorSimplePage);
+  const WrappedFaceSwapPage = withPageWrapper(FaceSwapPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -238,6 +240,7 @@ const Router = () => {
         <ProtectedRoute path="/firestore-social" component={WrappedFirestoreSocialPage} />
         <ProtectedRoute path="/image-generator" component={WrappedImageGeneratorPage} />
         <Route path="/image-generator-simple" component={WrappedImageGeneratorSimplePage} />
+        <Route path="/face-swap" component={WrappedFaceSwapPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

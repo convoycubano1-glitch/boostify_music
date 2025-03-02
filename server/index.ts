@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
 import cors from 'cors';
 import fs from 'fs';
+import fileUpload from 'express-fileupload';
 
 const app = express();
 
@@ -37,6 +38,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configurar middleware para procesamiento de archivos
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: '/tmp/',
+  createParentPath: true,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB máximo
+  abortOnLimit: true
+}));
 
 // Health check endpoint para monitoreo
 app.get('/api/health', (req, res) => {
