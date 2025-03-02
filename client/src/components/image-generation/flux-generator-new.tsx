@@ -66,7 +66,7 @@ export function FluxGenerator({
         const images = fluxLocalStorageService.getImages();
         
         // Filtrar imágenes sin URLs
-        const completedImages = images.filter((img: any) => img.url && img.url.length > 0);
+        const completedImages = images.filter(img => img.url && img.url.length > 0);
         console.log(`Loaded ${completedImages.length} saved Flux images from localStorage`);
         
         // Si no hay imágenes, mostrar una imagen de muestra para mejor UX
