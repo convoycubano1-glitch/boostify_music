@@ -1,0 +1,74 @@
+Unified API Schema
+Introduction
+As PiAPI's range of models and services has expanded, it has become increasingly challenging for both us to manage and for our users to integrate with various APIs. To simplify the experience and streamline the process, we are moving towards a Unified API. This new schema allows users to interact with all models and services through just two endpoints: create task and get task.
+
+By consolidating into this unified approach, we aim to reduce complexity while maintaining the full power of our API services. Everything stays the same, except for a few key parameters in the create task request body: model, task_type, and input.
+
+Key Benefits of the Unified API
+Simplified Integration: Users no longer need to interact with multiple endpoints for different models or tasks. With just two endpoints, you can create tasks and fetch results across all models and services.
+
+Consistency: The request and response formats remain consistent across all models, making it easier to build and scale your integrations.
+
+Scalability: As we add more models and services, this unified schema will ensure that your integration process remains as straightforward as possible, without the need to learn new APIs for each service.
+
+Webhooks: Unified API has built-in support for webhooks. Check Webhook for more details.
+
+Unified API Structure
+The Unified API is designed with simplicity in mind. All models and services are accessed via:
+
+1.
+Create Task Endpoint: Submit a task to any model or service.
+
+2.
+Get Task Endpoint: Retrieve the status and result of the submitted task.
+
+In the create task request body, you will need to specify three main components:
+
+model: The specific model you wish to interact with.
+
+task_type: The type of task (e.g., image generation, text generation).
+
+input: The inputs specific to the task and model (e.g., text prompts, image sizes).
+
+Example Workflow
+To demonstrate how the Unified API works, here are examples of how to use the create task and get task endpoints to interact with our models.
+
+Create Task: Submit a task to generate an image using the model "Qubico/flux1-dev."
+import requests
+import json
+ 
+url = "https://api.piapi.ai/api/v1/task" 
+ 
+payload = json.dumps({
+    "model": "Qubico/flux1-dev",
+    "task_type": "txt2img",
+    "input": {
+        "prompt": "a little cat",
+        "width": 1024, 
+        "height": 1024 
+    } 
+})
+headers = {
+  'X-API-Key': 'YOU-PIAPI-KEY', 
+  'Content-Type': 'application/json'
+}
+ 
+response = requests.request("POST", url, headers=headers, data=payload)
+ 
+print(response.text)
+Get Task: Fetch the status and results of the task once it's completed.
+import requests
+ 
+url = "https://api.piapi.ai/api/v1/task/56ea8da3-8507-4118-9f1e-111111111111" 
+ 
+payload={}
+headers = {
+  'X-API-Key': 'YOUR_PIAPI_KEY', 
+  'Content-Type': 'application/json'
+}
+ 
+response = requests.request("GET", url, headers=headers, data=payload)
+ 
+print(response.text)
+Important Note
+While we are excited about this unified approach, it’s important to clarify that the old API schema is not deprecated. All legacy schemas are still fully functional and will continue to work as expected. However, we highly recommend transitioning to the Unified API for future projects as it offers a more streamlined and efficient experience.
