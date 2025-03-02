@@ -44,6 +44,7 @@ export function FluxGenerator({
   const [model, setModel] = useState<FluxModel>(FluxModel.FLUX1_DEV);
   const [loraType, setLoraType] = useState<FluxLoraType | ''>('');
   const [useLoRA, setUseLoRA] = useState(false);
+  const [loraStrength, setLoraStrength] = useState<number>(0.7); // Valor por defecto 0.7 (70%)
   const [localIsGenerating, localSetIsGenerating] = useState(false);
   
   // Usar el estado externo si se proporciona, si no, usar el estado local
@@ -255,7 +256,7 @@ export function FluxGenerator({
         negativePrompt: negativePrompt,
         modelType: model,
         loraType: useLoRA ? loraType : undefined,
-        loraStrength: useLoRA ? 1.0 : undefined,
+        loraStrength: useLoRA ? loraStrength : undefined,
         taskType: taskType
       });
       
@@ -469,26 +470,63 @@ export function FluxGenerator({
                   </div>
                   
                   {useLoRA && (
-                    <Select 
-                      value={loraType} 
-                      onValueChange={(value) => setLoraType(value as FluxLoraType)}
-                      disabled={!useLoRA}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar estilo LoRA" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={FluxLoraType.ANIME}>Anime</SelectItem>
-                        <SelectItem value={FluxLoraType.ART}>Arte</SelectItem>
-                        <SelectItem value={FluxLoraType.DISNEY}>Disney</SelectItem>
-                        <SelectItem value={FluxLoraType.MJV6}>MidJourney v6</SelectItem>
-                        <SelectItem value={FluxLoraType.REALISM}>Realismo</SelectItem>
-                        <SelectItem value={FluxLoraType.SCENERY}>Paisajes</SelectItem>
-                        <SelectItem value={FluxLoraType.CYBERPUNK_ANIME}>Cyberpunk Anime</SelectItem>
-                        <SelectItem value={FluxLoraType.GRAPHIC_PORTRAIT}>Retratos Gráficos</SelectItem>
-                        <SelectItem value={FluxLoraType.FRACTAL}>Geometría Fractal</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-4">
+                      <Select 
+                        value={loraType} 
+                        onValueChange={(value) => setLoraType(value as FluxLoraType)}
+                        disabled={!useLoRA}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar estilo LoRA" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px] overflow-y-auto">
+                          <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">-- Modelos de XLabs-AI --</div>
+                          <SelectItem value={FluxLoraType.ANIME}>Anime</SelectItem>
+                          <SelectItem value={FluxLoraType.ART}>Arte</SelectItem>
+                          <SelectItem value={FluxLoraType.DISNEY}>Disney</SelectItem>
+                          <SelectItem value={FluxLoraType.FURRY}>Furry</SelectItem>
+                          <SelectItem value={FluxLoraType.MJV6}>MidJourney v6</SelectItem>
+                          <SelectItem value={FluxLoraType.REALISM}>Realismo</SelectItem>
+                          <SelectItem value={FluxLoraType.SCENERY}>Paisajes</SelectItem>
+                          
+                          <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">-- Modelos Artísticos --</div>
+                          <SelectItem value={FluxLoraType.COLLAGE_ARTSTYLE}>Collage Artístico</SelectItem>
+                          <SelectItem value={FluxLoraType.CREEPYCUTE}>Creepycute</SelectItem>
+                          <SelectItem value={FluxLoraType.CYBERPUNK_ANIME}>Cyberpunk Anime</SelectItem>
+                          <SelectItem value={FluxLoraType.DECO_PULSE}>Deco Pulse</SelectItem>
+                          <SelectItem value={FluxLoraType.DEEP_SEA}>Deep Sea Particle</SelectItem>
+                          <SelectItem value={FluxLoraType.FAETASTIC}>Detalles Faetásticos</SelectItem>
+                          <SelectItem value={FluxLoraType.FRACTAL}>Geometría Fractal</SelectItem>
+                          <SelectItem value={FluxLoraType.GALACTIXY}>Ilustraciones Galácticas</SelectItem>
+                          <SelectItem value={FluxLoraType.GEOMETRIC_WOMAN}>Mujer Geométrica</SelectItem>
+                          <SelectItem value={FluxLoraType.GRAPHIC_PORTRAIT}>Retratos Gráficos</SelectItem>
+                          <SelectItem value={FluxLoraType.MAT_MILLER}>Estilo Mat Miller</SelectItem>
+                          <SelectItem value={FluxLoraType.MOEBIUS}>Estilo Moebius</SelectItem>
+                          <SelectItem value={FluxLoraType.ISOMETRIC}>Cuartos 3D Isométricos</SelectItem>
+                          <SelectItem value={FluxLoraType.PAPER_QUILLING}>Papel Quilling y Capas</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Intensidad LoRA</label>
+                          <span className="text-xs text-gray-500">{Math.round(loraStrength * 100)}%</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0.1" 
+                          max="1.0" 
+                          step="0.1" 
+                          value={loraStrength}
+                          onChange={(e) => setLoraStrength(parseFloat(e.target.value))}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Sutil</span>
+                          <span>Intenso</span>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

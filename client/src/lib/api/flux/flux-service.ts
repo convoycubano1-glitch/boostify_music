@@ -29,8 +29,12 @@ export enum FluxTaskType {
 
 /**
  * Tipos de LoRA disponibles
+ * Fuentes:
+ * 1. XLabs-AI/flux-lora-collection en Hugging Face
+ * 2. Varios modelos de Civitai adaptados para Flux
  */
 export enum FluxLoraType {
+  // Colección básica de XLabs-AI
   ANIME = 'anime',
   ART = 'art',
   DISNEY = 'disney',
@@ -38,6 +42,8 @@ export enum FluxLoraType {
   MJV6 = 'mjv6',
   REALISM = 'realism',
   SCENERY = 'scenery',
+  
+  // Modelos adicionales de Civitai y otras fuentes
   COLLAGE_ARTSTYLE = 'collage-artstyle',
   CREEPYCUTE = 'creepcute',
   CYBERPUNK_ANIME = 'cyberpunk-anime-style',

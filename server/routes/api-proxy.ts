@@ -816,8 +816,11 @@ router.post('/flux/generate-image', async (req, res) => {
       guidance_scale = 2.5,
       model = 'Qubico/flux1-dev',
       task_type = 'txt2img',
-      lora_settings,
-      control_net_settings
+      loraType,               // Nuevo parámetro individual para tipo de LoRA
+      loraStrength,           // Nuevo parámetro individual para intensidad de LoRA
+      modelType,              // Nombre alternativo para modelo
+      lora_settings,          // Configuración de LoRA en formato de array
+      control_net_settings    // Configuración de ControlNet
     } = req.body;
     
     if (!prompt) {
@@ -840,9 +843,12 @@ router.post('/flux/generate-image', async (req, res) => {
       });
     }
 
+    // Usar modelType si está disponible, de lo contrario usar model
+    const actualModel = modelType || model;
+
     // Construir el payload según el tipo de tarea
     const payload: any = {
-      model,
+      model: actualModel,
       task_type,
       input: {
         prompt,
@@ -852,14 +858,41 @@ router.post('/flux/generate-image', async (req, res) => {
       }
     };
     
-    // Agregar configuración de LoRA si está presente
-    if (lora_settings && Array.isArray(lora_settings) && lora_settings.length > 0) {
+    // Manejo de LoRA: primero verificar los parámetros individuales
+    if (loraType) {
+      console.log(`Configurando LoRA con tipo: ${loraType}, intensidad: ${loraStrength || 0.7}`);
+      
+      // Crear la configuración de LoRA con los parámetros individuales
+      const loraConfig = {
+        lora_type: loraType,
+        lora_strength: loraStrength || 0.7 // Usar valor predeterminado si no se proporciona
+      };
+      
+      // Añadir la configuración de LoRA al payload
+      payload.input.lora_settings = [loraConfig];
+      
+      // Asegurarse de usar el modelo avanzado para LoRA
+      if (!actualModel.includes('advanced')) {
+        payload.model = 'Qubico/flux1-dev-advanced';
+      }
+      
+      // Asegurarse de usar el tipo de tarea correcto para LoRA
+      if (!task_type.includes('lora')) {
+        payload.task_type = 'txt2img-lora';
+      }
+    }
+    // Si no hay loraType pero sí hay lora_settings, usar esa configuración
+    else if (lora_settings && Array.isArray(lora_settings) && lora_settings.length > 0) {
       payload.input.lora_settings = lora_settings;
       
       // Si usamos LoRA, asegurarse de que estamos usando el modelo avanzado
-      if (model !== 'Qubico/flux1-dev-advanced') {
+      if (!actualModel.includes('advanced')) {
         payload.model = 'Qubico/flux1-dev-advanced';
-        payload.task_type = task_type.includes('lora') ? task_type : 'txt2img-lora';
+      }
+      
+      // Asegurarse de usar el tipo de tarea correcto para LoRA
+      if (!task_type.includes('lora')) {
+        payload.task_type = 'txt2img-lora';
       }
     }
     

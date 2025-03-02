@@ -30,16 +30,11 @@ import {
   CloudUpload
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { 
-  generateImage, 
-  generateVideo, 
-  saveGeneratedContent,
-  checkTaskStatus,
-  multiPlatformGenerator,
-  ImageResult,
+// Import with @ alias
+import type { 
+  ImageResult, 
   VideoResult 
-} from '@/lib/api/multi-platform-generator';
-import { FreepikModel } from '@/lib/api/freepik-service';
+} from '@/lib/api/generation-types';
 import { 
   saveGeneratedImage, 
   getGeneratedImages, 
@@ -47,17 +42,15 @@ import {
   getGeneratedVideos,
   saveMediaToLocalStorage
 } from '@/lib/api/generated-images-service';
-import { FreepikGenerator } from '@/components/image-generation';
 import { FluxGenerator } from '@/components/image-generation/flux-generator-new';
 
 // Form validation schemas
 const imageFormSchema = z.object({
   prompt: z.string().min(3, { message: 'Prompt must be at least 3 characters long' }),
   negativePrompt: z.string().optional(),
-  apiProvider: z.enum(['fal', 'freepik', 'kling']),
+  apiProvider: z.enum(['fal', 'kling']),
   imageSize: z.enum(['small', 'medium', 'large']).default('medium'),
   imageCount: z.number().min(1).max(4).default(1),
-  freepikModel: z.nativeEnum(FreepikModel).optional(),
 });
 
 const videoFormSchema = z.object({
@@ -72,7 +65,7 @@ type VideoFormValues = z.infer<typeof videoFormSchema>;
 
 export default function ImageGeneratorPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'freepik' | 'flux'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'flux'>('image');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [generatedVideos, setGeneratedVideos] = useState<VideoResult[]>([]);
@@ -90,7 +83,6 @@ export default function ImageGeneratorPage() {
       apiProvider: 'fal',
       imageSize: 'medium',
       imageCount: 1,
-      freepikModel: FreepikModel.MYSTIC,
     },
   });
 
@@ -104,6 +96,29 @@ export default function ImageGeneratorPage() {
       style: 'cinematic',
     },
   });
+
+  // Function to generate image through API
+  async function generateImage(params: {
+    prompt: string;
+    negativePrompt?: string;
+    apiProvider: string;
+    imageSize: string;
+    imageCount: number;
+  }): Promise<ImageResult> {
+    const res = await fetch('/api/image/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to generate image: ${res.statusText}`);
+    }
+    
+    return await res.json();
+  }
 
   // Handle image generation
   const onImageSubmit = async (values: ImageFormValues) => {
@@ -124,7 +139,6 @@ export default function ImageGeneratorPage() {
         apiProvider: values.apiProvider,
         imageSize: values.imageSize,
         imageCount: values.imageCount,
-        freepikModel: values.apiProvider === 'freepik' ? values.freepikModel : undefined,
       });
 
       console.log('Resultado de generación:', result);
@@ -206,6 +220,62 @@ export default function ImageGeneratorPage() {
       setIsGenerating(false);
     }
   };
+
+  // Function to generate video through API
+  async function generateVideo(params: {
+    prompt: string;
+    apiProvider: string;
+    duration: number;
+    style: string;
+  }): Promise<VideoResult> {
+    const res = await fetch('/api/video/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to generate video: ${res.statusText}`);
+    }
+    
+    return await res.json();
+  }
+
+  // Function to check task status for async generation
+  async function checkTaskStatus(taskId: string, provider: string): Promise<any> {
+    const res = await fetch(`/api/task/status?taskId=${taskId}&provider=${provider}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to check task status: ${res.statusText}`);
+    }
+    
+    return await res.json();
+  }
+
+  // Function to save generated content
+  async function saveGeneratedContent(content: ImageResult | VideoResult, type: 'image' | 'video'): Promise<string> {
+    const res = await fetch(`/api/media/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content, type }),
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to save content: ${res.statusText}`);
+    }
+    
+    const data = await res.json();
+    return data.id;
+  }
 
   // Handle video generation
   const onVideoSubmit = async (values: VideoFormValues) => {
@@ -296,14 +366,14 @@ export default function ImageGeneratorPage() {
           if (pendingImg.taskId) {
             try {
               // Determinar el proveedor basado en la cadena del proveedor
-              const provider = pendingImg.provider.includes('freepik') 
-                ? 'freepik' 
-                : (pendingImg.provider.includes('kling') ? 'kling' : 'fal');
+              const provider = pendingImg.provider.includes('kling') 
+                ? 'kling' 
+                : 'fal';
               
               console.log(`Verificando tarea ${pendingImg.taskId} de ${provider}...`);
               
               // Verificar estado actual
-              const result = await multiPlatformGenerator.checkTaskStatus(
+              const result = await checkTaskStatus(
                 pendingImg.taskId, 
                 provider
               );
@@ -539,8 +609,6 @@ export default function ImageGeneratorPage() {
     switch (provider) {
       case 'fal':
         return <PictureInPicture2 className="h-4 w-4" />;
-      case 'freepik':
-        return <ImageIcon className="h-4 w-4" />;
       case 'kling':
         return <FilmIcon className="h-4 w-4" />;
       case 'luma':
@@ -554,18 +622,14 @@ export default function ImageGeneratorPage() {
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">AI Media Generator</h1>
       <p className="text-gray-500 dark:text-gray-400 mb-8">
-        Create stunning images and videos with our multi-platform AI generator
+        Create stunning images and videos with our AI generator
       </p>
 
-      <Tabs defaultValue="image" value={activeTab} onValueChange={(value) => setActiveTab(value as 'image' | 'video' | 'freepik' | 'flux')}>
+      <Tabs defaultValue="image" value={activeTab} onValueChange={(value) => setActiveTab(value as 'image' | 'video' | 'flux')}>
         <TabsList className="mb-4">
           <TabsTrigger value="image">
             <ImageIcon className="mr-2 h-4 w-4" />
-            Multi-Platform
-          </TabsTrigger>
-          <TabsTrigger value="freepik">
-            <ImageIcon className="mr-2 h-4 w-4" />
-            Freepik
+            Image
           </TabsTrigger>
           <TabsTrigger value="flux">
             <PictureInPicture2 className="mr-2 h-4 w-4" />
@@ -585,40 +649,21 @@ export default function ImageGeneratorPage() {
                 <CardTitle>
                   {activeTab === 'image' 
                     ? 'Image Generator' 
-                    : activeTab === 'freepik' 
-                      ? 'Freepik Generator'
-                      : activeTab === 'flux'
-                        ? 'Flux AI Generator'
-                        : 'Video Generator'
+                    : activeTab === 'flux'
+                      ? 'Flux AI Generator'
+                      : 'Video Generator'
                   }
                 </CardTitle>
                 <CardDescription>
                   {activeTab === 'image' 
-                    ? 'Create AI-powered images with our multi-model generator.' 
-                    : activeTab === 'freepik'
-                      ? 'Generate high-quality images with dedicated Freepik models.'
-                      : activeTab === 'flux'
-                        ? 'Advanced AI image generation with LoRA and ControlNet features.'
-                        : 'Generate dynamic videos with advanced AI technology.'}
+                    ? 'Create AI-powered images with our generator.' 
+                    : activeTab === 'flux'
+                      ? 'Advanced AI image generation with LoRA and ControlNet features.'
+                      : 'Generate dynamic videos with advanced AI technology.'}
                 </CardDescription>
               </CardHeader>
               
-              <TabsContent value="freepik" className="mt-0">
-                <CardContent>
-                  <FreepikGenerator 
-                    onGeneratedImage={(image) => {
-                      // Add the newly generated image to our images list
-                      setGeneratedImages(prev => [image, ...prev]);
-                      // Also set it as selected image
-                      setSelectedImage(image);
-                      // Stop loading state
-                      setIsGenerating(false);
-                    }}
-                    isGenerating={isGenerating}
-                    setIsGenerating={setIsGenerating}
-                  />
-                </CardContent>
-              </TabsContent>
+
               
               <TabsContent value="flux" className="mt-0">
                 <CardContent>
@@ -704,14 +749,6 @@ export default function ImageGeneratorPage() {
                                 </FormItem>
                                 <FormItem className="flex items-center space-x-3 space-y-0">
                                   <FormControl>
-                                    <RadioGroupItem value="freepik" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    Freepik
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
                                     <RadioGroupItem value="kling" />
                                   </FormControl>
                                   <FormLabel className="font-normal">
@@ -725,38 +762,7 @@ export default function ImageGeneratorPage() {
                         )}
                       />
 
-                      {/* Conditional Freepik model selection */}
-                      {imageForm.watch('apiProvider') === 'freepik' && (
-                        <FormField
-                          control={imageForm.control}
-                          name="freepikModel"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Freepik Model</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select model" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value={FreepikModel.MYSTIC}>Mystic</SelectItem>
-                                  <SelectItem value={FreepikModel.IMAGEN3}>Imagen3</SelectItem>
-                                  <SelectItem value={FreepikModel.CLASSIC}>Classic</SelectItem>
-                                  <SelectItem value={FreepikModel.FLUX_DEV}>Flux Dev</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormDescription>
-                                Each model has different strengths and styles
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
+                      {/* Model selection removed */}
 
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
@@ -998,93 +1004,17 @@ export default function ImageGeneratorPage() {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle>
-                  {activeTab === 'image' || activeTab === 'freepik' ? 'Generated Images' : 'Generated Videos'}
+                  {activeTab === 'image' ? 'Generated Images' : 'Generated Videos'}
                 </CardTitle>
                 <CardDescription>
-                  {activeTab === 'image' || activeTab === 'freepik'
+                  {activeTab === 'image'
                     ? 'View and manage your AI-generated images'
                     : 'View and manage your AI-generated videos'}
                 </CardDescription>
               </CardHeader>
               
               <CardContent>
-                <TabsContent value="freepik" className="mt-0">
-                  {generatedImages.length === 0 ? (
-                    <div className="text-center py-12">
-                      <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-semibold">No Freepik images yet</h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Generate your first Freepik image to see it here
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {generatedImages
-                        .filter(img => img.provider && img.provider.toLowerCase().includes('freepik'))
-                        .map((image, index) => (
-                          <div 
-                            key={`freepik-${index}`} 
-                            className="relative group cursor-pointer overflow-hidden rounded-lg"
-                            onClick={() => handleImageSelect(image)}
-                          >
-                            {image.url ? (
-                              <img 
-                                src={image.url} 
-                                alt={`Generated Freepik image ${index + 1}`} 
-                                className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
-                                onError={(e) => {
-                                  console.error(`Error loading Freepik image: ${image.url}`);
-                                  e.currentTarget.src = '/assets/freepik__boostify_music_organe_abstract_icon.png';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-40 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                                <ImageIcon className="h-10 w-10 text-gray-400" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                              <Button 
-                                variant="secondary" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownload(image.url, 'image');
-                                }}
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
-                              </Button>
-                              <Button 
-                                variant="secondary" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSaveToFirestore(image, 'image');
-                                }}
-                                disabled={!!image.firestoreId}
-                              >
-                                {image.firestoreId ? (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
-                                    Saved
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save className="h-4 w-4 mr-1" />
-                                    Save
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                            <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center">
-                              {getProviderIcon(image.provider)}
-                              <span className="ml-1 capitalize">{image.provider}</span>
-                            </div>
-                          </div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
+
                 
                 <TabsContent value="image" className="mt-0">
                   {generatedImages.length === 0 ? (
@@ -1112,7 +1042,7 @@ export default function ImageGeneratorPage() {
                               onError={(e) => {
                                 console.error(`Error loading image: ${image.url}`);
                                 // Establecer una imagen de fallback local
-                                e.currentTarget.src = '/assets/freepik__boostify_music_organe_abstract_icon.png';
+                                e.currentTarget.src = '/assets/boostify_music_icon.png';
                               }}
                             />
                           ) : (
@@ -1243,16 +1173,16 @@ export default function ImageGeneratorPage() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              {activeTab === 'image' || activeTab === 'freepik' ? 'Image Details' : 'Video Details'}
+              {activeTab === 'image' ? 'Image Details' : 'Video Details'}
             </DialogTitle>
             <DialogDescription>
-              {activeTab === 'image' || activeTab === 'freepik'
+              {activeTab === 'image'
                 ? 'View and manage your generated image' 
                 : 'View and manage your generated video'}
             </DialogDescription>
           </DialogHeader>
 
-          {(activeTab === 'image' || activeTab === 'freepik') && selectedImage && (
+          {activeTab === 'image' && selectedImage && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="flex items-center justify-center">
                 <img 
@@ -1261,7 +1191,7 @@ export default function ImageGeneratorPage() {
                   className="max-w-full max-h-[400px] rounded-lg object-contain"
                   onError={(e) => {
                     console.error(`Error loading detail image: ${selectedImage.url}`);
-                    e.currentTarget.src = '/assets/freepik__boostify_music_organe_abstract_icon.png';
+                    e.currentTarget.src = '/assets/boostify_music_icon.png';
                   }}
                 />
               </div>
@@ -1316,7 +1246,7 @@ export default function ImageGeneratorPage() {
 
           <DialogFooter>
             <div className="flex gap-2">
-              {(activeTab === 'image' || activeTab === 'freepik') && selectedImage && (
+              {activeTab === 'image' && selectedImage && (
                 <>
                   <Button 
                     variant="outline"
