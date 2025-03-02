@@ -1,11 +1,20 @@
-import { loadStripe } from '@stripe/stripe-js';
 import { auth } from '@/lib/firebase';
 
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing Stripe public key');
-}
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Definir función para cargar Stripe de forma lazy solo cuando sea necesario
+const getStripe = async () => {
+  try {
+    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+      throw new Error('Missing Stripe public key');
+    }
+    
+    // Importación dinámica para evitar cargar Stripe en la inicialización
+    const { loadStripe } = await import('@stripe/stripe-js');
+    return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+  } catch (error) {
+    console.error('Error loading Stripe:', error);
+    return null;
+  }
+};
 
 export async function createPaymentSession(booking: {
   musicianId: string;
@@ -46,7 +55,7 @@ export async function createPaymentSession(booking: {
 
     console.log('Successfully created checkout session:', data.sessionId);
 
-    const stripe = await stripePromise;
+    const stripe = await getStripe();
     if (!stripe) {
       throw new Error('Stripe not initialized');
     }
@@ -110,7 +119,7 @@ export async function createCourseEnrollmentSession(course: {
 
     console.log('Successfully created checkout session:', data.sessionId);
 
-    const stripe = await stripePromise;
+    const stripe = await getStripe();
     if (!stripe) {
       throw new Error('Stripe not initialized');
     }

@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users, Key, Video, FileText, MessageSquare, Eye, Database, Brain, Music2, Scissors, Type, Sparkles, Music, Search, Image } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { loadStripe } from "@stripe/stripe-js";
+// Stripe is loaded dynamically to prevent initialization errors
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getAuthToken } from "@/lib/firebase";
 import { createYouTubeViewsOrder, checkApifyRun, YouTubeViewsData } from "@/lib/youtube-store";
@@ -32,7 +32,16 @@ import {
 import { Users2 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Function to load Stripe dynamically
+const getStripe = async () => {
+  try {
+    const { loadStripe } = await import('@stripe/stripe-js');
+    return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+  } catch (error) {
+    console.error('Error loading Stripe:', error);
+    return null;
+  }
+};
 
 const viewsPackages = [
   {
@@ -146,7 +155,7 @@ export default function YoutubeViewsPage() {
         throw new Error('Failed to create order');
       }
 
-      const stripe = await stripePromise;
+      const stripe = await getStripe();
       if (!stripe) {
         throw new Error("Could not initialize Stripe");
       }
