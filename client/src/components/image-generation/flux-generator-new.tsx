@@ -109,6 +109,11 @@ export function FluxGenerator({
     let interval: NodeJS.Timeout | null = null;
     
     if (pendingTaskId) {
+      // Determinar el intervalo de verificación (más rápido para tareas simuladas)
+      const checkInterval = pendingTaskId.startsWith('simulated-') ? 1000 : 3000;
+      
+      console.log(`Configurando verificación de estado para tarea ${pendingTaskId} cada ${checkInterval}ms`);
+      
       interval = setInterval(async () => {
         try {
           // Verificar estado de la tarea en el servidor
@@ -130,10 +135,13 @@ export function FluxGenerator({
             if (imageUrl) {
               console.log('URL de imagen encontrada:', imageUrl);
               
+              // Marcar la imagen como simulada si viene de una respuesta simulada
+              const providerSuffix = result.data.simulated ? '-simulado' : model;
+              
               // Crear objeto de imagen completada
               const completedImage: ImageResult = {
                 url: imageUrl,
-                provider: `flux-${model}`,
+                provider: `flux-${providerSuffix}`,
                 taskId: pendingTaskId,
                 status: 'COMPLETED',
                 prompt: prompt,
@@ -188,7 +196,7 @@ export function FluxGenerator({
         } catch (error) {
           console.error('Error checking Flux task status:', error);
         }
-      }, 3000);
+      }, checkInterval);
     }
     
     // Limpiar intervalo al desmontar
@@ -266,10 +274,19 @@ export function FluxGenerator({
         // Guardar el ID de tarea para verificaciones periódicas
         setPendingTaskId(response.data.task_id);
         
-        toast({
-          title: 'Generación iniciada',
-          description: 'Tu imagen está siendo generada. Esto puede tomar unos segundos...',
-        });
+        // Si la respuesta está marcada como simulada, mostrar toast informativo
+        if (response.data.simulated) {
+          console.log('Respuesta simulada detectada, usando imágenes de muestra');
+          toast({
+            title: 'Modo Simulación',
+            description: 'Ejecutando en modo de simulación debido a la configuración del API_KEY',
+          });
+        } else {
+          toast({
+            title: 'Generación iniciada',
+            description: 'Tu imagen está siendo generada. Esto puede tomar unos segundos...',
+          });
+        }
       } else {
         throw new Error('No se recibió ID de tarea de Flux');
       }
