@@ -13,7 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Image as ImageIcon, Save, RefreshCw } from 'lucide-react';
-import { FluxModel, FluxTaskType, FluxLoraType } from '@/lib/api/flux/flux-service';
+import { 
+  FluxModel, 
+  FluxTaskType, 
+  FluxLoraType, 
+  FluxTextToImageOptions, 
+  fluxService, 
+  canUseFluxDirectly 
+} from '@/lib/api/flux/flux-service';
 import { ImageResult } from '@/lib/types/model-types';
 import { fluxLocalStorageService } from '@/lib/api/flux/flux-local-storage-service';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +58,48 @@ export function FluxGenerator({
   
   const { toast } = useToast();
   
+  // Función para simular la generación de imagen como fallback
+  const simulateImageGeneration = () => {
+    console.log('Simulando generación de imagen como fallback');
+    
+    // Simulamos un tiempo de generación
+    setTimeout(() => {
+      // Usar la imagen de perro callejero como respuesta
+      const imageUrl = "https://img.theapi.app/temp/33c6ba8c-7f33-48f1-93c7-c16fd09de9cf.png";
+      const completedImage: ImageResult = {
+        url: imageUrl,
+        provider: `flux-${model}-fallback`,
+        taskId: `simulated-${Date.now()}`,
+        status: 'COMPLETED',
+        prompt: prompt,
+        createdAt: new Date()
+      };
+      
+      // Actualizar estado
+      setGeneratedImage(completedImage);
+      setPendingTaskId(null);
+      setIsGenerating(false);
+      
+      // Añadir a imágenes guardadas si no está ya
+      setSavedImages(prev => {
+        if (!prev.some(img => img.url === imageUrl)) {
+          return [completedImage, ...prev];
+        }
+        return prev;
+      });
+      
+      // Notificar al componente padre
+      if (onGeneratedImage) {
+        onGeneratedImage(completedImage);
+      }
+      
+      toast({
+        title: 'Imagen Generada (Simulada)',
+        description: 'Se ha generado una imagen simulada debido a problemas con la API',
+      });
+    }, 2000); // Simular 2 segundos de generación
+  };
+  
   // Cargar imágenes guardadas al montar el componente
   useEffect(() => {
     async function loadSavedImages() {
@@ -83,13 +132,30 @@ export function FluxGenerator({
     if (pendingTaskId) {
       interval = setInterval(async () => {
         try {
-          // Usar axios directamente para verificar el estado
-          const result = await axios.get(`/api/proxy/flux/task/${pendingTaskId}`);
+          let result;
+          
+          if (canUseFluxDirectly() && !pendingTaskId.startsWith('simulated-')) {
+            // Usar el servicio Flux directamente para verificar el estado
+            console.log('Verificando estado de tarea directamente con Flux:', pendingTaskId);
+            try {
+              result = await fluxService.checkTaskStatus(pendingTaskId);
+              console.log('Respuesta directa de estado de Flux:', result);
+            } catch (error) {
+              console.error('Error verificando estado directamente con Flux:', error);
+              // Intentar con proxy como fallback
+              result = await axios.get(`/api/proxy/flux/task/${pendingTaskId}`);
+              console.log('Respuesta de proxy para estado de Flux:', result);
+            }
+          } else {
+            // Usar proxy para tareas iniciadas a través del proxy
+            console.log('Verificando estado de tarea vía proxy:', pendingTaskId);
+            result = await axios.get(`/api/proxy/flux/task/${pendingTaskId}`);
+          }
           
           console.log('Flux task status update:', result);
           
           // Verificar si la tarea está completada
-          if (result.data.data && result.data.data.status === 'completed') {
+          if (result.data && result.data.data && result.data.data.status === 'completed') {
             // Primero intentar obtener la URL de la imagen del campo output.images (array)
             let imageUrl = null;
             
@@ -146,7 +212,7 @@ export function FluxGenerator({
               console.error('Tarea completada pero no se encontró URL de imagen:', result.data);
             }
           } 
-          else if (result.data.data && result.data.data.status === 'failed') {
+          else if (result.data && result.data.data && result.data.data.status === 'failed') {
             // Tarea fallida
             setPendingTaskId(null);
             setIsGenerating(false);
@@ -158,6 +224,11 @@ export function FluxGenerator({
           }
         } catch (error) {
           console.error('Error checking Flux task status:', error);
+          // En caso de error en la verificación de estado, podríamos considerar simular una respuesta exitosa
+          if (pendingTaskId && pendingTaskId.startsWith('simulated-')) {
+            simulateImageGeneration();
+            setPendingTaskId(null);
+          }
         }
       }, 3000);
     }
@@ -218,45 +289,57 @@ export function FluxGenerator({
         }
       }
       
-      // En lugar de llamar a la API, vamos a simular la generación para evitar problemas
-      // Esta es una solución temporal mientras resolvemos los problemas de Firestore
-      
-      // Simulamos un tiempo de generación
-      setTimeout(() => {
-        // Usar la imagen de perro callejero como respuesta
-        const imageUrl = "https://img.theapi.app/temp/33c6ba8c-7f33-48f1-93c7-c16fd09de9cf.png";
-        const completedImage: ImageResult = {
-          url: imageUrl,
-          provider: `flux-${model}`,
-          taskId: `simulated-${Date.now()}`,
-          status: 'COMPLETED',
-          prompt: prompt,
-          createdAt: new Date()
-        };
-        
-        // Actualizar estado
-        setGeneratedImage(completedImage);
-        setPendingTaskId(null);
-        setIsGenerating(false);
-        
-        // Añadir a imágenes guardadas si no está ya
-        setSavedImages(prev => {
-          if (!prev.some(img => img.url === imageUrl)) {
-            return [completedImage, ...prev];
+      // Usar el servicio directo de Flux con soporte de LoRA
+      if (canUseFluxDirectly()) {
+        console.log('Usando servicio Flux directo con API key');
+        try {
+          // Preparar opciones para la generación
+          const taskType = useLoRA ? FluxTaskType.TXT2IMG_LORA : FluxTaskType.TXT2IMG;
+          const options: FluxTextToImageOptions = {
+            prompt: prompt,
+            negative_prompt: negativePrompt,
+            steps: 28,
+            guidance_scale: 2.5,
+          };
+          
+          // Añadir configuración de LoRA si está habilitado
+          if (useLoRA && loraType) {
+            options.lora_settings = [{
+              lora_type: loraType as FluxLoraType,
+              lora_strength: 1.0
+            }];
           }
-          return prev;
-        });
-        
-        // Notificar al componente padre
-        if (onGeneratedImage) {
-          onGeneratedImage(completedImage);
+          
+          console.log('Opciones para generación de Flux:', options);
+          
+          // Llamar directamente al servicio Flux
+          const response = await fluxService.generateTextToImage(
+            options,
+            model,
+            taskType
+          );
+          
+          console.log('Respuesta de generación de Flux:', response);
+          
+          // Si la llamada fue exitosa, establecer el task ID para seguimiento
+          if (response && response.data && response.data.task_id) {
+            setPendingTaskId(response.data.task_id);
+            toast({
+              title: 'Generación iniciada',
+              description: 'Tu imagen está siendo generada con Flux. Esto puede tomar hasta 30 segundos...',
+            });
+          } else {
+            throw new Error('No se recibió un task_id válido de Flux API');
+          }
+        } catch (error) {
+          console.error('Error al llamar directamente a Flux API:', error);
+          // Continuar con la simulación como fallback
+          simulateImageGeneration();
         }
-        
-        toast({
-          title: 'Imagen Generada',
-          description: 'Tu imagen ha sido generada exitosamente',
-        });
-      }, 2000); // Simular 2 segundos de generación
+      } else {
+        console.log('API key de Flux no disponible, usando simulación');
+        simulateImageGeneration();
+      }
       
       toast({
         title: 'Generación iniciada',
