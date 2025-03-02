@@ -47,7 +47,8 @@ import {
   getGeneratedVideos,
   saveMediaToLocalStorage
 } from '@/lib/api/generated-images-service';
-import { FreepikGenerator, FluxGenerator } from '@/components/image-generation';
+import { FreepikGenerator } from '@/components/image-generation';
+import { FluxGenerator } from '@/components/image-generation/flux-generator-new';
 
 // Form validation schemas
 const imageFormSchema = z.object({

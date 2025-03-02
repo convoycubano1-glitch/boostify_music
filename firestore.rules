@@ -282,5 +282,21 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // Flux Images collection - Reglas específicas para imágenes generadas por PiAPI Flux
+    match /flux_images/{imageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        !resource.data.userId || 
+        resource.data.userId == request.auth.uid || 
+        resource.data.userId == "anonymous"
+      );
+      allow delete: if isAuthenticated() && (
+        !resource.data.userId || 
+        resource.data.userId == request.auth.uid || 
+        resource.data.userId == "anonymous"
+      );
+    }
   }
 }

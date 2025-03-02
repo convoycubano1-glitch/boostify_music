@@ -1,0 +1,37 @@
+Critical assets may not have loaded properly
+Error getting Flux images from Firestore: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Generating Flux image with options: 
+Object {model: "Qubico/flux1-dev-advanced", taskType: "txt2img-lora", options: {…}}
+Error generando imagen con PiAPI Flux Qubico/flux1-dev-advanced: 
+AxiosError {message: "Request failed with status code 403", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, …}
+code: "ERR_BAD_REQUEST"
+config: Object
+message: "Request failed with status code 403"
+name: "AxiosError"
+request: XMLHttpRequest
+response: Object
+status: 403
+stack: "AxiosError: Request failed with status code 403↵ at settle (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1235:12)↵ at XMLHttpRequest.onloadend (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1566:7)↵ at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:2124:41)↵ at async FluxService.generateTextToImage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/lib/api/flux/flux-service.ts:72:24)↵ at async handleSubmit (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/image-generation/flux-generator.tsx:174:24)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+Error generating image with Flux: 
+AxiosError {message: "Request failed with status code 403", name: "AxiosError", code: "ERR_BAD_REQUEST", config: {…}, request: XMLHttpRequest, …}
+code: "ERR_BAD_REQUEST"
+config: Object
+message: "Request failed with status code 403"
+name: "AxiosError"
+request: XMLHttpRequest
+response: Object
+status: 403
+stack: "AxiosError: Request failed with status code 403↵ at settle (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1235:12)↵ at XMLHttpRequest.onloadend (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1566:7)↵ at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:2124:41)↵ at async FluxService.generateTextToImage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/lib/api/flux/flux-service.ts:72:24)↵ at async handleSubmit (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/image-generation/flux-generator.tsx:174:24)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object

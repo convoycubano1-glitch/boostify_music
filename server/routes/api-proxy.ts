@@ -967,6 +967,24 @@ router.get('/flux/task/:taskId', async (req, res) => {
         { headers, timeout: 10000 }
       );
       
+      // Procesamiento adicional para imágenes completadas
+      if (response.data && 
+          response.data.data && 
+          response.data.data.status === 'completed' && 
+          response.data.data.output && 
+          response.data.data.output.image_url) {
+        
+        // Extraer la URL de la imagen de la respuesta
+        const imageUrl = response.data.data.output.image_url;
+        console.log(`Imagen completada para tarea ${taskId}:`, imageUrl);
+        
+        // Transformar la respuesta para ser compatible con el formato que espera el cliente
+        // Esto permite que el cliente procese la respuesta directamente
+        if (!response.data.data.output.images) {
+          response.data.data.output.images = [imageUrl];
+        }
+      }
+      
       // Devolver la respuesta completa para que el cliente pueda manejarla
       return res.json(response.data);
     } catch (apiError: any) {
@@ -982,6 +1000,46 @@ router.get('/flux/task/:taskId', async (req, res) => {
     return res.status(500).json({
       error: 'UNEXPECTED_ERROR',
       message: error.message || 'Error inesperado',
+      success: false
+    });
+  }
+});
+
+/**
+ * Endpoint para guardar una imagen completada directamente
+ * Este endpoint permite guardar una imagen ya generada, proporcionando la URL
+ * directamente sin necesidad de polling.
+ */
+router.post('/flux/save-completed-image', async (req, res) => {
+  try {
+    const { url, prompt, taskId } = req.body;
+    
+    if (!url || !prompt) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'URL and prompt are required',
+        success: false
+      });
+    }
+    
+    // Simplemente retornamos éxito con la información proporcionada
+    // El cliente se encargará de guardar en Firestore
+    return res.status(200).json({
+      success: true,
+      image: {
+        url,
+        prompt,
+        taskId,
+        provider: 'flux-direct',
+        status: 'COMPLETED',
+        createdAt: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Error guardando imagen completada:', error);
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Error guardando imagen',
       success: false
     });
   }

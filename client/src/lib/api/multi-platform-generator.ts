@@ -459,11 +459,9 @@ async function generateWithFlux(params: Omit<GenerateImageParams, 'apiProvider'>
         createdAt: new Date()
       };
       
-      // Intenta guardar el resultado pendiente en Firestore
+      // Guardar el resultado pendiente en Firestore usando fluxStorageService
       try {
-        // Aquí deberíamos usar un servicio de almacenamiento para Flux
-        // Por ahora usamos freepikStorageService como alternativa
-        const firestoreId = await freepikStorageService.saveImage(imageResult);
+        const firestoreId = await fluxStorageService.saveImage(imageResult);
         return {
           ...imageResult,
           firestoreId
@@ -678,7 +676,7 @@ export async function saveGeneratedContent(
  */
 export async function checkTaskStatus(taskId: string, provider: string): Promise<ImageResult | VideoResult | null> {
   try {
-    // First check in Firestore for Freepik images
+    // First check in Firestore for provider-specific images
     if (provider === 'freepik' || provider.startsWith('freepik-')) {
       // Try to find the existing image in Firestore
       const existingImage = await freepikStorageService.findImageByTaskId(taskId);
@@ -686,6 +684,15 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       // If the image is already completed in Firestore, return it directly
       if (existingImage && existingImage.url && existingImage.status === 'COMPLETED') {
         console.log('Found completed Freepik image in Firestore:', existingImage);
+        return existingImage;
+      }
+    } else if (provider === 'flux' || provider.startsWith('flux-')) {
+      // Try to find the existing Flux image in Firestore
+      const existingImage = await fluxStorageService.findImageByTaskId(taskId);
+      
+      // If the image is already completed in Firestore, return it directly
+      if (existingImage && existingImage.url && existingImage.status === 'COMPLETED') {
+        console.log('Found completed Flux image in Firestore:', existingImage);
         return existingImage;
       }
     }
@@ -815,6 +822,20 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
             } else if (response.data.result && response.data.result.images) {
               // Otro formato posible, dependiendo de la respuesta de la API
               result.url = response.data.result.images[0];
+            }
+            
+            // If we have a URL, store in Firestore using the Flux specific service
+            if (result.url) {
+              // Update completed image status
+              result.status = 'COMPLETED';
+              
+              // Store in Firestore for persistence and future retrieval
+              try {
+                const firestoreId = await fluxStorageService.saveImage(result);
+                result.firestoreId = firestoreId;
+              } catch (storageError) {
+                console.error('Error saving Flux image to Firestore:', storageError);
+              }
             }
           }
           
