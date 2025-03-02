@@ -1456,6 +1456,7 @@ router.post('/proxy/face-swap/start', async (req: Request, res) => {
     
     // Verificar que tenemos ambas imágenes
     if (!swapImageUrl || !targetImageUrl) {
+      console.error('Faltan imágenes requeridas:', { swapImageUrl: !!swapImageUrl, targetImageUrl: !!targetImageUrl });
       return res.status(400).json({
         success: false,
         error: 'Se requieren dos URLs de imágenes (source_image/swap_image y target_image)'
@@ -1464,6 +1465,7 @@ router.post('/proxy/face-swap/start', async (req: Request, res) => {
 
     // Verificar que tenemos la clave API
     if (!PIAPI_API_KEY) {
+      console.error('PIAPI_API_KEY no está configurada');
       return res.status(500).json({
         success: false,
         error: 'PIAPI_API_KEY no está configurada'
@@ -1471,7 +1473,32 @@ router.post('/proxy/face-swap/start', async (req: Request, res) => {
     }
     
     try {
-      console.log('Llamando a PiAPI para face swap con imágenes:', { swapImageUrl, targetImageUrl });
+      // Verificar si las URLs son data URLs o blob URLs, rechazar si son blob URLs
+      // Las blob URLs son efímeras y solo disponibles en el navegador
+      if (swapImageUrl.startsWith('blob:') || targetImageUrl.startsWith('blob:')) {
+        console.error('Se recibió una URL tipo blob, no se puede procesar.');
+        return res.status(400).json({
+          success: false,
+          error: 'Las URLs de blob no son aceptadas. Por favor, utiliza URLs de datos (data:image/...)'
+        });
+      }
+      
+      // Verificar que las imágenes son data URLs
+      if (!swapImageUrl.startsWith('data:image/') || !targetImageUrl.startsWith('data:image/')) {
+        console.error('Las URLs no son data URLs de imágenes');
+        const swapFormat = swapImageUrl.substring(0, 20) + '...';
+        const targetFormat = targetImageUrl.substring(0, 20) + '...';
+        console.log('Formatos recibidos:', { swapFormat, targetFormat });
+        return res.status(400).json({
+          success: false,
+          error: 'Las URLs deben ser data:image/... URLs'
+        });
+      }
+      
+      console.log('Llamando a PiAPI para face swap con imágenes en formato data URL');
+      console.log('API URL:', 'https://api.piapi.ai/api/v1/task');
+      console.log('Modelo:', 'Qubico/image-toolkit');
+      console.log('Tipo de tarea:', 'face-swap');
       
       // Llamada real a la API de PiAPI para face swap
       const response = await axios.post('https://api.piapi.ai/api/v1/task', {
@@ -1485,18 +1512,22 @@ router.post('/proxy/face-swap/start', async (req: Request, res) => {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': PIAPI_API_KEY
-        }
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
       });
       
-      console.log('Respuesta de PiAPI:', response.data);
+      console.log('Respuesta de PiAPI:', JSON.stringify(response.data));
       
       // Extraer el taskId de la respuesta
       const taskId = response.data?.data?.task_id;
       
       if (!taskId) {
+        console.error('No se pudo obtener task_id de la respuesta:', response.data);
         throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
       }
       
+      console.log('Face swap iniciado correctamente, taskId:', taskId);
       return res.json({
         success: true,
         taskId: taskId,
@@ -1504,7 +1535,13 @@ router.post('/proxy/face-swap/start', async (req: Request, res) => {
       });
     } catch (internalError: any) {
       console.error('Error llamando al endpoint de PiAPI:', internalError.message);
-      console.error('Detalles completos del error:', internalError.response?.data || internalError);
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Encabezados de respuesta:', internalError.response.headers);
+        console.error('Datos de respuesta:', internalError.response.data);
+      } else if (internalError.request) {
+        console.error('Solicitud enviada pero sin respuesta:', internalError.request);
+      }
       
       return res.status(500).json({
         success: false,
@@ -1531,6 +1568,7 @@ router.get('/proxy/face-swap/status', async (req, res) => {
     const { taskId } = req.query;
     
     if (!taskId) {
+      console.error('Error: No se proporcionó taskId en el request');
       return res.status(400).json({
         success: false,
         error: 'Se requiere el ID de la tarea'
@@ -1539,6 +1577,7 @@ router.get('/proxy/face-swap/status', async (req, res) => {
 
     // Verificar que tenemos la clave API
     if (!PIAPI_API_KEY) {
+      console.error('Error: PIAPI_API_KEY no está configurada');
       return res.status(500).json({
         success: false,
         error: 'PIAPI_API_KEY no está configurada'
@@ -1547,58 +1586,126 @@ router.get('/proxy/face-swap/status', async (req, res) => {
     
     try {
       console.log('Verificando estado de tarea de PiAPI:', taskId);
+      console.log('URL de endpoint:', `https://api.piapi.ai/api/v1/task/${taskId}`);
       
       // Llamada real a la API de PiAPI para verificar estado
       const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
         headers: {
-          'x-api-key': PIAPI_API_KEY
-        }
+          'x-api-key': PIAPI_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 10000 // Establecer un timeout de 10 segundos para evitar esperas infinitas
       });
       
-      console.log('Respuesta de status de PiAPI:', response.data);
+      console.log('Respuesta de status de PiAPI:', JSON.stringify(response.data));
+      
+      // Comprobar que la respuesta tiene una estructura válida
+      if (!response.data || !response.data.data) {
+        console.error('Error: Estructura de respuesta inválida:', response.data);
+        return res.status(500).json({
+          success: false,
+          status: 'failed',
+          errorMessage: 'Estructura de respuesta inválida desde PiAPI'
+        });
+      }
       
       // Extraer el estado de la respuesta
-      const status = response.data?.data?.status?.toLowerCase() || 'processing';
+      const taskData = response.data.data;
+      const status = taskData.status?.toLowerCase() || 'processing';
       
       // Si la tarea está completada, obtenemos la URL del resultado
       if (status === 'completed') {
-        const resultUrl = response.data?.data?.output?.image_url || response.data?.data?.output?.result_url;
+        console.log('Tarea completada. Obteniendo URL del resultado...');
         
-        if (!resultUrl) {
-          throw new Error('No se encontró la URL del resultado en la respuesta de PiAPI');
+        // Verificar varias posibles ubicaciones de la URL del resultado
+        let resultUrl = null;
+        
+        if (taskData.output?.image_url) {
+          resultUrl = taskData.output.image_url;
+          console.log('Encontrada image_url:', resultUrl);
+        } else if (taskData.output?.result_url) {
+          resultUrl = taskData.output.result_url;
+          console.log('Encontrada result_url:', resultUrl);
+        } else if (taskData.output?.url) {
+          resultUrl = taskData.output.url;
+          console.log('Encontrada url:', resultUrl);
+        } else if (typeof taskData.output === 'string') {
+          // Algunos endpoints devuelven directamente la URL como un string
+          resultUrl = taskData.output;
+          console.log('Output es directamente string:', resultUrl);
         }
         
+        if (!resultUrl) {
+          console.error('Error: No se encontró URL de resultado en la respuesta:', taskData);
+          return res.status(500).json({
+            status: 'failed',
+            success: false,
+            errorMessage: 'No se encontró la URL del resultado en la respuesta de PiAPI',
+            rawResponse: taskData // Incluir respuesta cruda para debug
+          });
+        }
+        
+        console.log('Tarea completada con éxito. URL del resultado:', resultUrl);
         return res.json({
           status: 'completed',
           url: resultUrl,
-          success: true
+          success: true,
+          taskId: taskId.toString() // Devolver el taskId para referencia
         });
       } 
       // Si la tarea falló, devolvemos un error
       else if (status === 'failed') {
-        const errorMessage = response.data?.data?.error?.message || 'Error desconocido en el procesamiento';
+        let errorMessage = 'Error desconocido en el procesamiento';
         
+        if (taskData.error?.message) {
+          errorMessage = taskData.error.message;
+        } else if (taskData.error) {
+          // Si error es un string, usarlo directamente
+          errorMessage = typeof taskData.error === 'string' ? taskData.error : JSON.stringify(taskData.error);
+        }
+        
+        console.error('Tarea fallida. Mensaje de error:', errorMessage);
         return res.json({
           status: 'failed',
           errorMessage: errorMessage,
-          success: false
+          success: false,
+          taskId: taskId.toString() // Devolver el taskId para referencia
         });
       } 
       // Si la tarea sigue en proceso, devolvemos el estado
       else {
+        console.log('Tarea aún en procesamiento...');
+        // Intentar extraer el progreso si está disponible
+        let progress = 50; // Valor predeterminado
+
+        if (taskData.progress && !isNaN(taskData.progress)) {
+          progress = Math.round(Number(taskData.progress) * 100);
+          console.log('Progreso detectado:', progress);
+        }
+        
         return res.json({
           status: 'processing',
-          progress: 50, // PiAPI no proporciona progreso exacto
-          success: true
+          progress: progress,
+          success: true,
+          taskId: taskId.toString() // Devolver el taskId para referencia
         });
       }
     } catch (internalError: any) {
       console.error('Error llamando al endpoint de PiAPI para status:', internalError.message);
-      console.error('Detalles completos del error:', internalError.response?.data || internalError);
+      
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Encabezados de respuesta:', internalError.response.headers);
+        console.error('Datos de respuesta:', internalError.response.data);
+      } else if (internalError.request) {
+        console.error('Solicitud enviada pero sin respuesta:', internalError.request);
+      }
       
       return res.status(500).json({
         success: false,
-        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado'
+        status: 'failed',
+        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado',
+        code: internalError.response?.status || 500
       });
     }
   } catch (error: any) {
