@@ -198,7 +198,7 @@ export default function HomePage() {
   };
 
   // Calculate days until launch
-  const launchDate = new Date('2025-03-01T00:00:00');
+  const launchDate = new Date('2025-04-01T00:00:00');
   const now = new Date();
   const diffTime = launchDate.getTime() - now.getTime();
   const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -260,26 +260,25 @@ export default function HomePage() {
                       <p className="text-xl font-bold text-orange-500">
                         {daysUntilLaunch} days until launch!
                       </p>
-                      <p className="text-sm text-white/70">March 1st, 2025</p>
+                      <p className="text-sm text-white/70">April 1st, 2025</p>
                     </div>
                     <div className="flex items-center gap-2 text-orange-500">
                       <Calendar className="h-5 w-5" />
-                      <span className="font-medium">Schedule a Meeting</span>
+                      <span className="font-medium">Beta Features Available</span>
                     </div>
-                    <a
-                      href="https://calendar.google.com/calendar/u/0/share?slt=1AXpMJuZYDhB-BkgrwqPtJV3OxMcYlX3VCKPmB7BiEg7zOJ_W7I2ziBrk3kw2ieMOaQFtyX2OS85UlA"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full"
-                    >
-                      <Button
-                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-all duration-300 transform hover:scale-105"
-                      >
-                        Join Pre-launch Meeting
-                      </Button>
-                    </a>
+                    <div className="grid grid-cols-3 gap-2 w-full">
+                      <div className="p-2 bg-black/30 rounded-lg text-center">
+                        <p className="text-xs font-medium text-orange-500">Virtual Try-On</p>
+                      </div>
+                      <div className="p-2 bg-black/30 rounded-lg text-center">
+                        <p className="text-xs font-medium text-orange-500">Lipsync</p>
+                      </div>
+                      <div className="p-2 bg-black/30 rounded-lg text-center">
+                        <p className="text-xs font-medium text-orange-500">Effects</p>
+                      </div>
+                    </div>
                     <p className="text-sm text-center text-white/70">
-                      Get personalized insights about our platform
+                      Try our beta features before official launch
                     </p>
                   </div>
                 </div>

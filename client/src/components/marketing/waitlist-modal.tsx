@@ -17,9 +17,9 @@ export function WaitlistModal() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Calculate days until March 1st, 2025
+    // Calculate days until April 1st, 2025
     const calculateDaysUntilLaunch = () => {
-      const launchDate = new Date('2025-03-01T00:00:00');
+      const launchDate = new Date('2025-04-01T00:00:00');
       const now = new Date();
       const diffTime = launchDate.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -82,7 +82,7 @@ export function WaitlistModal() {
 
       toast({
         title: "Welcome to the Waitlist!",
-        description: "You'll be notified when we launch on March 1st, 2025.",
+        description: "You'll be notified when we launch on April 1st, 2025. Try our beta features, including the new Kling tools (Virtual Try-On, Lipsync, and Effects).",
       });
       setOpen(false);
     } catch (error) {
@@ -132,7 +132,7 @@ export function WaitlistModal() {
                   <p className="text-xl font-bold text-orange-500">
                     {daysUntilLaunch} days until launch!
                   </p>
-                  <p className="text-sm text-muted-foreground">March 1st, 2025</p>
+                  <p className="text-sm text-muted-foreground">April 1st, 2025</p>
                 </div>
               </div>
             </div>
@@ -141,7 +141,7 @@ export function WaitlistModal() {
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-500/5 rounded-lg blur-xl" />
               <div className="relative bg-background/50 backdrop-blur-sm rounded-lg p-4 border border-orange-500/10">
                 <p className="text-sm text-muted-foreground">
-                  Feel free to explore our platform features. While most functionality will be available at launch, you can preview what's coming!
+                  All features are currently in beta mode until our official launch on April 1st, 2025. Our new Kling tools (Virtual Try-On, Lipsync, and Effects) are also available for testing. Feel free to explore our platform and provide feedback!
                 </p>
               </div>
             </div>
@@ -172,29 +172,28 @@ export function WaitlistModal() {
               </div>
             </form>
 
-            {/* Calendar Button Container */}
+            {/* Beta Features Container */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg blur-lg" />
               <div className="relative bg-background/50 backdrop-blur-sm rounded-lg p-6 border border-orange-500/20">
                 <div className="flex flex-col items-center gap-4">
                   <div className="flex items-center gap-2 text-orange-500">
                     <Calendar className="h-5 w-5" />
-                    <span className="font-medium">Schedule a Meeting</span>
+                    <span className="font-medium">Beta Features Available</span>
                   </div>
-                  <a 
-                    href="https://calendar.google.com/calendar/u/0/share?slt=1AXpMJuZYDhB-BkgrwqPtJV3OxMcYlX3VCKPmB7BiEg7zOJ_W7I2ziBrk3kw2ieMOaQFtyX2OS85UlA"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full"
-                  >
-                    <Button 
-                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-all duration-300 transform hover:scale-105"
-                    >
-                      Join Pre-launch Meeting
-                    </Button>
-                  </a>
+                  <div className="grid grid-cols-3 gap-2 w-full">
+                    <div className="p-2 bg-orange-500/10 rounded-lg text-center">
+                      <p className="text-sm font-medium text-orange-500">Virtual Try-On</p>
+                    </div>
+                    <div className="p-2 bg-orange-500/10 rounded-lg text-center">
+                      <p className="text-sm font-medium text-orange-500">Lipsync</p>
+                    </div>
+                    <div className="p-2 bg-orange-500/10 rounded-lg text-center">
+                      <p className="text-sm font-medium text-orange-500">Effects</p>
+                    </div>
+                  </div>
                   <p className="text-sm text-center text-muted-foreground">
-                    Get personalized insights about our platform
+                    Try our beta features before official launch
                   </p>
                 </div>
               </div>

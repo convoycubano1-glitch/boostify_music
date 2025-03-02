@@ -1720,4 +1720,758 @@ router.get('/proxy/face-swap/status', async (req, res) => {
   }
 });
 
+/**
+ * Endpoint para iniciar una tarea de Virtual Try-On con Kling
+ * 
+ * Este servicio permite a los usuarios "probarse" virtualmente prendas de vestir
+ * usando IA para superponer las prendas en imágenes de personas.
+ */
+router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
+  try {
+    console.log('Recibida solicitud para iniciar Virtual Try-On');
+    
+    // Obtener imágenes y parámetros del body
+    const { 
+      model_input, // imagen de la persona (obligatorio)
+      dress_input, // imagen de prenda completa (opcional)
+      upper_input, // imagen de prenda superior (opcional)
+      lower_input, // imagen de prenda inferior (opcional)
+      batch_size = 1 // número de imágenes a generar (1-4)
+    } = req.body;
+    
+    // Verificar que tenemos al menos la imagen del modelo y una prenda
+    if (!model_input || (!dress_input && !upper_input && !lower_input)) {
+      console.error('Faltan imágenes requeridas para Virtual Try-On');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere una imagen de modelo (model_input) y al menos una prenda (dress_input, upper_input o lower_input)'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      // Verificamos que los inputs son data URLs o URLs válidas
+      const validateUrl = (url: string) => {
+        if (!url) return true; // Si no está presente, se considera válido
+        return url.startsWith('data:image/') || url.startsWith('http://') || url.startsWith('https://');
+      };
+      
+      if (!validateUrl(model_input) || !validateUrl(dress_input) || !validateUrl(upper_input) || !validateUrl(lower_input)) {
+        console.error('Las URLs de imágenes no son válidas');
+        return res.status(400).json({
+          success: false,
+          error: 'Las URLs deben ser data:image/... o https://... URLs'
+        });
+      }
+      
+      console.log('Llamando a PiAPI para Virtual Try-On');
+      
+      // Construimos el objeto de input, solo incluyendo los campos que están presentes
+      const inputObj: any = {
+        model_input: model_input,
+        batch_size: batch_size
+      };
+      
+      if (dress_input) inputObj.dress_input = dress_input;
+      if (upper_input) inputObj.upper_input = upper_input;
+      if (lower_input) inputObj.lower_input = lower_input;
+      
+      // Llamada real a la API de PiAPI para Virtual Try-On
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', {
+        model: "kling",
+        task_type: "ai_try_on",
+        input: inputObj
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': PIAPI_API_KEY
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+      
+      console.log('Respuesta de PiAPI para Try-On:', JSON.stringify(response.data));
+      
+      // Extraer el taskId de la respuesta
+      const taskId = response.data?.data?.task_id;
+      
+      if (!taskId) {
+        console.error('No se pudo obtener task_id de la respuesta:', response.data);
+        throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
+      }
+      
+      console.log('Virtual Try-On iniciado correctamente, taskId:', taskId);
+      return res.json({
+        success: true,
+        taskId: taskId,
+        status: 'processing'
+      });
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para Try-On:', internalError.message);
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Datos de respuesta:', internalError.response.data);
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de try-on/start:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error al iniciar el proceso de Virtual Try-On'
+    });
+  }
+});
+
+/**
+ * Endpoint para verificar el estado de una tarea de Virtual Try-On
+ */
+router.get('/proxy/kling/try-on/status', async (req, res) => {
+  try {
+    const { taskId } = req.query;
+    
+    if (!taskId) {
+      console.error('Error: No se proporcionó taskId en el request');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere el ID de la tarea'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('Error: PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      console.log('Verificando estado de tarea de Virtual Try-On:', taskId);
+      
+      // Llamada real a la API de PiAPI para verificar estado
+      const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
+        headers: {
+          'x-api-key': PIAPI_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      console.log('Respuesta de status de PiAPI para Try-On:', JSON.stringify(response.data));
+      
+      if (!response.data || !response.data.data) {
+        console.error('Error: Estructura de respuesta inválida:', response.data);
+        return res.status(500).json({
+          success: false,
+          status: 'failed',
+          errorMessage: 'Estructura de respuesta inválida desde PiAPI'
+        });
+      }
+      
+      // Extraer el estado de la respuesta
+      const taskData = response.data.data;
+      const status = taskData.status?.toLowerCase() || 'processing';
+      
+      // Si la tarea está completada, obtenemos la URL del resultado
+      if (status === 'completed') {
+        console.log('Tarea completada. Obteniendo URL del resultado...');
+        
+        // Verificar varias posibles ubicaciones de la URL del resultado
+        let resultImages = [];
+        
+        if (taskData.output?.images && Array.isArray(taskData.output.images)) {
+          resultImages = taskData.output.images;
+          console.log('Encontradas imágenes en output.images');
+        } else if (taskData.output?.image_urls && Array.isArray(taskData.output.image_urls)) {
+          resultImages = taskData.output.image_urls.map((url: string) => ({ url }));
+          console.log('Encontradas imágenes en output.image_urls');
+        } else if (taskData.output?.image_url) {
+          resultImages = [{ url: taskData.output.image_url }];
+          console.log('Encontrada una sola imagen en output.image_url');
+        }
+        
+        if (resultImages.length === 0) {
+          console.error('Error: No se encontraron URLs de imágenes en la respuesta:', taskData);
+          return res.status(500).json({
+            status: 'failed',
+            success: false,
+            errorMessage: 'No se encontraron imágenes en la respuesta de PiAPI',
+            rawResponse: taskData // Incluir respuesta cruda para debug
+          });
+        }
+        
+        console.log('Tarea completada con éxito. Imágenes obtenidas:', resultImages.length);
+        return res.json({
+          status: 'completed',
+          images: resultImages,
+          success: true,
+          taskId: taskId.toString()
+        });
+      } 
+      // Si la tarea falló, devolvemos un error
+      else if (status === 'failed') {
+        let errorMessage = 'Error desconocido en el procesamiento';
+        
+        if (taskData.error?.message) {
+          errorMessage = taskData.error.message;
+        } else if (taskData.error) {
+          errorMessage = typeof taskData.error === 'string' ? taskData.error : JSON.stringify(taskData.error);
+        }
+        
+        console.error('Tarea fallida. Mensaje de error:', errorMessage);
+        return res.json({
+          status: 'failed',
+          errorMessage: errorMessage,
+          success: false,
+          taskId: taskId.toString()
+        });
+      } 
+      // Si la tarea sigue en proceso, devolvemos el estado
+      else {
+        console.log('Tarea aún en procesamiento...');
+        let progress = 50; // Valor predeterminado
+        
+        if (taskData.progress && !isNaN(taskData.progress)) {
+          progress = Math.round(Number(taskData.progress) * 100);
+          console.log('Progreso detectado:', progress);
+        }
+        
+        return res.json({
+          status: 'processing',
+          progress: progress,
+          success: true,
+          taskId: taskId.toString()
+        });
+      }
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para status de Try-On:', internalError.message);
+      
+      return res.status(500).json({
+        success: false,
+        status: 'failed',
+        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado',
+        code: internalError.response?.status || 500
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de try-on/status:', error);
+    
+    return res.status(500).json({
+      status: 'failed',
+      errorMessage: error.message || 'Error al verificar el estado del proceso',
+      success: false
+    });
+  }
+});
+
+/**
+ * Endpoint para iniciar una tarea de Lipsync con Kling
+ * 
+ * Este servicio permite sincronizar labios de un video con audio o texto
+ */
+router.post('/proxy/kling/lipsync/start', async (req: Request, res) => {
+  try {
+    console.log('Recibida solicitud para iniciar Lipsync');
+    
+    // Obtener los parámetros del body
+    const { 
+      origin_task_id, // ID de la tarea del video original
+      tts_text = "", // Texto para generar voz (si se usa TTS)
+      tts_timbre = "", // Timbre de voz a usar
+      tts_speed = 1, // Velocidad de la voz (0.8-2)
+      local_dubbing_url = "" // URL del audio a sincronizar
+    } = req.body;
+    
+    // Verificar que tenemos el ID del video original
+    if (!origin_task_id) {
+      console.error('Falta el ID del video original');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere el ID del video original (origin_task_id)'
+      });
+    }
+
+    // Verificar que tenemos o un texto o una URL de audio
+    if (!tts_text && !local_dubbing_url) {
+      console.error('Falta texto o audio para el Lipsync');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere o un texto (tts_text) o una URL de audio (local_dubbing_url)'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      console.log('Llamando a PiAPI para Lipsync');
+      
+      // Construimos el objeto de input
+      const inputObj: any = {
+        origin_task_id: origin_task_id
+      };
+      
+      // Si hay URL de audio, la usamos; si no, usamos TTS
+      if (local_dubbing_url) {
+        inputObj.local_dubbing_url = local_dubbing_url;
+      } else {
+        inputObj.tts_text = tts_text;
+        if (tts_timbre) inputObj.tts_timbre = tts_timbre;
+        inputObj.tts_speed = tts_speed;
+      }
+      
+      // Llamada real a la API de PiAPI para Lipsync
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', {
+        model: "kling",
+        task_type: "lip_sync",
+        input: inputObj
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': PIAPI_API_KEY
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+      
+      console.log('Respuesta de PiAPI para Lipsync:', JSON.stringify(response.data));
+      
+      // Extraer el taskId de la respuesta
+      const taskId = response.data?.data?.task_id;
+      
+      if (!taskId) {
+        console.error('No se pudo obtener task_id de la respuesta:', response.data);
+        throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
+      }
+      
+      console.log('Lipsync iniciado correctamente, taskId:', taskId);
+      return res.json({
+        success: true,
+        taskId: taskId,
+        status: 'processing'
+      });
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para Lipsync:', internalError.message);
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Datos de respuesta:', internalError.response.data);
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de lipsync/start:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error al iniciar el proceso de Lipsync'
+    });
+  }
+});
+
+/**
+ * Endpoint para verificar el estado de una tarea de Lipsync
+ */
+router.get('/proxy/kling/lipsync/status', async (req, res) => {
+  try {
+    const { taskId } = req.query;
+    
+    if (!taskId) {
+      console.error('Error: No se proporcionó taskId en el request');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere el ID de la tarea'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('Error: PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      console.log('Verificando estado de tarea de Lipsync:', taskId);
+      
+      // Llamada real a la API de PiAPI para verificar estado
+      const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
+        headers: {
+          'x-api-key': PIAPI_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      console.log('Respuesta de status de PiAPI para Lipsync:', JSON.stringify(response.data));
+      
+      if (!response.data || !response.data.data) {
+        console.error('Error: Estructura de respuesta inválida:', response.data);
+        return res.status(500).json({
+          success: false,
+          status: 'failed',
+          errorMessage: 'Estructura de respuesta inválida desde PiAPI'
+        });
+      }
+      
+      // Extraer el estado de la respuesta
+      const taskData = response.data.data;
+      const status = taskData.status?.toLowerCase() || 'processing';
+      
+      // Si la tarea está completada, obtenemos la URL del resultado
+      if (status === 'completed') {
+        console.log('Tarea completada. Obteniendo URL del resultado...');
+        
+        // Verificar varias posibles ubicaciones de la URL del resultado
+        let videoUrl = null;
+        
+        if (taskData.output?.video_url) {
+          videoUrl = taskData.output.video_url;
+          console.log('Encontrada video_url:', videoUrl);
+        } else if (taskData.output?.url) {
+          videoUrl = taskData.output.url;
+          console.log('Encontrada url:', videoUrl);
+        }
+        
+        if (!videoUrl) {
+          console.error('Error: No se encontró URL del video en la respuesta:', taskData);
+          return res.status(500).json({
+            status: 'failed',
+            success: false,
+            errorMessage: 'No se encontró la URL del video en la respuesta de PiAPI',
+            rawResponse: taskData // Incluir respuesta cruda para debug
+          });
+        }
+        
+        console.log('Tarea completada con éxito. URL del video:', videoUrl);
+        return res.json({
+          status: 'completed',
+          videoUrl: videoUrl,
+          success: true,
+          taskId: taskId.toString()
+        });
+      } 
+      // Si la tarea falló, devolvemos un error
+      else if (status === 'failed') {
+        let errorMessage = 'Error desconocido en el procesamiento';
+        
+        if (taskData.error?.message) {
+          errorMessage = taskData.error.message;
+        } else if (taskData.error) {
+          errorMessage = typeof taskData.error === 'string' ? taskData.error : JSON.stringify(taskData.error);
+        }
+        
+        console.error('Tarea fallida. Mensaje de error:', errorMessage);
+        return res.json({
+          status: 'failed',
+          errorMessage: errorMessage,
+          success: false,
+          taskId: taskId.toString()
+        });
+      } 
+      // Si la tarea sigue en proceso, devolvemos el estado
+      else {
+        console.log('Tarea aún en procesamiento...');
+        let progress = 50; // Valor predeterminado
+        
+        if (taskData.progress && !isNaN(taskData.progress)) {
+          progress = Math.round(Number(taskData.progress) * 100);
+          console.log('Progreso detectado:', progress);
+        }
+        
+        return res.json({
+          status: 'processing',
+          progress: progress,
+          success: true,
+          taskId: taskId.toString()
+        });
+      }
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para status de Lipsync:', internalError.message);
+      
+      return res.status(500).json({
+        success: false,
+        status: 'failed',
+        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado',
+        code: internalError.response?.status || 500
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de lipsync/status:', error);
+    
+    return res.status(500).json({
+      status: 'failed',
+      errorMessage: error.message || 'Error al verificar el estado del proceso',
+      success: false
+    });
+  }
+});
+
+/**
+ * Endpoint para iniciar una tarea de Kling Effects
+ * 
+ * Este servicio permite aplicar efectos especiales a imágenes, como "squish" o "expansion"
+ * para convertirlas en videos animados.
+ */
+router.post('/proxy/kling/effects/start', async (req: Request, res) => {
+  try {
+    console.log('Recibida solicitud para iniciar Kling Effects');
+    
+    // Obtener los parámetros del body
+    const { 
+      image_url, // URL de la imagen a la que aplicar el efecto
+      effect = 'squish' // Efecto a aplicar (squish o expansion)
+    } = req.body;
+    
+    // Verificar que tenemos la URL de la imagen
+    if (!image_url) {
+      console.error('Falta la URL de la imagen');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere la URL de la imagen (image_url)'
+      });
+    }
+
+    // Verificar que el efecto sea válido
+    if (effect !== 'squish' && effect !== 'expansion') {
+      console.error('Efecto no válido:', effect);
+      return res.status(400).json({
+        success: false,
+        error: 'El efecto debe ser "squish" o "expansion"'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      console.log('Llamando a PiAPI para Kling Effects');
+      
+      // Llamada a la API de PiAPI para Kling Effects
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', {
+        model: "kling",
+        task_type: "effects",
+        input: {
+          image_url: image_url,
+          effect: effect
+        }
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': PIAPI_API_KEY
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+      
+      console.log('Respuesta de PiAPI para Effects:', JSON.stringify(response.data));
+      
+      // Extraer el taskId de la respuesta
+      const taskId = response.data?.data?.task_id;
+      
+      if (!taskId) {
+        console.error('No se pudo obtener task_id de la respuesta:', response.data);
+        throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
+      }
+      
+      console.log('Kling Effects iniciado correctamente, taskId:', taskId);
+      return res.json({
+        success: true,
+        taskId: taskId,
+        status: 'processing'
+      });
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para Effects:', internalError.message);
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Datos de respuesta:', internalError.response.data);
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de effects/start:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error al iniciar el proceso de Kling Effects'
+    });
+  }
+});
+
+/**
+ * Endpoint para verificar el estado de una tarea de Kling Effects
+ */
+router.get('/proxy/kling/effects/status', async (req, res) => {
+  try {
+    const { taskId } = req.query;
+    
+    if (!taskId) {
+      console.error('Error: No se proporcionó taskId en el request');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere el ID de la tarea'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('Error: PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      console.log('Verificando estado de tarea de Kling Effects:', taskId);
+      
+      // Llamada real a la API de PiAPI para verificar estado
+      const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
+        headers: {
+          'x-api-key': PIAPI_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      console.log('Respuesta de status de PiAPI para Effects:', JSON.stringify(response.data));
+      
+      if (!response.data || !response.data.data) {
+        console.error('Error: Estructura de respuesta inválida:', response.data);
+        return res.status(500).json({
+          success: false,
+          status: 'failed',
+          errorMessage: 'Estructura de respuesta inválida desde PiAPI'
+        });
+      }
+      
+      // Extraer el estado de la respuesta
+      const taskData = response.data.data;
+      const status = taskData.status?.toLowerCase() || 'processing';
+      
+      // Si la tarea está completada, obtenemos la URL del resultado
+      if (status === 'completed') {
+        console.log('Tarea completada. Obteniendo URL del resultado...');
+        
+        // Verificar varias posibles ubicaciones de la URL del resultado
+        let videoUrl = null;
+        
+        if (taskData.output?.video_url) {
+          videoUrl = taskData.output.video_url;
+          console.log('Encontrada video_url:', videoUrl);
+        } else if (taskData.output?.url) {
+          videoUrl = taskData.output.url;
+          console.log('Encontrada url:', videoUrl);
+        }
+        
+        if (!videoUrl) {
+          console.error('Error: No se encontró URL del video en la respuesta:', taskData);
+          return res.status(500).json({
+            status: 'failed',
+            success: false,
+            errorMessage: 'No se encontró la URL del video en la respuesta de PiAPI',
+            rawResponse: taskData // Incluir respuesta cruda para debug
+          });
+        }
+        
+        console.log('Tarea completada con éxito. URL del video:', videoUrl);
+        return res.json({
+          status: 'completed',
+          videoUrl: videoUrl,
+          success: true,
+          taskId: taskId.toString()
+        });
+      } 
+      // Si la tarea falló, devolvemos un error
+      else if (status === 'failed') {
+        let errorMessage = 'Error desconocido en el procesamiento';
+        
+        if (taskData.error?.message) {
+          errorMessage = taskData.error.message;
+        } else if (taskData.error) {
+          errorMessage = typeof taskData.error === 'string' ? taskData.error : JSON.stringify(taskData.error);
+        }
+        
+        console.error('Tarea fallida. Mensaje de error:', errorMessage);
+        return res.json({
+          status: 'failed',
+          errorMessage: errorMessage,
+          success: false,
+          taskId: taskId.toString()
+        });
+      } 
+      // Si la tarea sigue en proceso, devolvemos el estado
+      else {
+        console.log('Tarea aún en procesamiento...');
+        let progress = 50; // Valor predeterminado
+        
+        if (taskData.progress && !isNaN(taskData.progress)) {
+          progress = Math.round(Number(taskData.progress) * 100);
+          console.log('Progreso detectado:', progress);
+        }
+        
+        return res.json({
+          status: 'processing',
+          progress: progress,
+          success: true,
+          taskId: taskId.toString()
+        });
+      }
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para status de Effects:', internalError.message);
+      
+      return res.status(500).json({
+        success: false,
+        status: 'failed',
+        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado',
+        code: internalError.response?.status || 500
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de effects/status:', error);
+    
+    return res.status(500).json({
+      status: 'failed',
+      errorMessage: error.message || 'Error al verificar el estado del proceso',
+      success: false
+    });
+  }
+});
+
 export default router;

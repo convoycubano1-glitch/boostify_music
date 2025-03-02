@@ -30,6 +30,7 @@ import HomePage from "@/pages/home";
 import ImageGeneratorPage from "@/pages/image-generator";
 import ImageGeneratorSimplePage from "@/pages/image-generator-simple";
 import InstagramBoostPage from "@/pages/instagram-boost";
+import KlingToolsPage from "@/pages/kling-tools";
 import ManagerToolsPage from "@/pages/manager-tools";
 import MerchandisePage from "@/pages/merchandise";
 import MessagesPage from "@/pages/messages";
@@ -183,6 +184,7 @@ const Router = () => {
   const WrappedImageGeneratorPage = withPageWrapper(ImageGeneratorPage);
   const WrappedImageGeneratorSimplePage = withPageWrapper(ImageGeneratorSimplePage);
   const WrappedFaceSwapPage = withPageWrapper(FaceSwapPage);
+  const WrappedKlingToolsPage = withPageWrapper(KlingToolsPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -241,6 +243,7 @@ const Router = () => {
         <ProtectedRoute path="/image-generator" component={WrappedImageGeneratorPage} />
         <Route path="/image-generator-simple" component={WrappedImageGeneratorSimplePage} />
         <Route path="/face-swap" component={WrappedFaceSwapPage} />
+        <Route path="/kling-tools" component={WrappedKlingToolsPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
