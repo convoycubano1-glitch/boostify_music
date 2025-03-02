@@ -21,16 +21,27 @@ import { GenerateImageParams } from '@/lib/types/model-types';
 import { useToast } from '@/hooks/use-toast';
 
 interface FreepikGeneratorProps {
-  onImageGenerated?: (image: ImageResult) => void;
+  onGeneratedImage?: (image: ImageResult) => void;
   onImageSelected?: (image: ImageResult) => void;
+  isGenerating?: boolean;
+  setIsGenerating?: (isGenerating: boolean) => void;
 }
 
-export function FreepikGenerator({ onImageGenerated, onImageSelected }: FreepikGeneratorProps) {
+export function FreepikGenerator({ 
+  onGeneratedImage, 
+  onImageSelected, 
+  isGenerating: externalIsGenerating, 
+  setIsGenerating: externalSetIsGenerating 
+}: FreepikGeneratorProps) {
   // State for form inputs
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [model, setModel] = useState<FreepikModel>(FreepikModel.MYSTIC);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [localIsGenerating, localSetIsGenerating] = useState(false);
+  
+  // Use the external state if provided, otherwise use local state
+  const isGenerating = externalIsGenerating !== undefined ? externalIsGenerating : localIsGenerating;
+  const setIsGenerating = externalSetIsGenerating || localSetIsGenerating;
   const [generatedImage, setGeneratedImage] = useState<ImageResult | null>(null);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   const [savedImages, setSavedImages] = useState<ImageResult[]>([]);
@@ -79,8 +90,8 @@ export function FreepikGenerator({ onImageGenerated, onImageSelected }: FreepikG
               setGeneratedImage(result);
               setPendingTaskId(null);
               setIsGenerating(false);
-              if (onImageGenerated) {
-                onImageGenerated(result);
+              if (onGeneratedImage) {
+                onGeneratedImage(result);
               }
               toast({
                 title: 'Image Generated',
@@ -115,7 +126,7 @@ export function FreepikGenerator({ onImageGenerated, onImageSelected }: FreepikG
         clearInterval(interval);
       }
     };
-  }, [pendingTaskId, onImageGenerated, toast]);
+  }, [pendingTaskId, onGeneratedImage, toast]);
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,8 +165,8 @@ export function FreepikGenerator({ onImageGenerated, onImageSelected }: FreepikG
         console.log('Found similar existing image:', similarImage);
         setGeneratedImage(similarImage);
         setIsGenerating(false);
-        if (onImageGenerated) {
-          onImageGenerated(similarImage);
+        if (onGeneratedImage) {
+          onGeneratedImage(similarImage);
         }
         toast({
           title: 'Similar Image Found',
@@ -184,8 +195,8 @@ export function FreepikGenerator({ onImageGenerated, onImageSelected }: FreepikG
       else if (result.url) {
         setGeneratedImage(result);
         setIsGenerating(false);
-        if (onImageGenerated) {
-          onImageGenerated(result);
+        if (onGeneratedImage) {
+          onGeneratedImage(result);
         }
         
         // Add to saved images if not already there
