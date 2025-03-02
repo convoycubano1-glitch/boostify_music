@@ -56,9 +56,9 @@ export function FluxGenerator({
     async function loadSavedImages() {
       try {
         setIsLoading(true);
-        const images = await fluxStorageService.getImages();
+        const images = await fluxLocalStorageService.getImages();
         // Filtrar imágenes sin URLs (tareas pendientes)
-        const completedImages = images.filter(img => img.url && img.url.length > 0);
+        const completedImages = images.filter((img: ImageResult) => img.url && img.url.length > 0);
         console.log(`Loaded ${completedImages.length} saved Flux images`);
         setSavedImages(completedImages);
       } catch (error) {
@@ -137,7 +137,7 @@ export function FluxGenerator({
               
               // Guardar en Firestore
               try {
-                const firestoreId = await fluxStorageService.saveImage(completedImage);
+                const firestoreId = await fluxLocalStorageService.saveImage(completedImage);
                 setGeneratedImage(prev => prev ? {...prev, firestoreId} : null);
               } catch (error) {
                 console.error('Error saving completed Flux image to Firestore:', error);
