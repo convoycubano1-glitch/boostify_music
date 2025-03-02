@@ -21,6 +21,7 @@ const FAL_API_KEY = process.env.FAL_API_KEY || '';
 const KLING_API_KEY = process.env.VITE_KLING_API_KEY || process.env.KLING_API_KEY || '';
 const LUMA_API_KEY = process.env.LUMA_API_KEY || '';
 const FREEPIK_API_KEY = process.env.FREEPIK_API_KEY || '';
+const PIAPI_API_KEY = process.env.PIAPI_API_KEY || '';
 
 /**
  * Verificar que todas las claves API requeridas estén configuradas
@@ -32,6 +33,7 @@ function verifyApiKeys() {
   if (!KLING_API_KEY) missingKeys.push('KLING_API_KEY');
   if (!LUMA_API_KEY) missingKeys.push('LUMA_API_KEY');
   if (!FREEPIK_API_KEY) missingKeys.push('FREEPIK_API_KEY');
+  if (!PIAPI_API_KEY) missingKeys.push('PIAPI_API_KEY');
   
   if (missingKeys.length > 0) {
     log(`⚠️ Missing API keys: ${missingKeys.join(', ')}`, 'api-proxy');
@@ -793,6 +795,199 @@ router.get('/luma/video/:taskId', async (req, res) => {
 });
 
 /**
+ * Proxy para la API de PiAPI Flux
+ * 
+ * Esta API proporciona generación de imágenes avanzada con LoRA y ControlNet
+ * Documentación: https://api.piapi.ai/api/v1/task
+ * 
+ * Los modelos disponibles son:
+ * - Qubico/flux1-dev
+ * - Qubico/flux1-schnell
+ * - Qubico/flux1-dev-advanced (para LoRA y ControlNet)
+ */
+router.post('/flux/generate-image', async (req, res) => {
+  try {
+    console.log('Recibida solicitud para generar imagen con PiAPI Flux:', JSON.stringify(req.body));
+    
+    const { 
+      prompt, 
+      negative_prompt = '',
+      steps = 28,
+      guidance_scale = 2.5,
+      model = 'Qubico/flux1-dev',
+      task_type = 'txt2img',
+      lora_settings,
+      control_net_settings
+    } = req.body;
+    
+    if (!prompt) {
+      // Enviamos una respuesta de error con status 400
+      console.log('Error: Prompt vacío en solicitud a PiAPI Flux');
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'Prompt is required',
+        success: false
+      });
+    }
+
+    if (!PIAPI_API_KEY) {
+      // Si no hay API key, retornar error con status 500
+      console.log('Error: No se encontró PIAPI_API_KEY');
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'PIAPI_API_KEY is not configured',
+        success: false
+      });
+    }
+
+    // Construir el payload según el tipo de tarea
+    const payload: any = {
+      model,
+      task_type,
+      input: {
+        prompt,
+        negative_prompt,
+        steps,
+        guidance_scale
+      }
+    };
+    
+    // Agregar configuración de LoRA si está presente
+    if (lora_settings && Array.isArray(lora_settings) && lora_settings.length > 0) {
+      payload.input.lora_settings = lora_settings;
+      
+      // Si usamos LoRA, asegurarse de que estamos usando el modelo avanzado
+      if (model !== 'Qubico/flux1-dev-advanced') {
+        payload.model = 'Qubico/flux1-dev-advanced';
+        payload.task_type = task_type.includes('lora') ? task_type : 'txt2img-lora';
+      }
+    }
+    
+    // Agregar configuración de ControlNet si está presente
+    if (control_net_settings && Array.isArray(control_net_settings) && control_net_settings.length > 0) {
+      payload.input.control_net_settings = control_net_settings;
+      
+      // Si usamos ControlNet, asegurarse de que estamos usando el modelo avanzado y la tarea correcta
+      if (model !== 'Qubico/flux1-dev-advanced') {
+        payload.model = 'Qubico/flux1-dev-advanced';
+      }
+      
+      if (!task_type.includes('controlnet')) {
+        payload.task_type = 'controlnet-lora';
+      }
+    }
+    
+    try {
+      console.log('Realizando llamada real a la API de PiAPI Flux');
+      
+      // Construir los headers para la API
+      const headers = {
+        'X-API-Key': PIAPI_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      // Llamar a la API para iniciar la generación
+      const response = await axios.post(
+        'https://api.piapi.ai/api/v1/task',
+        payload,
+        { headers, timeout: 15000 }
+      );
+      
+      // Verificar la respuesta y extraer el task_id
+      if (response.data && response.data.data && response.data.data.task_id) {
+        const taskId = response.data.data.task_id;
+        
+        // Devolver el task_id para que el cliente pueda verificar el estado
+        console.log('Generación iniciada exitosamente en PiAPI Flux, task_id:', taskId);
+        return res.status(200).json({
+          task_id: taskId,
+          status: 'processing',
+          model: response.data.data.model,
+          task_type: response.data.data.task_type
+        });
+      } else {
+        // Si no hay task_id, algo salió mal
+        console.error('Respuesta de PiAPI Flux no contiene task_id:', response.data);
+        throw new Error('Missing task_id in PiAPI Flux response');
+      }
+    } catch (apiError: any) {
+      // En caso de error en la API, retornamos un error
+      console.error('Error llamando a la API de PiAPI Flux:', apiError.message);
+      return res.status(500).json({
+        error: 'API_ERROR',
+        message: apiError.message || 'Error calling PiAPI Flux API',
+        success: false
+      });
+    }
+  } catch (error: any) {
+    // Si ocurre cualquier error, retornamos un error
+    console.error('Error inesperado en PiAPI Flux proxy:', error.message);
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Error inesperado',
+      success: false
+    });
+  }
+});
+
+/**
+ * Endpoint para verificar el estado de una tarea de generación de PiAPI Flux
+ */
+router.get('/flux/task/:taskId', async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    
+    if (!taskId) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        message: 'Task ID is required',
+        success: false
+      });
+    }
+    
+    if (!PIAPI_API_KEY) {
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'PIAPI_API_KEY is not configured',
+        success: false
+      });
+    }
+    
+    try {
+      // Construir los headers para la API
+      const headers = {
+        'X-API-Key': PIAPI_API_KEY,
+        'Accept': 'application/json'
+      };
+      
+      // Verificar el estado de la tarea
+      const response = await axios.get(
+        `https://api.piapi.ai/api/v1/task/${taskId}`,
+        { headers, timeout: 10000 }
+      );
+      
+      // Devolver la respuesta completa para que el cliente pueda manejarla
+      return res.json(response.data);
+    } catch (apiError: any) {
+      console.error(`Error verificando estado de tarea ${taskId} en PiAPI Flux:`, apiError.message);
+      return res.status(500).json({
+        error: 'API_ERROR',
+        message: apiError.message || 'Error verificando estado de tarea en PiAPI Flux',
+        success: false
+      });
+    }
+  } catch (error: any) {
+    console.error('Error inesperado en proxy de verificación de PiAPI Flux:', error.message);
+    return res.status(500).json({
+      error: 'UNEXPECTED_ERROR',
+      message: error.message || 'Error inesperado',
+      success: false
+    });
+  }
+});
+
+/**
  * Ruta para verificar el estado de las API
  */
 router.get('/status', (req, res) => {
@@ -800,7 +995,8 @@ router.get('/status', (req, res) => {
     fal: Boolean(FAL_API_KEY),
     freepik: Boolean(FREEPIK_API_KEY),
     kling: Boolean(KLING_API_KEY),
-    luma: Boolean(LUMA_API_KEY)
+    luma: Boolean(LUMA_API_KEY),
+    flux: Boolean(PIAPI_API_KEY)
   };
   
   return res.json({ status });

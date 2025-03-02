@@ -14,6 +14,10 @@ import {
 // Import Freepik storage service
 import { freepikStorageService } from './freepik-storage-service';
 
+// Import Flux service and storage
+import { fluxService, FluxModel, FluxTaskType, FluxLoraType, FluxControlNetType } from './flux/flux-service';
+import { fluxStorageService } from './flux/flux-storage-service';
+
 import { 
   GenerateImageParams,
   VideoGenerationParams,
@@ -26,12 +30,16 @@ import {
 export type ImageResult = ImportedImageResult;
 export type VideoResult = ImportedVideoResult;
 
+// Re-export Flux types
+export { FluxModel, FluxTaskType, FluxLoraType, FluxControlNetType };
+
 // Configuración para determinar si usar API directa o proxy de servidor
 const useDirectApi = {
   freepik: false, // Usar proxy del servidor debido a restricciones CORS
   fal: false,     // Seguir usando proxy para Fal por ahora
   kling: false,   // Seguir usando proxy para Kling por ahora
   luma: false,    // Seguir usando proxy para Luma por ahora
+  flux: false,    // Usar proxy del servidor por ahora
 };
 
 // Verificar si las claves API están disponibles en el cliente
@@ -45,6 +53,8 @@ function hasApiKey(provider: string): boolean {
       return !!import.meta.env.VITE_KLING_API_KEY;
     case 'luma':
       return !!import.meta.env.VITE_LUMA_API_KEY;
+    case 'flux':
+      return !!import.meta.env.VITE_PIAPI_API_KEY;
     default:
       return false;
   }
@@ -413,6 +423,77 @@ async function generateVideoWithLuma(params: Omit<VideoGenerationParams, 'apiPro
 }
 
 /**
+ * Generate image using Flux API through our server proxy
+ * @param params Image generation parameters
+ * @returns Promise with generated image result
+ */
+async function generateWithFlux(params: Omit<GenerateImageParams, 'apiProvider'>): Promise<ImageResult> {
+  try {
+    // Preparar los parámetros para la solicitud
+    const requestParams = {
+      prompt: params.prompt,
+      modelType: params.fluxModel || 'Qubico/flux1-dev', // Modelo predeterminado
+      loraType: params.loraType,
+      loraStrength: params.loraStrength,
+      controlNetType: params.controlNetType,
+      controlNetImage: params.controlNetImage,
+      controlNetStrength: params.controlNetStrength,
+      negativePrompt: params.negativePrompt || 'blurry, bad quality, distorted, disfigured'
+    };
+
+    // Utilizar el proxy del servidor para la generación
+    const response = await axios.post(
+      '/api/proxy/flux/generate-image',
+      requestParams
+    );
+
+    if (response.data && response.data.task_id) {
+      // Para la primera llamada, no tenemos URL todavía, así que devolvemos un task_id
+      // que se puede usar para verificar el estado más tarde
+      const imageResult: ImageResult = {
+        url: '', // URL estará vacía inicialmente
+        provider: `flux-${params.fluxModel || 'default'}`,
+        taskId: response.data.task_id,
+        status: 'IN_PROGRESS',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+      
+      // Intenta guardar el resultado pendiente en Firestore
+      try {
+        // Aquí deberíamos usar un servicio de almacenamiento para Flux
+        // Por ahora usamos freepikStorageService como alternativa
+        const firestoreId = await freepikStorageService.saveImage(imageResult);
+        return {
+          ...imageResult,
+          firestoreId
+        };
+      } catch (storageError) {
+        console.error('Error saving Flux task to Firestore:', storageError);
+        return imageResult;
+      }
+    }
+
+    // Si no hay task_id pero hay un fallback, utiliza el fallback
+    if (response.data && response.data.fallback) {
+      return {
+        url: response.data.fallback.url || '',
+        provider: 'flux (fallback)',
+        requestId: response.data.fallback.task_id || '',
+        prompt: params.prompt,
+        createdAt: new Date()
+      };
+    }
+
+    throw new Error('Failed to generate image with Flux');
+  } catch (error) {
+    console.error('Error generating image with Flux:', error);
+    // No usamos fallback automático, solo informamos del error
+    throw new Error('Image generation with Flux failed. Please try again later or use a different provider.');
+  }
+}
+
+/**
  * Generate video using Kling API through our server proxy
  * @param params Video generation parameters
  * @returns Promise with generated video result
@@ -483,21 +564,16 @@ function enhancePrompt(originalPrompt: string): string {
  * @returns Promise with generated image result
  */
 /**
- * Generates an image using Freepik exclusively
- * This implementation explicitly uses Freepik as the sole provider
- * and ensures Firestore integration for storage
+ * Generates an image using the specified provider (Freepik or Flux)
+ * Ensures Firestore integration for storage and retrieval
  * 
- * @param params Generation parameters
+ * @param params Generation parameters including provider selection
  * @returns Promise with the generated image result
  */
 export async function generateImage(params: GenerateImageParams): Promise<ImageResult> {
-  // Force 'freepik' as the only valid provider
-  const freepikParams = {
-    ...params,
-    apiProvider: 'freepik' as ApiProvider
-  };
-  
-  console.log('Using Freepik exclusively for image generation');
+  // Determine provider to use based on params.apiProvider
+  const apiProvider = params.apiProvider || 'freepik';
+  console.log(`Using ${apiProvider} for image generation`);
   
   // First check if we already have similar images in Firestore for the same prompt
   try {
@@ -512,7 +588,7 @@ export async function generateImage(params: GenerateImageParams): Promise<ImageR
     );
     
     if (similarImage) {
-      console.log('Found similar existing Freepik image in Firestore:', similarImage);
+      console.log(`Found similar existing image in Firestore: ${similarImage.provider}`, similarImage);
       return similarImage;
     }
   } catch (error) {
@@ -520,8 +596,21 @@ export async function generateImage(params: GenerateImageParams): Promise<ImageR
     // Continue with generation if search fails
   }
   
-  // Generate new image with Freepik
-  return generateWithFreepik(freepikParams);
+  // Generate new image with the specified provider
+  // Extraemos apiProvider para todos los casos y evitar pasarlo a las funciones de generación
+  const { apiProvider: _, ...cleanParams } = params;
+  
+  switch (apiProvider) {
+    case 'flux':
+      return generateWithFlux(cleanParams);
+    case 'fal':
+      return generateWithFal(cleanParams);
+    case 'kling':
+      return generateWithKling(cleanParams);
+    case 'freepik':
+    default:
+      return generateWithFreepik(cleanParams);
+  }
 }
 
 /**
@@ -715,6 +804,18 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
             result.url = response.data.data[0]?.url || '';
           } else if ((provider === 'luma' || provider === 'kling') && response.data.output) {
             result.url = response.data.output.url || '';
+          } else if (provider === 'flux' || provider.startsWith('flux-')) {
+            // Manejo especial para PiAPI Flux
+            if (response.data.images && response.data.images.length > 0) {
+              // Formato estándar para Flux es un array de imágenes en base64 o URLs
+              result.url = response.data.images[0];
+            } else if (response.data.url) {
+              // Posible formato alternativo
+              result.url = response.data.url;
+            } else if (response.data.result && response.data.result.images) {
+              // Otro formato posible, dependiendo de la respuesta de la API
+              result.url = response.data.result.images[0];
+            }
           }
           
           return result;

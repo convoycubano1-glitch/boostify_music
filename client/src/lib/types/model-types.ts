@@ -4,6 +4,7 @@
  */
 
 import { FreepikModel, FreepikAspectRatio } from '@/lib/api/freepik-service';
+import { FluxModel, FluxLoraType, FluxControlNetType, FluxTaskType } from '@/lib/api/flux/flux-service';
 
 /**
  * Base options for Freepik AI image generation requests
@@ -97,6 +98,33 @@ export function isValidSafetySettings(value: any): value is 'block_low_and_above
 }
 
 /**
+ * Type guard for checking if a value is a valid FluxModel
+ * @param value Value to check
+ * @returns Boolean indicating if the value is a valid FluxModel
+ */
+export function isValidFluxModel(value: any): value is FluxModel {
+  return Object.values(FluxModel).includes(value);
+}
+
+/**
+ * Type guard for checking if a value is a valid FluxLoraType
+ * @param value Value to check
+ * @returns Boolean indicating if the value is a valid FluxLoraType
+ */
+export function isValidFluxLoraType(value: any): value is FluxLoraType {
+  return Object.values(FluxLoraType).includes(value);
+}
+
+/**
+ * Type guard for checking if a value is a valid FluxTaskType
+ * @param value Value to check
+ * @returns Boolean indicating if the value is a valid FluxTaskType
+ */
+export function isValidFluxTaskType(value: any): value is FluxTaskType {
+  return Object.values(FluxTaskType).includes(value);
+}
+
+/**
  * Type definitions for various generation parameters
  */
 export interface GenerationOptions {
@@ -110,7 +138,7 @@ export interface GenerationOptions {
 /**
  * Type for API providers
  */
-export type ApiProvider = 'fal' | 'luma' | 'freepik' | 'kling';
+export type ApiProvider = 'fal' | 'luma' | 'freepik' | 'kling' | 'flux';
 
 /**
  * Parameters for image generation with specific providers
@@ -125,6 +153,12 @@ export interface GenerateImageParams {
   modelType?: string;
   useDirectApi?: boolean;
   freepikModel?: FreepikModel;
+  fluxModel?: FluxModel;
+  loraType?: FluxLoraType;
+  loraStrength?: number;
+  controlNetType?: FluxControlNetType;
+  controlNetImage?: string;
+  controlNetStrength?: number;
 }
 
 /**

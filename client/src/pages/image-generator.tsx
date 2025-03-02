@@ -47,7 +47,7 @@ import {
   getGeneratedVideos,
   saveMediaToLocalStorage
 } from '@/lib/api/generated-images-service';
-import { FreepikGenerator } from '@/components/image-generation';
+import { FreepikGenerator, FluxGenerator } from '@/components/image-generation';
 
 // Form validation schemas
 const imageFormSchema = z.object({
@@ -71,7 +71,7 @@ type VideoFormValues = z.infer<typeof videoFormSchema>;
 
 export default function ImageGeneratorPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'freepik'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'freepik' | 'flux'>('image');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [generatedVideos, setGeneratedVideos] = useState<VideoResult[]>([]);
@@ -556,7 +556,7 @@ export default function ImageGeneratorPage() {
         Create stunning images and videos with our multi-platform AI generator
       </p>
 
-      <Tabs defaultValue="image" value={activeTab} onValueChange={(value) => setActiveTab(value as 'image' | 'video' | 'freepik')}>
+      <Tabs defaultValue="image" value={activeTab} onValueChange={(value) => setActiveTab(value as 'image' | 'video' | 'freepik' | 'flux')}>
         <TabsList className="mb-4">
           <TabsTrigger value="image">
             <ImageIcon className="mr-2 h-4 w-4" />
@@ -565,6 +565,10 @@ export default function ImageGeneratorPage() {
           <TabsTrigger value="freepik">
             <ImageIcon className="mr-2 h-4 w-4" />
             Freepik
+          </TabsTrigger>
+          <TabsTrigger value="flux">
+            <PictureInPicture2 className="mr-2 h-4 w-4" />
+            Flux AI
           </TabsTrigger>
           <TabsTrigger value="video">
             <VideoIcon className="mr-2 h-4 w-4" />
@@ -581,8 +585,10 @@ export default function ImageGeneratorPage() {
                   {activeTab === 'image' 
                     ? 'Image Generator' 
                     : activeTab === 'freepik' 
-                      ? 'Freepik Generator' 
-                      : 'Video Generator'
+                      ? 'Freepik Generator'
+                      : activeTab === 'flux'
+                        ? 'Flux AI Generator'
+                        : 'Video Generator'
                   }
                 </CardTitle>
                 <CardDescription>
@@ -590,13 +596,32 @@ export default function ImageGeneratorPage() {
                     ? 'Create AI-powered images with our multi-model generator.' 
                     : activeTab === 'freepik'
                       ? 'Generate high-quality images with dedicated Freepik models.'
-                      : 'Generate dynamic videos with advanced AI technology.'}
+                      : activeTab === 'flux'
+                        ? 'Advanced AI image generation with LoRA and ControlNet features.'
+                        : 'Generate dynamic videos with advanced AI technology.'}
                 </CardDescription>
               </CardHeader>
               
               <TabsContent value="freepik" className="mt-0">
                 <CardContent>
                   <FreepikGenerator 
+                    onGeneratedImage={(image) => {
+                      // Add the newly generated image to our images list
+                      setGeneratedImages(prev => [image, ...prev]);
+                      // Also set it as selected image
+                      setSelectedImage(image);
+                      // Stop loading state
+                      setIsGenerating(false);
+                    }}
+                    isGenerating={isGenerating}
+                    setIsGenerating={setIsGenerating}
+                  />
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="flux" className="mt-0">
+                <CardContent>
+                  <FluxGenerator 
                     onGeneratedImage={(image) => {
                       // Add the newly generated image to our images list
                       setGeneratedImages(prev => [image, ...prev]);
