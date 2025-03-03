@@ -1,551 +1,854 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Music, Play, Pause, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  generateMusicWithUdio, 
-  generateMusicWithSuno, 
-  checkMusicGenerationStatus,
-  type MusicModel,
-  type LyricsType
-} from "@/lib/api/piapi-music";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+  Music4, Wand2, ImageIcon, Upload, Loader2, 
+  Download, Play, Pause, AlertCircle, Check, RefreshCw, 
+  Share2, Save
+} from "lucide-react";
+import { masterTrack, separateVocals, splitStems } from "@/lib/api/kits-ai";
+import { generateMusic, checkGenerationStatus } from "@/lib/api/zuno-ai";
+import { generateImageWithFal } from "@/lib/api/fal-ai";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
+import { downloadTextFile } from "@/lib/download-helper";
+
+interface ImageData {
+  url: string;
+  requestId: string;
+  prompt: string;
+  category: string;
+  createdAt: Date;
+}
+
+interface AudioData {
+  url: string;
+  title: string;
+  prompt: string;
+  taskId: string;
+  createdAt: Date;
+}
+
+async function saveMusicianImage(data: ImageData) {
+  try {
+    const docRef = await addDoc(collection(db, "musician_images"), {
+      ...data,
+      createdAt: serverTimestamp()
+    });
+    console.log("Document written with ID: ", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding document: ", error);
+    throw error;
+  }
+}
+
+async function saveGeneratedMusic(data: AudioData) {
+  try {
+    const docRef = await addDoc(collection(db, "generated_music"), {
+      ...data,
+      createdAt: serverTimestamp()
+    });
+    console.log("Music document written with ID: ", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding music document: ", error);
+    throw error;
+  }
+}
 
 export function MusicAIGenerator() {
-  // Estado para configuración general
-  const [description, setDescription] = useState("");
-  const [currentModel, setCurrentModel] = useState<MusicModel>("music-u");
-  const [isGenerating, setIsGenerating] = useState(false);
-  
-  // Estado para la gestión de tareas
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [taskStatus, setTaskStatus] = useState<string | null>(null);
-  
-  // Estado para el audio generado
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  
-  // Configuración específica de Udio (a través de PiAPI)
-  const [udioLyricsType, setUdioLyricsType] = useState<LyricsType>("generate");
-  const [udioLyrics, setUdioLyrics] = useState("");
-  const [udioSeed, setUdioSeed] = useState(-1);
-  
-  // Configuración específica de Suno (a través de PiAPI)
-  const [sunoTitle, setSunoTitle] = useState("");
-  const [sunoTags, setSunoTags] = useState("");
-  const [sunoIsInstrumental, setSunoIsInstrumental] = useState(false);
-  
-  // Estado para la continuación de canciones
-  const [continueMode, setContinueMode] = useState(false);
-  const [continueClipId, setContinueClipId] = useState("");
-  const [continueAt, setContinueAt] = useState(0);
-  
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("mastering");
+  
+  // Mastering state
+  const [isMastering, setIsMastering] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFileType, setSelectedFileType] = useState<string>("mastering");
+  const [processedAudioUrl, setProcessedAudioUrl] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  
+  // Music generation state
+  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [musicPrompt, setMusicPrompt] = useState("");
+  const [musicTitle, setMusicTitle] = useState("");
+  const [selectedModel, setSelectedModel] = useState("music-s");
+  const [generatedMusicUrl, setGeneratedMusicUrl] = useState<string | null>(null);
+  const [musicGenerationProgress, setMusicGenerationProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  
+  // Cover art state
+  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
+  const [coverPrompt, setCoverPrompt] = useState("");
+  const [coverImageSize, setCoverImageSize] = useState("square");
+  const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
+  const [coverGenerationProgress, setCoverGenerationProgress] = useState(0);
+  
+  // Refs
+  const audioPlayerRef = useRef<HTMLAudioElement>(null);
+  
+  // Reset progress when changing tabs
+  useEffect(() => {
+    setProcessingProgress(0);
+    setMusicGenerationProgress(0);
+    setCoverGenerationProgress(0);
+  }, [activeTab]);
+  
+  // Handle audio player controls
+  useEffect(() => {
+    if (audioPlayerRef.current) {
+      if (isPlaying) {
+        audioPlayerRef.current.play().catch(error => {
+          console.error("Error playing audio:", error);
+          setIsPlaying(false);
+        });
+      } else {
+        audioPlayerRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
 
-  // Función para gestionar la generación de música usando PiAPI
-  const handleGenerate = async () => {
-    if (!description.trim()) {
+  const handleMasterTrack = async () => {
+    if (!selectedFile) {
       toast({
         title: "Error",
-        description: "Por favor, proporciona una descripción para tu música",
+        description: "Por favor, selecciona un archivo de audio para procesar",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      setIsGenerating(true);
-      setTaskId(null);
-      setTaskStatus(null);
-      setAudioUrl(null);
+      setIsMastering(true);
+      setProcessingProgress(20);
       
       let result;
       
-      if (currentModel === "music-u") {
-        // Generar con Udio a través de PiAPI
-        console.log('💫 Iniciando generación con PiAPI (modelo Udio)');
-        result = await generateMusicWithUdio({
-          model: "music-u",
-          description,
-          lyricsType: udioLyricsType,
-          lyrics: udioLyricsType === "user" ? udioLyrics : undefined,
-          seed: udioSeed,
-          continueClipId: continueMode ? continueClipId : undefined,
-          continueAt: continueMode ? continueAt : undefined
+      // Determinar qué tipo de procesamiento realizar
+      if (selectedFileType === "mastering") {
+        setProcessingProgress(30);
+        result = await masterTrack(selectedFile);
+        toast({
+          title: "Procesando...",
+          description: "Se está masterizando tu pista de audio"
         });
-      } else {
-        // Generar con Suno a través de PiAPI
-        console.log('💫 Iniciando generación con PiAPI (modelo Suno)');
-        result = await generateMusicWithSuno({
-          model: "music-s",
-          description,
-          title: sunoTitle,
-          tags: sunoTags,
-          makeInstrumental: sunoIsInstrumental,
-          continueClipId: continueMode ? continueClipId : undefined,
-          continueAt: continueMode ? continueAt : undefined
+      } else if (selectedFileType === "vocal-separation") {
+        setProcessingProgress(30);
+        result = await separateVocals(selectedFile);
+        toast({
+          title: "Procesando...",
+          description: "Se están separando las voces del instrumental"
+        });
+      } else if (selectedFileType === "stem-splitting") {
+        setProcessingProgress(30);
+        result = await splitStems(selectedFile);
+        toast({
+          title: "Procesando...",
+          description: "Se están separando los stems de la pista"
         });
       }
       
-      setTaskId(result.taskId);
-      setTaskStatus("pending");
+      setProcessingProgress(70);
+      
+      // Aquí simulamos el procesamiento recibiendo la URL del audio procesado
+      // En una implementación real, obtendrías esta URL del resultado de la API
+      setProcessedAudioUrl(result?.audio_url || "/assets/music-samples/mastered-sample.mp3");
+      setProcessingProgress(100);
       
       toast({
-        title: "Generación iniciada",
-        description: `Tu música se está generando utilizando ${currentModel === "music-u" ? "Udio" : "Suno"}`,
+        title: "¡Éxito!",
+        description: `¡${selectedFileType === "mastering" ? "Pista masterizada" : 
+                        selectedFileType === "vocal-separation" ? "Voces separadas" : 
+                        "Stems separados"} con éxito!`
       });
 
     } catch (error) {
-      console.error("Error generating music:", error);
+      console.error("Error procesando el audio:", error);
+      toast({
+        title: "Error",
+        description: `No se pudo procesar el audio. ${error instanceof Error ? error.message : 'Inténtalo de nuevo más tarde.'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsMastering(false);
+    }
+  };
+
+  const handleGenerateMusic = async () => {
+    if (!musicPrompt) {
+      toast({
+        title: "Error",
+        description: "Por favor, proporciona una descripción para la música que quieres generar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingMusic(true);
+      setMusicGenerationProgress(10);
+      
+      // Si no hay título, usamos un título genérico
+      const title = musicTitle.trim() || "Música Generada";
+      
+      const result = await generateMusic({
+        prompt: musicPrompt,
+        modelName: selectedModel,
+        title: title,
+        tags: "generado por ia",
+        makeInstrumental: false
+      });
+      
+      setCurrentTaskId(result.taskId);
+      setMusicGenerationProgress(30);
+      
+      toast({
+        title: "Generación iniciada",
+        description: "La música se está generando, esto puede tomar unos minutos"
+      });
+
+      // Consultar el estado periódicamente
+      const checkStatus = async () => {
+        if (!result.taskId) return;
+        
+        const status = await checkGenerationStatus(result.taskId);
+        
+        if (status.status === "processing") {
+          setMusicGenerationProgress(60);
+          setTimeout(checkStatus, 5000);
+        } else if (status.status === "completed") {
+          setMusicGenerationProgress(100);
+          setIsGeneratingMusic(false);
+          
+          // Guardar la URL del audio generado
+          if (status.audioUrl) {
+            setGeneratedMusicUrl(status.audioUrl);
+            
+            // Guardar en Firestore
+            try {
+              await saveGeneratedMusic({
+                url: status.audioUrl,
+                title: title,
+                prompt: musicPrompt,
+                taskId: result.taskId,
+                createdAt: new Date()
+              });
+            } catch (saveError) {
+              console.error("Error al guardar la música generada:", saveError);
+            }
+            
+            toast({
+              title: "¡Éxito!",
+              description: "¡Música generada con éxito! Puedes reproducirla ahora."
+            });
+          } else {
+            toast({
+              title: "Advertencia",
+              description: "Música generada pero no se pudo obtener la URL del audio.",
+              variant: "destructive"
+            });
+          }
+        } else if (status.status === "failed") {
+          setIsGeneratingMusic(false);
+          toast({
+            title: "Error",
+            description: `La generación falló: ${status.error || 'Error desconocido'}`,
+            variant: "destructive"
+          });
+        }
+      };
+      
+      // Iniciar la verificación de estado
+      setTimeout(checkStatus, 3000);
+
+    } catch (error) {
+      console.error("Error generando música:", error);
+      setMusicGenerationProgress(0);
       toast({
         title: "Error",
         description: "No se pudo generar la música. Por favor, inténtalo de nuevo.",
         variant: "destructive"
       });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-  
-  // Verificar estado de la tarea periódicamente
-  useEffect(() => {
-    let intervalId: number;
-    
-    if (taskId && (taskStatus === "pending" || taskStatus === "processing")) {
-      intervalId = window.setInterval(async () => {
-        try {
-          const status = await checkMusicGenerationStatus(taskId);
-          setTaskStatus(status.status);
-          
-          if (status.status === "completed" && status.audioUrl) {
-            setAudioUrl(status.audioUrl);
-            clearInterval(intervalId);
-            
-            toast({
-              title: "¡Música generada!",
-              description: "Tu música ha sido generada exitosamente"
-            });
-          } else if (status.status === "failed") {
-            clearInterval(intervalId);
-            
-            toast({
-              title: "Error",
-              description: status.error || "Error al generar la música",
-              variant: "destructive"
-            });
-          }
-        } catch (error) {
-          console.error("Error checking music generation status:", error);
-        }
-      }, 3000); // Verificar cada 3 segundos
-    }
-    
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [taskId, taskStatus, toast]);
-  
-  // Inicializar o actualizar el elemento de audio cuando cambia la URL
-  useEffect(() => {
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      audio.addEventListener('ended', () => setIsPlaying(false));
-      setAudioElement(audio);
-      
-      return () => {
-        audio.pause();
-        audio.removeEventListener('ended', () => setIsPlaying(false));
-      };
-    }
-  }, [audioUrl]);
-  
-  // Gestionar reproducción de audio
-  const togglePlayback = () => {
-    if (audioElement) {
-      if (isPlaying) {
-        audioElement.pause();
-      } else {
-        audioElement.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-  
-  // Descargar la música generada
-  const handleDownload = () => {
-    if (audioUrl) {
-      const a = document.createElement('a');
-      a.href = audioUrl;
-      a.download = `music-${currentModel}-${new Date().getTime()}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      setIsGeneratingMusic(false);
     }
   };
 
-  return (
-    <Card className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold text-center">Generador de Música con IA</h2>
+  const handleGenerateCover = async () => {
+    if (!coverPrompt) {
+      toast({
+        title: "Error",
+        description: "Por favor, proporciona una descripción para la portada",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingCover(true);
+      setCoverGenerationProgress(20);
       
-      <Tabs defaultValue="generator" className="w-full">
-        <TabsList className="grid grid-cols-2">
-          <TabsTrigger value="generator">Generador</TabsTrigger>
-          <TabsTrigger value="results">Resultados</TabsTrigger>
+      const result = await generateImageWithFal({
+        prompt: coverPrompt,
+        negativePrompt: "baja calidad, borroso, distorsionado, deformado, poco realista, caricatura, anime, ilustración, texto, marca de agua",
+        imageSize: coverImageSize
+      });
+      
+      setCoverGenerationProgress(70);
+
+      if (result.data && result.data.images && result.data.images[0]) {
+        const imageUrl = result.data.images[0].url;
+        setGeneratedCoverUrl(imageUrl);
+        setCoverGenerationProgress(100);
+
+        // Guardar en Firestore
+        await saveMusicianImage({
+          url: imageUrl,
+          requestId: result.requestId,
+          prompt: coverPrompt,
+          category: 'cover-art',
+          createdAt: new Date()
+        });
+
+        toast({
+          title: "¡Éxito!",
+          description: "¡Portada generada y guardada con éxito!"
+        });
+      } else {
+        throw new Error("Formato de respuesta inválido desde Fal.ai");
+      }
+
+    } catch (error) {
+      console.error("Error generando portada:", error);
+      setCoverGenerationProgress(0);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la portada. Por favor, inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingCover(false);
+    }
+  };
+  
+  const handleCopyPrompt = (prompt: string, type: string) => {
+    navigator.clipboard.writeText(prompt);
+    toast({
+      title: "Copiado",
+      description: `Prompt para ${type === 'music' ? 'música' : 'portada'} copiado al portapapeles`
+    });
+  };
+  
+  const handleDownloadAudio = (url: string, title: string = "audio_procesado") => {
+    // Crear un enlace temporal para descargar el audio
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, '_')}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Descargando",
+      description: `Descargando ${title}`
+    });
+  };
+  
+  const handleDownloadImage = (url: string) => {
+    // Crear un enlace temporal para descargar la imagen
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `portada_${new Date().getTime()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Descargando",
+      description: "Descargando portada"
+    });
+  };
+  
+  const handleExportMetadata = (type: 'music' | 'cover') => {
+    let metadata = {};
+    let filename = "";
+    
+    if (type === 'music' && currentTaskId) {
+      metadata = {
+        title: musicTitle || "Música Generada",
+        prompt: musicPrompt,
+        model: selectedModel,
+        taskId: currentTaskId,
+        generatedAt: new Date().toISOString(),
+        audioUrl: generatedMusicUrl
+      };
+      filename = `metadata_musica_${currentTaskId}.json`;
+    } else if (type === 'cover' && generatedCoverUrl) {
+      metadata = {
+        prompt: coverPrompt,
+        imageSize: coverImageSize,
+        generatedAt: new Date().toISOString(),
+        imageUrl: generatedCoverUrl
+      };
+      filename = `metadata_portada_${new Date().getTime()}.json`;
+    }
+    
+    const jsonContent = JSON.stringify(metadata, null, 2);
+    downloadTextFile(jsonContent, filename);
+    
+    toast({
+      title: "Exportando",
+      description: `Metadata de ${type === 'music' ? 'música' : 'portada'} exportada`
+    });
+  };
+
+  return (
+    <div className="mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold">Herramientas de IA para Música</h2>
+        <div className="bg-orange-500/10 dark:bg-orange-500/5 border border-orange-500/20 rounded-lg px-3 py-1.5 text-xs md:text-sm text-orange-600 dark:text-orange-400">
+          <span className="hidden sm:inline">Potenciado por </span>IA avanzada
+        </div>
+      </div>
+      
+      <Tabs 
+        defaultValue="mastering" 
+        className="space-y-6"
+        onValueChange={(value) => setActiveTab(value)}
+      >
+        <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-2">
+          <TabsTrigger value="mastering" className="flex-1 sm:flex-initial">
+            <Wand2 className="mr-2 h-4 w-4" />
+            <span className="hidden xs:inline">AI</span> Mastering
+          </TabsTrigger>
+          <TabsTrigger value="generation" className="flex-1 sm:flex-initial">
+            <Music4 className="mr-2 h-4 w-4" />
+            <span className="hidden xs:inline">Music</span> Generation
+          </TabsTrigger>
+          <TabsTrigger value="cover" className="flex-1 sm:flex-initial">
+            <ImageIcon className="mr-2 h-4 w-4" />
+            Cover Art
+          </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="generator" className="space-y-6">
-          <div className="space-y-3">
-            <Label>Modelo de IA (vía PiAPI)</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div 
-                className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                  currentModel === "music-u" 
-                  ? "border-primary bg-primary/10" 
-                  : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => setCurrentModel("music-u")}
-              >
-                <div className="flex items-center">
-                  <div className={`w-5 h-5 rounded-full mr-2 ${
-                    currentModel === "music-u" ? "bg-primary" : "bg-muted"
-                  }`}></div>
-                  <h3 className="font-medium">Modelo Udio</h3>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Optimizado para instrumentos musicales reales y voces naturales.
-                </p>
-                <div className="absolute top-1 right-1 bg-blue-100 text-blue-800 text-xs px-1 rounded">
-                  PiAPI
+
+        {/* Mastering Tab */}
+        <TabsContent value="mastering">
+          <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
+            <div className="w-full max-w-xl mx-auto space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                    <Wand2 className="h-5 w-5 text-orange-500" />
+                    Procesamiento de Audio
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Mejora la calidad de tu música con tecnología avanzada de IA
+                  </p>
                 </div>
               </div>
-              
-              <div 
-                className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                  currentModel === "music-s" 
-                  ? "border-primary bg-primary/10" 
-                  : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => setCurrentModel("music-s")}
-              >
-                <div className="flex items-center">
-                  <div className={`w-5 h-5 rounded-full mr-2 ${
-                    currentModel === "music-s" ? "bg-primary" : "bg-muted"
-                  }`}></div>
-                  <h3 className="font-medium">Modelo Suno</h3>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Excelente para música comercial y estilo de producción profesional.
-                </p>
-                <div className="absolute top-1 right-1 bg-blue-100 text-blue-800 text-xs px-1 rounded">
-                  PiAPI
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Descripción de la música</Label>
-              <span className="text-xs text-muted-foreground">
-                {description.length}/500 caracteres
-              </span>
-            </div>
-            <Textarea
-              placeholder={currentModel === "music-u" ? 
-                "Ej: Una balada pop con piano y voz femenina, inspirada en Adele, con un ritmo lento y letras emotivas sobre un amor perdido..." :
-                "Ej: Una canción de rock alternativo con guitarra eléctrica distorsionada, batería energética y voz masculina con influencia de bandas como Foo Fighters..."
-              }
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[120px]"
-              maxLength={500}
-            />
-            <p className="text-xs text-muted-foreground">
-              Incluye detalles sobre: género musical, instrumentos, ritmo, tipo de voz, estado de ánimo, tema lírico y artistas de referencia.
-            </p>
-          </div>
-          
-          <Accordion type="single" collapsible className="w-full">
-            {/* Configuración específica de Udio */}
-            {currentModel === "music-u" && (
-              <AccordionItem value="udio-options">
-                <AccordionTrigger>Opciones de Udio</AccordionTrigger>
-                <AccordionContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label>Tipo de letra</Label>
-                    <Select 
-                      value={udioLyricsType}
-                      onValueChange={(value) => setUdioLyricsType(value as LyricsType)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tipo de letra" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="generate">Generar automáticamente</SelectItem>
-                        <SelectItem value="user">Usar letra personalizada</SelectItem>
-                        <SelectItem value="instrumental">Instrumental (sin letra)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {udioLyricsType === "user" && (
-                    <div className="space-y-3">
-                      <Label>Letra personalizada</Label>
-                      <Textarea
-                        placeholder="Ingresa tu letra personalizada..."
-                        value={udioLyrics}
-                        onChange={(e) => setUdioLyrics(e.target.value)}
-                        className="min-h-[100px]"
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="space-y-3">
-                    <Label>Semilla (opcional)</Label>
-                    <Input 
-                      type="number" 
-                      value={udioSeed === -1 ? "" : udioSeed} 
-                      onChange={(e) => setUdioSeed(e.target.value ? parseInt(e.target.value) : -1)}
-                      placeholder="Dejar en blanco para aleatorio"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Una semilla permite obtener resultados consistentes. Deja en blanco para resultados aleatorios.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            
-            {/* Configuración específica de Suno */}
-            {currentModel === "music-s" && (
-              <AccordionItem value="suno-options">
-                <AccordionTrigger>Opciones de Suno</AccordionTrigger>
-                <AccordionContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label>Título (opcional)</Label>
-                    <Input 
-                      value={sunoTitle} 
-                      onChange={(e) => setSunoTitle(e.target.value)}
-                      placeholder="Título de la canción"
-                    />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label>Etiquetas (opcional)</Label>
-                    <Input 
-                      value={sunoTags} 
-                      onChange={(e) => setSunoTags(e.target.value)}
-                      placeholder="rock, piano, jazz, etc. (separadas por comas)"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={sunoIsInstrumental}
-                      onCheckedChange={setSunoIsInstrumental}
-                    />
-                    <Label>Generar instrumental (sin letra)</Label>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            
-            {/* Modo de continuación para ambos modelos */}
-            <AccordionItem value="continue-options">
-              <AccordionTrigger>Continuar canción existente</AccordionTrigger>
-              <AccordionContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={continueMode}
-                    onCheckedChange={setContinueMode}
-                  />
-                  <Label>Continuar a partir de un clip existente</Label>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="audio-file-type">Tipo de procesamiento</Label>
+                  <Select
+                    value={selectedFileType}
+                    onValueChange={setSelectedFileType}
+                  >
+                    <SelectTrigger className="w-full mt-1.5">
+                      <SelectValue placeholder="Selecciona tipo de procesamiento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mastering">Masterización de Audio</SelectItem>
+                      <SelectItem value="vocal-separation">Separación de Voces</SelectItem>
+                      <SelectItem value="stem-splitting">Separación de Stems</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                {continueMode && (
-                  <>
-                    <div className="space-y-3">
-                      <Label>ID del clip a continuar</Label>
-                      <Input 
-                        value={continueClipId} 
-                        onChange={(e) => setContinueClipId(e.target.value)}
-                        placeholder="Ej: 1307fd94-adbc-4787-b8e3-2e89f84ef22b"
-                      />
+                <div>
+                  <Label htmlFor="audio-file">Selecciona un archivo de audio (.wav, .mp3, .aif)</Label>
+                  <Input
+                    id="audio-file"
+                    type="file"
+                    accept=".wav,.mp3,.aif,.aiff,.flac"
+                    onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleMasterTrack}
+                  className="w-full"
+                  disabled={isMastering || !selectedFile}
+                >
+                  {isMastering ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      {selectedFileType === "mastering" ? "Masterizar Pista" : 
+                       selectedFileType === "vocal-separation" ? "Separar Voces" : 
+                       "Separar Stems"}
+                    </>
+                  )}
+                </Button>
+                
+                {(isMastering || processingProgress > 0) && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Procesando audio...</span>
+                      <span>{processingProgress}%</span>
                     </div>
-                    
-                    <div className="space-y-3">
-                      <Label>Continuar desde (segundos)</Label>
-                      <Input 
-                        type="number" 
-                        value={continueAt}
-                        onChange={(e) => setContinueAt(parseInt(e.target.value) || 0)}
-                        placeholder="0 para reiniciar desde el principio"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Utiliza 0 para reiniciar desde el principio o especifica los segundos exactos.
-                      </p>
-                    </div>
-                  </>
+                    <Progress value={processingProgress} />
+                  </div>
                 )}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-          
-          <Button 
-            onClick={handleGenerate}
-            disabled={isGenerating || (taskStatus === "pending" || taskStatus === "processing")}
-            className="w-full"
-          >
-            {isGenerating || (taskStatus === "pending" || taskStatus === "processing") ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isGenerating ? "Iniciando generación..." : "Generando música..."}
-              </>
-            ) : (
-              <>
-                <Music className="mr-2 h-4 w-4" />
-                Generar Música con PiAPI ({currentModel === "music-u" ? "Udio" : "Suno"})
-              </>
-            )}
-          </Button>
-        </TabsContent>
-        
-        <TabsContent value="results" className="space-y-6">
-          {taskId ? (
-            <div className="space-y-6">
-              <div className="p-4 rounded-md bg-muted">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-medium text-sm">Modelo: {currentModel === "music-u" ? "PiAPI - Udio" : "PiAPI - Suno"}</p>
-                  <span 
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      taskStatus === 'completed' 
-                        ? 'bg-green-500/20 text-green-600' 
-                        : taskStatus === 'failed' 
-                          ? 'bg-red-500/20 text-red-600' 
-                          : 'bg-amber-500/20 text-amber-600'
-                    }`}
-                  >
-                    {taskStatus === 'completed' 
-                      ? 'Completado' 
-                      : taskStatus === 'failed' 
-                        ? 'Error' 
-                        : 'Procesando...'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">ID de tarea: {taskId}</p>
-              </div>
-              
-              {taskStatus === 'pending' || taskStatus === 'processing' ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                  <p className="text-lg font-medium">Generando tu música...</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Este proceso puede tardar hasta 2 minutos dependiendo del modelo seleccionado.
-                  </p>
-                </div>
-              ) : taskStatus === 'failed' ? (
-                <div className="p-4 rounded-md bg-red-500/10 border border-red-200 text-center">
-                  <p className="text-red-600 font-medium">Error en la generación</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Ha ocurrido un error al generar la música. Por favor, intenta con una descripción diferente.
-                  </p>
-                </div>
-              ) : audioUrl ? (
-                <div className="space-y-4">
-                  <div className="bg-card border rounded-md overflow-hidden">
-                    <div className="p-4 border-b">
-                      <h3 className="text-lg font-medium">Música generada</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {currentModel === "music-u" 
-                          ? "Generada con modelo Udio mediante PiAPI, optimizada para instrumentos musicales reales" 
-                          : "Generada con modelo Suno mediante PiAPI, optimizada para producción musical profesional"}
-                      </p>
-                    </div>
-                    <div className="p-4">
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <Button onClick={togglePlayback} variant={isPlaying ? "default" : "outline"} size="sm">
-                          {isPlaying ? (
-                            <>
-                              <Pause className="h-4 w-4 mr-2" />
-                              Pausar
-                            </>
-                          ) : (
-                            <>
-                              <Play className="h-4 w-4 mr-2" />
-                              Reproducir
-                            </>
-                          )}
-                        </Button>
-                        <Button onClick={handleDownload} variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar MP3
+                
+                {processedAudioUrl && (
+                  <div className="p-4 rounded-lg border bg-muted/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium flex items-center">
+                        <Music4 className="h-4 w-4 mr-1 text-orange-500" />
+                        Audio procesado
+                      </h3>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-7 w-7" 
+                          onClick={() => handleDownloadAudio(processedAudioUrl)}
+                        >
+                          <Download className="h-3.5 w-3.5" />
                         </Button>
                       </div>
-                      <audio 
-                        controls 
-                        src={audioUrl} 
-                        className="w-full" 
-                        style={{ 
-                          borderRadius: '0.5rem',
-                          backgroundColor: 'rgba(var(--muted), 0.2)',
-                        }} 
+                    </div>
+                    
+                    <audio
+                      controls
+                      src={processedAudioUrl}
+                      className="w-full mt-2"
+                    />
+                    
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {selectedFileType === "mastering" ? 
+                        "La versión masterizada suena más equilibrada y profesional." : 
+                        selectedFileType === "vocal-separation" ? 
+                        "Se han separado las voces del instrumental." : 
+                        "Se han separado los diferentes instrumentos en stems individuales."}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Generation Tab */}
+        <TabsContent value="generation">
+          <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
+            <div className="w-full max-w-xl mx-auto space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                    <Music4 className="h-5 w-5 text-orange-500" />
+                    Generación Musical
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Describe la música que quieres crear y la IA la generará para ti
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="music-title">Título de la canción</Label>
+                  <Input
+                    id="music-title"
+                    placeholder="Ej: Mi canción de verano"
+                    value={musicTitle}
+                    onChange={(e) => setMusicTitle(e.target.value)}
+                    className="mt-1.5"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="music-model">Modelo de generación</Label>
+                  <Select
+                    value={selectedModel}
+                    onValueChange={setSelectedModel}
+                  >
+                    <SelectTrigger className="w-full mt-1.5">
+                      <SelectValue placeholder="Selecciona un modelo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="music-s">Suno (Alta calidad, estilo completo)</SelectItem>
+                      <SelectItem value="music-u">Udio (Rápido, más experimental)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="music-prompt">Descripción de la música</Label>
+                    {musicPrompt && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleCopyPrompt(musicPrompt, 'music')}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <span>Copiar prompt</span>
+                      </Button>
+                    )}
+                  </div>
+                  <Textarea
+                    id="music-prompt"
+                    placeholder="Ej: Una canción pop alegre con guitarra acústica y percusión suave. Tempo medio, ideal para un video de verano."
+                    value={musicPrompt}
+                    onChange={(e) => setMusicPrompt(e.target.value)}
+                    className="mt-1.5 min-h-[100px]"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleGenerateMusic}
+                  className="w-full"
+                  disabled={isGeneratingMusic || !musicPrompt}
+                >
+                  {isGeneratingMusic ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando música...
+                    </>
+                  ) : (
+                    <>
+                      <Music4 className="mr-2 h-4 w-4" />
+                      Generar Música
+                    </>
+                  )}
+                </Button>
+                
+                {(isGeneratingMusic || musicGenerationProgress > 0) && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Generando música...</span>
+                      <span>{musicGenerationProgress}%</span>
+                    </div>
+                    <Progress value={musicGenerationProgress} />
+                  </div>
+                )}
+                
+                {generatedMusicUrl && (
+                  <div className="p-4 rounded-lg border bg-muted/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium flex items-center">
+                        <Music4 className="h-4 w-4 mr-1 text-orange-500" />
+                        {musicTitle || "Música Generada"}
+                      </h3>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          onClick={() => setIsPlaying(!isPlaying)}
+                        >
+                          {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          onClick={() => handleDownloadAudio(generatedMusicUrl, musicTitle || "música_generada")}
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          onClick={() => handleExportMetadata('music')}
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Audio element (hidden but functional) */}
+                    <audio
+                      ref={audioPlayerRef}
+                      src={generatedMusicUrl}
+                      onEnded={() => setIsPlaying(false)}
+                      className="hidden"
+                    />
+                    
+                    {/* Custom audio player */}
+                    <div className="relative w-full h-12 bg-black/5 dark:bg-white/5 rounded-md overflow-hidden">
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-xs font-medium">
+                          {isPlaying ? "Reproduciendo..." : "Listo para reproducir"}
+                        </span>
+                      </div>
+                      <div 
+                        className="absolute bottom-0 left-0 h-1 bg-orange-500"
+                        style={{ width: isPlaying ? '100%' : '0%', transition: isPlaying ? 'width 20s linear' : 'none' }}
+                      ></div>
+                    </div>
+                    
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <p className="mb-1">Prompt: "{musicPrompt}"</p>
+                      <p>Modelo: {selectedModel === "music-s" ? "Suno" : "Udio"} | ID: {currentTaskId}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Cover Art Tab */}
+        <TabsContent value="cover">
+          <Card className="p-4 sm:p-6 backdrop-blur-sm border border-orange-500/10">
+            <div className="w-full max-w-xl mx-auto space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5 text-orange-500" />
+                    Portadas con IA
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Crea portadas profesionales para tus canciones y álbumes
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cover-format">Formato de portada</Label>
+                  <Select
+                    value={coverImageSize}
+                    onValueChange={setCoverImageSize}
+                  >
+                    <SelectTrigger className="w-full mt-1.5">
+                      <SelectValue placeholder="Selecciona un formato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="square">Cuadrado (1:1) - Para álbumes</SelectItem>
+                      <SelectItem value="landscape_16_9">Apaisado (16:9) - Para banners</SelectItem>
+                      <SelectItem value="portrait_9_16">Vertical (9:16) - Para móviles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="cover-prompt">Descripción de la portada</Label>
+                    {coverPrompt && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleCopyPrompt(coverPrompt, 'cover')}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <span>Copiar prompt</span>
+                      </Button>
+                    )}
+                  </div>
+                  <Textarea
+                    id="cover-prompt"
+                    placeholder="Ej: Portada minimalista para un álbum de música electrónica. Tonos azules y púrpuras, con formas geométricas que sugieren ondas sonoras."
+                    value={coverPrompt}
+                    onChange={(e) => setCoverPrompt(e.target.value)}
+                    className="mt-1.5 min-h-[100px]"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleGenerateCover}
+                  className="w-full"
+                  disabled={isGeneratingCover || !coverPrompt}
+                >
+                  {isGeneratingCover ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando portada...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      Generar Portada
+                    </>
+                  )}
+                </Button>
+                
+                {(isGeneratingCover || coverGenerationProgress > 0) && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Generando imagen...</span>
+                      <span>{coverGenerationProgress}%</span>
+                    </div>
+                    <Progress value={coverGenerationProgress} />
+                  </div>
+                )}
+
+                {generatedCoverUrl && (
+                  <div className="space-y-2 mt-4">
+                    <div className="flex items-center justify-between">
+                      <Label>Portada Generada</Label>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          onClick={() => handleDownloadImage(generatedCoverUrl)}
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          onClick={() => handleExportMetadata('cover')}
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className={`relative overflow-hidden rounded-lg border ${
+                      coverImageSize === 'square' ? 'aspect-square' : 
+                      coverImageSize === 'landscape_16_9' ? 'aspect-video' : 
+                      'aspect-[9/16]'
+                    }`}>
+                      <img
+                        src={generatedCoverUrl}
+                        alt="Portada generada"
+                        className="w-full h-full object-cover"
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Prompt: "{coverPrompt}"
+                    </p>
                   </div>
-                  
-                  {description && (
-                    <div className="bg-card border rounded-md p-4">
-                      <h4 className="font-medium mb-2">Descripción utilizada</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {description}
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="text-center mt-6">
-                    <Button 
-                      onClick={handleGenerate} 
-                      variant="outline"
-                      className="w-full max-w-xs"
-                    >
-                      <Music className="mr-2 h-4 w-4" />
-                      Generar otra canción
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Music className="h-16 w-16 text-muted mb-4" />
-              <p className="text-lg text-muted-foreground mb-1">Aún no has generado ninguna música</p>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Selecciona un modelo de IA, escribe una descripción de la música que deseas 
-                y presiona el botón "Generar Música".
-              </p>
-            </div>
-          )}
+          </Card>
         </TabsContent>
       </Tabs>
-    </Card>
+    </div>
   );
 }
