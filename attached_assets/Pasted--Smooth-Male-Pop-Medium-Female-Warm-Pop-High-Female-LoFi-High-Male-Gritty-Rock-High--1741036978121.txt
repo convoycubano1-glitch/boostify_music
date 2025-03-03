@@ -1,0 +1,452 @@
+
+Smooth Male Pop
+Medium
+
+Female Warm Pop
+High
+
+Female LoFi
+High
+
+Male Gritty Rock
+High
+
+Male Pop
+High
+
+Male Strained Rock
+Medium
+
+Female Jazz
+High
+
+Female RnB
+Medium
+
+Male Emo Pop
+Medium
+
+Female Rock/Pop
+High
+
+Tenor Saxophone by Vivid Fever Dreams
+—
+
+Low Electronic
+Low
+
+Female Singer Songwriter
+Medium
+
+Female Slavic
+High
+
+Female Pop Country
+High
+
+Bright Pop
+High
+
+Male Jazz
+Medium
+
+Male Alternative Rock
+Low
+
+Female Gospel
+High
+
+Female Bright EDM
+High
+
+Male Low Rap
+Low
+
+Female Traditional Pop
+Medium
+
+Overdriven Guitar
+—
+
+Female Broadway
+High
+
+90s Pop Punk
+Medium
+
+Female Indie & Alternative
+High
+
+Male Gospel Pop
+Low
+
+Male UK Rap
+Low
+
+Female Bedroom Pop
+Medium
+
+Female Pop Disco
+High
+
+Male Slavic
+Low
+
+Female Talk-Rap
+Medium
+
+Female Afro Pop
+High
+
+Male RnB
+High
+
+Male Rock
+Medium
+
+Male Cloud Rap
+Low
+
+Female Doo-Wop Pop
+High
+
+Female Energetic Spanish
+High
+
+Male Chicago Drill
+Low
+
+Male Boy Band Lead
+High
+
+Male British Pop
+High
+
+Male Americana
+Low
+
+Gritty Tape Drums
+—
+
+Male Traditional Pop
+Low
+
+Male Gritty Pop
+Low
+
+Male Pop Punk
+Medium
+
+Male Afro Beat
+Medium
+
+Male Synth Pop
+Medium
+
+Male Latin Pop
+Medium
+
+Male Pop Rock
+Medium
+
+Female Breathy Ballad
+High
+
+Cello
+—
+
+Bass Guitar
+—
+
+Male Reggae Pop
+Low
+
+Female French Pop
+High
+
+Male Classic Rock
+Medium
+
+Male Laid-back Rap
+Low
+
+Male Neo Soul
+Medium
+
+Male Hindi
+Medium
+
+Crunch Guitar
+—
+
+Female Latin Pop
+—
+
+Male Texas Rap
+Low
+
+Male Punk Rock
+Medium
+
+Male Gospel
+Medium
+
+Male Bedroom Pop
+Medium
+
+Male Dancehall
+Medium
+
+Male Spanish Ballad
+Low
+
+Male Modern RnB
+Medium
+
+Male Overdrive Rock
+Medium
+
+Male Spanish Rock
+High
+
+Female Smooth Rock
+High
+
+British Male Voiceover
+Low
+
+Modern Growl Bass
+—
+
+Female Modern RnB
+High
+
+Female Spanish Somber
+High
+
+Female Spanish Salsa
+High
+
+Male Spanish Pop
+High
+
+Classic Female Soul
+High
+
+Male Rock and Roll
+Medium
+
+Female Spanish Ballad
+High
+
+Raspy Female Spanish
+Medium
+
+Male Spanish Pop Star
+Medium
+
+Male Energetic Spanish
+Medium
+
+Powerful Female Spanish
+High
+
+British Male Voice Actor
+Medium
+
+Powerful Female Slovene
+High
+
+1940's Male Radio
+Low
+
+Female Southern Soul
+High
+
+Classic Growl Bass
+—
+
+Full-bodied American Male
+Low
+
+Female 90's RnB
+High
+
+Female Vintage Jazz
+High
+
+Modern Pop Diva
+High
+
+Male Reggae
+Medium
+
+Solo Saxophone
+High
+
+American Female Empath
+Medium
+
+Female Sultry Spanish
+High
+
+Male Vintage Blues
+Medium
+
+British Female Saleswoman
+High
+
+Nylon String Guitar
+Low
+
+Female Smokey Soul
+High
+
+Solo Violin
+High
+
+Male Spanish Dark
+Medium
+
+Solo Trumpet
+High
+
+Metal Lead Guitar
+Medium
+
+British Male Professional
+Low
+
+Clean Electric Guitar
+Medium
+
+Female Portuguese Pop
+High
+
+Female American Articulate
+Medium
+
+Dramatic Female Spanish
+High
+
+British Female Voiceover
+Low
+
+American Female Assertive
+High
+
+Female American Neutral
+Medium
+
+Solo Flute
+High
+
+Vintage Violin
+High
+
+Female Modern Jazz
+High
+
+8-Bit Lead
+High
+
+Synth Choir
+Low
+
+Female Overdrive Rock
+High
+
+New Age Lead
+High
+
+Heartfelt Spanish Female
+High
+
+Trance Lead
+Low
+
+Spanish Male Modern Pop
+Medium
+
+Latino Male Ballad
+Medium
+
+Solo Clarinet
+Low
+
+Funky Talk Box
+High
+
+Pan Flute
+High
+
+Hypersaw Lead
+High
+
+80's Drum Machine
+High
+
+Female Spanish Folk
+High
+
+Fiery Spanish Female
+High
+
+Solo Oboe
+Low
+
+Jazz Vox Doo
+High
+
+Wah-Wah Synth Bass
+Low
+
+Vintage Violin
+High
+
+Simple Sine Wave
+High
+
+80's Dance Drum Machine
+High
+
+Modern Male Hip-Hop
+Low
+
+Simple Square Wave
+Low
+
+Female Gritty Pop
+High
+
+Simple Saw Lead
+High
+
+Female R&B Diva
+High
+
+Male 2000s Rock
+Medium
+
+Male R&B Royale
+Medium
+
+Breathy Male Soul
+Medium
+
+Vintage Vibraphone
+High
+
+Electric Piano
+High
+
+Funky Clav
+High
+
+Vintage Tape Cello
+Low
+
+Vintage Tape Trombone
+Medium
+
+80's Toy Synth
