@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Loader2, Upload, Camera, Image as ImageIcon, Shirt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { klingService, TryOnRequest, TryOnResult } from '@/services/kling/kling-service';
+import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
 
 export function VirtualTryOnComponent() {
   const [modelImage, setModelImage] = useState<string>('');

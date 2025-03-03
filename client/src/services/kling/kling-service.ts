@@ -102,8 +102,8 @@ class KlingService {
       url: '/api/proxy/kling/try-on/start',
       method: 'POST',
       data: {
-        modelImage,
-        clothingImage,
+        model_input: modelImage,
+        dress_input: clothingImage,
         settings
       }
     });
@@ -251,7 +251,7 @@ class KlingService {
       method: 'GET'
     });
 
-    return response.results;
+    return response.results || [];
   }
 }
 
