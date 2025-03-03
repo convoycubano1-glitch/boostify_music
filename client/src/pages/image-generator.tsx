@@ -24,6 +24,7 @@ import {
   FilmIcon, 
   PictureInPicture2, 
   CirclePlay,
+  Clapperboard,
   Loader2,
   Save,
   CheckCircle,
@@ -55,9 +56,12 @@ const imageFormSchema = z.object({
 
 const videoFormSchema = z.object({
   prompt: z.string().min(3, { message: 'Prompt must be at least 3 characters long' }),
-  apiProvider: z.enum(['luma', 'kling']),
+  apiProvider: z.enum(['luma', 'kling', 'piapi']),
   duration: z.number().min(3).max(15).default(5),
   style: z.enum(['realistic', 'cinematic', 'anime', 'cartoon']).default('cinematic'),
+  cameraMovements: z.array(z.string()).optional(),
+  piapiModel: z.enum(['t2v-01', 't2v-01-director', 'i2v-01', 'i2v-01-live', 's2v-01']).optional(),
+  image_url: z.string().optional(), // Para los modelos de image-to-video
 });
 
 type ImageFormValues = z.infer<typeof imageFormSchema>;
@@ -227,13 +231,42 @@ export default function ImageGeneratorPage() {
     apiProvider: string;
     duration: number;
     style: string;
+    cameraMovements?: string[];
+    piapiModel?: string;
+    image_url?: string;
   }): Promise<VideoResult> {
+    // Creamos un objeto nuevo para la solicitud, con todos los parámetros transformados según sea necesario
+    const requestBody: Record<string, any> = {
+      prompt: params.prompt,
+      apiProvider: params.apiProvider,
+      duration: params.duration,
+      style: params.style
+    };
+    
+    // Si es PiAPI, necesitamos incluir parámetros específicos
+    if (params.apiProvider === 'piapi') {
+      // Incluir el modelo seleccionado
+      if (params.piapiModel) {
+        requestBody.model = params.piapiModel;
+      }
+      
+      // Si hay movimientos de cámara y es el modelo director, incluirlos
+      if (params.piapiModel === 't2v-01-director' && params.cameraMovements?.length) {
+        requestBody.camera_movement = params.cameraMovements.join(',');
+      }
+      
+      // Si hay una URL de imagen y es un modelo basado en imagen, incluirla
+      if (params.image_url && ['i2v-01', 'i2v-01-live', 's2v-01'].includes(params.piapiModel || '')) {
+        requestBody.image_url = params.image_url;
+      }
+    }
+    
     const res = await fetch('/api/video/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify(requestBody),
     });
     
     if (!res.ok) {
@@ -295,6 +328,12 @@ export default function ImageGeneratorPage() {
         apiProvider: values.apiProvider,
         duration: values.duration,
         style: values.style,
+        // Incluir parámetros específicos de PiAPI si es el proveedor seleccionado
+        ...(values.apiProvider === 'piapi' && {
+          piapiModel: values.piapiModel,
+          cameraMovements: values.cameraMovements,
+          image_url: values.image_url
+        })
       });
 
       // Verificar que la URL exista
@@ -613,6 +652,8 @@ export default function ImageGeneratorPage() {
         return <FilmIcon className="h-4 w-4" />;
       case 'luma':
         return <CirclePlay className="h-4 w-4" />;
+      case 'piapi':
+        return <Clapperboard className="h-4 w-4" />;
       default:
         return <ImageIcon className="h-4 w-4" />;
     }
@@ -883,9 +924,16 @@ export default function ImageGeneratorPage() {
                             <FormLabel>Video Engine</FormLabel>
                             <FormControl>
                               <RadioGroup
-                                onValueChange={field.onChange}
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Resetear campos específicos al cambiar el proveedor
+                                  if (value === "piapi") {
+                                    videoForm.setValue("piapiModel", "t2v-01-director");
+                                    videoForm.setValue("cameraMovements", []);
+                                  }
+                                }}
                                 defaultValue={field.value}
-                                className="flex space-x-1"
+                                className="flex flex-wrap gap-2"
                               >
                                 <FormItem className="flex items-center space-x-3 space-y-0">
                                   <FormControl>
@@ -903,12 +951,164 @@ export default function ImageGeneratorPage() {
                                     Kling
                                   </FormLabel>
                                 </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="piapi" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    PiAPI Hailuo
+                                  </FormLabel>
+                                </FormItem>
                               </RadioGroup>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      
+                      {/* Campo condicional: Modelo de PiAPI, solo visible cuando apiProvider es "piapi" */}
+                      {videoForm.watch("apiProvider") === "piapi" && (
+                        <FormField
+                          control={videoForm.control}
+                          name="piapiModel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>PiAPI Model</FormLabel>
+                              <Select 
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Resetear movimientos de cámara cuando no se usa el modelo Director
+                                  if (value !== "t2v-01-director") {
+                                    videoForm.setValue("cameraMovements", []);
+                                  }
+                                }}
+                                defaultValue={field.value || "t2v-01-director"}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a model" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="t2v-01">Text to Video</SelectItem>
+                                  <SelectItem value="t2v-01-director">Director (with camera movements)</SelectItem>
+                                  <SelectItem value="i2v-01">Image to Video</SelectItem>
+                                  <SelectItem value="i2v-01-live">Image to Video Live</SelectItem>
+                                  <SelectItem value="s2v-01">Subject Reference</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                Select the specific PiAPI model to use
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      {/* Campo condicional: URL de imagen, solo para modelos de PiAPI basados en imagen */}
+                      {videoForm.watch("apiProvider") === "piapi" && 
+                       (videoForm.watch("piapiModel") === "i2v-01" || 
+                        videoForm.watch("piapiModel") === "i2v-01-live" ||
+                        videoForm.watch("piapiModel") === "s2v-01") && (
+                        <FormField
+                          control={videoForm.control}
+                          name="image_url"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image URL</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Enter image URL..." 
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                URL of the image to convert to video
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      {/* Campo condicional: Movimientos de cámara, solo para t2v-01-director */}
+                      {videoForm.watch("apiProvider") === "piapi" && 
+                       videoForm.watch("piapiModel") === "t2v-01-director" && (
+                        <FormField
+                          control={videoForm.control}
+                          name="cameraMovements"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Camera Movements</FormLabel>
+                              <FormControl>
+                                <div className="flex flex-wrap gap-2">
+                                  {[
+                                    { value: "Static shot", label: "Static Shot" },
+                                    { value: "Truck left", label: "Truck Left" },
+                                    { value: "Truck right", label: "Truck Right" },
+                                    { value: "Pan left", label: "Pan Left" },
+                                    { value: "Pan right", label: "Pan Right" },
+                                    { value: "Push in", label: "Push In" },
+                                    { value: "Push out", label: "Push Out" },
+                                    { value: "Pedestal up", label: "Pedestal Up" },
+                                    { value: "Pedestal down", label: "Pedestal Down" },
+                                    { value: "Tilt up", label: "Tilt Up" },
+                                    { value: "Tilt down", label: "Tilt Down" },
+                                    { value: "Zoom in", label: "Zoom In" },
+                                    { value: "Zoom out", label: "Zoom Out" },
+                                    { value: "Tracking shot", label: "Tracking Shot" },
+                                    { value: "Shake", label: "Shake" },
+                                  ].map((movement) => (
+                                    <Button
+                                      key={movement.value}
+                                      type="button"
+                                      variant={field.value?.includes(movement.value) ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => {
+                                        let newMovements = [...(field.value || [])];
+                                        
+                                        // Si ya está seleccionado, removerlo
+                                        if (newMovements.includes(movement.value)) {
+                                          newMovements = newMovements.filter(m => m !== movement.value);
+                                        } 
+                                        // Si no está seleccionado
+                                        else {
+                                          // Si es "Static shot", deseleccionar todos los demás
+                                          if (movement.value === "Static shot") {
+                                            newMovements = ["Static shot"];
+                                          } 
+                                          // Si seleccionamos otro y ya tenemos "Static shot", quitarlo
+                                          else if (newMovements.includes("Static shot")) {
+                                            newMovements = newMovements.filter(m => m !== "Static shot");
+                                            newMovements.push(movement.value);
+                                          }
+                                          // Si no hay "Static shot" y tenemos menos de 3 movimientos, añadir
+                                          else if (newMovements.length < 3) {
+                                            newMovements.push(movement.value);
+                                          }
+                                        }
+                                        
+                                        field.onChange(newMovements);
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      {movement.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </FormControl>
+                              <FormDescription>
+                                {field.value?.includes("Static shot") 
+                                  ? "Static shot is exclusive and cannot be combined with other movements." 
+                                  : `Select up to 3 camera movements (${(field.value || []).length}/3 selected).`}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
                       <div className="grid grid-cols-2 gap-4">
                         <FormField

@@ -138,7 +138,7 @@ export interface GenerationOptions {
 /**
  * Type for API providers
  */
-export type ApiProvider = 'fal' | 'luma' | 'freepik' | 'kling' | 'flux';
+export type ApiProvider = 'fal' | 'luma' | 'freepik' | 'kling' | 'flux' | 'piapi';
 
 /**
  * Parameters for image generation with specific providers
@@ -162,6 +162,42 @@ export interface GenerateImageParams {
 }
 
 /**
+ * Opciones para los modelos de generación de video en Hailuo/PiAPI
+ * Estos son los modelos disponibles para el endpoint de video_generation
+ */
+export enum PiapiVideoModel {
+  I2V_01 = 'i2v-01',              // Image to Video
+  I2V_01_LIVE = 'i2v-01-live',    // Image to Video (live version)
+  T2V_01 = 't2v-01',              // Text to Video
+  T2V_01_DIRECTOR = 't2v-01-director', // Text to Video con Director Mode
+  S2V_01 = 's2v-01'               // Subject Reference Video
+}
+
+/**
+ * Tipos de movimientos de cámara disponibles para el modelo t2v-01-director
+ * Se permiten hasta 3 movimientos por prompt
+ */
+export enum CameraMovementType {
+  // Movimientos básicos
+  TRUCK_LEFT = 'Truck left',
+  TRUCK_RIGHT = 'Truck right',
+  PAN_LEFT = 'Pan left',
+  PAN_RIGHT = 'Pan right',
+  PUSH_IN = 'Push in',
+  PUSH_OUT = 'Push out',
+  PEDESTAL_UP = 'Pedestal up',
+  PEDESTAL_DOWN = 'Pedestal down',
+  TILT_UP = 'Tilt up',
+  TILT_DOWN = 'Tilt down',
+  ZOOM_IN = 'Zoom in',
+  ZOOM_OUT = 'Zoom out',
+  SHAKE = 'Shake',
+  TRACKING_SHOT = 'Tracking shot',
+  // Movimiento especial
+  STATIC_SHOT = 'Static shot'  // Es mutuamente exclusivo con otros movimientos
+}
+
+/**
  * Parameters for video generation
  */
 export interface VideoGenerationParams {
@@ -171,6 +207,11 @@ export interface VideoGenerationParams {
   imageCount?: number;
   apiProvider: ApiProvider;
   useDirectApi?: boolean;
+  // Parámetros específicos para PiAPI
+  piapiModel?: PiapiVideoModel;
+  image_url?: string;           // Requerido para modelos i2v-01, i2v-01-live y s2v-01
+  cameraMovements?: CameraMovementType[];  // Para t2v-01-director
+  expand_prompt?: boolean;      // Si se debe expandir el prompt automáticamente
 }
 
 /**
@@ -198,5 +239,6 @@ export interface VideoResult {
   status?: string;
   prompt: string;
   createdAt: Date;
+  progress?: number;  // Porcentaje de progreso para tareas asíncronas
   firestoreId?: string; // ID de referencia en Firestore cuando se guarda
 }

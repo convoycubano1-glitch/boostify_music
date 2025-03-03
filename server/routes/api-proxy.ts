@@ -2474,4 +2474,294 @@ router.get('/proxy/kling/effects/status', async (req, res) => {
   }
 });
 
+/**
+ * Proxy para PiAPI Video Generation - Endpoint para iniciar el proceso
+ * 
+ * Este endpoint permite generar videos con el modelo Hailuo de PiAPI
+ * Soporta varios modelos, incluyendo t2v-01-director con movimientos de cámara
+ * Implementación basada en: https://api.piapi.ai/api/v1/task
+ */
+router.post('/proxy/piapi/video/start', async (req: Request, res) => {
+  try {
+    console.log('Recibida solicitud para iniciar generación de video con PiAPI (Hailuo)');
+    
+    // Obtener los parámetros del body
+    const { 
+      prompt, 
+      model = 'i2v-01', 
+      image_url = null,
+      expand_prompt = true,
+      service_mode = 'public',
+      camera_movement = null,  // Nuevo parámetro para movimientos de cámara
+      webhook_config = null    // Configuración para webhook opcional
+    } = req.body;
+    
+    // Validaciones específicas según el modelo seleccionado
+    if (['t2v-01', 't2v-01-director'].includes(model)) {
+      // Para modelos text-to-video, se requiere prompt
+      if (!prompt) {
+        console.error('Error: Prompt vacío en solicitud a PiAPI Video (t2v)');
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere un prompt para modelos text-to-video'
+        });
+      }
+      
+      // image_url no debería proporcionarse para t2v models
+      if (image_url) {
+        console.warn('Advertencia: image_url fue proporcionado para un modelo t2v, será ignorado');
+      }
+    } else if (['i2v-01', 'i2v-01-live'].includes(model)) {
+      // Para modelos image-to-video, se requiere image_url
+      if (!image_url) {
+        console.error('Error: URL de imagen no proporcionada para modelo i2v');
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere una URL de imagen para modelos image-to-video'
+        });
+      }
+    } else if (model === 's2v-01') {
+      // Para Subject Reference Video, se requieren tanto prompt como image_url
+      if (!prompt || !image_url) {
+        console.error('Error: Se requieren tanto prompt como image_url para s2v-01');
+        return res.status(400).json({
+          success: false,
+          error: 'Se requieren tanto prompt como image_url para el modelo s2v-01'
+        });
+      }
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('Error: PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      // Preparar el prompt final, integrando los movimientos de cámara si es necesario
+      let finalPrompt = prompt;
+      
+      // Si es modelo director y tenemos movimientos de cámara, los integramos en el prompt
+      if (model === 't2v-01-director' && camera_movement) {
+        // Asegurarse de que los movimientos de cámara estén en formato correcto
+        // El formato correcto es: [Movimiento1,Movimiento2]texto del prompt
+        if (!finalPrompt.includes('[') && camera_movement) {
+          // Solo añadimos los corchetes si no están ya en el prompt
+          finalPrompt = `[${camera_movement}]${finalPrompt}`;
+        }
+      }
+      
+      console.log('Llamando a PiAPI para generación de video:', finalPrompt, 'con modelo:', model);
+      
+      // Crear el payload para la API con interfaz adecuada
+      const payload: {
+        model: string;
+        task_type: string;
+        input: {
+          prompt?: string;
+          model: string;
+          image_url?: string;
+          expand_prompt: boolean;
+        };
+        config: {
+          service_mode: string;
+          webhook_config?: any;
+        };
+      } = {
+        model: "hailuo",
+        task_type: "video_generation",
+        input: {
+          model: model,
+          expand_prompt: expand_prompt
+        },
+        config: {
+          service_mode: service_mode
+        }
+      };
+      
+      // Añadir prompt si está presente
+      if (finalPrompt) {
+        payload.input.prompt = finalPrompt;
+      }
+      
+      // Si hay una URL de imagen y el modelo lo requiere, la incluimos en el payload
+      if (image_url && ['i2v-01', 'i2v-01-live', 's2v-01'].includes(model)) {
+        payload.input.image_url = image_url;
+      }
+      
+      // Si se proporcionó configuración de webhook, la añadimos
+      if (webhook_config) {
+        payload.config.webhook_config = webhook_config;
+      }
+      
+      // Llamada real a la API de PiAPI para generación de video
+      const response = await axios.post(
+        'https://api.piapi.ai/api/v1/task',
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': PIAPI_API_KEY
+          },
+          timeout: 15000 // Timeout ampliado para generación de video
+        }
+      );
+      
+      console.log('Respuesta de PiAPI para generación de video:', JSON.stringify(response.data));
+      
+      // Extraer el task_id de la respuesta
+      const taskId = response.data?.data?.task_id;
+      
+      if (!taskId) {
+        console.error('No se pudo obtener task_id de la respuesta:', response.data);
+        throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
+      }
+      
+      console.log('Generación de video iniciada correctamente, taskId:', taskId);
+      return res.json({
+        success: true,
+        taskId: taskId,
+        status: 'processing'
+      });
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para generación de video:', internalError.message);
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Datos de respuesta:', internalError.response.data);
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de piapi/video/start:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error al iniciar el proceso de generación de video'
+    });
+  }
+});
+
+/**
+ * Proxy para PiAPI Video Generation - Endpoint para verificar el estado
+ * 
+ * Este endpoint permite verificar el estado de un proceso de generación de video
+ */
+router.get('/proxy/piapi/video/status', async (req, res) => {
+  try {
+    // Obtener el task_id de los query parameters
+    const taskId = req.query.taskId as string;
+    
+    if (!taskId) {
+      console.error('Error: No se proporcionó taskId en el request');
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere el ID de la tarea'
+      });
+    }
+
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      console.error('Error: PIAPI_API_KEY no está configurada');
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
+    
+    try {
+      console.log('Verificando estado de tarea de generación de video:', taskId);
+      
+      // Llamada real a la API de PiAPI para verificar estado
+      const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
+        headers: {
+          'x-api-key': PIAPI_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      console.log('Respuesta de status de PiAPI para generación de video:', JSON.stringify(response.data));
+      
+      if (!response.data || !response.data.data) {
+        console.error('Error: Estructura de respuesta inválida:', response.data);
+        return res.status(500).json({
+          success: false,
+          status: 'failed',
+          errorMessage: 'Estructura de respuesta inválida desde PiAPI'
+        });
+      }
+      
+      // Extraer el estado de la respuesta
+      const taskData = response.data.data;
+      const status = taskData.status?.toLowerCase() || 'processing';
+      
+      // Si la tarea está completada, obtenemos la URL del resultado
+      if (status === 'completed') {
+        // Intentar extraer la URL del video de la respuesta
+        const videoUrl = taskData.output?.videos?.[0]?.url || 
+                         taskData.output?.url || 
+                         taskData.output?.video_url;
+        
+        if (!videoUrl) {
+          console.error('Error: No se encontró la URL del video en la respuesta:', taskData);
+          return res.status(500).json({
+            success: false,
+            status: 'completed_but_no_url',
+            errorMessage: 'No se encontró la URL del video en la respuesta de PiAPI',
+            rawData: taskData
+          });
+        }
+        
+        // Devolver respuesta exitosa con la URL del video
+        return res.json({
+          success: true,
+          status: 'completed',
+          result: {
+            url: videoUrl,
+            task_id: taskId
+          }
+        });
+      } 
+      // Si la tarea falló, devolvemos un error
+      else if (status === 'failed') {
+        return res.json({
+          success: false,
+          status: 'failed',
+          error: taskData.error || 'La tarea falló sin un mensaje de error específico'
+        });
+      }
+      // Si la tarea sigue en proceso, devolvemos el estado
+      else {
+        const progress = taskData.progress || 0;
+        return res.json({
+          success: true,
+          status: status,
+          progress: progress
+        });
+      }
+    } catch (internalError: any) {
+      console.error('Error llamando al endpoint de PiAPI para status de generación de video:', internalError.message);
+      
+      return res.status(500).json({
+        success: false,
+        error: internalError.message || 'Error al verificar el estado de la tarea'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error en proxy de piapi/video/status:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error al verificar el estado de la generación de video'
+    });
+  }
+});
+
 export default router;
