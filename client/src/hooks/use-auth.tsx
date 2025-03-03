@@ -21,6 +21,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  
+  // Manejar redireccionamiento manual al dashboard para usuarios ya autenticados
+  useEffect(() => {
+    // Si el usuario está autenticado y hay un destino en sessionStorage, redirigir
+    if (user && !loading) {
+      const redirectPath = sessionStorage.getItem('auth_redirect_path');
+      if (redirectPath) {
+        console.log('Usuario autenticado con destino pendiente, redirigiendo a:', redirectPath);
+        window.location.href = redirectPath;
+        sessionStorage.removeItem('auth_redirect_path');
+      }
+    }
+  }, [user, loading]);
 
   // Iniciar sesión con Google
   const login = useCallback(async (redirectPath: string = '/dashboard') => {
@@ -136,9 +149,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = React.useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  try {
+    const context = React.useContext(AuthContext);
+    if (!context) {
+      console.error("useAuth debe usarse dentro de un AuthProvider");
+      // Proporcionar un valor por defecto para evitar errores catastróficos
+      return {
+        user: null,
+        isLoading: false,
+        error: new Error("AuthProvider not found"),
+        login: async () => { console.error("Auth Provider not available"); },
+        logout: async () => { console.error("Auth Provider not available"); }
+      };
+    }
+    return context;
+  } catch (error) {
+    console.error("Error al usar hook de autenticación:", error);
+    // Proporcionar un valor por defecto para evitar errores catastróficos
+    return {
+      user: null,
+      isLoading: false,
+      error: error instanceof Error ? error : new Error("Unknown auth error"),
+      login: async () => { console.error("Auth Provider error"); },
+      logout: async () => { console.error("Auth Provider error"); }
+    };
   }
-  return context;
 }

@@ -148,8 +148,7 @@ const plans = [
    COMPONENTE PRINCIPAL: HOME PAGE
 ============================= */
 export default function HomePage() {
-  const { login } = useAuth();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
@@ -182,19 +181,27 @@ export default function HomePage() {
 
   const handleGoogleLogin = async () => {
     try {
-      await login('/dashboard');
-      
       toast({
-        title: "Success",
-        description: "Successfully logged in. Redirecting to dashboard..."
+        title: "Iniciando sesión",
+        description: "Conectando con Google..."
       });
       
-      // No es necesario setLocation ya que el método login maneja la redirección
+      // Primero intentamos usar el método de login con manejo de redirección automático
+      await login('/dashboard');
+      
+      // Si la función login retorna (no redirecciona), intentamos redireccionar manualmente
+      console.log("Intentando redirección manual al dashboard");
+      setTimeout(() => {
+        if (user) {
+          window.location.href = '/dashboard';
+        }
+      }, 1500);
+      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
-        title: "Authentication Error",
-        description: "Could not sign in with Google. Please try again.",
+        title: "Error de autenticación",
+        description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
         variant: "destructive"
       });
     }
