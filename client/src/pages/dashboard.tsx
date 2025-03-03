@@ -57,7 +57,8 @@ export default function Dashboard() {
     styleRecommendations: 0,
     coursesEnrolled: 0,
     merchandiseSold: 0,
-    aiAgentsUsed: 0
+    aiAgentsUsed: 0,
+    musicGenerated: 0
   });
 
   useEffect(() => {
@@ -83,6 +84,7 @@ export default function Dashboard() {
             coursesEnrolled: 0,
             merchandiseSold: 0,
             aiAgentsUsed: 0,
+            musicGenerated: 0,
             updatedAt: new Date()
           };
 
@@ -103,7 +105,8 @@ export default function Dashboard() {
             styleRecommendations: data.styleRecommendations || 0,
             coursesEnrolled: data.coursesEnrolled || 0,
             merchandiseSold: data.merchandiseSold || 0,
-            aiAgentsUsed: data.aiAgentsUsed || 0
+            aiAgentsUsed: data.aiAgentsUsed || 0,
+            musicGenerated: data.musicGenerated || 0
           });
         }
       } catch (error) {
@@ -141,6 +144,16 @@ export default function Dashboard() {
       highlight: true
     },
     {
+      name: "Music Generator",
+      description: "Create AI-powered music",
+      icon: Music2,
+      route: "/music-generator",
+      stats: metrics.musicGenerated,
+      statsLabel: "Tracks",
+      color: "text-orange-500",
+      highlight: true
+    },
+    {
       name: "Merchandise Store",
       description: "Create custom merchandise",
       icon: ShoppingBag,
@@ -158,7 +171,7 @@ export default function Dashboard() {
       stats: metrics.styleRecommendations,
       statsLabel: "Styles",
       color: "text-pink-500",
-      highlight: true
+      highlight: false
     },
     {
       name: "Music Videos",

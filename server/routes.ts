@@ -33,6 +33,7 @@ import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
 import apiProxyRouter from './routes/api-proxy'; // Importamos el router de proxy para APIs externas
 import videoStatusRouter from './routes/video-status'; // Importamos el router dedicado para estado de videos
+import musicRouter from './routes/music'; // Importamos el router de generación de música
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 import { Request, Response } from 'express';
@@ -118,6 +119,9 @@ export function registerRoutes(app: Express): Server {
   
   // Registrar el router dedicado para estado de videos (sin autenticación)
   app.use('/api/video', videoStatusRouter);
+  
+  // Registrar el router para generación de música (requiere autenticación parcial)
+  app.use('/api/music', musicRouter);
 
   // Ruta específica para generación de video (sin autenticación)
   app.post('/api/video/generate', async (req, res) => {

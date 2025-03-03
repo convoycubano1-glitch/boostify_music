@@ -1,5 +1,4 @@
-import { User } from "firebase/auth";
-import { auth } from "@/firebase";
+import { auth } from "../firebase";
 
 /**
  * Implements exponential backoff for retrying network requests
@@ -9,16 +8,20 @@ import { auth } from "@/firebase";
  * @returns Promise with the result of the function
  */
 async function withRetry<T>(
-  fn: () => Promise<T>, 
-  retries = 3, 
-  delay = 300
+  fn: () => Promise<T>,
+  retries: number = 3,
+  delay: number = 300
 ): Promise<T> {
   try {
     return await fn();
   } catch (error) {
-    if (retries <= 0) throw error;
-    console.log(`Retrying operation after ${delay}ms...`);
+    if (retries <= 0) {
+      throw error;
+    }
+    
+    // Exponential backoff
     await new Promise(resolve => setTimeout(resolve, delay));
+    
     return withRetry(fn, retries - 1, delay * 2);
   }
 }
@@ -28,9 +31,19 @@ async function withRetry<T>(
  * @returns Promise with the token string or null if not authenticated
  */
 export async function getAuthToken(): Promise<string | null> {
-  if (!auth.currentUser) return null;
+  const currentUser = auth.currentUser;
   
-  return withRetry(async () => {
-    return auth.currentUser?.getIdToken(true) || null;
-  });
+  if (!currentUser) {
+    return null;
+  }
+  
+  try {
+    return await withRetry(async () => {
+      const token = await currentUser.getIdToken(true);
+      return token;
+    });
+  } catch (error) {
+    console.error("Error getting auth token:", error);
+    return null;
+  }
 }
