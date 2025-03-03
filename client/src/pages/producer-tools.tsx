@@ -24,6 +24,7 @@ import { StudioVideoCall } from "@/components/producer/StudioVideoCall";
 import { ProductionProgressContainer } from "@/components/producer/ProductionProgressContainer";
 import { VersionControl } from "@/components/producer/VersionControl";
 import { MusicAIGenerator } from "@/components/music/music-ai-generator";
+import { AudioMastering } from "@/components/music/audio-mastering";
 
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
@@ -634,6 +635,12 @@ export default function ProducerToolsPage() {
 
           {/* AI Tools Section */}
           <MusicAIGenerator />
+          
+          {/* Audio Mastering & Voice Conversion Section */}
+          <div className="mt-8">
+            <h2 className="text-3xl font-bold mb-8">Audio Processing Tools</h2>
+            <AudioMastering />
+          </div>
         </div>
       </ScrollArea>
     </div>
