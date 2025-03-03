@@ -28,6 +28,7 @@ import artistRouter from './routes/artist';
 import artistGeneratorRouter from './routes/artist-generator'; // Added import
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
+import videoGenerationRouter from './routes/video-generation'; // Router directo para generación de videos con PiAPI
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
 import apiProxyRouter from './routes/api-proxy'; // Importamos el router de proxy para APIs externas
@@ -94,6 +95,9 @@ export function registerRoutes(app: Express): Server {
 
   // Register translation routes
   app.use('/api', translationRouter);
+
+  // Registro del router de generación de video (implementación directa)
+  app.use('/api/video-generation', videoGenerationRouter);
 
   app.use('/api/manager', managerRouter);
   app.use('/api/artist', artistRouter);

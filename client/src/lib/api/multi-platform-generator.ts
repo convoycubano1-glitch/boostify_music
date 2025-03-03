@@ -623,29 +623,35 @@ export async function generateImage(params: GenerateImageParams): Promise<ImageR
  * @param params Video generation parameters specific to PiAPI
  * @returns Promise with generated video result
  */
+/**
+ * Generate video using PiAPI service with direct integration
+ * Uses the new simplified endpoint that accesses PiAPI directly
+ * @param params Video generation parameters
+ * @returns Promise with generated video result
+ */
 async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiProvider'>): Promise<VideoResult> {
   try {
     // Determinar el modelo a utilizar
     const model = params.piapiModel || PiapiVideoModel.T2V_01_DIRECTOR;
     
-    // Preparar los parámetros base
+    // Preparar los parámetros base con enfoque simplificado
     const requestParams: any = {
       prompt: params.prompt,
-      model: model,
-      expand_prompt: params.expand_prompt !== undefined ? params.expand_prompt : true
+      model: model
     };
     
     // Si hay movimientos de cámara y es el modelo director, prepararlos
     if (model === PiapiVideoModel.T2V_01_DIRECTOR && params.cameraMovements && params.cameraMovements.length > 0) {
-      // Máximo 3 movimientos de cámara, separados por comas
-      const movements = params.cameraMovements.slice(0, 3).join(',');
+      // Máximo 3 movimientos de cámara
+      const cameraMovements = params.cameraMovements.slice(0, 3);
       
       // Si incluye Static shot, no debería tener otros movimientos
-      if (movements.includes('Static shot') && params.cameraMovements.length > 1) {
+      if (cameraMovements.includes('Static shot' as any) && cameraMovements.length > 1) {
         console.warn('Static shot es mutuamente exclusivo con otros movimientos de cámara. Solo se usará Static shot.');
-        requestParams.camera_movement = 'Static shot';
+        requestParams.camera_movement = ['Static shot'];
       } else {
-        requestParams.camera_movement = movements;
+        // Ahora pasamos el array directamente, la API se encargará de formatearlo
+        requestParams.camera_movement = cameraMovements;
       }
     }
     
@@ -654,10 +660,10 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
       requestParams.image_url = params.image_url;
     }
     
-    // Llamar al endpoint del proxy
-    console.log('Llamando a endpoint de PiAPI para generación de video con parámetros:', requestParams);
+    // Llamar al endpoint de generación directa con el modelo axios simplificado
+    console.log('Llamando al nuevo endpoint directo de video con parámetros:', requestParams);
     const response = await axios.post(
-      '/api/proxy/piapi/video/start',
+      '/api/video-generation/generate',
       requestParams
     );
 
@@ -665,10 +671,12 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
     if (response.data && response.data.success && response.data.taskId) {
       const taskId = response.data.taskId;
       
+      console.log('✅ Generación iniciada correctamente con el endpoint directo. TaskId:', taskId);
+      
       // Devolver el resultado inicial (sin URL todavía)
       return {
-        url: '', // URL se obtendrá después
-        provider: `piapi-${model}`,
+        url: '', // URL se obtendrá después al verificar el estado
+        provider: `piapi-direct-${model}`,
         taskId: taskId,
         status: 'processing',
         prompt: params.prompt,
@@ -676,14 +684,14 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
       };
     }
     
-    throw new Error('Failed to start video generation with PiAPI');
+    throw new Error('Failed to start video generation with direct PiAPI endpoint');
   } catch (error) {
-    console.error('Error generating video with PiAPI:', error);
+    console.error('Error en generación de video con endpoint directo:', error);
     
     // Fallback para demos
     return {
       url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      provider: 'piapi (error fallback)',
+      provider: 'piapi-direct (error fallback)',
       prompt: params.prompt,
       createdAt: new Date()
     };
@@ -696,16 +704,24 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
  * @param taskId The task ID returned from the initial request
  * @returns Promise resolving to the result with video URL when ready
  */
+/**
+ * Check status of a PiAPI video generation task using the direct implementation
+ * This function polls the status endpoint until the video is ready
+ * @param taskId The task ID returned from the initial request
+ * @returns Promise resolving to the result with video URL when ready
+ */
 export async function checkPiapiVideoStatus(taskId: string): Promise<VideoResult | null> {
   try {
-    // Llamar al endpoint de status
-    const response = await axios.get(`/api/proxy/piapi/video/status?taskId=${taskId}`);
+    // Llamar al nuevo endpoint directo de status
+    const response = await axios.get(`/api/video-generation/status/${taskId}`);
+    
+    console.log('Respuesta del endpoint directo de status:', response.data);
     
     // Si la tarea se completó correctamente
     if (response.data && response.data.success && response.data.status === 'completed') {
       return {
         url: response.data.result.url,
-        provider: 'piapi',
+        provider: 'piapi-direct',
         taskId: taskId,
         status: 'completed',
         prompt: '', // No tenemos el prompt original aquí
@@ -713,11 +729,11 @@ export async function checkPiapiVideoStatus(taskId: string): Promise<VideoResult
       };
     }
     
-    // Si todavía está procesando, devolvemos null para indicar que siga verificando
+    // Si todavía está procesando, devolvemos objeto de procesamiento con progreso
     if (response.data && response.data.success && ['processing', 'pending'].includes(response.data.status)) {
       return {
         url: '',
-        provider: 'piapi',
+        provider: 'piapi-direct',
         taskId: taskId,
         status: 'processing',
         prompt: '', // No tenemos el prompt original aquí
@@ -728,13 +744,13 @@ export async function checkPiapiVideoStatus(taskId: string): Promise<VideoResult
     
     // Si falló, lanzamos error
     if (response.data && !response.data.success) {
-      throw new Error(response.data.error || 'Failed to generate video with PiAPI');
+      throw new Error(response.data.error || 'Failed to generate video with PiAPI direct endpoint');
     }
     
-    // Si no se pudo determinar el estado, devolvemos null
+    // Si no se pudo determinar el estado, devolvemos null para seguir intentando
     return null;
   } catch (error) {
-    console.error('Error checking PiAPI video status:', error);
+    console.error('Error checking PiAPI direct video status:', error);
     return null;
   }
 }
@@ -890,8 +906,11 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       if (provider === 'freepik') {
         endpoint = `/api/proxy/freepik/task/${taskId}`;
       } else if (provider === 'piapi' || provider.startsWith('piapi-')) {
-        // Para PiAPI usamos el endpoint específico
-        endpoint = `/api/proxy/piapi/video/status?taskId=${taskId}`;
+        // Para PiAPI usamos el nuevo endpoint directo
+        endpoint = `/api/video-generation/status/${taskId}`;
+      } else if (provider === 'piapi-direct' || provider.startsWith('piapi-direct-')) {
+        // Para PiAPI directo usamos el nuevo endpoint directo
+        endpoint = `/api/video-generation/status/${taskId}`;
       } else {
         endpoint = `/api/proxy/${provider}/task-status/${taskId}`;
       }
@@ -947,6 +966,12 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
             result.url = response.data.data[0]?.url || '';
           } else if ((provider === 'luma' || provider === 'kling') && response.data.output) {
             result.url = response.data.output.url || '';
+          } else if (provider === 'piapi-direct' || provider.startsWith('piapi-direct-')) {
+            // Manejo específico para el endpoint directo de PiAPI
+            if (response.data.result && response.data.result.url) {
+              result.url = response.data.result.url;
+              console.log("PiAPI Direct video URL:", result.url);
+            }
           } else if (provider === 'flux' || provider.startsWith('flux-')) {
             // Manejo especial para PiAPI Flux
             if (response.data.images && response.data.images.length > 0) {

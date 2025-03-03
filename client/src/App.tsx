@@ -47,6 +47,7 @@ import SpotifyPage from "@/pages/spotify";
 import StorePage from "@/pages/store";
 import TermsPage from "@/pages/terms";
 import VideosPage from "@/pages/videos";
+import VideoGenerationTestPage from "@/pages/video-generation-test";
 import YoutubeViewsPage from "@/pages/youtube-views";
 import RealTimeTranslator from "@/pages/real-time-translator";
 import EducationPage from "@/pages/education";
@@ -187,6 +188,7 @@ const Router = () => {
   const WrappedFaceSwapPage = withPageWrapper(FaceSwapPage);
   const WrappedKlingToolsPage = withPageWrapper(KlingToolsPage);
   const WrappedKlingStorePage = withPageWrapper(KlingStorePage);
+  const WrappedVideoGenerationTestPage = withPageWrapper(VideoGenerationTestPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -247,6 +249,7 @@ const Router = () => {
         <Route path="/face-swap" component={WrappedFaceSwapPage} />
         <Route path="/kling-tools" component={WrappedKlingToolsPage} />
         <Route path="/kling-store" component={WrappedKlingStorePage} />
+        <Route path="/video-generation-test" component={WrappedVideoGenerationTestPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
