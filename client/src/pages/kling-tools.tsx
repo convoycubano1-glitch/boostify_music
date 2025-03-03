@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import KlingEffects from "@/components/effects/kling-effects";
-import VirtualTryOn from "@/components/virtual-try-on/virtual-try-on";
-import KlingLipsync from "@/components/lipsync/kling-lipsync";
+import { EffectsComponent } from "@/components/kling/effects-component";
+import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
+import { LipsyncComponent } from "@/components/kling/lipsync-component";
 import { Shirt, Sparkles, Mic } from 'lucide-react';
 
 export default function KlingToolsPage() {
+  // El estado del tab activo determina qué sección se muestra
   const [activeTab, setActiveTab] = useState("effects");
 
   return (
@@ -45,7 +46,7 @@ export default function KlingToolsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <KlingEffects />
+                  <EffectsComponent />
                 </CardContent>
               </Card>
               
@@ -104,7 +105,7 @@ export default function KlingToolsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <VirtualTryOn />
+                  <VirtualTryOnComponent />
                 </CardContent>
               </Card>
               
@@ -171,7 +172,7 @@ export default function KlingToolsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <KlingLipsync />
+                  <LipsyncComponent />
                 </CardContent>
               </Card>
               

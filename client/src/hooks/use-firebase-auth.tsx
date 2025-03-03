@@ -1,26 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  signInWithPopup, 
-  GoogleAuthProvider, 
   onAuthStateChanged,
-  signOut,
   User,
-  browserSessionPersistence,
-  setPersistence,
-  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-
-// Configure GoogleAuthProvider with more robust settings
-const googleProvider = new GoogleAuthProvider();
-// Set custom parameters for prompt
-googleProvider.setCustomParameters({
-  // Using a minimal set of parameters to avoid cookie issues
-  prompt: 'select_account',
-  // Adding login_hint helps with account selection
-  login_hint: 'user@example.com'
-});
+import { authService } from '@/services/auth-service';
 
 export function useFirebaseAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,6 +13,27 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Verificar si hay resultados pendientes de redirección de autenticación
+    // Esto es necesario para manejar el flujo completo de autenticación con redirección
+    const checkForRedirectResult = async () => {
+      try {
+        const redirectUser = await authService.checkRedirectResult();
+        if (redirectUser) {
+          console.log('Usuario autenticado mediante redirección:', redirectUser.email);
+          toast({
+            title: "¡Bienvenido!",
+            description: `Has iniciado sesión como ${redirectUser.email}`,
+          });
+        }
+      } catch (redirectError) {
+        console.error('Error al procesar resultado de redirección:', redirectError);
+      }
+    };
+    
+    // Ejecutar la verificación una vez al montar el componente
+    checkForRedirectResult();
+    
+    // Suscribirse a cambios en el estado de autenticación
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -40,80 +46,61 @@ export function useFirebaseAuth() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
-
-
+  /**
+   * Función para iniciar sesión con Google
+   * Utiliza el servicio de autenticación que maneja múltiples estrategias
+   * y gestiona errores comunes de autenticación
+   */
   const signInWithGoogle = async () => {
     try {
-      console.log('Iniciando proceso de autenticación con Google...');
+      // Utilizamos el nuevo servicio de autenticación que maneja toda la lógica
+      // de limpieza previa y estrategias múltiples de autenticación
+      const user = await authService.signInWithGoogle();
       
-      // Limpiamos cualquier dato de autenticación previo que pueda estar causando conflictos
-      try {
-        await signOut(auth);
-        console.log('Sesión anterior cerrada para comenzar autenticación limpia');
-        
-        // Limpiamos localStorage para evitar problemas con datos corruptos
-        localStorage.removeItem('firebase:authUser');
-        sessionStorage.removeItem('firebase:authUser');
-        
-        // Esperar un momento para asegurar que todo se limpió correctamente
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (logoutError) {
-        console.log('No había sesión previa activa, continuando con la autenticación', logoutError);
+      // Si llegamos aquí es que la autenticación fue exitosa usando popup
+      if (user) {
+        toast({
+          title: "¡Bienvenido!",
+          description: `Has iniciado sesión como ${user.email}`,
+        });
+        return user;
       }
       
-      // Configurar persistencia LOCAL que es más compatible en diferentes navegadores
-      await setPersistence(auth, browserLocalPersistence);
-      console.log('Persistencia establecida correctamente');
-      
-      // Modificamos la configuración del proveedor para cada intento
-      // Esto evita problemas con datos almacenados en caché
-      const newProvider = new GoogleAuthProvider();
-      newProvider.setCustomParameters({
-        prompt: 'select_account',
-        // Evitando el uso de parámetros adicionales que pueden causar problemas
-      });
-      
-      console.log('Intentando autenticación con proveedor optimizado...');
-      const result = await signInWithPopup(auth, newProvider);
-      
-      console.log('Autenticación exitosa:', result.user.email);
-      
-      toast({
-        title: "¡Bienvenido!",
-        description: `Has iniciado sesión como ${result.user.email}`,
-      });
-      
-      return result.user;
-      
+      // Si no tenemos usuario pero no hubo error, es porque se inició un flujo
+      // de redirección que será manejado por el useEffect
+      return null;
     } catch (error: any) {
-      console.error('Error detallado en autenticación con Google:', error);
+      console.error('Error en autenticación con Google:', error);
       
-      // Manejo centralizado de errores con mensajes claros
+      // Manejo centralizado de errores con mensajes amigables
       let errorMessage = "No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.";
       let shouldRetry = false;
 
-      // Manejar tipos de errores comunes con mensajes descriptivos
+      // Manejar tipos de errores comunes
       if (error.code === 'auth/popup-blocked') {
         errorMessage = "El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes para este sitio.";
       } else if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "Proceso de inicio de sesión cancelado. Por favor, completa el proceso de autenticación.";
       } else if (error.code === 'auth/internal-error') {
-        // Mensaje más específico y útil para el error interno
-        errorMessage = "Error de autenticación con Google. Esto puede deberse a configuraciones del navegador. Asegúrate de tener cookies habilitadas y ventanas emergentes permitidas.";
+        errorMessage = "Error interno durante la autenticación. Estamos utilizando un método alternativo. Por favor, espera un momento...";
         shouldRetry = true;
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = "Problema de red durante la autenticación. Por favor, verifica tu conexión a internet.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "Este dominio no está autorizado para la autenticación. Contacta al administrador.";
       }
 
-      // Para errores internos, podemos mostrar un mensaje que sugiera alternativas
+      // Para errores que pueden solucionarse con un reintento, mostramos un mensaje diferente
       if (shouldRetry) {
         toast({
-          title: "Error de inicio de sesión",
-          description: errorMessage + " Intenta refrescar la página y probar nuevamente.",
-          variant: "destructive",
+          title: "Reintentando autenticación",
+          description: errorMessage,
         });
+        
+        // Para errores internos, no mostramos un mensaje de error sino más bien
+        // un mensaje informativo de que estamos intentando un método alternativo
       } else {
         toast({
           title: "Error de inicio de sesión",
@@ -127,9 +114,13 @@ export function useFirebaseAuth() {
     }
   };
 
+  /**
+   * Función para cerrar sesión
+   * Utiliza el servicio de autenticación para limpiar adecuadamente el estado
+   */
   const logout = async () => {
     try {
-      await signOut(auth);
+      await authService.signOut();
       toast({
         title: "Sesión cerrada",
         description: "Has cerrado sesión exitosamente",
