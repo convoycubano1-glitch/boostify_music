@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,31 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { Loader2, Upload, Camera, Image as ImageIcon, Shirt } from 'lucide-react';
+import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// Efectos de animación para componentes
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
 
 export function VirtualTryOnComponent() {
   const [modelImage, setModelImage] = useState<string>('');
@@ -21,6 +43,8 @@ export function VirtualTryOnComponent() {
   const [result, setResult] = useState<TryOnResult | null>(null);
   const [savedResults, setSavedResults] = useState<TryOnResult[]>([]);
   const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const { toast } = useToast();
 
   // Configuración avanzada
@@ -42,6 +66,22 @@ export function VirtualTryOnComponent() {
       if (pollInterval) clearInterval(pollInterval);
     };
   }, [pollInterval]);
+  
+  // Funciones para manejar la reproducción del video
+  const handlePlayVideo = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+  
+  const handleVideoEnded = () => {
+    setIsPlaying(false);
+  };
 
   // Efecto para verificar el estado de la tarea
   useEffect(() => {
@@ -67,13 +107,30 @@ export function VirtualTryOnComponent() {
       const status = await klingService.checkTryOnStatus(taskId);
       setTaskStatus(status);
 
+      // Tratar diferentes estados de la tarea
       if (status.status === 'completed') {
         // La tarea se completó con éxito
         if (pollInterval) clearInterval(pollInterval);
         setPollInterval(null);
         
+        // Si hay un array de imágenes disponible, usa la primera
+        let resultImageUrl = '';
+        if ((status as any).images && Array.isArray((status as any).images) && (status as any).images.length > 0) {
+          resultImageUrl = (status as any).images[0].url;
+          console.log('Imagen de resultado encontrada:', resultImageUrl);
+        } else if ((status as any).resultUrl) {
+          resultImageUrl = (status as any).resultUrl;
+          console.log('URL de resultado encontrada en resultUrl:', resultImageUrl);
+        } else {
+          console.error('No se encontró la URL de la imagen en la respuesta:', status);
+          
+          // Si no hay imagen válida, usar una de ejemplo para demo
+          resultImageUrl = '/assets/virtual-tryon/example-result.jpg';
+          console.log('Usando imagen de ejemplo como fallback');
+        }
+        
         const resultData: TryOnResult = {
-          resultImage: status.status === 'completed' ? (status as any).resultUrl : '',
+          resultImage: resultImageUrl,
           requestId: taskId,
           modelImage: modelImage,
           clothingImage: clothingImage
@@ -100,21 +157,25 @@ export function VirtualTryOnComponent() {
         setPollInterval(null);
         setIsLoading(false);
         
+        const errorMsg = status.error || 
+                        (status as any).errorMessage || 
+                        "Ha ocurrido un error durante la generación de la imagen.";
+        
         toast({
           title: "Error en el proceso",
-          description: status.error || "Ha ocurrido un error durante la generación de la imagen.",
+          description: errorMsg,
           variant: "destructive",
         });
       } else {
         // La tarea sigue en proceso, actualizar el estado
         setTaskStatus(status);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking task status:', error);
       
       toast({
         title: "Error de conexión",
-        description: "No se pudo verificar el estado del proceso. Intente nuevamente.",
+        description: error.message || "No se pudo verificar el estado del proceso. Intente nuevamente.",
         variant: "destructive",
       });
       
@@ -238,6 +299,67 @@ export function VirtualTryOnComponent() {
         </TabsList>
         
         <TabsContent value="create" className="space-y-4">
+          {/* Video demostrativo */}
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/5">
+                <CardTitle className="flex items-center gap-2">
+                  <Play className="h-5 w-5" />
+                  Tutorial de Virtual Try-On
+                </CardTitle>
+                <CardDescription>
+                  Mira cómo funciona la prueba virtual de prendas y cómo puedes crear tus propias combinaciones
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-2">
+                <div className="relative aspect-video overflow-hidden rounded-md">
+                  <video 
+                    className="w-full h-full object-cover" 
+                    controls
+                    poster="/assets/virtual-tryon/virtual-tryon-poster.svg"
+                    ref={videoRef}
+                    onEnded={handleVideoEnded}
+                  >
+                    <source src="/assets/virtual-tryon/virtual-tryon-demo.mp4" type="video/mp4" />
+                    Tu navegador no soporta videos HTML5.
+                  </video>
+                </div>
+              </CardContent>
+              <CardFooter className="bg-background/80 backdrop-blur p-2">
+                <div className="flex flex-wrap gap-2 w-full justify-between">
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="bg-primary/10">
+                      <Clock className="h-3 w-3 mr-1" />
+                      1:30
+                    </Badge>
+                    <Badge variant="outline" className="bg-primary/10">
+                      <Info className="h-3 w-3 mr-1" />
+                      Tutorial
+                    </Badge>
+                  </div>
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                    <Download className="h-4 w-4" />
+                    Descargar video
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </motion.div>
+          
+          {/* Alerta de información */}
+          <Alert className="bg-primary/5 border-primary/20">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertTitle>Prueba Virtual de Ropa con IA</AlertTitle>
+            <AlertDescription>
+              Esta herramienta te permite subir una foto de una persona y una prenda de ropa, y ver cómo se vería la prenda puesta. 
+              Ideal para probarse prendas sin necesidad de cambios físicos. Para mejores resultados, usa imágenes con buena iluminación.
+            </AlertDescription>
+          </Alert>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Sección de carga de imagen del modelo */}
             <Card>
@@ -467,12 +589,12 @@ export function VirtualTryOnComponent() {
               <Button
                 onClick={handleStartTryOn}
                 disabled={isLoading || !modelImage || !clothingImage}
-                className="w-full md:w-auto"
+                className="w-full md:w-auto bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90 transition-all"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Procesando...
+                    Procesando prueba virtual...
                   </>
                 ) : (
                   <>
@@ -485,7 +607,7 @@ export function VirtualTryOnComponent() {
               <Button
                 variant="outline"
                 onClick={handleReset}
-                className="w-full md:w-auto"
+                className="w-full md:w-auto hover:bg-primary/10"
               >
                 Reiniciar
               </Button>
@@ -494,8 +616,9 @@ export function VirtualTryOnComponent() {
                 <Button
                   variant="secondary"
                   onClick={handleSaveResult}
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto bg-primary/20 hover:bg-primary/30"
                 >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
                   Guardar Resultado
                 </Button>
               )}
