@@ -36,6 +36,7 @@ import ManagerToolsPage from "@/pages/manager-tools";
 import MerchandisePage from "@/pages/merchandise";
 import MessagesPage from "@/pages/messages";
 import MusicVideoCreator from "@/pages/music-video-creator";
+import MusicGeneratorPage from "@/pages/music-generator";
 import NewsPage from "@/pages/news";
 import PRPage from "@/pages/pr";
 import PrivacyPage from "@/pages/privacy";
@@ -166,6 +167,7 @@ const Router = () => {
   const WrappedManagerToolsPage = withPageWrapper(ManagerToolsPage);
   const WrappedProducerToolsPage = withPageWrapper(ProducerToolsPage);
   const WrappedMusicVideoCreator = withPageWrapper(MusicVideoCreator);
+  const WrappedMusicGeneratorPage = withPageWrapper(MusicGeneratorPage);
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
   const WrappedAIAdvisorsPage = withPageWrapper(AIAdvisorsPage);
@@ -226,6 +228,7 @@ const Router = () => {
         <ProtectedRoute path="/manager-tools" component={WrappedManagerToolsPage} />
         <ProtectedRoute path="/producer-tools" component={WrappedProducerToolsPage} />
         <ProtectedRoute path="/music-video-creator" component={WrappedMusicVideoCreator} />
+        <ProtectedRoute path="/music-generator" component={WrappedMusicGeneratorPage} />
         <ProtectedRoute path="/record-label-services" component={WrappedRecordLabelServices} />
         <ProtectedRoute path="/ai-agents" component={WrappedAIAgentsPage} />
         <ProtectedRoute path="/ai-advisors" component={WrappedAIAdvisorsPage} />
