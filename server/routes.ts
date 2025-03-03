@@ -1147,13 +1147,28 @@ export function registerRoutes(app: Express): Server {
       const apiProvider = req.body.apiProvider;
       
       if (apiProvider === 'piapi') {
-        // Preparar parámetros para PiAPI
+        // Preparar parámetros para PiAPI - manejo de nombres de parámetros esperados
+        // Extraer el modelo del piapiModel si existe, o usar el campo model, o fallback a t2v-01
+        const model = req.body.piapiModel || req.body.model || 't2v-01';
+        
+        // Extrae los movimientos de cámara que pueden venir en formato array o string
+        let cameraMovement = null;
+        if (req.body.cameraMovements && Array.isArray(req.body.cameraMovements)) {
+          // Si es un array (formato del frontend), lo convertimos a string separado por comas
+          cameraMovement = req.body.cameraMovements.join(',');
+        } else if (req.body.camera_movement) {
+          // Si ya viene como string (camera_movement), lo usamos directamente
+          cameraMovement = req.body.camera_movement;
+        }
+        
         const proxyReq = {
           prompt: req.body.prompt,
-          model: req.body.model || 't2v-01',
-          camera_movement: req.body.camera_movement,
+          model: model,
+          camera_movement: cameraMovement,
           image_url: req.body.image_url
         };
+        
+        console.log('Enviando solicitud al proxy con parámetros:', proxyReq);
         
         // Realizar la solicitud al proxy interno
         const proxyRes = await axios.post(

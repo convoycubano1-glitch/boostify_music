@@ -2548,9 +2548,24 @@ router.post('/proxy/piapi/video/start', async (req: Request, res) => {
       if (model === 't2v-01-director' && camera_movement) {
         // Asegurarse de que los movimientos de cámara estén en formato correcto
         // El formato correcto es: [Movimiento1,Movimiento2]texto del prompt
-        if (!finalPrompt.includes('[') && camera_movement) {
-          // Solo añadimos los corchetes si no están ya en el prompt
-          finalPrompt = `[${camera_movement}]${finalPrompt}`;
+        
+        // Verificamos si ya hay corchetes en el prompt o en el camera_movement
+        const hasOpenBracket = finalPrompt.includes('[') || camera_movement.includes('[');
+        const hasCloseBracket = finalPrompt.includes(']') || camera_movement.includes(']');
+        
+        // Solo formateamos si no hay corchetes ya en el prompt o los movimientos
+        if (!hasOpenBracket && !hasCloseBracket) {
+          // Verificamos si los movimientos ya están separados por comas
+          const formattedCameraMovement = camera_movement.includes(',') 
+            ? camera_movement 
+            : camera_movement.split(' ').join(',');
+          
+          // Añadimos el formato correcto [Movimiento1,Movimiento2]
+          finalPrompt = `[${formattedCameraMovement}]${finalPrompt}`;
+          console.log('Prompt con movimientos de cámara formateados:', finalPrompt);
+        } else {
+          // Si ya hay corchetes, asumimos que el formato es correcto
+          console.log('Manteniendo formato existente de movimientos de cámara');
         }
       }
       

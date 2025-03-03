@@ -247,12 +247,16 @@ export default function ImageGeneratorPage() {
     if (params.apiProvider === 'piapi') {
       // Incluir el modelo seleccionado
       if (params.piapiModel) {
+        // Enviamos el modelo tanto como piapiModel (para el endpoint que espera ese nombre)
+        // como model (para el endpoint del proxy que espera este nombre)
+        requestBody.piapiModel = params.piapiModel;
         requestBody.model = params.piapiModel;
       }
       
       // Si hay movimientos de cámara y es el modelo director, incluirlos
       if (params.piapiModel === 't2v-01-director' && params.cameraMovements?.length) {
-        requestBody.camera_movement = params.cameraMovements.join(',');
+        // Pasamos los movimientos como un array para que el backend pueda procesarlos
+        requestBody.cameraMovements = params.cameraMovements;
       }
       
       // Si hay una URL de imagen y es un modelo basado en imagen, incluirla
@@ -322,6 +326,14 @@ export default function ImageGeneratorPage() {
         description: `Using ${values.apiProvider} to create your video...`,
       });
 
+      // Formatear los movimientos de cámara para PiAPI
+      let cameraMovementsString = '';
+      if (values.apiProvider === 'piapi' && values.cameraMovements && values.cameraMovements.length > 0) {
+        // Convertir el array de movimientos a string delimitado por comas
+        cameraMovementsString = values.cameraMovements.join(',');
+        console.log('Camera movements formatted:', cameraMovementsString);
+      }
+      
       // Call the API to generate the video
       const result = await generateVideo({
         prompt: values.prompt,
@@ -332,6 +344,7 @@ export default function ImageGeneratorPage() {
         ...(values.apiProvider === 'piapi' && {
           piapiModel: values.piapiModel,
           cameraMovements: values.cameraMovements,
+          camera_movement: cameraMovementsString, // Aseguramos que siempre se envíe como string
           image_url: values.image_url
         })
       });
@@ -1045,21 +1058,28 @@ export default function ImageGeneratorPage() {
                               <FormControl>
                                 <div className="flex flex-wrap gap-2">
                                   {[
-                                    { value: "Static shot", label: "Static Shot" },
-                                    { value: "Truck left", label: "Truck Left" },
-                                    { value: "Truck right", label: "Truck Right" },
-                                    { value: "Pan left", label: "Pan Left" },
-                                    { value: "Pan right", label: "Pan Right" },
-                                    { value: "Push in", label: "Push In" },
-                                    { value: "Push out", label: "Push Out" },
-                                    { value: "Pedestal up", label: "Pedestal Up" },
-                                    { value: "Pedestal down", label: "Pedestal Down" },
-                                    { value: "Tilt up", label: "Tilt Up" },
-                                    { value: "Tilt down", label: "Tilt Down" },
-                                    { value: "Zoom in", label: "Zoom In" },
-                                    { value: "Zoom out", label: "Zoom Out" },
-                                    { value: "Tracking shot", label: "Tracking Shot" },
-                                    { value: "Shake", label: "Shake" },
+                                    // Movimientos de cámara horizontales
+                                    { value: "Static shot", label: "Static Shot", group: "basic", icon: <span className="text-xs">⊟</span> },
+                                    { value: "Pan left", label: "Pan Left", group: "horizontal", icon: <span className="text-xs">⊲</span> },
+                                    { value: "Pan right", label: "Pan Right", group: "horizontal", icon: <span className="text-xs">⊳</span> },
+                                    { value: "Truck left", label: "Truck Left", group: "horizontal", icon: <span className="text-xs">↤</span> },
+                                    { value: "Truck right", label: "Truck Right", group: "horizontal", icon: <span className="text-xs">↦</span> },
+                                    
+                                    // Movimientos de cámara verticales
+                                    { value: "Pedestal up", label: "Pedestal Up", group: "vertical", icon: <span className="text-xs">⬆</span> },
+                                    { value: "Pedestal down", label: "Pedestal Down", group: "vertical", icon: <span className="text-xs">⬇</span> },
+                                    { value: "Tilt up", label: "Tilt Up", group: "vertical", icon: <span className="text-xs">↑</span> },
+                                    { value: "Tilt down", label: "Tilt Down", group: "vertical", icon: <span className="text-xs">↓</span> },
+                                    
+                                    // Movimientos de profundidad
+                                    { value: "Push in", label: "Push In", group: "depth", icon: <span className="text-xs">⥅</span> },
+                                    { value: "Push out", label: "Push Out", group: "depth", icon: <span className="text-xs">⥄</span> },
+                                    { value: "Zoom in", label: "Zoom In", group: "depth", icon: <span className="text-xs">⊕</span> },
+                                    { value: "Zoom out", label: "Zoom Out", group: "depth", icon: <span className="text-xs">⊖</span> },
+                                    
+                                    // Movimientos especiales
+                                    { value: "Tracking shot", label: "Tracking Shot", group: "special", icon: <span className="text-xs">⥰</span> },
+                                    { value: "Shake", label: "Shake", group: "special", icon: <span className="text-xs">≈</span> },
                                   ].map((movement) => (
                                     <Button
                                       key={movement.value}
@@ -1092,8 +1112,12 @@ export default function ImageGeneratorPage() {
                                         
                                         field.onChange(newMovements);
                                       }}
-                                      className="text-xs"
+                                      className={`text-xs ${movement.group === "horizontal" ? "border-blue-200 dark:border-blue-900" : 
+                                                 movement.group === "vertical" ? "border-green-200 dark:border-green-900" : 
+                                                 movement.group === "depth" ? "border-purple-200 dark:border-purple-900" : 
+                                                 movement.group === "special" ? "border-amber-200 dark:border-amber-900" : ""}`}
                                     >
+                                      <span className="mr-1">{movement.icon}</span>
                                       {movement.label}
                                     </Button>
                                   ))}
@@ -1103,6 +1127,73 @@ export default function ImageGeneratorPage() {
                                 {field.value?.includes("Static shot") 
                                   ? "Static shot is exclusive and cannot be combined with other movements." 
                                   : `Select up to 3 camera movements (${(field.value || []).length}/3 selected).`}
+                                
+                                {/* Previsualización del formato de movimientos de cámara */}
+                                {field.value && field.value.length > 0 && (
+                                  <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
+                                    <p className="text-xs font-medium mb-1">Camera movement preview:</p>
+                                    <code className="text-xs bg-slate-100 dark:bg-slate-800 p-1 rounded block">
+                                      <span className="text-blue-500">[</span>
+                                      <span className="text-green-500">{field.value.join(',')}</span>
+                                      <span className="text-blue-500">]</span>
+                                      <span className="text-slate-400">your prompt text</span>
+                                    </code>
+                                    <p className="text-xs mt-1 text-slate-500">
+                                      This is how your camera movements will be formatted in the prompt.
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {/* Tooltip con información sobre los movimientos seleccionados */}
+                                {field.value && field.value.length > 0 && (
+                                  <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-900">
+                                    <p className="text-xs font-medium mb-1">Selected movements:</p>
+                                    <ul className="text-xs space-y-1 ml-2">
+                                      {field.value.map((movement, index) => (
+                                        <li key={index} className="flex items-center">
+                                          <span className="mr-2 font-semibold">•</span>
+                                          <span>
+                                            <span className="font-medium">{movement}</span>
+                                            {movement === "Pan left" && " - Camera rotates horizontally to the left"}
+                                            {movement === "Pan right" && " - Camera rotates horizontally to the right"}
+                                            {movement === "Tilt up" && " - Camera rotates vertically upward"}
+                                            {movement === "Tilt down" && " - Camera rotates vertically downward"}
+                                            {movement === "Truck left" && " - Camera moves horizontally to the left"}
+                                            {movement === "Truck right" && " - Camera moves horizontally to the right"}
+                                            {movement === "Pedestal up" && " - Camera moves physically upward"}
+                                            {movement === "Pedestal down" && " - Camera moves physically downward"}
+                                            {movement === "Push in" && " - Camera moves forward toward subject"}
+                                            {movement === "Push out" && " - Camera moves backward away from subject"}
+                                            {movement === "Zoom in" && " - Lens zooms in, field of view narrows"}
+                                            {movement === "Zoom out" && " - Lens zooms out, field of view widens"}
+                                            {movement === "Tracking shot" && " - Camera follows subject in motion"}
+                                            {movement === "Shake" && " - Camera shakes for dramatic effect"}
+                                            {movement === "Static shot" && " - Camera remains completely stationary"}
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                <div className="mt-2 text-xs grid grid-cols-2 gap-1">
+                                  <div className="flex items-center">
+                                    <span className="w-3 h-3 inline-block mr-1 bg-blue-200 dark:bg-blue-900 rounded-full"></span>
+                                    <span>Horizontal movements</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="w-3 h-3 inline-block mr-1 bg-green-200 dark:bg-green-900 rounded-full"></span>
+                                    <span>Vertical movements</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="w-3 h-3 inline-block mr-1 bg-purple-200 dark:bg-purple-900 rounded-full"></span>
+                                    <span>Depth movements</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="w-3 h-3 inline-block mr-1 bg-amber-200 dark:bg-amber-900 rounded-full"></span>
+                                    <span>Special movements</span>
+                                  </div>
+                                </div>
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
