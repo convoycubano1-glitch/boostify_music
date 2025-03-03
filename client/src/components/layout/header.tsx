@@ -23,18 +23,28 @@ export function Header() {
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'anonymous'>('loading');
   const { toast } = useToast();
   
-  // Monitorear y comunicar estado de autenticación visualmente
+  // Monitorear el estado de autenticación una sola vez al cargar
+  // Sin dependencias repetitivas que causan re-renders innecesarios
+  const [authChecked, setAuthChecked] = useState(false);
+  
+  // Este efecto se ejecuta una sola vez al montar el componente
   useEffect(() => {
-    if (isLoading) {
-      setAuthStatus('loading');
-    } else if (user) {
-      setAuthStatus('authenticated');
-      console.log('Header: Usuario autenticado detectado', user.email);
-    } else {
-      setAuthStatus('anonymous');
-      console.log('Header: Sin usuario autenticado');
+    // Solo actualizar el estado si no se ha verificado antes
+    if (!authChecked) {
+      if (isLoading) {
+        setAuthStatus('loading');
+      } else if (user) {
+        setAuthStatus('authenticated');
+        console.log('Header: Usuario autenticado una sola vez', user.email);
+        setAuthChecked(true);
+      } else {
+        setAuthStatus('anonymous');
+        console.log('Header: Sin usuario autenticado');
+        setAuthChecked(false);
+      }
     }
-  }, [user, isLoading]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle scroll effect for header
   useEffect(() => {
@@ -94,20 +104,26 @@ export function Header() {
   ];
 
   // Mostrar un indicador de estado de autenticación
+  // Sin mensajes repetitivos en consola
   if (authStatus === 'loading') {
-    console.log('Header: Cargando estado de autenticación...');
     // Aquí podría renderizarse un estado intermedio si es necesario
-  } else if (authStatus === 'anonymous') {
-    console.log('Header: No user detected, hiding header');
     return null;
-  } else {
-    console.log('Header: User authenticated, displaying header', user?.email);
+  } else if (authStatus === 'anonymous') {
+    return null;
   }
   
   // Si estamos aquí, es porque el usuario está autenticado
   // Podemos mostrar una notificación discreta de autenticación exitosa
+  // Usamos un estado para evitar notificaciones repetidas
+  const [welcomeNotificationShown, setWelcomeNotificationShown] = useState(false);
+  
   useEffect(() => {
-    if (authStatus === 'authenticated' && user) {
+    // Solo mostrar la notificación si el usuario está autenticado, 
+    // la notificación no se ha mostrado antes, y el estado está verificado
+    if (authStatus === 'authenticated' && user && !welcomeNotificationShown && authChecked) {
+      // Marcar como mostrada antes de mostrar el toast para evitar duplicados
+      setWelcomeNotificationShown(true);
+      
       toast({
         title: (
           <div className="flex items-center gap-2">
@@ -118,8 +134,10 @@ export function Header() {
         description: `¡Bienvenido ${user.displayName || user.email}!`,
         duration: 2000,
       });
+      
+      console.log("Header: Notificación de bienvenida mostrada");
     }
-  }, [authStatus, user, toast]);
+  }, [authStatus, user, toast, welcomeNotificationShown, authChecked]);
 
   const isAdmin = user?.email === 'convoycubano@gmail.com';
 
