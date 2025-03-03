@@ -51,10 +51,15 @@ export function setupAuth(app: Express) {
     const publicRoutes = [
       '/api/stripe-webhook',
       '/api/webhook',
-      '/api/chat/completions' // Añadimos nuestra ruta de chat para permitir el acceso sin autenticación
+      '/api/chat/completions',    // Ruta de chat para permitir el acceso sin autenticación
+      '/api/task/status',         // Ruta para verificar el estado de tareas asíncronas
+      '/api/video/generate',      // Ruta para generar videos
+      '/api/video/status'         // Ruta para verificar el estado de videos
     ];
     
-    if (publicRoutes.includes(req.path)) {
+    // Verificar si la ruta actual está en la lista de rutas públicas
+    if (publicRoutes.includes(req.path) || req.path.startsWith('/api/proxy/')) {
+      console.log('Ruta pública accedida sin autenticación:', req.path);
       return next();
     }
     

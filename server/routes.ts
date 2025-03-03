@@ -31,8 +31,10 @@ import achievementsRouter from './routes/achievements';
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
 import apiProxyRouter from './routes/api-proxy'; // Importamos el router de proxy para APIs externas
+import videoStatusRouter from './routes/video-status'; // Importamos el router dedicado para estado de videos
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
+import { Request, Response } from 'express';
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -109,6 +111,9 @@ export function registerRoutes(app: Express): Server {
 
   // Registrar el router de proxy API (sin autenticación)
   app.use('/api', apiProxyRouter);
+  
+  // Registrar el router dedicado para estado de videos (sin autenticación)
+  app.use('/api/video', videoStatusRouter);
 
   // Ruta específica para generación de video (sin autenticación)
   app.post('/api/video/generate', async (req, res) => {
@@ -183,7 +188,132 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Servicios que requieren autenticación
+  // Definir los endpoints adicionales de estado que no requieren autenticación
+  /**
+   * Endpoint específico para verificar el estado de tareas de generación de video
+   * Esta ruta es pública y no requiere autenticación
+   */
+  app.get('/api/video/status', async (req, res) => {
+    try {
+      const { taskId, provider } = req.query;
+      
+      console.log('Procesando solicitud de estado de video:', { taskId, provider });
+      
+      if (!taskId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere el ID de la tarea'
+        });
+      }
+      
+      if (provider === 'piapi') {
+        // Verificar estado en PiAPI
+        console.log(`Verificando estado de tarea de video ${taskId} con proveedor ${provider}`);
+        try {
+          const proxyRes = await axios.get(
+            `${req.protocol}://${req.get('host')}/api/proxy/piapi/video/status?taskId=${taskId}`
+          );
+          
+          console.log('Respuesta de verificación de estado:', proxyRes.data);
+          return res.json(proxyRes.data);
+        } catch (proxyError) {
+          console.error('Error al verificar estado en proxy:', proxyError);
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea de video'
+          });
+        }
+      } else if (provider === 'luma') {
+        // Verificar estado en Luma
+        try {
+          const proxyRes = await axios.get(
+            `${req.protocol}://${req.get('host')}/api/proxy/luma/status?taskId=${taskId}`
+          );
+          
+          return res.json(proxyRes.data);
+        } catch (proxyError) {
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea en Luma'
+          });
+        }
+      } else if (provider === 'kling') {
+        // Verificar estado en Kling
+        try {
+          const proxyRes = await axios.get(
+            `${req.protocol}://${req.get('host')}/api/proxy/kling/video/status?taskId=${taskId}`
+          );
+          
+          return res.json(proxyRes.data);
+        } catch (proxyError) {
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea en Kling'
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: `Proveedor no soportado: ${provider}`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error al verificar estado de tarea de video:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Error interno del servidor'
+      });
+    }
+  });
+  
+  /**
+   * Endpoint general para verificar el estado de cualquier tarea asíncrona
+   * Esta ruta también es pública y no requiere autenticación
+   */
+  app.get('/api/task/status', async (req, res) => {
+    try {
+      const { taskId, provider } = req.query;
+      
+      console.log('Procesando solicitud general de estado de tarea:', { taskId, provider });
+      
+      if (!taskId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere el ID de la tarea'
+        });
+      }
+      
+      // Redirigir a los endpoints específicos según el proveedor
+      if (provider === 'piapi' || provider === 'luma' || provider === 'kling') {
+        // Para proveedores de video, usar el endpoint de video
+        try {
+          const proxyUrl = `${req.protocol}://${req.get('host')}/api/video/status?taskId=${taskId}&provider=${provider}`;
+          console.log(`Redirigiendo a endpoint de video: ${proxyUrl}`);
+          const videoRes = await axios.get(proxyUrl);
+          return res.json(videoRes.data);
+        } catch (error) {
+          console.error('Error al redirigir a endpoint de video:', error);
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea de video'
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: `Proveedor no soportado o no especificado: ${provider}`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error verificando estado de tarea:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Error interno del servidor'
+      });
+    }
+  });
+
+  // Servicios que requieren autenticación - después de definir todas las rutas públicas
   setupAuth(app);
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);
@@ -1003,6 +1133,187 @@ export function registerRoutes(app: Express): Server {
       timestamp: new Date().toISOString(),
       serverPath: __dirname
     });
+  });
+
+  /**
+   * Endpoint para generar videos con PiAPI/Hailuo
+   * Conecta el frontend con el endpoint del proxy
+   */
+  app.post('/api/video/generate', async (req, res) => {
+    try {
+      console.log('Recibiendo solicitud de generación de video:', req.body);
+      
+      // Preparar los parámetros para enviar al proxy
+      const apiProvider = req.body.apiProvider;
+      
+      if (apiProvider === 'piapi') {
+        // Preparar parámetros para PiAPI
+        const proxyReq = {
+          prompt: req.body.prompt,
+          model: req.body.model || 't2v-01',
+          camera_movement: req.body.camera_movement,
+          image_url: req.body.image_url
+        };
+        
+        // Realizar la solicitud al proxy interno
+        const proxyRes = await axios.post(
+          `${req.protocol}://${req.get('host')}/api/proxy/piapi/video/start`,
+          proxyReq
+        );
+        
+        // Verificar si la respuesta fue exitosa
+        if (proxyRes.data.success) {
+          // La generación se inició correctamente, devolver el ID de tarea
+          return res.json({
+            success: true,
+            taskId: proxyRes.data.taskId,
+            provider: 'piapi',
+            status: 'processing',
+            // Para compatibilidad con el frontend actual, también devolvemos una URL temporal
+            url: '/temp-processing.mp4'
+          });
+        } else {
+          // Hubo un error en el proxy
+          throw new Error(proxyRes.data.error || 'Error desconocido en el proxy de PiAPI');
+        }
+      } else {
+        // Proveedores no soportados
+        return res.status(400).json({
+          success: false,
+          error: `Proveedor no soportado: ${apiProvider}`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generando video:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Error interno del servidor'
+      });
+    }
+  });
+  
+  /**
+   * Endpoint específico para verificar el estado de tareas de generación de video
+   * Esta ruta es pública y no requiere autenticación
+   */
+  app.get('/api/video/status', async (req, res) => {
+    try {
+      const { taskId, provider } = req.query;
+      
+      console.log('Procesando solicitud de estado de video:', { taskId, provider });
+      
+      if (!taskId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere el ID de la tarea'
+        });
+      }
+      
+      if (provider === 'piapi') {
+        // Verificar estado en PiAPI
+        console.log(`Verificando estado de tarea de video ${taskId} con proveedor ${provider}`);
+        try {
+          const proxyRes = await axios.get(
+            `${req.protocol}://${req.get('host')}/api/proxy/piapi/video/status?taskId=${taskId}`
+          );
+          
+          console.log('Respuesta de verificación de estado:', proxyRes.data);
+          return res.json(proxyRes.data);
+        } catch (proxyError) {
+          console.error('Error al verificar estado en proxy:', proxyError);
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea de video'
+          });
+        }
+      } else if (provider === 'luma') {
+        // Verificar estado en Luma
+        try {
+          const proxyRes = await axios.get(
+            `${req.protocol}://${req.get('host')}/api/proxy/luma/status?taskId=${taskId}`
+          );
+          
+          return res.json(proxyRes.data);
+        } catch (proxyError) {
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea en Luma'
+          });
+        }
+      } else if (provider === 'kling') {
+        // Verificar estado en Kling
+        try {
+          const proxyRes = await axios.get(
+            `${req.protocol}://${req.get('host')}/api/proxy/kling/video/status?taskId=${taskId}`
+          );
+          
+          return res.json(proxyRes.data);
+        } catch (proxyError) {
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea en Kling'
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: `Proveedor no soportado: ${provider}`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error al verificar estado de tarea de video:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Error interno del servidor'
+      });
+    }
+  });
+  
+  /**
+   * Endpoint general para verificar el estado de cualquier tarea asíncrona
+   * Esta ruta también es pública y no requiere autenticación
+   */
+  app.get('/api/task/status', async (req, res) => {
+    try {
+      const { taskId, provider } = req.query;
+      
+      console.log('Procesando solicitud general de estado de tarea:', { taskId, provider });
+      
+      if (!taskId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere el ID de la tarea'
+        });
+      }
+      
+      // Redirigir a los endpoints específicos según el proveedor
+      if (provider === 'piapi' || provider === 'luma' || provider === 'kling') {
+        // Para proveedores de video, usar el endpoint de video
+        try {
+          const proxyUrl = `${req.protocol}://${req.get('host')}/api/video/status?taskId=${taskId}&provider=${provider}`;
+          console.log(`Redirigiendo a endpoint de video: ${proxyUrl}`);
+          const videoRes = await axios.get(proxyUrl);
+          return res.json(videoRes.data);
+        } catch (error) {
+          console.error('Error al redirigir a endpoint de video:', error);
+          return res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de la tarea de video'
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: `Proveedor no soportado o no especificado: ${provider}`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error verificando estado de tarea:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Error interno del servidor'
+      });
+    }
   });
 
   const httpServer = createServer(app);
