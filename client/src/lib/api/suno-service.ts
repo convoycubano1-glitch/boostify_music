@@ -2,6 +2,13 @@ import { z } from "zod";
 import { db } from '../firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { env } from '@/env';
+import { generateMusicWithSuno, checkMusicGenerationStatus } from './piapi-music';
+
+/**
+ * AVISO: Este servicio ahora funciona exclusivamente a través de PiAPI
+ * Todo el funcionamiento de generación de música ahora utiliza el servicio
+ * de PiAPI en lugar de comunicarse directamente con Suno/Luma.
+ */
 
 // Definición de tipos para las respuestas de agentes
 export const AgentResponseSchema = z.object({
@@ -20,79 +27,65 @@ export const AgentResponseSchema = z.object({
 
 export type AgentResponse = z.infer<typeof AgentResponseSchema>;
 
-// Configuración de Suno
-const SUNO_API_KEY = env.VITE_SUNO_API_KEY;
-const BASE_URL = 'https://api.lumaapi.com/api/v1';
-
 export const sunoService = {
   generateMusic: async (
     params: {
       genre: string;
       tempo: number;
       mood: string;
+      structure?: string;
     },
     userId: string
   ): Promise<AgentResponse> => {
-    // Verificar y loggear el estado de la API key
-    console.log('Estado de la API key de Suno:', {
-      exists: !!SUNO_API_KEY,
-      length: SUNO_API_KEY?.length,
-      envVar: import.meta.env.VITE_SUNO_API_KEY ? 'presente' : 'ausente'
-    });
-
-    if (!SUNO_API_KEY) {
-      throw new Error('Suno API key is not configured. Please check your environment variables.');
-    }
-
     try {
-      console.log('Iniciando generación de música con Suno AI:', {
+      console.log('Iniciando generación de música con PiAPI:', {
         ...params,
-        userId,
-        apiKeyConfigured: !!SUNO_API_KEY
+        userId
       });
 
-      const requestBody = {
-        model: 'chirp-v3-5',
-        input: {
-          genre: params.genre,
-          tempo: parseInt(params.tempo.toString()),
-          mood: params.mood,
-          structure: params.structure || 'verse-chorus' // Added handling for optional structure
+      // Crear un prompt descriptivo basado en los parámetros
+      const description = `Generate a ${params.mood} ${params.genre} track with a tempo of ${params.tempo} BPM. Use a ${params.structure || 'verse-chorus'} structure.`;
+
+      // Usar PiAPI para generar la música
+      const result = await generateMusicWithSuno({
+        model: "music-s",
+        description,
+        makeInstrumental: false,
+        tags: params.genre
+      });
+
+      console.log('Tarea de generación de música iniciada con PiAPI:', result);
+
+      // Esperar hasta que la música esté generada
+      let status;
+      let retries = 0;
+      const maxRetries = 30; // Máximo 5 minutos (10 segundos x 30 intentos)
+      
+      do {
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos entre verificaciones
+        status = await checkMusicGenerationStatus(result.taskId);
+        console.log(`Verificación ${++retries}/${maxRetries}:`, status);
+        
+        if (status.status === 'failed') {
+          throw new Error(`La generación de música falló: ${status.error || 'Error desconocido'}`);
         }
-      };
-
-      console.log('Request body:', requestBody);
-
-      const response = await fetch(`${BASE_URL}/music/generate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SUNO_API_KEY}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': window.location.origin,
-          'HTTP-Referer': window.location.origin,
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error('Error en la respuesta de Suno API:', errorData);
-        throw new Error(`Error en Suno API: ${response.statusText}. ${errorData ? JSON.stringify(errorData) : ''}`);
+        
+      } while (status.status !== 'completed' && retries < maxRetries);
+      
+      if (retries >= maxRetries) {
+        throw new Error('Se agotó el tiempo de espera para la generación de música');
       }
 
-      const data = await response.json();
-      console.log('Respuesta exitosa de Suno API:', data);
-
+      // Construir respuesta en el formato esperado
       const sunoResponse: AgentResponse = {
         id: crypto.randomUUID(),
         userId,
-        musicUrl: data.output.audio_url, 
+        musicUrl: status.audioUrl || '/assets/music-samples/fallback-music.mp3', 
         parameters: params,
         timestamp: new Date(),
         metadata: {
-          model: 'chirp-v3-5',
-          generationId: data.id
+          model: 'music-s-via-piapi',
+          taskId: result.taskId
         }
       };
 
@@ -112,7 +105,19 @@ export const sunoService = {
       return sunoResponse;
     } catch (error) {
       console.error('Error en generateMusic:', error);
-      throw error;
+      
+      // Proporcionar respuesta de fallback para no romper la UI
+      return {
+        id: crypto.randomUUID(),
+        userId,
+        musicUrl: '/assets/music-samples/fallback-music.mp3',
+        parameters: params,
+        timestamp: new Date(),
+        metadata: {
+          isError: true,
+          errorMessage: error instanceof Error ? error.message : 'Error desconocido'
+        }
+      };
     }
   }
 };

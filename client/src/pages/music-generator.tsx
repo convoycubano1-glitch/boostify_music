@@ -57,15 +57,31 @@ export default function MusicGeneratorPage() {
 
       <MusicAIGenerator />
 
-      <div className="mt-8 bg-muted p-4 rounded-lg">
-        <h3 className="font-semibold mb-2">Consejos para mejores resultados:</h3>
-        <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
-          <li>Sé específico con los géneros musicales y el estilo que buscas</li>
-          <li>Incluye referencias a artistas o canciones para influir en el resultado</li>
-          <li>Menciona los instrumentos que deseas que sean prominentes</li>
-          <li>Detalla el estado de ánimo o emoción que quieres transmitir</li>
-          <li>Para letras personalizadas, asegúrate de que tengan una estructura clara</li>
-        </ul>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <div className="bg-muted p-4 rounded-lg">
+          <h3 className="font-semibold mb-2">Consejos para mejores resultados:</h3>
+          <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+            <li>Sé específico con los géneros musicales y el estilo que buscas</li>
+            <li>Incluye referencias a artistas o canciones para influir en el resultado</li>
+            <li>Menciona los instrumentos que deseas que sean prominentes</li>
+            <li>Detalla el estado de ánimo o emoción que quieres transmitir</li>
+            <li>Para letras personalizadas, asegúrate de que tengan una estructura clara</li>
+          </ul>
+        </div>
+        <div className="bg-muted p-4 rounded-lg">
+          <h3 className="font-semibold mb-2">Ejemplos de prompts efectivos:</h3>
+          <div className="text-sm text-muted-foreground space-y-3">
+            <p className="bg-card p-2 rounded border">
+              "Una balada pop con piano y voz femenina, inspirada en Adele, con ritmo lento y letras emotivas sobre un amor perdido"
+            </p>
+            <p className="bg-card p-2 rounded border">
+              "Rock alternativo energético estilo Foo Fighters, con guitarras distorsionadas, batería potente y letra sobre superar obstáculos"
+            </p>
+            <p className="bg-card p-2 rounded border">
+              "Instrumental de lofi hip hop con samples de jazz, beat relajado, piano melódico y un bajo profundo perfecto para estudiar"
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
