@@ -267,9 +267,10 @@ export default function ArtistImageAdvisorPage() {
                 >
                   <div className="space-y-6">
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold">Virtual Try-On</h2>
-                      <p className="text-muted-foreground">
-                        Prueba prendas virtualmente para visualizar tu estilo perfecto como artista
+                      <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Virtual Try-On</h2>
+                      <p className="text-muted-foreground max-w-2xl mx-auto">
+                        Prueba prendas virtualmente para visualizar tu estilo perfecto como artista. 
+                        Sube una foto tuya y la prenda que quieres probar para ver el resultado al instante.
                       </p>
                     </div>
                     <VirtualTryOnComponent />
@@ -440,8 +441,8 @@ export default function ArtistImageAdvisorPage() {
                                 <Shirt className="h-5 w-5" />
                               </div>
                               <div>
-                                <p className="font-medium">Experimenta con la funcionalidad Try-On</p>
-                                <p className="text-sm text-muted-foreground">Utiliza la herramienta de Virtual Try-On para explorar diferentes estilos de vestimenta que potencien tu imagen artística.</p>
+                                <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Experimenta con la funcionalidad Try-On</p>
+                                <p className="text-sm text-muted-foreground">Utiliza la herramienta de Virtual Try-On para explorar diferentes estilos de vestimenta que potencien tu imagen artística como músico. Prueba combinaciones variadas para descubrir tu estilo único.</p>
                               </div>
                             </li>
                             <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">

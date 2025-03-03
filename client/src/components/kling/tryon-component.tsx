@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History } from 'lucide-react';
+import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
 import { motion } from 'framer-motion';
@@ -589,16 +589,16 @@ export function VirtualTryOnComponent() {
               <Button
                 onClick={handleStartTryOn}
                 disabled={isLoading || !modelImage || !clothingImage}
-                className="w-full md:w-auto bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90 transition-all"
+                className="w-full py-6 text-md group bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90 transition-all shadow-md"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Procesando prueba virtual...
                   </>
                 ) : (
                   <>
-                    <Upload className="mr-2 h-4 w-4" />
+                    <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
                     Iniciar Prueba Virtual
                   </>
                 )}
@@ -609,6 +609,7 @@ export function VirtualTryOnComponent() {
                 onClick={handleReset}
                 className="w-full md:w-auto hover:bg-primary/10"
               >
+                <History className="mr-2 h-5 w-5" />
                 Reiniciar
               </Button>
               
@@ -616,9 +617,9 @@ export function VirtualTryOnComponent() {
                 <Button
                   variant="secondary"
                   onClick={handleSaveResult}
-                  className="w-full md:w-auto bg-primary/20 hover:bg-primary/30"
+                  className="w-full md:w-auto bg-gradient-to-r from-primary/30 to-primary/20 hover:from-primary/40 hover:to-primary/30 shadow-sm"
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
                   Guardar Resultado
                 </Button>
               )}
@@ -628,8 +629,11 @@ export function VirtualTryOnComponent() {
         
         <TabsContent value="history" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Historial de Pruebas Virtuales</CardTitle>
+            <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/5">
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Historial de Pruebas Virtuales
+              </CardTitle>
               <CardDescription>Revisa tus pruebas virtuales anteriores</CardDescription>
             </CardHeader>
             <CardContent>
@@ -652,7 +656,12 @@ export function VirtualTryOnComponent() {
                         <p className="text-xs text-gray-500">
                           ID: {item.requestId.substring(0, 8)}...
                         </p>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="hover:bg-primary/10 flex items-center gap-1"
+                        >
+                          <Info className="h-4 w-4" />
                           Ver detalles
                         </Button>
                       </CardFooter>

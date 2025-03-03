@@ -1840,9 +1840,10 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
 /**
  * Endpoint para verificar el estado de una tarea de Virtual Try-On
  */
-router.get('/proxy/kling/try-on/status', async (req, res) => {
+router.post('/proxy/kling/try-on/status', async (req, res) => {
   try {
-    const taskIdParam = req.query.taskId;
+    // Soporta tanto POST como query parameters para mayor flexibilidad
+    const taskIdParam = req.body.taskId || req.query.taskId;
     
     if (!taskIdParam) {
       console.error('Falta el ID de tarea');
