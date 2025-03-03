@@ -54,19 +54,45 @@ export default function ArtistImageAdvisorPage() {
       </div>
 
       <main className="container mx-auto px-4 py-8 md:py-12">
-        {/* Hero Section */}
+        {/* Hero Section with Video Background */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center space-y-4 mb-12"
+          className="relative rounded-xl overflow-hidden mb-12"
         >
-          <h1 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-            AI-Powered Image Advisor
-          </h1>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Transform your artist image with cutting-edge AI technology. Get personalized style recommendations and visualize your perfect look.
-          </p>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 z-10"></div>
+          
+          {/* Video Background */}
+          <div className="relative h-[350px] md:h-[400px] w-full overflow-hidden">
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              className="absolute w-full h-full object-cover"
+            >
+              <source src="/assets/Standard_Mode_Generated_Video%20(9).mp4" type="video/mp4" />
+            </video>
+            
+            {/* Content overlay */}
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6">
+              <div className="bg-black/50 p-8 rounded-xl backdrop-blur-sm">
+                <h1 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 mb-4">
+                  AI-Powered Image Advisor
+                </h1>
+                <p className="text-base md:text-lg text-white max-w-2xl mx-auto">
+                  Transform your artist image with cutting-edge AI technology. Get personalized style recommendations and visualize your perfect look.
+                </p>
+                <Button 
+                  className="mt-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg"
+                >
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Comienza tu transformación
+                </Button>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Features Grid */}

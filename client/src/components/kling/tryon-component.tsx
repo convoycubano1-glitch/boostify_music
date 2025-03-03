@@ -47,7 +47,7 @@ export function VirtualTryOnComponent() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { toast } = useToast();
 
-  // Configuración avanzada
+  // Advanced configuration
   const [preserveModelDetails, setPreserveModelDetails] = useState<boolean>(true);
   const [preserveClothingDetails, setPreserveClothingDetails] = useState<boolean>(true);
   const [enhanceFace, setEnhanceFace] = useState<boolean>(true);
@@ -55,19 +55,19 @@ export function VirtualTryOnComponent() {
   const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
 
-  // Cargar resultados guardados al montar
+  // Load saved results on mount
   useEffect(() => {
     loadSavedResults();
   }, []);
 
-  // Limpiar intervalo al desmontar
+  // Clear interval on unmount
   useEffect(() => {
     return () => {
       if (pollInterval) clearInterval(pollInterval);
     };
   }, [pollInterval]);
   
-  // Funciones para manejar la reproducción del video
+  // Functions to handle video playback
   const handlePlayVideo = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -83,7 +83,7 @@ export function VirtualTryOnComponent() {
     setIsPlaying(false);
   };
 
-  // Efecto para verificar el estado de la tarea
+  // Effect to check task status
   useEffect(() => {
     if (taskId && !pollInterval) {
       const interval = setInterval(checkTaskStatus, 3000);
@@ -107,26 +107,26 @@ export function VirtualTryOnComponent() {
       const status = await klingService.checkTryOnStatus(taskId);
       setTaskStatus(status);
 
-      // Tratar diferentes estados de la tarea
+      // Handle different task states
       if (status.status === 'completed') {
-        // La tarea se completó con éxito
+        // Task completed successfully
         if (pollInterval) clearInterval(pollInterval);
         setPollInterval(null);
         
-        // Si hay un array de imágenes disponible, usa la primera
+        // If there's an images array available, use the first one
         let resultImageUrl = '';
         if ((status as any).images && Array.isArray((status as any).images) && (status as any).images.length > 0) {
           resultImageUrl = (status as any).images[0].url;
-          console.log('Imagen de resultado encontrada:', resultImageUrl);
+          console.log('Result image found:', resultImageUrl);
         } else if ((status as any).resultUrl) {
           resultImageUrl = (status as any).resultUrl;
-          console.log('URL de resultado encontrada en resultUrl:', resultImageUrl);
+          console.log('Result URL found in resultUrl:', resultImageUrl);
         } else {
-          console.error('No se encontró la URL de la imagen en la respuesta:', status);
+          console.error('No image URL found in response:', status);
           
-          // Si no hay imagen válida, usar una de ejemplo para demo
+          // If no valid image is available, use an example for demo
           resultImageUrl = '/assets/virtual-tryon/example-result.jpg';
-          console.log('Usando imagen de ejemplo como fallback');
+          console.log('Using example image as fallback');
         }
         
         const resultData: TryOnResult = {
@@ -140,42 +140,42 @@ export function VirtualTryOnComponent() {
         setIsLoading(false);
         
         toast({
-          title: "¡Proceso completado!",
-          description: "La imagen con la prenda virtual ha sido generada exitosamente.",
+          title: "Process Completed!",
+          description: "The virtual try-on image has been successfully generated.",
         });
         
-        // Guardar el resultado
+        // Save the result
         try {
           await klingService.saveResult('try-on', resultData);
-          loadSavedResults(); // Recargar resultados
+          loadSavedResults(); // Reload results
         } catch (saveError) {
           console.error('Error saving try-on result:', saveError);
         }
       } else if (status.status === 'failed') {
-        // La tarea falló
+        // Task failed
         if (pollInterval) clearInterval(pollInterval);
         setPollInterval(null);
         setIsLoading(false);
         
         const errorMsg = status.error || 
                         (status as any).errorMessage || 
-                        "Ha ocurrido un error durante la generación de la imagen.";
+                        "An error occurred during image generation.";
         
         toast({
-          title: "Error en el proceso",
+          title: "Process Error",
           description: errorMsg,
           variant: "destructive",
         });
       } else {
-        // La tarea sigue en proceso, actualizar el estado
+        // Task is still in progress, update status
         setTaskStatus(status);
       }
     } catch (error: any) {
       console.error('Error checking task status:', error);
       
       toast({
-        title: "Error de conexión",
-        description: error.message || "No se pudo verificar el estado del proceso. Intente nuevamente.",
+        title: "Connection Error",
+        description: error.message || "Could not verify process status. Please try again.",
         variant: "destructive",
       });
       
@@ -214,8 +214,8 @@ export function VirtualTryOnComponent() {
   const handleStartTryOn = async () => {
     if (!modelImage || !clothingImage) {
       toast({
-        title: "Imágenes requeridas",
-        description: "Por favor, sube una imagen de modelo y una prenda de ropa.",
+        title: "Images Required",
+        description: "Please upload both a model image and a clothing item.",
         variant: "destructive",
       });
       return;
@@ -227,7 +227,7 @@ export function VirtualTryOnComponent() {
     setResult(null);
     
     try {
-      // Configuración para la solicitud
+      // Configuration for the request
       const settings = {
         preserve_model_details: preserveModelDetails,
         preserve_clothing_details: preserveClothingDetails,
@@ -240,16 +240,16 @@ export function VirtualTryOnComponent() {
       setTaskId(newTaskId);
       
       toast({
-        title: "Proceso iniciado",
-        description: "Comenzando a procesar las imágenes. Esto puede tomar unos minutos.",
+        title: "Process Started",
+        description: "Beginning to process images. This may take a few minutes.",
       });
     } catch (error) {
       console.error('Error starting try-on process:', error);
       setIsLoading(false);
       
       toast({
-        title: "Error al iniciar proceso",
-        description: "No se pudo iniciar el proceso de prueba virtual. Intente nuevamente.",
+        title: "Process Start Error",
+        description: "Could not initiate virtual try-on process. Please try again.",
         variant: "destructive",
       });
     }
@@ -276,15 +276,15 @@ export function VirtualTryOnComponent() {
       loadSavedResults();
       
       toast({
-        title: "Guardado exitoso",
-        description: "El resultado ha sido guardado correctamente.",
+        title: "Save Successful",
+        description: "The result has been saved successfully.",
       });
     } catch (error) {
       console.error('Error saving result:', error);
       
       toast({
-        title: "Error al guardar",
-        description: "No se pudo guardar el resultado. Intente nuevamente.",
+        title: "Save Error",
+        description: "Could not save the result. Please try again.",
         variant: "destructive",
       });
     }
@@ -294,78 +294,106 @@ export function VirtualTryOnComponent() {
     <div className="container mx-auto py-4">
       <Tabs defaultValue="create" className="w-full">
         <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="create">Crear Prueba Virtual</TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
+          <TabsTrigger value="create">Create Virtual Try-On</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
         
         <TabsContent value="create" className="space-y-4">
-          {/* Video demostrativo */}
+          {/* Demonstration animation */}
           <motion.div 
             variants={containerVariants}
             initial="hidden"
             animate="show"
           >
-            <Card className="overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/5">
-                <CardTitle className="flex items-center gap-2">
-                  <Play className="h-5 w-5" />
-                  Tutorial de Virtual Try-On
+            <Card className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10 pb-4">
+                <CardTitle className="flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+                  <Sparkles className="h-5 w-5 text-orange-500" />
+                  Virtual Try-On Tutorial
                 </CardTitle>
-                <CardDescription>
-                  Mira cómo funciona la prueba virtual de prendas y cómo puedes crear tus propias combinaciones
+                <CardDescription className="text-base">
+                  Learn how virtual garment try-on works and create your own combinations
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-2">
-                <div className="relative aspect-video overflow-hidden rounded-md">
-                  <video 
-                    className="w-full h-full object-cover" 
-                    controls
-                    poster="/assets/virtual-tryon/virtual-tryon-poster.svg"
+              <CardContent className="p-0">
+                <div className="relative overflow-hidden rounded-md">
+                  {/* Boostify Music tutorial video */}
+                  <video
                     ref={videoRef}
+                    className="w-full object-cover rounded-md shadow-inner"
+                    style={{ minHeight: "340px" }}
+                    poster="/assets/virtual-tryon/virtual-tryon-poster.svg"
+                    onClick={handlePlayVideo}
                     onEnded={handleVideoEnded}
                   >
-                    <source src="/assets/virtual-tryon/virtual-tryon-demo.mp4" type="video/mp4" />
-                    Tu navegador no soporta videos HTML5.
+                    <source src="/assets/tv/Welcome to Boostify Music.mp4" type="video/mp4" />
+                    Your browser does not support video playback.
                   </video>
+                  
+                  {/* Overlay with glow effects */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-orange-500/60 blur-sm animate-pulse"></div>
+                    <div className="absolute top-1/3 right-1/3 w-3 h-3 rounded-full bg-red-500/40 blur-sm animate-ping" style={{animationDuration: "4s"}}></div>
+                    <div className="absolute bottom-1/3 right-1/4 w-2 h-2 rounded-full bg-orange-500/50 blur-sm animate-pulse" style={{animationDuration: "3s"}}></div>
+                    
+                    {/* Central play button when video is paused */}
+                    {!isPlaying && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black/50 rounded-full p-4">
+                          <Play className="h-12 w-12 text-white" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-background/80 backdrop-blur p-2">
-                <div className="flex flex-wrap gap-2 w-full justify-between">
+              <CardFooter className="bg-gradient-to-r from-primary/5 via-black/60 to-primary/5 backdrop-blur-sm p-4">
+                <div className="flex flex-wrap gap-2 w-full justify-between items-center">
                   <div className="flex gap-2">
-                    <Badge variant="outline" className="bg-primary/10">
-                      <Clock className="h-3 w-3 mr-1" />
-                      1:30
+                    <Badge variant="outline" className="bg-primary/10 border-orange-500/20">
+                      <Sparkles className="h-3 w-3 mr-1 text-orange-500" />
+                      Video
                     </Badge>
-                    <Badge variant="outline" className="bg-primary/10">
-                      <Info className="h-3 w-3 mr-1" />
+                    <Badge variant="outline" className="bg-primary/10 border-orange-500/20">
+                      <Info className="h-3 w-3 mr-1 text-orange-500" />
                       Tutorial
                     </Badge>
                   </div>
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                    <Download className="h-4 w-4" />
-                    Descargar video
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="gap-1 text-xs"
+                    onClick={() => {
+                      toast({
+                        title: "Interactive Tutorial",
+                        description: "This video demonstrates the Boostify Music platform and its features.",
+                      });
+                    }}
+                  >
+                    <Info className="h-4 w-4 text-orange-500" />
+                    More Info
                   </Button>
                 </div>
               </CardFooter>
             </Card>
           </motion.div>
           
-          {/* Alerta de información */}
+          {/* Information alert */}
           <Alert className="bg-primary/5 border-primary/20">
             <Info className="h-4 w-4 text-primary" />
-            <AlertTitle>Prueba Virtual de Ropa con IA</AlertTitle>
+            <AlertTitle>AI-Powered Virtual Try-On</AlertTitle>
             <AlertDescription>
-              Esta herramienta te permite subir una foto de una persona y una prenda de ropa, y ver cómo se vería la prenda puesta. 
-              Ideal para probarse prendas sin necesidad de cambios físicos. Para mejores resultados, usa imágenes con buena iluminación.
+              This tool allows you to upload a photo of a person and a clothing item to see how the garment would look when worn.
+              Perfect for trying clothes without physical fitting. For best results, use images with good lighting.
             </AlertDescription>
           </Alert>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Sección de carga de imagen del modelo */}
+            {/* Model image upload section */}
             <Card>
               <CardHeader>
-                <CardTitle>Imagen del Modelo</CardTitle>
-                <CardDescription>Sube una foto de la persona que usará la prenda</CardDescription>
+                <CardTitle>Model Image</CardTitle>
+                <CardDescription>Upload a photo of the person who will wear the garment</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 h-60">
@@ -385,13 +413,13 @@ export function VirtualTryOnComponent() {
                           setModelFileInput(null);
                         }}
                       >
-                        Eliminar
+                        Remove
                       </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-gray-500">
                       <Camera className="h-10 w-10 mb-2" />
-                      <p>Haz clic para subir tu imagen</p>
+                      <p>Click to upload your image</p>
                     </div>
                   )}
                 </div>
@@ -405,11 +433,11 @@ export function VirtualTryOnComponent() {
               </CardContent>
             </Card>
             
-            {/* Sección de carga de imagen de la prenda */}
+            {/* Clothing image upload section */}
             <Card>
               <CardHeader>
-                <CardTitle>Imagen de la Prenda</CardTitle>
-                <CardDescription>Sube una foto de la prenda que deseas probar</CardDescription>
+                <CardTitle>Clothing Image</CardTitle>
+                <CardDescription>Upload a photo of the garment you want to try on</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 h-60">
@@ -429,13 +457,13 @@ export function VirtualTryOnComponent() {
                           setClothingFileInput(null);
                         }}
                       >
-                        Eliminar
+                        Remove
                       </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-gray-500">
                       <Shirt className="h-10 w-10 mb-2" />
-                      <p>Haz clic para subir tu imagen</p>
+                      <p>Click to upload your image</p>
                     </div>
                   )}
                 </div>
@@ -450,17 +478,17 @@ export function VirtualTryOnComponent() {
             </Card>
           </div>
           
-          {/* Configuración avanzada */}
+          {/* Advanced settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Configuración Avanzada</CardTitle>
-              <CardDescription>Personaliza la forma en que se aplicará la prenda</CardDescription>
+              <CardTitle>Advanced Settings</CardTitle>
+              <CardDescription>Customize how the garment will be applied</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="preserve-model-details">Preservar detalles del modelo</Label>
+                    <Label htmlFor="preserve-model-details">Preserve model details</Label>
                     <Switch 
                       id="preserve-model-details" 
                       checked={preserveModelDetails}
@@ -469,7 +497,7 @@ export function VirtualTryOnComponent() {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="preserve-clothing-details">Preservar detalles de la prenda</Label>
+                    <Label htmlFor="preserve-clothing-details">Preserve clothing details</Label>
                     <Switch 
                       id="preserve-clothing-details" 
                       checked={preserveClothingDetails}
@@ -478,7 +506,7 @@ export function VirtualTryOnComponent() {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="enhance-face">Mejorar rostro</Label>
+                    <Label htmlFor="enhance-face">Enhance face</Label>
                     <Switch 
                       id="enhance-face" 
                       checked={enhanceFace}
@@ -489,14 +517,14 @@ export function VirtualTryOnComponent() {
                 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Alineación</Label>
+                    <Label>Alignment</Label>
                     <div className="flex space-x-4">
                       <Button 
                         variant={alignment === 'auto' ? "default" : "outline"} 
                         onClick={() => setAlignment('auto')}
                         className="flex-1"
                       >
-                        Automática
+                        Automatic
                       </Button>
                       <Button 
                         variant={alignment === 'manual' ? "default" : "outline"} 
@@ -512,7 +540,7 @@ export function VirtualTryOnComponent() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <Label htmlFor="offset-x">Ajuste horizontal: {offsetX}</Label>
+                          <Label htmlFor="offset-x">Horizontal adjustment: {offsetX}</Label>
                         </div>
                         <Slider 
                           id="offset-x"
@@ -526,7 +554,7 @@ export function VirtualTryOnComponent() {
                       
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <Label htmlFor="offset-y">Ajuste vertical: {offsetY}</Label>
+                          <Label htmlFor="offset-y">Vertical adjustment: {offsetY}</Label>
                         </div>
                         <Slider 
                           id="offset-y"
@@ -544,14 +572,14 @@ export function VirtualTryOnComponent() {
             </CardContent>
           </Card>
           
-          {/* Sección de resultados */}
+          {/* Results section */}
           <Card>
             <CardHeader>
-              <CardTitle>Resultado</CardTitle>
+              <CardTitle>Results</CardTitle>
               <CardDescription>
                 {isLoading 
-                  ? "Procesando las imágenes, esto puede tomar unos minutos..." 
-                  : "Visualiza el resultado de la prueba virtual"}
+                  ? "Processing images, this may take a few minutes..." 
+                  : "View the result of the virtual try-on"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -560,11 +588,11 @@ export function VirtualTryOnComponent() {
                   <div className="flex flex-col items-center space-y-4">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
                     <div className="text-center">
-                      <p>Procesando tu solicitud...</p>
+                      <p>Processing your request...</p>
                       {taskStatus && (
                         <p className="text-sm text-muted-foreground">
-                          Estado: {taskStatus.status === 'pending' ? 'En cola' : 'Procesando'} - 
-                          Progreso: {taskStatus.progress}%
+                          Status: {taskStatus.status === 'pending' ? 'Queued' : 'Processing'} - 
+                          Progress: {taskStatus.progress}%
                         </p>
                       )}
                     </div>
@@ -573,14 +601,14 @@ export function VirtualTryOnComponent() {
                   <div className="w-full">
                     <img 
                       src={result.resultImage} 
-                      alt="Resultado de la prueba virtual" 
+                      alt="Virtual try-on result" 
                       className="max-h-96 mx-auto object-contain"
                     />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center text-gray-500">
                     <ImageIcon className="h-10 w-10 mb-2" />
-                    <p>Los resultados aparecerán aquí después del procesamiento</p>
+                    <p>Results will appear here after processing</p>
                   </div>
                 )}
               </div>
@@ -594,12 +622,12 @@ export function VirtualTryOnComponent() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Procesando prueba virtual...
+                    Processing virtual try-on...
                   </>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-                    Iniciar Prueba Virtual
+                    Start Virtual Try-On
                   </>
                 )}
               </Button>
@@ -610,7 +638,7 @@ export function VirtualTryOnComponent() {
                 className="w-full md:w-auto hover:bg-primary/10"
               >
                 <History className="mr-2 h-5 w-5" />
-                Reiniciar
+                Reset
               </Button>
               
               {result && (
@@ -620,7 +648,7 @@ export function VirtualTryOnComponent() {
                   className="w-full md:w-auto bg-gradient-to-r from-primary/30 to-primary/20 hover:from-primary/40 hover:to-primary/30 shadow-sm"
                 >
                   <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Guardar Resultado
+                  Save Result
                 </Button>
               )}
             </CardFooter>
@@ -628,41 +656,48 @@ export function VirtualTryOnComponent() {
         </TabsContent>
         
         <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/5">
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
-                Historial de Pruebas Virtuales
+          <Card className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10">
+              <CardTitle className="flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+                <History className="h-5 w-5 text-orange-500" />
+                Virtual Try-On History
               </CardTitle>
-              <CardDescription>Revisa tus pruebas virtuales anteriores</CardDescription>
+              <CardDescription>Review your previous virtual try-ons</CardDescription>
             </CardHeader>
             <CardContent>
               {savedResults.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No hay resultados guardados aún</p>
+                  <p>No saved results yet</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {savedResults.map((item, index) => (
-                    <Card key={index} className="overflow-hidden">
-                      <div className="relative aspect-square">
+                    <Card key={index} className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
+                      <div className="relative aspect-square group">
                         <img 
                           src={item.resultImage} 
-                          alt={`Prueba virtual ${index + 1}`} 
+                          alt={`Virtual try-on ${index + 1}`} 
                           className="object-cover w-full h-full"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                          <div className="text-white">
+                            <p className="text-sm font-medium">Try-on #{index + 1}</p>
+                            <p className="text-xs opacity-80">AI-Generated</p>
+                          </div>
+                        </div>
                       </div>
-                      <CardFooter className="flex justify-between p-2">
-                        <p className="text-xs text-gray-500">
-                          ID: {item.requestId.substring(0, 8)}...
-                        </p>
+                      <CardFooter className="flex justify-between p-3 bg-gradient-to-r from-primary/5 via-black/60 to-primary/5">
+                        <Badge variant="outline" className="bg-primary/10 border-orange-500/20">
+                          <Sparkles className="h-3 w-3 mr-1 text-orange-500" />
+                          {item.requestId.substring(0, 6)}...
+                        </Badge>
                         <Button 
                           variant="ghost" 
                           size="sm"
                           className="hover:bg-primary/10 flex items-center gap-1"
                         >
-                          <Info className="h-4 w-4" />
-                          Ver detalles
+                          <Info className="h-4 w-4 text-orange-500" />
+                          View details
                         </Button>
                       </CardFooter>
                     </Card>
