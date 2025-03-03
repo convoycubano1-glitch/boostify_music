@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 /**
- * Estructura para definir los parámetros avanzados de generación de música
+ * Structure to define advanced music generation parameters
  */
 export interface MusicGenerationAdvancedParams {
   makeInstrumental: boolean;
@@ -59,8 +59,8 @@ interface MusicGenerationAdvancedParamsProps {
 }
 
 /**
- * Componente para configurar parámetros avanzados de generación de música
- * Ofrece múltiples modos y opciones específicas para cada uno
+ * Component to configure advanced music generation parameters
+ * Offers multiple modes and specific options for each one
  */
 export function MusicGenerationAdvancedParams({
   params,
@@ -84,7 +84,7 @@ export function MusicGenerationAdvancedParams({
   
   return (
     <div className="space-y-4">
-      {/* Selector de modo avanzado */}
+      {/* Advanced mode selector */}
       <Tabs 
         value={advancedModeType} 
         onValueChange={(v) => setAdvancedModeType(v as 'standard' | 'continuation' | 'lyrics' | 'upload')} 
@@ -93,30 +93,30 @@ export function MusicGenerationAdvancedParams({
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="standard" className="text-xs px-2 py-1.5">
             <MusicIcon className="w-3.5 h-3.5 mr-1" />
-            Estándar
+            Standard
           </TabsTrigger>
           <TabsTrigger value="continuation" className="text-xs px-2 py-1.5">
             <Repeat className="w-3.5 h-3.5 mr-1" />
-            Continuación
+            Continuation
           </TabsTrigger>
           <TabsTrigger value="lyrics" className="text-xs px-2 py-1.5">
             <MessageSquare className="w-3.5 h-3.5 mr-1" />
-            Letras
+            Lyrics
           </TabsTrigger>
           <TabsTrigger value="upload" className="text-xs px-2 py-1.5">
             <Upload className="w-3.5 h-3.5 mr-1" />
-            Subir audio
+            Upload Audio
           </TabsTrigger>
         </TabsList>
         
-        {/* Parámetros para modo estándar */}
+        {/* Parameters for standard mode */}
         <TabsContent value="standard" className="space-y-4 mt-4">
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="music-params">
               <AccordionTrigger className="py-2 text-sm font-medium">
                 <div className="flex items-center">
                   <Music className="h-4 w-4 mr-2" />
-                  Parámetros Musicales
+                  Musical Parameters
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -136,21 +136,21 @@ export function MusicGenerationAdvancedParams({
                       onValueChange={(values) => handleParamChange("tempo", values[0])}
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Lento</span>
-                      <span>Medio</span>
-                      <span>Rápido</span>
+                      <span>Slow</span>
+                      <span>Medium</span>
+                      <span>Fast</span>
                     </div>
                   </div>
                   
-                  {/* Tonalidad */}
+                  {/* Key Signature */}
                   <div className="space-y-2">
-                    <Label htmlFor="keySignature" className="text-xs">Tonalidad</Label>
+                    <Label htmlFor="keySignature" className="text-xs">Key Signature</Label>
                     <Select
                       value={params.keySignature}
                       onValueChange={(value) => handleParamChange("keySignature", value)}
                     >
                       <SelectTrigger id="keySignature">
-                        <SelectValue placeholder="Seleccionar tonalidad" />
+                        <SelectValue placeholder="Select key signature" />
                       </SelectTrigger>
                       <SelectContent>
                         {keySignatureOptions.map((key) => (
@@ -162,9 +162,9 @@ export function MusicGenerationAdvancedParams({
                     </Select>
                   </div>
                   
-                  {/* Estructura musical */}
+                  {/* Song Structure */}
                   <div className="space-y-2">
-                    <Label className="text-xs">Estructura musical</Label>
+                    <Label className="text-xs">Song Structure</Label>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -180,7 +180,7 @@ export function MusicGenerationAdvancedParams({
                           checked={params.structure.verse}
                           onCheckedChange={(checked) => handleParamChange("structure", { ...params.structure, verse: checked })}
                         />
-                        <Label htmlFor="verse" className="text-xs">Verso</Label>
+                        <Label htmlFor="verse" className="text-xs">Verse</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -188,7 +188,7 @@ export function MusicGenerationAdvancedParams({
                           checked={params.structure.chorus}
                           onCheckedChange={(checked) => handleParamChange("structure", { ...params.structure, chorus: checked })}
                         />
-                        <Label htmlFor="chorus" className="text-xs">Coro</Label>
+                        <Label htmlFor="chorus" className="text-xs">Chorus</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -196,7 +196,7 @@ export function MusicGenerationAdvancedParams({
                           checked={params.structure.bridge}
                           onCheckedChange={(checked) => handleParamChange("structure", { ...params.structure, bridge: checked })}
                         />
-                        <Label htmlFor="bridge" className="text-xs">Puente</Label>
+                        <Label htmlFor="bridge" className="text-xs">Bridge</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -216,24 +216,24 @@ export function MusicGenerationAdvancedParams({
               <AccordionTrigger className="py-2 text-sm font-medium">
                 <div className="flex items-center">
                   <BrainCircuit className="h-4 w-4 mr-2" />
-                  Opciones Avanzadas
+                  Advanced Options
                 </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid gap-4 p-2">
-                  {/* Opciones instrumentales */}
+                  {/* Instrumental options */}
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="makeInstrumental"
                       checked={params.makeInstrumental}
                       onCheckedChange={(checked) => handleParamChange("makeInstrumental", checked)}
                     />
-                    <Label htmlFor="makeInstrumental" className="text-xs">Generar versión instrumental</Label>
+                    <Label htmlFor="makeInstrumental" className="text-xs">Generate instrumental version</Label>
                   </div>
                   
-                  {/* Etiquetas a incluir */}
+                  {/* Include tags */}
                   <div className="space-y-2">
-                    <Label htmlFor="tags" className="text-xs">Etiquetas a incluir (separadas por comas)</Label>
+                    <Label htmlFor="tags" className="text-xs">Tags to include (comma separated)</Label>
                     <Input
                       id="tags"
                       value={params.tags}
@@ -242,9 +242,9 @@ export function MusicGenerationAdvancedParams({
                     />
                   </div>
                   
-                  {/* Etiquetas a excluir */}
+                  {/* Exclude tags */}
                   <div className="space-y-2">
-                    <Label htmlFor="negativeTags" className="text-xs">Etiquetas a evitar (separadas por comas)</Label>
+                    <Label htmlFor="negativeTags" className="text-xs">Tags to exclude (comma separated)</Label>
                     <Input
                       id="negativeTags"
                       value={params.negativeTags}
@@ -253,9 +253,9 @@ export function MusicGenerationAdvancedParams({
                     />
                   </div>
                   
-                  {/* Semilla de generación aleatoria */}
+                  {/* Random generation seed */}
                   <div className="space-y-2">
-                    <Label htmlFor="seed" className="text-xs">Semilla (-1 para aleatorio)</Label>
+                    <Label htmlFor="seed" className="text-xs">Seed (-1 for random)</Label>
                     <Input
                       id="seed"
                       type="number"
@@ -265,7 +265,7 @@ export function MusicGenerationAdvancedParams({
                       max="999999999"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Una semilla específica permite reproducir la misma generación.
+                      A specific seed allows you to reproduce the same generation.
                     </p>
                   </div>
                 </div>
@@ -274,25 +274,25 @@ export function MusicGenerationAdvancedParams({
           </Accordion>
         </TabsContent>
         
-        {/* Parámetros para modo continuación */}
+        {/* Parameters for continuation mode */}
         <TabsContent value="continuation" className="space-y-4 mt-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="continueClipId" className="text-sm font-medium">ID del clip a continuar</Label>
+              <Label htmlFor="continueClipId" className="text-sm font-medium">Clip ID to continue</Label>
               <Input
                 id="continueClipId"
                 value={params.continueClipId}
                 onChange={(e) => handleParamChange("continueClipId", e.target.value)}
-                placeholder="Ej. A1B2C3D4"
+                placeholder="E.g. A1B2C3D4"
               />
               <p className="text-xs text-muted-foreground">
-                Introduce el ID del clip de música que quieres continuar.
+                Enter the ID of the music clip you want to continue.
               </p>
             </div>
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="continueAt" className="text-sm font-medium">Continuar en (segundos)</Label>
+                <Label htmlFor="continueAt" className="text-sm font-medium">Continue at (seconds)</Label>
                 <span className="text-xs font-mono">{params.continueAt}s</span>
               </div>
               <Slider
@@ -304,17 +304,17 @@ export function MusicGenerationAdvancedParams({
                 onValueChange={(values) => handleParamChange("continueAt", values[0])}
               />
               <p className="text-xs text-muted-foreground">
-                Define en qué segundo la nueva generación continuará la pieza original.
+                Define at which second the new generation will continue the original piece.
               </p>
             </div>
           </div>
         </TabsContent>
         
-        {/* Parámetros para modo letras */}
+        {/* Parameters for lyrics mode */}
         <TabsContent value="lyrics" className="space-y-4 mt-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Opciones de letras</Label>
+              <Label className="text-sm font-medium">Lyrics Options</Label>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="generateLyrics"
@@ -322,57 +322,57 @@ export function MusicGenerationAdvancedParams({
                   onCheckedChange={(checked) => handleParamChange("generateLyrics", checked)}
                 />
                 <Label htmlFor="generateLyrics" className="text-xs">
-                  Generar letras automáticamente
+                  Generate lyrics automatically
                 </Label>
               </div>
             </div>
             
             {!params.generateLyrics && (
               <div className="space-y-2">
-                <Label htmlFor="customLyrics" className="text-sm font-medium">Letras personalizadas</Label>
+                <Label htmlFor="customLyrics" className="text-sm font-medium">Custom lyrics</Label>
                 <Textarea
                   id="customLyrics"
                   value={params.customLyrics}
                   onChange={(e) => handleParamChange("customLyrics", e.target.value)}
-                  placeholder="Escribe aquí las letras que quieres para tu canción..."
+                  placeholder="Write your custom lyrics here..."
                   rows={6}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Separa los versos y coros con líneas en blanco para mejor estructuración.
+                  Separate verses and choruses with blank lines for better structure.
                 </p>
               </div>
             )}
           </div>
         </TabsContent>
         
-        {/* Parámetros para modo subir audio */}
+        {/* Parameters for upload audio mode */}
         <TabsContent value="upload" className="space-y-4 mt-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="audioUrl" className="text-sm font-medium">URL del audio</Label>
+              <Label htmlFor="audioUrl" className="text-sm font-medium">Audio URL</Label>
               <Input
                 id="audioUrl"
                 value={params.audioUrl}
                 onChange={(e) => handleParamChange("audioUrl", e.target.value)}
-                placeholder="https://ejemplo.com/audio.mp3"
+                placeholder="https://example.com/audio.mp3"
               />
               <p className="text-xs text-muted-foreground">
-                Proporciona una URL pública a un archivo de audio MP3, WAV o FLAC.
+                Provide a public URL to an MP3, WAV, or FLAC audio file.
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Subir archivo de audio</Label>
+              <Label className="text-sm font-medium">Upload audio file</Label>
               <div className="border-2 border-dashed rounded-md p-4 text-center">
                 <FileMusic className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground mb-2">
-                  Arrastra aquí tu archivo o
+                  Drag your file here or
                 </p>
                 <Button type="button" size="sm" className="mx-auto">
-                  Seleccionar archivo
+                  Select file
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Formatos soportados: MP3, WAV, FLAC. Máximo 10 MB.
+                  Supported formats: MP3, WAV, FLAC. Maximum 10 MB.
                 </p>
               </div>
             </div>

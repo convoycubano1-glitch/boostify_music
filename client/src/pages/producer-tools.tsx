@@ -407,7 +407,7 @@ export default function ProducerToolsPage() {
       setIsGeneratingMusic(true);
       const result = await generateMusic({
         prompt: musicPrompt,
-        modelName: "chirp-v3.5",
+        model: "chirp-v3.5", // Changed from 'modelName' to 'model' to match expected interface
         title: "Generated Music",
         tags: "ai generated"
       });

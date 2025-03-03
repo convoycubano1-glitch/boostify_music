@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  MusicGenreTemplate, 
-  GenreTemplateSelector 
-} from "./genre-template-selector";
+import { MusicGenreTemplate } from "./genre-data";
+import { GenreTemplateSelector } from "./genre-template-selector";
 import { 
   MusicGenerationAdvancedParams,
 } from "./advanced-music-params";
@@ -81,7 +79,7 @@ export function MusicGenerationSection({
   
   return (
     <div className="space-y-4">
-      {/* Panel de selección de género */}
+      {/* Genre selection panel */}
       <div className={`rounded-lg border bg-card ${expandTemplates ? 'p-4' : 'p-0 overflow-hidden'}`}>
         <div 
           className={`flex justify-between items-center cursor-pointer ${expandTemplates ? '' : 'p-4'}`}
@@ -89,7 +87,7 @@ export function MusicGenerationSection({
         >
           <div className="flex items-center">
             <Music className="h-5 w-5 mr-2 text-primary" />
-            <h3 className="font-medium">Plantillas por Género Musical</h3>
+            <h3 className="font-medium">Music Genre Templates</h3>
           </div>
           <Button variant="ghost" size="icon" className="ml-2 h-8 w-8">
             <PlusCircle className={`h-4 w-4 transition-transform ${expandTemplates ? 'rotate-45' : ''}`} />
@@ -107,14 +105,14 @@ export function MusicGenerationSection({
         )}
       </div>
       
-      {/* Controles principales de generación */}
+      {/* Main generation controls */}
       <div className="space-y-4">
-        {/* Campo de texto para prompt */}
+        {/* Prompt text field */}
         <div className="space-y-2">
-          <Label htmlFor="musicPrompt">Descripción de la música</Label>
+          <Label htmlFor="musicPrompt">Music Description</Label>
           <Textarea
             id="musicPrompt"
-            placeholder="Describe la música que quieres generar. Por ejemplo: Una canción pop enérgica con ritmo de baile, sintetizadores y voces femeninas..."
+            placeholder="Describe the music you want to generate. For example: An energetic pop song with dance rhythm, synthesizers and female vocals..."
             value={musicPrompt}
             onChange={(e) => setMusicPrompt(e.target.value)}
             className="min-h-[80px]"
@@ -122,21 +120,21 @@ export function MusicGenerationSection({
           />
         </div>
         
-        {/* Campo para título */}
+        {/* Title field */}
         <div className="space-y-2">
-          <Label htmlFor="musicTitle">Título de la canción (opcional)</Label>
+          <Label htmlFor="musicTitle">Song Title (optional)</Label>
           <Input
             id="musicTitle"
-            placeholder="Ingresa un título para tu generación"
+            placeholder="Enter a title for your generation"
             value={musicTitle}
             onChange={(e) => setMusicTitle(e.target.value)}
             disabled={isGeneratingMusic}
           />
         </div>
         
-        {/* Selector de modelo */}
+        {/* Model selector */}
         <div className="space-y-2">
-          <Label htmlFor="model-selector">Modelo</Label>
+          <Label htmlFor="model-selector">Model</Label>
           <Tabs 
             value={selectedModel} 
             onValueChange={setSelectedModel} 
@@ -155,12 +153,12 @@ export function MusicGenerationSection({
           </Tabs>
           <p className="text-xs text-muted-foreground">
             {selectedModel === 'music-s' 
-              ? "Suno genera música de alta calidad con mayor rango de estilos y control preciso." 
-              : "Udio produce resultados con más naturalidad en voces y es óptimo para música pop y moderna."}
+              ? "Suno generates high-quality music with a wider range of styles and precise control." 
+              : "Udio produces results with more natural vocals and is optimal for pop and modern music."}
           </p>
         </div>
         
-        {/* Parámetros avanzados toggle */}
+        {/* Advanced parameters toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Button
@@ -171,12 +169,12 @@ export function MusicGenerationSection({
               className="flex items-center"
             >
               <Settings className="h-3.5 w-3.5 mr-1.5" />
-              {showAdvancedParams ? "Ocultar parámetros" : "Mostrar parámetros"}
+              {showAdvancedParams ? "Hide Parameters" : "Show Parameters"}
             </Button>
           </div>
         </div>
         
-        {/* Sección de parámetros avanzados */}
+        {/* Advanced parameters section */}
         {showAdvancedParams && (
           <div className="rounded-lg border p-4">
             <MusicGenerationAdvancedParams 
@@ -188,27 +186,27 @@ export function MusicGenerationSection({
           </div>
         )}
         
-        {/* Consejos para mejores resultados */}
+        {/* Tips for better results */}
         <Alert variant="default" className="bg-muted/50">
           <Info className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            <strong>Consejos para mejores resultados:</strong> Incluye el género musical, instrumentos, tempo, y cualquier artista de referencia. Cuanto más detallada sea tu descripción, mejores resultados obtendrás.
+            <strong>Tips for better results:</strong> Include the musical genre, instruments, tempo, and any reference artists. The more detailed your description, the better results you'll get.
           </AlertDescription>
         </Alert>
         
-        {/* Botón de generación y progreso */}
+        {/* Generation button and progress */}
         <div className="pt-2">
           {isGeneratingMusic ? (
             <div className="space-y-4">
               <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
-                <span>Generando música...</span>
+                <span>Generating music...</span>
                 <span>{musicGenerationProgress}%</span>
               </div>
               <Progress value={musicGenerationProgress} className="h-2" />
               <div className="flex justify-center">
                 <div className="flex items-center text-sm text-muted-foreground gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Este proceso puede tardar hasta 2 minutos...</span>
+                  <span>This process may take up to 2 minutes...</span>
                 </div>
               </div>
             </div>
@@ -219,7 +217,7 @@ export function MusicGenerationSection({
               disabled={!musicPrompt.trim()}
             >
               <Sparkles className="h-5 w-5 mr-2 group-hover:animate-pulse" />
-              Generar Música
+              Generate Music
             </Button>
           )}
         </div>

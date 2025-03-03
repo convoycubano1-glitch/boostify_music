@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { MusicGenreTemplate } from "@/components/music/genre-templates/genre-template-selector";
 import { MusicGenerationSection } from "@/components/music/genre-templates/music-generation-section";
 import { MusicGenerationAdvancedParams } from "@/components/music/genre-templates/advanced-music-params";
-import { musicGenreTemplates, getGenreTemplateById, getDetailedPrompt } from "@/components/music/genre-templates/genre-data";
+import { 
+  musicGenreTemplates, 
+  getGenreTemplateById, 
+  getDetailedPrompt,
+  MusicGenreTemplate
+} from "@/components/music/genre-templates/genre-data";
 import { generateMusic, checkGenerationStatus, getRecentGenerations } from "@/lib/api/zuno-ai";
 import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/layout/header";
+import { motion } from "framer-motion";
 
 import {
   Tabs,
@@ -44,22 +50,26 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  Wand2,
+  Headphones,
+  Share2,
+  Sparkles,
 } from "lucide-react";
 
 /**
- * Página principal del generador de música con IA
+ * Main page of the AI Music Generator
  * 
- * Esta página permite:
- * - Generar música con diferentes modelos y géneros
- * - Personalizar los parámetros de generación
- * - Ver el historial de generaciones
- * - Reproducir y descargar las generaciones
+ * This page allows:
+ * - Generate music with different models and genres
+ * - Customize generation parameters
+ * - View generation history
+ * - Play and download generations
  */
 export default function MusicGeneratorPage() {
-  // Hooks y servicios
+  // Hooks and services
   const { toast } = useToast();
   
-  // Estado para el generador de música
+  // Music generator state
   const [musicPrompt, setMusicPrompt] = useState<string>("");
   const [musicTitle, setMusicTitle] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("music-s");
@@ -71,16 +81,16 @@ export default function MusicGeneratorPage() {
   const [showAdvancedParams, setShowAdvancedParams] = useState<boolean>(false);
   const [advancedModeType, setAdvancedModeType] = useState<'standard' | 'continuation' | 'lyrics' | 'upload'>('standard');
   
-  // Estado para reproductor de audio
+  // Audio player state
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   
-  // Estado para historial de generaciones
+  // Generation history state
   const [recentGenerations, setRecentGenerations] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true);
   
-  // Estado para parámetros avanzados
+  // Advanced parameters state
   const [advancedParams, setAdvancedParams] = useState<MusicGenerationAdvancedParams>({
     makeInstrumental: false,
     negativeTags: "",
@@ -110,12 +120,12 @@ export default function MusicGeneratorPage() {
     musicTemplate: "pop"
   });
   
-  // Cargar generaciones recientes al montar el componente
+  // Load recent generations when component mounts
   useEffect(() => {
     loadRecentGenerations();
   }, []);
   
-  // Verificar estado de generación en progreso
+  // Check status of generation in progress
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     
@@ -124,7 +134,7 @@ export default function MusicGeneratorPage() {
         try {
           const status = await checkGenerationStatus(currentTaskId);
           
-          // Actualizar el progreso basado en el estado
+          // Update progress based on status
           if (status.status === 'pending') {
             setMusicGenerationProgress(10);
           } else if (status.status === 'processing') {
@@ -134,12 +144,12 @@ export default function MusicGeneratorPage() {
             setIsGeneratingMusic(false);
             clearInterval(intervalId);
             
-            // Agregar la generación completada al historial
+            // Add completed generation to history
             if (status.audioUrl) {
               const newGeneration = {
                 id: `local_gen_${Date.now()}`,
                 taskId: currentTaskId,
-                title: musicTitle || 'Generación sin título',
+                title: musicTitle || 'Untitled Generation',
                 model: selectedModel,
                 prompt: musicPrompt,
                 audioUrl: status.audioUrl,
@@ -157,7 +167,7 @@ export default function MusicGeneratorPage() {
           }
         } catch (error) {
           console.error('Error checking generation status:', error);
-          setGenerationError('Error verificando el estado de la generación');
+          setGenerationError('Error checking generation status');
           setIsGeneratingMusic(false);
           setMusicGenerationProgress(0);
           clearInterval(intervalId);
@@ -170,9 +180,9 @@ export default function MusicGeneratorPage() {
     };
   }, [isGeneratingMusic, currentTaskId]);
   
-  // Gestionar reproducción de audio
+  // Manage audio playback
   useEffect(() => {
-    // Limpiar reproductor al desmontar
+    // Clean up player when unmounting
     return () => {
       if (currentAudio) {
         currentAudio.pause();
@@ -182,21 +192,21 @@ export default function MusicGeneratorPage() {
   }, []);
   
   /**
-   * Carga las generaciones de música recientes
+   * Load recent music generations
    */
   const loadRecentGenerations = async () => {
     setIsLoadingHistory(true);
     try {
       const generations = await getRecentGenerations();
       setRecentGenerations(generations);
-      // Si llegamos hasta aquí, el token de autenticación fue válido
+      // If we get here, the auth token was valid
     } catch (error) {
-      console.error('Error cargando generaciones recientes:', error);
-      // Si hay un error 401 (Unauthorized), podemos mostrar un mensaje adecuado
+      console.error('Error loading recent generations:', error);
+      // If there's a 401 (Unauthorized) error, show appropriate message
       if (error instanceof Error && error.message.includes('401')) {
         toast({
-          title: "Inicia sesión para ver tu historial",
-          description: "Necesitas iniciar sesión para ver tus generaciones de música anteriores.",
+          title: "Sign in to view your history",
+          description: "You need to sign in to see your previous music generations.",
           variant: "destructive",
         });
       }
@@ -206,10 +216,10 @@ export default function MusicGeneratorPage() {
   };
   
   /**
-   * Maneja la reproducción de audio
+   * Handle audio playback
    */
   const handlePlay = (audioUrl: string, id: string) => {
-    // Si ya hay audio reproduciéndose, detenerlo
+    // If there's already audio playing, stop it
     if (currentAudio) {
       currentAudio.pause();
       if (id === currentPlayingId) {
@@ -219,7 +229,7 @@ export default function MusicGeneratorPage() {
       }
     }
     
-    // Crear nuevo reproductor de audio
+    // Create new audio player
     const audio = new Audio(audioUrl);
     audio.onended = () => {
       setIsPlaying(false);
@@ -237,10 +247,10 @@ export default function MusicGeneratorPage() {
     audio.onerror = () => {
       setIsPlaying(false);
       setCurrentPlayingId(null);
-      console.error('Error reproduciendo audio:', audioUrl);
+      console.error('Error playing audio:', audioUrl);
     };
     
-    // Reproducir audio
+    // Play audio
     audio.play()
       .then(() => {
         setCurrentAudio(audio);
@@ -248,29 +258,29 @@ export default function MusicGeneratorPage() {
         setCurrentPlayingId(id);
       })
       .catch(error => {
-        console.error('Error reproduciendo audio:', error);
+        console.error('Error playing audio:', error);
         setIsPlaying(false);
         setCurrentPlayingId(null);
       });
   };
   
   /**
-   * Maneja la eliminación de una generación del historial
+   * Handle deletion of a generation from history
    */
   const handleDeleteGeneration = (id: string) => {
-    // Si se está reproduciendo esta generación, detener
+    // If this generation is playing, stop it
     if (id === currentPlayingId && currentAudio) {
       currentAudio.pause();
       setIsPlaying(false);
       setCurrentPlayingId(null);
     }
     
-    // Eliminar de la lista
+    // Remove from list
     setRecentGenerations(prev => prev.filter(gen => gen.id !== id));
   };
   
   /**
-   * Maneja la descarga de audio
+   * Handle audio download
    */
   const handleDownload = (audioUrl: string, title: string) => {
     const a = document.createElement('a');
@@ -282,7 +292,7 @@ export default function MusicGeneratorPage() {
   };
   
   /**
-   * Inicia el proceso de generación de música
+   * Start the music generation process
    */
   const handleGenerateMusic = async () => {
     if (!musicPrompt.trim()) return;
@@ -292,7 +302,7 @@ export default function MusicGeneratorPage() {
     setMusicGenerationProgress(0);
     
     try {
-      // Preparar los datos de generación según el modo
+      // Prepare generation data based on mode
       let generationData: any = {
         prompt: musicPrompt,
         title: musicTitle || undefined,
@@ -305,7 +315,7 @@ export default function MusicGeneratorPage() {
         keySignature: advancedParams.keySignature,
       };
       
-      // Agregar datos específicos según el modo
+      // Add mode-specific data
       if (advancedModeType === 'continuation') {
         generationData.continueClipId = advancedParams.continueClipId;
         generationData.continueAt = advancedParams.continueAt;
@@ -317,23 +327,23 @@ export default function MusicGeneratorPage() {
         generationData.uploadAudio = true;
       }
       
-      // Iniciar la generación
+      // Start generation
       const result = await generateMusic(generationData);
       
       setCurrentTaskId(result.taskId);
     } catch (error) {
-      console.error('Error generando música:', error);
+      console.error('Error generating music:', error);
       
-      // Comprobamos si es un error de autenticación
+      // Check if it's an authentication error
       if (error instanceof Error && error.message.includes('401')) {
-        setGenerationError('Necesitas iniciar sesión para generar música');
+        setGenerationError('You need to sign in to generate music');
         toast({
-          title: "Autenticación requerida",
-          description: "Inicia sesión para poder crear música con IA.",
+          title: "Authentication required",
+          description: "Sign in to create music with AI.",
           variant: "destructive",
         });
       } else {
-        setGenerationError('Error iniciando la generación de música');
+        setGenerationError('Error starting music generation');
       }
       
       setIsGeneratingMusic(false);
@@ -342,12 +352,18 @@ export default function MusicGeneratorPage() {
   };
   
   /**
-   * Aplica una plantilla de género a la interfaz
+   * Apply a genre template to the interface
    */
   const applyMusicTemplate = (templateId: string) => {
     const template = getGenreTemplateById(templateId);
     
-    // Aplicar parámetros de plantilla
+    // Only proceed if we have a valid template
+    if (!template) {
+      console.error(`Template with ID ${templateId} not found`);
+      return;
+    }
+    
+    // Apply template parameters
     setAdvancedParams(prev => ({
       ...prev,
       tempo: template.tempo,
@@ -357,8 +373,8 @@ export default function MusicGeneratorPage() {
       musicTemplate: templateId,
     }));
     
-    // Si el prompt está vacío o es el predeterminado de otra plantilla,
-    // establecer el prompt predeterminado de esta plantilla
+    // If prompt is empty or is the default from another template,
+    // set the default prompt for this template
     if (!musicPrompt.trim() || 
         musicGenreTemplates.some(t => t.id !== templateId && musicPrompt === t.defaultPrompt)) {
       setMusicPrompt(template.defaultPrompt);
@@ -366,11 +382,11 @@ export default function MusicGeneratorPage() {
   };
   
   /**
-   * Formatea la fecha para mostrar
+   * Format date for display
    */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('es', {
+    return new Intl.DateTimeFormat('en', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -379,220 +395,336 @@ export default function MusicGeneratorPage() {
     }).format(date);
   };
   
+  // Features data for feature section
+  const featuresData = [
+    {
+      icon: Wand2,
+      title: "Advanced AI Models",
+      description: "Create studio-quality music using state-of-the-art AI models",
+    },
+    {
+      icon: Music,
+      title: "Genre Templates",
+      description: "Quickly start with optimized settings for different music genres",
+    },
+    {
+      icon: Headphones,
+      title: "High-Quality Output",
+      description: "Generate professional-sounding tracks with vocals and instruments",
+    },
+  ];
+  
   return (
-    <div className="container py-6 space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold flex items-center">
-          <Music2 className="h-8 w-8 mr-2" />
-          Generador de Música AI
-        </h1>
-        <p className="text-muted-foreground max-w-3xl">
-          Crea música original con IA avanzada. Usa plantillas por género o personaliza tu generación con parámetros específicos.
-          La música generada puede utilizarse para proyectos personales, demos o inspiración.
-        </p>
-      </div>
-      
-      <Tabs defaultValue="generator" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="generator" className="flex items-center gap-2">
-            <MusicIcon className="h-4 w-4" /> Generar Música
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" /> Historial
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Tab de generación */}
-        <TabsContent value="generator" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            {/* Panel de generación */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Disc3 className="h-5 w-5 mr-2" />
-                  Generación de Música
-                </CardTitle>
-                <CardDescription>
-                  Describe la música que deseas generar o selecciona una plantilla de género
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Componente principal de generación */}
-                <MusicGenerationSection 
-                  musicGenreTemplates={musicGenreTemplates}
-                  selectedGenreTemplate={selectedGenreTemplate}
-                  setSelectedGenreTemplate={setSelectedGenreTemplate}
-                  isGeneratingMusic={isGeneratingMusic}
-                  musicGenerationProgress={musicGenerationProgress}
-                  handleGenerateMusic={handleGenerateMusic}
-                  musicPrompt={musicPrompt}
-                  setMusicPrompt={setMusicPrompt}
-                  musicTitle={musicTitle}
-                  setMusicTitle={setMusicTitle}
-                  selectedModel={selectedModel}
-                  setSelectedModel={setSelectedModel}
-                  showAdvancedParams={showAdvancedParams}
-                  setShowAdvancedParams={setShowAdvancedParams}
-                  advancedModeType={advancedModeType}
-                  setAdvancedModeType={setAdvancedModeType}
-                  advancedParams={advancedParams}
-                  setAdvancedParams={setAdvancedParams}
-                  applyMusicTemplate={applyMusicTemplate}
-                />
-              </CardContent>
-            </Card>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      <main className="flex-1 flex flex-col">
+        {/* Hero Section */}
+        <div className="relative w-full min-h-[40vh] sm:min-h-[50vh] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-90"
+          >
+            <source src="/assets/Standard_Mode_Generated_Video (9).mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-background" />
+          <div className="relative z-10 container mx-auto h-full flex flex-col justify-center items-center px-4 py-8 sm:py-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-black/40 backdrop-blur-sm rounded-lg p-4 sm:p-6 w-full max-w-[95%] sm:max-w-2xl text-center"
+            >
+              <motion.h1
+                className="text-xl sm:text-3xl md:text-5xl font-bold text-primary mb-2 sm:mb-4"
+                style={{ textShadow: '0 4px 8px rgba(0,0,0,0.8)' }}
+              >
+                AI Music Generator
+              </motion.h1>
+              <motion.p
+                transition={{ delay: 0.2 }}
+                className="text-xs sm:text-base md:text-lg text-white/90 mb-4 sm:mb-6"
+                style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+              >
+                Create original, high-quality music in seconds with advanced AI technology
+              </motion.p>
+            </motion.div>
             
-            {/* Errores */}
-            {generationError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error de generación</AlertTitle>
-                <AlertDescription>
-                  {generationError}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </TabsContent>
-        
-        {/* Tab de historial */}
-        <TabsContent value="history" className="space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center">
-                  <History className="h-5 w-5 mr-2" />
-                  Generaciones Recientes
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={loadRecentGenerations}
-                  disabled={isLoadingHistory}
+            {/* Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-8 w-full max-w-[95%] sm:max-w-[90%] mx-auto">
+              {featuresData.map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="bg-black/70 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-white/20 hover:border-primary/50 transition-colors"
                 >
-                  {isLoadingHistory ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Cargando...
-                    </>
-                  ) : (
-                    <>
-                      <Music className="h-4 w-4 mr-2" />
-                      Actualizar
-                    </>
-                  )}
-                </Button>
+                  <div className="flex flex-col items-center text-center">
+                    <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary mb-2 sm:mb-3" />
+                    <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">{feature.title}</h3>
+                    <p className="text-xs sm:text-sm text-white/90">{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Main Content */}
+        <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
+          <div className="flex flex-col items-center mb-6 text-center">
+            <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-4">Create Your Own Music</h2>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl mb-4 px-2 sm:px-4">
+              Use our advanced AI models to create original music in any style. Choose from ready-made templates or customize your generation with detailed parameters.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto mb-8">
+            {/* Video explanation */}
+            <div className="lg:col-span-1 rounded-lg overflow-hidden shadow-lg">
+              <div className="aspect-video relative overflow-hidden">
+                <video 
+                  className="w-full h-full object-cover" 
+                  controls
+                  poster="/assets/music-generator-poster.jpg"
+                >
+                  <source src="/assets/indications/Welcome to Boostify Music 1.mp4" type="video/mp4" />
+                </video>
               </div>
-              <CardDescription>
-                Historial de tus generaciones de música
-              </CardDescription>
-              <Separator className="mt-2" />
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[400px]">
-                {isLoadingHistory ? (
-                  <div className="p-6 space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-40" />
-                          <Skeleton className="h-4 w-60" />
-                        </div>
-                      </div>
-                    ))}
+              <div className="p-4 bg-card">
+                <h3 className="text-lg font-medium mb-2">How It Works</h3>
+                <p className="text-sm text-muted-foreground">
+                  Watch this quick tutorial to learn how to create amazing music in just a few clicks using our AI generator.
+                </p>
+              </div>
+            </div>
+            
+            {/* How it works */}
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="p-4 flex flex-col items-center text-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-medium mb-2">1. Describe Your Idea</h3>
+                <p className="text-sm text-muted-foreground">
+                  Describe the music you want to create or choose from our genre templates.
+                </p>
+              </Card>
+              
+              <Card className="p-4 flex flex-col items-center text-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                  <Wand2 className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-medium mb-2">2. Generate</h3>
+                <p className="text-sm text-muted-foreground">
+                  Our AI creates complete songs with vocals, instruments, and structure in seconds.
+                </p>
+              </Card>
+              
+              <Card className="p-4 flex flex-col items-center text-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                  <Share2 className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-medium mb-2">3. Use & Share</h3>
+                <p className="text-sm text-muted-foreground">
+                  Download your track for personal projects, inspiration, or share with others.
+                </p>
+              </Card>
+            </div>
+          </div>
+          
+          {/* Generator Tabs */}
+          <Tabs defaultValue="generator" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="generator" className="flex items-center gap-2">
+                <MusicIcon className="h-4 w-4" /> Generate Music
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-2">
+                <History className="h-4 w-4" /> History
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Generation Tab */}
+            <TabsContent value="generator" className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                {/* Generation Panel */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Disc3 className="h-5 w-5 mr-2" />
+                      Music Generation
+                    </CardTitle>
+                    <CardDescription>
+                      Describe the music you want to generate or select a genre template
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Main Generation Component */}
+                    <MusicGenerationSection 
+                      musicGenreTemplates={musicGenreTemplates}
+                      selectedGenreTemplate={selectedGenreTemplate}
+                      setSelectedGenreTemplate={setSelectedGenreTemplate}
+                      isGeneratingMusic={isGeneratingMusic}
+                      musicGenerationProgress={musicGenerationProgress}
+                      handleGenerateMusic={handleGenerateMusic}
+                      musicPrompt={musicPrompt}
+                      setMusicPrompt={setMusicPrompt}
+                      musicTitle={musicTitle}
+                      setMusicTitle={setMusicTitle}
+                      selectedModel={selectedModel}
+                      setSelectedModel={setSelectedModel}
+                      showAdvancedParams={showAdvancedParams}
+                      setShowAdvancedParams={setShowAdvancedParams}
+                      advancedModeType={advancedModeType}
+                      setAdvancedModeType={setAdvancedModeType}
+                      advancedParams={advancedParams}
+                      setAdvancedParams={setAdvancedParams}
+                      applyMusicTemplate={applyMusicTemplate}
+                    />
+                  </CardContent>
+                </Card>
+                
+                {/* Errors */}
+                {generationError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Generation Error</AlertTitle>
+                    <AlertDescription>
+                      {generationError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </TabsContent>
+            
+            {/* History Tab */}
+            <TabsContent value="history" className="space-y-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center">
+                      <History className="h-5 w-5 mr-2" />
+                      Recent Generations
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={loadRecentGenerations}
+                      disabled={isLoadingHistory}
+                    >
+                      <Loader2 className={`h-3.5 w-3.5 mr-1.5 ${isLoadingHistory ? 'animate-spin' : 'opacity-0'}`} />
+                      Refresh
+                    </Button>
                   </div>
-                ) : recentGenerations.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <Info className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      No tienes generaciones de música todavía.
-                      <br />
-                      Genera tu primera pieza musical para empezar.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y">
-                    {recentGenerations.map((gen) => (
-                      <div key={gen.id} className="p-4 hover:bg-accent/50 transition-colors">
-                        <div className="flex justify-between mb-2">
-                          <div className="flex items-center">
-                            <Avatar className="h-10 w-10 mr-3">
-                              <Music className="h-5 w-5" />
-                            </Avatar>
-                            <div>
-                              <h4 className="font-medium">{gen.title}</h4>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <span>{gen.createdAt ? formatDate(gen.createdAt) : 'Desconocido'}</span>
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                  {gen.model === 'music-s' ? 'Suno' : 'Udio'}
-                                </Badge>
-                                {gen.status === 'completed' ? (
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800">
-                                    <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
-                                    Completada
-                                  </Badge>
-                                ) : gen.status === 'failed' ? (
-                                  <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                                    <XCircle className="h-2.5 w-2.5 mr-1" />
-                                    Fallida
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
-                                    Procesando
-                                  </Badge>
-                                )}
-                              </div>
+                  <CardDescription>
+                    Listen to and download your previous generations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[calc(100vh-28rem)] md:pr-4">
+                    {isLoadingHistory ? (
+                      // Skeleton loader for history
+                      <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="flex items-center space-x-4">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <div className="space-y-2 flex-1">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-4 w-1/2" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {gen.status === 'completed' && gen.audioUrl && (
-                              <>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => handlePlay(gen.audioUrl, gen.id)}
-                                >
-                                  {isPlaying && currentPlayingId === gen.id ? (
-                                    <Pause className="h-4 w-4" />
-                                  ) : (
-                                    <Play className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => handleDownload(gen.audioUrl, gen.title)}
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleDeleteGeneration(gen.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        {gen.prompt && (
-                          <p className="text-sm text-muted-foreground ml-13 mt-1">
-                            {gen.prompt.length > 100 ? `${gen.prompt.slice(0, 100)}...` : gen.prompt}
-                          </p>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    ) : recentGenerations.length === 0 ? (
+                      // Message when no generations
+                      <div className="text-center py-6">
+                        <Music2 className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-muted-foreground">
+                          You don't have any recent generations
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Create your first composition in the Generate tab
+                        </p>
+                      </div>
+                    ) : (
+                      // List of generations
+                      <div className="space-y-4">
+                        {recentGenerations.map((generation) => (
+                          <Card key={generation.id} className="overflow-hidden">
+                            <div className="p-3 sm:p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium truncate">
+                                    {generation.title}
+                                  </h3>
+                                  <p className="text-muted-foreground text-xs mt-1 line-clamp-2">
+                                    {generation.prompt}
+                                  </p>
+                                  <div className="flex items-center mt-1.5 space-x-2">
+                                    <Badge variant="outline" className="text-xs py-0 h-5">
+                                      {generation.model === 'music-s' ? 'Suno' : 'Udio'}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" /> 
+                                      {formatDate(generation.createdAt)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-1 ml-2">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8"
+                                    onClick={() => handlePlay(generation.audioUrl, generation.id)}
+                                  >
+                                    {currentPlayingId === generation.id && isPlaying ? (
+                                      <Pause className="h-4 w-4" />
+                                    ) : (
+                                      <Play className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8"
+                                    onClick={() => handleDownload(generation.audioUrl, generation.title)}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteGeneration(generation.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              {/* Simple audio player */}
+                              {generation.audioUrl && (
+                                <div className="mt-4">
+                                  <audio 
+                                    controls 
+                                    src={generation.audioUrl} 
+                                    className="w-full h-8"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { GenreTemplateSelector, MusicGenreTemplate } from "./genre-templates/genre-template-selector";
-import { AdvancedMusicParams, MusicGenerationAdvancedParams } from "./genre-templates/advanced-music-params";
+import { MusicGenerationAdvancedParams } from "./genre-templates/advanced-music-params";
 import { MusicGenerationSection } from "./genre-templates/music-generation-section";
 import { TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";

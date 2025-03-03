@@ -1,25 +1,36 @@
-import { MusicGenreTemplate } from "./genre-template-selector";
+// Define the music genre template interface
+export interface MusicGenreTemplate {
+  id: string;
+  name: string;
+  description: string;
+  defaultPrompt: string;
+  suggestedTags: string[];
+  tempo: number;
+  keySignature: string;
+  mainInstruments: string[];
+  structure: {
+    intro: boolean;
+    verse: boolean;
+    chorus: boolean;
+    bridge: boolean;
+    outro: boolean;
+  };
+}
 
 /**
- * Plantillas predefinidas para diferentes géneros musicales
- * Cada plantilla contiene:
- * - ID único para identificación
- * - Nombre y descripción del género
- * - Prompt predeterminado optimizado para el género
- * - Etiquetas sugeridas para ese estilo musical
- * - Parámetros musicales (tempo, tonalidad, instrumentos, etc.)
+ * Collection of music genre templates for music generation
+ * Each template includes default settings for the specific genre
  */
 export const musicGenreTemplates: MusicGenreTemplate[] = [
-  // Pop
   {
     id: "pop",
     name: "Pop",
-    description: "Música pop moderna con melodías pegadizas y estructura comercial",
-    defaultPrompt: "Una canción pop moderna con melodía pegadiza, voces claras, ritmo de baile moderno, sintetizadores brillantes y estructura verso-coro-verso-coro-puente-coro",
-    suggestedTags: ["pop", "commercial", "catchy", "radio", "dance"],
-    tempo: 118,
+    description: "Catchy melodies with contemporary production",
+    defaultPrompt: "Create a modern pop song with catchy hooks, upbeat tempo, and contemporary production. Include verse-chorus structure with a memorable hook.",
+    suggestedTags: ["pop", "catchy", "contemporary", "radio-friendly"],
+    tempo: 120,
     keySignature: "C Major",
-    mainInstruments: ["synth", "drums", "piano", "vocals"],
+    mainInstruments: ["piano", "guitar", "drums"],
     structure: {
       intro: true,
       verse: true,
@@ -28,17 +39,15 @@ export const musicGenreTemplates: MusicGenreTemplate[] = [
       outro: true
     }
   },
-  
-  // Rock
   {
     id: "rock",
     name: "Rock",
-    description: "Rock con guitarras energéticas, batería potente y melodías impactantes",
-    defaultPrompt: "Una canción de rock energética con guitarras distorsionadas, batería potente, bajo marcado, y voz masculina con actitud. Estilo similar a Foo Fighters o Green Day.",
-    suggestedTags: ["rock", "guitar", "drums", "energetic", "distorted"],
-    tempo: 130,
+    description: "Guitar-driven energy with dynamic structures",
+    defaultPrompt: "Create an energetic rock song with electric guitars, punchy drums, and powerful vocals. Include driving rhythm and dynamic contrast between verses and chorus.",
+    suggestedTags: ["rock", "guitar", "energetic", "drums"],
+    tempo: 135,
     keySignature: "E Minor",
-    mainInstruments: ["electric guitar", "bass", "drums", "vocals"],
+    mainInstruments: ["electric guitar", "bass", "drums"],
     structure: {
       intro: true,
       verse: true,
@@ -47,17 +56,49 @@ export const musicGenreTemplates: MusicGenreTemplate[] = [
       outro: true
     }
   },
-  
-  // Electrónica
   {
     id: "electronic",
-    name: "Electrónica",
-    description: "Música electrónica con ritmos pulsantes y sintetizadores atmosféricos",
-    defaultPrompt: "Una pista de música electrónica con ritmo pulsante, bajos profundos, sintetizadores atmosféricos y progresión gradual. Estilo similar a Daft Punk o Calvin Harris.",
-    suggestedTags: ["electronic", "dance", "edm", "synthesizer", "beats"],
+    name: "Electronic",
+    description: "Synthesizer-based sounds with rhythmic patterns",
+    defaultPrompt: "Create an electronic dance track with synthesizers, driving beat, and progressive structure. Include builds and drops with electronic production techniques.",
+    suggestedTags: ["electronic", "dance", "synth", "beat"],
     tempo: 128,
-    keySignature: "F Minor",
-    mainInstruments: ["synth", "drums", "bass", "effects"],
+    keySignature: "F Major",
+    mainInstruments: ["synthesizer", "drum machine", "bass"],
+    structure: {
+      intro: true,
+      verse: true,
+      chorus: true,
+      bridge: true,
+      outro: true
+    }
+  },
+  {
+    id: "rnb",
+    name: "R&B",
+    description: "Soulful vocals with rhythm and blues influence",
+    defaultPrompt: "Create a smooth R&B track with soulful vocals, rhythmic beats, and emotional lyrics. Include jazz-influenced chord progressions and expressive melody.",
+    suggestedTags: ["rnb", "soul", "smooth", "vocal"],
+    tempo: 95,
+    keySignature: "Bb Major",
+    mainInstruments: ["piano", "bass", "drums", "vocals"],
+    structure: {
+      intro: true,
+      verse: true,
+      chorus: true,
+      bridge: true,
+      outro: true
+    }
+  },
+  {
+    id: "hiphop",
+    name: "Hip Hop",
+    description: "Rhythmic vocals with heavy beats and samples",
+    defaultPrompt: "Create a hip hop track with strong beats, bass, and rhythmic vocal flow. Include atmospheric elements and minimal musical backing to highlight lyrics.",
+    suggestedTags: ["hiphop", "rap", "beat", "urban"],
+    tempo: 90,
+    keySignature: "G Minor",
+    mainInstruments: ["drums", "bass", "samples"],
     structure: {
       intro: true,
       verse: true,
@@ -66,36 +107,15 @@ export const musicGenreTemplates: MusicGenreTemplate[] = [
       outro: true
     }
   },
-  
-  // Lo-Fi
-  {
-    id: "lofi",
-    name: "Lo-Fi Hip Hop",
-    description: "Beats relajados con texturas cálidas y ambiente nostálgico",
-    defaultPrompt: "Un beat lo-fi hip hop relajante con piano suave, batería crujiente, samples de vinilo, bajo profundo y atmósfera nostálgica, perfecto para estudiar o relajarse.",
-    suggestedTags: ["lofi", "chill", "relax", "beats", "study"],
-    tempo: 85,
-    keySignature: "D Minor",
-    mainInstruments: ["piano", "drums", "bass", "vinyl"],
-    structure: {
-      intro: true,
-      verse: true,
-      chorus: false,
-      bridge: false,
-      outro: true
-    }
-  },
-  
-  // Jazz
   {
     id: "jazz",
     name: "Jazz",
-    description: "Jazz suave con instrumentación sofisticada e improvisación",
-    defaultPrompt: "Una pieza de jazz suave con piano elegante, contrabajo sólido, batería con escobillas, saxofón melódico y ambiente nocturno de club. Estilo similar a Miles Davis o Bill Evans.",
-    suggestedTags: ["jazz", "smooth", "piano", "saxophone", "nightclub"],
-    tempo: 92,
-    keySignature: "Bb Major",
-    mainInstruments: ["piano", "double bass", "drums", "saxophone"],
+    description: "Improvisational style with complex harmonies",
+    defaultPrompt: "Create a jazz composition with improvisational feel, complex chord progressions, and swing rhythm. Include instrumental solos and sophisticated harmonic structure.",
+    suggestedTags: ["jazz", "swing", "improvisation", "sophisticated"],
+    tempo: 110,
+    keySignature: "D Minor",
+    mainInstruments: ["piano", "saxophone", "bass", "drums"],
     structure: {
       intro: true,
       verse: true,
@@ -104,164 +124,134 @@ export const musicGenreTemplates: MusicGenreTemplate[] = [
       outro: true
     }
   },
-  
-  // Clásica
+  {
+    id: "acoustic",
+    name: "Acoustic",
+    description: "Natural instruments with intimate production",
+    defaultPrompt: "Create an acoustic folk song with guitar, gentle vocals, and natural instruments. Focus on storytelling lyrics and organic production without electronic elements.",
+    suggestedTags: ["acoustic", "folk", "natural", "intimate"],
+    tempo: 85,
+    keySignature: "G Major",
+    mainInstruments: ["acoustic guitar", "vocals", "percussion"],
+    structure: {
+      intro: true,
+      verse: true,
+      chorus: true,
+      bridge: true,
+      outro: true
+    }
+  },
   {
     id: "classical",
-    name: "Clásica",
-    description: "Música clásica orquestal con composición sofisticada",
-    defaultPrompt: "Una pieza orquestal clásica emotiva con cuerdas prominentes, piano delicado, arreglos armónicos sofisticados y desarrollo dinámico. Inspirado en Debussy o Chopin.",
-    suggestedTags: ["classical", "orchestra", "strings", "piano", "instrumental"],
-    tempo: 80,
-    keySignature: "G Major",
-    mainInstruments: ["orchestra", "strings", "piano", "woodwinds"],
-    structure: {
-      intro: true,
-      verse: true,
-      chorus: false,
-      bridge: true,
-      outro: true
-    }
-  },
-  
-  // Indie
-  {
-    id: "indie",
-    name: "Indie",
-    description: "Indie folk-rock con sonido orgánico y letras introspectivas",
-    defaultPrompt: "Una canción indie folk-rock con guitarras acústicas, voz íntima y ligeramente imperfecta, armonías sutiles, batería ligera y ambiente cálido. Estilo similar a Bon Iver o Fleet Foxes.",
-    suggestedTags: ["indie", "folk", "acoustic", "intimate", "organic"],
-    tempo: 95,
+    name: "Classical",
+    description: "Orchestral instruments with traditional structures",
+    defaultPrompt: "Create a classical composition for orchestra with traditional structure and development. Include string and brass sections with dynamic range and emotional impact.",
+    suggestedTags: ["classical", "orchestral", "strings", "traditional"],
+    tempo: 100,
     keySignature: "A Minor",
-    mainInstruments: ["acoustic guitar", "vocals", "drums", "bass"],
+    mainInstruments: ["strings", "piano", "brass", "woodwinds"],
     structure: {
       intro: true,
       verse: true,
       chorus: true,
       bridge: true,
-      outro: true
-    }
-  },
-  
-  // Ambiente
-  {
-    id: "ambient",
-    name: "Ambient",
-    description: "Música ambiental atmosférica y envolvente",
-    defaultPrompt: "Una pieza ambient inmersiva con sintetizadores expansivos, texturas atmosféricas, drones sutiles, sin ritmo definido y progresión lenta. Estilo similar a Brian Eno o Stars of the Lid.",
-    suggestedTags: ["ambient", "atmospheric", "relaxing", "drone", "space"],
-    tempo: 70,
-    keySignature: "C Major",
-    mainInstruments: ["synth", "pad", "effects", "atmosphere"],
-    structure: {
-      intro: true,
-      verse: false,
-      chorus: false,
-      bridge: false,
-      outro: true
-    }
-  },
-  
-  // Urbano
-  {
-    id: "urban",
-    name: "Urbano/Trap",
-    description: "Trap/hip-hop moderno con beats pesados y atmósfera oscura",
-    defaultPrompt: "Una pista trap/hip-hop moderna con 808s contundentes, hi-hats rápidos, melodía de sintetizador oscura, efectos vocales con autotune y ambiente urbano. Estilo similar a Travis Scott o Future.",
-    suggestedTags: ["trap", "urban", "808", "autotune", "hiphop"],
-    tempo: 140,
-    keySignature: "G Minor",
-    mainInstruments: ["808", "drums", "synth", "vocals"],
-    structure: {
-      intro: true,
-      verse: true,
-      chorus: true,
-      bridge: false,
-      outro: true
-    }
-  },
-  
-  // Latino
-  {
-    id: "latin",
-    name: "Latino",
-    description: "Música latina con ritmos bailables y melodías vibrantes",
-    defaultPrompt: "Una canción latina bailable con percusión afro-caribeña, guitarra flamenca, trompetas brillantes, bajo rítmico y voz en español apasionada. Mezcla de reggaeton y pop latino.",
-    suggestedTags: ["latin", "reggaeton", "dance", "spanish", "caribbean"],
-    tempo: 95,
-    keySignature: "E Minor",
-    mainInstruments: ["percussion", "guitar", "brass", "vocals"],
-    structure: {
-      intro: true,
-      verse: true,
-      chorus: true,
-      bridge: false,
       outro: true
     }
   }
 ];
 
+// Interface has been moved to the top of the file
+
+// Helper functions for working with genre templates
+
 /**
- * Busca y devuelve una plantilla de género musical por su ID
- * @param id ID de la plantilla a buscar
- * @returns La plantilla encontrada o una plantilla por defecto
+ * Get a genre template by ID
+ * @param id The ID of the genre template to retrieve
+ * @returns The template or undefined if not found
  */
-export function getGenreTemplateById(id: string): MusicGenreTemplate {
-  const found = musicGenreTemplates.find(template => template.id === id);
-  
-  if (found) {
-    return found;
-  }
-  
-  // Plantilla por defecto (pop) si no se encuentra
-  return musicGenreTemplates[0];
+export function getGenreTemplateById(id: string): MusicGenreTemplate | undefined {
+  return musicGenreTemplates.find(template => template.id === id);
 }
 
 /**
- * Genera un prompt detallado basado en una plantilla y parámetros adicionales
- * @param templateId ID de la plantilla base
- * @param customParams Parámetros personalizados adicionales
- * @returns Prompt detallado optimizado para generación
+ * Generate a detailed prompt from a template and additional parameters
+ * @param template The genre template to use as a base
+ * @param additionalParams Additional parameters to enhance the prompt
+ * @returns A detailed generation prompt
  */
-export function getDetailedPrompt(templateId: string, customParams?: any): string {
-  const template = getGenreTemplateById(templateId);
+export function getDetailedPrompt(
+  template: MusicGenreTemplate, 
+  additionalParams?: {
+    makeInstrumental?: boolean;
+    customInstruments?: string[];
+    emotion?: string;
+    lyrics?: string;
+  }
+): string {
+  let prompt = template.defaultPrompt;
   
-  // Comenzar con el prompt base de la plantilla
-  let detailedPrompt = template.defaultPrompt;
+  // Add custom instrumentation if provided
+  if (additionalParams?.customInstruments && additionalParams.customInstruments.length > 0) {
+    prompt += ` Use primarily ${additionalParams.customInstruments.join(', ')} instruments.`;
+  }
   
-  // Agregar información sobre estructura musical según la plantilla
-  const structureParts = [];
-  if (template.structure.intro) structureParts.push("intro");
-  if (template.structure.verse) structureParts.push("verse");
-  if (template.structure.chorus) structureParts.push("chorus");
-  if (template.structure.bridge) structureParts.push("bridge");
-  if (template.structure.outro) structureParts.push("outro");
+  // Add emotional direction if provided
+  if (additionalParams?.emotion) {
+    prompt += ` The composition should have a ${additionalParams.emotion} emotional tone.`;
+  }
   
-  const structureString = structureParts.join("-");
-  
-  // Añadir información sobre instrumentos principales
-  const instrumentsString = template.mainInstruments.join(", ");
-  
-  // Añadir información sobre tempo y tonalidad
-  const musicInfoString = `Tempo: ${template.tempo} BPM, Key: ${template.keySignature}`;
-  
-  // Combinar todo en un prompt detallado
-  detailedPrompt += ` Structure: ${structureString}. Instruments: ${instrumentsString}. ${musicInfoString}.`;
-  
-  // Agregar parámetros personalizados si se proporcionan
-  if (customParams) {
-    if (customParams.makeInstrumental) {
-      detailedPrompt += " Make this instrumental without vocals.";
-    }
-    
-    if (customParams.tags) {
-      detailedPrompt += ` Additional style elements: ${customParams.tags}.`;
-    }
-    
-    if (customParams.customLyrics && !customParams.generateLyrics) {
-      detailedPrompt += " Use the provided custom lyrics exactly as written.";
+  // Mention vocal/instrumental preference
+  if (additionalParams?.makeInstrumental) {
+    prompt += ` Make this a fully instrumental track without vocals.`;
+  } else {
+    // If custom lyrics are provided, let's mention that
+    if (additionalParams?.lyrics) {
+      prompt += ` Include vocals with lyrics about ${additionalParams.lyrics}.`;
+    } else {
+      prompt += ` Include appropriate vocals for this genre.`;
     }
   }
   
-  return detailedPrompt;
+  return prompt;
+}
+
+/**
+ * Generate defaults for music generation based on a template
+ * @param template The template to generate defaults from
+ * @returns Default parameters for music generation
+ */
+export function getGenerationDefaults(template: MusicGenreTemplate) {
+  return {
+    prompt: template.defaultPrompt,
+    tags: template.suggestedTags.join(', '),
+    negativeTags: '',
+    tempo: template.tempo,
+    keySignature: template.keySignature,
+    makeInstrumental: template.id === 'classical' || template.id === 'jazz', // Default for classical and jazz
+    generateLyrics: !(template.id === 'classical' || template.id === 'jazz'), // Default for everything else
+    title: getDefaultTitle(template.id),
+    mainInstruments: template.mainInstruments,
+    lyricsType: (template.id === 'classical' || template.id === 'jazz') ? 'none' : 'auto',
+    musicTemplate: template.id
+  };
+}
+
+/**
+ * Get a default title for a genre
+ * @param genreId The ID of the genre
+ * @returns A default title
+ */
+function getDefaultTitle(genreId: string): string {
+  const titleMap: Record<string, string> = {
+    'pop': 'Catchy Melody',
+    'rock': 'Electric Dreams',
+    'electronic': 'Digital Beats',
+    'rnb': 'Soul Rhythm',
+    'hiphop': 'Flow State',
+    'jazz': 'Blue Notes',
+    'acoustic': 'Wooden Strings',
+    'classical': 'Symphony No. 1'
+  };
+  
+  return titleMap[genreId] || 'New Composition';
 }

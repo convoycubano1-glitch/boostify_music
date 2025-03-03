@@ -13,27 +13,7 @@ import {
   Music, 
   Check 
 } from "lucide-react";
-
-/**
- * Definición de una plantilla de género musical
- */
-export interface MusicGenreTemplate {
-  id: string;
-  name: string;
-  description: string;
-  defaultPrompt: string;
-  suggestedTags: string[];
-  tempo: number;
-  keySignature: string;
-  mainInstruments: string[];
-  structure: {
-    intro: boolean;
-    verse: boolean;
-    chorus: boolean;
-    bridge: boolean;
-    outro: boolean;
-  };
-}
+import { MusicGenreTemplate } from "./genre-data";
 
 interface GenreTemplateSelectorProps {
   templates: MusicGenreTemplate[];
