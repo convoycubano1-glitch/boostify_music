@@ -18,6 +18,7 @@ import Stripe from 'stripe';
 import { z } from "zod";
 import express from 'express';
 import passport from 'passport';
+import axios from 'axios';
 import session from 'express-session';
 import OpenAI from "openai";
 import { insertBookingSchema } from "./db/schema";
@@ -108,6 +109,79 @@ export function registerRoutes(app: Express): Server {
 
   // Registrar el router de proxy API (sin autenticación)
   app.use('/api', apiProxyRouter);
+
+  // Ruta específica para generación de video (sin autenticación)
+  app.post('/api/video/generate', async (req, res) => {
+    try {
+      console.log('Recibiendo solicitud de generación de video:', req.body);
+
+      // Obtener parámetros del cuerpo de la solicitud
+      const { 
+        prompt, 
+        apiProvider, 
+        duration, 
+        style,
+        cameraMovements,
+        piapiModel,
+        image_url
+      } = req.body;
+
+      // Validar que tenemos un prompt y un proveedor
+      if (!prompt || !apiProvider) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere un prompt y un proveedor API'
+        });
+      }
+
+      // Si el proveedor es piapi, redireccionar al endpoint de PiAPI
+      if (apiProvider === 'piapi') {
+        // Preparar el cuerpo de la solicitud para el endpoint de PiAPI
+        const requestBody: any = {
+          prompt: prompt,
+          model: piapiModel || 't2v-01',
+          expand_prompt: true
+        };
+
+        // Si hay movimientos de cámara y es el modelo director, incluirlos
+        if (piapiModel === 't2v-01-director' && cameraMovements?.length) {
+          requestBody.camera_movement = cameraMovements.join(',');
+        }
+
+        // Si hay una URL de imagen y es un modelo basado en imagen, incluirla
+        if (image_url && ['i2v-01', 'i2v-01-live', 's2v-01'].includes(piapiModel)) {
+          requestBody.image_url = image_url;
+        }
+
+        // Hacer solicitud al endpoint de PiAPI a través del proxy
+        const apiResponse = await axios.post('/api/proxy/piapi/video/start', requestBody, {
+          baseURL: `${req.protocol}://${req.get('host')}`
+        });
+
+        // Devolver la respuesta del endpoint de PiAPI
+        console.log('Respuesta del endpoint de PiAPI:', apiResponse.data);
+        return res.json({
+          success: true,
+          url: apiResponse.data.result?.url || null,
+          taskId: apiResponse.data.taskId,
+          status: apiResponse.data.status,
+          provider: 'piapi'
+        });
+      } else {
+        // Si es otro proveedor, devolver error no implementado
+        return res.status(400).json({
+          success: false,
+          error: `Proveedor ${apiProvider} no implementado aún`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generando video:', error.message);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Error al generar video'
+      });
+    }
+  });
 
   // Servicios que requieren autenticación
   setupAuth(app);
