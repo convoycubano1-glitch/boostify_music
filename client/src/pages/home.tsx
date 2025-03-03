@@ -186,24 +186,53 @@ export default function HomePage() {
         description: "Conectando con Google..."
       });
       
-      // Primero intentamos usar el método de login con manejo de redirección automático
+      // Mostrar un indicador de estado de autenticación
+      const loadingToastId = toast({
+        title: "Autenticación en proceso",
+        description: "Por favor, espera mientras completamos la autenticación...",
+        duration: 10000, // 10 segundos
+      });
+      
+      // Iniciar proceso de autenticación con Gmail
+      console.log("Iniciando autenticación con Gmail");
       await login('/dashboard');
       
-      // Si la función login retorna (no redirecciona), intentamos redireccionar manualmente
-      console.log("Intentando redirección manual al dashboard");
-      setTimeout(() => {
+      // Crear una redirección de respaldo automática en caso de que el proceso normal falle
+      const redirectTimer = setTimeout(() => {
         if (user) {
+          console.log("Redireccionando al dashboard mediante timer de respaldo");
           window.location.href = '/dashboard';
         }
-      }, 1500);
+      }, 2000);
+      
+      // Limpiar el toast de carga
+      setTimeout(() => {
+        toast({
+          title: "Autenticación exitosa",
+          description: "Has iniciado sesión correctamente.",
+          variant: "default"
+        });
+      }, 1000);
+      
+      return () => {
+        clearTimeout(redirectTimer);
+      };
       
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Error durante la autenticación con Gmail:", error);
       toast({
         title: "Error de autenticación",
         description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
         variant: "destructive"
       });
+      
+      // Verificar si el usuario está autenticado a pesar del error
+      if (user) {
+        console.log("Usuario autenticado a pesar del error, redirigiendo al dashboard");
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
+      }
     }
   };
 
