@@ -1,3 +1,19 @@
+/**
+ * Virtual Try-On Component
+ * 
+ * This component provides an interface for uploading model and clothing images
+ * to generate a virtual try-on result using Kling's AI capabilities.
+ * 
+ * Image Validation & Error Handling:
+ * - Accepted formats: .jpg, .jpeg, .png only (validated both at HTML input and data URL levels)
+ * - File format validation in handleModelImageChange and handleClothingImageChange
+ * - Data URL validation in validateImageData before submission
+ * - Enhanced error handling in loadSavedResults with improved JSON parsing
+ * - Robust error handling in checkTaskStatus with specific error messages
+ * - User-friendly error messages for all validation failures
+ * - Toast notifications for better UX feedback
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,9 +110,56 @@ export function VirtualTryOnComponent() {
   async function loadSavedResults() {
     try {
       const results = await klingService.getResults('try-on');
-      setSavedResults(results as TryOnResult[]);
+      
+      // Enhanced validation to ensure we have valid data
+      if (Array.isArray(results)) {
+        // Validate each result to ensure it has the required properties
+        const validResults = results.filter(item => {
+          try {
+            // Validate required properties exist
+            const isValid = 
+              item && 
+              typeof item === 'object' &&
+              'resultImage' in item && 
+              'requestId' in item && 
+              'modelImage' in item && 
+              'clothingImage' in item;
+            
+            if (!isValid) {
+              console.warn('Skipping invalid result item:', item);
+            }
+            
+            return isValid;
+          } catch (validationError) {
+            console.warn('Error validating result item:', validationError);
+            return false;
+          }
+        });
+        
+        setSavedResults(validResults as TryOnResult[]);
+        
+        if (validResults.length < results.length) {
+          console.info(`Filtered out ${results.length - validResults.length} invalid results`);
+        }
+      } else {
+        console.warn('Invalid results format:', results);
+        setSavedResults([]); // Initialize with empty array on invalid data
+        
+        toast({
+          title: "Data Error",
+          description: "Could not load saved Try-On results due to invalid data format.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error loading saved results:', error);
+      setSavedResults([]); // Initialize with empty array on error
+      
+      toast({
+        title: "Load Error",
+        description: "Failed to load saved Try-On results. Please try refreshing the page.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -105,6 +168,12 @@ export function VirtualTryOnComponent() {
 
     try {
       const status = await klingService.checkTryOnStatus(taskId);
+      
+      // Validate status response
+      if (!status || typeof status !== 'object') {
+        throw new Error('Invalid response format received from the server');
+      }
+      
       setTaskStatus(status);
 
       // Handle different task states
@@ -115,18 +184,38 @@ export function VirtualTryOnComponent() {
         
         // If there's an images array available, use the first one
         let resultImageUrl = '';
-        if ((status as any).images && Array.isArray((status as any).images) && (status as any).images.length > 0) {
-          resultImageUrl = (status as any).images[0].url;
-          console.log('Result image found:', resultImageUrl);
-        } else if ((status as any).resultUrl) {
-          resultImageUrl = (status as any).resultUrl;
-          console.log('Result URL found in resultUrl:', resultImageUrl);
-        } else {
-          console.error('No image URL found in response:', status);
-          
-          // If no valid image is available, use an example for demo
+        try {
+          if ((status as any).images && Array.isArray((status as any).images) && (status as any).images.length > 0) {
+            resultImageUrl = (status as any).images[0].url;
+            console.log('Result image found:', resultImageUrl);
+          } else if ((status as any).resultUrl) {
+            resultImageUrl = (status as any).resultUrl;
+            console.log('Result URL found in resultUrl:', resultImageUrl);
+          } else {
+            // Check for alternative response formats
+            if ((status as any).result && typeof (status as any).result === 'object') {
+              if ((status as any).result.images && Array.isArray((status as any).result.images)) {
+                resultImageUrl = (status as any).result.images[0].url;
+                console.log('Result image found in nested result object:', resultImageUrl);
+              } else if ((status as any).result.image_url) {
+                resultImageUrl = (status as any).result.image_url;
+                console.log('Result image found in result.image_url:', resultImageUrl);
+              }
+            }
+            
+            // If still no valid URL, use fallback
+            if (!resultImageUrl) {
+              console.error('No image URL found in response:', status);
+              // If no valid image is available, use an example for demo
+              resultImageUrl = '/assets/virtual-tryon/example-result.jpg';
+              console.log('Using example image as fallback');
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing response data:', parseError);
+          // Use fallback image if parsing fails
           resultImageUrl = '/assets/virtual-tryon/example-result.jpg';
-          console.log('Using example image as fallback');
+          console.log('Using example image as fallback due to parsing error');
         }
         
         const resultData: TryOnResult = {
@@ -150,6 +239,11 @@ export function VirtualTryOnComponent() {
           loadSavedResults(); // Reload results
         } catch (saveError) {
           console.error('Error saving try-on result:', saveError);
+          
+          toast({
+            title: "Save Warning",
+            description: "The image was generated successfully but could not be saved to history.",
+          });
         }
       } else if (status.status === 'failed') {
         // Task failed
@@ -157,9 +251,34 @@ export function VirtualTryOnComponent() {
         setPollInterval(null);
         setIsLoading(false);
         
-        const errorMsg = status.error || 
-                        (status as any).errorMessage || 
-                        "An error occurred during image generation.";
+        let errorMsg = "An error occurred during image generation.";
+        
+        try {
+          // Try to extract error message from different possible formats
+          if (status.error && typeof status.error === 'string') {
+            errorMsg = status.error;
+          } else if ((status as any).errorMessage && typeof (status as any).errorMessage === 'string') {
+            errorMsg = (status as any).errorMessage;
+          } else if ((status as any).message && typeof (status as any).message === 'string') {
+            errorMsg = (status as any).message;
+          } else if ((status as any).error && typeof (status as any).error === 'object') {
+            // Handle nested error objects
+            if ((status as any).error.message) {
+              errorMsg = (status as any).error.message;
+            } else if ((status as any).error.details) {
+              errorMsg = (status as any).error.details;
+            }
+          }
+          
+          // Check for specific error patterns
+          if (errorMsg.includes('format') || errorMsg.includes('unsupported')) {
+            errorMsg = "Unsupported image format. Please use only JPG or PNG images.";
+          } else if (errorMsg.includes('size')) {
+            errorMsg = "Image size too large. Please use smaller images.";
+          }
+        } catch (parseError) {
+          console.error('Error parsing error message:', parseError);
+        }
         
         toast({
           title: "Process Error",
@@ -173,9 +292,28 @@ export function VirtualTryOnComponent() {
     } catch (error: any) {
       console.error('Error checking task status:', error);
       
+      let errorMessage = "Could not verify process status. Please try again.";
+      
+      // Extract more specific error messages if available
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response && error.response.data) {
+        try {
+          // Try to extract message from API error response
+          const responseData = error.response.data;
+          if (responseData.error && typeof responseData.error === 'string') {
+            errorMessage = responseData.error;
+          } else if (responseData.message) {
+            errorMessage = responseData.message;
+          }
+        } catch (parseError) {
+          console.error('Error parsing API error response:', parseError);
+        }
+      }
+      
       toast({
         title: "Connection Error",
-        description: error.message || "Could not verify process status. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       
@@ -188,6 +326,17 @@ export function VirtualTryOnComponent() {
   const handleModelImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Validate image format - only accept jpeg, jpg, png
+    const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!supportedFormats.includes(file.type)) {
+      toast({
+        title: "Unsupported Format",
+        description: "Please upload only JPG or PNG images. Other formats are not supported.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setModelFileInput(file);
     
@@ -202,6 +351,17 @@ export function VirtualTryOnComponent() {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    // Validate image format - only accept jpeg, jpg, png
+    const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!supportedFormats.includes(file.type)) {
+      toast({
+        title: "Unsupported Format",
+        description: "Please upload only JPG or PNG images. Other formats are not supported.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setClothingFileInput(file);
     
     const reader = new FileReader();
@@ -212,6 +372,7 @@ export function VirtualTryOnComponent() {
   };
 
   const handleStartTryOn = async () => {
+    // Validate required inputs
     if (!modelImage || !clothingImage) {
       toast({
         title: "Images Required",
@@ -221,6 +382,27 @@ export function VirtualTryOnComponent() {
       return;
     }
 
+    // Validate image data format for model image
+    if (!validateImageData(modelImage)) {
+      toast({
+        title: "Invalid Model Image",
+        description: "The model image format is invalid. Please upload a proper JPEG or PNG image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate image data format for clothing image
+    if (!validateImageData(clothingImage)) {
+      toast({
+        title: "Invalid Clothing Image",
+        description: "The clothing image format is invalid. Please upload a proper JPEG or PNG image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Start loading and reset state
     setIsLoading(true);
     setTaskId(null);
     setTaskStatus(null);
@@ -236,23 +418,91 @@ export function VirtualTryOnComponent() {
         position_offset: alignment === 'manual' ? { x: offsetX, y: offsetY } : undefined
       };
       
+      // Show loading toast to provide feedback
+      toast({
+        title: "Preparing Process",
+        description: "Uploading and validating images...",
+      });
+      
       const newTaskId = await klingService.startTryOn(modelImage, clothingImage, settings);
+      
+      if (!newTaskId) {
+        throw new Error("Failed to get a valid task ID from the server");
+      }
+      
       setTaskId(newTaskId);
       
       toast({
         title: "Process Started",
         description: "Beginning to process images. This may take a few minutes.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting try-on process:', error);
       setIsLoading(false);
       
+      // Extract more specific error messages when possible
+      let errorMessage = "Could not initiate virtual try-on process. Please try again.";
+      
+      if (error.message) {
+        if (error.message.includes("format") || error.message.includes("unsupported")) {
+          errorMessage = "Unsupported image format. Please use only JPG or PNG images.";
+        } else if (error.message.includes("size")) {
+          errorMessage = "Image size is too large. Please use smaller images (under 5MB).";
+        } else if (error.message.includes("resolution")) {
+          errorMessage = "Image resolution is too high. Please use images with lower resolution.";
+        } else {
+          errorMessage = error.message;
+        }
+      } else if (error.response && error.response.data) {
+        try {
+          const responseData = error.response.data;
+          if (responseData.error) {
+            errorMessage = typeof responseData.error === 'string' 
+              ? responseData.error 
+              : responseData.error.message || errorMessage;
+          } else if (responseData.message) {
+            errorMessage = responseData.message;
+          }
+        } catch (parseError) {
+          console.error('Error parsing API error response:', parseError);
+        }
+      }
+      
       toast({
         title: "Process Start Error",
-        description: "Could not initiate virtual try-on process. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
+  };
+  
+  // Helper function to validate image data URLs
+  const validateImageData = (dataUrl: string): boolean => {
+    // Basic validation for data URLs
+    if (!dataUrl.startsWith('data:image/')) {
+      return false;
+    }
+    
+    // Check for supported formats
+    const isJpeg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
+    const isPng = dataUrl.startsWith('data:image/png');
+    
+    if (!isJpeg && !isPng) {
+      return false;
+    }
+    
+    // Basic check for data presence
+    const parts = dataUrl.split(',');
+    if (parts.length !== 2 || !parts[1]) {
+      return false;
+    }
+    
+    // Optional: check minimum data length to ensure it's not an empty image
+    if (parts[1].length < 100) {
+      return false;
+    }
+    
+    return true;
   };
 
   const handleReset = () => {
@@ -405,9 +655,8 @@ export function VirtualTryOnComponent() {
                         className="h-full mx-auto object-contain"
                       />
                       <Button 
-                        variant="destructive" 
                         size="sm" 
-                        className="absolute top-2 right-2"
+                        className="absolute top-2 right-2 bg-gradient-to-r from-red-500/90 to-red-500 hover:from-red-500 hover:to-red-500/90 border-0"
                         onClick={() => {
                           setModelImage('');
                           setModelFileInput(null);
@@ -425,7 +674,7 @@ export function VirtualTryOnComponent() {
                 </div>
                 <Input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/jpeg,image/jpg,image/png" 
                   onChange={handleModelImageChange} 
                   id="model-image"
                   className="cursor-pointer"
@@ -449,9 +698,8 @@ export function VirtualTryOnComponent() {
                         className="h-full mx-auto object-contain"
                       />
                       <Button 
-                        variant="destructive" 
                         size="sm" 
-                        className="absolute top-2 right-2"
+                        className="absolute top-2 right-2 bg-gradient-to-r from-red-500/90 to-red-500 hover:from-red-500 hover:to-red-500/90 border-0"
                         onClick={() => {
                           setClothingImage('');
                           setClothingFileInput(null);
@@ -469,7 +717,7 @@ export function VirtualTryOnComponent() {
                 </div>
                 <Input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/jpeg,image/jpg,image/png" 
                   onChange={handleClothingImageChange} 
                   id="clothing-image"
                   className="cursor-pointer"
@@ -520,16 +768,18 @@ export function VirtualTryOnComponent() {
                     <Label>Alignment</Label>
                     <div className="flex space-x-4">
                       <Button 
-                        variant={alignment === 'auto' ? "default" : "outline"} 
                         onClick={() => setAlignment('auto')}
-                        className="flex-1"
+                        className={`flex-1 ${alignment === 'auto' ? 
+                          'bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90' : 
+                          'bg-transparent border border-primary/30 hover:bg-primary/10'}`}
                       >
                         Automatic
                       </Button>
                       <Button 
-                        variant={alignment === 'manual' ? "default" : "outline"} 
                         onClick={() => setAlignment('manual')}
-                        className="flex-1"
+                        className={`flex-1 ${alignment === 'manual' ? 
+                          'bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90' : 
+                          'bg-transparent border border-primary/30 hover:bg-primary/10'}`}
                       >
                         Manual
                       </Button>
@@ -633,9 +883,8 @@ export function VirtualTryOnComponent() {
               </Button>
               
               <Button
-                variant="outline"
                 onClick={handleReset}
-                className="w-full md:w-auto hover:bg-primary/10"
+                className="w-full md:w-auto bg-gradient-to-r from-gray-500/40 to-gray-500/30 hover:from-gray-500/50 hover:to-gray-500/40 shadow-sm border-0"
               >
                 <History className="mr-2 h-5 w-5" />
                 Reset
@@ -692,9 +941,8 @@ export function VirtualTryOnComponent() {
                           {item.requestId.substring(0, 6)}...
                         </Badge>
                         <Button 
-                          variant="ghost" 
                           size="sm"
-                          className="hover:bg-primary/10 flex items-center gap-1"
+                          className="bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 flex items-center gap-1 border-0 shadow-sm"
                         >
                           <Info className="h-4 w-4 text-orange-500" />
                           View details

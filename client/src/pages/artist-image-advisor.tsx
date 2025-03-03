@@ -88,7 +88,7 @@ export default function ArtistImageAdvisorPage() {
                   className="mt-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg"
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Comienza tu transformación
+                  Start Your Transformation
                 </Button>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function ArtistImageAdvisorPage() {
                     <div className="text-center mb-6">
                       <h2 className="text-2xl font-bold">Music Style Analysis</h2>
                       <p className="text-muted-foreground">
-                        Analiza cómo tu género musical influye en tu imagen visual como artista
+                        Analyze how your musical genre influences your visual image as an artist
                       </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -223,7 +223,7 @@ export default function ArtistImageAdvisorPage() {
                         <div className="space-y-4">
                           <h3 className="text-xl font-semibold flex items-center gap-2">
                             <Palette className="h-5 w-5 text-orange-500" /> 
-                            Paletas de Color Recomendadas
+                            Recommended Color Palettes
                           </h3>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
@@ -250,32 +250,32 @@ export default function ArtistImageAdvisorPage() {
                         <div className="space-y-4">
                           <h3 className="text-xl font-semibold flex items-center gap-2">
                             <TrendingUp className="h-5 w-5 text-orange-500" /> 
-                            Tendencias en Imagen
+                            Image Trends
                           </h3>
                           <ul className="space-y-2 text-sm">
                             <li className="flex items-start gap-2">
                               <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
                                 <span className="text-orange-500 text-xs">1</span>
                               </div>
-                              <p>Minimalismo en alta definición con contraste potente</p>
+                              <p>High-definition minimalism with powerful contrast</p>
                             </li>
                             <li className="flex items-start gap-2">
                               <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
                                 <span className="text-orange-500 text-xs">2</span>
                               </div>
-                              <p>Fusión de estéticas retro con elementos futuristas</p>
+                              <p>Fusion of retro aesthetics with futuristic elements</p>
                             </li>
                             <li className="flex items-start gap-2">
                               <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
                                 <span className="text-orange-500 text-xs">3</span>
                               </div>
-                              <p>Estética visual coherente entre plataformas digitales</p>
+                              <p>Coherent visual aesthetics across digital platforms</p>
                             </li>
                             <li className="flex items-start gap-2">
                               <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
                                 <span className="text-orange-500 text-xs">4</span>
                               </div>
-                              <p>Narrativas visuales que complementan la historia musical</p>
+                              <p>Visual narratives that complement the musical story</p>
                             </li>
                           </ul>
                         </div>
@@ -293,12 +293,37 @@ export default function ArtistImageAdvisorPage() {
                 >
                   <div className="space-y-6">
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Virtual Try-On</h2>
+                      <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary/90 to-primary">Virtual Try-On</h2>
                       <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Prueba prendas virtualmente para visualizar tu estilo perfecto como artista. 
-                        Sube una foto tuya y la prenda que quieres probar para ver el resultado al instante.
+                        Try on clothing virtually to visualize your perfect style as an artist. 
+                        Upload your photo and the clothing item you want to try for instant results.
                       </p>
                     </div>
+                    
+                    {/* Video Tutorial Background */}
+                    <div className="relative mb-8 rounded-lg overflow-hidden border border-primary/20">
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40 z-10"></div>
+                      <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full object-cover h-[220px]"
+                        poster="/assets/virtual-tryon/virtual-tryon-poster.svg"
+                      >
+                        <source src="/assets/tv/Welcome to Boostify Music.mp4" type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                      <div className="absolute inset-0 z-20 flex items-center justify-center flex-col p-6 text-center">
+                        <h3 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+                          AI-Powered Virtual Try-On
+                        </h3>
+                        <p className="text-sm text-white/90 max-w-3xl">
+                          Create your perfect artist look with our advanced AI technology. Simply upload your photo and clothing items to see how they look together instantly.
+                        </p>
+                      </div>
+                    </div>
+                    
                     <VirtualTryOnComponent />
                   </div>
                 </motion.div>
@@ -386,9 +411,9 @@ export default function ArtistImageAdvisorPage() {
                 >
                   <div className="space-y-6">
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold">Resultados y Recomendaciones</h2>
+                      <h2 className="text-2xl font-bold">Results and Recommendations</h2>
                       <p className="text-muted-foreground">
-                        Resumen de análisis y recomendaciones personalizadas para tu imagen artística
+                        Analysis summary and personalized recommendations for your artist image
                       </p>
                     </div>
                     
@@ -397,7 +422,7 @@ export default function ArtistImageAdvisorPage() {
                         <div className="space-y-4">
                           <h3 className="text-xl font-semibold flex items-center gap-2">
                             <Star className="h-5 w-5 text-orange-500" /> 
-                            Análisis de Imagen Actual
+                            Current Image Analysis
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-1">
@@ -410,7 +435,7 @@ export default function ArtistImageAdvisorPage() {
                             <div className="md:col-span-2 space-y-3">
                               <div className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                  <span>Coherencia con el género</span>
+                                  <span>Genre coherence</span>
                                   <span>78%</span>
                                 </div>
                                 <div className="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -419,7 +444,7 @@ export default function ArtistImageAdvisorPage() {
                               </div>
                               <div className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                  <span>Profesionalismo</span>
+                                  <span>Professionalism</span>
                                   <span>65%</span>
                                 </div>
                                 <div className="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -428,7 +453,7 @@ export default function ArtistImageAdvisorPage() {
                               </div>
                               <div className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                  <span>Originalidad</span>
+                                  <span>Originality</span>
                                   <span>82%</span>
                                 </div>
                                 <div className="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -437,7 +462,7 @@ export default function ArtistImageAdvisorPage() {
                               </div>
                               <div className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                  <span>Impacto visual</span>
+                                  <span>Visual impact</span>
                                   <span>70%</span>
                                 </div>
                                 <div className="h-2 bg-black/40 rounded-full overflow-hidden">
@@ -451,15 +476,15 @@ export default function ArtistImageAdvisorPage() {
                       
                       <Card className="p-6 backdrop-blur-sm border-orange-500/20">
                         <div className="space-y-4">
-                          <h3 className="text-xl font-semibold">Recomendaciones Finales</h3>
+                          <h3 className="text-xl font-semibold">Final Recommendations</h3>
                           <ul className="space-y-3">
                             <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">
                               <div className="mt-0.5 text-orange-500">
                                 <Sparkles className="h-5 w-5" />
                               </div>
                               <div>
-                                <p className="font-medium">Mejora la coherencia visual</p>
-                                <p className="text-sm text-muted-foreground">Establece una paleta de colores consistente en todas tus imágenes y plataformas digitales.</p>
+                                <p className="font-medium">Improve visual coherence</p>
+                                <p className="text-sm text-muted-foreground">Establish a consistent color palette across all your images and digital platforms.</p>
                               </div>
                             </li>
                             <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">
@@ -467,8 +492,8 @@ export default function ArtistImageAdvisorPage() {
                                 <Shirt className="h-5 w-5" />
                               </div>
                               <div>
-                                <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Experimenta con la funcionalidad Try-On</p>
-                                <p className="text-sm text-muted-foreground">Utiliza la herramienta de Virtual Try-On para explorar diferentes estilos de vestimenta que potencien tu imagen artística como músico. Prueba combinaciones variadas para descubrir tu estilo único.</p>
+                                <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Experiment with the Try-On functionality</p>
+                                <p className="text-sm text-muted-foreground">Use the Virtual Try-On tool to explore different clothing styles that enhance your artistic image as a musician. Try various combinations to discover your unique style.</p>
                               </div>
                             </li>
                             <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">
@@ -476,8 +501,8 @@ export default function ArtistImageAdvisorPage() {
                                 <Camera className="h-5 w-5" />
                               </div>
                               <div>
-                                <p className="font-medium">Invierte en fotografía profesional</p>
-                                <p className="text-sm text-muted-foreground">El análisis sugiere que unas sesiones de fotos profesionales mejorarían significativamente tu presencia visual.</p>
+                                <p className="font-medium">Invest in professional photography</p>
+                                <p className="text-sm text-muted-foreground">The analysis suggests that professional photo sessions would significantly improve your visual presence.</p>
                               </div>
                             </li>
                           </ul>
@@ -485,8 +510,8 @@ export default function ArtistImageAdvisorPage() {
                       </Card>
                       
                       <div className="flex justify-center">
-                        <Button className="bg-orange-500 hover:bg-orange-600">
-                          Descargar Informe Completo
+                        <Button className="bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90">
+                          Download Complete Report
                         </Button>
                       </div>
                     </div>
