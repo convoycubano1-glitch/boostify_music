@@ -8,6 +8,7 @@ import {
   Auth
 } from 'firebase/auth';
 import { auth } from '@/firebase';
+import { useLocation } from 'wouter';
 
 /**
  * Servicio mejorado de autenticación que proporciona una capa adicional de
@@ -58,11 +59,12 @@ class AuthService {
   /**
    * Intenta iniciar sesión con Google usando primero el método popup,
    * y si falla, intenta con redirect como fallback.
+   * @param redirectPath Ruta a la que redirigir después de una autenticación exitosa
    */
-  async signInWithGoogle(): Promise<User | null> {
+  async signInWithGoogle(redirectPath: string = '/dashboard'): Promise<User | null> {
     try {
-      // Primero, limpiar estado previo
-      await this.clearAuthState();
+      // Almacenar la ruta de redirección para usarla después de la autenticación
+      sessionStorage.setItem('auth_redirect_path', redirectPath);
       
       // Generar un proveedor específico para esta sesión para evitar problemas de caché
       const sessionProvider = new GoogleAuthProvider();
@@ -73,6 +75,12 @@ class AuthService {
         console.log('AuthService: Intentando autenticación con popup');
         const result = await signInWithPopup(this.auth, sessionProvider);
         console.log('AuthService: Autenticación con popup exitosa');
+        
+        // Redirigir después de una autenticación exitosa
+        if (typeof window !== 'undefined') {
+          window.location.href = redirectPath;
+        }
+        
         return result.user;
       } catch (popupError: any) {
         console.warn('AuthService: Error en autenticación con popup:', popupError);
@@ -124,6 +132,15 @@ class AuthService {
         const result = await getRedirectResult(this.auth);
         if (result) {
           console.log('AuthService: Redirección exitosa, usuario autenticado');
+          
+          // Redirigir al path almacenado después de una autenticación exitosa
+          const redirectPath = sessionStorage.getItem('auth_redirect_path') || '/dashboard';
+          sessionStorage.removeItem('auth_redirect_path');
+          
+          if (typeof window !== 'undefined') {
+            window.location.href = redirectPath;
+          }
+          
           return result.user;
         } else {
           console.log('AuthService: No hay resultado de redirección o fue cancelado');
@@ -144,12 +161,24 @@ class AuthService {
   async signOut(): Promise<void> {
     try {
       await signOut(this.auth);
-      this.clearAuthState();
+      await this.clearAuthState();
       console.log('AuthService: Sesión cerrada correctamente');
+      
+      // Redirigir a la página principal después de cerrar sesión
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     } catch (error) {
       console.error('AuthService: Error al cerrar sesión:', error);
       throw error;
     }
+  }
+  
+  /**
+   * Obtiene el usuario actual
+   */
+  getCurrentUser(): User | null {
+    return this.auth.currentUser;
   }
 }
 

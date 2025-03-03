@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { EffectsComponent } from "@/components/kling/effects-component";
 import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
 import { LipsyncComponent } from "@/components/kling/lipsync-component";
-import { Shirt, Sparkles, Mic } from 'lucide-react';
+import { Shirt, Sparkles, Mic, Store, ExternalLink } from 'lucide-react';
+import { Link } from "wouter";
 
 export default function KlingToolsPage() {
   // El estado del tab activo determina qué sección se muestra
@@ -13,11 +15,20 @@ export default function KlingToolsPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex flex-col gap-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Herramientas de Kling IA</h1>
-          <p className="text-muted-foreground">
-            Explora las capacidades de Kling para transformar imágenes, probar ropa virtualmente y sincronizar labios en videos
-          </p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">Herramientas de Kling IA</h1>
+            <p className="text-muted-foreground">
+              Explora las capacidades de Kling para transformar imágenes, probar ropa virtualmente y sincronizar labios en videos
+            </p>
+          </div>
+          <Link href="/kling-store">
+            <Button className="w-full md:w-auto" variant="outline">
+              <Store className="mr-2 h-5 w-5" />
+              Visitar Tienda Kling
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -92,6 +103,25 @@ export default function KlingToolsPage() {
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Banner informativo para aplicaciones móviles */}
+              <div className="flex items-center p-4 mt-4 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                <Store className="h-10 w-10 text-blue-500 mr-4 flex-shrink-0" />
+                <div className="flex-grow">
+                  <h3 className="font-medium text-blue-700 dark:text-blue-300 mb-1">
+                    ¿Quieres usar Kling Effects en tu dispositivo móvil?
+                  </h3>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    Descubre nuestra aplicación móvil Kling Effects, disponible para iOS y Android. Aplica efectos sobre la marcha y comparte tus creaciones directamente desde tu teléfono.
+                  </p>
+                </div>
+                <Link href="/kling-store" className="ml-4 flex-shrink-0">
+                  <Button size="sm">
+                    Ver App
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </TabsContent>
           
@@ -159,6 +189,25 @@ export default function KlingToolsPage() {
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Banner informativo para aplicaciones móviles */}
+              <div className="flex items-center p-4 mt-4 border rounded-lg bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <Store className="h-10 w-10 text-green-500 mr-4 flex-shrink-0" />
+                <div className="flex-grow">
+                  <h3 className="font-medium text-green-700 dark:text-green-300 mb-1">
+                    ¿Quieres usar Virtual Try-On en tu dispositivo móvil?
+                  </h3>
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    Prueba nuestra aplicación móvil Kling AR Toolkit con funcionalidades avanzadas de realidad aumentada para probarte ropa virtualmente en tiempo real.
+                  </p>
+                </div>
+                <Link href="/kling-store" className="ml-4 flex-shrink-0">
+                  <Button size="sm" variant="outline" className="border-green-500 hover:bg-green-100 dark:hover:bg-green-900">
+                    Ver App
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </TabsContent>
           
@@ -219,6 +268,25 @@ export default function KlingToolsPage() {
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Banner informativo para aplicaciones móviles */}
+              <div className="flex items-center p-4 mt-4 border rounded-lg bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+                <Store className="h-10 w-10 text-purple-500 mr-4 flex-shrink-0" />
+                <div className="flex-grow">
+                  <h3 className="font-medium text-purple-700 dark:text-purple-300 mb-1">
+                    ¿Quieres usar Lipsync en tu dispositivo móvil?
+                  </h3>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">
+                    Descarga nuestra aplicación móvil Kling Video Editor con herramientas avanzadas de sincronización labial para crear videos profesionales con diálogos perfectamente sincronizados.
+                  </p>
+                </div>
+                <Link href="/kling-store" className="ml-4 flex-shrink-0">
+                  <Button size="sm" variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300 dark:hover:bg-purple-800">
+                    Ver App
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

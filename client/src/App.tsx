@@ -31,6 +31,7 @@ import ImageGeneratorPage from "@/pages/image-generator";
 import ImageGeneratorSimplePage from "@/pages/image-generator-simple";
 import InstagramBoostPage from "@/pages/instagram-boost";
 import KlingToolsPage from "@/pages/kling-tools";
+import KlingStorePage from "@/pages/kling-store";
 import ManagerToolsPage from "@/pages/manager-tools";
 import MerchandisePage from "@/pages/merchandise";
 import MessagesPage from "@/pages/messages";
@@ -60,7 +61,6 @@ import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
 import { CustomerServiceAgent } from "@/components/agents/customer-service-agent";
 import AffiliatesPage from "@/pages/affiliates";
-import TestPage from "@/pages/test-page";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -186,7 +186,7 @@ const Router = () => {
   const WrappedImageGeneratorSimplePage = withPageWrapper(ImageGeneratorSimplePage);
   const WrappedFaceSwapPage = withPageWrapper(FaceSwapPage);
   const WrappedKlingToolsPage = withPageWrapper(KlingToolsPage);
-  const WrappedTestPage = withPageWrapper(TestPage);
+  const WrappedKlingStorePage = withPageWrapper(KlingStorePage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -246,7 +246,7 @@ const Router = () => {
         <Route path="/image-generator-simple" component={WrappedImageGeneratorSimplePage} />
         <Route path="/face-swap" component={WrappedFaceSwapPage} />
         <Route path="/kling-tools" component={WrappedKlingToolsPage} />
-        <Route path="/test" component={WrappedTestPage} />
+        <Route path="/kling-store" component={WrappedKlingStorePage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

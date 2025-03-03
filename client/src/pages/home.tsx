@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+// import { useFirebaseAuth } from "@/hooks/use-firebase-auth"; // Ya no utilizamos este hook
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Footer } from "@/components/layout/footer";
@@ -148,7 +148,7 @@ const plans = [
    COMPONENTE PRINCIPAL: HOME PAGE
 ============================= */
 export default function HomePage() {
-  const { signInWithGoogle } = useFirebaseAuth();
+  const { login } = useAuth();
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -182,13 +182,16 @@ export default function HomePage() {
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithGoogle();
+      await login('/dashboard');
+      
       toast({
         title: "Success",
         description: "Successfully logged in. Redirecting to dashboard..."
       });
-      setLocation("/dashboard");
+      
+      // No es necesario setLocation ya que el método login maneja la redirección
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Authentication Error",
         description: "Could not sign in with Google. Please try again.",
