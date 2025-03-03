@@ -148,7 +148,8 @@ const plans = [
    COMPONENTE PRINCIPAL: HOME PAGE
 ============================= */
 export default function HomePage() {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
@@ -181,58 +182,21 @@ export default function HomePage() {
 
   const handleGoogleLogin = async () => {
     try {
-      toast({
-        title: "Iniciando sesión",
-        description: "Conectando con Google..."
-      });
-      
-      // Mostrar un indicador de estado de autenticación
-      const loadingToastId = toast({
-        title: "Autenticación en proceso",
-        description: "Por favor, espera mientras completamos la autenticación...",
-        duration: 10000, // 10 segundos
-      });
-      
-      // Iniciar proceso de autenticación con Gmail
-      console.log("Iniciando autenticación con Gmail");
       await login('/dashboard');
       
-      // Crear una redirección de respaldo automática en caso de que el proceso normal falle
-      const redirectTimer = setTimeout(() => {
-        if (user) {
-          console.log("Redireccionando al dashboard mediante timer de respaldo");
-          window.location.href = '/dashboard';
-        }
-      }, 2000);
-      
-      // Limpiar el toast de carga
-      setTimeout(() => {
-        toast({
-          title: "Autenticación exitosa",
-          description: "Has iniciado sesión correctamente.",
-          variant: "default"
-        });
-      }, 1000);
-      
-      return () => {
-        clearTimeout(redirectTimer);
-      };
-      
-    } catch (error: any) {
-      console.error("Error durante la autenticación con Gmail:", error);
       toast({
-        title: "Error de autenticación",
-        description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
-        variant: "destructive"
+        title: "Success",
+        description: "Successfully logged in. Redirecting to dashboard..."
       });
       
-      // Verificar si el usuario está autenticado a pesar del error
-      if (user) {
-        console.log("Usuario autenticado a pesar del error, redirigiendo al dashboard");
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1000);
-      }
+      // No es necesario setLocation ya que el método login maneja la redirección
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Authentication Error",
+        description: "Could not sign in with Google. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

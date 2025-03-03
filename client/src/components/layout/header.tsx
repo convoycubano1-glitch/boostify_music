@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare, CheckCircle } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,39 +12,13 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useEffect, useState } from "react";
 import { useLanguageDetection } from "@/hooks/use-language-detection";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import { useToast } from "@/hooks/use-toast";
 
 export function Header() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const { logout } = useFirebaseAuth();
   const { detectedLanguage } = useLanguageDetection();
   const { scrollDirection, scrollY } = useScrollDirection();
   const [showFullHeader, setShowFullHeader] = useState(true);
-  const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'anonymous'>('loading');
-  const { toast } = useToast();
-  
-  // Monitorear el estado de autenticación una sola vez al cargar
-  // Sin dependencias repetitivas que causan re-renders innecesarios
-  const [authChecked, setAuthChecked] = useState(false);
-  
-  // Este efecto se ejecuta una sola vez al montar el componente
-  useEffect(() => {
-    // Solo actualizar el estado si no se ha verificado antes
-    if (!authChecked) {
-      if (isLoading) {
-        setAuthStatus('loading');
-      } else if (user) {
-        setAuthStatus('authenticated');
-        console.log('Header: Usuario autenticado una sola vez', user.email);
-        setAuthChecked(true);
-      } else {
-        setAuthStatus('anonymous');
-        console.log('Header: Sin usuario autenticado');
-        setAuthChecked(false);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Handle scroll effect for header
   useEffect(() => {
@@ -103,41 +77,7 @@ export function Header() {
     { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
-  // Mostrar un indicador de estado de autenticación
-  // Sin mensajes repetitivos en consola
-  if (authStatus === 'loading') {
-    // Aquí podría renderizarse un estado intermedio si es necesario
-    return null;
-  } else if (authStatus === 'anonymous') {
-    return null;
-  }
-  
-  // Si estamos aquí, es porque el usuario está autenticado
-  // Podemos mostrar una notificación discreta de autenticación exitosa
-  // Usamos un estado para evitar notificaciones repetidas
-  const [welcomeNotificationShown, setWelcomeNotificationShown] = useState(false);
-  
-  useEffect(() => {
-    // Solo mostrar la notificación si el usuario está autenticado, 
-    // la notificación no se ha mostrado antes, y el estado está verificado
-    if (authStatus === 'authenticated' && user && !welcomeNotificationShown && authChecked) {
-      // Marcar como mostrada antes de mostrar el toast para evitar duplicados
-      setWelcomeNotificationShown(true);
-      
-      toast({
-        title: (
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Autenticado</span>
-          </div>
-        ),
-        description: `¡Bienvenido ${user.displayName || user.email}!`,
-        duration: 2000,
-      });
-      
-      console.log("Header: Notificación de bienvenida mostrada");
-    }
-  }, [authStatus, user, toast, welcomeNotificationShown, authChecked]);
+  if (!user) return null;
 
   const isAdmin = user?.email === 'convoycubano@gmail.com';
 
@@ -290,7 +230,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    {user && user.photoURL ? (
+                    {user.photoURL ? (
                       <img
                         src={user.photoURL}
                         alt={user.displayName || "User avatar"}
@@ -299,7 +239,7 @@ export function Header() {
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/10">
                         <span className="text-sm font-medium text-orange-500">
-                          {user?.displayName?.[0] || user?.email?.[0] || "U"}
+                          {user.displayName?.[0] || user.email?.[0] || "U"}
                         </span>
                       </div>
                     )}
@@ -308,10 +248,10 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-56 bg-[#1B1B1B] border-[#2A2A2A]">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {user && user.displayName && (
+                      {user.displayName && (
                         <p className="text-sm font-medium text-white">{user.displayName}</p>
                       )}
-                      {user && user.email && (
+                      {user.email && (
                         <p className="text-xs text-gray-400">{user.email}</p>
                       )}
                     </div>

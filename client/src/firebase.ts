@@ -49,11 +49,6 @@ try {
   
   // Obtener instancias de servicios con manejo adecuado de errores
   auth = getAuth(app);
-  
-  // Usar el browserPopupRedirectResolver para solucionar errores auth/internal-error
-  // No podemos configurarlo directamente en la instancia de auth porque es una propiedad privada
-  // pero lo configuramos a través de funciones que lo utilizan
-  
   db = getFirestore(app);
   storage = getStorage(app);
   
