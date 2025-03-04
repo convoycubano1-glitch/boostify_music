@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Loader2, Wand2, Mic, Download, RefreshCw, Waves, Music, History, 
-  Split, Settings, AudioLines, Info, Cloud, Save 
+  Split, Settings, AudioLines, Info, Cloud, Save, Mic2 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,10 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+// Importar nuevos componentes de voz
+import { VoiceModelCreator } from "./voice-model-creator";
+import { VoiceConversion } from "./voice-conversion";
 
 // Firebase imports
 import { auth } from "@/firebase";
@@ -32,7 +36,7 @@ import {
 } from "@/lib/firebase-storage";
 
 // Importamos los tipos desde nuestro archivo centralizado
-import type { VoiceConversionRecord, VoiceConversion } from "@/lib/types/audio-types";
+import type { VoiceConversionRecord, VoiceConversion as VoiceConversionType } from "@/lib/types/audio-types";
 
 interface PaginationMeta {
   currentPage: number;
@@ -47,7 +51,7 @@ interface PaginationMeta {
 }
 
 interface VoiceConversionListResponse {
-  data: VoiceConversion[];
+  data: VoiceConversionType[];
   meta: PaginationMeta;
 }
 
@@ -100,8 +104,8 @@ export function AudioMastering() {
   const [pitchShift, setPitchShift] = useState(0);
   const [usePreprocessing, setUsePreprocessing] = useState(false);
   const [usePostprocessing, setUsePostprocessing] = useState(false);
-  const [voiceConversions, setVoiceConversions] = useState<VoiceConversion[]>([]);
-  const [selectedConversion, setSelectedConversion] = useState<VoiceConversion | null>(null);
+  const [voiceConversions, setVoiceConversions] = useState<VoiceConversionType[]>([]);
+  const [selectedConversion, setSelectedConversion] = useState<VoiceConversionType | null>(null);
   
   const { toast } = useToast();
 
@@ -166,7 +170,7 @@ export function AudioMastering() {
     const simulatedResultUrl1 = "https://firebasestorage.googleapis.com/v0/b/artist-boost.appspot.com/o/demoFiles%2Fmastered_audio_sample.mp3?alt=media&token=93a82642-59e3-406c-a7b6-8d4cc3b5c6a8";
     const simulatedResultUrl2 = "https://firebasestorage.googleapis.com/v0/b/artist-boost.appspot.com/o/demoFiles%2Fvoice_conversion_sample.mp3?alt=media&token=1be2a3c4-5d6e-7f8g-9h0i-jk1l2m3n4o5p";
     
-    const mockConversions: VoiceConversion[] = [
+    const mockConversions: VoiceConversionType[] = [
       {
         id: "demo-1",
         fileName: "Vocal_Demo_01.wav",
@@ -254,7 +258,7 @@ export function AudioMastering() {
         // Esto es solo para fines de demostración
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        const mockConversions: VoiceConversion[] = [
+        const mockConversions: VoiceConversionType[] = [
           {
             id: 1,
             createdAt: new Date(Date.now() - 3600000).toISOString(),
@@ -289,7 +293,7 @@ export function AudioMastering() {
       
       // También actualizar el estado de la interfaz actual
       // Mapear los datos de Firebase al formato que usa la UI
-      const mappedConversions: VoiceConversion[] = conversions.map((conv, index) => ({
+      const mappedConversions: VoiceConversionType[] = conversions.map((conv, index) => ({
         id: index + 1, // Usar el índice como ID para UI
         createdAt: conv.createdAt.toDate().toISOString(),
         type: "infer",
@@ -523,7 +527,7 @@ export function AudioMastering() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Crear objeto para la UI
-      const newConversion: VoiceConversion = {
+      const newConversion: VoiceConversionType = {
         id: Math.floor(Math.random() * 1000) + 10,
         createdAt: new Date().toISOString(),
         type: "infer",
@@ -631,7 +635,7 @@ export function AudioMastering() {
         Audio Production Suite
       </h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-1' : 'grid-cols-4'} text-xs sm:text-sm`}>
+        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-1' : 'grid-cols-5'} text-xs sm:text-sm`}>
           <TabsTrigger value="mastering" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
             <Waves className="h-4 w-4" />
             <span className={isMobile ? 'mt-1' : ''}>Audio Processing</span>
@@ -639,6 +643,10 @@ export function AudioMastering() {
           <TabsTrigger value="voice-conversion" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
             <Mic className="h-4 w-4" />
             <span className={isMobile ? 'mt-1' : ''}>Voice Conversion</span>
+          </TabsTrigger>
+          <TabsTrigger value="voice-model" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
+            <Music className="h-4 w-4" />
+            <span className={isMobile ? 'mt-1' : ''}>Train Voice</span>
           </TabsTrigger>
           <TabsTrigger value="separation" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
             <Split className="h-4 w-4" />
@@ -998,6 +1006,37 @@ export function AudioMastering() {
                 </p>
               </div>
             </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        {/* Voice Model Training Tab */}
+        <TabsContent value="voice-model">
+          <Card className="border-t-4 border-t-primary/80">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Music className="h-5 w-5 text-primary" />
+                    Voice Model Training
+                  </CardTitle>
+                  <CardDescription>
+                    Create your own custom voice models for voice conversion with AI
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="bg-primary/5">Professional</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Implementamos directamente el componente VoiceModelCreator */}
+              <VoiceModelCreator 
+                onModelCreated={(modelId) => {
+                  toast({
+                    title: "Modelo creado con éxito",
+                    description: `El modelo de voz con ID ${modelId} ha sido creado y está en entrenamiento.`,
+                  });
+                }} 
+              />
+            </CardContent>
           </Card>
         </TabsContent>
         
