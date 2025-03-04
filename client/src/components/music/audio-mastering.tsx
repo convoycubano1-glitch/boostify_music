@@ -1023,7 +1023,19 @@ export function AudioMastering() {
                     Create your own custom voice models for voice conversion with AI
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="bg-primary/5">Professional</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-primary/5">Professional</Badge>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-80">
+                        <p>Uses Revocalize API key: {voiceModelService.isApiKeyConfigured() ? 'Configured ✓' : 'Missing ✗'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
