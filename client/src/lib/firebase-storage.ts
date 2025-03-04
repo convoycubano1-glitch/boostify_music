@@ -138,11 +138,16 @@ export async function getUserVoiceConversions(userId: string): Promise<VoiceConv
 }
 
 // Función para obtener datos simulados
-export function getMockVoiceConversions(): VoiceConversionRecord[] {
-  // Importación dinámica para evitar ciclos
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { getMockVoiceData } = require('./mock-voice-data');
-  return getMockVoiceData();
+export async function getMockVoiceConversions(): Promise<VoiceConversionRecord[]> {
+  try {
+    // Importación dinámica compatible con el navegador usando import()
+    const mockModule = await import('./mock-voice-data');
+    return mockModule.getMockVoiceData();
+  } catch (error) {
+    console.error("Error importing mock data:", error);
+    // Devolver array vacío en caso de error
+    return [];
+  }
 }
 
 /**

@@ -332,13 +332,13 @@ export function AudioMastering() {
       if (isDev) {
         console.log("Development environment detected - using mock conversion data for ID:", id);
         
-        // Obtenemos todos los datos simulados
-        const allMockConversions = fbConversions.length > 0 
+        // Obtenemos todos los datos simulados - manejamos la promesa que devuelve getMockVoiceConversions
+        const allMockConversions: VoiceConversionRecord[] = fbConversions.length > 0 
           ? fbConversions 
-          : getMockVoiceConversions();
+          : await getMockVoiceConversions();
         
         // Buscamos la conversión por ID o "conv-00X" si el ID es numérico
-        const mockConversion = allMockConversions.find(c => 
+        const mockConversion = allMockConversions.find((c: VoiceConversionRecord) => 
           c.id === id.toString() || 
           (typeof id === 'number' && c.id === `conv-00${id}`)
         );
