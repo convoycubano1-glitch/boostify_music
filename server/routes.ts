@@ -34,6 +34,7 @@ import generatedArtistsRouter from './routes/generated-artists';
 import apiProxyRouter from './routes/api-proxy'; // Importamos el router de proxy para APIs externas
 import videoStatusRouter from './routes/video-status'; // Importamos el router dedicado para estado de videos
 import musicRouter from './routes/music'; // Importamos el router de generación de música
+import { v4 as uuidv4 } from 'uuid'; // Para generar IDs únicos para tareas
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 import { Request, Response } from 'express';
@@ -341,6 +342,37 @@ export function registerRoutes(app: Express): Server {
 
   // Register investors routes
   app.use('/api/investors', investorsRouter);
+  
+  // Register music generation routes - specific routes handling
+  // Separate public test endpoint from authenticated routes
+  app.post('/api/music/test-integration', (req, res) => {
+    try {
+      const { prompt = 'Una melodía suave de piano' } = req.body;
+      
+      const taskId = uuidv4();
+      
+      // Solo verificamos si existe la API key para este test público
+      if (process.env.PIAPI_API_KEY) {
+        return res.status(200).json({ 
+          success: true, 
+          message: 'API key de PiAPI encontrada, la integración parece estar correctamente configurada',
+          test_only: true,
+          api_key_present: true
+        });
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: 'No se encontró API_KEY para PiAPI en variables de entorno'
+        });
+      }
+    } catch (error) {
+      console.error('Error en test de integración:', error);
+      res.status(500).json({ error: 'Error interno al probar la integración' });
+    }
+  });
+  
+  // Las demás rutas de música requieren autenticación
+  app.use('/api/music', musicRouter);
 
 
   // AI Campaign Suggestions Route

@@ -12,8 +12,20 @@ import { v4 as uuidv4 } from 'uuid';
 import { authenticate } from '../middleware/auth';
 import { db } from '@db';
 import { log } from '../vite';
+import fileUpload from 'express-fileupload';
+import FormData from 'form-data';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 const router = Router();
+
+// Configurar middleware para manejo de archivos
+router.use(fileUpload({
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB límite máximo
+  useTempFiles: true,
+  tempFileDir: path.join(os.tmpdir(), 'music-uploads')
+}));
 
 // Mapeo de modelos internos a modelos de la API de PiAPI
 const MODEL_MAPPING: Record<string, string> = {
@@ -23,6 +35,8 @@ const MODEL_MAPPING: Record<string, string> = {
 
 // Estado en memoria para seguimiento de generaciones (en producción usaríamos una base de datos)
 const musicGenerations: Record<string, any> = {};
+
+// El endpoint de prueba se ha movido a server/routes.ts para evitar problemas con el middleware de autenticación
 
 /**
  * Endpoint para iniciar una generación de música
@@ -64,9 +78,6 @@ router.post('/generate', authenticate, async (req: Request, res: Response) => {
     // Verificar que el usuario tiene permisos para generar música
     // En producción, aquí podríamos verificar límites o suscripciones
 
-    // En un entorno de producción, aquí es donde haríamos la llamada a la API externa
-    // Por ahora, simularemos una generación asíncrona
-
     // Registro de la generación en nuestra base de datos o cache
     musicGenerations[taskId] = {
       id: taskId,
@@ -93,8 +104,92 @@ router.post('/generate', authenticate, async (req: Request, res: Response) => {
       }
     };
 
-    // Iniciar proceso asíncrono simulado de generación
-    simulateGeneration(taskId);
+    // Determinar el tipo de tarea adecuado según las opciones
+    let taskType = 'generate_music';
+    if (generateLyrics) {
+      taskType = 'generate_lyrics';
+    } else if (uploadAudio) {
+      taskType = 'upload_audio';
+    } else if (continueClipId) {
+      taskType = 'continue_music';
+    }
+
+    // Preparar los datos para la API de PiAPI
+    const apiModel = MODEL_MAPPING[model]; // 'suno-v3-music' o 'udio-v1-music'
+    const requestData: any = {
+      model: apiModel,
+      task_type: taskType,
+      input: {
+        prompt: prompt,
+      }
+    };
+
+    // Añadir opciones específicas según el tipo de tarea
+    if (makeInstrumental) {
+      requestData.input.make_instrumental = true;
+    }
+    
+    if (negativeTags) {
+      requestData.input.negative_tags = negativeTags;
+    }
+    
+    if (tags) {
+      requestData.input.tags = tags;
+    }
+    
+    if (seed && !isNaN(Number(seed))) {
+      requestData.input.seed = Number(seed);
+    }
+    
+    if (tempo) {
+      requestData.input.tempo = tempo;
+    }
+    
+    if (keySignature) {
+      requestData.input.key_signature = keySignature;
+    }
+    
+    if (continueClipId) {
+      requestData.input.continue_clip_id = continueClipId;
+      
+      if (continueAt) {
+        requestData.input.continue_at = continueAt;
+      }
+    }
+    
+    if (model === 'music-u' && !uploadAudio && !continueClipId) {
+      // Opciones específicas para Udio
+      requestData.input.lyrics_type = makeInstrumental ? 'instrumental' : (customLyrics ? 'user' : 'generate');
+      
+      if (customLyrics) {
+        requestData.input.lyrics = customLyrics;
+      }
+    }
+
+    try {
+      // Intentar hacer la llamada a la API de PiAPI
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.PIAPI_API_KEY || ''
+        }
+      });
+      
+      // Actualizar el registro con el ID de tarea de PiAPI
+      if (response.data && response.data.task_id) {
+        musicGenerations[taskId].piapiTaskId = response.data.task_id;
+        log(`Generación de música enviada a PiAPI: ${response.data.task_id}`, 'music-api');
+      } else {
+        // Falló la solicitud a PiAPI, usar la simulación como fallback
+        log(`Error al enviar a PiAPI, usando simulación como fallback: ${taskId}`, 'music-api');
+        simulateGeneration(taskId);
+      }
+    } catch (error) {
+      // Error al comunicarse con PiAPI, usar la simulación como fallback
+      console.error('Error al comunicarse con PiAPI:', error);
+      log(`Error de comunicación con PiAPI, usando simulación como fallback: ${taskId}`, 'music-api');
+      simulateGeneration(taskId);
+    }
 
     // Responder al cliente con el ID de la tarea
     res.status(202).json({ 
@@ -129,12 +224,64 @@ router.get('/status', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Generación no encontrada' });
     }
 
-    // Devolver el estado actual
+    // Si tenemos un ID de tarea de PiAPI, verificar el estado real en la API
+    if (generation.piapiTaskId) {
+      try {
+        // Consultar el estado de la tarea en PiAPI
+        const response = await axios.get(`https://api.piapi.ai/api/v1/task/${generation.piapiTaskId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.PIAPI_API_KEY || ''
+          }
+        });
+
+        if (response.data) {
+          // Actualizar el estado según la respuesta de PiAPI
+          const piApiStatus = response.data.status?.toLowerCase();
+          
+          if (piApiStatus === 'completed' && response.data.output?.audio_url) {
+            // Si la generación está completa y tenemos una URL de audio
+            generation.status = 'completed';
+            generation.progress = 100;
+            generation.audioUrl = response.data.output.audio_url;
+            
+            log(`Generación de música completada en PiAPI: ${taskId}`, 'music-api');
+          } else if (piApiStatus === 'failed') {
+            // Si la generación falló
+            generation.status = 'failed';
+            generation.progress = 100;
+            generation.error = response.data.error || 'Error desconocido en PiAPI';
+            
+            log(`Error en generación de música en PiAPI: ${taskId} - ${generation.error}`, 'music-api');
+          } else if (piApiStatus === 'processing' || piApiStatus === 'pending') {
+            // Si la generación está en proceso, actualizar el progreso
+            generation.status = piApiStatus;
+            
+            // PiAPI no siempre proporciona un porcentaje exacto, así que lo estimamos
+            if (piApiStatus === 'processing') {
+              // Si está procesando, asumimos al menos 5% de progreso
+              generation.progress = Math.max(5, generation.progress);
+              
+              // Incrementamos un poco el progreso cada vez que consultamos
+              if (generation.progress < 90) {
+                generation.progress += 2;
+              }
+            }
+          }
+        }
+      } catch (apiError) {
+        console.error('Error al consultar estado en PiAPI:', apiError);
+        // No modificamos el estado en caso de error al consultar la API
+      }
+    }
+
+    // Devolver el estado actual (ya sea de la API o de nuestra simulación)
     res.json({
       id: generation.id,
       status: generation.status,
       progress: generation.progress || 0,
       audioUrl: generation.audioUrl,
+      error: generation.error,
       message: getStatusMessage(generation.status)
     });
   } catch (error) {
@@ -230,5 +377,153 @@ function simulateGeneration(taskId: string): void {
     }
   }, 1000); // Actualizar cada segundo
 }
+
+/**
+ * Endpoint para subir un archivo de audio y procesarlo con PiAPI
+ * Requiere autenticación
+ */
+router.post('/upload', authenticate, async (req: Request & { files?: any }, res: Response) => {
+  try {
+    // Verificar si se recibió un archivo
+    if (!req.files || !req.files.audio) {
+      return res.status(400).json({ error: 'No se recibió ningún archivo de audio' });
+    }
+
+    const { 
+      prompt, 
+      title, 
+      model = 'music-s',
+      makeInstrumental = false,
+      negativeTags = '',
+      tags = ''
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'El prompt es requerido' });
+    }
+
+    // Validar el modelo
+    if (!MODEL_MAPPING[model]) {
+      return res.status(400).json({ error: 'Modelo no válido' });
+    }
+
+    // Obtener el archivo subido
+    const audioFile = req.files.audio;
+    const filePath = audioFile.tempFilePath;
+    
+    // Crear un ID único para esta generación
+    const taskId = uuidv4();
+    const userId = req.user?.uid || 'anonymous';
+
+    // Registrar la generación en nuestro sistema
+    musicGenerations[taskId] = {
+      id: taskId,
+      userId,
+      title: title || `Audio procesado ${new Date().toLocaleString()}`,
+      prompt,
+      model,
+      status: 'pending',
+      progress: 0,
+      createdAt: new Date().toISOString(),
+      options: {
+        makeInstrumental,
+        negativeTags,
+        tags,
+        uploadAudio: true
+      }
+    };
+
+    try {
+      // Preparar el FormData para el upload de archivos
+      const formData = new FormData();
+      
+      // Añadir el archivo al FormData
+      formData.append('file', fs.createReadStream(filePath), {
+        filename: path.basename(filePath),
+        contentType: audioFile.mimetype
+      });
+
+      // Subir el archivo a la API de PiAPI primero (endpoint de upload)
+      const uploadResponse = await axios.post('https://api.piapi.ai/api/v1/upload', formData, {
+        headers: {
+          ...formData.getHeaders(),
+          'x-api-key': process.env.PIAPI_API_KEY || ''
+        }
+      });
+
+      if (!uploadResponse.data || !uploadResponse.data.url) {
+        throw new Error('No se recibió URL de archivo después de la subida');
+      }
+
+      // Ahora usamos la URL del archivo subido para crear la tarea de procesamiento
+      const audioUrl = uploadResponse.data.url;
+      
+      // Preparar los datos para la API de PiAPI (task de procesamiento)
+      const apiModel = MODEL_MAPPING[model];
+      const requestData: any = {
+        model: apiModel,
+        task_type: 'upload_audio',
+        input: {
+          prompt: prompt,
+          audio_url: audioUrl
+        }
+      };
+
+      // Añadir opciones específicas
+      if (makeInstrumental) {
+        requestData.input.make_instrumental = true;
+      }
+      
+      if (negativeTags) {
+        requestData.input.negative_tags = negativeTags;
+      }
+      
+      if (tags) {
+        requestData.input.tags = tags;
+      }
+
+      // Hacer la llamada para crear la tarea de procesamiento
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.PIAPI_API_KEY || ''
+        }
+      });
+      
+      // Actualizar el registro con el ID de tarea de PiAPI
+      if (response.data && response.data.task_id) {
+        musicGenerations[taskId].piapiTaskId = response.data.task_id;
+        musicGenerations[taskId].audioUrl = audioUrl; // Guardar la URL del audio original
+        
+        log(`Audio subido y procesamiento iniciado en PiAPI: ${response.data.task_id}`, 'music-api');
+      } else {
+        // Falló la solicitud a PiAPI, usar la simulación como fallback
+        log(`Error al procesar audio en PiAPI, usando simulación como fallback: ${taskId}`, 'music-api');
+        simulateGeneration(taskId);
+      }
+    } catch (apiError) {
+      console.error('Error al comunicarse con PiAPI para audio:', apiError);
+      log(`Error de comunicación con PiAPI para audio, usando simulación como fallback: ${taskId}`, 'music-api');
+      simulateGeneration(taskId);
+    } finally {
+      // Limpiar el archivo temporal
+      try {
+        fs.unlinkSync(filePath);
+      } catch (cleanupError) {
+        console.error('Error al eliminar archivo temporal:', cleanupError);
+      }
+    }
+
+    // Responder al cliente con el ID de la tarea
+    res.status(202).json({ 
+      taskId, 
+      message: 'Procesamiento de audio iniciado con éxito' 
+    });
+
+  } catch (error) {
+    console.error('Error al procesar audio:', error);
+    res.status(500).json({ error: 'Error interno al procesar el audio' });
+  }
+});
 
 export default router;

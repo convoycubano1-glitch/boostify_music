@@ -477,29 +477,64 @@ export function MusicAIGenerator() {
       setAudioDuration(audioEl.duration || 0);
     };
     
+    // Función para cargar el audio en el elemento
+    const loadAudio = () => {
+      if (generatedMusicUrl) {
+        // Asegurarnos de que el audio sea recargado
+        audioEl.load();
+        return true;
+      }
+      return false;
+    };
+    
     if (isPlaying) {
-      audioEl.play().catch(error => {
-        console.error("Error playing audio:", error);
+      // Establecer volumen antes de reproducir
+      audioEl.volume = audioVolume / 100;
+      
+      // Si tenemos un URL de audio, intentar cargar y reproducir
+      if (generatedMusicUrl) {
+        loadAudio();
+        const playPromise = audioEl.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Error playing audio:", error);
+            toast({
+              title: "Error de reproducción",
+              description: `No se pudo reproducir el audio: ${error.message || 'Error desconocido'}`,
+              variant: "destructive"
+            });
+            setIsPlaying(false);
+          });
+        }
+      } else {
+        // No hay URL de audio, no se puede reproducir
         setIsPlaying(false);
-      });
+        toast({
+          title: "Error",
+          description: "No hay audio disponible para reproducir",
+          variant: "destructive"
+        });
+      }
     } else {
       audioEl.pause();
     }
     
-    // Update audio volume
-    audioEl.volume = audioVolume / 100;
+    // Set up event listeners with named functions for proper cleanup
+    const handleTimeUpdate = () => updateProgress();
+    const handleLoadedMetadata = () => updateProgress();
+    const handleEnded = () => setIsPlaying(false);
     
-    // Set up event listeners
-    audioEl.addEventListener('timeupdate', updateProgress);
-    audioEl.addEventListener('loadedmetadata', updateProgress);
-    audioEl.addEventListener('ended', () => setIsPlaying(false));
+    audioEl.addEventListener('timeupdate', handleTimeUpdate);
+    audioEl.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audioEl.addEventListener('ended', handleEnded);
     
     return () => {
-      audioEl.removeEventListener('timeupdate', updateProgress);
-      audioEl.removeEventListener('loadedmetadata', updateProgress);
-      audioEl.removeEventListener('ended', () => setIsPlaying(false));
+      audioEl.removeEventListener('timeupdate', handleTimeUpdate);
+      audioEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audioEl.removeEventListener('ended', handleEnded);
     };
-  }, [isPlaying, audioVolume, audioPlayerRef.current]);
+  }, [isPlaying, audioVolume, generatedMusicUrl, toast]);
 
   const handleMasterTrack = async () => {
     if (!selectedFile) {
@@ -860,34 +895,107 @@ export function MusicAIGenerator() {
     });
   };
   
-  const handleDownloadAudio = (url: string, title: string = "audio_procesado") => {
-    // Crear un enlace temporal para descargar el audio
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${title.replace(/\s+/g, '_')}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadAudio = (url: string | null, title: string = "audio_procesado") => {
+    if (!url) {
+      toast({
+        title: "Error",
+        description: "No hay URL de audio disponible para descargar",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    toast({
-      title: "Descargando",
-      description: `Descargando ${title}`
-    });
+    try {
+      // Validación de seguridad mejorada
+      if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+        toast({
+          title: "Error de seguridad",
+          description: "La URL del audio no es válida o no está disponible",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar que sea una URL válida con estructura correcta
+      new URL(url);
+      
+      // Crear un enlace temporal para descargar el audio
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${title.replace(/\s+/g, '_').substring(0, 50)}.mp3`; // Limitar longitud del nombre
+      link.type = "audio/mpeg"; // Agregar MIME type para mejor compatibilidad
+      
+      // Proceso de descarga con manejo de errores
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Descarga iniciada",
+        description: "Tu audio se está descargando...",
+      });
+      
+      toast({
+        title: "Descargando",
+        description: `Descargando ${title}`
+      });
+    } catch (error) {
+      console.error("Error en la descarga de audio:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el audio. URL inválida.",
+        variant: "destructive"
+      });
+    }
   };
   
-  const handleDownloadImage = (url: string) => {
-    // Crear un enlace temporal para descargar la imagen
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `portada_${new Date().getTime()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadImage = (url: string | null) => {
+    if (!url) {
+      toast({
+        title: "Error",
+        description: "No hay URL de imagen disponible para descargar",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    toast({
-      title: "Descargando",
-      description: "Descargando portada"
-    });
+    try {
+      // Validación de seguridad mejorada
+      if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+        toast({
+          title: "Error de seguridad",
+          description: "La URL de la imagen no es válida o no está disponible",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Verificar que sea una URL válida con estructura correcta
+      new URL(url);
+      
+      // Crear un enlace temporal para descargar la imagen
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `portada_${new Date().getTime()}.jpg`;
+      link.type = "image/jpeg"; // Agregar MIME type para mejor compatibilidad
+      
+      // Proceso de descarga con manejo de errores
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Descarga iniciada",
+        description: "Tu imagen se está descargando...",
+      });
+    } catch (error) {
+      console.error("Error en la descarga de imagen:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar la imagen. La URL no es válida o no se puede acceder al recurso.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleExportMetadata = (type: 'music' | 'cover') => {
@@ -1048,9 +1156,31 @@ export function MusicAIGenerator() {
                     
                     <audio
                       controls
-                      src={processedAudioUrl}
                       className="w-full mt-2"
-                    />
+                      preload="metadata"
+                      onError={(e) => {
+                        console.error("Error loading audio:", e);
+                        toast({
+                          title: "Error de reproducción",
+                          description: "No se pudo cargar el audio procesado. Intenta descargar el archivo directamente.",
+                          variant: "destructive"
+                        });
+                      }}
+                      onLoadedData={() => {
+                        console.log("Audio cargado correctamente");
+                      }}
+                    >
+                      {processedAudioUrl && (
+                        <>
+                          <source src={processedAudioUrl} type="audio/mpeg" />
+                          <source src={processedAudioUrl} type="audio/mp3" />
+                        </>
+                      )}
+                      Tu navegador no soporta la reproducción de audio
+                      <p className="text-xs text-muted-foreground">
+                        Tu navegador no soporta la reproducción de audio.
+                      </p>
+                    </audio>
                     
                     <p className="text-xs text-muted-foreground mt-2">
                       {selectedFileType === "mastering" ? 
@@ -1378,10 +1508,31 @@ export function MusicAIGenerator() {
                   {/* Audio element (hidden but functional) */}
                   <audio
                     ref={audioPlayerRef}
-                    src={generatedMusicUrl}
                     onEnded={() => setIsPlaying(false)}
+                    preload="metadata"
+                    onError={(e) => {
+                      console.error("Error en reproducción de audio:", e);
+                      toast({
+                        title: "Error de reproducción",
+                        description: "No se pudo reproducir el audio generado. Intenta descargar el archivo directamente.",
+                        variant: "destructive"
+                      });
+                      setIsPlaying(false);
+                    }}
+                    onLoadedData={() => console.log("Audio generado cargado correctamente")}
                     className="hidden"
-                  />
+                  >
+                    {generatedMusicUrl && (
+                      <>
+                        <source src={generatedMusicUrl} type="audio/mpeg" />
+                        <source src={generatedMusicUrl} type="audio/mp3" />
+                      </>
+                    )}
+                    Tu navegador no soporta la reproducción de audio
+                    <p className="text-xs text-muted-foreground">
+                      Tu navegador no soporta la reproducción de audio.
+                    </p>
+                  </audio>
                   
                   {/* Custom audio player */}
                   <div className="space-y-2">

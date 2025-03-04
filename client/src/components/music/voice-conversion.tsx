@@ -165,16 +165,57 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
     }
   };
   
-  // Manejador para descargar el audio convertido
+  // Manejador para descargar el audio convertido con validación de URL
   const handleDownloadOutput = () => {
-    if (conversionStatus?.output_audio_urls && conversionStatus.output_audio_urls.length > selectedOutput) {
+    if (conversionStatus?.output_audio_urls && 
+        conversionStatus.output_audio_urls.length > selectedOutput &&
+        conversionStatus.output_audio_urls[selectedOutput]) {
+      
       const url = conversionStatus.output_audio_urls[selectedOutput];
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `converted_voice_${Date.now()}.wav`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      
+      // Validación mejorada de URL para seguridad
+      if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+        toast({
+          title: 'Error de seguridad',
+          description: 'La URL del audio no es válida o no está disponible.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      try {
+        // Verificar que sea una URL válida con estructura correcta
+        new URL(url);
+        
+        // Crear un enlace temporal para descargar el audio
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `converted_voice_${Date.now()}.wav`;
+        link.type = "audio/wav"; // Agregar MIME type correcto para el audio
+        
+        // Proceso de descarga con manejo de errores
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: 'Descarga iniciada',
+          description: 'Tu archivo de audio procesado se está descargando...',
+        });
+      } catch (error) {
+        toast({
+          title: 'Error al descargar',
+          description: 'No se pudo descargar el archivo de audio. La URL no es válida o no se puede acceder al recurso.',
+          variant: 'destructive'
+        });
+        console.error('Error al descargar audio:', error);
+      }
+    } else {
+      toast({
+        title: 'Audio no disponible',
+        description: 'No hay un archivo de audio disponible para descargar.',
+        variant: 'destructive'
+      });
     }
   };
   
@@ -222,10 +263,29 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
             {sourceAudio && (
               <audio 
                 ref={sourceAudioRef}
-                src={URL.createObjectURL(sourceAudio)} 
                 className="hidden"
+                controls={false}
+                preload="metadata"
                 onEnded={() => setIsPlaying(false)}
-              />
+                onError={(e) => {
+                  console.error('Error loading source audio:', e);
+                  toast({
+                    title: 'Error de audio',
+                    description: 'No se pudo cargar el audio original. El formato podría no ser compatible.',
+                    variant: 'destructive'
+                  });
+                }}
+              >
+                <source 
+                  src={URL.createObjectURL(sourceAudio)} 
+                  type={sourceAudio.type || "audio/mpeg"} 
+                />
+                <source 
+                  src={URL.createObjectURL(sourceAudio)} 
+                  type="audio/mp3" 
+                />
+                Tu navegador no soporta la reproducción de audio
+              </audio>
             )}
           </div>
           
@@ -362,10 +422,34 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                   <div>
                     <audio 
                       ref={outputAudioRef}
-                      src={conversionStatus.output_audio_urls[selectedOutput]} 
                       className="hidden"
+                      controls={false}
+                      preload="metadata"
                       onEnded={() => setIsPlaying(false)}
-                    />
+                      onError={(e) => {
+                        console.error('Error loading converted audio:', e);
+                        toast({
+                          title: 'Error de reproducción',
+                          description: 'No se pudo cargar el audio convertido. Intenta descargar el archivo directamente.',
+                          variant: 'destructive'
+                        });
+                        setIsPlaying(false);
+                      }}
+                    >
+                      {conversionStatus.output_audio_urls && conversionStatus.output_audio_urls[selectedOutput] && (
+                        <>
+                          <source 
+                            src={conversionStatus.output_audio_urls[selectedOutput]} 
+                            type="audio/wav" 
+                          />
+                          <source 
+                            src={conversionStatus.output_audio_urls[selectedOutput]} 
+                            type="audio/mpeg" 
+                          />
+                        </>
+                      )}
+                      Tu navegador no soporta la reproducción de audio
+                    </audio>
                     
                     {conversionStatus.output_audio_urls.length > 1 && (
                       <div className="mb-3">
