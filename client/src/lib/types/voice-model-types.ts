@@ -111,11 +111,15 @@ export interface AudioEffect {
 
 // Tipo para la solicitud de conversión de audio
 export interface VoiceConversionRequest {
-  audio_file: File;
+  // Nuevo formato en camelCase
+  audioFile: File;
   model: string;
   transpose?: number;
-  generations_count?: number;
+  generationsCount?: number;
   effects?: AudioEffect[];
+  // Campos en el formato anterior para compatibilidad
+  audio_file?: File; // @deprecated - usar audioFile
+  generations_count?: number; // @deprecated - usar generationsCount
 }
 
 // Tipo para la respuesta de la API al convertir audio

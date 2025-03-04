@@ -1033,7 +1033,7 @@ export function MusicAIGenerator() {
 
   return (
     <div className="mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 music-header-container">
         <h2 className="text-2xl sm:text-3xl font-bold">Herramientas de IA para Música</h2>
         <div className="bg-orange-500/10 dark:bg-orange-500/5 border border-orange-500/20 rounded-lg px-3 py-1.5 text-xs md:text-sm text-orange-600 dark:text-orange-400">
           <span className="hidden sm:inline">Potenciado por </span>IA avanzada
@@ -1045,16 +1045,16 @@ export function MusicAIGenerator() {
         className="space-y-6"
         onValueChange={(value) => setActiveTab(value)}
       >
-        <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-2">
-          <TabsTrigger value="mastering" className="flex-1 sm:flex-initial">
+        <TabsList className="w-full flex overflow-x-auto no-scrollbar justify-start sm:justify-center mb-2 music-tabs-list">
+          <TabsTrigger value="mastering" className="flex-1 sm:flex-initial music-tab-trigger">
             <Wand2 className="mr-2 h-4 w-4" />
             <span className="hidden xs:inline">AI</span> Mastering
           </TabsTrigger>
-          <TabsTrigger value="generation" className="flex-1 sm:flex-initial">
+          <TabsTrigger value="generation" className="flex-1 sm:flex-initial music-tab-trigger">
             <Music4 className="mr-2 h-4 w-4" />
             <span className="hidden xs:inline">Music</span> Generation
           </TabsTrigger>
-          <TabsTrigger value="cover" className="flex-1 sm:flex-initial">
+          <TabsTrigger value="cover" className="flex-1 sm:flex-initial music-tab-trigger">
             <ImageIcon className="mr-2 h-4 w-4" />
             Cover Art
           </TabsTrigger>

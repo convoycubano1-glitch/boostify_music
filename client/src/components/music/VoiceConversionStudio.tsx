@@ -28,11 +28,13 @@ import {
 } from '@/components/ui/dialog';
 
 import { voiceModelService } from '../../lib/services/voice-model-service';
-import type { VoiceModel, VoiceConversionRequest, AudioEffect, VoiceConversionRecord } from '../../lib/types/voice-model-types';
+import type { VoiceModel, VoiceConversionRequest, VoiceConversionResponse, AudioEffect, VoiceConversionRecord } from '../../lib/types/voice-model-types';
 
-interface ConversionResult {
+// Adaptando ConversionResult para que sea idéntico a VoiceConversionResponse
+interface ConversionResult extends VoiceConversionResponse {
+  // Asegurar que ConversionResult sea compatible con VoiceConversionResponse
   taskId: string;
-  recordId: string;
+  recordId?: string; // Hacemos esto opcional para que coincida con VoiceConversionResponse
 }
 
 interface VoiceConversionStudioProps {
@@ -169,8 +171,15 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
   // Mutación para iniciar la conversión
   const convertMutation = useMutation<ConversionResult, Error, VoiceConversionRequest>({
     mutationFn: async (request: VoiceConversionRequest) => {
-      const result = await voiceModelService.convertAudio(
-        request.audio_file,
+      // Usar audioFile prioritariamente, con fallback a audio_file para compatibilidad
+      const audioFile = request.audioFile || request.audio_file;
+      
+      if (!audioFile) {
+        throw new Error('No se proporcionó un archivo de audio válido');
+      }
+      
+      const apiResult = await voiceModelService.convertAudio(
+        audioFile,
         request.model,
         {
           transpose: request.transpose,
@@ -178,6 +187,13 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
         },
         userId
       );
+      
+      // Convertir explícitamente a ConversionResult para garantizar compatibilidad de tipos
+      const result: ConversionResult = {
+        taskId: apiResult.taskId,
+        recordId: apiResult.recordId || '' // Asignamos string vacío si es undefined
+      };
+      
       return result;
     },
     onSuccess: (result: ConversionResult) => {
@@ -252,12 +268,12 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
     const enabledEffects = effects
       .filter(effect => effect.enabled);
     
-    // Crear la solicitud incluyendo los efectos
+    // Crear la solicitud incluyendo los efectos utilizando camelCase
     const request: VoiceConversionRequest = {
-      audio_file: inputFile,
+      audioFile: inputFile, // Nuevo formato camelCase
       model: selectedModelId,
       transpose: 0, // O el valor que corresponda de los efectos
-      generations_count: 1, // Por defecto una generación
+      generationsCount: 1, // Nuevo formato camelCase
       effects: enabledEffects.length > 0 ? enabledEffects : undefined
     };
     
@@ -393,9 +409,9 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
         <CardContent className="space-y-4">
           {/* Panel principal con tabs */}
           <Tabs defaultValue="voices" onValueChange={(value) => setActiveTab(value as 'voices' | 'history')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="voices">Voces</TabsTrigger>
-              <TabsTrigger value="history">Historial</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 music-tabs-list">
+              <TabsTrigger value="voices" className="music-tab-trigger">Voces</TabsTrigger>
+              <TabsTrigger value="history" className="music-tab-trigger">Historial</TabsTrigger>
             </TabsList>
             
             <TabsContent value="voices" className="space-y-4">
@@ -409,14 +425,14 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                     <h3 className="text-sm font-medium">
                       {inputFile ? inputFile.name : 'Input File'}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground music-player-controls">
                       <span>{inputFile ? formatTime(duration) : '0:00'}</span>
                       {inputFile && (
                         <>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-6 w-6"
+                            className="h-6 w-6 music-action-button"
                             onClick={toggleInputAudio}
                           >
                             {isPlaying ? (
@@ -432,6 +448,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                   <Button 
                     variant="secondary" 
                     size="sm"
+                    className="music-action-button"
                     onClick={() => document.getElementById('input-audio')?.click()}
                   >
                     <Upload className="h-4 w-4 mr-1" />
@@ -472,7 +489,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium">Voces</h3>
-                  <Button variant="ghost" size="sm" className="h-8" onClick={handleAddVoice}>
+                  <Button variant="ghost" size="sm" className="h-8 music-action-button" onClick={handleAddVoice}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add voice to project
                   </Button>
@@ -510,7 +527,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                         <div className="flex items-center gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 music-action-button">
                                 <Settings className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
@@ -555,7 +572,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-destructive hover:text-destructive/90"
+                            className="h-8 w-8 text-destructive hover:text-destructive/90 music-action-button"
                             onClick={() => handleRemoveVoice(voice.id)}
                           >
                             <Trash className="h-4 w-4" />
@@ -628,12 +645,12 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 music-player-controls">
                         {conversion.outputUrl && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8"
+                            className="h-8 w-8 music-action-button"
                             onClick={() => {
                               window.open(conversion.outputUrl, '_blank');
                             }}
@@ -644,7 +661,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8"
+                          className="h-8 w-8 music-action-button"
                           onClick={() => {
                             if (conversion.outputUrl) {
                               // Crear un enlace temporal para descargar el audio
@@ -816,7 +833,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
           
           {/* Botón de procesamiento */}
           <Button
-            className="w-full"
+            className="w-full music-action-button"
             onClick={handleStartProcessing}
             disabled={isProcessing || !inputFile || !selectedModelId}
           >

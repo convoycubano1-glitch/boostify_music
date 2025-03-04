@@ -8,7 +8,14 @@
  * - Gestionar historial de conversiones
  */
 
-import { VoiceModel, AudioEffect, TrainingStatus, VoiceConversionRecord } from '../types/voice-model-types';
+import { 
+  VoiceModel, 
+  AudioEffect, 
+  TrainingStatus, 
+  VoiceConversionRecord,
+  VoiceConversionResponse,
+  VoiceConversionRequest 
+} from '../types/voice-model-types';
 import { voiceProcessingService } from './voice-processing-service';
 import { revocalizeAPI } from './api/revocalize-api';
 import { kitsAIAPI } from './api/kits-ai-api';
