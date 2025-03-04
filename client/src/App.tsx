@@ -63,6 +63,7 @@ import ProfilePage from "@/pages/profile";
 import { BoostifyRadio } from "@/components/radio/boostify-radio";
 import { CustomerServiceAgent } from "@/components/agents/customer-service-agent";
 import AffiliatesPage from "@/pages/affiliates";
+import MusicMasteringPage from "@/pages/music-mastering";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -191,6 +192,7 @@ const Router = () => {
   const WrappedKlingToolsPage = withPageWrapper(KlingToolsPage);
   const WrappedKlingStorePage = withPageWrapper(KlingStorePage);
   const WrappedVideoGenerationTestPage = withPageWrapper(VideoGenerationTestPage);
+  const WrappedMusicMasteringPage = withPageWrapper(MusicMasteringPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -253,6 +255,7 @@ const Router = () => {
         <Route path="/kling-tools" component={WrappedKlingToolsPage} />
         <Route path="/kling-store" component={WrappedKlingStorePage} />
         <Route path="/video-generation-test" component={WrappedVideoGenerationTestPage} />
+        <Route path="/music-mastering" component={WrappedMusicMasteringPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

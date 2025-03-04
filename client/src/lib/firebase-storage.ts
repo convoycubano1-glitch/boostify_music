@@ -1,17 +1,21 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { storage } from "../firebase";
 import { doc, collection, addDoc, updateDoc, getDoc, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, storage } from "../firebase";
 import { User } from "firebase/auth";
 
 /**
- * Importamos el tipo que ahora se define en audio-mastering-types.ts
- * para evitar importaciones circulares
+ * Importamos directamente los tipos necesarios
  */
-import { VoiceConversionRecord } from './audio-mastering-types';
-
-// Re-exportamos el tipo para que sea accesible desde módulos que importan este archivo
-export { VoiceConversionRecord } from './audio-mastering-types';
+import type { 
+  VoiceConversionRecord,
+  VoiceSettings,
+  ConversionStatus,
+  VoiceModel,
+  VoiceConversion,
+  ImageResult,
+  VideoResult,
+  MockVoiceData
+} from './types/audio-types';
 
 /**
  * Sube un archivo de audio a Firebase Storage con manejo de errores mejorado
@@ -133,11 +137,11 @@ export async function getUserVoiceConversions(userId: string): Promise<VoiceConv
   }
 }
 
-// Importamos los datos simulados del archivo específico para evitar importaciones circulares
-import { getMockVoiceData } from './mock-voice-data';
-
 // Función para obtener datos simulados
 export function getMockVoiceConversions(): VoiceConversionRecord[] {
+  // Importación dinámica para evitar ciclos
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { getMockVoiceData } = require('./mock-voice-data');
   return getMockVoiceData();
 }
 

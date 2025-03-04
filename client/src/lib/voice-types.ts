@@ -1,26 +1,23 @@
 /**
- * Tipos compartidos para el sistema de audio mastering
- * Este archivo resuelve dependencias circulares al definir tipos
- * que pueden ser importados sin crear ciclos
+ * Definiciones de tipos para el módulo de conversión de voz
  */
 
 import { Timestamp } from "firebase/firestore";
 
-/**
- * Interfaz para las configuraciones de conversión de voz
- */
-export interface VoiceConversionSettings {
+// Ajustes para la conversión de voz
+export type VoiceSettings = {
   conversionStrength?: number;
   modelVolumeMix?: number;
   pitchShift?: number;
   usePreprocessing?: boolean;
   usePostprocessing?: boolean;
-}
+};
 
-/**
- * Interfaz para los registros de conversión de voz en Firestore
- */
-export interface VoiceConversionRecord {
+// Estados posibles para una conversión
+export type VoiceStatus = 'pending' | 'processing' | 'running' | 'completed' | 'failed';
+
+// Registro de una conversión de voz
+export type VoiceRecord = {
   id?: string;
   userId: string;
   fileName: string;
@@ -30,26 +27,22 @@ export interface VoiceConversionRecord {
   resultFileUrl?: string | null;
   createdAt: Timestamp;
   completedAt?: Timestamp | null;
-  status: 'pending' | 'processing' | 'running' | 'completed' | 'failed';
+  status: VoiceStatus;
   progress?: number;
   duration?: string;
-  settings?: VoiceConversionSettings;
-}
+  settings?: VoiceSettings;
+};
 
-/**
- * Interfaz para los modelos de voz disponibles
- */
-export interface VoiceModel {
+// Modelo de voz disponible
+export type VoiceModelType = {
   id: number;
   name: string;
   description: string;
   previewUrl?: string;
-}
+};
 
-/**
- * Tipo para los datos simulados
- */
-export interface MockVoiceData {
+// Datos para conversiones simuladas en desarrollo
+export type MockVoiceType = {
   id: string;
   userId: string;
   fileName: string;
@@ -59,8 +52,8 @@ export interface MockVoiceData {
   resultFileUrl: string | null;
   createdAt: Timestamp;
   completedAt: Timestamp | null;
-  status: 'pending' | 'processing' | 'running' | 'completed' | 'failed';
-  settings: VoiceConversionSettings;
+  status: VoiceStatus;
+  settings: VoiceSettings;
   progress: number;
   duration: string;
-}
+};

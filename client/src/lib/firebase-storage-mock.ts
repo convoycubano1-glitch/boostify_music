@@ -1,14 +1,31 @@
 /**
- * Este archivo está vacío deliberadamente.
- * Sus funciones se han transferido a firebase-storage.ts
- * para evitar ciclos de importación.
+ * Este archivo se mantiene para compatibilidad con código existente.
+ * La funcionalidad principal ha sido centralizada en otros módulos.
  * 
- * NOTA: Este archivo se mantiene para compatibilidad con código existente,
- * pero su funcionalidad ha sido trasladada.
+ * Usamos re-exportación para mantener compatibilidad hacia atrás
+ * mientras se consolida la arquitectura del código.
  */
 
-// Exportamos los datos simulados del archivo específico
+// Re-exportamos todos los tipos y funciones desde sus ubicaciones actuales
 export { getMockVoiceData } from './mock-voice-data';
 
-// Exportamos las interfaces desde audio-mastering-types para mantener compatibilidad
-export { VoiceConversionRecord, VoiceConversionSettings, VoiceModel, MockVoiceData } from './audio-mastering-types';
+export { 
+  uploadAudioFile,
+  saveVoiceConversion, 
+  updateVoiceConversion,
+  getUserVoiceConversions,
+  getMockVoiceConversions,
+  deleteStorageFile,
+  downloadFileFromStorage,
+  getOrCreateUserDocument
+} from './firebase-storage';
+
+// Re-exportamos todos los tipos desde el archivo centralizado de tipos
+export { 
+  VoiceSettings, 
+  VoiceConversionRecord, 
+  VoiceModel,
+  VoiceConversion, 
+  ConversionStatus,
+  MockVoiceData
+} from '@/lib/types/audio-types';

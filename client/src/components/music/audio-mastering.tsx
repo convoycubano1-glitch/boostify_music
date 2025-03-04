@@ -25,30 +25,14 @@ import {
   uploadAudioFile, 
   saveVoiceConversion, 
   getUserVoiceConversions, 
-  updateVoiceConversion, 
-  VoiceConversionRecord,
+  updateVoiceConversion,
   getOrCreateUserDocument,
   downloadFileFromStorage,
   getMockVoiceConversions
 } from "@/lib/firebase-storage";
-// Nota: Hemos eliminado la importación de firebase-storage-mock.ts para evitar ciclos
 
-// Interfaces for voice conversion
-interface VoiceConversion {
-  id: number | string; // Cambiado para permitir IDs tanto numéricos como de cadena
-  createdAt: string;
-  type: string;
-  voiceModelId: number;
-  modelName?: string; // Nombre del modelo para mostrar
-  status: "pending" | "running" | "completed" | "failed" | string; // Agregado string para compatibilidad
-  jobStartTime: string;
-  jobEndTime: string | null;
-  resultUrl?: string | null; // Permitir null para compatibilidad con Firebase
-  fileName?: string; // Nombre del archivo para la descarga
-  originalUrl?: string | null; // URL original para comparación
-  duration?: string; // Duración del audio
-  progress?: number; // Progreso de la conversión (0-100)
-}
+// Importamos los tipos desde nuestro archivo centralizado
+import type { VoiceConversionRecord, VoiceConversion } from "@/lib/types/audio-types";
 
 interface PaginationMeta {
   currentPage: number;
