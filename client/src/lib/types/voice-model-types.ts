@@ -1,6 +1,13 @@
 /**
  * Tipos para la funcionalidad de modelos de voz personalizados
  * Basados en la API de Voice Models de Revocalize
+ * 
+ * Incluye definiciones para:
+ * - Modelos de voz (VoiceModel)
+ * - Estado de entrenamiento (TrainingStatus)
+ * - Solicitudes de conversión (VoiceConversionRequest)
+ * - Estado de tareas de conversión (VoiceConversionTaskStatus)
+ * - Registro de conversiones (VoiceConversionRecord)
  */
 
 // Enumera los géneros disponibles para los modelos de voz
@@ -92,15 +99,40 @@ export interface VoiceConversionTaskStatus {
   error?: string;
 }
 
+// Tipo para los efectos de audio
+export interface AudioEffect {
+  name: string;
+  settings: {
+    [key: string]: number | string | boolean;
+  };
+}
+
 // Tipo para la solicitud de conversión de audio
 export interface VoiceConversionRequest {
   audio_file: File;
   model: string;
   transpose?: number;
   generations_count?: number;
+  effects?: AudioEffect[];
 }
 
 // Tipo para la respuesta de la API al convertir audio
 export interface VoiceConversionResponse {
   task_id: string;
+}
+
+// Tipo para registros de conversiones de voz almacenados
+export interface VoiceConversionRecord {
+  id?: string;
+  task_id: string;
+  userId: string;
+  model: string;
+  modelName?: string;
+  status: 'in_progress' | 'completed' | 'failed';
+  input_audio_url?: string;
+  output_audio_urls?: string[];
+  effects?: AudioEffect[];
+  transpose?: number;
+  createdAt: Date | any; // Puede ser Timestamp de Firestore
+  updatedAt: Date | any;
 }

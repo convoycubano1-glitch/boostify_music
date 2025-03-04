@@ -4,6 +4,7 @@
  * 
  * Este servicio implementa una simulación robusta para entornos de desarrollo 
  * que funciona sin depender de conexiones externas en tiempo real.
+ * Proporciona métodos para obtener, crear y utilizar modelos de voz.
  */
 import axios from 'axios';
 import { db, storage } from '../../firebase';
@@ -331,6 +332,99 @@ class VoiceModelService {
       console.error('Error checking conversion status:', error);
       throw new Error('Failed to check conversion status');
     }
+  }
+  
+  /**
+   * Obtiene el historial de conversiones de voz de un usuario
+   * @param userId ID del usuario (opcional, usa el usuario actual por defecto)
+   * @returns Lista de conversiones de voz ordenadas por fecha de creación
+   */
+  async getUserVoiceConversions(userId?: string): Promise<any[]> {
+    try {
+      // Si no se proporciona un ID de usuario, usamos el almacenado localmente o uno de demo
+      const uid = userId || localStorage.getItem('currentUserId') || 'user123';
+      
+      // Consultar Firestore para obtener todas las tareas de conversión
+      const tasksRef = collection(db, 'voice-conversion-tasks');
+      // En un escenario real, filtrar por usuario: where('userId', '==', uid)
+      // Para demo, mostramos todas las conversiones
+      const snapshot = await getDocs(tasksRef);
+      
+      if (snapshot.empty) {
+        return [];
+      }
+      
+      // Convertir los documentos a objetos y ordenar por fecha (más recientes primero)
+      return snapshot.docs
+        .map(doc => {
+          const data = doc.data();
+          // Asegurarnos de que las fechas sean objetos Date para ordenar correctamente
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.created_at || Timestamp.now(),
+            updatedAt: data.updated_at || Timestamp.now()
+          };
+        })
+        .sort((a, b) => {
+          const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toDate() : a.createdAt;
+          const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : b.createdAt;
+          return dateB.getTime() - dateA.getTime(); // Orden descendente (más recientes primero)
+        });
+    } catch (error) {
+      console.error('Error fetching voice conversions:', error);
+      
+      // Proporcionar datos simulados para demo en caso de error
+      return this.getMockVoiceConversions();
+    }
+  }
+  
+  /**
+   * Proporciona datos simulados de conversiones de voz para demostración
+   * @returns Array de conversiones de voz simuladas
+   */
+  private getMockVoiceConversions(): any[] {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const lastWeek = new Date(now);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    return [
+      {
+        id: 'mock-conversion-1',
+        task_id: 'task-12345',
+        status: 'completed',
+        model: 'andra',
+        modelName: 'Andra',
+        input_audio_url: 'https://example.com/input1.wav',
+        output_audio_urls: ['https://example.com/output1.wav'],
+        createdAt: Timestamp.fromDate(now),
+        updatedAt: Timestamp.fromDate(now)
+      },
+      {
+        id: 'mock-conversion-2',
+        task_id: 'task-67890',
+        status: 'completed',
+        model: 'nicole_cherry',
+        modelName: 'Nicole Cherry',
+        input_audio_url: 'https://example.com/input2.wav',
+        output_audio_urls: ['https://example.com/output2.wav'],
+        createdAt: Timestamp.fromDate(yesterday),
+        updatedAt: Timestamp.fromDate(yesterday)
+      },
+      {
+        id: 'mock-conversion-3',
+        task_id: 'task-98765',
+        status: 'completed',
+        model: 'inna',
+        modelName: 'Inna',
+        input_audio_url: 'https://example.com/input3.wav',
+        output_audio_urls: ['https://example.com/output3.wav'],
+        createdAt: Timestamp.fromDate(lastWeek),
+        updatedAt: Timestamp.fromDate(lastWeek)
+      }
+    ];
   }
   
   /**

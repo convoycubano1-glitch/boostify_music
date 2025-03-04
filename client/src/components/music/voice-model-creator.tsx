@@ -153,9 +153,27 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
         description: "El entrenamiento ha comenzado. Este proceso puede tardar varios minutos.",
       });
       
-      // Callback opcional
+      // Callback opcional y navegación a la sesión de conversión
       if (onModelCreated) {
         onModelCreated(modelId);
+        
+        // Navegar a la sesión de conversión automáticamente después de crear el modelo
+        setTimeout(() => {
+          // Forzar la navegación a la sesión de conversión de voz con el nuevo modelo
+          const conversionStudioElement = document.getElementById('voice-conversion-studio');
+          if (conversionStudioElement) {
+            conversionStudioElement.scrollIntoView({ behavior: 'smooth' });
+            
+            // Seleccionar el modelo recién creado en el selector de modelos
+            const modelSelector = document.querySelector('#voice-model-selector') as HTMLSelectElement;
+            if (modelSelector) {
+              modelSelector.value = modelId;
+              // Disparar evento de cambio para actualizar la interfaz
+              const event = new Event('change', { bubbles: true });
+              modelSelector.dispatchEvent(event);
+            }
+          }
+        }, 1000); // Aumentamos el tiempo para asegurar que los componentes estén cargados
       }
       
       // Limpiar el formulario
@@ -224,10 +242,29 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
     }
   };
   
-  // Manejador para cambiar entre modos
+  // Manejador para cambiar entre modos y navegar a la sesión de conversión
   const handleProfessionalModelComplete = (modelId: string) => {
     if (onModelCreated) {
+      // Se llama al callback con el ID del modelo para que se pueda utilizar en el componente padre
       onModelCreated(modelId);
+      
+      // Navegar a la sesión de conversión automáticamente después de crear el modelo
+      setTimeout(() => {
+        // Forzar la navegación a la sesión de conversión de voz con el nuevo modelo
+        const conversionStudioElement = document.getElementById('voice-conversion-studio');
+        if (conversionStudioElement) {
+          conversionStudioElement.scrollIntoView({ behavior: 'smooth' });
+          
+          // Seleccionar el modelo recién creado en el selector de modelos
+          const modelSelector = document.querySelector('#voice-model-selector') as HTMLSelectElement;
+          if (modelSelector) {
+            modelSelector.value = modelId;
+            // Disparar evento de cambio para actualizar la interfaz
+            const event = new Event('change', { bubbles: true });
+            modelSelector.dispatchEvent(event);
+          }
+        }
+      }, 500);
     }
     setCreationMode('standard');
   };
