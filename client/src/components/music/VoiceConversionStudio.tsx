@@ -28,15 +28,11 @@ import {
 } from '@/components/ui/dialog';
 
 import { voiceModelService } from '../../lib/services/voice-model-service';
-import type { VoiceModel, VoiceConversionRequest } from '../../lib/types/voice-model-types';
+import type { VoiceModel, VoiceConversionRequest, AudioEffect, VoiceConversionRecord } from '../../lib/types/voice-model-types';
 
-// Tipos para los efectos de audio
-interface AudioEffect {
-  name: string;
-  enabled: boolean;
-  settings: {
-    [key: string]: number | boolean | string;
-  };
+interface ConversionResult {
+  taskId: string;
+  recordId: string;
 }
 
 interface VoiceConversionStudioProps {
@@ -49,8 +45,11 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
   const [selectedModelId, setSelectedModelId] = useState<string>('');
   const [voices, setVoices] = useState<{ id: string, name: string, model: string }[]>([]);
   
-  // Referencia al elemento de selección de modelo
-  const modelSelectorRef = useRef<HTMLSelectElement>(null);
+  // ID del usuario para las conversiones
+  const userId = localStorage.getItem('currentUserId') || 'user123';
+  
+  // El ID del elemento de selección de modelo
+  const MODEL_SELECTOR_ID = 'voice-model-selector';
   const [activeTab, setActiveTab] = useState<'voices' | 'history'>('voices');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -168,12 +167,21 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
   }, [conversionStatus]);
   
   // Mutación para iniciar la conversión
-  const convertMutation = useMutation({
-    mutationFn: (request: VoiceConversionRequest) => {
-      return voiceModelService.convertAudio(request);
+  const convertMutation = useMutation<ConversionResult, Error, VoiceConversionRequest>({
+    mutationFn: async (request: VoiceConversionRequest) => {
+      const result = await voiceModelService.convertAudio(
+        request.audio_file,
+        request.model,
+        {
+          transpose: request.transpose,
+          effects: request.effects
+        },
+        userId
+      );
+      return result;
     },
-    onSuccess: (taskId: string) => {
-      setTaskId(taskId);
+    onSuccess: (result: ConversionResult) => {
+      setTaskId(result.taskId);
       setIsProcessing(true);
       toast({
         title: 'Procesamiento iniciado',
@@ -242,11 +250,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
     
     // Extraer los efectos habilitados para aplicarlos
     const enabledEffects = effects
-      .filter(effect => effect.enabled)
-      .map(effect => ({
-        name: effect.name,
-        settings: effect.settings
-      }));
+      .filter(effect => effect.enabled);
     
     // Crear la solicitud incluyendo los efectos
     const request: VoiceConversionRequest = {
@@ -335,6 +339,29 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+  
+  // Función para formatear fecha con manejo seguro de tipos
+  const formatDate = (dateOrTimestamp: any): string => {
+    if (!dateOrTimestamp) return 'Fecha desconocida';
+    
+    try {
+      // Caso 1: Es un objeto Timestamp de Firestore
+      if (dateOrTimestamp && typeof dateOrTimestamp.toDate === 'function') {
+        return dateOrTimestamp.toDate().toLocaleDateString();
+      }
+      
+      // Caso 2: Es un objeto Date
+      if (dateOrTimestamp instanceof Date) {
+        return dateOrTimestamp.toLocaleDateString();
+      }
+      
+      // Caso 3: Es un string ISO o timestamp numérico
+      return new Date(dateOrTimestamp).toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Fecha inválida';
+    }
   };
   
   // Actualizar la posición actual durante la reproducción
@@ -547,7 +574,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                   value={selectedModelId}
                   onValueChange={setSelectedModelId}
                 >
-                  <SelectTrigger id="voice-model-selector" ref={modelSelectorRef} className="mt-2">
+                  <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Selecciona un modelo de voz" />
                   </SelectTrigger>
                   <SelectContent>
@@ -594,7 +621,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                         </div>
                         <div>
                           <h4 className="text-sm font-medium">
-                            Conversión {new Date(conversion.createdAt?.toDate()).toLocaleDateString()}
+                            Conversión {formatDate(conversion.createdAt)}
                           </h4>
                           <p className="text-xs text-muted-foreground">
                             Modelo: {conversion.modelName || conversion.model || "Desconocido"}
@@ -602,13 +629,13 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {conversion.output_audio_urls && conversion.output_audio_urls.length > 0 && (
+                        {conversion.outputUrl && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8"
                             onClick={() => {
-                              window.open(conversion.output_audio_urls[0], '_blank');
+                              window.open(conversion.outputUrl, '_blank');
                             }}
                           >
                             <Play className="h-4 w-4" />
@@ -619,10 +646,10 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                           size="icon" 
                           className="h-8 w-8"
                           onClick={() => {
-                            if (conversion.output_audio_urls && conversion.output_audio_urls.length > 0) {
+                            if (conversion.outputUrl) {
                               // Crear un enlace temporal para descargar el audio
                               const link = document.createElement('a');
-                              link.href = conversion.output_audio_urls[0];
+                              link.href = conversion.outputUrl;
                               link.download = `converted_${Date.now()}.wav`;
                               document.body.appendChild(link);
                               link.click();
@@ -841,14 +868,14 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                   <span>Tu audio procesado está listo</span>
                 </div>
                 
-                {conversionStatus.output_audio_urls && conversionStatus.output_audio_urls.length > 0 && (
+                {conversionStatus.result && conversionStatus.result.url && (
                   <div className="space-y-2">
                     <audio 
                       ref={audioOutputRef}
                       controls
                       preload="metadata"
                       className="w-full"
-                      src={conversionStatus.output_audio_urls[0]}
+                      src={conversionStatus.result.url}
                       onError={(e) => {
                         console.error('Error loading processed audio:', e);
                         toast({
@@ -865,9 +892,9 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                         size="sm"
                         className="gap-1"
                         onClick={() => {
-                          if (conversionStatus.output_audio_urls) {
+                          if (conversionStatus.result?.url) {
                             const link = document.createElement('a');
-                            link.href = conversionStatus.output_audio_urls[0];
+                            link.href = conversionStatus.result.url;
                             link.download = `processed_${Date.now()}.wav`;
                             document.body.appendChild(link);
                             link.click();

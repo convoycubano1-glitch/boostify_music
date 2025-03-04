@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { BookingDialog } from "@/components/booking/booking-dialog";
+import { ProfessionalVoiceCloning } from "@/components/music/ProfessionalVoiceCloning";
 import { AddMusicianForm } from "@/components/booking/add-musician-form";
 import { FileExchangeHub } from "@/components/producer/FileExchangeHub";
 import { StudioVideoCall } from "@/components/producer/StudioVideoCall";
@@ -645,7 +646,10 @@ export default function ProducerToolsPage() {
           {/* Audio Mastering & Voice Conversion Section */}
           <div className="mt-8">
             <h2 className="text-3xl font-bold mb-8">Audio Processing Tools</h2>
-            <AudioMastering />
+            <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
+              <AudioMastering />
+              <ProfessionalVoiceCloning />
+            </div>
           </div>
         </div>
       </ScrollArea>

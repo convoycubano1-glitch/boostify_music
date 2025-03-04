@@ -48,14 +48,18 @@ export interface VocalRange {
 export interface VoiceModel {
   id: string;
   name: string;
-  gender: 'male' | 'female';
-  age: AgeCategory;
   description: string;
-  base_language: string; // En formato ISO 639-1
-  traits: string[];
-  genre: VoiceModelGenre;
-  voice_type: VoiceType;
-  vocal_range: VocalRange;
+  type?: string; // 'inference', 'custom', etc.
+  gender?: 'male' | 'female' | 'neutral';
+  language?: string; // En formato ISO 639-1 (ej: 'en-US', 'es-ES')
+  tags?: string[];
+  samples?: string[]; // URLs de muestras de audio
+  // Campos adicionales para modelos detallados
+  age?: AgeCategory;
+  traits?: string[];
+  genre?: VoiceModelGenre;
+  voice_type?: VoiceType;
+  vocal_range?: VocalRange;
   isCustom?: boolean;
   isReady?: boolean;
   createdAt?: Date;
@@ -89,12 +93,9 @@ export interface TrainingStatus {
 // Tipo para la respuesta al verificar el estado de una tarea de conversión
 export interface VoiceConversionTaskStatus {
   status: 'in_progress' | 'completed' | 'failed';
-  input_audio_url?: string;
-  output_audio_urls?: string[];
-  output_settings?: {
-    model: string;
-    transpose: number;
-    vocal_style?: string;
+  progress?: number;
+  result?: {
+    url: string;
   };
   error?: string;
 }
@@ -102,6 +103,7 @@ export interface VoiceConversionTaskStatus {
 // Tipo para los efectos de audio
 export interface AudioEffect {
   name: string;
+  enabled: boolean;
   settings: {
     [key: string]: number | string | boolean;
   };
@@ -118,19 +120,25 @@ export interface VoiceConversionRequest {
 
 // Tipo para la respuesta de la API al convertir audio
 export interface VoiceConversionResponse {
-  task_id: string;
+  taskId: string;
+  // Mantenido para compatibilidad con código anterior que todavía usa este campo
+  recordId?: string;
 }
 
 // Tipo para registros de conversiones de voz almacenados
 export interface VoiceConversionRecord {
   id?: string;
-  task_id: string;
+  taskId: string;
   userId: string;
   model: string;
   modelName?: string;
   status: 'in_progress' | 'completed' | 'failed';
-  input_audio_url?: string;
-  output_audio_urls?: string[];
+  inputUrl: string;
+  outputUrl?: string;
+  // Campos compatibles con versiones anteriores - marcar como deprecated
+  task_id?: string; // @deprecated - usar taskId
+  input_audio_url?: string; // @deprecated - usar inputUrl
+  output_audio_urls?: string[]; // @deprecated - usar outputUrl
   effects?: AudioEffect[];
   transpose?: number;
   createdAt: Date | any; // Puede ser Timestamp de Firestore

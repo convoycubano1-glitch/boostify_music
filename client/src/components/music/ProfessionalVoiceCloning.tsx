@@ -1,418 +1,223 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Upload, Info, ArrowRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+/**
+ * Componente de Clonación Profesional de Voz
+ * 
+ * Este componente proporciona una interfaz de usuario avanzada para:
+ * 1. Crear modelos de voz personalizados usando Revocalize
+ * 2. Convertir audio entre diferentes voces
+ * 3. Aplicar efectos profesionales usando KITS AI
+ * 4. Visualizar y compartir el historial de conversiones
+ */
+
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
+} from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from '@/components/ui/input';
+import { 
+  Mic, Upload, Wand2, Music2, BarChart3, History, 
+  Settings, Plus, Server, Info, HelpCircle 
+} from 'lucide-react';
+import { VoiceConversionStudio } from './VoiceConversionStudio';
+import { VoiceModelCreator } from './voice-model-creator';
+import { voiceModelService } from '../../lib/services/voice-model-service';
 import { toast } from '@/hooks/use-toast';
 
-interface ProfessionalVoiceCloningProps {
-  onComplete?: (voiceModelId: string) => void;
-  onExit?: () => void;
+interface ProfessionalVoiceModelingProps {
+  className?: string;
 }
 
-export function ProfessionalVoiceCloning({ onComplete, onExit }: ProfessionalVoiceCloningProps) {
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [datasetDuration, setDatasetDuration] = useState(0);
-  const [currentStep, setCurrentStep] = useState(1);
+export function ProfessionalVoiceCloning({ className }: ProfessionalVoiceModelingProps) {
+  const [activeTab, setActiveTab] = useState<string>('studio');
   
-  // Configuración avanzada
-  const [autoEnhance, setAutoEnhance] = useState(true);
-  const [isolateVocals, setIsolateVocals] = useState(true);
-  const [removeReverb, setRemoveReverb] = useState(false);
-  const [removeBackingVocals, setRemoveBackingVocals] = useState(false);
-  
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Manejadores de arrastrar y soltar
-  const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  }, []);
-  
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files);
-    }
-  }, []);
-  
-  // Manejador de cambio de archivo
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      handleFiles(e.target.files);
-    }
-  };
-  
-  // Procesar archivos seleccionados
-  const handleFiles = (files: FileList) => {
-    const file = files[0];
-    
-    // Verificar que sea un archivo de audio
-    if (!file.type.startsWith('audio/')) {
-      toast({
-        title: "Tipo de archivo incorrecto",
-        description: "Por favor, sube un archivo de audio (WAV, MP3, FLAC, etc.)",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Verificar el tamaño del archivo (límite de 200 MB)
-    if (file.size > 200 * 1024 * 1024) {
-      toast({
-        title: "Archivo demasiado grande",
-        description: "El tamaño máximo permitido es 200 MB",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setAudioFile(file);
-    
-    // Calcular una duración estimada simulada (en minutos)
-    // En un entorno real, analizaríamos el archivo para obtener la duración real
-    const fileSizeMB = file.size / (1024 * 1024);
-    // Aproximadamente 1MB por minuto para audio comprimido de calidad media
-    const estimatedDuration = Math.min(Math.round(fileSizeMB), 60);
-    setDatasetDuration(estimatedDuration);
-  };
-  
-  // Activar el diálogo de selección de archivo
-  const onButtonClick = () => {
-    if (inputRef.current) {
-      inputRef.current.click();
-    }
-  };
-  
-  // Continuar al siguiente paso
-  const handleContinue = () => {
-    if (currentStep === 1) {
-      if (!audioFile) {
-        toast({
-          title: "Archivo requerido",
-          description: "Por favor, sube un archivo de audio para entrenar tu modelo de voz",
-          variant: "destructive"
-        });
-        return;
+  // Verificar el estado de las APIs
+  const { data: apiStatus, isLoading: isLoadingApiStatus } = useQuery({
+    queryKey: ['api-status'],
+    queryFn: async () => {
+      // Verificar si las claves API están configuradas
+      const isConfigured = voiceModelService.isApiKeyConfigured();
+      
+      // Obtener los modelos disponibles para comprobar la conexión
+      try {
+        const models = await voiceModelService.getAvailableModels();
+        return { 
+          isConfigured, 
+          isConnected: true, 
+          modelsCount: models.length 
+        };
+      } catch (error) {
+        console.error('Error verificando estado de API:', error);
+        return { 
+          isConfigured, 
+          isConnected: false, 
+          error: error instanceof Error ? error.message : 'Error desconocido'
+        };
       }
-      
-      // Continuar al siguiente paso (en una implementación real, aquí comenzaría el entrenamiento)
-      setCurrentStep(2);
-      
-      // Simular finalización después de un tiempo (solo para demostración)
-      setTimeout(() => {
-        if (onComplete) {
-          // Generar un ID ficticio para el modelo
-          const mockModelId = `voice-model-${Date.now()}`;
-          onComplete(mockModelId);
-        }
-      }, 3000);
-    }
-  };
+    },
+    refetchOnWindowFocus: false
+  });
   
   return (
-    <Tabs defaultValue="step1" className="w-full">
-      <TabsList className="grid grid-cols-3 mb-6">
-        <TabsTrigger value="step1" disabled={currentStep !== 1}>Datos de Entrenamiento</TabsTrigger>
-        <TabsTrigger value="step2" disabled={currentStep !== 2}>Procesamiento</TabsTrigger>
-        <TabsTrigger value="step3" disabled={currentStep < 3}>Completo</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="step1" className="space-y-6">
-        <Card className="border-0 bg-black/70 shadow-xl">
-          <CardContent className="p-6 space-y-6">
-            {/* Área de subida de archivos */}
-            <div 
-              className={`border-2 border-dashed rounded-xl p-8 transition-colors flex flex-col items-center justify-center cursor-pointer 
-                ${dragActive ? 'border-primary bg-primary/10' : 'border-gray-600 hover:border-primary/70 dark:border-gray-700'}
-                ${audioFile ? 'bg-primary/5' : ''}`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={onButtonClick}
-              style={{ minHeight: '200px' }}
-            >
-              <input
-                ref={inputRef}
-                type="file"
-                className="hidden"
-                accept="audio/*"
-                onChange={handleChange}
-              />
-              
-              <Upload className="h-12 w-12 text-primary/70 mb-4" />
-              <p className="text-center text-lg mb-2">Drag and drop file or Browse</p>
-              <p className="text-center text-sm text-muted-foreground">Max file size: 200 MB</p>
-              
-              {audioFile && (
-                <div className="mt-4 p-2 bg-primary/20 rounded-lg text-sm w-full max-w-sm text-center">
-                  {audioFile.name} ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
+    <div className={className}>
+      <Card className="w-full">
+        <CardHeader className="bg-muted/40">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Mic className="h-6 w-6 text-primary" />
+                Voice AI Studio
+              </CardTitle>
+              <CardDescription>
+                Plataforma profesional de clonación y procesamiento de voz con IA
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {apiStatus ? (
+                apiStatus.isConfigured ? (
+                  <div className="text-xs bg-green-500/10 text-green-600 py-1 px-2 rounded-md flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                    APIs conectadas ({apiStatus.modelsCount || 0} modelos)
+                  </div>
+                ) : (
+                  <div className="text-xs bg-amber-500/10 text-amber-600 py-1 px-2 rounded-md flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                    API keys no configuradas
+                  </div>
+                )
+              ) : isLoadingApiStatus ? (
+                <div className="text-xs bg-blue-500/10 text-blue-600 py-1 px-2 rounded-md flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  Verificando APIs...
+                </div>
+              ) : (
+                <div className="text-xs bg-red-500/10 text-red-600 py-1 px-2 rounded-md flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                  Error de conexión
                 </div>
               )}
-            </div>
-            
-            {/* Indicador de duración del dataset */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Dataset duration: {datasetDuration} mins</span>
-              </div>
-              
-              <div className="relative pt-1">
-                <div className="flex h-2 overflow-hidden rounded bg-gray-800">
-                  <div
-                    style={{ width: `${Math.min((datasetDuration / 60) * 100, 100)}%` }}
-                    className={`transition-all duration-300 ${
-                      datasetDuration < 10 ? 'bg-red-500' : 
-                      datasetDuration < 30 ? 'bg-yellow-500' : 
-                      'bg-green-500'
-                    }`}
-                  ></div>
-                </div>
-                
-                <div className="flex justify-between text-xs mt-1 text-gray-400">
-                  <span>MINIMUM<br/>10 mins</span>
-                  <span>RECOMMENDED<br/>30 mins</span>
-                  <span>MAXIMUM<br/>60 mins</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Configuración avanzada */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium uppercase tracking-wider">ADVANCED SETTINGS</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-black/30 rounded-lg p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span>Auto-Enhance</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Automáticamente mejora la calidad de audio para el entrenamiento.
-                            Reduce ruido y optimiza la claridad vocal.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Switch
-                    checked={autoEnhance}
-                    onCheckedChange={setAutoEnhance}
-                  />
-                </div>
-                
-                <div className="bg-black/30 rounded-lg p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span>Isolate Vocals</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Separa automáticamente las voces de la instrumentación
-                            para un entrenamiento más preciso.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Switch
-                    checked={isolateVocals}
-                    onCheckedChange={setIsolateVocals}
-                  />
-                </div>
-                
-                <div className="bg-black/30 rounded-lg p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span>Remove Reverb</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Elimina la reverberación del audio para obtener
-                            una voz más limpia para el entrenamiento.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Switch
-                    checked={removeReverb}
-                    onCheckedChange={setRemoveReverb}
-                  />
-                </div>
-                
-                <div className="bg-black/30 rounded-lg p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span>Remove Backing Vocals</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Elimina las voces secundarias o coros,
-                            manteniendo solo la voz principal.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Switch
-                    checked={removeBackingVocals}
-                    onCheckedChange={setRemoveBackingVocals}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Botones de acción */}
-            <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={onExit}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  toast({
+                    title: 'Sobre las APIs de voz',
+                    description: 'Este componente integra Revocalize para clonación de voz y KITS AI para efectos profesionales de audio.',
+                  });
+                }}
               >
-                EXIT
-              </Button>
-              
-              <Button
-                onClick={handleContinue}
-                disabled={!audioFile}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                CONTINUE
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Info className="h-4 w-4 mr-1" />
+                Acerca de
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="step2">
-        <Card className="border-0 bg-black/70 shadow-xl">
-          <CardContent className="p-6 space-y-8">
-            <div className="text-center">
-              <h3 className="text-xl font-semibold mb-2">Procesando tus datos de voz</h3>
-              <p className="text-muted-foreground">
-                Estamos preparando tu modelo de voz personalizado. Este proceso puede tardar varios minutos.
-              </p>
-            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="studio" onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-3 mb-8">
+              <TabsTrigger value="studio" className="flex items-center gap-2">
+                <Music2 className="h-4 w-4" />
+                <span>Estudio de Voz</span>
+              </TabsTrigger>
+              <TabsTrigger value="models" className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4" />
+                <span>Creación de Modelos</span>
+              </TabsTrigger>
+              <TabsTrigger value="config" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                <span>Configuración</span>
+              </TabsTrigger>
+            </TabsList>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Convirtiendo audio</span>
-                  <span>100%</span>
+            {/* Estudio de conversión de voz */}
+            <TabsContent value="studio" className="space-y-4">
+              <VoiceConversionStudio />
+            </TabsContent>
+            
+            {/* Creación de modelos de voz */}
+            <TabsContent value="models" className="space-y-4">
+              <VoiceModelCreator />
+            </TabsContent>
+            
+            {/* Configuración y ajustes */}
+            <TabsContent value="config" className="space-y-4">
+              <div className="bg-muted/30 rounded-xl p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Server className="h-5 w-5 text-primary" />
+                  Configuración de APIs
+                </h2>
+                
+                <div className="space-y-6">
+                  {/* Configuración de Revocalize */}
+                  <div>
+                    <h3 className="text-md font-medium mb-2">Revocalize API</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Esta API se utiliza para crear modelos personalizados de voz y realizar conversiones de voz.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="password"
+                        placeholder="Ingresa tu API key de Revocalize"
+                        className="max-w-md"
+                      />
+                      <Button variant="secondary" size="sm">
+                        Guardar
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Configuración de KITS */}
+                  <div>
+                    <h3 className="text-md font-medium mb-2">KITS Audio API</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Esta API proporciona efectos avanzados de audio y post-procesamiento.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="password"
+                        placeholder="Ingresa tu API key de KITS Audio"
+                        className="max-w-md"
+                      />
+                      <Button variant="secondary" size="sm">
+                        Guardar
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Opciones avanzadas */}
+                  <div className="pt-4 border-t">
+                    <h3 className="text-md font-medium mb-2">Opciones Avanzadas</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Configura opciones avanzadas para el procesamiento de voz y modelos.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button variant="outline" className="justify-start">
+                        <HelpCircle className="h-4 w-4 mr-2" />
+                        Documentación de APIs
+                      </Button>
+                      <Button variant="outline" className="justify-start">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Ver uso de la API
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <Progress value={100} className="h-2" />
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Aislando voces</span>
-                  <span>80%</span>
-                </div>
-                <Progress value={80} className="h-2" />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Mejorando calidad</span>
-                  <span>45%</span>
-                </div>
-                <Progress value={45} className="h-2" />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Entrenando modelo</span>
-                  <span>10%</span>
-                </div>
-                <Progress value={10} className="h-2" />
-              </div>
-            </div>
-            
-            <div className="pt-4 text-center text-sm text-muted-foreground">
-              Tiempo estimado restante: 15 minutos
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="step3">
-        <Card className="border-0 bg-black/70 shadow-xl">
-          <CardContent className="p-6 space-y-6 text-center">
-            <div className="rounded-full bg-green-500/20 p-4 inline-flex">
-              <CheckIcon className="h-12 w-12 text-green-500" />
-            </div>
-            
-            <h3 className="text-2xl font-semibold">¡Modelo de voz completado!</h3>
-            
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Tu modelo de voz personalizado ha sido creado exitosamente y está listo para usar
-              en la sección de conversión de voz.
-            </p>
-            
-            <Button
-              onClick={() => {
-                console.log("Professional voice model completed");
-                onComplete && onComplete('voice-model-pro-example');
-              }}
-              className="mt-4 bg-primary hover:bg-primary/90 text-white"
-            >
-              Ir a conversión de voz
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="bg-muted/30 flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            Integración con Revocalize y KITS AI
+          </div>
+          <div>
+            <Button variant="link" size="sm" className="text-xs text-muted-foreground">
+              Términos de uso
             </Button>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
-  );
-}
-
-// Icono de verificación
-function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      {...props}
-    >
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

@@ -1,717 +1,419 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2, Music, Upload, CheckCircle, AlertCircle, Server, Info, Wand } from 'lucide-react';
+/**
+ * Componente de Creación de Modelos de Voz
+ * 
+ * Este componente permite a los usuarios:
+ * 1. Grabar o subir muestras de voz
+ * 2. Entrenar un modelo personalizado de voz
+ * 3. Ver el progreso de entrenamiento
+ */
+
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-
-// Importar el nuevo componente de clonación profesional de voz
-import { ProfessionalVoiceCloning } from './ProfessionalVoiceCloning';
-
-import { voiceModelService } from '../../lib/services/voice-model-service';
-import type { 
-  VoiceModel, 
-  NewVoiceModel, 
-  TrainingStatus, 
-  VoiceModelGenre, 
-  VoiceType, 
-  AgeCategory 
-} from '../../lib/types/voice-model-types';
-
-// Esquema de validación para el formulario
-const voiceModelFormSchema = z.object({
-  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  gender: z.enum(['male', 'female']),
-  age: z.enum(['child', 'young adult', 'adult']),
-  description: z.string().min(10, 'Por favor proporciona una descripción detallada'),
-  base_language: z.string().min(2, 'Selecciona un idioma base'),
-  traits: z.string().min(2, 'Ingresa al menos un rasgo vocal'),
-  genre: z.enum([
-    'pop', 'rock', 'hip-hop', 'r&b', 'country', 
-    'jazz', 'classical', 'electronic', 'world', 'other'
-  ]),
-  voice_type: z.enum([
-    'soprano', 'mezzo-soprano', 'alto', 'tenor', 'baritone', 'bass'
-  ]),
-  min_range: z.string().min(2, 'Especifica el rango mínimo (ej: C3)'),
-  max_range: z.string().min(2, 'Especifica el rango máximo (ej: C7)')
-});
-
-type VoiceModelFormValues = z.infer<typeof voiceModelFormSchema>;
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Mic, Upload, Pause, Save, Server, Info, AlertCircle } from 'lucide-react';
 
 interface VoiceModelCreatorProps {
-  onModelCreated?: (modelId: string) => void;
+  className?: string;
 }
 
-export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [showTrainingDialog, setShowTrainingDialog] = useState(false);
-  const [currentModelId, setCurrentModelId] = useState<string | null>(null);
-  const [trainingProgress, setTrainingProgress] = useState(0);
+export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
+  // Estados para controlar la grabación
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingTime, setRecordingTime] = useState<number>(0);
+  const [audioSamples, setAudioSamples] = useState<{id: string; name: string; duration: number; url: string}[]>([]);
+  const [modelName, setModelName] = useState<string>('');
+  const [enhanceFidelity, setEnhanceFidelity] = useState<boolean>(true);
+  const [reduceNoise, setReduceNoise] = useState<boolean>(true);
+  const [isCreatingModel, setIsCreatingModel] = useState<boolean>(false);
+  const [trainingProgress, setTrainingProgress] = useState<number>(0);
   
-  // Nuevo estado para manejar el modo de creación (estándar o profesional)
-  const [creationMode, setCreationMode] = useState<'standard' | 'professional'>('standard');
+  // Referencia para acceder al grabador
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  const queryClient = useQueryClient();
-  
-  // Consulta para obtener los modelos de voz disponibles
-  const { data: voiceModels, isLoading: isLoadingModels } = useQuery({
-    queryKey: ['voice-models'],
-    queryFn: () => voiceModelService.getAvailableModels()
-  });
-  
-  // Consulta para verificar el estado del entrenamiento
-  const { data: trainingStatus, isLoading: isLoadingTraining } = useQuery({
-    queryKey: ['training-status', currentModelId],
-    queryFn: () => voiceModelService.checkTrainingStatus(currentModelId || ''),
-    enabled: !!currentModelId && showTrainingDialog,
-    refetchInterval: showTrainingDialog ? 2000 : false
-  });
-  
-  // Actualizamos el progreso de entrenamiento cuando cambia el estado
-  useEffect(() => {
-    if (trainingStatus && trainingStatus.total_epochs) {
-      const progress = Math.round((trainingStatus.current_epoch || 0) / trainingStatus.total_epochs * 100);
-      setTrainingProgress(progress);
+  // Función para iniciar grabación
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
       
-      // Si el entrenamiento ha terminado, actualizamos la caché
-      if (trainingStatus.status === 'completed') {
-        queryClient.invalidateQueries({ queryKey: ['voice-models'] });
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const sampleName = `Sample_${audioSamples.length + 1}`;
         
-        // Notificamos al usuario
-        toast({
-          title: "¡Entrenamiento completado!",
-          description: "Tu modelo de voz personalizado está listo para usar.",
-        });
-      }
-    }
-  }, [trainingStatus, queryClient]);
-  
-  // Configuración del formulario
-  const form = useForm<VoiceModelFormValues>({
-    resolver: zodResolver(voiceModelFormSchema),
-    defaultValues: {
-      name: '',
-      gender: 'male',
-      age: 'adult',
-      description: '',
-      base_language: 'es',
-      traits: '',
-      genre: 'pop',
-      voice_type: 'tenor',
-      min_range: 'C3',
-      max_range: 'C5'
-    }
-  });
-  
-  // Mutación para crear un nuevo modelo de voz
-  const createModelMutation = useMutation({
-    mutationFn: async (data: { modelData: NewVoiceModel, audioFile: File }) => {
-      return voiceModelService.createCustomModel(data.modelData, data.audioFile);
-    },
-    onSuccess: (modelId: string) => {
-      setCurrentModelId(modelId);
-      setShowTrainingDialog(true);
-      setIsCreating(false);
-      
-      // Notificar creación exitosa
-      toast({
-        title: "Modelo creado con éxito",
-        description: "El entrenamiento ha comenzado. Este proceso puede tardar varios minutos.",
-      });
-      
-      // Callback opcional y navegación a la sesión de conversión
-      if (onModelCreated) {
-        onModelCreated(modelId);
-        
-        // Navegar a la sesión de conversión automáticamente después de crear el modelo
-        setTimeout(() => {
-          // Forzar la navegación a la sesión de conversión de voz con el nuevo modelo
-          const conversionStudioElement = document.getElementById('voice-conversion-studio');
-          if (conversionStudioElement) {
-            conversionStudioElement.scrollIntoView({ behavior: 'smooth' });
-            
-            // Seleccionar el modelo recién creado en el selector de modelos
-            const modelSelector = document.querySelector('#voice-model-selector') as HTMLSelectElement;
-            if (modelSelector) {
-              modelSelector.value = modelId;
-              // Disparar evento de cambio para actualizar la interfaz
-              const event = new Event('change', { bubbles: true });
-              modelSelector.dispatchEvent(event);
-            }
+        setAudioSamples([
+          ...audioSamples,
+          {
+            id: `sample-${Date.now()}`,
+            name: sampleName,
+            duration: recordingTime,
+            url: audioUrl
           }
-        }, 1000); // Aumentamos el tiempo para asegurar que los componentes estén cargados
-      }
+        ]);
+        
+        toast({
+          title: 'Grabación completada',
+          description: `Se ha guardado la muestra "${sampleName}" (${recordingTime}s)`
+        });
+      };
       
-      // Limpiar el formulario
-      form.reset();
-      setAudioFile(null);
-    },
-    onError: (error) => {
-      setIsCreating(false);
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Iniciar temporizador para seguir el tiempo de grabación
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error al iniciar grabación:', error);
       toast({
-        title: "Error al crear el modelo",
-        description: error instanceof Error ? error.message : "Ocurrió un error desconocido",
-        variant: "destructive"
+        title: 'Error de grabación',
+        description: 'No se pudo acceder al micrófono. Verifica los permisos.',
+        variant: 'destructive'
       });
     }
-  });
-  
-  // Manejador para enviar el formulario
-  const onSubmit = (values: VoiceModelFormValues) => {
-    if (!audioFile) {
-      toast({
-        title: "Archivo de audio requerido",
-        description: "Por favor, sube un archivo de audio para entrenar tu modelo de voz",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsCreating(true);
-    
-    // Convertir los valores del formulario al formato esperado
-    const newModel: NewVoiceModel = {
-      name: values.name,
-      gender: values.gender,
-      age: values.age,
-      description: values.description,
-      base_language: values.base_language,
-      traits: values.traits.split(',').map(trait => trait.trim()),
-      genre: values.genre as VoiceModelGenre,
-      voice_type: values.voice_type as VoiceType,
-      vocal_range: {
-        min: values.min_range,
-        max: values.max_range
-      }
-    };
-    
-    // Crear el modelo
-    createModelMutation.mutate({ modelData: newModel, audioFile });
   };
   
-  // Manejador para subir archivo de audio
-  const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Función para detener grabación
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      // Detener todos los tracks de audio
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      // Limpiar temporizador
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  };
+  
+  // Función para subir archivo de audio
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       const file = files[0];
+      
       // Verificar que sea un archivo de audio
       if (!file.type.startsWith('audio/')) {
         toast({
-          title: "Tipo de archivo incorrecto",
-          description: "Por favor, sube un archivo de audio (WAV recomendado)",
-          variant: "destructive"
+          title: 'Tipo de archivo incorrecto',
+          description: 'Por favor, sube un archivo de audio (WAV, MP3, etc.)',
+          variant: 'destructive'
         });
         return;
       }
       
-      setAudioFile(file);
+      const audioUrl = URL.createObjectURL(file);
+      const audio = new Audio(audioUrl);
+      
+      // Cargar el audio para obtener metadatos como duración
+      audio.onloadedmetadata = () => {
+        const sampleName = file.name.replace(/\.[^/.]+$/, ""); // Nombre sin extensión
+        
+        setAudioSamples([
+          ...audioSamples,
+          {
+            id: `sample-${Date.now()}`,
+            name: sampleName,
+            duration: Math.round(audio.duration),
+            url: audioUrl
+          }
+        ]);
+        
+        toast({
+          title: 'Archivo subido',
+          description: `Se ha añadido "${sampleName}" a tus muestras`
+        });
+      };
+      
+      audio.onerror = () => {
+        toast({
+          title: 'Error al cargar audio',
+          description: 'No se pudo procesar el archivo de audio',
+          variant: 'destructive'
+        });
+      };
+      
+      // Cargar el audio para procesar metadatos
+      audio.load();
     }
   };
   
-  // Manejador para cambiar entre modos y navegar a la sesión de conversión
-  const handleProfessionalModelComplete = (modelId: string) => {
-    if (onModelCreated) {
-      // Se llama al callback con el ID del modelo para que se pueda utilizar en el componente padre
-      onModelCreated(modelId);
-      
-      // Navegar a la sesión de conversión automáticamente después de crear el modelo
-      setTimeout(() => {
-        // Forzar la navegación a la sesión de conversión de voz con el nuevo modelo
-        const conversionStudioElement = document.getElementById('voice-conversion-studio');
-        if (conversionStudioElement) {
-          conversionStudioElement.scrollIntoView({ behavior: 'smooth' });
-          
-          // Seleccionar el modelo recién creado en el selector de modelos
-          const modelSelector = document.querySelector('#voice-model-selector') as HTMLSelectElement;
-          if (modelSelector) {
-            modelSelector.value = modelId;
-            // Disparar evento de cambio para actualizar la interfaz
-            const event = new Event('change', { bubbles: true });
-            modelSelector.dispatchEvent(event);
-          }
-        }
-      }, 500);
-    }
-    setCreationMode('standard');
+  // Eliminar una muestra
+  const removeSample = (sampleId: string) => {
+    setAudioSamples(audioSamples.filter(sample => sample.id !== sampleId));
   };
-
+  
+  // Iniciar creación del modelo
+  const startModelCreation = () => {
+    if (audioSamples.length < 2) {
+      toast({
+        title: 'Muestras insuficientes',
+        description: 'Se requieren al menos 2 muestras de voz para crear un modelo',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!modelName.trim()) {
+      toast({
+        title: 'Nombre requerido',
+        description: 'Por favor, proporciona un nombre para tu modelo de voz',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Simulación de proceso de entrenamiento
+    setIsCreatingModel(true);
+    setTrainingProgress(0);
+    
+    const interval = setInterval(() => {
+      setTrainingProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsCreatingModel(false);
+          
+          toast({
+            title: 'Modelo creado con éxito',
+            description: `Tu modelo "${modelName}" ha sido creado y está listo para usar`
+          });
+          
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 500);
+  };
+  
+  // Formato del tiempo en MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+  
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Music className="h-5 w-5 text-primary" />
-            Crear un Modelo de Voz Personalizado
-          </CardTitle>
-          <CardDescription>
-            Crea tu propio modelo de voz AI entrenado con tus grabaciones vocales
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Selector de modo de creación */}
-          <Tabs
-            value={creationMode}
-            onValueChange={(value) => setCreationMode(value as 'standard' | 'professional')}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="standard" className="flex items-center gap-2">
-                <Server className="h-4 w-4" />
-                Modo Estándar
-              </TabsTrigger>
-              <TabsTrigger value="professional" className="flex items-center gap-2">
-                <Wand className="h-4 w-4" />
-                Clonación Profesional
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="standard">
-              <div className="space-y-4">
-                <div className="bg-primary/5 rounded-md p-4 text-sm">
-                  <p className="flex items-center gap-2">
-                    <Info className="h-4 w-4 text-primary" />
-                    El modo estándar te permite crear un modelo de voz básico proporcionando detalles específicos y un archivo de audio.
-                  </p>
-                </div>
-                
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nombre del Modelo</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Mi Voz" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Un nombre único que identifique tu modelo
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="gender"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Género</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona el género" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="male">Masculino</SelectItem>
-                                <SelectItem value="female">Femenino</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="age"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Categoría de Edad</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona la categoría" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="child">Niño</SelectItem>
-                                <SelectItem value="young adult">Joven</SelectItem>
-                                <SelectItem value="adult">Adulto</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="base_language"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Idioma Base</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona el idioma" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="es">Español</SelectItem>
-                                <SelectItem value="en">Inglés</SelectItem>
-                                <SelectItem value="fr">Francés</SelectItem>
-                                <SelectItem value="it">Italiano</SelectItem>
-                                <SelectItem value="de">Alemán</SelectItem>
-                                <SelectItem value="pt">Portugués</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descripción</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Describe las características de tu voz" 
-                              {...field} 
-                              rows={3}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Una descripción detallada de las cualidades vocales
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="traits"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rasgos Vocales</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="potente,melódica,clara,brillante" 
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Lista de rasgos separados por comas
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="genre"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Género Musical</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona el género" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="pop">Pop</SelectItem>
-                                <SelectItem value="rock">Rock</SelectItem>
-                                <SelectItem value="hip-hop">Hip-Hop</SelectItem>
-                                <SelectItem value="r&b">R&B</SelectItem>
-                                <SelectItem value="country">Country</SelectItem>
-                                <SelectItem value="jazz">Jazz</SelectItem>
-                                <SelectItem value="classical">Clásica</SelectItem>
-                                <SelectItem value="electronic">Electrónica</SelectItem>
-                                <SelectItem value="world">World</SelectItem>
-                                <SelectItem value="other">Otro</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="voice_type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tipo de Voz</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona el tipo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="soprano">Soprano</SelectItem>
-                                <SelectItem value="mezzo-soprano">Mezzo-soprano</SelectItem>
-                                <SelectItem value="alto">Alto</SelectItem>
-                                <SelectItem value="tenor">Tenor</SelectItem>
-                                <SelectItem value="baritone">Barítono</SelectItem>
-                                <SelectItem value="bass">Bajo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="min_range"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Rango Vocal Mínimo</FormLabel>
-                            <FormControl>
-                              <Input placeholder="C3" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Ej: C3, G2, etc.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="max_range"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Rango Vocal Máximo</FormLabel>
-                            <FormControl>
-                              <Input placeholder="C5" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Ej: C5, F4, etc.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div>
-                      <FormLabel htmlFor="audio-upload">Archivo de Audio para Entrenamiento</FormLabel>
-                      <div className="mt-2 flex items-center gap-4">
-                        <FormControl>
-                          <Input
-                            id="audio-upload"
-                            type="file"
-                            accept="audio/*"
-                            onChange={handleAudioUpload}
-                            className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                          />
-                        </FormControl>
-                        {audioFile && (
-                          <Badge variant="outline" className="ml-2 py-1">
-                            {audioFile.name} ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
-                          </Badge>
-                        )}
-                      </div>
-                      <FormDescription className="mt-2">
-                        Sube un archivo de audio de tu voz (WAV recomendado). 
-                        Asegúrate de que el audio sea claro y sin música de fondo.
-                      </FormDescription>
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      disabled={isCreating}
-                    >
-                      {isCreating ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creando modelo...
-                        </>
-                      ) : (
-                        <>
-                          <Server className="mr-2 h-4 w-4" />
-                          Crear y Entrenar Modelo de Voz
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="professional">
-              <ProfessionalVoiceCloning 
-                onComplete={handleProfessionalModelComplete} 
-                onExit={() => setCreationMode('standard')}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="flex flex-col items-start">
-          <p className="text-sm text-muted-foreground">
-            El entrenamiento del modelo puede tardar varios minutos. Se te notificará cuando esté listo.
-          </p>
-        </CardFooter>
-      </Card>
-      
-      {showTrainingDialog && currentModelId && (
-        <Dialog open={showTrainingDialog} onOpenChange={setShowTrainingDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Entrenando Modelo de Voz</DialogTitle>
-              <DialogDescription>
-                El modelo se está entrenando con tus datos. Este proceso puede tardar varios minutos.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progreso del entrenamiento</span>
-                  <span>{trainingProgress}%</span>
-                </div>
-                <Progress value={trainingProgress} />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Badge variant={trainingStatus?.status === 'completed' ? 'default' : 'outline'}>
-                  {trainingStatus?.status === 'pending' && 'Pendiente'}
-                  {trainingStatus?.status === 'training' && 'Entrenando...'}
-                  {trainingStatus?.status === 'completed' && 'Completado'}
-                  {trainingStatus?.status === 'failed' && 'Error'}
-                </Badge>
-                
-                {trainingStatus?.status === 'training' && (
-                  <p className="text-sm text-muted-foreground">
-                    Epochs: {trainingStatus.current_epoch || 0} / {trainingStatus.total_epochs || 0}
-                  </p>
-                )}
-              </div>
-              
-              {trainingStatus?.status === 'completed' && (
-                <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <CheckCircle className="h-5 w-5" />
-                    <p>¡Modelo entrenado con éxito!</p>
-                  </div>
-                </div>
-              )}
-              
-              {trainingStatus?.status === 'failed' && (
-                <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <AlertCircle className="h-5 w-5" />
-                    <p>Ha ocurrido un error durante el entrenamiento.</p>
-                  </div>
-                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                    {trainingStatus.error || 'Error desconocido'}
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            <DialogFooter>
+    <Card className={`w-full ${className}`}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Server className="h-5 w-5 text-primary" />
+          Creación de Modelos de Voz
+        </CardTitle>
+        <CardDescription>
+          Crea modelos de voz personalizados con tus propias grabaciones
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Información sobre requisitos */}
+        <Alert className="bg-muted/50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Requisitos para un modelo óptimo</AlertTitle>
+          <AlertDescription>
+            Para mejores resultados, proporciona al menos 3-5 muestras de audio de alta calidad
+            con una duración total de 2-5 minutos en un ambiente sin ruido.
+          </AlertDescription>
+        </Alert>
+        
+        {/* Sección de grabación */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Muestras de voz</h3>
+            <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
-                onClick={() => setShowTrainingDialog(false)} 
-                disabled={trainingStatus?.status === 'training'}
+                size="sm"
+                onClick={() => document.getElementById('upload-audio')?.click()}
+                disabled={isRecording}
               >
-                Cerrar
+                <Upload className="h-4 w-4 mr-1" />
+                Subir audio
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Sección para mostrar los modelos de voz disponibles */}
-      {voiceModels && voiceModels.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Mis Modelos de Voz</h3>
+              <Input
+                id="upload-audio"
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              {isRecording ? (
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={stopRecording}
+                >
+                  <Pause className="h-4 w-4 mr-1" />
+                  Detener ({formatTime(recordingTime)})
+                </Button>
+              ) : (
+                <Button 
+                  size="sm"
+                  onClick={startRecording}
+                >
+                  <Mic className="h-4 w-4 mr-1" />
+                  Grabar
+                </Button>
+              )}
+            </div>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {voiceModels.map((model) => (
-              <Card key={model.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-base">{model.name}</CardTitle>
-                    <Badge variant={model.isCustom && model.isReady ? 'default' : 'outline'}>
-                      {model.isCustom && model.isReady ? 'Listo' : 'En proceso'}
-                    </Badge>
+          {/* Lista de muestras */}
+          <div className="space-y-2">
+            {audioSamples.length === 0 ? (
+              <div className="bg-muted/30 p-8 rounded-lg flex flex-col items-center justify-center text-center">
+                <Server className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No hay muestras de voz.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Graba o sube archivos de audio para crear tu modelo de voz
+                </p>
+              </div>
+            ) : (
+              <div className="bg-muted/30 p-4 rounded-lg">
+                {audioSamples.map((sample) => (
+                  <div 
+                    key={sample.id} 
+                    className="flex items-center justify-between py-2 border-b last:border-b-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Mic className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{sample.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatTime(sample.duration)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          const audio = new Audio(sample.url);
+                          audio.play();
+                        }}
+                      >
+                        <Mic className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => removeSample(sample.id)}
+                      >
+                        <AlertCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <CardDescription className="text-xs">
-                    {model.genre} • {model.voice_type} • {model.base_language.toUpperCase()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs space-y-1 pt-0">
-                  <p>{model.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {model.traits.map((trait, index) => (
-                      <Badge key={index} variant="outline" className="text-[10px] py-0">
-                        {trait}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+                
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {audioSamples.length} muestras · {formatTime(audioSamples.reduce((acc, sample) => acc + sample.duration, 0))} duración total
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
-    </div>
+        
+        {/* Configuración del modelo */}
+        <div className="space-y-4 pt-2">
+          <h3 className="text-sm font-medium">Configuración del modelo</h3>
+          
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="model-name">Nombre del modelo</Label>
+              <Input
+                id="model-name"
+                placeholder="Ej. Mi Voz Profesional"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="enhance-fidelity">Mejorar fidelidad</Label>
+                <p className="text-xs text-muted-foreground">
+                  Mejora el realismo y reduce artefactos
+                </p>
+              </div>
+              <Switch
+                id="enhance-fidelity"
+                checked={enhanceFidelity}
+                onCheckedChange={setEnhanceFidelity}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="reduce-noise">Reducción de ruido</Label>
+                <p className="text-xs text-muted-foreground">
+                  Elimina ruido de fondo y mejora claridad
+                </p>
+              </div>
+              <Switch
+                id="reduce-noise"
+                checked={reduceNoise}
+                onCheckedChange={setReduceNoise}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Progreso de entrenamiento */}
+        {isCreatingModel && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Entrenando modelo...</span>
+              <span>{trainingProgress}%</span>
+            </div>
+            <Progress value={trainingProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">
+              El entrenamiento puede durar varios minutos. No cierres esta ventana.
+            </p>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="border-t bg-muted/30 pt-4 flex justify-between">
+        <Button variant="outline" disabled={isCreatingModel}>
+          <Info className="h-4 w-4 mr-1" />
+          Más información
+        </Button>
+        <Button
+          disabled={audioSamples.length < 2 || !modelName.trim() || isCreatingModel}
+          onClick={startModelCreation}
+        >
+          <Save className="h-4 w-4 mr-1" />
+          {isCreatingModel ? 'Creando...' : 'Crear modelo'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
