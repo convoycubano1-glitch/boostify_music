@@ -50,6 +50,7 @@ export interface VoiceModel {
   voice_type: VoiceType;
   vocal_range: VocalRange;
   isCustom?: boolean;
+  isReady?: boolean;
   createdAt?: Date;
   userId?: string;
 }

@@ -113,6 +113,7 @@ class VoiceModelService {
         userId,
         audioUrl: fileUrl,
         isCustom: true,
+        isReady: false,  // Inicialmente el modelo no está listo
         createdAt: Timestamp.now()
       });
       

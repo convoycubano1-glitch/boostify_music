@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Music, Upload, CheckCircle, AlertCircle, Server, Info } from 'lucide-react';
+import { Loader2, Music, Upload, CheckCircle, AlertCircle, Server, Info, Wand } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +36,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from '@/hooks/use-toast';
+
+// Importar el nuevo componente de clonación profesional de voz
+import { ProfessionalVoiceCloning } from './ProfessionalVoiceCloning';
 
 import { voiceModelService } from '../../lib/services/voice-model-service';
 import type { 
@@ -77,6 +81,9 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
   const [showTrainingDialog, setShowTrainingDialog] = useState(false);
   const [currentModelId, setCurrentModelId] = useState<string | null>(null);
   const [trainingProgress, setTrainingProgress] = useState(0);
+  
+  // Nuevo estado para manejar el modo de creación (estándar o profesional)
+  const [creationMode, setCreationMode] = useState<'standard' | 'professional'>('standard');
   
   const queryClient = useQueryClient();
   
@@ -217,6 +224,14 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
     }
   };
   
+  // Manejador para cambiar entre modos
+  const handleProfessionalModelComplete = (modelId: string) => {
+    if (onModelCreated) {
+      onModelCreated(modelId);
+    }
+    setCreationMode('standard');
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -230,289 +245,325 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre del Modelo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Mi Voz" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Un nombre único que identifique tu modelo
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Género</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona el género" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="male">Masculino</SelectItem>
-                          <SelectItem value="female">Femenino</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoría de Edad</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona la categoría" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="child">Niño</SelectItem>
-                          <SelectItem value="young adult">Joven</SelectItem>
-                          <SelectItem value="adult">Adulto</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="base_language"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Idioma Base</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona el idioma" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="es">Español</SelectItem>
-                          <SelectItem value="en">Inglés</SelectItem>
-                          <SelectItem value="fr">Francés</SelectItem>
-                          <SelectItem value="it">Italiano</SelectItem>
-                          <SelectItem value="de">Alemán</SelectItem>
-                          <SelectItem value="pt">Portugués</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe las características de tu voz" 
-                        {...field} 
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Una descripción detallada de las cualidades vocales
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="traits"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rasgos Vocales</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="potente,melódica,clara,brillante" 
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Lista de rasgos separados por comas
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="genre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Género Musical</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona el género" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pop">Pop</SelectItem>
-                          <SelectItem value="rock">Rock</SelectItem>
-                          <SelectItem value="hip-hop">Hip-Hop</SelectItem>
-                          <SelectItem value="r&b">R&B</SelectItem>
-                          <SelectItem value="country">Country</SelectItem>
-                          <SelectItem value="jazz">Jazz</SelectItem>
-                          <SelectItem value="classical">Clásica</SelectItem>
-                          <SelectItem value="electronic">Electrónica</SelectItem>
-                          <SelectItem value="world">World</SelectItem>
-                          <SelectItem value="other">Otro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="voice_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Voz</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona el tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="soprano">Soprano</SelectItem>
-                          <SelectItem value="mezzo-soprano">Mezzo-soprano</SelectItem>
-                          <SelectItem value="alto">Alto</SelectItem>
-                          <SelectItem value="tenor">Tenor</SelectItem>
-                          <SelectItem value="baritone">Barítono</SelectItem>
-                          <SelectItem value="bass">Bajo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="min_range"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rango Vocal Mínimo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="C3" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ej: C3, G2, etc.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="max_range"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rango Vocal Máximo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="C5" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ej: C5, F4, etc.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div>
-                <FormLabel htmlFor="audio-upload">Archivo de Audio para Entrenamiento</FormLabel>
-                <div className="mt-2 flex items-center gap-4">
-                  <FormControl>
-                    <Input
-                      id="audio-upload"
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleAudioUpload}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                    />
-                  </FormControl>
-                  {audioFile && (
-                    <Badge variant="outline" className="ml-2 py-1">
-                      {audioFile.name} ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
-                    </Badge>
-                  )}
+          {/* Selector de modo de creación */}
+          <Tabs
+            value={creationMode}
+            onValueChange={(value) => setCreationMode(value as 'standard' | 'professional')}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="standard" className="flex items-center gap-2">
+                <Server className="h-4 w-4" />
+                Modo Estándar
+              </TabsTrigger>
+              <TabsTrigger value="professional" className="flex items-center gap-2">
+                <Wand className="h-4 w-4" />
+                Clonación Profesional
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="standard">
+              <div className="space-y-4">
+                <div className="bg-primary/5 rounded-md p-4 text-sm">
+                  <p className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    El modo estándar te permite crear un modelo de voz básico proporcionando detalles específicos y un archivo de audio.
+                  </p>
                 </div>
-                <FormDescription className="mt-2">
-                  Sube un archivo de audio de tu voz (WAV recomendado). 
-                  Asegúrate de que el audio sea claro y sin música de fondo.
-                </FormDescription>
+                
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre del Modelo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Mi Voz" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Un nombre único que identifique tu modelo
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="gender"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Género</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona el género" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="male">Masculino</SelectItem>
+                                <SelectItem value="female">Femenino</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="age"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Categoría de Edad</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona la categoría" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="child">Niño</SelectItem>
+                                <SelectItem value="young adult">Joven</SelectItem>
+                                <SelectItem value="adult">Adulto</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="base_language"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Idioma Base</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona el idioma" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="es">Español</SelectItem>
+                                <SelectItem value="en">Inglés</SelectItem>
+                                <SelectItem value="fr">Francés</SelectItem>
+                                <SelectItem value="it">Italiano</SelectItem>
+                                <SelectItem value="de">Alemán</SelectItem>
+                                <SelectItem value="pt">Portugués</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descripción</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe las características de tu voz" 
+                              {...field} 
+                              rows={3}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Una descripción detallada de las cualidades vocales
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="traits"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rasgos Vocales</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="potente,melódica,clara,brillante" 
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Lista de rasgos separados por comas
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="genre"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Género Musical</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona el género" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="pop">Pop</SelectItem>
+                                <SelectItem value="rock">Rock</SelectItem>
+                                <SelectItem value="hip-hop">Hip-Hop</SelectItem>
+                                <SelectItem value="r&b">R&B</SelectItem>
+                                <SelectItem value="country">Country</SelectItem>
+                                <SelectItem value="jazz">Jazz</SelectItem>
+                                <SelectItem value="classical">Clásica</SelectItem>
+                                <SelectItem value="electronic">Electrónica</SelectItem>
+                                <SelectItem value="world">World</SelectItem>
+                                <SelectItem value="other">Otro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="voice_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de Voz</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona el tipo" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="soprano">Soprano</SelectItem>
+                                <SelectItem value="mezzo-soprano">Mezzo-soprano</SelectItem>
+                                <SelectItem value="alto">Alto</SelectItem>
+                                <SelectItem value="tenor">Tenor</SelectItem>
+                                <SelectItem value="baritone">Barítono</SelectItem>
+                                <SelectItem value="bass">Bajo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="min_range"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Rango Vocal Mínimo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="C3" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Ej: C3, G2, etc.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="max_range"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Rango Vocal Máximo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="C5" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Ej: C5, F4, etc.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div>
+                      <FormLabel htmlFor="audio-upload">Archivo de Audio para Entrenamiento</FormLabel>
+                      <div className="mt-2 flex items-center gap-4">
+                        <FormControl>
+                          <Input
+                            id="audio-upload"
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleAudioUpload}
+                            className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                          />
+                        </FormControl>
+                        {audioFile && (
+                          <Badge variant="outline" className="ml-2 py-1">
+                            {audioFile.name} ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
+                          </Badge>
+                        )}
+                      </div>
+                      <FormDescription className="mt-2">
+                        Sube un archivo de audio de tu voz (WAV recomendado). 
+                        Asegúrate de que el audio sea claro y sin música de fondo.
+                      </FormDescription>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isCreating}
+                    >
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creando modelo...
+                        </>
+                      ) : (
+                        <>
+                          <Server className="mr-2 h-4 w-4" />
+                          Crear y Entrenar Modelo de Voz
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={isCreating}
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creando modelo...
-                  </>
-                ) : (
-                  <>
-                    <Server className="mr-2 h-4 w-4" />
-                    Crear y Entrenar Modelo de Voz
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
+            </TabsContent>
+            
+            <TabsContent value="professional">
+              <ProfessionalVoiceCloning 
+                onComplete={handleProfessionalModelComplete} 
+                onExit={() => setCreationMode('standard')}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
         <CardFooter className="flex flex-col items-start">
           <p className="text-sm text-muted-foreground">
@@ -559,11 +610,8 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
                 <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
                   <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                     <CheckCircle className="h-5 w-5" />
-                    <p className="font-medium">¡Entrenamiento completado con éxito!</p>
+                    <p>¡Modelo entrenado con éxito!</p>
                   </div>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    Tu modelo de voz personalizado ya está disponible para usar en conversiones.
-                  </p>
                 </div>
               )}
               
@@ -571,10 +619,10 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
                 <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <AlertCircle className="h-5 w-5" />
-                    <p className="font-medium">Error en el entrenamiento</p>
+                    <p>Ha ocurrido un error durante el entrenamiento.</p>
                   </div>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    {trainingStatus.error || "Ha ocurrido un error durante el entrenamiento. Por favor, inténtalo de nuevo."}
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    {trainingStatus.error || 'Error desconocido'}
                   </p>
                 </div>
               )}
@@ -583,78 +631,50 @@ export function VoiceModelCreator({ onModelCreated }: VoiceModelCreatorProps) {
             <DialogFooter>
               <Button 
                 variant="outline" 
-                onClick={() => setShowTrainingDialog(false)}
+                onClick={() => setShowTrainingDialog(false)} 
+                disabled={trainingStatus?.status === 'training'}
               >
                 Cerrar
               </Button>
-              
-              {trainingStatus?.status === 'completed' && (
-                <Button onClick={() => {
-                  setShowTrainingDialog(false);
-                  queryClient.invalidateQueries({ queryKey: ['voice-models'] });
-                }}>
-                  Usar modelo
-                </Button>
-              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
       
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="models">
-          <AccordionTrigger>Modelos de Voz Disponibles</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-4">
-              {isLoadingModels ? (
-                <div className="flex justify-center items-center p-6">
-                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
-                </div>
-              ) : voiceModels && voiceModels.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {voiceModels.map((model) => (
-                    <Card key={model.id} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base">{model.name}</CardTitle>
-                          {model.isCustom && (
-                            <Badge>Personalizado</Badge>
-                          )}
-                        </div>
-                        <CardDescription className="text-xs">
-                          {model.description.length > 60 
-                            ? `${model.description.substring(0, 60)}...` 
-                            : model.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="text-xs space-y-1 pt-0">
-                        <div className="flex flex-wrap gap-1">
-                          {model.traits.map((trait, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {trait}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex gap-3 text-muted-foreground mt-2">
-                          <span>{model.gender === 'male' ? 'Masculino' : 'Femenino'}</span>
-                          <span>•</span>
-                          <span>{model.voice_type}</span>
-                          <span>•</span>
-                          <span>{model.genre}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground">
-                  No hay modelos de voz disponibles. ¡Crea tu primer modelo!
-                </p>
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      {/* Sección para mostrar los modelos de voz disponibles */}
+      {voiceModels && voiceModels.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Mis Modelos de Voz</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {voiceModels.map((model) => (
+              <Card key={model.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-base">{model.name}</CardTitle>
+                    <Badge variant={model.isCustom && model.isReady ? 'default' : 'outline'}>
+                      {model.isCustom && model.isReady ? 'Listo' : 'En proceso'}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs">
+                    {model.genre} • {model.voice_type} • {model.base_language.toUpperCase()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs space-y-1 pt-0">
+                  <p>{model.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {model.traits.map((trait, index) => (
+                      <Badge key={index} variant="outline" className="text-[10px] py-0">
+                        {trait}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
