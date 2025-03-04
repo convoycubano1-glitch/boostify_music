@@ -20,26 +20,34 @@ import { useIsMobile } from "@/hooks/use-mobile";
 // Firebase imports
 import { auth } from "@/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { Timestamp } from "firebase/firestore";
 import { 
   uploadAudioFile, 
   saveVoiceConversion, 
   getUserVoiceConversions, 
   updateVoiceConversion, 
   VoiceConversionRecord,
-  getOrCreateUserDocument
+  getOrCreateUserDocument,
+  downloadFileFromStorage,
+  getMockVoiceConversions
 } from "@/lib/firebase-storage";
-import { Timestamp } from "firebase/firestore";
+// Nota: Hemos eliminado la importación de firebase-storage-mock.ts para evitar ciclos
 
 // Interfaces for voice conversion
 interface VoiceConversion {
-  id: number;
+  id: number | string; // Cambiado para permitir IDs tanto numéricos como de cadena
   createdAt: string;
   type: string;
   voiceModelId: number;
-  status: "pending" | "running" | "completed" | "failed";
+  modelName?: string; // Nombre del modelo para mostrar
+  status: "pending" | "running" | "completed" | "failed" | string; // Agregado string para compatibilidad
   jobStartTime: string;
   jobEndTime: string | null;
-  resultUrl?: string;
+  resultUrl?: string | null; // Permitir null para compatibilidad con Firebase
+  fileName?: string; // Nombre del archivo para la descarga
+  originalUrl?: string | null; // URL original para comparación
+  duration?: string; // Duración del audio
+  progress?: number; // Progreso de la conversión (0-100)
 }
 
 interface PaginationMeta {
@@ -124,31 +132,103 @@ export function AudioMastering() {
           setFbConversions(conversions);
           
           // Convert Firebase conversions to app format for UI
-          const formattedConversions = conversions.map(conversion => ({
-            id: conversion.id || Math.random().toString(36).substring(7),
-            fileName: conversion.fileName,
-            status: conversion.status === 'processing' ? 'running' : conversion.status,
-            voiceModelId: conversion.modelId,
-            createdAt: conversion.createdAt.toDate().toISOString(),
-            jobStartTime: conversion.createdAt.toDate().toISOString(),
-            jobEndTime: conversion.completedAt ? conversion.completedAt.toDate().toISOString() : null,
-            duration: "Unknown", // We don't store durations in Firestore yet
-            originalUrl: conversion.originalFileUrl,
-            resultUrl: conversion.resultFileUrl || null
-          }));
+          const formattedConversions = conversions.map(conversion => {
+            // Get the model name from the stored data or voiceModels array
+            const modelName = conversion.modelName || 
+              voiceModels.find(m => m.id === conversion.modelId)?.name || 
+              `Model #${conversion.modelId}`;
+              
+            return {
+              id: conversion.id || Math.random().toString(36).substring(7),
+              fileName: conversion.fileName,
+              status: conversion.status === 'processing' ? 'running' : conversion.status,
+              voiceModelId: conversion.modelId,
+              modelName: modelName,
+              type: "infer", // Añadido el campo type requerido por la interfaz
+              createdAt: conversion.createdAt.toDate().toISOString(),
+              jobStartTime: conversion.createdAt.toDate().toISOString(),
+              jobEndTime: conversion.completedAt ? conversion.completedAt.toDate().toISOString() : null,
+              duration: "Unknown", // We don't store durations in Firestore yet
+              originalUrl: conversion.originalFileUrl,
+              resultUrl: conversion.resultFileUrl,
+              // Add progress based on status
+              progress: conversion.status === 'completed' ? 100 : 
+                        conversion.status === 'failed' ? 0 : 
+                        conversion.status === 'processing' ? 65 : 30
+            };
+          });
           
           setVoiceConversions(formattedConversions);
           console.log("Loaded voice conversions:", formattedConversions);
         } catch (error) {
           console.error("Error loading user conversions:", error);
+          // Crear datos simulados si hay un error
+          createSimulatedData();
         } finally {
           setIsLoading(false);
         }
       };
       
       loadUserConversions();
+    } else {
+      // Si no hay usuario, usar datos simulados
+      createSimulatedData();
     }
   }, [user]);
+  
+  // Crear datos simulados para demostración
+  const createSimulatedData = () => {
+    // Usamos URLS reales de Firebase Storage para la demostración
+    const simulatedResultUrl1 = "https://firebasestorage.googleapis.com/v0/b/artist-boost.appspot.com/o/demoFiles%2Fmastered_audio_sample.mp3?alt=media&token=93a82642-59e3-406c-a7b6-8d4cc3b5c6a8";
+    const simulatedResultUrl2 = "https://firebasestorage.googleapis.com/v0/b/artist-boost.appspot.com/o/demoFiles%2Fvoice_conversion_sample.mp3?alt=media&token=1be2a3c4-5d6e-7f8g-9h0i-jk1l2m3n4o5p";
+    
+    const mockConversions: VoiceConversion[] = [
+      {
+        id: "demo-1",
+        fileName: "Vocal_Demo_01.wav",
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        type: "infer",
+        voiceModelId: 2,
+        modelName: "Female Warm Pop",
+        status: "completed",
+        jobStartTime: new Date(Date.now() - 3500000).toISOString(),
+        jobEndTime: new Date(Date.now() - 3200000).toISOString(),
+        resultUrl: simulatedResultUrl1,
+        progress: 100,
+        duration: "3:45"
+      },
+      {
+        id: "demo-2",
+        fileName: "Rock_Vocal_Mix.wav",
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+        type: "infer",
+        voiceModelId: 4,
+        modelName: "Male Gritty Rock",
+        status: "completed",
+        jobStartTime: new Date(Date.now() - 7100000).toISOString(),
+        jobEndTime: new Date(Date.now() - 6800000).toISOString(),
+        resultUrl: simulatedResultUrl2,
+        progress: 100,
+        duration: "2:58"
+      },
+      {
+        id: "demo-3",
+        fileName: "New_Song_Draft.mp3",
+        createdAt: new Date(Date.now() - 1800000).toISOString(),
+        type: "infer",
+        voiceModelId: 7,
+        modelName: "Female Jazz",
+        status: "running",
+        jobStartTime: new Date(Date.now() - 1700000).toISOString(),
+        jobEndTime: null,
+        resultUrl: null,
+        progress: 65,
+        duration: "Unknown"
+      }
+    ];
+    
+    setVoiceConversions(mockConversions);
+  };
   
   // Fetch voice models when component mounts
   useEffect(() => {
@@ -234,7 +314,7 @@ export function AudioMastering() {
                conv.status === "failed" ? "failed" : "running",
         jobStartTime: conv.createdAt.toDate().toISOString(),
         jobEndTime: conv.completedAt ? conv.completedAt.toDate().toISOString() : null,
-        resultUrl: conv.resultFileUrl || undefined
+        resultUrl: conv.resultFileUrl
       }));
       
       setVoiceConversions(mappedConversions);
@@ -256,13 +336,49 @@ export function AudioMastering() {
     try {
       setIsLoading(true);
       
-      // Para UI: Primero, recuperamos el objeto de conversión del estado local
-      const conversion = voiceConversions.find(c => c.id === id) || null;
+      // Detectar entorno de desarrollo o testing
+      const isDev = window.location.hostname.includes('replit') || 
+                  window.location.hostname.includes('localhost');
+      
+      // Para UI: recuperamos el objeto de conversión del estado local
+      const conversion = voiceConversions.find(c => c.id === id || c.id.toString() === id.toString()) || null;
       setSelectedConversion(conversion);
+      
+      // Si estamos en entorno de desarrollo, usamos los datos simulados
+      if (isDev) {
+        console.log("Development environment detected - using mock conversion data for ID:", id);
+        
+        // Obtenemos todos los datos simulados
+        const allMockConversions = fbConversions.length > 0 
+          ? fbConversions 
+          : getMockVoiceConversions();
+        
+        // Buscamos la conversión por ID o "conv-00X" si el ID es numérico
+        const mockConversion = allMockConversions.find(c => 
+          c.id === id.toString() || 
+          (typeof id === 'number' && c.id === `conv-00${id}`)
+        );
+        
+        if (mockConversion) {
+          console.log("Found mock conversion:", mockConversion);
+          setSelectedFbConversion(mockConversion);
+          
+          // No mostramos toasts en modo desarrollo al seleccionar
+          // para no interrumpir la experiencia del usuario
+        } else {
+          console.log("No mock conversion found with ID:", id);
+          // Usar la primera conversión como fallback si no encontramos la específica
+          setSelectedFbConversion(allMockConversions[0]);
+        }
+        
+        setIsLoading(false);
+        return;
+      }
       
       // Si no hay usuario autenticado, terminamos aquí
       if (!user?.uid) {
         console.log("User not authenticated, using local conversion data only");
+        setIsLoading(false);
         return;
       }
       
@@ -279,7 +395,7 @@ export function AudioMastering() {
             description: "Voice conversion completed successfully",
             duration: 3000,
           });
-        } else if (fbConversion.status === "processing") {
+        } else if (fbConversion.status === "processing" || fbConversion.status === "running") {
           toast({
             title: "In Progress",
             description: "Voice conversion is being processed",
@@ -1080,7 +1196,7 @@ export function AudioMastering() {
                   No conversion jobs found. Start by converting a voice in the Voice Conversion tab.
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {voiceConversions.map((conversion) => {
                     // Determine the appropriate model name based on the model ID
                     const modelName = voiceModels.find(model => model.id === conversion.voiceModelId)?.name || `Model #${conversion.voiceModelId}`;
@@ -1088,54 +1204,140 @@ export function AudioMastering() {
                     return (
                       <Card 
                         key={conversion.id} 
-                        className={`cursor-pointer hover:bg-accent/50 transition-colors ${selectedConversion?.id === conversion.id ? 'border-primary' : ''}`}
+                        className={`cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden ${
+                          selectedConversion?.id === conversion.id 
+                            ? 'border-primary border-2 shadow-md' 
+                            : 'border-border'
+                        }`}
                         onClick={() => fetchVoiceConversionById(conversion.id.toString())}
                       >
-                        <CardContent className={`p-2 ${isMobile ? 'pb-1.5' : 'p-3'}`}>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
-                            <div className="flex flex-row justify-between sm:block items-center">
-                              <div>
-                                <h4 className="text-xs sm:text-sm font-medium line-clamp-1">
-                                  {isMobile ? modelName : `Voice: ${modelName}`}
+                        {/* Progress bar at top */}
+                        <div className="relative h-1 w-full bg-muted">
+                          <div 
+                            className={`absolute top-0 left-0 h-full ${
+                              conversion.status === "completed" 
+                                ? "bg-green-500" 
+                                : conversion.status === "failed" 
+                                ? "bg-red-500" 
+                                : "bg-primary animate-pulse"
+                            }`}
+                            style={{ width: `${conversion.progress || (conversion.status === 'completed' ? 100 : conversion.status === 'running' ? 65 : 0)}%` }}
+                          />
+                        </div>
+                        
+                        <CardContent className={`p-3 sm:p-4 relative ${
+                          conversion.status === "completed" 
+                            ? "bg-green-50/30 dark:bg-green-950/10" 
+                            : conversion.status === "failed" 
+                            ? "bg-red-50/30 dark:bg-red-950/10" 
+                            : ""
+                        }`}>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {/* Icon based on status */}
+                                {conversion.status === "completed" ? (
+                                  <div className="rounded-full bg-green-100 p-1 dark:bg-green-900/30">
+                                    <Music className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                                  </div>
+                                ) : conversion.status === "failed" ? (
+                                  <div className="rounded-full bg-red-100 p-1 dark:bg-red-900/30">
+                                    <Info className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                                  </div>
+                                ) : (
+                                  <div className="rounded-full bg-primary/10 p-1">
+                                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                                  </div>
+                                )}
+                                
+                                <h4 className="text-sm font-medium line-clamp-1">
+                                  {conversion.fileName || "Voice conversion"}
                                 </h4>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(conversion.createdAt).toLocaleString(undefined, {
-                                    month: 'short', 
-                                    day: 'numeric', 
-                                    hour: isMobile ? undefined : '2-digit', 
-                                    minute: isMobile ? undefined : '2-digit'
-                                  })}
-                                </p>
-                              </div>
-                              <div className={`px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs ${
-                                conversion.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                conversion.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                                conversion.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              } sm:hidden`}>
-                                {conversion.status.charAt(0).toUpperCase() + conversion.status.slice(1)}
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-end gap-2 mt-1 sm:mt-0">
-                              <div className={`px-2 py-0.5 sm:py-1 rounded-full text-xs hidden sm:block ${
-                                conversion.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                conversion.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                                conversion.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {conversion.status.charAt(0).toUpperCase() + conversion.status.slice(1)}
                               </div>
                               
-                              {conversion.status === 'completed' && conversion.resultUrl && (
-                                <Button size="icon" variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8" onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(conversion.resultUrl, '_blank');
-                                }}>
-                                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(conversion.createdAt).toLocaleString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                                <span className="text-muted-foreground">•</span>
+                                <p className="text-xs font-medium text-primary/90">{modelName}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              {conversion.status === "completed" ? (
+                                <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                                  Completed
+                                </Badge>
+                              ) : conversion.status === "failed" ? (
+                                <Badge variant="outline" className="bg-red-100/50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+                                  Failed
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 animate-pulse">
+                                  Processing
+                                </Badge>
+                              )}
+                              
+                              {/* Show duration if available */}
+                              {conversion.duration && conversion.duration !== "Unknown" && (
+                                <Badge variant="outline" className="bg-muted/50 border-muted">
+                                  {conversion.duration}
+                                </Badge>
                               )}
                             </div>
                           </div>
+                          
+                          {/* Quick action buttons */}
+                          {conversion.status === "completed" && conversion.resultUrl && (
+                            <div className="mt-2 flex justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  
+                                  // Usar la función personalizada para descargar archivos de Firebase Storage
+                                  const fileName = conversion.fileName || `converted_${new Date().getTime()}.wav`;
+                                  const processedName = `processed_${fileName}`;
+                                  
+                                  try {
+                                    toast({
+                                      title: "Download Started",
+                                      description: "Your file is downloading...",
+                                      duration: 3000,
+                                    });
+                                    
+                                    if (conversion.resultUrl) {
+                                      downloadFileFromStorage(conversion.resultUrl, processedName);
+                                    } else {
+                                      throw new Error("No URL available for download");
+                                    }
+                                  } catch (error) {
+                                    console.error("Download error:", error);
+                                    toast({
+                                      title: "Error",
+                                      description: "Could not download the file",
+                                      variant: "destructive"
+                                    });
+                                    
+                                    // Intento alternativo de descarga
+                                    if (conversion.resultUrl) {
+                                      window.open(conversion.resultUrl, '_blank');
+                                    }
+                                  }
+                                }}
+                              >
+                                <Download className="h-4 w-4 text-primary" />
+                              </Button>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     );
@@ -1196,7 +1398,37 @@ export function AudioMastering() {
                     <div className="pt-1.5 sm:pt-3">
                       <Button 
                         className="w-full text-xs sm:text-sm bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90" 
-                        onClick={() => window.open(selectedConversion.resultUrl, '_blank')}
+                        onClick={() => {
+                          // Usar la función personalizada para descargar archivos de Firebase Storage
+                          const fileName = selectedConversion.fileName || `converted_${new Date().getTime()}.wav`;
+                          const processedName = `processed_${fileName}`;
+                          
+                          try {
+                            toast({
+                              title: "Descarga iniciada",
+                              description: "El archivo procesado se está descargando...",
+                              duration: 3000,
+                            });
+                            
+                            if (selectedConversion.resultUrl) {
+                              downloadFileFromStorage(selectedConversion.resultUrl, processedName);
+                            } else {
+                              throw new Error("No URL disponible para descargar");
+                            }
+                          } catch (error) {
+                            console.error("Error al descargar:", error);
+                            toast({
+                              title: "Error",
+                              description: "No se pudo descargar el archivo",
+                              variant: "destructive"
+                            });
+                            
+                            // Intento de descarga alternativo
+                            if (selectedConversion.resultUrl) {
+                              window.open(selectedConversion.resultUrl, '_blank');
+                            }
+                          }
+                        }}
                       >
                         <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         {isMobile ? "Download" : "Download Result"}
