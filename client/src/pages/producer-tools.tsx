@@ -542,6 +542,12 @@ export default function ProducerToolsPage() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Musician</DialogTitle>
+                  <DialogDescription>
+                    Add a new musician to collaborate with on your projects
+                  </DialogDescription>
+                </DialogHeader>
                 <AddMusicianForm
                   onClose={() => setShowAddMusicianDialog(false)}
                   onSuccess={handleMusicianAdded}

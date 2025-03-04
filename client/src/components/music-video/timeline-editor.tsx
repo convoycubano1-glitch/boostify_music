@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export interface TimelineClip {
   id: number;
@@ -580,6 +580,7 @@ export function TimelineEditor({
       {/* Diálogo de vista previa de imagen */}
       <Dialog open={selectedImagePreview !== null} onOpenChange={() => setSelectedImagePreview(null)}>
         <DialogContent className="sm:max-w-[90vw] sm:h-[90vh] flex flex-col p-0">
+          <DialogTitle className="sr-only">Vista previa de imagen</DialogTitle>
           <div className="relative w-full h-full">
             <Button
               variant="ghost"

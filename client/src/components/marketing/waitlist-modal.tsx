@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -100,6 +100,7 @@ export function WaitlistModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md border-orange-500/20">
+        <DialogTitle className="sr-only">Boostify Music Waitlist</DialogTitle>
         <div className="relative overflow-hidden">
           {/* Timer */}
           <div className="absolute top-0 right-0 p-2">

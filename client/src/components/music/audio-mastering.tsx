@@ -1031,7 +1031,7 @@ export function AudioMastering() {
                         <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-80">
-                        <p>Uses Revocalize API key: {voiceModelService.isApiKeyConfigured() ? 'Configured ✓' : 'Missing ✗'}</p>
+                        <p>Revocalize API status check</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
