@@ -732,33 +732,69 @@ export default function VirtualRecordLabelPage() {
               <p className="text-xl text-white mb-6">
                 Build a complete record label powered by cutting-edge AI technology:
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
-                  <Music className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-white">Advanced Music Generation</h3>
-                    <p className="text-white/80">Create professional tracks with proprietary AI algorithms</p>
+              {/* Feature Cards with Improved Styling */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Card 1: Advanced Music Generation */}
+                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-purple-500/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
+                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                      <Music className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Advanced Music Generation</h3>
+                    <p className="text-gray-300 mb-4 flex-grow">Create professional-quality tracks using our proprietary AI algorithms tuned for multiple genres and styles.</p>
+                    <p className="text-xs text-orange-400 flex items-center">
+                      <span className="mr-1">Industry-leading quality</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
-                  <Film className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-white">Professional Video Creation</h3>
-                    <p className="text-white/80">Generate stunning videos using PiAPI's video engine</p>
+                
+                {/* Card 2: Professional Video Creation */}
+                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-purple-500/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
+                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                      <Film className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Professional Video Creation</h3>
+                    <p className="text-gray-300 mb-4 flex-grow">Generate stunning music videos with PiAPI's advanced video engine - without recording equipment or crew.</p>
+                    <p className="text-xs text-orange-400 flex items-center">
+                      <span className="mr-1">Driven by PiAPI technology</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
-                  <Bot className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-white">Virtual Artists</h3>
-                    <p className="text-white/80">Create AI personas with unique personalities and backstories</p>
+                
+                {/* Card 3: Virtual Artists */}
+                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-purple-500/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
+                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                      <Bot className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Virtual Artists</h3>
+                    <p className="text-gray-300 mb-4 flex-grow">Create full artist personas with unique personalities, backstories, and visual identities - powered by GPT technology.</p>
+                    <p className="text-xs text-orange-400 flex items-center">
+                      <span className="mr-1">Personalized AI artists</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
-                  <Users className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-white">Integrated CRM</h3>
-                    <p className="text-white/80">Manage industry connections and grow your network</p>
+                
+                {/* Card 4: Integrated CRM */}
+                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-purple-500/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
+                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                      <Users className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Integrated CRM System</h3>
+                    <p className="text-gray-300 mb-4 flex-grow">Manage industry contacts, marketing campaigns, and fan interactions with our built-in relationship management system.</p>
+                    <p className="text-xs text-orange-400 flex items-center">
+                      <span className="mr-1">Comprehensive management</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </p>
                   </div>
                 </div>
               </div>

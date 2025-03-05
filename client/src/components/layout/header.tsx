@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare, Disc } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +59,7 @@ export function Header() {
     { name: "Education", href: "/education", icon: GraduationCap },
     { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
+    { name: "Virtual Record Label", href: "/virtual-record-label", icon: Disc, highlight: true },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
     { name: "Store", href: "/store", icon: Store, highlight: true }
   ];

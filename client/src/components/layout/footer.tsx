@@ -13,7 +13,9 @@ import {
   Brain,
   Gamepad2,
   Settings,
-  Sparkles
+  Sparkles,
+  Disc,
+  Building2
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -68,10 +70,26 @@ export function Footer() {
             <h3 className="text-lg font-semibold">Services</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
+                <Link href="/virtual-record-label">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Disc className="h-4 w-4 mr-2 text-orange-500" />
+                    Virtual Record Label
+                  </Button>
+                </Link>
+              </li>
+              <li>
+                <Link href="/record-label-services">
+                  <Button variant="link" className="p-0 h-auto font-normal">
+                    <Building2 className="h-4 w-4 mr-2 text-orange-500" />
+                    Record Label Services
+                  </Button>
+                </Link>
+              </li>
+              <li>
                 <Link href="/youtube-views">
                   <Button variant="link" className="p-0 h-auto font-normal">
                     <Youtube className="h-4 w-4 mr-2 text-orange-500" />
-                    YouTube Views Boost
+                    YouTube Views
                   </Button>
                 </Link>
               </li>
@@ -88,22 +106,6 @@ export function Footer() {
                   <Button variant="link" className="p-0 h-auto font-normal">
                     <Music2 className="h-4 w-4 mr-2 text-orange-500" />
                     Music Promotion
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href="/global">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Globe className="h-4 w-4 mr-2 text-orange-500" />
-                    Global Reach
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Settings className="h-4 w-4 mr-2 text-orange-500" />
-                    Admin Panel
                   </Button>
                 </Link>
               </li>
