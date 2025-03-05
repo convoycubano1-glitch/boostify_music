@@ -731,11 +731,37 @@ export default function VirtualRecordLabelPage() {
               </h1>
               <p className="text-xl text-white mb-6">
                 Build a complete record label powered by cutting-edge AI technology:
-                <span className="block mt-2 ml-4">• Advanced music generation with proprietary AI algorithms</span>
-                <span className="block ml-4">• Professional video creation using PiAPI's video engine</span>
-                <span className="block ml-4">• Virtual artists with unique personalities and backstories</span>
-                <span className="block ml-4">• Integrated CRM system for industry connections</span>
               </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
+                  <Music className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-white">Advanced Music Generation</h3>
+                    <p className="text-white/80">Create professional tracks with proprietary AI algorithms</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
+                  <Film className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-white">Professional Video Creation</h3>
+                    <p className="text-white/80">Generate stunning videos using PiAPI's video engine</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
+                  <Bot className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-white">Virtual Artists</h3>
+                    <p className="text-white/80">Create AI personas with unique personalities and backstories</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 bg-black/30 p-4 rounded-lg border border-orange-500/30">
+                  <Users className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-white">Integrated CRM</h3>
+                    <p className="text-white/80">Manage industry connections and grow your network</p>
+                  </div>
+                </div>
+              </div>
               <p className="text-lg text-white/80 mb-8">
                 Our platform gives you everything you need to produce, promote, and profit from music without traditional limitations. Choose your genre, platforms, and number of artists to launch your digital music empire today.
               </p>
@@ -1303,6 +1329,65 @@ export default function VirtualRecordLabelPage() {
       </section>
 
       {/* Testimonials */}
+      {/* Key Features Section */}
+      <section className="py-16 bg-background">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Key Features</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Our Virtual Record Label platform provides everything you need to succeed in the music industry
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            {/* Music Generation Feature */}
+            <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
+              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mb-4">
+                <Music className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Advanced Music Generation</h3>
+              <p className="text-muted-foreground text-sm">
+                Create professional-quality tracks with our AI-powered music generation system. Control genre, mood, and style.
+              </p>
+            </div>
+            
+            {/* Video Creation Feature */}
+            <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
+              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mb-4">
+                <Film className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Professional Video Creation</h3>
+              <p className="text-muted-foreground text-sm">
+                Generate high-quality music videos and promotional content using state-of-the-art AI video technology.
+              </p>
+            </div>
+            
+            {/* Virtual Artists Feature */}
+            <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
+              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mb-4">
+                <Bot className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Virtual Artists</h3>
+              <p className="text-muted-foreground text-sm">
+                Create and manage AI-powered artists with unique personalities, styles, and visual identities.
+              </p>
+            </div>
+            
+            {/* CRM System Feature */}
+            <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
+              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Industry CRM System</h3>
+              <p className="text-muted-foreground text-sm">
+                Connect with music industry professionals, venues, and promoters through our integrated contact management system.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Success Stories Section */}
       <section className="bg-muted py-16">
         <div className="container">
           <div className="text-center mb-12">

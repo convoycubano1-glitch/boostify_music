@@ -25,7 +25,15 @@
   div[class*="banner"],
   div[class*="announcement"],
   [data-banner="beta"],
-  [data-banner="announcement"] {
+  [data-banner="announcement"],
+  div.bg-yellow-500,
+  .bg-amber-500,
+  .bg-yellow-400,
+  .bg-amber-400,
+  div.text-yellow-900,
+  header + div.bg-amber-100,
+  header + div.bg-yellow-100,
+  .virtual-record-label-banner {
     display: none !important;
   }
 }
