@@ -635,26 +635,26 @@ export function AudioMastering() {
         Audio Production Suite
       </h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-1' : 'grid-cols-5'} text-xs sm:text-sm`}>
-          <TabsTrigger value="mastering" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
-            <Waves className="h-4 w-4" />
-            <span className={isMobile ? 'mt-1' : ''}>Audio Processing</span>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-2 p-1">
+          <TabsTrigger value="mastering" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
+            <Waves className="h-5 w-5" />
+            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Audio" : "Audio Processing"}</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-conversion" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
-            <Mic className="h-4 w-4" />
-            <span className={isMobile ? 'mt-1' : ''}>Voice Conversion</span>
+          <TabsTrigger value="voice-conversion" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
+            <Mic className="h-5 w-5" />
+            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Voice" : "Voice Conversion"}</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-model" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
-            <Music className="h-4 w-4" />
-            <span className={isMobile ? 'mt-1' : ''}>Train Voice</span>
+          <TabsTrigger value="voice-model" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
+            <Music className="h-5 w-5" />
+            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Train" : "Train Voice"}</span>
           </TabsTrigger>
-          <TabsTrigger value="separation" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
-            <Split className="h-4 w-4" />
-            <span className={isMobile ? 'mt-1' : ''}>Stem Separation</span>
+          <TabsTrigger value="separation" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
+            <Split className="h-5 w-5" />
+            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Split" : "Stem Separation"}</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className={`flex items-center ${isMobile ? 'flex-col py-2 px-1' : 'gap-1'}`}>
-            <History className="h-4 w-4" />
-            <span className={isMobile ? 'mt-1' : ''}>History</span>
+          <TabsTrigger value="history" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
+            <History className="h-5 w-5" />
+            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">History</span>
           </TabsTrigger>
         </TabsList>
         
