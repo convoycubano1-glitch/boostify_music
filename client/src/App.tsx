@@ -65,6 +65,7 @@ import { CustomerServiceAgent } from "@/components/agents/customer-service-agent
 import AffiliatesPage from "@/pages/affiliates";
 import MusicMasteringPage from "@/pages/music-mastering";
 import VirtualRecordLabelPage from "@/pages/virtual-record-label";
+import TestProgressPage from "@/pages/test-progress";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -195,6 +196,7 @@ const Router = () => {
   const WrappedVideoGenerationTestPage = withPageWrapper(VideoGenerationTestPage);
   const WrappedMusicMasteringPage = withPageWrapper(MusicMasteringPage);
   const WrappedVirtualRecordLabelPage = withPageWrapper(VirtualRecordLabelPage);
+  const WrappedTestProgressPage = withPageWrapper(TestProgressPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -260,6 +262,7 @@ const Router = () => {
         <Route path="/music-mastering" component={WrappedMusicMasteringPage} />
         <Route path="/vrl" component={WrappedVirtualRecordLabelPage} />
         <Route path="/virtual-record-label" component={WrappedVirtualRecordLabelPage} />
+        <Route path="/test-progress" component={WrappedTestProgressPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

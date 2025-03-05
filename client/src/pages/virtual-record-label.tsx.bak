@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -55,16 +54,7 @@ import {
   Wand2,
   Loader2,
   BarChart2,
-  MessageSquare,
-  CloudUpload,
-  Shield,
-  Zap,
-  Database,
-  Music,
-  Award,
-  Megaphone,
-  Radio,
-  Mail
+  MessageSquare
 } from "lucide-react";
 import { SiSpotify, SiApplemusic, SiYoutube, SiTiktok, SiInstagram } from "react-icons/si";
 
@@ -116,73 +106,12 @@ interface PlanOption {
   popular?: boolean;
 }
 
-// useEffect para simular la actualización periódica del estado
-const useUpdateEffect = (callbackFn: () => void, delay: number) => {
-  useEffect(() => {
-    const interval = setInterval(() => {
-      callbackFn();
-    }, delay);
-    
-    return () => clearInterval(interval);
-  }, [callbackFn, delay]);
-};
-
 export default function VirtualRecordLabelPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
-  
-  // Progress simulation states
-  const [showProgress, setShowProgress] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [progressStage, setProgressStage] = useState(0);
-  const [isUnderReview, setIsUnderReview] = useState(false);
-  
-  // Stages for creation process
-  const creationStages = [
-    { 
-      title: "Iniziando creación", 
-      description: "Preparando infraestructura para tu sello discográfico",
-      icon: <CloudUpload className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Configurando plataformas", 
-      description: "Preparando integración con plataformas de distribución",
-      icon: <Music className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Generando perfiles de artistas", 
-      description: "Creando perfiles basados en tu género musical",
-      icon: <Users className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Optimizando estrategia de marketing", 
-      description: "Ajustando campañas para máximo impacto",
-      icon: <Megaphone className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Configurando análisis de datos", 
-      description: "Preparando panel de rendimiento y estadísticas",
-      icon: <BarChart2 className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Seguridad y protección de IP", 
-      description: "Configurando protección para tu contenido",
-      icon: <Shield className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Configurando gestión de finanzas", 
-      description: "Estableciendo sistemas de ingresos y pagos",
-      icon: <DollarSign className="h-5 w-5 text-orange-500" />
-    },
-    { 
-      title: "Preparando lanzamiento", 
-      description: "Últimos toques para tu sello discográfico",
-      icon: <Zap className="h-5 w-5 text-orange-500" />
-    }
-  ];
 
   // Configuration state
   const [config, setConfig] = useState<Partial<RecordLabelConfig>>({
@@ -452,7 +381,7 @@ export default function VirtualRecordLabelPage() {
     }
   };
 
-  // Create the virtual record label with progress simulation
+  // Create the virtual record label
   const createRecordLabel = async () => {
     if (!user) {
       toast({
@@ -473,9 +402,6 @@ export default function VirtualRecordLabelPage() {
     }
 
     setIsCreatingLabel(true);
-    setShowProgress(true);
-    setProgress(0);
-    setProgressStage(0);
 
     try {
       // Create a complete record label object
@@ -492,55 +418,18 @@ export default function VirtualRecordLabelPage() {
         createdAt: new Date()
       };
       
-      // Simulate creation process with stages
-      let currentProgress = 0;
-      let currentStage = 0;
-      
-      // Function to update progress with animation
-      const updateProgress = (stage: number, progressValue: number) => {
-        return new Promise<void>(resolve => {
-          setProgressStage(stage);
-          
-          // Animate progress bar
-          const interval = setInterval(() => {
-            setProgress(prev => {
-              if (prev >= progressValue) {
-                clearInterval(interval);
-                resolve();
-                return prev;
-              }
-              return prev + 1;
-            });
-          }, 30);
-        });
-      };
-      
-      // Process each stage
-      for (let i = 0; i < creationStages.length; i++) {
-        // Calculate target progress for this stage
-        const targetProgress = Math.round(((i + 1) / creationStages.length) * 100);
-        
-        // Update UI with current stage and animate progress
-        await updateProgress(i, targetProgress);
-        
-        // Simulate processing time for this stage
-        await new Promise(resolve => setTimeout(resolve, 
-          i === creationStages.length - 1 ? 2000 : 3000)); // Last stage is shorter
-      }
-      
       // Save to Firestore
       const docRef = doc(collection(db, "record_labels"), recordLabel.id);
       await setDoc(docRef, recordLabel);
       
-      // Show success toast
       toast({
-        title: "Record Label Created",
-        description: "Your virtual record label is now under review!",
+        title: "Success",
+        description: "Your virtual record label has been created successfully!",
       });
       
-      // Show "Under Review" screen instead of success
-      setIsUnderReview(true);
-      
+      // Navigate to management page or dashboard
+      // In a real implementation, you might redirect to a management page
+      setCurrentStep(5); // Show success step
     } catch (error) {
       console.error("Error creating record label:", error);
       toast({
@@ -548,7 +437,6 @@ export default function VirtualRecordLabelPage() {
         description: "Could not create your record label. Please try again.",
         variant: "destructive"
       });
-      setShowProgress(false);
     } finally {
       setIsCreatingLabel(false);
     }
@@ -572,116 +460,9 @@ export default function VirtualRecordLabelPage() {
     });
   };
 
-  // Show progress overlay over normal content
-  const ProgressOverlay = () => (
-    <motion.div 
-      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="bg-background w-full max-w-md rounded-xl p-8 space-y-6">
-        <div className="text-center space-y-2 mb-6">
-          <h2 className="text-2xl font-bold">Creating Your Record Label</h2>
-          <p className="text-muted-foreground">Please wait while we set up your label.</p>
-        </div>
-        
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <p className="text-sm font-medium">Progress</p>
-              <p className="text-sm text-muted-foreground">{progress}%</p>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-          
-          <div className="border rounded-lg p-4 bg-muted/50">
-            <div className="flex items-center gap-4">
-              {creationStages[progressStage].icon}
-              <div>
-                <h3 className="font-semibold">{creationStages[progressStage].title}</h3>
-                <p className="text-sm text-muted-foreground">{creationStages[progressStage].description}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-  
-  // Under Review Screen
-  const UnderReviewScreen = () => (
-    <motion.div 
-      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="bg-background w-full max-w-2xl rounded-xl p-8">
-        <div className="text-center space-y-4 mb-8">
-          <div className="w-16 h-16 bg-orange-500/10 rounded-full mx-auto flex items-center justify-center mb-2">
-            <Shield className="h-8 w-8 text-orange-500" />
-          </div>
-          <h2 className="text-3xl font-bold">Your Record Label is Under Review</h2>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Our team is reviewing your submission. You'll receive an email at {user?.email} once it's approved.
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-4 space-y-2 bg-orange-500/5 border-orange-500/20">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-orange-500" />
-              <h3 className="font-semibold">Review Timeline</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">Typically within 24-48 hours</p>
-          </Card>
-          
-          <Card className="p-4 space-y-2 bg-orange-500/5 border-orange-500/20">
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-orange-500" />
-              <h3 className="font-semibold">Email Notification</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">You'll be notified once approved</p>
-          </Card>
-          
-          <Card className="p-4 space-y-2 bg-orange-500/5 border-orange-500/20">
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-orange-500" />
-              <h3 className="font-semibold">Quick Start</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">Full access to your dashboard</p>
-          </Card>
-        </div>
-        
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">
-            While you wait, you can explore our library of resources for record label management.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button variant="outline" className="flex gap-2">
-              <Music2 className="h-4 w-4" />
-              Resources
-            </Button>
-            <Button onClick={() => setIsUnderReview(false)} className="flex gap-2 bg-orange-500 hover:bg-orange-600">
-              <Home className="h-4 w-4" />
-              Return Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      {/* Progress Overlay */}
-      {showProgress && <ProgressOverlay />}
-      
-      {/* Under Review Screen */}
-      {isUnderReview && <UnderReviewScreen />}
       
       {/* Breadcrumb */}
       <div className="container pt-4 pb-2">
