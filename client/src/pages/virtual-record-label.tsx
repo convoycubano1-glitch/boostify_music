@@ -64,7 +64,9 @@ import {
   Award,
   Megaphone,
   Radio,
-  Mail
+  Mail,
+  Film,
+  Bot
 } from "lucide-react";
 import { SiSpotify, SiApplemusic, SiYoutube, SiTiktok, SiInstagram } from "react-icons/si";
 
@@ -143,43 +145,43 @@ export default function VirtualRecordLabelPage() {
   // Stages for creation process
   const creationStages = [
     { 
-      title: "Iniziando creación", 
-      description: "Preparando infraestructura para tu sello discográfico",
+      title: "Setup AI Music Engine", 
+      description: "Configuring AI algorithms for music composition and audio mastering",
       icon: <CloudUpload className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Configurando plataformas", 
-      description: "Preparando integración con plataformas de distribución",
-      icon: <Music className="h-5 w-5 text-orange-500" />
+      title: "Video Generation Framework", 
+      description: "Setting up AI-powered video creation for artists through PiAPI",
+      icon: <Film className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Generando perfiles de artistas", 
-      description: "Creando perfiles basados en tu género musical",
+      title: "AI Artist Generation", 
+      description: "Creating virtual artists with GPT-based personalities and backstories",
       icon: <Users className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Optimizando estrategia de marketing", 
-      description: "Ajustando campañas para máximo impacto",
+      title: "CRM Integration", 
+      description: "Configuring contact management system for industry professionals",
       icon: <Megaphone className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Configurando análisis de datos", 
-      description: "Preparando panel de rendimiento y estadísticas",
+      title: "Analytics Dashboard", 
+      description: "Setting up performance tracking and insights for your label",
       icon: <BarChart2 className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Seguridad y protección de IP", 
-      description: "Configurando protección para tu contenido",
+      title: "Digital Rights Management", 
+      description: "Implementing protection systems for your intellectual property",
       icon: <Shield className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Configurando gestión de finanzas", 
-      description: "Estableciendo sistemas de ingresos y pagos",
+      title: "Distribution Network", 
+      description: "Connecting to global streaming platforms and music marketplaces",
       icon: <DollarSign className="h-5 w-5 text-orange-500" />
     },
     { 
-      title: "Preparando lanzamiento", 
-      description: "Últimos toques para tu sello discográfico",
+      title: "Finalizing Launch", 
+      description: "Last touches before your virtual record label goes live",
       icon: <Zap className="h-5 w-5 text-orange-500" />
     }
   ];
@@ -728,11 +730,14 @@ export default function VirtualRecordLabelPage() {
                 Create Your Own Virtual Record Label with AI Artists
               </h1>
               <p className="text-xl text-white mb-6">
-                Choose your genre, platforms, and number of artists based on your plan.
-                Launch your music empire with AI-powered artists and automated promotion.
+                Build a complete record label powered by cutting-edge AI technology:
+                <span className="block mt-2 ml-4">• Advanced music generation with proprietary AI algorithms</span>
+                <span className="block ml-4">• Professional video creation using PiAPI's video engine</span>
+                <span className="block ml-4">• Virtual artists with unique personalities and backstories</span>
+                <span className="block ml-4">• Integrated CRM system for industry connections</span>
               </p>
               <p className="text-lg text-white/80 mb-8">
-                Join the digital music revolution with your own record label powered by cutting-edge AI technology. Our platform gives you everything you need to produce, promote, and profit from music without traditional limitations.
+                Our platform gives you everything you need to produce, promote, and profit from music without traditional limitations. Choose your genre, platforms, and number of artists to launch your digital music empire today.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button 
@@ -1217,7 +1222,8 @@ export default function VirtualRecordLabelPage() {
                       ) : (
                         <>
                           <Building2 className="mr-2 h-4 w-4" />
-                          Create My Record Label
+                          Create My Virtual Record Label
+                          <Bot className="ml-2 h-4 w-4 text-orange-400" />
                         </>
                       )}
                     </Button>
@@ -1245,7 +1251,8 @@ export default function VirtualRecordLabelPage() {
                   ) : (
                     <>
                       <Building2 className="mr-2 h-4 w-4" />
-                      Create My Record Label
+                      Create My Virtual Record Label
+                      <Bot className="ml-2 h-4 w-4 text-orange-400" />
                     </>
                   )}
                 </Button>

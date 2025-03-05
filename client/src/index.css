@@ -11,6 +11,23 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+  
+  /* Hide any yellow banner notifications */
+  div[role="alert"].bg-yellow-50,
+  div[role="alert"].bg-yellow-100,
+  div[role="alert"].bg-amber-50,
+  div[role="alert"].bg-amber-100,
+  div[role="alert"].bg-orange-50,
+  div[role="alert"].bg-orange-100,
+  div[role="alert"].bg-orange-500,
+  div[role="alert"].border-yellow-500,
+  div[role="alert"].border-orange-500,
+  div[class*="banner"],
+  div[class*="announcement"],
+  [data-banner="beta"],
+  [data-banner="announcement"] {
+    display: none !important;
+  }
 }
 
 @layer utilities {
