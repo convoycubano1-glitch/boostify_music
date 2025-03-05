@@ -1267,20 +1267,20 @@ export function AudioMastering() {
                             ? "bg-red-50/30 dark:bg-red-950/10" 
                             : ""
                         }`}>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                          <div className="flex flex-col gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 {/* Icon based on status */}
                                 {conversion.status === "completed" ? (
-                                  <div className="rounded-full bg-green-100 p-1 dark:bg-green-900/30">
+                                  <div className="rounded-full bg-green-100 p-1 dark:bg-green-900/30 flex-shrink-0">
                                     <Music className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                                   </div>
                                 ) : conversion.status === "failed" ? (
-                                  <div className="rounded-full bg-red-100 p-1 dark:bg-red-900/30">
+                                  <div className="rounded-full bg-red-100 p-1 dark:bg-red-900/30 flex-shrink-0">
                                     <Info className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                                   </div>
                                 ) : (
-                                  <div className="rounded-full bg-primary/10 p-1">
+                                  <div className="rounded-full bg-primary/10 p-1 flex-shrink-0">
                                     <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
                                   </div>
                                 )}
@@ -1290,8 +1290,8 @@ export function AudioMastering() {
                                 </h4>
                               </div>
                               
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <p className="text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1 mt-1.5">
+                                <p className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                   {new Date(conversion.createdAt).toLocaleString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
@@ -1299,29 +1299,30 @@ export function AudioMastering() {
                                     minute: '2-digit'
                                   })}
                                 </p>
-                                <span className="text-muted-foreground">•</span>
-                                <p className="text-xs font-medium text-primary/90">{modelName}</p>
+                                <span className="text-muted-foreground hidden sm:inline">•</span>
+                                <p className="text-xs font-medium text-primary/90 truncate">{modelName}</p>
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-2">
+                            {/* Badges in a flex-wrap container to prevent overflow */}
+                            <div className="flex flex-wrap items-center gap-1">
                               {conversion.status === "completed" ? (
-                                <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                                <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 text-[10px] py-0 h-5 px-1.5">
                                   Completed
                                 </Badge>
                               ) : conversion.status === "failed" ? (
-                                <Badge variant="outline" className="bg-red-100/50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+                                <Badge variant="outline" className="bg-red-100/50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 text-[10px] py-0 h-5 px-1.5">
                                   Failed
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 animate-pulse">
+                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 animate-pulse text-[10px] py-0 h-5 px-1.5">
                                   Processing
                                 </Badge>
                               )}
                               
                               {/* Show duration if available */}
                               {conversion.duration && conversion.duration !== "Unknown" && (
-                                <Badge variant="outline" className="bg-muted/50 border-muted">
+                                <Badge variant="outline" className="bg-muted/50 border-muted text-[10px] py-0 h-5 px-1.5">
                                   {conversion.duration}
                                 </Badge>
                               )}
@@ -1334,7 +1335,7 @@ export function AudioMastering() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 min-w-8 ml-auto" /* Agregado min-w-8 y ml-auto para evitar superposición */
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   
@@ -1368,6 +1369,7 @@ export function AudioMastering() {
                                     }
                                   }
                                 }}
+                                aria-label="Download file"
                               >
                                 <Download className="h-4 w-4 text-primary" />
                               </Button>

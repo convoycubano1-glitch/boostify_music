@@ -242,18 +242,19 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
           {/* Entrada de audio */}
           <div>
             <Label htmlFor="source-audio">Audio Original</Label>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2">
               <Input
                 id="source-audio"
                 type="file"
                 accept="audio/*"
                 onChange={handleAudioUpload}
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                className="w-full sm:flex-1 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               />
               {sourceAudio && (
                 <Button 
                   variant="outline" 
                   size="icon"
+                  className="mt-2 sm:mt-0"
                   onClick={toggleSourceAudio}
                 >
                   <Play className="h-4 w-4" />
@@ -327,9 +328,11 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
           {/* Opciones de conversión */}
           <div className="space-y-4">
             <div>
-              <div className="flex justify-between">
-                <Label htmlFor="transpose">Transposición (semitonos)</Label>
-                <span className="text-sm text-muted-foreground">{transpose}</span>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="transpose" className="text-xs sm:text-sm">Transposición</Label>
+                <Badge variant="outline" className="h-5 px-2 text-xs">
+                  {transpose > 0 ? '+' : ''}{transpose}
+                </Badge>
               </div>
               <Slider
                 id="transpose"
@@ -340,7 +343,7 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                 onValueChange={(value) => setTranspose(value[0])}
                 className="mt-2"
               />
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>-12</span>
                 <span>0</span>
                 <span>+12</span>
@@ -348,9 +351,11 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
             </div>
             
             <div>
-              <div className="flex justify-between">
-                <Label htmlFor="generations">Número de generaciones</Label>
-                <span className="text-sm text-muted-foreground">{generationsCount}</span>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="generations" className="text-xs sm:text-sm">Generaciones</Label>
+                <Badge variant="outline" className="h-5 px-2 text-xs">
+                  {generationsCount}
+                </Badge>
               </div>
               <Slider
                 id="generations"
@@ -361,6 +366,11 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                 onValueChange={(value) => setGenerationsCount(value[0])}
                 className="mt-2"
               />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>1</span>
+                <span>3</span>
+                <span>5</span>
+              </div>
             </div>
           </div>
           
@@ -404,9 +414,13 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                   </div>
                   <Progress value={isConverting ? 33 : 100} className="h-2" />
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span>La conversión puede tardar unos minutos. No cierres esta ventana.</span>
+                <div className="flex items-start sm:items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0 mt-0.5 sm:mt-0" />
+                  <span className="flex-1">
+                    {window.innerWidth <= 640 ? 
+                      "Procesando... No cierres esta ventana." : 
+                      "La conversión puede tardar unos minutos. No cierres esta ventana."}
+                  </span>
                 </div>
               </div>
             )}
@@ -453,24 +467,25 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                     
                     {conversionStatus.output_audio_urls.length > 1 && (
                       <div className="mb-3">
-                        <Label className="mb-2 block">Selecciona una generación:</Label>
-                        <div className="flex flex-wrap gap-2">
+                        <Label className="mb-2 block text-sm">Selecciona una generación:</Label>
+                        <div className="flex flex-wrap gap-1 sm:gap-2">
                           {conversionStatus.output_audio_urls.map((_, index) => (
                             <Button
                               key={index}
                               variant={selectedOutput === index ? "default" : "outline"}
                               size="sm"
+                              className="text-xs py-1 px-2 h-7 sm:text-sm sm:h-8 sm:px-3"
                               onClick={() => handleSelectOutput(index)}
                             >
-                              Generación {index + 1}
+                              Gen {index + 1}
                             </Button>
                           ))}
                         </div>
                       </div>
                     )}
                     
-                    <div className="flex gap-2 mt-4">
-                      <Button onClick={toggleOutputAudio} className="flex-1">
+                    <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                      <Button onClick={toggleOutputAudio} className="w-full sm:flex-1">
                         {outputAudioRef.current?.paused ? (
                           <>
                             <Play className="mr-2 h-4 w-4" />
@@ -483,7 +498,11 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                           </>
                         )}
                       </Button>
-                      <Button variant="outline" onClick={handleDownloadOutput}>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleDownloadOutput}
+                        className="w-full sm:w-auto mt-1 sm:mt-0"
+                      >
                         <Download className="mr-2 h-4 w-4" />
                         Descargar
                       </Button>
@@ -507,12 +526,16 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
             )}
             
             {!isConverting && conversionStatus && conversionStatus.status === 'failed' && (
-              <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
-                <h4 className="text-red-600 dark:text-red-400 font-medium mb-1">Error en la conversión</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
+                <h4 className="text-red-600 dark:text-red-400 font-medium mb-1 text-sm sm:text-base">Error en la conversión</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {conversionStatus.error || "Ocurrió un error durante la conversión. Por favor intenta de nuevo con un audio diferente o un modelo distinto."}
                 </p>
-                <Button variant="outline" className="mt-3" onClick={() => setTaskId(null)}>
+                <Button 
+                  variant="outline" 
+                  className="mt-3 w-full sm:w-auto text-xs sm:text-sm px-2 py-1 h-8" 
+                  onClick={() => setTaskId(null)}
+                >
                   Intentar nuevamente
                 </Button>
               </div>
