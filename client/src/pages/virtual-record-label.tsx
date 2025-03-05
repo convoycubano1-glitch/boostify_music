@@ -430,8 +430,8 @@ export default function VirtualRecordLabelPage() {
       // For now, we'll simulate a delay and provide a static example
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Placeholder for AI-generated logo URL
-      const logoUrl = "https://placehold.co/400x400/orange/white?text="+encodeURIComponent(config.name || "Record Label");
+      // Placeholder for AI-generated logo URL with dark gray background and light gray text
+      const logoUrl = "https://placehold.co/400x400/121212/505050?text="+encodeURIComponent(config.name || "Record Label");
       
       setConfig({
         ...config,
@@ -835,7 +835,7 @@ export default function VirtualRecordLabelPage() {
                   className="rounded-2xl shadow-xl w-full"
                   onError={(e) => { 
                     // Fallback if image doesn't exist
-                    e.currentTarget.src = "https://placehold.co/600x400/orange/white?text=Virtual+Record+Label";
+                    e.currentTarget.src = "https://placehold.co/600x400/121212/505050?text=Virtual+Record+Label";
                   }}
                 />
               </motion.div>
