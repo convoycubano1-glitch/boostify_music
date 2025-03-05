@@ -258,6 +258,7 @@ const Router = () => {
         <Route path="/kling-store" component={WrappedKlingStorePage} />
         <Route path="/video-generation-test" component={WrappedVideoGenerationTestPage} />
         <Route path="/music-mastering" component={WrappedMusicMasteringPage} />
+        <Route path="/vrl" component={WrappedVirtualRecordLabelPage} />
         <Route path="/virtual-record-label" component={WrappedVirtualRecordLabelPage} />
         
         {/* Catch all not found route */}
