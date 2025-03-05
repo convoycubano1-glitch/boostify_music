@@ -1039,12 +1039,12 @@ export function AudioMastering() {
               </div>
             </CardHeader>
             <CardContent>
-              {/* Implementamos directamente el componente VoiceModelCreator */}
+              {/* Voice Model Creator component */}
               <VoiceModelCreator 
-                onModelCreated={(modelId) => {
+                onModelCreated={(modelId: string) => {
                   toast({
-                    title: "Modelo creado con éxito",
-                    description: `El modelo de voz con ID ${modelId} ha sido creado y está en entrenamiento.`,
+                    title: "Model created successfully",
+                    description: `Voice model with ID ${modelId} has been created and is ready to use.`,
                   });
                 }} 
               />

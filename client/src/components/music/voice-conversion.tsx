@@ -14,11 +14,53 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { voiceModelService } from '../../lib/services/voice-model-service';
-import type { VoiceModel, VoiceConversionRequest } from '../../lib/types/voice-model-types';
+import type { VoiceModel, VoiceConversionRequest, AudioEffect } from '../../lib/types/voice-model-types';
 
 interface VoiceConversionProps {
   className?: string;
 }
+
+// Definimos algunos efectos de audio predefinidos para uso en la conversión
+const predefinedAudioEffects: AudioEffect[] = [
+  {
+    name: "reverb",
+    enabled: false,
+    settings: {
+      roomSize: 0.8,
+      dampening: 0.5,
+      width: 1.0
+    }
+  },
+  {
+    name: "delay",
+    enabled: false,
+    settings: {
+      time: 0.3,
+      feedback: 0.4,
+      mix: 0.3
+    }
+  },
+  {
+    name: "chorus",
+    enabled: false,
+    settings: {
+      rate: 1.5,
+      depth: 0.7,
+      feedback: 0.4,
+      delay: 0.03
+    }
+  },
+  {
+    name: "compression",
+    enabled: false,
+    settings: {
+      threshold: -24,
+      ratio: 4,
+      attack: 0.003,
+      release: 0.25
+    }
+  }
+];
 
 export function VoiceConversion({ className }: VoiceConversionProps) {
   const [sourceAudio, setSourceAudio] = useState<File | null>(null);
@@ -29,6 +71,7 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [selectedOutput, setSelectedOutput] = useState<number>(0);
+  const [selectedEffects, setSelectedEffects] = useState<AudioEffect[]>([]);
   
   const sourceAudioRef = useRef<HTMLAudioElement>(null);
   const outputAudioRef = useRef<HTMLAudioElement>(null);
@@ -74,10 +117,18 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
   // Mutación para iniciar la conversión
   const convertMutation = useMutation({
     mutationFn: (request: VoiceConversionRequest) => {
-      return voiceModelService.convertAudio(request);
+      return voiceModelService.convertAudio(
+        request.audioFile, 
+        request.model, 
+        {
+          transpose: request.transpose,
+          effects: request.effects
+        },
+        'user-123' // Mock user ID for development
+      );
     },
-    onSuccess: (taskId: string) => {
-      setTaskId(taskId);
+    onSuccess: (response: { taskId: string; recordId?: string }) => {
+      setTaskId(response.taskId);
       setIsConverting(true);
       toast({
         title: 'Conversión iniciada',
@@ -113,6 +164,31 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
     }
   };
   
+  // Manejador para gestionar los efectos de audio
+  const toggleEffect = (effectName: string) => {
+    const updatedEffects = [...selectedEffects];
+    const effectIndex = updatedEffects.findIndex(effect => effect.name === effectName);
+    
+    if (effectIndex >= 0) {
+      // El efecto ya existe, actualiza su estado enabled
+      updatedEffects[effectIndex] = {
+        ...updatedEffects[effectIndex],
+        enabled: !updatedEffects[effectIndex].enabled
+      };
+    } else {
+      // El efecto no existe, añade uno nuevo desde los predefinidos
+      const predefinedEffect = predefinedAudioEffects.find(effect => effect.name === effectName);
+      if (predefinedEffect) {
+        updatedEffects.push({
+          ...predefinedEffect,
+          enabled: true // lo activamos por defecto
+        });
+      }
+    }
+    
+    setSelectedEffects(updatedEffects);
+  };
+
   // Manejador para iniciar la conversión
   const handleStartConversion = () => {
     if (!sourceAudio) {
@@ -133,11 +209,15 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
       return;
     }
     
+    // Filtrar solo los efectos que están habilitados
+    const activeEffects = selectedEffects.filter(effect => effect.enabled);
+    
     const request: VoiceConversionRequest = {
-      audio_file: sourceAudio,
+      audioFile: sourceAudio,
       model: selectedModelId,
       transpose,
-      generations_count: generationsCount
+      generationsCount: generationsCount,
+      effects: activeEffects
     };
     
     convertMutation.mutate(request);
@@ -167,11 +247,8 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
   
   // Manejador para descargar el audio convertido con validación de URL
   const handleDownloadOutput = () => {
-    if (conversionStatus?.output_audio_urls && 
-        conversionStatus.output_audio_urls.length > selectedOutput &&
-        conversionStatus.output_audio_urls[selectedOutput]) {
-      
-      const url = conversionStatus.output_audio_urls[selectedOutput];
+    if (conversionStatus?.result?.url) {
+      const url = conversionStatus.result.url;
       
       // Validación mejorada de URL para seguridad
       if (!url || typeof url !== 'string' || !url.startsWith('http')) {
@@ -219,11 +296,10 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
     }
   };
   
-  // Seleccionar salida diferente
+  // Seleccionar salida diferente (actualizado para nuevo formato API)
   const handleSelectOutput = (index: number) => {
-    if (conversionStatus?.output_audio_urls && index < conversionStatus.output_audio_urls.length) {
-      setSelectedOutput(index);
-    }
+    // En el nuevo formato solo tenemos una URL de resultado, así que ignoramos el índice
+    setSelectedOutput(0); // Siempre usamos el primer resultado
   };
   
   return (
@@ -372,6 +448,35 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                 <span>5</span>
               </div>
             </div>
+
+            {/* Efectos de audio */}
+            <div className="mt-4">
+              <Label className="text-xs sm:text-sm mb-2 block">Efectos de Audio</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {predefinedAudioEffects.map((effect) => {
+                  // Busca si el efecto está seleccionado
+                  const isSelected = selectedEffects.some(
+                    (selectedEffect) => selectedEffect.name === effect.name && selectedEffect.enabled
+                  );
+                  return (
+                    <Button
+                      key={effect.name}
+                      type="button"
+                      size="sm"
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={() => toggleEffect(effect.name)}
+                      className="flex items-center justify-start gap-2 text-xs h-auto py-2"
+                    >
+                      <div className={`h-3 w-3 rounded-full ${isSelected ? 'bg-primary-foreground' : 'bg-primary'}`} />
+                      <span className="capitalize">{effect.name}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Selecciona los efectos que deseas aplicar a tu voz
+              </p>
+            </div>
           </div>
           
           {/* Botón de conversión */}
@@ -432,7 +537,7 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                   <span>Tu conversión de voz está lista</span>
                 </div>
                 
-                {conversionStatus.output_audio_urls && conversionStatus.output_audio_urls.length > 0 && (
+                {conversionStatus.result && conversionStatus.result.url && (
                   <div>
                     <audio 
                       ref={outputAudioRef}
@@ -450,39 +555,18 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                         setIsPlaying(false);
                       }}
                     >
-                      {conversionStatus.output_audio_urls && conversionStatus.output_audio_urls[selectedOutput] && (
-                        <>
-                          <source 
-                            src={conversionStatus.output_audio_urls[selectedOutput]} 
-                            type="audio/wav" 
-                          />
-                          <source 
-                            src={conversionStatus.output_audio_urls[selectedOutput]} 
-                            type="audio/mpeg" 
-                          />
-                        </>
-                      )}
+                      <source 
+                        src={conversionStatus.result.url} 
+                        type="audio/wav" 
+                      />
+                      <source 
+                        src={conversionStatus.result.url} 
+                        type="audio/mpeg" 
+                      />
                       Tu navegador no soporta la reproducción de audio
                     </audio>
                     
-                    {conversionStatus.output_audio_urls.length > 1 && (
-                      <div className="mb-3">
-                        <Label className="mb-2 block text-sm">Selecciona una generación:</Label>
-                        <div className="flex flex-wrap gap-1 sm:gap-2">
-                          {conversionStatus.output_audio_urls.map((_, index) => (
-                            <Button
-                              key={index}
-                              variant={selectedOutput === index ? "default" : "outline"}
-                              size="sm"
-                              className="text-xs py-1 px-2 h-7 sm:text-sm sm:h-8 sm:px-3"
-                              onClick={() => handleSelectOutput(index)}
-                            >
-                              Gen {index + 1}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    {/* Removida la selección múltiple, ahora solo tenemos una URL de resultado */}
                     
                     <div className="flex flex-col sm:flex-row gap-2 mt-4">
                       <Button onClick={toggleOutputAudio} className="w-full sm:flex-1">
@@ -510,18 +594,31 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                   </div>
                 )}
                 
-                {conversionStatus.output_settings && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-2">Configuración utilizada:</h4>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>Modelo: {conversionStatus.output_settings.model}</p>
-                      <p>Transposición: {conversionStatus.output_settings.transpose} semitonos</p>
-                      {conversionStatus.output_settings.vocal_style && (
-                        <p>Estilo vocal: {conversionStatus.output_settings.vocal_style}</p>
+                {/* Configuración (no disponible en el nuevo formato de API) */}
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Configuración utilizada:</h4>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>Modelo: {selectedModelId || "No disponible"}</p>
+                    <p>Transposición: {transpose || 0} semitonos</p>
+                    <div>
+                      <p>Efectos aplicados:</p>
+                      {selectedEffects.filter(effect => effect.enabled).length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedEffects
+                            .filter(effect => effect.enabled)
+                            .map(effect => (
+                              <Badge key={effect.name} variant="outline" className="text-xs">
+                                {effect.name}
+                              </Badge>
+                            ))
+                          }
+                        </div>
+                      ) : (
+                        <span className="text-xs">Ninguno</span>
                       )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
             

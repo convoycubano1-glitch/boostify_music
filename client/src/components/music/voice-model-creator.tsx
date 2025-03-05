@@ -21,9 +21,10 @@ import { Mic, Upload, Pause, Save, Server, Info, AlertCircle } from 'lucide-reac
 
 interface VoiceModelCreatorProps {
   className?: string;
+  onModelCreated?: (modelId: string) => void;
 }
 
-export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
+export function VoiceModelCreator({ className, onModelCreated }: VoiceModelCreatorProps) {
   // Estados para controlar la grabación
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordingTime, setRecordingTime] = useState<number>(0);
@@ -171,8 +172,8 @@ export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
   const startModelCreation = () => {
     if (audioSamples.length < 2) {
       toast({
-        title: 'Muestras insuficientes',
-        description: 'Se requieren al menos 2 muestras de voz para crear un modelo',
+        title: 'Insufficient samples',
+        description: 'You need at least 2 voice samples to create a model',
         variant: 'destructive'
       });
       return;
@@ -180,8 +181,8 @@ export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
     
     if (!modelName.trim()) {
       toast({
-        title: 'Nombre requerido',
-        description: 'Por favor, proporciona un nombre para tu modelo de voz',
+        title: 'Name required',
+        description: 'Please provide a name for your voice model',
         variant: 'destructive'
       });
       return;
@@ -198,9 +199,15 @@ export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
           setIsCreatingModel(false);
           
           toast({
-            title: 'Modelo creado con éxito',
-            description: `Tu modelo "${modelName}" ha sido creado y está listo para usar`
+            title: 'Model created successfully',
+            description: `Your model "${modelName}" has been created and is ready to use`
           });
+          
+          // Generate a mock model ID and call the callback if provided
+          const modelId = `model-${Date.now()}`;
+          if (onModelCreated) {
+            onModelCreated(modelId);
+          }
           
           return 100;
         }
@@ -218,39 +225,40 @@ export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
   
   return (
     <Card className={`w-full ${className}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="mb-4">
+        <CardTitle className="flex items-center gap-2 mb-2">
           <Server className="h-5 w-5 text-primary" />
-          Creación de Modelos de Voz
+          Voice Model Training
         </CardTitle>
-        <CardDescription>
-          Crea modelos de voz personalizados con tus propias grabaciones
+        <CardDescription className="text-base">
+          Create your own custom voice models for voice conversion with AI
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Información sobre requisitos */}
-        <Alert className="bg-muted/50">
+        <Alert className="bg-muted/50 mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Requisitos para un modelo óptimo</AlertTitle>
-          <AlertDescription>
-            Para mejores resultados, proporciona al menos 3-5 muestras de audio de alta calidad
-            con una duración total de 2-5 minutos en un ambiente sin ruido.
+          <AlertTitle>Requirements for optimal results</AlertTitle>
+          <AlertDescription className="mt-1">
+            For best results, provide at least 3-5 high-quality audio samples
+            with a total duration of 2-5 minutes recorded in a noise-free environment.
           </AlertDescription>
         </Alert>
         
-        {/* Sección de grabación */}
-        <div className="space-y-4">
+        {/* Voice Recording Section */}
+        <div className="space-y-6 mb-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Muestras de voz</h3>
-            <div className="flex items-center gap-2">
+            <h3 className="text-base font-medium">Voice Samples</h3>
+            <div className="flex items-center gap-3">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => document.getElementById('upload-audio')?.click()}
                 disabled={isRecording}
+                className="px-4 py-2 h-10"
               >
-                <Upload className="h-4 w-4 mr-1" />
-                Subir audio
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Audio
               </Button>
               <Input
                 id="upload-audio"
@@ -264,154 +272,160 @@ export function VoiceModelCreator({ className }: VoiceModelCreatorProps) {
                   variant="destructive" 
                   size="sm"
                   onClick={stopRecording}
+                  className="px-4 py-2 h-10"
                 >
-                  <Pause className="h-4 w-4 mr-1" />
-                  Detener ({formatTime(recordingTime)})
+                  <Pause className="h-4 w-4 mr-2" />
+                  Stop ({formatTime(recordingTime)})
                 </Button>
               ) : (
                 <Button 
                   size="sm"
                   onClick={startRecording}
+                  className="px-4 py-2 h-10"
                 >
-                  <Mic className="h-4 w-4 mr-1" />
-                  Grabar
+                  <Mic className="h-4 w-4 mr-2" />
+                  Record
                 </Button>
               )}
             </div>
           </div>
           
-          {/* Lista de muestras */}
+          {/* Sample List */}
           <div className="space-y-2">
             {audioSamples.length === 0 ? (
-              <div className="bg-muted/30 p-8 rounded-lg flex flex-col items-center justify-center text-center">
-                <Server className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No hay muestras de voz.
+              <div className="bg-muted/30 p-10 rounded-lg flex flex-col items-center justify-center text-center">
+                <Server className="h-10 w-10 text-muted-foreground mb-4" />
+                <p className="text-base text-muted-foreground mb-2">
+                  No voice samples yet
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Graba o sube archivos de audio para crear tu modelo de voz
+                <p className="text-sm text-muted-foreground">
+                  Record or upload audio files to create your voice model
                 </p>
               </div>
             ) : (
-              <div className="bg-muted/30 p-4 rounded-lg">
+              <div className="bg-muted/30 p-5 rounded-lg">
                 {audioSamples.map((sample) => (
                   <div 
                     key={sample.id} 
-                    className="flex items-center justify-between py-2 border-b last:border-b-0"
+                    className="flex items-center justify-between py-3 border-b last:border-b-0"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Mic className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Mic className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">{sample.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {formatTime(sample.duration)}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-9 w-9"
                         onClick={() => {
                           const audio = new Audio(sample.url);
                           audio.play();
                         }}
                       >
-                        <Mic className="h-4 w-4" />
+                        <Mic className="h-5 w-5" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        className="h-8 w-8 text-destructive"
+                        className="h-9 w-9 text-destructive"
                         onClick={() => removeSample(sample.id)}
                       >
-                        <AlertCircle className="h-4 w-4" />
+                        <AlertCircle className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
                 ))}
                 
-                <div className="mt-2 text-xs text-muted-foreground">
-                  {audioSamples.length} muestras · {formatTime(audioSamples.reduce((acc, sample) => acc + sample.duration, 0))} duración total
+                <div className="mt-3 text-sm text-muted-foreground">
+                  {audioSamples.length} samples · {formatTime(audioSamples.reduce((acc, sample) => acc + sample.duration, 0))} total duration
                 </div>
               </div>
             )}
           </div>
         </div>
         
-        {/* Configuración del modelo */}
-        <div className="space-y-4 pt-2">
-          <h3 className="text-sm font-medium">Configuración del modelo</h3>
+        {/* Model Configuration */}
+        <div className="space-y-5 pt-4 mb-6">
+          <h3 className="text-base font-medium">Model Configuration</h3>
           
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="model-name">Nombre del modelo</Label>
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-3">
+              <Label htmlFor="model-name" className="text-sm">Model Name</Label>
               <Input
                 id="model-name"
-                placeholder="Ej. Mi Voz Profesional"
+                placeholder="e.g., My Professional Voice"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
+                className="h-11"
               />
             </div>
             
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="enhance-fidelity">Mejorar fidelidad</Label>
+            <div className="flex items-center justify-between py-2">
+              <div className="space-y-1">
+                <Label htmlFor="enhance-fidelity" className="text-sm">Enhance Fidelity</Label>
                 <p className="text-xs text-muted-foreground">
-                  Mejora el realismo y reduce artefactos
+                  Improves realism and reduces artifacts
                 </p>
               </div>
               <Switch
                 id="enhance-fidelity"
                 checked={enhanceFidelity}
                 onCheckedChange={setEnhanceFidelity}
+                className="scale-110"
               />
             </div>
             
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="reduce-noise">Reducción de ruido</Label>
+            <div className="flex items-center justify-between py-2">
+              <div className="space-y-1">
+                <Label htmlFor="reduce-noise" className="text-sm">Noise Reduction</Label>
                 <p className="text-xs text-muted-foreground">
-                  Elimina ruido de fondo y mejora claridad
+                  Eliminates background noise and improves clarity
                 </p>
               </div>
               <Switch
                 id="reduce-noise"
                 checked={reduceNoise}
                 onCheckedChange={setReduceNoise}
+                className="scale-110"
               />
             </div>
           </div>
         </div>
         
-        {/* Progreso de entrenamiento */}
+        {/* Training Progress */}
         {isCreatingModel && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Entrenando modelo...</span>
+          <div className="space-y-3 mb-4 mt-2">
+            <div className="flex items-center justify-between text-sm font-medium">
+              <span>Training model...</span>
               <span>{trainingProgress}%</span>
             </div>
-            <Progress value={trainingProgress} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              El entrenamiento puede durar varios minutos. No cierres esta ventana.
+            <Progress value={trainingProgress} className="h-3" />
+            <p className="text-sm text-muted-foreground mt-2">
+              Training may take several minutes. Please do not close this window.
             </p>
           </div>
         )}
       </CardContent>
-      <CardFooter className="border-t bg-muted/30 pt-4 flex justify-between">
-        <Button variant="outline" disabled={isCreatingModel}>
-          <Info className="h-4 w-4 mr-1" />
-          Más información
+      <CardFooter className="border-t bg-muted/30 pt-6 pb-6 flex justify-between mt-4">
+        <Button variant="outline" disabled={isCreatingModel} className="h-11">
+          <Info className="h-4 w-4 mr-2" />
+          Learn More
         </Button>
         <Button
           disabled={audioSamples.length < 2 || !modelName.trim() || isCreatingModel}
           onClick={startModelCreation}
+          className="h-11"
         >
-          <Save className="h-4 w-4 mr-1" />
-          {isCreatingModel ? 'Creando...' : 'Crear modelo'}
+          <Save className="h-4 w-4 mr-2" />
+          {isCreatingModel ? 'Training...' : 'Create Model'}
         </Button>
       </CardFooter>
     </Card>
