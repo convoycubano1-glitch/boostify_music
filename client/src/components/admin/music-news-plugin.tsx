@@ -1,19 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshCw, Newspaper } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RefreshCw, Search, Share2, Image, FileText, Instagram, Twitter, Facebook, Sparkles, Save, Trash2, Copy, Check, Music, RssIcon, Newspaper } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { db, storage } from "@/firebase";
-import { collection, addDoc, getDocs, query, orderBy, Timestamp, deleteDoc, doc } from "firebase/firestore";
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 interface NewsItem {
   id: string;

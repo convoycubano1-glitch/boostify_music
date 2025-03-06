@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AIModelsManager } from "@/components/admin/ai-models-manager";
-import MusicNewsPlugin from "@/components/admin/music-news-plugin";
+import SimplifiedNewsPlugin from "@/components/admin/simplified-news-plugin";
+import TestComponent from "@/components/admin/test-component";
 import {
   Users,
   CreditCard,
@@ -370,8 +371,11 @@ export default function AdminPage() {
                     </Card>
                   </div>
                   
-                  {/* Music News Plugin */}
-                  <MusicNewsPlugin />
+                  {/* SimplifiedNewsPlugin - Stable version */}
+                  <SimplifiedNewsPlugin />
+                  
+                  {/* Test Component for debugging */}
+                  <TestComponent />
                 </div>
               </TabsContent>
               
