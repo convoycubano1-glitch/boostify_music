@@ -67,6 +67,7 @@ import MusicMasteringPage from "@/pages/music-mastering";
 import VirtualRecordLabelPage from "@/pages/virtual-record-label";
 import TestProgressPage from "@/pages/test-progress";
 import AuthPage from "@/pages/auth-page";
+import PluginsPage from "@/pages/plugins";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -199,6 +200,7 @@ const Router = () => {
   const WrappedVirtualRecordLabelPage = withPageWrapper(VirtualRecordLabelPage);
   const WrappedTestProgressPage = withPageWrapper(TestProgressPage);
   const WrappedAuthPage = withPageWrapper(AuthPage);
+  const WrappedPluginsPage = withPageWrapper(PluginsPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -266,6 +268,7 @@ const Router = () => {
         <Route path="/vrl" component={WrappedVirtualRecordLabelPage} />
         <Route path="/virtual-record-label" component={WrappedVirtualRecordLabelPage} />
         <Route path="/test-progress" component={WrappedTestProgressPage} />
+        <Route path="/plugins" component={WrappedPluginsPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

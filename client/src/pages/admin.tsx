@@ -20,7 +20,8 @@ import {
   DollarSign,
   Lock,
   Briefcase,
-  Menu
+  Menu,
+  Puzzle
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -51,7 +52,8 @@ export default function AdminPage() {
     { value: "data", label: "Data & Emails", icon: <Mail className="w-4 h-4" /> },
     { value: "investors", label: "Investors", icon: <Briefcase className="w-4 h-4" /> },
     { value: "permissions", label: "Permissions", icon: <Lock className="w-4 h-4" /> },
-    { value: "finances", label: "Finances", icon: <DollarSign className="w-4 h-4" /> }
+    { value: "finances", label: "Finances", icon: <DollarSign className="w-4 h-4" /> },
+    { value: "plugins", label: "Plugins", icon: <Puzzle className="w-4 h-4" />, href: "/plugins" }
   ];
 
   return (
@@ -98,7 +100,7 @@ export default function AdminPage() {
                   </Select>
                 </div>
               ) : (
-                <TabsList className="grid grid-cols-7 max-w-[1400px] mb-8">
+                <TabsList className="grid grid-cols-8 max-w-[1400px] mb-8">
                   <TabsTrigger value="subscriptions" className="data-[state=active]:bg-orange-500">
                     <CreditCard className="w-4 h-4 mr-2" />
                     Subscriptions
@@ -126,6 +128,12 @@ export default function AdminPage() {
                   <TabsTrigger value="finances" className="data-[state=active]:bg-orange-500">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Finances
+                  </TabsTrigger>
+                  <TabsTrigger value="plugins" asChild>
+                    <a href="/plugins" className="inline-flex items-center justify-center text-sm px-3 py-1.5 rounded-md transition-colors hover:bg-background/80 cursor-pointer">
+                      <Puzzle className="w-4 h-4 mr-2" />
+                      Plugins
+                    </a>
                   </TabsTrigger>
                 </TabsList>
               )}
