@@ -752,7 +752,7 @@ export default function VirtualRecordLabelPage() {
       {/* Under Review Screen */}
       {isUnderReview && <UnderReviewScreen />}
       
-      {/* Removed gray banner that just displayed "Virtual Record Label" */}
+      {/* Removed gray banner that just displayed "Virtual Record Label" - This was a redundant UI element */}
 
       {/* Hero Section with Video Background */}
       <section className="relative mb-12 overflow-hidden rounded-xl">
