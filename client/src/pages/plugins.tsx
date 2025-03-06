@@ -13,14 +13,21 @@ import {
   MessageSquare,
   Sparkles,
   BarChart,
-  Radio 
+  Radio,
+  Music,
+  Headphones
 } from "lucide-react";
 
 import { 
   BeatNewsPlugin, 
   ContentPulsePlugin, 
   SocialSyncPlugin,
-  EventBeatPlugin 
+  EventBeatPlugin,
+  TuneMatchPlugin,
+  TrendTrackerPlugin,
+  StreamLinkPlugin,
+  EchoChatPlugin,
+  SEOPulsePlugin
 } from "../components/plugins";
 
 export default function PluginsPage() {
@@ -54,6 +61,41 @@ export default function PluginsPage() {
       description: "Music event tracking and promotion",
       icon: <Calendar className="h-5 w-5 text-orange-500" />,
       component: <EventBeatPlugin />
+    },
+    { 
+      id: "tunematch", 
+      name: "TuneMatch", 
+      description: "Personalized content recommendations based on user preferences",
+      icon: <Headphones className="h-5 w-5 text-orange-500" />,
+      component: <TuneMatchPlugin />
+    },
+    { 
+      id: "trendtracker", 
+      name: "TrendTracker", 
+      description: "Analytics and visualization of content interaction trends",
+      icon: <BarChart className="h-5 w-5 text-orange-500" />,
+      component: <TrendTrackerPlugin />
+    },
+    { 
+      id: "streamlink", 
+      name: "StreamLink", 
+      description: "Music streaming platform integration and analytics",
+      icon: <Radio className="h-5 w-5 text-orange-500" />,
+      component: <StreamLinkPlugin />
+    },
+    { 
+      id: "echochat", 
+      name: "EchoChat", 
+      description: "User engagement through comments management across all platforms",
+      icon: <MessageSquare className="h-5 w-5 text-orange-500" />,
+      component: <EchoChatPlugin />
+    },
+    { 
+      id: "seopulse", 
+      name: "SEOPulse", 
+      description: "Optimize content for search engines and improve visibility",
+      icon: <Sparkles className="h-5 w-5 text-orange-500" />,
+      component: <SEOPulsePlugin />
     }
   ];
   
@@ -107,50 +149,7 @@ export default function PluginsPage() {
                   </div>
                 </Button>
               ))}
-              
-              <div className="pt-4 border-t mt-4">
-                <p className="text-xs text-muted-foreground mb-3">Coming Soon</p>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground opacity-70"
-                  disabled
-                >
-                  <MessageSquare className="h-5 w-5 mr-2 text-orange-500" />
-                  <div className="text-left">
-                    <div>EchoChat</div>
-                  </div>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground opacity-70"
-                  disabled
-                >
-                  <Sparkles className="h-5 w-5 mr-2 text-orange-500" />
-                  <div className="text-left">
-                    <div>TrendTracker</div>
-                  </div>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground opacity-70"
-                  disabled
-                >
-                  <BarChart className="h-5 w-5 mr-2 text-orange-500" />
-                  <div className="text-left">
-                    <div>SEOPulse</div>
-                  </div>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground opacity-70"
-                  disabled
-                >
-                  <Radio className="h-5 w-5 mr-2 text-orange-500" />
-                  <div className="text-left">
-                    <div>StreamLink</div>
-                  </div>
-                </Button>
-              </div>
+              {/* No more plugins in "Coming Soon" section */}
             </div>
           </Card>
         </div>
