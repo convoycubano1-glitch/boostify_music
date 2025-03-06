@@ -8,15 +8,20 @@ import { useToast } from "@/hooks/use-toast";
 import { useGoogleConnectionCheck } from "@/components/auth/google-connection-check";
 import { authService } from "@/services/auth-service";
 import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4';
-import { Loader2, WifiOff, ShieldCheck } from "lucide-react";
+import { Loader2, WifiOff, ShieldCheck, Info, User, UserMinus, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function AuthPage() {
   const { user } = useAuth();
-  const { signInWithGoogle } = useFirebaseAuth();
+  const { signInWithGoogle, signInAnonymouslyWithEmail } = useFirebaseAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnonLoading, setIsAnonLoading] = useState(false);
   const { isConnecting, canConnect, checkGoogleConnection } = useGoogleConnectionCheck();
   const [connectionErrorShown, setConnectionErrorShown] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [email, setEmail] = useState("");
   
   // Comprueba la conectividad con Google cuando el componente se monta
   useEffect(() => {
@@ -39,6 +44,51 @@ export default function AuthPage() {
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [isConnecting, canConnect, connectionErrorShown, toast]);
+
+  // Función para validar el email
+  const validateEmail = (email: string): boolean => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  // Manejar el inicio de sesión anónimo
+  const handleAnonymousSignIn = async () => {
+    setShowEmailDialog(true);
+  };
+
+  // Manejar el envío del formulario de email
+  const handleEmailSubmit = async () => {
+    if (!validateEmail(email)) {
+      toast({
+        title: "Email inválido",
+        description: "Por favor ingresa un email válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnonLoading(true);
+    
+    try {
+      await signInAnonymouslyWithEmail(email);
+      setShowEmailDialog(false);
+      setIsAnonLoading(false);
+      
+      toast({
+        title: "Acceso temporal concedido",
+        description: "Has iniciado sesión en modo de vista previa. Ten en cuenta que todas las funciones están en desarrollo.",
+      });
+    } catch (error) {
+      console.error("Error en autenticación anónima:", error);
+      setIsAnonLoading(false);
+      
+      toast({
+        title: "Error de inicio de sesión",
+        description: "No se pudo iniciar sesión. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     if (isLoading) return; // Prevenir múltiples clics
@@ -186,6 +236,14 @@ export default function AuthPage() {
           </span>
         </div>
 
+        {/* Aviso de funciones en desarrollo */}
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md p-3 text-white flex items-center gap-2 mb-4">
+          <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0" />
+          <span className="text-sm text-left">
+            <strong>Nota importante:</strong> Esta plataforma está en fase de desarrollo. Todas las funcionalidades están siendo implementadas y optimizadas.
+          </span>
+        </div>
+
         <Button 
           variant="outline" 
           className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
@@ -214,8 +272,33 @@ export default function AuthPage() {
             </>
           )}
         </Button>
+
+        <div className="relative my-4 flex items-center">
+          <div className="flex-grow border-t border-gray-600"></div>
+          <span className="flex-shrink-0 px-4 text-gray-400 text-sm">o</span>
+          <div className="flex-grow border-t border-gray-600"></div>
+        </div>
+
+        <Button 
+          variant="outline"
+          className="w-full gap-2 bg-[#121212] hover:bg-[#202020] text-white border-none"
+          onClick={handleAnonymousSignIn}
+          disabled={isAnonLoading}
+        >
+          {isAnonLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              Procesando...
+            </>
+          ) : (
+            <>
+              <UserMinus className="w-5 h-5" />
+              Acceso temporal (sin cuenta)
+            </>
+          )}
+        </Button>
         
-        {isLoading && (
+        {(isLoading || isAnonLoading) && (
           <p className="text-sm text-gray-400 animate-pulse">
             Preparando conexión segura...
           </p>
@@ -232,6 +315,68 @@ export default function AuthPage() {
             Sistema de autenticación: v2.0 (con recuperación de errores)
           </p>
         </div>
+
+        {/* Diálogo para ingresar email */}
+        <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Ingresa tu email para continuar</DialogTitle>
+              <DialogDescription>
+                Para el acceso temporal necesitamos un email válido donde podamos contactarte.
+                Todas las funciones de la plataforma están en desarrollo.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md p-3 flex items-start gap-2">
+                <Info className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                <span className="text-sm">
+                  El acceso temporal te permite explorar la plataforma en modo de vista previa. Ten en cuenta que
+                  todas las funciones están en fase de desarrollo y pueden tener limitaciones.
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  placeholder="tu@email.com"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full"
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEmailDialog(false)}
+                disabled={isAnonLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleEmailSubmit}
+                disabled={isAnonLoading || !email}
+                className="bg-[#121212] hover:bg-[#202020] text-white"
+              >
+                {isAnonLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Procesando...
+                  </>
+                ) : (
+                  "Continuar"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

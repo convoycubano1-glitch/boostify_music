@@ -66,6 +66,7 @@ import AffiliatesPage from "@/pages/affiliates";
 import MusicMasteringPage from "@/pages/music-mastering";
 import VirtualRecordLabelPage from "@/pages/virtual-record-label";
 import TestProgressPage from "@/pages/test-progress";
+import AuthPage from "@/pages/auth-page";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -197,13 +198,15 @@ const Router = () => {
   const WrappedMusicMasteringPage = withPageWrapper(MusicMasteringPage);
   const WrappedVirtualRecordLabelPage = withPageWrapper(VirtualRecordLabelPage);
   const WrappedTestProgressPage = withPageWrapper(TestProgressPage);
+  const WrappedAuthPage = withPageWrapper(AuthPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
     <>
       <Switch>
         {/* Public routes */}
-        <Route path="/" component={WrappedHomePage} />
+        <Route path="/" component={WrappedAuthPage} />
+        <Route path="/home" component={WrappedHomePage} />
         <Route path="/terms" component={WrappedTermsPage} />
         <Route path="/privacy" component={WrappedPrivacyPage} />
         <Route path="/cookies" component={WrappedCookiesPage} />

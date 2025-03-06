@@ -115,11 +115,49 @@ export function useFirebaseAuth() {
   };
 
   /**
+   * Función para iniciar sesión anónima con email
+   * Solicita un email al usuario y lo asocia con la cuenta anónima
+   */
+  const signInAnonymouslyWithEmail = async (email: string) => {
+    try {
+      // Utilizamos el servicio de autenticación para crear una sesión anónima
+      const user = await authService.signInAnonymously();
+      
+      if (user) {
+        // Almacenamos el email en localStorage para futuras referencias
+        // En una implementación real, esto debería guardarse en Firestore
+        localStorage.setItem('anonymous_user_email', email);
+        
+        toast({
+          title: "¡Bienvenido!",
+          description: "Has iniciado sesión en modo de acceso temporal",
+        });
+        return user;
+      }
+      
+      return null;
+    } catch (error: any) {
+      console.error('Error en autenticación anónima:', error);
+      
+      toast({
+        title: "Error de inicio de sesión",
+        description: "No se pudo iniciar sesión anónima. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+      
+      throw error;
+    }
+  };
+
+  /**
    * Función para cerrar sesión
    * Utiliza el servicio de autenticación para limpiar adecuadamente el estado
    */
   const logout = async () => {
     try {
+      // Limpiar también el email anónimo si existe
+      localStorage.removeItem('anonymous_user_email');
+      
       await authService.signOut();
       toast({
         title: "Sesión cerrada",
@@ -140,6 +178,7 @@ export function useFirebaseAuth() {
     user,
     loading,
     signInWithGoogle,
+    signInAnonymouslyWithEmail,
     logout
   };
 }

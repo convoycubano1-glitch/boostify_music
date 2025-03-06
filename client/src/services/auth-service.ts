@@ -69,7 +69,7 @@ class AuthService {
    * Útil cuando las APIs de autenticación tienen problemas o para uso en entornos de desarrollo
    * @param redirectPath Ruta a la que redirigir después de la autenticación
    */
-  async signInAnonymously(redirectPath: string = '/dashboard'): Promise<User | null> {
+  async signInAnonymously(redirectPath: string = '/home'): Promise<User | null> {
     try {
       console.log('AuthService: Iniciando sesión anónima para pruebas');
       const result = await signInAnonymously(this.auth);
@@ -87,7 +87,7 @@ class AuthService {
     }
   }
 
-  async signInWithGoogle(redirectPath: string = '/dashboard'): Promise<User | null> {
+  async signInWithGoogle(redirectPath: string = '/home'): Promise<User | null> {
     try {
       // Almacenar la ruta de redirección para usarla después de la autenticación
       sessionStorage.setItem('auth_redirect_path', redirectPath);
