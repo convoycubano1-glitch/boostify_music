@@ -26,7 +26,8 @@ import {
   Tv,
   Music,
   User,
-  CreditCard
+  CreditCard,
+  Puzzle
 } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import { useEffect, useState } from "react";
@@ -344,6 +345,7 @@ export default function Dashboard() {
                   { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: Tv, statsValue: 24, statsLabel: "Videos", color: "text-red-500" },
                   { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: Video, statsValue: metrics.youtubeViews, statsLabel: "Views", color: "text-rose-500" },
                   { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: Music, statsValue: metrics.spotifyFollowers, statsLabel: "Followers", color: "text-emerald-500" },
+                  { title: "Plugins", description: "Content extensions", link: "/plugins", icon: Puzzle, statsValue: 8, statsLabel: "Plugins", color: "text-cyan-500" },
                   { title: "Contracts", description: "Legal documents", link: "/contracts", icon: FileText, statsValue: metrics.contractsCreated, statsLabel: "Documents", color: "text-indigo-500" },
                   { title: "Profile", description: "Artist profile", link: "/profile", icon: User, statsValue: 1, statsLabel: "Profile", color: "text-purple-500" },
                   { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards", color: "text-amber-500" }

@@ -13,7 +13,8 @@ import {
   Youtube,
   Users,
   Brain,
-  Globe
+  Globe,
+  Puzzle
 } from "lucide-react";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +29,7 @@ const navigation = [
   { name: "YouTube Views", href: "/youtube-views", icon: Youtube },
   { name: "Contacts", href: "/contacts", icon: Users },
   { name: "AI Agents", href: "/ai-agents", icon: Brain },
+  { name: "Plugins", href: "/plugins", icon: Puzzle },
   { name: "Real-Time Translator", href: "/translator", icon: Globe },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
