@@ -154,42 +154,42 @@ export default function VirtualRecordLabelPage() {
     { 
       title: "Setup AI Music Engine", 
       description: "Configuring AI algorithms for music composition and audio mastering",
-      icon: <CloudUpload className="h-5 w-5 text-[#505050]" />
+      icon: <CloudUpload className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "Video Generation Framework", 
       description: "Setting up AI-powered video creation for artists through PiAPI",
-      icon: <Film className="h-5 w-5 text-[#505050]" />
+      icon: <Film className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "AI Artist Generation", 
       description: "Creating virtual artists with GPT-based personalities and backstories",
-      icon: <Users className="h-5 w-5 text-[#505050]" />
+      icon: <Users className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "CRM Integration", 
       description: "Configuring contact management system for industry professionals",
-      icon: <Megaphone className="h-5 w-5 text-[#505050]" />
+      icon: <Megaphone className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "Analytics Dashboard", 
       description: "Setting up performance tracking and insights for your label",
-      icon: <BarChart2 className="h-5 w-5 text-[#505050]" />
+      icon: <BarChart2 className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "Digital Rights Management", 
       description: "Implementing protection systems for your intellectual property",
-      icon: <Shield className="h-5 w-5 text-[#505050]" />
+      icon: <Shield className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "Distribution Network", 
       description: "Connecting to global streaming platforms and music marketplaces",
-      icon: <DollarSign className="h-5 w-5 text-[#505050]" />
+      icon: <DollarSign className="h-5 w-5 text-orange-500" />
     },
     { 
       title: "Finalizing Launch", 
       description: "Last touches before your virtual record label goes live",
-      icon: <Zap className="h-5 w-5 text-[#505050]" />
+      icon: <Zap className="h-5 w-5 text-orange-500" />
     }
   ];
 
@@ -592,7 +592,7 @@ export default function VirtualRecordLabelPage() {
       <div className="bg-background w-full max-w-md rounded-xl p-8 space-y-6">
         <div className="text-center space-y-2 mb-6">
           <div className="w-16 h-16 bg-[#121212]/20 rounded-full mx-auto flex items-center justify-center mb-4">
-            <Loader2 className="h-8 w-8 text-[#505050] animate-spin" />
+            <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
           </div>
           <h2 className="text-2xl font-bold">Creating Your Record Label</h2>
           <p className="text-muted-foreground">Please wait while we set up your label.</p>
@@ -632,7 +632,7 @@ export default function VirtualRecordLabelPage() {
       <div className="bg-background w-full max-w-3xl rounded-xl p-4 sm:p-6 md:p-8 my-auto">
         <div className="text-center space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#121212]/20 rounded-full mx-auto flex items-center justify-center mb-3 sm:mb-4">
-            <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-[#505050]" />
+            <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-orange-500" />
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Your Record Label is Under Review</h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
@@ -647,7 +647,7 @@ export default function VirtualRecordLabelPage() {
           <div className="space-y-3 sm:space-y-4">
             <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border bg-muted/20">
               <div className="mt-0.5 flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-[#121212]/20 rounded-full flex items-center justify-center">
-                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-[#505050]" />
+                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
               </div>
               <div>
                 <h4 className="font-medium">Label Creation Complete</h4>
@@ -657,7 +657,7 @@ export default function VirtualRecordLabelPage() {
             
             <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border bg-gradient-to-r from-[#121212]/10 to-transparent">
               <div className="mt-0.5 flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-[#121212]/20 rounded-full flex items-center justify-center">
-                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#505050] animate-spin" />
+                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 animate-spin" />
               </div>
               <div>
                 <h4 className="font-medium">Quality Check (In Progress)</h4>
@@ -691,7 +691,7 @@ export default function VirtualRecordLabelPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           <Card className="p-3 sm:p-4 space-y-2 bg-[#121212]/5 border-[#121212]/20">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-[#505050]" />
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
               <h3 className="font-semibold">Review Timeline</h3>
             </div>
             <p className="text-sm text-muted-foreground">Your label will be ready within 24-48 hours</p>
@@ -699,7 +699,7 @@ export default function VirtualRecordLabelPage() {
           
           <Card className="p-3 sm:p-4 space-y-2 bg-[#121212]/5 border-[#121212]/20">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-[#505050]" />
+              <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
               <h3 className="font-semibold">Confirmation Email</h3>
             </div>
             <p className="text-sm text-muted-foreground">Detailed activation instructions will be sent to you</p>
@@ -707,7 +707,7 @@ export default function VirtualRecordLabelPage() {
           
           <Card className="p-3 sm:p-4 space-y-2 bg-[#121212]/5 border-[#121212]/20 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
-              <Music className="h-4 w-4 sm:h-5 sm:w-5 text-[#505050]" />
+              <Music className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
               <h3 className="font-semibold">Content Creation</h3>
             </div>
             <p className="text-sm text-muted-foreground">AI-generated artists, tracks, and visual assets</p>
@@ -792,7 +792,7 @@ export default function VirtualRecordLabelPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Advanced Music Generation</h3>
                     <p className="text-gray-300 mb-4 flex-grow">Create professional-quality tracks using our proprietary AI algorithms tuned for multiple genres and styles.</p>
-                    <p className="text-xs text-[#505050] flex items-center">
+                    <p className="text-xs text-orange-500 flex items-center">
                       <span className="mr-1">Industry-leading quality</span>
                       <ChevronRight className="h-3 w-3" />
                     </p>
@@ -808,7 +808,7 @@ export default function VirtualRecordLabelPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Professional Video Creation</h3>
                     <p className="text-gray-300 mb-4 flex-grow">Generate stunning music videos with PiAPI's advanced video engine - without recording equipment or crew.</p>
-                    <p className="text-xs text-[#505050] flex items-center">
+                    <p className="text-xs text-orange-500 flex items-center">
                       <span className="mr-1">Driven by PiAPI technology</span>
                       <ChevronRight className="h-3 w-3" />
                     </p>
@@ -824,7 +824,7 @@ export default function VirtualRecordLabelPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Virtual Artists</h3>
                     <p className="text-gray-300 mb-4 flex-grow">Create full artist personas with unique personalities, backstories, and visual identities - powered by GPT technology.</p>
-                    <p className="text-xs text-[#505050] flex items-center">
+                    <p className="text-xs text-orange-500 flex items-center">
                       <span className="mr-1">Personalized AI artists</span>
                       <ChevronRight className="h-3 w-3" />
                     </p>
@@ -840,7 +840,7 @@ export default function VirtualRecordLabelPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Integrated CRM System</h3>
                     <p className="text-gray-300 mb-4 flex-grow">Manage industry contacts, marketing campaigns, and fan interactions with our built-in relationship management system.</p>
-                    <p className="text-xs text-[#505050] flex items-center">
+                    <p className="text-xs text-orange-500 flex items-center">
                       <span className="mr-1">Comprehensive management</span>
                       <ChevronRight className="h-3 w-3" />
                     </p>
@@ -1334,7 +1334,7 @@ export default function VirtualRecordLabelPage() {
                         <>
                           <Building2 className="mr-2 h-4 w-4" />
                           Create My Virtual Record Label
-                          <Bot className="ml-2 h-4 w-4 text-[#505050]" />
+                          <Bot className="ml-2 h-4 w-4 text-orange-500" />
                         </>
                       )}
                     </Button>
@@ -1363,7 +1363,7 @@ export default function VirtualRecordLabelPage() {
                     <>
                       <Building2 className="mr-2 h-4 w-4" />
                       Create My Virtual Record Label
-                      <Bot className="ml-2 h-4 w-4 text-[#505050]" />
+                      <Bot className="ml-2 h-4 w-4 text-orange-500" />
                     </>
                   )}
                 </Button>
@@ -1428,7 +1428,7 @@ export default function VirtualRecordLabelPage() {
             {/* Music Generation Feature */}
             <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
               <div className="h-12 w-12 rounded-full bg-[#121212]/10 flex items-center justify-center mb-4">
-                <Music className="h-6 w-6 text-[#121212]" />
+                <Music className="h-6 w-6 text-orange-500" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Advanced Music Generation</h3>
               <p className="text-muted-foreground text-sm">
@@ -1439,7 +1439,7 @@ export default function VirtualRecordLabelPage() {
             {/* Video Creation Feature */}
             <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
               <div className="h-12 w-12 rounded-full bg-[#121212]/10 flex items-center justify-center mb-4">
-                <Film className="h-6 w-6 text-[#121212]" />
+                <Film className="h-6 w-6 text-orange-500" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Professional Video Creation</h3>
               <p className="text-muted-foreground text-sm">
@@ -1450,7 +1450,7 @@ export default function VirtualRecordLabelPage() {
             {/* Virtual Artists Feature */}
             <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
               <div className="h-12 w-12 rounded-full bg-[#121212]/10 flex items-center justify-center mb-4">
-                <Bot className="h-6 w-6 text-[#121212]" />
+                <Bot className="h-6 w-6 text-orange-500" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Virtual Artists</h3>
               <p className="text-muted-foreground text-sm">
@@ -1461,7 +1461,7 @@ export default function VirtualRecordLabelPage() {
             {/* CRM System Feature */}
             <div className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-all">
               <div className="h-12 w-12 rounded-full bg-[#121212]/10 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-[#121212]" />
+                <Users className="h-6 w-6 text-orange-500" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Industry CRM System</h3>
               <p className="text-muted-foreground text-sm">
@@ -1499,7 +1499,7 @@ export default function VirtualRecordLabelPage() {
                     />
                     <div>
                       <h3 className="font-semibold">{testimonial.name}</h3>
-                      <p className="text-sm text-[#505050]">{testimonial.label}</p>
+                      <p className="text-sm text-orange-500">{testimonial.label}</p>
                     </div>
                   </div>
                   <p className="text-muted-foreground italic">"{testimonial.quote}"</p>
