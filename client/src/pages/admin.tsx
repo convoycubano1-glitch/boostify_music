@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AIModelsManager } from "@/components/admin/ai-models-manager";
-import SimplifiedNewsPlugin from "@/components/admin/simplified-news-plugin";
-import TestComponent from "@/components/admin/test-component";
 import {
   Users,
   CreditCard,
@@ -22,11 +20,7 @@ import {
   DollarSign,
   Lock,
   Briefcase,
-  Menu,
-  Newspaper,
-  Bot,
-  Music,
-  Image
+  Menu
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -57,8 +51,7 @@ export default function AdminPage() {
     { value: "data", label: "Data & Emails", icon: <Mail className="w-4 h-4" /> },
     { value: "investors", label: "Investors", icon: <Briefcase className="w-4 h-4" /> },
     { value: "permissions", label: "Permissions", icon: <Lock className="w-4 h-4" /> },
-    { value: "finances", label: "Finances", icon: <DollarSign className="w-4 h-4" /> },
-    { value: "plugins", label: "Plugins", icon: <Bot className="w-4 h-4" /> }
+    { value: "finances", label: "Finances", icon: <DollarSign className="w-4 h-4" /> }
   ];
 
   return (
@@ -105,7 +98,7 @@ export default function AdminPage() {
                   </Select>
                 </div>
               ) : (
-                <TabsList className="grid grid-cols-8 max-w-[1400px] mb-8">
+                <TabsList className="grid grid-cols-7 max-w-[1400px] mb-8">
                   <TabsTrigger value="subscriptions" className="data-[state=active]:bg-orange-500">
                     <CreditCard className="w-4 h-4 mr-2" />
                     Subscriptions
@@ -133,10 +126,6 @@ export default function AdminPage() {
                   <TabsTrigger value="finances" className="data-[state=active]:bg-orange-500">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Finances
-                  </TabsTrigger>
-                  <TabsTrigger value="plugins" className="data-[state=active]:bg-orange-500">
-                    <Bot className="w-4 h-4 mr-2" />
-                    Plugins
                   </TabsTrigger>
                 </TabsList>
               )}
@@ -330,55 +319,6 @@ export default function AdminPage() {
                 </Card>
               </TabsContent>
 
-              {/* Plugins Tab */}
-              <TabsContent value="plugins">
-                <div className="grid grid-cols-1 gap-4 md:gap-6 mb-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-                    <Card className="p-4 md:p-6">
-                      <div className="flex items-center gap-3 md:gap-4">
-                        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
-                          <Newspaper className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs md:text-sm text-muted-foreground">Music News</p>
-                          <p className="text-xl md:text-2xl font-bold">Active</p>
-                        </div>
-                      </div>
-                    </Card>
-                    
-                    <Card className="p-4 md:p-6">
-                      <div className="flex items-center gap-3 md:gap-4">
-                        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
-                          <Music className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs md:text-sm text-muted-foreground">Content Generated</p>
-                          <p className="text-xl md:text-2xl font-bold">12</p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 md:p-6">
-                      <div className="flex items-center gap-3 md:gap-4">
-                        <div className="p-2 md:p-3 bg-orange-500/10 rounded-lg">
-                          <Image className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs md:text-sm text-muted-foreground">Images Created</p>
-                          <p className="text-xl md:text-2xl font-bold">8</p>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                  
-                  {/* SimplifiedNewsPlugin - Stable version */}
-                  <SimplifiedNewsPlugin />
-                  
-                  {/* Test Component for debugging */}
-                  <TestComponent />
-                </div>
-              </TabsContent>
-              
               {/* Investors Tab */}
               <TabsContent value="investors">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -563,8 +503,6 @@ export default function AdminPage() {
                   </div>
                 </Card>
               </TabsContent>
-
-              {/* End of tabs */}
             </Tabs>
           </div>
         </ScrollArea>
