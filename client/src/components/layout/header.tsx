@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare, Disc } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare, Disc, ChevronDown, ChevronUp } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLanguageDetection } from "@/hooks/use-language-detection";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 
@@ -19,6 +19,9 @@ export function Header() {
   const { detectedLanguage } = useLanguageDetection();
   const { scrollDirection, scrollY } = useScrollDirection();
   const [showFullHeader, setShowFullHeader] = useState(true);
+  const [headerHeight, setHeaderHeight] = useState(280);
+  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   // Handle scroll effect for header
   useEffect(() => {
@@ -33,6 +36,35 @@ export function Header() {
     }
   }, [scrollDirection, scrollY]);
   
+  // Default state for menu expansion
+  useEffect(() => {
+    // Start with expanded menu on desktop, collapsed on mobile
+    const isMobile = window.innerWidth < 768;
+    setIsMenuExpanded(!isMobile);
+  }, []);
+  
+  // Track header height and update spacer
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.offsetHeight;
+        setHeaderHeight(height);
+      }
+    };
+
+    // Update header height on mount and window resize
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    
+    // Also update after a short delay to account for DOM manipulation
+    const timerId = setTimeout(updateHeaderHeight, 500);
+
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+      clearTimeout(timerId);
+    };
+  }, []);
+
   useEffect(() => {
     const initTranslate = () => {
       if (window.google && window.google.translate) {
@@ -84,13 +116,15 @@ export function Header() {
 
   return (
     <>
-      <header className={`fixed top-0 z-50 w-full border-b border-border/40 bg-[#1B1B1B] transition-transform duration-300 ${
-        scrollY > 50 && !showFullHeader ? "-translate-y-16" : "translate-y-0"
-      }`}>
+      <header 
+        ref={headerRef}
+        className={`fixed top-0 z-50 w-full border-b border-border/40 bg-[#1B1B1B] transition-transform duration-300 ${
+          scrollY > 50 && !showFullHeader ? "-translate-y-16" : "translate-y-0"
+        }`}>
         <div className="container flex h-16 max-w-screen-2xl items-center">
           <div className="flex flex-1 items-center justify-between space-x-4">
-            {/* Logo section */}
-            <Link href="/" className="flex items-center space-x-3">
+            {/* Logo section - now navigates to home page */}
+            <Link href="/home" className="flex items-center space-x-3">
               <img
                 src="/assets/freepik__boostify_music_organe_abstract_icon.png"
                 alt="Boostify Music"
@@ -272,46 +306,63 @@ export function Header() {
           </div>
         </div>
 
-        {/* Secondary Navigation Bar - Inspired by Freepik */}
-        <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm">
-          <div className="container flex h-10 max-w-screen-2xl items-center overflow-hidden">
-            <nav className="flex items-center space-x-3 md:space-x-5 px-2 md:px-4 overflow-x-auto scrollbar-hide pb-2 w-full">
+        {/* Secondary Navigation Bar - Inspired by Freepik with Vertical Scroll */}
+        <div className="border-t border-border/40 bg-black/80 backdrop-blur-sm relative">
+          <div className="container max-w-screen-2xl relative">
+            {/* Toggle expand/collapse button */}
+            <button 
+              onClick={() => setIsMenuExpanded(!isMenuExpanded)}
+              className="absolute right-3 top-1 z-20 text-gray-300 hover:text-orange-500 transition-colors"
+            >
+              {isMenuExpanded 
+                ? <ChevronUp className="h-5 w-5" /> 
+                : <ChevronDown className="h-5 w-5" />
+              }
+            </button>
+            
+            {/* Fade indicators for vertical scroll */}
+            <div className="absolute left-0 right-0 top-0 h-4 bg-gradient-to-b from-black/80 to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute left-0 right-0 bottom-0 h-4 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
+            
+            <nav className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 px-3 py-3 transition-all duration-300 ${
+              isMenuExpanded ? 'max-h-[240px]' : 'max-h-[65px]'
+            } overflow-y-auto`}>
               {[...navigation, ...secondaryNavigation].map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center whitespace-nowrap ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 ${
                     item.name === "Investors" || item.name === "Affiliates" ? "text-orange-500 font-medium" : "text-gray-300"
                   } text-xs hover:text-orange-400 transition-colors`}
                 >
                   <item.icon 
-                    className={`h-4 w-4 md:h-3.5 md:w-3.5 ${
+                    className={`h-5 w-5 mb-1 ${
                       item.name === "Investors" || item.name === "Affiliates"
                         ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
-                        : "text-gray-400"
+                        : "text-gray-300"
                     }`} 
                   />
-                  <span className="md:inline hidden md:ml-2">{item.name}</span>
+                  <span className="text-center">{item.name}</span>
                 </Link>
               ))}
               
               {/* Settings Link */}
               <Link
                 href="/settings"
-                className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
+                className="flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 text-gray-300 text-xs hover:text-orange-400 transition-colors"
               >
-                <Settings className="h-4 w-4 md:h-3.5 md:w-3.5 text-gray-400" />
-                <span className="md:inline hidden md:ml-2">Settings</span>
+                <Settings className="h-5 w-5 mb-1 text-gray-300" />
+                <span className="text-center">Settings</span>
               </Link>
               
               {/* Admin Icon - Only visible to admins */}
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="flex items-center whitespace-nowrap text-gray-300 text-xs hover:text-orange-400 transition-colors"
+                  className="flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 text-gray-300 text-xs hover:text-orange-400 transition-colors"
                 >
-                  <Shield className="h-4 w-4 md:h-3.5 md:w-3.5 text-gray-400" />
-                  <span className="md:inline hidden md:ml-2">Admin</span>
+                  <Shield className="h-5 w-5 mb-1 text-gray-300" />
+                  <span className="text-center">Admin</span>
                 </Link>
               )}
             </nav>
@@ -319,7 +370,7 @@ export function Header() {
         </div>
       </header>
       {/* Spacer to prevent content from hiding under the fixed header */}
-      <div className="h-[106px]" />
+      <div style={{ height: `${headerHeight}px` }} className="transition-all duration-300" />
     </>
   );
 }

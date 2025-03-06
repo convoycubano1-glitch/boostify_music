@@ -288,31 +288,31 @@ export default function AuthPage() {
           {isAnonLoading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              Procesando...
+              Processing...
             </>
           ) : (
             <>
               <UserMinus className="w-5 h-5" />
-              Acceso temporal (sin cuenta)
+              Temporary Access (No Account)
             </>
           )}
         </Button>
         
         {(isLoading || isAnonLoading) && (
           <p className="text-sm text-gray-400 animate-pulse">
-            Preparando conexión segura...
+            Preparing secure connection...
           </p>
         )}
         
         <div className="text-xs text-gray-400 mt-4">
           <p>
-            ¿Experimentando problemas? Intenta refrescar la página o limpiar el caché del navegador.
+            Experiencing problems? Try refreshing the page or clearing your browser cache.
           </p>
           <p className="mt-1">
-            Estado de red: {isConnecting ? "Verificando..." : canConnect ? "Conectado" : "Sin conexión"}
+            Network status: {isConnecting ? "Checking..." : canConnect ? "Connected" : "Disconnected"}
           </p>
           <p className="mt-1">
-            Sistema de autenticación: v2.0 (con recuperación de errores)
+            Authentication system: v2.0 (with error recovery)
           </p>
         </div>
 
@@ -320,10 +320,10 @@ export default function AuthPage() {
         <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Ingresa tu email para continuar</DialogTitle>
+              <DialogTitle>Enter your email to continue</DialogTitle>
               <DialogDescription>
-                Para el acceso temporal necesitamos un email válido donde podamos contactarte.
-                Todas las funciones de la plataforma están en desarrollo.
+                For temporary access, we need a valid email where we can contact you.
+                All platform features are currently in development.
               </DialogDescription>
             </DialogHeader>
             
@@ -331,8 +331,8 @@ export default function AuthPage() {
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md p-3 flex items-start gap-2">
                 <Info className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <span className="text-sm">
-                  El acceso temporal te permite explorar la plataforma en modo de vista previa. Ten en cuenta que
-                  todas las funciones están en fase de desarrollo y pueden tener limitaciones.
+                  Temporary access allows you to explore the platform in preview mode. Please note that
+                  all features are in development phase and may have limitations.
                 </span>
               </div>
               
@@ -342,7 +342,7 @@ export default function AuthPage() {
                 </label>
                 <Input
                   id="email"
-                  placeholder="tu@email.com"
+                  placeholder="your@email.com"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -358,7 +358,7 @@ export default function AuthPage() {
                 onClick={() => setShowEmailDialog(false)}
                 disabled={isAnonLoading}
               >
-                Cancelar
+                Cancel
               </Button>
               <Button
                 onClick={handleEmailSubmit}
@@ -368,10 +368,10 @@ export default function AuthPage() {
                 {isAnonLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Procesando...
+                    Processing...
                   </>
                 ) : (
-                  "Continuar"
+                  "Continue"
                 )}
               </Button>
             </DialogFooter>
