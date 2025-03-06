@@ -141,8 +141,13 @@ export default function VirtualRecordLabelPage() {
   const [showProgress, setShowProgress] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressStage, setProgressStage] = useState(0);
-  // Establecemos a true por defecto para poder visualizar la pantalla de revisión (pruebas)
-  const [isUnderReview, setIsUnderReview] = useState(true);
+  // Estado para pantalla de revisión (solo debe mostrarse después del envío)
+  const [isUnderReview, setIsUnderReview] = useState(false);
+  
+  // Console log para depuración
+  useEffect(() => {
+    console.log("isUnderReview state:", isUnderReview);
+  }, [isUnderReview]);
   
   // Stages for creation process
   const creationStages = [
@@ -747,25 +752,7 @@ export default function VirtualRecordLabelPage() {
       {/* Under Review Screen */}
       {isUnderReview && <UnderReviewScreen />}
       
-      {/* Breadcrumb */}
-      <div className="container pt-4 pb-2">
-        <Breadcrumb className="mb-4">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/">
-                  <Home className="h-3.5 w-3.5 mr-1" />
-                  Home
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Virtual Record Label</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
+      {/* Removed gray banner that just displayed "Virtual Record Label" */}
 
       {/* Hero Section with Video Background */}
       <section className="relative mb-12 overflow-hidden rounded-xl">
