@@ -44,9 +44,14 @@ import {
   DownloadCloud,
   CreditCard
 } from "lucide-react";
-// Importamos nuestros componentes de navegación
-import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
-import { NavigationHeader, SimpleNavigationHeader } from "@/components/artist/section-navigation-wrapper";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../../firebase";
+import { useToast } from "@/components/ui/use-toast";
+
 import {
   Dialog,
   DialogContent,
@@ -54,13 +59,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useToast } from "@/hooks/use-toast";
+
+// Importamos los componentes de sección
+import { MusicSection } from "./music-section";
+import { VideosSection } from "./videos-section";
+
+// Importamos nuestros componentes de navegación
+import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
+import { NavigationHeader, SimpleNavigationHeader } from "@/components/artist/section-navigation-wrapper";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -75,6 +81,7 @@ interface Song {
   userId: string;
   createdAt?: any;
   storageRef?: string;
+  coverArt?: string;
 }
 
 interface Video {
@@ -84,6 +91,8 @@ interface Video {
   url: string;
   userId: string;
   createdAt?: any;
+  views?: number;
+  likes?: number;
 }
 
 // Add ShareDialog component
@@ -175,7 +184,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const { toast } = useToast();
 
   // Query optimizada para obtener canciones
-  const { data: songs = [], isLoading: isLoadingSongs } = useQuery({
+  const { data: songs = [] as Song[], isLoading: isLoadingSongs } = useQuery<Song[]>({
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
@@ -217,7 +226,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   });
 
   // Query optimizada para obtener videos
-  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
+  const { data: videos = [] as Video[], isLoading: isLoadingVideos } = useQuery<Video[]>({
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
@@ -308,22 +317,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
   };
 
-  // Función auxiliar para obtener el ID del video de YouTube
-  const getYoutubeVideoId = (url: string): string => {
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu.be\/|youtube.com\/embed\/)([^&\n?#]+)/,
-      /^[a-zA-Z0-9_-]{11}$/
-    ];
-
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
-    }
-
-    return '';
-  };
+  // Ya definimos esta función anteriormente
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -657,8 +651,21 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           
           {/* Contenido de secciones */}
           <div className="space-y-6 mb-20">
-            {activeSection === 'music' && <MusicSection />}
-            {activeSection === 'videos' && <VideosSection />}
+            {activeSection === 'music' && (
+              <MusicSection 
+                songs={songs} 
+                isLoadingSongs={isLoadingSongs} 
+                currentTrack={currentTrack} 
+                isPlaying={isPlaying}
+                togglePlay={togglePlay}
+              />
+            )}
+            {activeSection === 'videos' && (
+              <VideosSection 
+                videos={videos} 
+                isLoadingVideos={isLoadingVideos}
+              />
+            )}
             {activeSection === 'shows' && <ShowsSection />}
             {activeSection === 'merch' && <MerchSection />}
           </div>
@@ -718,6 +725,26 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     </>
   );
 }
+
+// Definimos las variantes para animaciones de las secciones
+const sectionItemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.3 },
+  },
+};
+
+// Nota: Ya tenemos estos estados definidos arriba con useState y useQuery
+// No necesitamos redefinirlos aquí
+
+// Función para extraer ID de video de YouTube desde una URL
+const getYoutubeVideoId = (url: string): string => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : '';
+};
 
 // Datos de prueba
 export const mockArtist = {
@@ -811,113 +838,18 @@ export const mockArtist = {
   ]
 };
 
-// Sección de música mejorada con diseño de tarjetas
-const MusicSection = () => (
-  <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={itemVariants}>
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-          <Music2 className="w-6 h-6 mr-2 text-orange-500" />
-          Latest Tracks
-        </h3>
-        <Button variant="ghost" size="sm" className="text-orange-500 hover:text-orange-400">
-          <span>View All</span>
-          <ChartBar className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-      
-      <div className="space-y-4">
-        {isLoadingSongs ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="relative">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Music2 className="h-4 w-4 text-orange-300" />
-              </div>
-            </div>
-            <p className="ml-3 text-orange-300">Cargando pistas...</p>
-          </div>
-        ) : songs && songs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {songs.map((song, index) => (
-              <motion.div
-                key={song.id}
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-                className={`flex items-center p-4 rounded-lg transition-all duration-300 backdrop-blur-sm ${
-                  currentTrack === index
-                    ? "bg-gradient-to-r from-orange-500/30 to-pink-500/20 border border-orange-500/50"
-                    : "bg-black/30 border border-orange-500/10 hover:border-orange-500/30"
-                }`}
-              >
-                <div className="flex items-center gap-3 w-full">
-                  <div className="relative shrink-0">
-                    <div className={`w-12 h-12 rounded-md overflow-hidden bg-orange-500/20 ${
-                      currentTrack === index && isPlaying ? 'ring-2 ring-orange-500 ring-offset-1 ring-offset-black' : ''
-                    }`}>
-                      <img 
-                        src={song.coverArt} 
-                        alt={song.name} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/assets/freepik__boostify_music_organe_abstract_icon.png';
-                        }}  
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => togglePlay(song, index)}
-                      className={`absolute -bottom-2 -right-2 w-7 h-7 rounded-full transition-transform duration-300 ${
-                        currentTrack === index && isPlaying
-                          ? "bg-orange-500 text-white hover:bg-orange-600 scale-110"
-                          : "bg-black/70 text-white hover:bg-orange-500/80"
-                      }`}
-                    >
-                      {currentTrack === index && isPlaying ? (
-                        <Pause className="h-3 w-3" />
-                      ) : (
-                        <Play className="h-3 w-3" />
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium truncate">{song.name || song.title}</span>
-                      <span className="text-xs text-muted-foreground ml-2 shrink-0">
-                        {song.duration || "3:45"}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground block truncate">
-                      {song.createdAt ? new Date(song.createdAt).toLocaleDateString() : 'No date'} 
-                      {currentTrack === index && isPlaying && <span className="ml-2 text-orange-500">• Reproduciendo</span>}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-black/20 rounded-lg p-8 text-center">
-            <Music2 className="h-12 w-12 text-orange-500/40 mx-auto mb-3" />
-            <p className="text-orange-100/70">No hay pistas disponibles</p>
-            <p className="text-sm text-orange-300/50 mt-2">Las canciones que subas aparecerán aquí</p>
-            <Button variant="outline" className="mt-4 border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Subir música
-            </Button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  </Card>
-);
+// El componente MusicSection ahora se importa desde music-section.tsx
 
 // Implementación del componente VideosSection en el mismo estilo que MusicSection
-const VideosSection = () => (
+const VideosSection = ({
+  videos = [] as Video[],
+  isLoadingVideos = false
+}: {
+  videos: Video[],
+  isLoadingVideos: boolean
+}) => (
   <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={itemVariants}>
+    <motion.div variants={sectionItemVariants}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
           <VideoIcon className="w-6 h-6 mr-2 text-orange-500" />
@@ -1002,7 +934,7 @@ const VideosSection = () => (
 // Implementación del componente ShowsSection
 const ShowsSection = () => (
   <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={itemVariants}>
+    <motion.div variants={sectionItemVariants}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
           <Ticket className="w-6 h-6 mr-2 text-orange-500" />
@@ -1078,7 +1010,7 @@ const ShowsSection = () => (
 // Implementación del componente MerchSection
 const MerchSection = () => (
   <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={itemVariants}>
+    <motion.div variants={sectionItemVariants}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
           <ShoppingBag className="w-6 h-6 mr-2 text-orange-500" />
