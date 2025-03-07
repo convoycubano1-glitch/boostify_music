@@ -29,7 +29,7 @@ export function Header() {
   const { logout } = useFirebaseAuth();
   const { detectedLanguage } = useLanguageDetection();
   const { scrollDirection, scrollY } = useScrollDirection();
-  const { isVisible, setIsVisible, toggle } = useNavigationVisibility();
+  const { isVisible, toggleVisibility } = useNavigationVisibility();
   const [showFullHeader, setShowFullHeader] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(280);
   const [isMenuExpanded, setIsMenuExpanded] = useState(true);
@@ -172,7 +172,7 @@ export function Header() {
           !isVisible ? "-translate-y-full" : 
           scrollY > 50 && !showFullHeader ? "-translate-y-16" : "translate-y-0"
         }`}
-        onDoubleClick={() => toggle()}>
+        onDoubleClick={() => toggleVisibility()}>
         <div className="container flex h-16 max-w-screen-2xl items-center">
           <div className="flex flex-1 items-center justify-between space-x-4">
             {/* Logo section - now navigates to home page */}

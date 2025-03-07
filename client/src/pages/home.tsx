@@ -1,6 +1,7 @@
 import { WaitlistModal } from "@/components/marketing/waitlist-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PageContainer } from "@/components/ui/page-container";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
@@ -207,10 +208,10 @@ export default function HomePage() {
   const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <PageContainer className="bg-black text-white">
       <WaitlistModal />
       {/* HERO SECTION */}
-      <div className="fixed inset-0 -z-10">
+      <div className="absolute inset-0 -z-10">
         <video
           autoPlay
           loop
@@ -1134,6 +1135,6 @@ export default function HomePage() {
       </section>
       <SuperAgent />
       <Footer />
-    </div>
+    </PageContainer>
   );
 }

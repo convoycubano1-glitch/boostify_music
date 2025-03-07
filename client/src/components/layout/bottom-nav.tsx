@@ -8,11 +8,9 @@ export function BottomNav() {
   const [location] = useLocation();
   const [showRadioIndicator, setShowRadioIndicator] = useState(false);
   const [showAllNav, setShowAllNav] = useState(false);
-  const { isVisible, setIsVisible, toggle } = useNavigationVisibility();
+  const { isVisible, toggleVisibility } = useNavigationVisibility();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
-  const lastClickTimeRef = useRef<number>(0);
-  const doubleClickThreshold = 300; // ms
 
   // Todos los elementos de navegación
   const allNavItems = [
@@ -90,7 +88,7 @@ export function BottomNav() {
       
       // Detect swipe up from bottom
       if (diff > 50 && touchStartY > window.innerHeight - 50 && !isVisible) {
-        setIsVisible(true);
+        toggleVisibility(true); // Usamos el método del hook global
       }
     };
     
@@ -101,7 +99,7 @@ export function BottomNav() {
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [isVisible, setIsVisible]);
+  }, [isVisible, toggleVisibility]);
 
   // Scroll controls for horizontal navigation
   const scrollLeft = () => {
@@ -149,7 +147,7 @@ export function BottomNav() {
         {!isVisible && (
           <div 
             className="absolute -top-6 left-0 right-0 flex justify-center"
-            onClick={() => setIsVisible(true)}
+            onClick={() => toggleVisibility(true)}
           >
             <div className="bg-black/90 rounded-t-lg px-6 py-1 border-t border-x border-orange-500/30">
               <ChevronLeft className="w-5 h-5 text-orange-500/70 transform -rotate-90" />
