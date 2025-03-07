@@ -6,8 +6,14 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Loader2, Wand2, Mic, Download, RefreshCw, Waves, Music, History, 
-  Split, Settings, AudioLines, Info, Cloud, Save, Mic2 
+  Split, Settings, AudioLines, Info, Cloud, Save, Mic2, ChevronDown,
+  Headphones, Piano, CheckCircle2
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -635,26 +641,26 @@ export function AudioMastering() {
         Audio Production Suite
       </h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-2 p-1">
-          <TabsTrigger value="mastering" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
-            <Waves className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
-            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Audio" : "Audio Processing"}</span>
+        <TabsList className={`grid w-full ${isMobile ? "grid-cols-3" : "sm:grid-cols-5"} gap-1 sm:gap-2 p-1`}>
+          <TabsTrigger value="mastering" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-1.5 px-2 sm:p-3 h-auto">
+            <Waves className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center whitespace-nowrap">{isMobile ? "Audio" : "Audio Processing"}</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-conversion" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
-            <Mic className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
-            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Voice" : "Voice Conversion"}</span>
+          <TabsTrigger value="voice-conversion" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-1.5 px-2 sm:p-3 h-auto">
+            <Mic className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center whitespace-nowrap">{isMobile ? "Voice" : "Voice Conversion"}</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-model" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
-            <Music className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
-            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Train" : "Train Voice"}</span>
+          <TabsTrigger value="voice-model" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-1.5 px-2 sm:p-3 h-auto">
+            <Music className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center whitespace-nowrap">{isMobile ? "Train" : "Train Voice"}</span>
           </TabsTrigger>
-          <TabsTrigger value="separation" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
-            <Split className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
-            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Split" : "Stem Separation"}</span>
+          <TabsTrigger value="separation" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-1.5 px-2 sm:p-3 h-auto">
+            <Split className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center whitespace-nowrap">{isMobile ? "Split" : "Stem Separation"}</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
-            <History className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
-            <span className="text-[10px] sm:text-sm font-medium text-center">History</span>
+          <TabsTrigger value="history" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-1.5 px-2 sm:p-3 h-auto">
+            <History className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center whitespace-nowrap">History</span>
           </TabsTrigger>
         </TabsList>
         
@@ -803,28 +809,75 @@ export function AudioMastering() {
               </div>
             </CardHeader>
             <CardContent className="space-y-5">
-              {/* Recording High-Quality Datasets Guide Section */}
-              <div className="bg-primary/5 rounded-lg p-4 mb-4">
-                <h3 className="text-base font-semibold mb-2">Recording High-Quality Datasets</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  30-60 minutes of clean and varied audio will result in the highest-quality voice models.
-                </p>
-                
-                <h4 className="text-sm font-medium mt-3 mb-1">Clean audio recommendations:</h4>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-                  <li>Use a quality microphone into an audio interface</li>
-                  <li>Record in a noise-free setting with limited room reverberations</li>
-                  <li>Maintain correct and consistent mic placement</li>
-                  <li>Ensure volume peaks between -9db and -3db</li>
-                </ul>
-                
-                <h4 className="text-sm font-medium mt-3 mb-1">Processing recommendations:</h4>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-                  <li>Maintain consistent dynamics across the whole dataset</li>
-                  <li>Apply light EQ to remove any muddiness or hiss</li>
-                  <li>Use compression/limiting to smooth out peaks</li>
-                  <li>Avoid reverb, delay, or doubling effects</li>
-                </ul>
+              {/* Recording High-Quality Datasets Guide Section - Mobile Optimized */}
+              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/10 shadow-sm p-1.5 sm:p-4 mb-3 sm:mb-4">
+                <Collapsible defaultOpen={false}>
+                  <CollapsibleTrigger className="flex justify-between w-full items-center p-1 rounded hover:bg-primary/5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="rounded-full bg-primary/10 p-1 flex-shrink-0">
+                        <Headphones className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                      </div>
+                      <h3 className="text-xs sm:text-base font-semibold">Recording High-Quality Datasets</h3>
+                    </div>
+                    <Badge variant="outline" className="bg-primary/5 text-primary/80 text-[9px] py-0 px-1.5 h-4 mr-1 hidden sm:flex">
+                      TIPS
+                    </Badge>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform ui-expanded:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 px-1.5 sm:px-2 pb-1 sm:pb-2 animate-accordion-down">
+                    <div className="p-1.5 rounded-md bg-white/10 dark:bg-black/10 mb-2">
+                      <p className="text-[11px] sm:text-sm text-primary/80 leading-tight">
+                        <span className="font-medium">Pro Tip:</span> 30-60 minutes of clean, varied audio creates the best voice models.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 mt-2">
+                      <div className="bg-white/5 dark:bg-black/5 rounded-md p-1.5 sm:p-2.5">
+                        <h4 className="text-[11px] sm:text-sm font-medium mb-1 flex items-center gap-1.5">
+                          <div className="rounded-full bg-primary/10 p-0.5 sm:p-1">
+                            <Mic className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-primary" />
+                          </div>
+                          Recording setup:
+                        </h4>
+                        <ul className="text-[10px] sm:text-xs text-muted-foreground space-y-1 list-none pl-1">
+                          {[
+                            "Quality microphone + audio interface",
+                            "Noise-free room with minimal reverb",
+                            "Consistent mic distance (6-8 inches)",
+                            "Volume: peaks between -9db and -3db"
+                          ].map((item, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary/70 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-white/5 dark:bg-black/5 rounded-md p-1.5 sm:p-2.5">
+                        <h4 className="text-[11px] sm:text-sm font-medium mb-1 flex items-center gap-1.5">
+                          <div className="rounded-full bg-primary/10 p-0.5 sm:p-1">
+                            <Settings className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-primary" />
+                          </div>
+                          Audio processing:
+                        </h4>
+                        <ul className="text-[10px] sm:text-xs text-muted-foreground space-y-1 list-none pl-1">
+                          {[
+                            "Consistent dynamics throughout",
+                            "Light EQ (remove mud/hiss only)",
+                            "Subtle compression (2:1 ratio)",
+                            "No reverb, delay or doubling effects"
+                          ].map((item, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary/70 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="audio-voice">Audio File</Label>
@@ -1095,78 +1148,58 @@ export function AudioMastering() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TooltipProvider>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
+                    <h4 className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
+                      <Split className="h-3.5 w-3.5 text-primary/70" />
+                      Select stems to extract:
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
                       <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
-                                <Mic className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Extract vocals from the mix</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <div className="text-center">
+                        <CardContent className="p-1.5 sm:p-3 flex items-center gap-2">
+                          <div className="rounded-full bg-primary/10 p-1.5 sm:p-2.5 flex-shrink-0">
+                            <Mic className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          </div>
+                          <div>
                             <h3 className="font-medium text-xs sm:text-sm">Vocals</h3>
+                            <p className="text-[9px] sm:text-xs text-muted-foreground">Lead/backing</p>
                           </div>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
-                                <Music className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Extract instrumentals (no vocals)</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <div className="text-center">
+                        <CardContent className="p-1.5 sm:p-3 flex items-center gap-2">
+                          <div className="rounded-full bg-primary/10 p-1.5 sm:p-2.5 flex-shrink-0">
+                            <Music className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          </div>
+                          <div>
                             <h3 className="font-medium text-xs sm:text-sm">Instrumental</h3>
+                            <p className="text-[9px] sm:text-xs text-muted-foreground">No vocals</p>
                           </div>
                         </CardContent>
                       </Card>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
                       <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
-                                <Waves className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Extract drum tracks</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <div className="text-center">
+                        <CardContent className="p-1.5 sm:p-3 flex items-center gap-2">
+                          <div className="rounded-full bg-primary/10 p-1.5 sm:p-2.5 flex-shrink-0">
+                            <Waves className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          </div>
+                          <div>
                             <h3 className="font-medium text-xs sm:text-sm">Drums</h3>
+                            <p className="text-[9px] sm:text-xs text-muted-foreground">Percussion</p>
                           </div>
                         </CardContent>
                       </Card>
                       
                       <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
-                                <AudioLines className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Extract bass lines</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <div className="text-center">
+                        <CardContent className="p-1.5 sm:p-3 flex items-center gap-2">
+                          <div className="rounded-full bg-primary/10 p-1.5 sm:p-2.5 flex-shrink-0">
+                            <AudioLines className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          </div>
+                          <div>
                             <h3 className="font-medium text-xs sm:text-sm">Bass</h3>
+                            <p className="text-[9px] sm:text-xs text-muted-foreground">Bass lines</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -1174,21 +1207,32 @@ export function AudioMastering() {
                   </div>
                 </TooltipProvider>
                 
-                <div className="bg-primary/5 rounded-lg p-3 sm:p-4">
-                  <h3 className="text-sm sm:text-base font-semibold mb-1 sm:mb-2">About Stem Separation</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
-                    Our advanced AI can separate your mixed audio into individual instrument tracks (stems), including:
-                  </p>
-                  <ul className="text-xs text-muted-foreground space-y-0.5 sm:space-y-1 list-disc pl-3 sm:pl-4">
-                    <li>Vocals (lead and backing vocals)</li>
-                    <li>Instruments (all non-vocal elements)</li>
-                    <li>Drums (percussion elements)</li>
-                    <li>Bass (bass guitar and sub frequencies)</li>
-                    <li>Other (remaining musical elements)</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-2 sm:mt-3 italic">
-                    For best results, use high-quality WAV or lossless audio files.
-                  </p>
+                <div className="bg-primary/5 rounded-lg p-2 sm:p-4">
+                  <h3 className="text-xs sm:text-base font-semibold mb-1 sm:mb-2 flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5 text-primary/80" />
+                    About Stem Separation
+                  </h3>
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex justify-between w-full items-center py-1 md:hidden">
+                      <p className="text-[10px] text-muted-foreground">Tap to see more info</p>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="md:block">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+                        Our AI separates your mixed audio into individual instrument tracks:
+                      </p>
+                      <ul className="text-[10px] sm:text-xs text-muted-foreground space-y-0.5 sm:space-y-1 list-disc pl-3 sm:pl-4">
+                        <li>Vocals (lead and backing vocals)</li>
+                        <li>Instruments (all non-vocal elements)</li>
+                        <li>Drums (percussion elements)</li>
+                        <li>Bass (bass guitar and sub frequencies)</li>
+                        <li>Other (remaining musical elements)</li>
+                      </ul>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3 italic">
+                        For best results, use high-quality WAV or lossless audio files.
+                      </p>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </div>
             </CardContent>
