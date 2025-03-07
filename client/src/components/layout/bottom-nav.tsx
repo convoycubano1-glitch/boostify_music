@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2, MessageSquare } from "lucide-react";
+import { Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart, MessageSquare } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigationVisibility } from "@/hooks/use-navigation-visibility";
 
@@ -38,7 +38,7 @@ export function BottomNav() {
     },
     {
       title: "Stats",
-      icon: BarChart2,
+      icon: BarChart,
       href: "/analytics-dashboard",
     },
     {

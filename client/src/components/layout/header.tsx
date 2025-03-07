@@ -2,11 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from "wouter";
 import { useUser } from '@/hooks/use-user';
 import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
+import { useAuth } from '@/hooks/use-auth'; // Añadido
+import { useFirebaseAuth } from '@/hooks/use-firebase-auth'; // Añadido
+import { useLanguageDetection } from '@/hooks/use-language-detection'; // Añadido
+import { useScrollDirection } from '@/hooks/use-scroll-direction'; // Añadido
 import { 
   PieChart, FileText, Home, Music, Video, Rss, 
   ShoppingBag, Shield, ClipboardList, 
   ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
-  Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight
+  Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight,
+  // Añadidos los iconos faltantes
+  Disc, Store, Share2, DollarSign, Mic, Briefcase, Wrench, 
+  GraduationCap, Tv, Building2, Brain, Users, Instagram, Youtube, Radio
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -124,7 +131,7 @@ export function Header() {
   ];
 
   const mainNavigation = [
-    { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
+    { name: "Dashboard", href: "/dashboard", icon: BarChart },
     { name: "Artist Dashboard", href: "/artist-dashboard", icon: Mic },
     { name: "Manager Tools", href: "/manager-tools", icon: Briefcase },
     { name: "Producer Tools", href: "/producer-tools", icon: Wrench },
@@ -138,7 +145,7 @@ export function Header() {
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
     { name: "Artist Image", href: "/artist-image-advisor", icon: Users },
     { name: "Merch", href: "/merchandise", icon: Store },
-    { name: "Spotify", href: "/spotify", icon: Music2 },
+    { name: "Spotify", href: "/spotify", icon: Music },
     { name: "Instagram", href: "/instagram-boost", icon: Instagram },
     { name: "YouTube", href: "/youtube-views", icon: Youtube },
     { name: "Contracts", href: "/contracts", icon: FileText },
