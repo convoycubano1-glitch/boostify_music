@@ -629,15 +629,15 @@ export function AudioMastering() {
   };
 
   return (
-    <div className="space-y-6 p-2 sm:p-4 mb-6 sm:mb-8">
-      <h1 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
-        <AudioLines className="text-primary h-5 sm:h-6 w-5 sm:w-6" />
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 mb-4 sm:mb-8">
+      <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-4 flex items-center gap-2 text-center sm:text-left">
+        <AudioLines className="text-blue-500 h-4 sm:h-5 md:h-6 w-4 sm:w-5 md:w-6" />
         Audio Production Suite
       </h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-2 p-1">
-          <TabsTrigger value="mastering" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
-            <Waves className="h-5 w-5" />
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-2 p-1">
+          <TabsTrigger value="mastering" className="flex flex-row items-center justify-center gap-1 sm:gap-3 py-2 sm:py-3 px-1 sm:px-2 text-xs sm:text-sm">
+            <Waves className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Audio" : "Audio Processing"}</span>
           </TabsTrigger>
           <TabsTrigger value="voice-conversion" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
@@ -782,18 +782,18 @@ export function AudioMastering() {
         {/* Voice Conversion Tab */}
         <TabsContent value="voice-conversion">
           <Card className="border-t-4 border-t-primary/80">
-            <CardHeader>
-              <div className="flex justify-between items-center">
+            <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mic className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Mic className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                     Voice Conversion
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
                     Transform your vocals using advanced AI voice models
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="bg-primary/5">Professional</Badge>
+                <Badge variant="outline" className="bg-blue-500/5 text-blue-500 text-xs">Professional</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-5">

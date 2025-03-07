@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
+import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2 } from "lucide-react";
+import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -297,14 +298,44 @@ export default function ProducerToolsPage() {
 
         console.log("Images grouped by category:", imagesByCategory);
 
-        const updatedMusicians = musicians.map(musician => {
-          const categoryImages = imagesByCategory[musician.category] || [];
+        // Asignar imágenes predefinidas para cada músico
+        // Esto garantiza que cada músico tenga su propia imagen consistente
+        const predefinedImages: Record<string, string> = {
+          "Alex Rivera": "https://fal.media/files/lion/0Yt3i5dtnFhLWLrwCWPf8_ee5a759c737c46729e4e45bf6d8f8bf8.jpg",
+          "Sarah Johnson": "https://fal.media/files/tiger/ZA-Dhf_yr3gSdFYoXtFA7_07c64d9dfff243b78deebc7d36bc7ee7.jpg",
+          "Miguel Torres": "https://fal.media/files/lion/6kQHDeoRbAw967gWtOIhj_bad0644f5e4040038fcfacfa58fc4a53.jpg",
+          "John Smith": "https://fal.media/files/rabbit/rxCMh6_XR_2Hw3E7yK7uU_ec1ff464e0fb4d59ad93872c0a47c4f4.jpg",
+          "Lisa Chen": "https://fal.media/files/koala/9teXqGpjZlk-o-kVu9vZy_61fccb781e3748c181d0b744375e7939.jpg",
+          "David Wilson": "https://fal.media/files/elephant/2hMFRub3fi0sHoEQSEX5t_2ee52261424047b3957275eab33bf070.jpg",
+          "Emma Watson": "https://fal.media/files/zebra/Jy2A-uRG59pZzWRI15m4m_57bdefae1e5d4d9b96d89763b0558b92.jpg",
+          "Carlos Ruiz": "https://fal.media/files/zebra/WEqNVS4NDcCqCyiG6P527_4a5104d4c1f54426b704931f208eee7c.jpg",
+          "Sophie Martin": "https://fal.media/files/monkey/WAiQgINO5zOQ9jermZTNG_f0b3dd90634b47abbd21c28709953704.jpg",
+          "Maria García": "https://fal.media/files/koala/aPxr5fmwvJp31YVV8oPS3_f6c9acd30fc041e993ee2530472d44ec.jpg",
+          "James Brown": "https://fal.media/files/penguin/Br3ttzJv9-3_FVXtfDFb9_0cbfac20c9b348bc99dc8981c7fee564.jpg",
+          "Luna Kim": "https://fal.media/files/zebra/G1kOorawegMCHryO1RTW3_c89d1bafdad9496b899f307aed6d0c9b.jpg",
+          "Mark Davis": "https://fal.media/files/rabbit/2II1s_a8uZL-uOIfDdHE-_6eb5e5918c5747ecbc36e3cf415aee49.jpg",
+          "Ana Silva": "https://fal.media/files/lion/jg_i5oyzlx4nKXrwH4oxS_5f7a05882eb2478fa156ccfe428f0187.jpg",
+          "Tom Wilson": "https://fal.media/files/kangaroo/JgFrut-dvBy9uunJG_S1o_5d9f6390615640f38eeff5cdb76a5926.jpg"
+        };
 
-          // Usar un índice basado en el ID del músico para variar las imágenes dentro de cada categoría
+        const updatedMusicians = musicians.map(musician => {
+          const musicianName = musician.title;
+          // Usar la imagen predefinida para este músico específico
+          if (musicianName in predefinedImages) {
+            console.log(`Assigning predefined image for ${musicianName}:`, predefinedImages[musicianName]);
+            return {
+              ...musician,
+              userId: `user-${musician.id}`,
+              photo: predefinedImages[musicianName]
+            };
+          }
+          
+          // Fallback al sistema de categorías si no hay imagen predefinida
+          const categoryImages = imagesByCategory[musician.category] || [];
           const imageIndex = parseInt(musician.id) % (categoryImages.length || 1);
 
           if (categoryImages.length > 0) {
-            console.log(`Assigning image for ${musician.title} (${musician.category}):`, categoryImages[imageIndex]);
+            console.log(`Assigning category image for ${musician.title} (${musician.category}):`, categoryImages[imageIndex]);
             return {
               ...musician,
               userId: `user-${musician.id}`,
@@ -515,14 +546,32 @@ export default function ProducerToolsPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-end pb-12 md:pb-12 pt-48 md:pt-96">
-          <div className="text-center md:text-left mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Your Creative Music Hub
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center md:text-left mb-12"
+          >
+            <div className="inline-block bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full px-4 py-2 mb-6">
+              <span className="text-orange-500 text-sm font-medium flex items-center">
+                <Music2 className="h-4 w-4 mr-2" /> Next-Gen Production Suite
+              </span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+              Your Creative <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Music Hub</span>
             </h1>
-            <p className="text-lg text-white/90 max-w-2xl">
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mb-8">
               Connect with musicians worldwide or use our AI tools to enhance your production workflow
             </p>
-          </div>
+            <div className="flex flex-wrap gap-3 items-center">
+              <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-white">
+                Start Creating <Wand2 className="ml-2 h-5 w-5" />
+              </Button>
+              <Button variant="outline" size="lg" className="border-white/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/40">
+                Watch Demo <PlayCircle className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </div>
 
@@ -579,76 +628,182 @@ export default function ProducerToolsPage() {
           </div>
 
           {/* Musicians Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {isLoadingImages ? (
-              // Loading skeleton
-              Array.from({ length: 6 }).map((_, i) => (
-                <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse backdrop-blur-sm">
-                  <div className="aspect-video bg-muted" />
-                  <div className="p-6 space-y-4">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                  </div>
-                </Card>
-              ))
-            ) : (
-              filteredMusicians.map((musician) => (
-                <Card key={musician.id} className="overflow-hidden backdrop-blur-sm bg-background/80">
-                  <div className="aspect-video bg-orange-500/10 relative">
-                    <img
-                      src={musician.photo || "/assets/musician-placeholder.jpg"}
-                      alt={musician.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-semibold">{musician.title}</h3>
-                      <span className="text-sm font-medium text-orange-500">{musician.instrument}</span>
-                    </div>
-                    <p className="text-muted-foreground mb-4">{musician.description}</p>
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                        <span className="font-medium">{musician.rating.toFixed(1)}</span>
-                        <span className="text-muted-foreground">
-                          ({musician.totalReviews} reviews)
-                        </span>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-12"
+          >
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isLoadingImages ? (
+                // Loading skeleton
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse backdrop-blur-sm border border-orange-500/10 shadow-xl shadow-orange-500/5">
+                    <div className="aspect-[4/3] bg-muted" />
+                    <div className="p-6 space-y-4">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-1/2" />
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 bg-muted rounded w-1/4" />
+                        <div className="h-4 bg-muted rounded w-1/4" />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-orange-500" />
-                        <span className="font-medium">${musician.price}/sesión</span>
-                      </div>
+                      <div className="h-10 bg-muted rounded w-full" />
                     </div>
-                    <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600"
-                      asChild
-                    >
-                      <BookingDialog musician={musician} />
-                    </Button>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
+                  </Card>
+                ))
+              ) : (
+                filteredMusicians.map((musician, index) => (
+                  <motion.div
+                    key={musician.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <Card className="overflow-hidden backdrop-blur-sm bg-background/80 border border-orange-500/10 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group">
+                      <div className="aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
+                        <img
+                          src={musician.photo || "/assets/musician-placeholder.jpg"}
+                          alt={musician.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute top-3 right-3 z-10">
+                          <Badge variant="outline" className="bg-black/50 backdrop-blur-md border-orange-500/20 text-white px-2.5 py-1">
+                            {musician.instrument}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-xl font-semibold group-hover:text-orange-500 transition-colors">{musician.title}</h3>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
+                            <span className="font-medium">{musician.rating.toFixed(1)}</span>
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground mb-4 line-clamp-2">{musician.description}</p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {musician.genres?.slice(0, 3).map(genre => (
+                            <Badge key={genre} variant="secondary" className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20">
+                              {genre}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="text-muted-foreground text-sm">
+                            {musician.totalReviews} valoraciones
+                          </div>
+                          <div className="flex items-center gap-2 text-base font-semibold text-orange-500">
+                            <DollarSign className="h-4 w-4" />
+                            ${musician.price}/sesión
+                          </div>
+                        </div>
+                        <Button
+                          className="w-full bg-orange-500 hover:bg-orange-600 shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
+                          asChild
+                        >
+                          <BookingDialog musician={musician} />
+                        </Button>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </motion.div>
 
           {/* Production Tools Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-            <FileExchangeHub />
-            <StudioVideoCall />
-            <ProductionProgressContainer />
-            <VersionControl />
+          <div className="mb-12">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gradient-primary mb-2">Production Workflow Tools</h2>
+                <p className="text-muted-foreground max-w-2xl">Collaborate seamlessly with professional tools designed for musicians and producers.</p>
+              </div>
+              <Badge variant="outline" className="mt-2 md:mt-0 bg-orange-500/10 text-orange-500 border-orange-500/20 px-3 py-1">
+                <span className="animate-pulse mr-2">●</span> Live Collaboration
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <FileExchangeHub />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+              >
+                <StudioVideoCall />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+              >
+                <ProductionProgressContainer />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.4 }}
+              >
+                <VersionControl />
+              </motion.div>
+            </div>
           </div>
 
           {/* AI Tools Section */}
-          <MusicAIGenerator />
+          <div className="mb-12">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gradient-primary mb-2">AI Music Generation</h2>
+                <p className="text-muted-foreground max-w-2xl">Create original compositions and soundscapes powered by our advanced AI models.</p>
+              </div>
+              <Badge variant="outline" className="mt-2 md:mt-0 bg-green-500/10 text-green-500 border-green-500/20 px-3 py-1">
+                <Wand2 className="h-3.5 w-3.5 mr-1" /> AI Powered
+              </Badge>
+            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <MusicAIGenerator />
+            </motion.div>
+          </div>
           
           {/* Audio Mastering & Voice Conversion Section */}
           <div className="mt-8">
-            <h2 className="text-3xl font-bold mb-8">Audio Processing Tools</h2>
-            <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
-              <AudioMastering />
-              <ProfessionalVoiceCloning />
+            <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+              <div className="text-center md:text-left">
+                <h2 className="text-3xl font-bold text-gradient-primary mb-2">Audio Production Suite</h2>
+                <p className="text-muted-foreground max-w-2xl">Professional audio mastering and voice cloning solutions for your production needs.</p>
+              </div>
+              <Badge variant="outline" className="mt-4 md:mt-0 bg-blue-500/10 text-blue-500 border-blue-500/20 px-3 py-1">
+                <Music4 className="h-3.5 w-3.5 mr-1" /> Professional Quality
+              </Badge>
+            </div>
+            {/* Sección móvil optimizada con disposición de columnas */}
+            <div className="space-y-6 lg:space-y-0 lg:grid lg:gap-8 lg:grid-cols-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="backdrop-blur-sm border border-blue-500/10 rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300"
+              >
+                <AudioMastering />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="backdrop-blur-sm border border-blue-500/10 rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300"
+              >
+                <ProfessionalVoiceCloning />
+              </motion.div>
             </div>
           </div>
         </div>
