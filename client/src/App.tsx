@@ -221,7 +221,7 @@ const Router = () => {
         <ProtectedRoute path="/spotify" component={WrappedSpotifyPage} />
         <ProtectedRoute path="/contracts" component={WrappedContractsPage} />
         <ProtectedRoute path="/boostify-international" component={WrappedBoostifyInternationalPage} />
-        <ProtectedRoute path="/boostify-tv" component={WrappedBoostifyTVPage} />
+        <Route path="/boostify-tv" component={WrappedBoostifyTVPage} />
         <ProtectedRoute path="/pr" component={WrappedPRPage} />
         <ProtectedRoute path="/news" component={WrappedNewsPage} />
         <ProtectedRoute path="/events" component={WrappedEventsPage} />

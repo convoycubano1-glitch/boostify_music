@@ -12,9 +12,9 @@ const app = express();
 // Enable CORS for development
 app.use(cors());
 
-// Middleware para configurar encabezados de seguridad (CSP)
+// Middleware to configure security headers (CSP)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  // Configuración CSP actualizada para permitir más orígenes y recursos
+  // Updated CSP configuration to allow more origins and resources
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -28,7 +28,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "frame-src 'self';"
   );
   
-  // Agregar cabeceras CORS para evitar problemas de CORB
+  // Add CORS headers to avoid CORB issues
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
@@ -36,11 +36,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Aumentar el límite de tamaño para JSON para manejar data URLs de imágenes
+// Increase JSON size limit to handle image data URLs
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Configurar middleware para procesamiento de archivos
+// Configure middleware for file processing
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
@@ -279,7 +279,7 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(process.cwd(), 'client/public')));
   
   // Agregamos un diagnóstico para depurar el manejo de rutas
-  log('🔍 Vite manejará las rutas frontend en modo desarrollo');
+  log('🔍 Vite will handle frontend routes in development mode');
 }
 
 (async () => {
@@ -343,7 +343,7 @@ if (process.env.NODE_ENV === "production") {
       log('🛠 Setting up Vite development server');
       
       // Diagnóstico adicional para identificar el orden de inicialización
-      log('📌 Configurando Vite para manejar rutas frontend como "/"');
+      log('📌 Configuring Vite to handle frontend routes like "/"');
       
       // Configuramos Vite con mayor prioridad para rutas no-API
       await setupVite(app, server);
@@ -352,7 +352,7 @@ if (process.env.NODE_ENV === "production") {
       app.use('*', (req, res, next) => {
         // Solo para rutas que no sean API y que Vite no haya manejado
         if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
-          log(`⚠️ Ruta no manejada por Vite: ${req.method} ${req.path}`);
+          log(`⚠️ Route not handled by Vite: ${req.method} ${req.path}`);
         }
         next();
       });
@@ -367,7 +367,7 @@ if (process.env.NODE_ENV === "production") {
     
     // En producción, asegurarnos de que escuchamos en el puerto correcto
     if (process.env.NODE_ENV === "production") {
-      log(`🚀 Iniciando servidor en modo producción en puerto ${PORT}`);
+      log(`🚀 Starting server in production mode on port ${PORT}`);
     }
     
     // Iniciar el servidor en un puerto específico - siempre en 0.0.0.0 para asegurar accesibilidad externa
