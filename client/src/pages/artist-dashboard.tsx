@@ -231,8 +231,9 @@ export default function ArtistDashboard() {
         if (querySnapshot.empty) return [];
         const strategies = querySnapshot.docs.map((doc) => ({
           ...doc.data(),
+          id: doc.id,
           createdAt: doc.data().createdAt?.toDate() || new Date(),
-        }));
+        })) as Strategy[];
         strategies.sort(
           (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
         );
@@ -369,7 +370,7 @@ export default function ArtistDashboard() {
               name: selectedFile.name,
               audioUrl: downloadURL,
               storageRef: storageRefObj.fullPath,
-              userId: auth.currentUser.uid,
+              userId: auth.currentUser?.uid || 'unknown',
               createdAt: serverTimestamp(),
             };
 
@@ -380,7 +381,7 @@ export default function ArtistDashboard() {
               type: "song",
               action: "Uploaded new song",
               title: selectedFile.name,
-              userId: auth.currentUser.uid,
+              userId: auth.currentUser?.uid || 'unknown',
               createdAt: serverTimestamp(),
             });
 
@@ -440,7 +441,7 @@ export default function ArtistDashboard() {
       }
       const videoData = {
         url: videoUrl,
-        userId: auth.currentUser.uid,
+        userId: auth.currentUser?.uid || 'unknown',
         createdAt: serverTimestamp(),
         title: "YouTube Video",
         thumbnailUrl: getYouTubeThumbnailUrl(videoId),
@@ -450,7 +451,7 @@ export default function ArtistDashboard() {
         type: "video",
         action: "Added new video",
         title: videoUrl,
-        userId: auth.currentUser.uid,
+        userId: auth.currentUser?.uid || 'unknown',
         createdAt: serverTimestamp(),
       });
       toast({
@@ -548,43 +549,43 @@ export default function ArtistDashboard() {
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-background" />
           
-          <div className="absolute inset-0 z-10 flex flex-col justify-center md:justify-end">
+          <div className="absolute inset-0 z-10 flex flex-col justify-end">
             <div className="container mx-auto px-4 md:px-8 pb-8 md:pb-16">
-              <div className="text-center md:text-left mb-8 mt-auto">
+              <div className="text-center md:text-left mb-4 md:mb-8 mt-auto">
                 <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600 drop-shadow-lg"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600 drop-shadow-lg"
                 >
-                  Welcome to Your Creative Hub
+                  Creative Hub
                 </motion.h1>
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="mt-2 text-base sm:text-lg md:text-xl text-white shadow-sm"
+                  className="mt-1 text-sm sm:text-base md:text-lg text-white shadow-sm"
                 >
-                  Manage and enhance your musical presence from one place
+                  Gestione su presencia musical en un solo lugar
                 </motion.p>
               </div>
 
               {/* Estadísticas en tarjetas mejoradas */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Card className="p-3 sm:p-4 md:p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Published Videos
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+                          Videos
                         </p>
-                        <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold mt-1">{videos.length}</h3>
                       </div>
-                      <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <Video className="h-6 w-6 text-orange-500" />
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                        <Video className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                       </div>
                     </div>
                   </Card>
@@ -595,16 +596,16 @@ export default function ArtistDashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Card className="p-3 sm:p-4 md:p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Uploaded Songs
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+                          Canciones
                         </p>
-                        <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold mt-1">{songs.length}</h3>
                       </div>
-                      <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <Music2 className="h-6 w-6 text-orange-500" />
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                        <Music2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                       </div>
                     </div>
                   </Card>
@@ -614,17 +615,18 @@ export default function ArtistDashboard() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
+                  className="col-span-2 sm:col-span-1"
                 >
-                  <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Card className="p-3 sm:p-4 md:p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Active Strategies
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+                          Estrategias
                         </p>
-                        <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold mt-1">{currentStrategy.length}</h3>
                       </div>
-                      <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <BarChart2 className="h-6 w-6 text-orange-500" />
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                        <BarChart2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
                       </div>
                     </div>
                   </Card>
@@ -644,42 +646,42 @@ export default function ArtistDashboard() {
               transition={{ delay: 0.5 }}
               className="bg-gradient-to-r from-orange-500/10 to-orange-500/5 rounded-xl p-6 border border-orange-500/20"
             >
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
-                <div className="flex items-center gap-4">
-                  <Zap className="h-8 w-8 text-orange-500" />
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4 md:mb-6">
+                <div className="flex items-center gap-3">
+                  <Zap className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                   <div>
-                    <h2 className="text-xl font-bold text-white">Quick Actions</h2>
-                    <p className="text-muted-foreground">Manage your content and promotion</p>
+                    <h2 className="text-lg md:text-xl font-bold text-white">Acciones Rápidas</h2>
+                    <p className="text-xs md:text-sm text-muted-foreground">Gestione su contenido y promoción</p>
                   </div>
                 </div>
                 
-                <div className="flex flex-wrap gap-3 mt-4 md:mt-0 md:ml-auto">
+                <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3 w-full sm:w-auto mt-3 md:mt-0 md:ml-auto">
                   <Button 
                     variant="secondary" 
                     size="sm" 
-                    className="bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
+                    className="flex flex-col sm:flex-row items-center justify-center sm:justify-start h-auto py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
                     onClick={() => setIsVideoDialogOpen(true)}
                   >
-                    <Video className="mr-2 h-4 w-4" />
-                    Add Video
+                    <Video className="mb-1 sm:mb-0 sm:mr-2 h-4 w-4" />
+                    <span className="text-xs sm:text-sm">Añadir Video</span>
                   </Button>
                   <Button 
                     variant="secondary" 
                     size="sm" 
-                    className="bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
+                    className="flex flex-col sm:flex-row items-center justify-center sm:justify-start h-auto py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
                     onClick={() => setIsSongDialogOpen(true)}
                   >
-                    <Music2 className="mr-2 h-4 w-4" />
-                    Add Song
+                    <Music2 className="mb-1 sm:mb-0 sm:mr-2 h-4 w-4" />
+                    <span className="text-xs sm:text-sm">Añadir Canción</span>
                   </Button>
                   <Button 
                     variant="secondary" 
                     size="sm" 
-                    className="bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
+                    className="flex flex-col sm:flex-row items-center justify-center sm:justify-start h-auto py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
                     onClick={() => setIsStrategyDialogOpen(true)}
                   >
-                    <BarChart2 className="mr-2 h-4 w-4" />
-                    Create Strategy
+                    <BarChart2 className="mb-1 sm:mb-0 sm:mr-2 h-4 w-4" />
+                    <span className="text-xs sm:text-sm">Crear Estrategia</span>
                   </Button>
                 </div>
               </div>
@@ -1196,7 +1198,6 @@ export default function ArtistDashboard() {
         <StrategyDialog
           open={isStrategyDialogOpen}
           onOpenChange={setIsStrategyDialogOpen}
-          selectedStrategy={selectedStrategy}
           onStrategyUpdate={fetchStrategies}
         />
       </main>
