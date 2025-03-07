@@ -5,27 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos para ajuste de contenido cuando los menús están ocultos */
-:root {
-  --nav-transition-duration: 300ms;
-}
-
-/* Cuerpo de página con ajuste automático */
-.content-container {
-  transition: padding var(--nav-transition-duration);
-  padding-bottom: 5rem; /* Espacio para navegación inferior */
-}
-
-/* Clases para ajustar el contenido cuando los menús están ocultos */
-.menu-hidden .content-container {
-  padding-bottom: 1rem;
-}
-
-/* Clase que se aplicará dinámicamente al cuerpo cuando los menús estén ocultos */
-body.nav-hidden {
-  overflow-x: hidden;
-}
-
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 0.7;

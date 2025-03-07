@@ -1,11 +1,10 @@
 import { WaitlistModal } from "@/components/marketing/waitlist-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PageContainer } from "@/components/ui/page-container";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
-  MessageCircle, BarChart, Calendar, UserCircle2, Video, Sparkles, Wand2, Play, Volume2
+  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, Play, Volume2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -208,22 +207,19 @@ export default function HomePage() {
   const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   return (
-    <PageContainer className="bg-black text-white">
+    <div className="min-h-screen bg-black text-white">
       <WaitlistModal />
       {/* HERO SECTION */}
-      <div className="absolute inset-0 -z-10">
+      <section className="relative min-h-[100svh] flex items-center overflow-hidden">
         <video
           autoPlay
           loop
-          muted
           playsInline
           aria-hidden="true"
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           src="/assets/Standard_Mode_Generated_Video (9).mp4"
         />
         <div className="absolute inset-0 bg-black/60" />
-      </div>
-      <section className="relative min-h-[100svh] flex items-center overflow-hidden">
         <div className="container relative mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -891,7 +887,7 @@ export default function HomePage() {
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="p-6 bg-black/50 backdrop-blur-sm border-orange-500/10">
-                <BarChart className="h-8 w-8 text-orange-500 mb-4" />
+                <BarChart2 className="h-8 w-8 text-orange-500 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Data-Driven Growth</h3>
                 <p className="text-muted-foreground">
                   Make informed decisions with comprehensive analytics and insights
@@ -1135,6 +1131,6 @@ export default function HomePage() {
       </section>
       <SuperAgent />
       <Footer />
-    </PageContainer>
+    </div>
   );
 }

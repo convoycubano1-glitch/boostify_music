@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart, MessageSquare } from "lucide-react";
+import { Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2, MessageSquare } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigationVisibility } from "@/hooks/use-navigation-visibility";
 
@@ -8,9 +8,11 @@ export function BottomNav() {
   const [location] = useLocation();
   const [showRadioIndicator, setShowRadioIndicator] = useState(false);
   const [showAllNav, setShowAllNav] = useState(false);
-  const { isVisible, toggleVisibility } = useNavigationVisibility();
+  const { isVisible, setIsVisible, toggle } = useNavigationVisibility();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const lastClickTimeRef = useRef<number>(0);
+  const doubleClickThreshold = 300; // ms
 
   // Todos los elementos de navegación
   const allNavItems = [
@@ -36,7 +38,7 @@ export function BottomNav() {
     },
     {
       title: "Stats",
-      icon: BarChart,
+      icon: BarChart2,
       href: "/analytics-dashboard",
     },
     {
@@ -88,7 +90,7 @@ export function BottomNav() {
       
       // Detect swipe up from bottom
       if (diff > 50 && touchStartY > window.innerHeight - 50 && !isVisible) {
-        toggleVisibility(true); // Usamos el método del hook global
+        setIsVisible(true);
       }
     };
     
@@ -99,7 +101,7 @@ export function BottomNav() {
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [isVisible, toggleVisibility]);
+  }, [isVisible, setIsVisible]);
 
   // Scroll controls for horizontal navigation
   const scrollLeft = () => {
@@ -147,7 +149,7 @@ export function BottomNav() {
         {!isVisible && (
           <div 
             className="absolute -top-6 left-0 right-0 flex justify-center"
-            onClick={() => toggleVisibility(true)}
+            onClick={() => setIsVisible(true)}
           >
             <div className="bg-black/90 rounded-t-lg px-6 py-1 border-t border-x border-orange-500/30">
               <ChevronLeft className="w-5 h-5 text-orange-500/70 transform -rotate-90" />
