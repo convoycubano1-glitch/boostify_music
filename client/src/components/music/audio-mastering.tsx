@@ -696,10 +696,10 @@ export function AudioMastering() {
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                 <TooltipProvider>
                   <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                    <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                    <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                          <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                             <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                         </TooltipTrigger>
@@ -707,18 +707,20 @@ export function AudioMastering() {
                           <p>Enhance your track with professional mastering</p>
                         </TooltipContent>
                       </Tooltip>
-                      <h3 className="font-medium text-sm sm:text-base">Master Track</h3>
-                      <p className="text-xs text-center text-muted-foreground">
-                        Optimize levels, EQ, and dynamics
-                      </p>
+                      <div className="text-center">
+                        <h3 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Master Track</h3>
+                        <p className="text-xs text-center text-muted-foreground">
+                          Optimize levels, EQ, dynamics
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 
                   <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                    <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                    <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                          <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                             <Split className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                         </TooltipTrigger>
@@ -726,18 +728,20 @@ export function AudioMastering() {
                           <p>Separate vocals from instrumentation</p>
                         </TooltipContent>
                       </Tooltip>
-                      <h3 className="font-medium text-sm sm:text-base">Voice Extraction</h3>
-                      <p className="text-xs text-center text-muted-foreground">
-                        Isolate vocals from the mix
-                      </p>
+                      <div className="text-center">
+                        <h3 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Voice Extraction</h3>
+                        <p className="text-xs text-center text-muted-foreground">
+                          Isolate vocals from the mix
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 
                   <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                    <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                    <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                          <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                             <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                         </TooltipTrigger>
@@ -745,10 +749,12 @@ export function AudioMastering() {
                           <p>Customize audio processing settings</p>
                         </TooltipContent>
                       </Tooltip>
-                      <h3 className="font-medium text-sm sm:text-base">Advanced Settings</h3>
-                      <p className="text-xs text-center text-muted-foreground">
-                        Fine-tune processing parameters
-                      </p>
+                      <div className="text-center">
+                        <h3 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Advanced Settings</h3>
+                        <p className="text-xs text-center text-muted-foreground">
+                          Fine-tune processing parameters
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 </TooltipProvider>
@@ -1012,25 +1018,25 @@ export function AudioMastering() {
         {/* Voice Model Training Tab */}
         <TabsContent value="voice-model">
           <Card className="border-t-4 border-t-primary/80">
-            <CardHeader>
-              <div className="flex justify-between items-center">
+            <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Music className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Music className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                     Voice Model Training
                   </CardTitle>
-                  <CardDescription>
-                    Create your own custom voice models for voice conversion with AI
+                  <CardDescription className="text-xs sm:text-sm">
+                    Create your own custom voice models for conversion with AI
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-primary/5">Professional</Badge>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <Badge variant="outline" className="bg-blue-500/5 text-blue-500 text-xs">Professional</Badge>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                        <Info className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground cursor-pointer" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-80">
+                      <TooltipContent className="max-w-60 sm:max-w-80 text-xs sm:text-sm">
                         <p>Revocalize API status check</p>
                       </TooltipContent>
                     </Tooltip>
@@ -1055,18 +1061,18 @@ export function AudioMastering() {
         {/* Stem Separation Tab */}
         <TabsContent value="separation">
           <Card className="border-t-4 border-t-primary/80">
-            <CardHeader>
-              <div className="flex justify-between items-center">
+            <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Split className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Split className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                     Stem Separation
                   </CardTitle>
-                  <CardDescription>
-                    Separate your audio into individual instrument tracks
+                  <CardDescription className="text-xs sm:text-sm">
+                    Separate audio into individual instrument tracks
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="bg-primary/5">Professional</Badge>
+                <Badge variant="outline" className="bg-blue-500/5 text-blue-500 text-xs">Professional</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1091,10 +1097,10 @@ export function AudioMastering() {
                 <TooltipProvider>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                               <Mic className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             </div>
                           </TooltipTrigger>
@@ -1102,15 +1108,17 @@ export function AudioMastering() {
                             <p>Extract vocals from the mix</p>
                           </TooltipContent>
                         </Tooltip>
-                        <h3 className="font-medium text-sm sm:text-base">Vocals</h3>
+                        <div className="text-center">
+                          <h3 className="font-medium text-sm sm:text-base">Vocals</h3>
+                        </div>
                       </CardContent>
                     </Card>
                     
                     <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                               <Music className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             </div>
                           </TooltipTrigger>
@@ -1118,17 +1126,19 @@ export function AudioMastering() {
                             <p>Extract instrumentals (no vocals)</p>
                           </TooltipContent>
                         </Tooltip>
-                        <h3 className="font-medium text-sm sm:text-base">Instrumental</h3>
+                        <div className="text-center">
+                          <h3 className="font-medium text-sm sm:text-base">Instrumental</h3>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                               <Waves className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             </div>
                           </TooltipTrigger>
@@ -1136,15 +1146,17 @@ export function AudioMastering() {
                             <p>Extract drum tracks</p>
                           </TooltipContent>
                         </Tooltip>
-                        <h3 className="font-medium text-sm sm:text-base">Drums</h3>
+                        <div className="text-center">
+                          <h3 className="font-medium text-sm sm:text-base">Drums</h3>
+                        </div>
                       </CardContent>
                     </Card>
                     
                     <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2">
+                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-1 sm:p-2">
+                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                               <AudioLines className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             </div>
                           </TooltipTrigger>
@@ -1152,7 +1164,9 @@ export function AudioMastering() {
                             <p>Extract bass lines</p>
                           </TooltipContent>
                         </Tooltip>
-                        <h3 className="font-medium text-sm sm:text-base">Bass</h3>
+                        <div className="text-center">
+                          <h3 className="font-medium text-sm sm:text-base">Bass</h3>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -1204,18 +1218,18 @@ export function AudioMastering() {
         {/* History Tab */}
         <TabsContent value="history">
           <Card className="border-t-4 border-t-primary/80">
-            <CardHeader>
-              <div className="flex justify-between items-center">
+            <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <History className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <History className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                     Processing History
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
                     View and manage your audio processing jobs
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="bg-primary/5">Recent Jobs</Badge>
+                <Badge variant="outline" className="bg-blue-500/5 text-blue-500 text-xs">Recent Jobs</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-5">
