@@ -8,6 +8,12 @@
     min-height: 44px;
     min-width: 44px;
   }
+  
+  /* Special handling for double-click to hide/show navigation */
+  body {
+    min-height: 100vh;
+    overscroll-behavior: none; /* Prevent bounce effects that interfere with our UI */
+  }
 
   /* Custom scrollbar styling for horizontal navigation */
   .scrollbar-hide {
@@ -17,6 +23,31 @@
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Toast notification styles */
+  .toast-notification {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 9999;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    backdrop-filter: blur(4px);
+    animation: fade-in-out 3s forwards;
+  }
+  
+  @keyframes fade-in-out {
+    0% { opacity: 0; transform: translate(-50%, 20px); }
+    10% { opacity: 1; transform: translate(-50%, 0); }
+    90% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, 0); }
   }
   
   /* Enhancing navigation visibility */
@@ -40,6 +71,8 @@
     scroll-behavior: smooth;
     padding: 0.5rem 0;
     gap: 0.5rem;
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
   }
   
   .horizontal-scroll-item {
@@ -79,6 +112,7 @@
     color: rgb(156, 163, 175);
     transition: color 0.2s ease;
     cursor: pointer;
+    z-index: 5;
   }
   
   .scroll-control:hover {
@@ -96,9 +130,29 @@
     height: 24px;
     border-radius: 9999px;
     transition: all 0.2s ease;
+    z-index: 10;
   }
   
   .nav-toggle:active {
     transform: scale(0.9);
+  }
+  
+  /* Navigation pull-up indicator */
+  .nav-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background-color: rgba(249, 115, 22, 0.5);
+    border-radius: 2px;
+    margin-bottom: 6px;
+  }
+  
+  /* Full-screen content adjustments when navigation is hidden */
+  .content-fullscreen {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
   }
 }

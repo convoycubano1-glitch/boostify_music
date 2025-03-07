@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from "wouter";
+import { auth } from '@/firebase';
+import { Link } from 'wouter';
 import { useUser } from '@/hooks/use-user';
 import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
 import { 
-  PieChart, FileText, Home, Music, Video, Rss, 
-  ShoppingBag, Shield, ClipboardList, 
-  ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
-  Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight
+  Users, Search, PieChart, FileText, Home, Music, Video, Rss, 
+  ShoppingBag, Calendar, Headphones, Radio, Shield, ClipboardList, 
+  LogOut, ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
+  Send, MessageSquare, Mic, Zap, Award, BookOpen, BarChart, MoveRight
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -18,142 +19,89 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Header() {
-  const { user } = useAuth();
-  const { logout } = useFirebaseAuth();
-  const { detectedLanguage } = useLanguageDetection();
-  const { scrollDirection, scrollY } = useScrollDirection();
+  const { user, logout } = useUser();
   const { isVisible, setIsVisible, toggle } = useNavigationVisibility();
+  const [scrollY, setScrollY] = useState(0);
   const [showFullHeader, setShowFullHeader] = useState(true);
-  const [headerHeight, setHeaderHeight] = useState(280);
-  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const headerRef = useRef<HTMLDivElement>(null);
-  
-  // Indicador de instrucción para móvil (doble clic)
-  const [showHeaderHint, setShowHeaderHint] = useState(true);
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [showHeaderHint, setShowHeaderHint] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
-  // Handle scroll effect for header
+  // Mostrar la pista para doble clic después de un tiempo
   useEffect(() => {
-    if (scrollY > 50) {
-      if (scrollDirection === "down") {
-        setShowFullHeader(false);
-      } else {
-        setShowFullHeader(true);
-      }
-    } else {
-      setShowFullHeader(true);
-    }
-    
-    // No ocultamos automáticamente el header en mobile a menos que el usuario lo haga con doble clic
-    // Este comportamiento ahora se maneja a través del hook global useNavigationVisibility
-  }, [scrollDirection, scrollY]);
-  
-  // Ocultar la indicación de instrucción después de un tiempo
-  useEffect(() => {
-    if (showHeaderHint) {
+    // Solo en dispositivos móviles
+    const isMobile = window.innerWidth < 640;
+    if (isMobile) {
       const timer = setTimeout(() => {
-        setShowHeaderHint(false);
-      }, 5000); // Ocultar después de 5 segundos
+        setShowHeaderHint(true);
+      }, 3000);
       
-      return () => clearTimeout(timer);
+      const hideTimer = setTimeout(() => {
+        setShowHeaderHint(false);
+      }, 10000);
+      
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(hideTimer);
+      };
     }
-  }, [showHeaderHint]);
-  
-  // Default state for menu expansion
-  useEffect(() => {
-    // Start with expanded menu on desktop, collapsed on mobile
-    const isMobile = window.innerWidth < 768;
-    setIsMenuExpanded(!isMobile);
-    
-    // Update menu expansion state on window resize
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768;
-      setIsMenuExpanded(!isMobile);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
-  // Track header height and update spacer
+
+  // Actualizar la altura del header
   useEffect(() => {
-    const updateHeaderHeight = () => {
-      if (headerRef.current) {
-        const height = headerRef.current.offsetHeight;
-        setHeaderHeight(height);
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+  }, [isMenuExpanded, isVisible, showFullHeader]);
+
+  // Manejar el scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+      
+      // Auto-colapsar el menú expandido al hacer scroll
+      if (window.scrollY > 100 && isMenuExpanded) {
+        setIsMenuExpanded(false);
       }
     };
 
-    // Update header height on mount and window resize
-    updateHeaderHeight();
-    window.addEventListener('resize', updateHeaderHeight);
-    
-    // Also update after a short delay to account for DOM manipulation
-    const timerId = setTimeout(updateHeaderHeight, 500);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMenuExpanded]);
+  
+  // Navegar al clic de botones
+  const navigateTo = (path: string) => {
+    // window.location.href = path;
+    console.log("Navigating to", path);
+  };
 
-    return () => {
-      window.removeEventListener('resize', updateHeaderHeight);
-      clearTimeout(timerId);
-    };
-  }, []);
-
-  useEffect(() => {
-    const initTranslate = () => {
-      if (window.google && window.google.translate) {
-        const translateElement = document.getElementById('google_translate_element');
-        if (translateElement && translateElement.innerHTML === '') {
-          console.log('Initializing Google Translate');
-          window.googleTranslateElementInit();
-        }
-      } else {
-        console.log('Google Translate not loaded yet, retrying...');
-        setTimeout(initTranslate, 500);
-      }
-    };
-
-    initTranslate();
-  }, [detectedLanguage]);
-
-  // Grupos de navegación para una mejor organización
-  const featuredNavigation = [
-    { name: "Virtual Record Label", href: "/virtual-record-label", icon: Disc, highlight: true },
-    { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall, highlight: true },
-    { name: "Store", href: "/store", icon: Store, highlight: true },
-    { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
-    { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
-  ];
-
+  // Elementos de navegación principales
   const mainNavigation = [
-    { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
-    { name: "Artist Dashboard", href: "/artist-dashboard", icon: Mic },
-    { name: "Manager Tools", href: "/manager-tools", icon: Briefcase },
-    { name: "Producer Tools", href: "/producer-tools", icon: Wrench },
-    { name: "Music Videos", href: "/music-video-creator", icon: Video },
+    { name: "Home", href: "/home", icon: Home },
+    { name: "Artist Dashboard", href: "/artist-dashboard", icon: BarChart },
+    { name: "Campaigns", href: "/campaigns", icon: Rss },
+    { name: "Marketing", href: "/marketing", icon: PieChart },
+    { name: "Promotion", href: "/promotion", icon: MoveRight },
+    { name: "YouTube", href: "/youtube-views", icon: Video },
   ];
-  
+
+  // Elementos de navegación destacados
+  const featuredNavigation = [
+    { name: "AI Tools", href: "/ai-tools", icon: Zap },
+    { name: "Music", href: "/music-generator", icon: Music },
+    { name: "Videos", href: "/videos", icon: Video },
+  ];
+
+  // Elementos de navegación secundarios
   const secondaryNavigation = [
-    { name: "Education", href: "/education", icon: GraduationCap },
-    { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
-    { name: "Record Labels", href: "/record-label-services", icon: Building2 },
-    { name: "AI Agents", href: "/ai-agents", icon: Brain },
-    { name: "Artist Image", href: "/artist-image-advisor", icon: Users },
-    { name: "Merch", href: "/merchandise", icon: Store },
-    { name: "Spotify", href: "/spotify", icon: Music2 },
-    { name: "Instagram", href: "/instagram-boost", icon: Instagram },
-    { name: "YouTube", href: "/youtube-views", icon: Youtube },
-    { name: "Contracts", href: "/contracts", icon: FileText },
-    { name: "PR", href: "/pr", icon: Radio },
-    { name: "Contacts", href: "/contacts", icon: Users },
+    { name: "Store", href: "/store", icon: ShoppingBag },
+    { name: "Education", href: "/courses", icon: BookOpen },
+    { name: "PR", href: "/pr", icon: Send },
+    { name: "Manager", href: "/manager-tools", icon: ClipboardList },
+    { name: "Label", href: "/record-label-services", icon: Award },
+    { name: "News", href: "/news", icon: FileText },
   ];
-
-  // Navigation agrupado para la interfaz de móvil
-  const allNavigation = [
-    { title: "Featured", items: featuredNavigation },
-    { title: "Main", items: mainNavigation },
-    { title: "More", items: secondaryNavigation },
-  ];
-
-  if (!user) return null;
 
   const isAdmin = user?.email === 'convoycubano@gmail.com';
 
@@ -332,7 +280,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    {user.photoURL ? (
+                    {user?.photoURL ? (
                       <img
                         src={user.photoURL}
                         alt={user.displayName || "User avatar"}
@@ -341,7 +289,7 @@ export function Header() {
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/10">
                         <span className="text-sm font-medium text-orange-500">
-                          {user.displayName?.[0] || user.email?.[0] || "U"}
+                          {user?.displayName?.[0] || user?.email?.[0] || "U"}
                         </span>
                       </div>
                     )}
@@ -350,10 +298,10 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-56 bg-[#1B1B1B] border-[#2A2A2A]">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {user.displayName && (
+                      {user?.displayName && (
                         <p className="text-sm font-medium text-white">{user.displayName}</p>
                       )}
-                      {user.email && (
+                      {user?.email && (
                         <p className="text-xs text-gray-400">{user.email}</p>
                       )}
                     </div>
@@ -471,3 +419,5 @@ export function Header() {
     </>
   );
 }
+
+export default Header;
