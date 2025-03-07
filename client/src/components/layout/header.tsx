@@ -1,12 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from "wouter";
 import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/hooks/use-auth';
+import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useLanguageDetection } from '@/hooks/use-language-detection';
+import { useScrollDirection } from '@/hooks/use-scroll-direction';
 import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
 import { 
   PieChart, FileText, Home, Music, Video, Rss, 
   ShoppingBag, Shield, ClipboardList, 
   ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
-  Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight
+  Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight,
+  Disc, Store, Share2, DollarSign, BarChart2, Mic, Briefcase, 
+  Wrench, GraduationCap, Tv, Building2, Brain, Users, 
+  Music2, Instagram, Youtube, Radio
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -118,16 +125,16 @@ export function Header() {
   const featuredNavigation = [
     { name: "Virtual Record Label", href: "/virtual-record-label", icon: Disc, highlight: true },
     { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall, highlight: true },
-    { name: "Store", href: "/store", icon: Store, highlight: true },
+    { name: "Store", href: "/store", icon: ShoppingBag, highlight: true },
     { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
     { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
   const mainNavigation = [
-    { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
+    { name: "Dashboard", href: "/dashboard", icon: BarChart },
     { name: "Artist Dashboard", href: "/artist-dashboard", icon: Mic },
     { name: "Manager Tools", href: "/manager-tools", icon: Briefcase },
-    { name: "Producer Tools", href: "/producer-tools", icon: Wrench },
+    { name: "Producer Tools", href: "/producer-tools", icon: Settings, highlight: false },
     { name: "Music Videos", href: "/music-video-creator", icon: Video },
   ];
   
@@ -136,14 +143,14 @@ export function Header() {
     { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
-    { name: "Artist Image", href: "/artist-image-advisor", icon: Users },
-    { name: "Merch", href: "/merchandise", icon: Store },
+    { name: "Artist Image", href: "/artist-image-advisor", icon: MessageSquare },
+    { name: "Merch", href: "/merchandise", icon: ShoppingBag },
     { name: "Spotify", href: "/spotify", icon: Music2 },
     { name: "Instagram", href: "/instagram-boost", icon: Instagram },
     { name: "YouTube", href: "/youtube-views", icon: Youtube },
     { name: "Contracts", href: "/contracts", icon: FileText },
-    { name: "PR", href: "/pr", icon: Radio },
-    { name: "Contacts", href: "/contacts", icon: Users },
+    { name: "PR", href: "/pr", icon: Rss },
+    { name: "Contacts", href: "/contacts", icon: MessageSquare },
   ];
 
   // Navigation agrupado para la interfaz de móvil
