@@ -10,6 +10,9 @@ import { v4 as uuidv4 } from "uuid";
 
 // UI Components
 import { Header } from "@/components/layout/header";
+import { HeroSection } from "@/components/hero-section";
+import ProgressOverlay from "@/components/ProgressOverlay";
+import UnderReviewScreen from "@/components/UnderReviewScreen";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -581,164 +584,250 @@ export default function VirtualRecordLabelPage() {
     });
   };
 
-  // Show progress overlay over normal content
+  // Show progress overlay over normal content - Improved design with animation and better mobile support
   const ProgressOverlay = () => (
     <motion.div 
-      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="bg-background w-full max-w-md rounded-xl p-8 space-y-6">
-        <div className="text-center space-y-2 mb-6">
-          <div className="w-16 h-16 bg-[#121212]/20 rounded-full mx-auto flex items-center justify-center mb-4">
-            <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
+      <motion.div 
+        className="bg-gradient-to-b from-background to-background/95 w-full max-w-md rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl border border-orange-500/10"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
+      >
+        <div className="text-center space-y-3 mb-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-orange-500/20 to-orange-500/5 rounded-full mx-auto flex items-center justify-center mb-4 shadow-inner">
+            <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
           </div>
-          <h2 className="text-2xl font-bold">Creating Your Record Label</h2>
-          <p className="text-muted-foreground">Please wait while we set up your label.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">Creating Your Record Label</h2>
+          <p className="text-muted-foreground">Please wait while we set up your professional music platform.</p>
         </div>
         
         <div className="space-y-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <p className="text-sm font-medium">Progress</p>
-              <p className="text-sm text-muted-foreground">{progress}%</p>
+              <motion.p 
+                key={progress}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-sm font-semibold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600"
+              >{progress}%</motion.p>
             </div>
-            <Progress value={progress} className="h-2 bg-[#121212]/20 [&>div]:bg-[#505050]" />
+            <div className="relative h-3 rounded-full bg-orange-500/10 overflow-hidden">
+              <motion.div 
+                className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-600"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
           </div>
           
-          <div className="border rounded-lg p-4 bg-[#121212]/5 border-[#121212]/20">
+          <motion.div 
+            key={progressStage}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="rounded-xl p-5 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/10 shadow-lg"
+          >
             <div className="flex items-center gap-4">
-              {creationStages[progressStage].icon}
+              <div className="p-2.5 bg-orange-500/10 rounded-full">
+                {creationStages[progressStage].icon}
+              </div>
               <div>
-                <h3 className="font-semibold">{creationStages[progressStage].title}</h3>
-                <p className="text-sm text-muted-foreground">{creationStages[progressStage].description}</p>
+                <h3 className="font-semibold text-base sm:text-lg">{creationStages[progressStage].title}</h3>
+                <p className="text-sm text-muted-foreground/80">{creationStages[progressStage].description}</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
   
-  // Under Review Screen - Mejorado para dispositivos móviles
+  // Under Review Screen - Improved design with modern elements and better mobile support
   const UnderReviewScreen = () => (
     <motion.div 
-      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center overflow-y-auto py-4 sm:py-6 md:py-10 px-2"
+      className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto py-4 sm:py-6 md:py-10 px-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="bg-background w-full max-w-3xl rounded-xl p-4 sm:p-6 md:p-8 my-auto">
-        <div className="text-center space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#121212]/20 rounded-full mx-auto flex items-center justify-center mb-3 sm:mb-4">
-            <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-orange-500" />
+      <motion.div 
+        className="bg-gradient-to-b from-background to-background/95 w-full max-w-3xl rounded-2xl p-6 sm:p-8 my-auto shadow-2xl border border-orange-500/10"
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
+      >
+        <div className="text-center space-y-4 mb-8">
+          <div className="w-24 h-24 bg-gradient-to-br from-orange-500/20 to-orange-500/5 rounded-full mx-auto flex items-center justify-center mb-4 shadow-inner relative">
+            <Shield className="h-12 w-12 text-orange-500" />
+            <div className="absolute inset-0 rounded-full border border-orange-500/20 animate-ping opacity-70"></div>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Your Record Label is Under Review</h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
+          <motion.h2 
+            className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Your Record Label is Under Review
+          </motion.h2>
+          <motion.p 
+            className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             Thank you for creating your virtual record label! Our team is reviewing your submission. 
-            You'll receive an email at <span className="font-medium">{user?.email}</span> once it's approved.
-          </p>
+            You'll receive an email at <span className="font-medium text-orange-500/90">{user?.email}</span> once it's approved.
+          </motion.p>
         </div>
 
-        {/* Review Process Steps - Responsive layout */}
-        <div className="mb-6 sm:mb-8 md:mb-10">
-          <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-center">Review Process</h3>
+        {/* Review Process Steps - Enhanced with animations and styling */}
+        <div className="mb-8 sm:mb-10">
+          <motion.h3 
+            className="text-lg sm:text-xl font-semibold mb-5 text-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Review Process
+          </motion.h3>
           <div className="space-y-3 sm:space-y-4">
-            <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border bg-muted/20">
-              <div className="mt-0.5 flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-[#121212]/20 rounded-full flex items-center justify-center">
-                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+            <motion.div 
+              className="flex items-start gap-3 p-4 rounded-xl border border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-transparent shadow-sm"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <div className="mt-0.5 flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 bg-orange-500/20 rounded-full flex items-center justify-center">
+                <Check className="h-5 w-5 text-orange-500" />
               </div>
               <div>
-                <h4 className="font-medium">Label Creation Complete</h4>
-                <p className="text-sm text-muted-foreground">Your record label configuration has been successfully submitted</p>
+                <h4 className="font-semibold text-base sm:text-lg">Label Creation Complete</h4>
+                <p className="text-sm text-muted-foreground/90">Your record label configuration has been successfully submitted</p>
               </div>
-            </div>
+            </motion.div>
             
-            <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border bg-gradient-to-r from-[#121212]/10 to-transparent">
-              <div className="mt-0.5 flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-[#121212]/20 rounded-full flex items-center justify-center">
-                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 animate-spin" />
+            <motion.div 
+              className="flex items-start gap-3 p-4 rounded-xl border border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-transparent shadow-sm"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="mt-0.5 flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 bg-orange-500/20 rounded-full flex items-center justify-center relative">
+                <Loader2 className="h-5 w-5 text-orange-500 animate-spin" />
+                <div className="absolute inset-0 rounded-full border border-orange-500/30 animate-pulse"></div>
               </div>
               <div>
-                <h4 className="font-medium">Quality Check (In Progress)</h4>
-                <p className="text-sm text-muted-foreground">Our system is verifying your label details and preparing resources</p>
+                <h4 className="font-semibold text-base sm:text-lg">Quality Check <span className="text-orange-500 text-sm">(In Progress)</span></h4>
+                <p className="text-sm text-muted-foreground/90">Our system is verifying your label details and preparing resources</p>
               </div>
-            </div>
+            </motion.div>
             
-            <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border opacity-60">
-              <div className="mt-0.5 flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-muted rounded-full flex items-center justify-center">
-                <Database className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+            <motion.div 
+              className="flex items-start gap-3 p-4 rounded-xl border border-muted bg-background/50"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 0.7, x: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <div className="mt-0.5 flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 bg-muted/80 rounded-full flex items-center justify-center">
+                <Database className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <h4 className="font-medium">AI Artist Generation</h4>
-                <p className="text-sm text-muted-foreground">Creation of AI-powered artists based on your label's genre and style</p>
+                <h4 className="font-semibold text-base sm:text-lg">AI Artist Generation</h4>
+                <p className="text-sm text-muted-foreground/90">Creation of AI-powered artists based on your label's genre and style</p>
               </div>
-            </div>
+            </motion.div>
             
-            <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border opacity-60">
-              <div className="mt-0.5 flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-muted rounded-full flex items-center justify-center">
-                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+            <motion.div 
+              className="flex items-start gap-3 p-4 rounded-xl border border-muted bg-background/50"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 0.7, x: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <div className="mt-0.5 flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 bg-muted/80 rounded-full flex items-center justify-center">
+                <Award className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <h4 className="font-medium">Label Activation</h4>
-                <p className="text-sm text-muted-foreground">Final verification and dashboard access activation</p>
+                <h4 className="font-semibold text-base sm:text-lg">Label Activation</h4>
+                <p className="text-sm text-muted-foreground/90">Final verification and dashboard access activation</p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
         
-        {/* What to Expect Cards - Responsive grid layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-          <Card className="p-3 sm:p-4 space-y-2 bg-[#121212]/5 border-[#121212]/20">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+        {/* What to Expect Cards - Enhanced grid with hover effects */}
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+        >
+          <Card className="p-5 space-y-3 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 rounded-xl shadow-md hover:shadow-lg transition-shadow group">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-500/10 rounded-full group-hover:bg-orange-500/20 transition-colors">
+                <Calendar className="h-5 w-5 text-orange-500" />
+              </div>
               <h3 className="font-semibold">Review Timeline</h3>
             </div>
-            <p className="text-sm text-muted-foreground">Your label will be ready within 24-48 hours</p>
+            <p className="text-sm text-muted-foreground/90">Your label will be ready within 24-48 hours</p>
           </Card>
           
-          <Card className="p-3 sm:p-4 space-y-2 bg-[#121212]/5 border-[#121212]/20">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+          <Card className="p-5 space-y-3 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 rounded-xl shadow-md hover:shadow-lg transition-shadow group">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-500/10 rounded-full group-hover:bg-orange-500/20 transition-colors">
+                <Mail className="h-5 w-5 text-orange-500" />
+              </div>
               <h3 className="font-semibold">Confirmation Email</h3>
             </div>
-            <p className="text-sm text-muted-foreground">Detailed activation instructions will be sent to you</p>
+            <p className="text-sm text-muted-foreground/90">Detailed activation instructions will be sent to you</p>
           </Card>
           
-          <Card className="p-3 sm:p-4 space-y-2 bg-[#121212]/5 border-[#121212]/20 sm:col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <Music className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+          <Card className="p-5 space-y-3 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 rounded-xl shadow-md hover:shadow-lg transition-shadow group sm:col-span-2 md:col-span-1">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-500/10 rounded-full group-hover:bg-orange-500/20 transition-colors">
+                <Music className="h-5 w-5 text-orange-500" />
+              </div>
               <h3 className="font-semibold">Content Creation</h3>
             </div>
-            <p className="text-sm text-muted-foreground">AI-generated artists, tracks, and visual assets</p>
+            <p className="text-sm text-muted-foreground/90">AI-generated artists, tracks, and visual assets</p>
           </Card>
-        </div>
+        </motion.div>
         
-        {/* Call to Action Buttons - Responsive layout */}
-        <div className="text-center space-y-3 sm:space-y-4">
+        {/* Call to Action Buttons - Enhanced buttons with animation */}
+        <motion.div 
+          className="text-center space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
           <p className="text-sm sm:text-base text-muted-foreground">
             While you wait, explore our resources for record label management or check out our educational content.
           </p>
-          <div className="flex flex-wrap gap-2 sm:gap-4 justify-center">
-            <Button variant="outline" size="sm" className="flex gap-2 text-xs sm:text-sm sm:size-default">
-              <Music2 className="h-3 w-3 sm:h-4 sm:w-4" />
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Button variant="outline" size="sm" className="flex gap-2 text-xs sm:text-sm border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/30 transition-colors">
+              <Music2 className="h-4 w-4 text-orange-500" />
               Industry Resources
             </Button>
-            <Button variant="outline" size="sm" className="flex gap-2 text-xs sm:text-sm sm:size-default">
-              <Megaphone className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Button variant="outline" size="sm" className="flex gap-2 text-xs sm:text-sm border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/30 transition-colors">
+              <Megaphone className="h-4 w-4 text-orange-500" />
               Marketing Tips
             </Button>
             <Button 
               onClick={() => setIsUnderReview(false)} 
-              className="flex gap-2 bg-[#121212] hover:bg-[#202020] text-xs sm:text-sm sm:size-default"
+              className="flex gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm transition-colors"
               size="sm"
             >
-              <Home className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Home className="h-4 w-4" />
               Return Home
             </Button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 
@@ -752,146 +841,8 @@ export default function VirtualRecordLabelPage() {
       {/* Under Review Screen */}
       {isUnderReview && <UnderReviewScreen />}
       
-      {/* Removed gray banner that just displayed "Virtual Record Label" - This was a redundant UI element */}
-
-      {/* Hero Section with Video Background */}
-      <section className="relative mb-12 overflow-hidden rounded-xl">
-        {/* Video Background */}
-        <div className="absolute inset-0 w-full h-full z-0">
-          <video 
-            className="w-full h-full object-cover opacity-70"
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-          >
-            <source src="/background-video.mp4" type="video/mp4" />
-          </video>
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent z-10"></div>
-        </div>
-        
-        {/* Content */}
-        <div className="container relative z-20 py-16">
-          <div className="flex flex-col md:flex-row gap-8 items-center">
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#505050] via-[#707070] to-[#323232]">
-                Create Your Own Virtual Record Label with AI Artists
-              </h1>
-              <p className="text-xl text-white mb-6">
-                Build a complete record label powered by cutting-edge AI technology:
-              </p>
-              {/* Feature Cards with Improved Styling */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Card 1: Advanced Music Generation */}
-                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/20 to-[#505050]/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
-                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
-                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-[#121212] to-[#303030] text-white">
-                      <Music className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Advanced Music Generation</h3>
-                    <p className="text-gray-300 mb-4 flex-grow">Create professional-quality tracks using our proprietary AI algorithms tuned for multiple genres and styles.</p>
-                    <p className="text-xs text-orange-500 flex items-center">
-                      <span className="mr-1">Industry-leading quality</span>
-                      <ChevronRight className="h-3 w-3" />
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Card 2: Professional Video Creation */}
-                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/20 to-[#505050]/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
-                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
-                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-[#121212] to-[#303030] text-white">
-                      <Film className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Professional Video Creation</h3>
-                    <p className="text-gray-300 mb-4 flex-grow">Generate stunning music videos with PiAPI's advanced video engine - without recording equipment or crew.</p>
-                    <p className="text-xs text-orange-500 flex items-center">
-                      <span className="mr-1">Driven by PiAPI technology</span>
-                      <ChevronRight className="h-3 w-3" />
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Card 3: Virtual Artists */}
-                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/20 to-[#505050]/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
-                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
-                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-[#121212] to-[#303030] text-white">
-                      <Bot className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Virtual Artists</h3>
-                    <p className="text-gray-300 mb-4 flex-grow">Create full artist personas with unique personalities, backstories, and visual identities - powered by GPT technology.</p>
-                    <p className="text-xs text-orange-500 flex items-center">
-                      <span className="mr-1">Personalized AI artists</span>
-                      <ChevronRight className="h-3 w-3" />
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Card 4: Integrated CRM */}
-                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-black to-black/80 p-1">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/20 to-[#505050]/20 opacity-50 group-hover:opacity-70 transition-opacity"></div>
-                  <div className="relative bg-black/80 rounded-lg p-5 h-full flex flex-col">
-                    <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-lg bg-gradient-to-r from-[#121212] to-[#303030] text-white">
-                      <Users className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Integrated CRM System</h3>
-                    <p className="text-gray-300 mb-4 flex-grow">Manage industry contacts, marketing campaigns, and fan interactions with our built-in relationship management system.</p>
-                    <p className="text-xs text-orange-500 flex items-center">
-                      <span className="mr-1">Comprehensive management</span>
-                      <ChevronRight className="h-3 w-3" />
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-lg text-white/80 mb-8">
-                Our platform gives you everything you need to produce, promote, and profit from music without traditional limitations. Choose your genre, platforms, and number of artists to launch your digital music empire today.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Button 
-                  size="lg" 
-                  className="bg-[#121212] hover:bg-[#202020] text-white"
-                  onClick={() => setCurrentStep(1)}
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="bg-black/50 text-white border-white/30 hover:bg-black/70"
-                >
-                  Watch Demo
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex-1">
-              <motion.div 
-                className="relative"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#121212]/40 rounded-full blur-3xl" />
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#505050]/30 rounded-full blur-3xl" />
-                <img 
-                  src="/assets/virtual-record-label-concept.png" 
-                  alt="Virtual Record Label"
-                  className="rounded-2xl shadow-xl w-full"
-                  onError={(e) => { 
-                    // Fallback if image doesn't exist
-                    e.currentTarget.src = "https://placehold.co/600x400/121212/505050?text=Virtual+Record+Label";
-                  }}
-                />
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Enhanced Hero Section */}
+      <HeroSection handleCreateLabel={() => setCurrentStep(1)} />
 
       {/* Configuration Steps */}
       <section className="container mb-16">
