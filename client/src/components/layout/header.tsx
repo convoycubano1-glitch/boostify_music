@@ -1,17 +1,25 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare, Disc, ChevronDown, ChevronUp } from "lucide-react";
+import { Music2, BarChart2, FileText, Radio, Settings, Menu, Youtube, Instagram, Home, Users, Mic, Briefcase, Wrench, Video, Building2, Brain, Store, Shield, Globe, Tv, GraduationCap, DollarSign, Share2, PhoneCall, MessageCircle, MessageSquare, Disc, ChevronDown, ChevronUp, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useEffect, useState, useRef } from "react";
 import { useLanguageDetection } from "@/hooks/use-language-detection";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
+import { cn } from "@/lib/utils";
 
 export function Header() {
   const { user } = useAuth();
@@ -21,6 +29,7 @@ export function Header() {
   const [showFullHeader, setShowFullHeader] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(280);
   const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Handle scroll effect for header
@@ -41,6 +50,15 @@ export function Header() {
     // Start with expanded menu on desktop, collapsed on mobile
     const isMobile = window.innerWidth < 768;
     setIsMenuExpanded(!isMobile);
+    
+    // Update menu expansion state on window resize
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setIsMenuExpanded(!isMobile);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
   
   // Track header height and update spacer
@@ -82,21 +100,28 @@ export function Header() {
     initTranslate();
   }, [detectedLanguage]);
 
-  const navigation = [
+  // Grupos de navegación para una mejor organización
+  const featuredNavigation = [
+    { name: "Virtual Record Label", href: "/virtual-record-label", icon: Disc, highlight: true },
+    { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall, highlight: true },
+    { name: "Store", href: "/store", icon: Store, highlight: true },
+    { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
+    { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
+  ];
+
+  const mainNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart2 },
     { name: "Artist Dashboard", href: "/artist-dashboard", icon: Mic },
     { name: "Manager Tools", href: "/manager-tools", icon: Briefcase },
     { name: "Producer Tools", href: "/producer-tools", icon: Wrench },
     { name: "Music Videos", href: "/music-video-creator", icon: Video },
+  ];
+  
+  const secondaryNavigation = [
     { name: "Education", href: "/education", icon: GraduationCap },
     { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
     { name: "Record Labels", href: "/record-label-services", icon: Building2 },
-    { name: "Virtual Record Label", href: "/virtual-record-label", icon: Disc, highlight: true },
     { name: "AI Agents", href: "/ai-agents", icon: Brain },
-    { name: "Store", href: "/store", icon: Store, highlight: true }
-  ];
-
-  const secondaryNavigation = [
     { name: "Artist Image", href: "/artist-image-advisor", icon: Users },
     { name: "Merch", href: "/merchandise", icon: Store },
     { name: "Spotify", href: "/spotify", icon: Music2 },
@@ -105,9 +130,13 @@ export function Header() {
     { name: "Contracts", href: "/contracts", icon: FileText },
     { name: "PR", href: "/pr", icon: Radio },
     { name: "Contacts", href: "/contacts", icon: Users },
-    { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall, highlight: true },
-    { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
-    { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
+  ];
+
+  // Navigation agrupado para la interfaz de móvil
+  const allNavigation = [
+    { title: "Featured", items: featuredNavigation },
+    { title: "Main", items: mainNavigation },
+    { title: "More", items: secondaryNavigation },
   ];
 
   if (!user) return null;
@@ -139,12 +168,12 @@ export function Header() {
 
             {/* Primary Navigation - Now always hidden */}
             <nav className="hidden items-center space-x-1">
-              {navigation.map((item) => (
+              {[...mainNavigation, ...featuredNavigation].map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`flex items-center px-4 py-2 text-sm font-medium transition-colors hover:text-orange-500 ${
-                    item.highlight ? 'text-orange-500' : 'text-gray-200'
+                    featuredNavigation.some(i => i.name === item.name) ? 'text-orange-500' : 'text-gray-200'
                   }`}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
@@ -225,7 +254,29 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[300px] bg-[#1B1B1B] border-[#2A2A2A]">
-                  {[...navigation, ...secondaryNavigation].map((item) => (
+                  {/* Agrupación del menú desplegable por categorías */}
+                  <div className="py-1 px-3 text-xs text-orange-500 font-semibold">Featured</div>
+                  {featuredNavigation.map((item) => (
+                    <Link key={item.name} href={item.href}>
+                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                        <item.icon className="mr-2 h-4 w-4 text-orange-500" />
+                        {item.name}
+                      </DropdownMenuItem>
+                    </Link>
+                  ))}
+                  
+                  <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1">Main</div>
+                  {mainNavigation.map((item) => (
+                    <Link key={item.name} href={item.href}>
+                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.name}
+                      </DropdownMenuItem>
+                    </Link>
+                  ))}
+                  
+                  <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1">More</div>
+                  {secondaryNavigation.map((item) => (
                     <Link key={item.name} href={item.href}>
                       <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
                         <item.icon className="mr-2 h-4 w-4" />
@@ -326,22 +377,41 @@ export function Header() {
             
             <nav className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 px-3 py-3 transition-all duration-300 ${
               isMenuExpanded ? 'max-h-[240px]' : 'max-h-[65px]'
-            } overflow-y-auto`}>
-              {[...navigation, ...secondaryNavigation].map((item) => (
+            } overflow-y-auto mobile-tabs-container`}>
+              {/* Featured navigation items first with highlight */}
+              {featuredNavigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 ${
-                    item.name === "Investors" || item.name === "Affiliates" ? "text-orange-500 font-medium" : "text-gray-300"
-                  } text-xs hover:text-orange-400 transition-colors`}
+                  className="flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 text-orange-500 font-medium text-xs hover:text-orange-400 transition-colors touch-target"
                 >
                   <item.icon 
-                    className={`h-5 w-5 mb-1 ${
-                      item.name === "Investors" || item.name === "Affiliates"
-                        ? "text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
-                        : "text-gray-300"
-                    }`} 
+                    className="h-5 w-5 mb-1 text-orange-500 drop-shadow-[0_0_3px_rgba(249,115,22,0.5)]" 
                   />
+                  <span className="text-center">{item.name}</span>
+                </Link>
+              ))}
+              
+              {/* Main navigation items */}
+              {mainNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 text-gray-300 text-xs hover:text-orange-400 transition-colors touch-target"
+                >
+                  <item.icon className="h-5 w-5 mb-1 text-gray-300" />
+                  <span className="text-center">{item.name}</span>
+                </Link>
+              ))}
+              
+              {/* Secondary navigation items */}
+              {secondaryNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="flex flex-col items-center justify-center p-2 rounded-md hover:bg-black/40 text-gray-300 text-xs hover:text-orange-400 transition-colors touch-target"
+                >
+                  <item.icon className="h-5 w-5 mb-1 text-gray-300" />
                   <span className="text-center">{item.name}</span>
                 </Link>
               ))}

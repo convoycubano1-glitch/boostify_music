@@ -1,4 +1,6 @@
-@import url('./styles/mobile-optimization.css');
+/* Import mobile optimizations */
+@import './styles/mobile-optimization.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

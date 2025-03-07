@@ -1,288 +1,104 @@
-/* Optimizaciones móviles para componentes de música y producción */
-
-/* Ajustes generales para interfaces móviles */
-@media (max-width: 640px) {
-  .mobile-full-width {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-  }
-  
-  .mobile-compact-padding {
-    padding: 0.75rem !important;
-  }
-  
-  .mobile-no-padding {
-    padding: 0 !important;
-  }
-  
-  .mobile-text-center {
-    text-align: center !important;
-  }
-  
-  .mobile-stack {
-    flex-direction: column !important;
-  }
-  
-  .mobile-hidden {
-    display: none !important;
-  }
-  
-  .mobile-visible {
-    display: flex !important;
-  }
-  
-  /* Ajuste del espacio entre elementos en móvil */
-  .mobile-gap-1 {
-    gap: 0.25rem !important;
-  }
-  
-  .mobile-gap-2 {
-    gap: 0.5rem !important;
-  }
-  
-  .mobile-gap-4 {
-    gap: 1rem !important;
-  }
-}
-
-/* Optimizaciones específicas para componentes de audio */
-.audio-controls-mobile {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.audio-slider-mobile {
-  height: 3rem;
-  padding-top: 1.25rem;
-}
-
-/* Clase para elementos que deben ser más fáciles de tocar */
-.touch-target {
-  min-height: 2.5rem;
-  min-width: 2.5rem;
-}
-
-/* Mejoras de transiciones para interfaces responsive */
-.responsive-transition {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Contenedor adaptable para pestañas en móvil */
-.mobile-tabs-container {
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.mobile-tabs-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-/* Optimización para componentes de carga y procesamiento */
-.mobile-processing-indicator {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 50;
-  background-color: rgba(0, 0, 0, 0.7);
-  border-radius: 9999px;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Optimización para tarjetas en móvil */
-.mobile-card {
-  border-radius: 0.5rem !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-}
-
-.mobile-card-header {
-  padding: 0.75rem 1rem !important;
-}
-
-.mobile-card-content {
-  padding: 0.75rem 1rem !important;
-}
-
-.mobile-card-footer {
-  padding: 0.75rem 1rem !important;
-}
-
-/* Animaciones optimizadas para rendimiento en móvil */
-@media (max-width: 640px) {
-  .reduce-motion {
-    transition: none !important;
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-/* Botones adaptados para interfaces touch */
-.touch-button {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0.625rem 1rem;
-  font-size: 1rem;
-}
-
-/* Estilos para entrada de archivos personalizada en móvil */
-.custom-file-input-mobile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  text-align: center;
-  background-color: rgba(0, 0, 0, 0.02);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  height: 120px;
-}
-
-.custom-file-input-mobile:hover,
-.custom-file-input-mobile:focus {
-  border-color: #90cdf4;
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-.custom-file-input-mobile input[type="file"] {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-/* Estilos para la nueva UI moderna */
-.modern-ui-container {
-  background: linear-gradient(to bottom, rgba(59, 130, 246, 0.05), transparent);
-  border-radius: 1rem;
-  overflow: hidden;
-}
-
-.modern-ui-header {
-  background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-}
-
-.modern-ui-content {
-  padding: 1rem;
-}
-
-.modern-ui-footer {
-  background: rgba(59, 130, 246, 0.03);
-  padding: 1rem;
-  border-top: 1px solid rgba(59, 130, 246, 0.05);
-}
-
-/* Estilos para la interfaz de procesamiento de audio */
-.audio-processing-container {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.75rem;
-  background: linear-gradient(145deg, #ffffff, #f5f7fa);
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03),
-    inset 0 2px 4px rgba(255, 255, 255, 0.5);
-}
-
-.audio-processing-header {
-  background: linear-gradient(to right, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-}
-
-.audio-processing-content {
-  padding: 1.5rem;
-}
-
-.audio-processing-footer {
-  background: rgba(59, 130, 246, 0.03);
-  padding: 1.25rem 1.5rem;
-  border-top: 1px solid rgba(59, 130, 246, 0.08);
-}
-
-/* Ajustes de rendimiento para móvil */
-@media (max-width: 640px) {
-  .performance-critical {
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-}
-
-/* Estilos para controles de audio en interfaces modernas */
-.modern-audio-controls {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
+/* Mobile optimization styles 
+   Focusing on navigation and touch-friendly UI
+*/
 
 @media (max-width: 640px) {
-  .modern-audio-controls {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+  /* Optimizing touch targets for mobile */
+  a, button, .clickable {
+    min-height: 44px;
+    min-width: 44px;
   }
-}
 
-.modern-audio-control-item {
-  background: white;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.05),
-    0 1px 2px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: all 0.2s ease;
-}
-
-.modern-audio-control-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 4px 6px rgba(0, 0, 0, 0.05),
-    0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.modern-audio-control-icon {
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: 50%;
-  width: 3rem;
-  height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-}
-
-.modern-audio-control-title {
-  font-weight: 600;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.modern-audio-control-description {
-  font-size: 0.75rem;
-  color: #64748b;
-  line-height: 1.2;
+  /* Custom scrollbar styling for horizontal navigation */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Enhancing navigation visibility */
+  .mobile-nav-item {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-nav-item:active {
+    transform: scale(0.95);
+    background-color: rgba(249, 115, 22, 0.2); /* orange-500 with opacity */
+  }
+  
+  /* Horizontal scrolling navigation */
+  .horizontal-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding: 0.5rem 0;
+    gap: 0.5rem;
+  }
+  
+  .horizontal-scroll-item {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+  
+  /* Nav button styles for better visibility */
+  .nav-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 4rem;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    background-color: transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-btn:active {
+    background-color: rgba(249, 115, 22, 0.2);
+  }
+  
+  .nav-btn-active {
+    background-color: rgba(249, 115, 22, 0.15);
+  }
+  
+  /* Scroll control buttons for navigation */
+  .scroll-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    min-height: 30px;
+    color: rgb(156, 163, 175);
+    transition: color 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .scroll-control:hover {
+    color: rgb(249, 115, 22);
+  }
+  
+  /* Expanded view toggle button */
+  .nav-toggle {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(249, 115, 22, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-toggle:active {
+    transform: scale(0.9);
+  }
 }
