@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { MusicSection } from "./music-section";
+import { VideosSection } from "./videos-section";
 import {
   Play,
   Pause,
@@ -50,7 +52,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Dialog,
@@ -59,10 +61,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Importamos los componentes de sección
-import { MusicSection } from "./music-section";
-import { VideosSection } from "./videos-section";
 
 // Importamos nuestros componentes de navegación
 import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
@@ -245,8 +243,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             id: doc.id,
             title: data.title,
             url: data.url,
-            thumbnail: data.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined),
-            videoId: videoId,
+            userId: data.userId || artistId, // Aseguramos que siempre haya un userId
+            thumbnailUrl: data.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined),
             createdAt: data.createdAt?.toDate(),
             views: Math.floor(Math.random() * 10000) + 1000, // Datos de muestra para mejorar UX
             likes: Math.floor(Math.random() * 500) + 50,
@@ -654,7 +652,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             {activeSection === 'music' && (
               <MusicSection 
                 songs={songs} 
-                isLoadingSongs={isLoadingSongs} 
+                isLoading={isLoadingSongs} 
                 currentTrack={currentTrack} 
                 isPlaying={isPlaying}
                 togglePlay={togglePlay}
@@ -663,7 +661,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             {activeSection === 'videos' && (
               <VideosSection 
                 videos={videos} 
-                isLoadingVideos={isLoadingVideos}
+                isLoading={isLoadingVideos}
               />
             )}
             {activeSection === 'shows' && <ShowsSection />}
@@ -840,96 +838,7 @@ export const mockArtist = {
 
 // El componente MusicSection ahora se importa desde music-section.tsx
 
-// Implementación del componente VideosSection en el mismo estilo que MusicSection
-const VideosSection = ({
-  videos = [] as Video[],
-  isLoadingVideos = false
-}: {
-  videos: Video[],
-  isLoadingVideos: boolean
-}) => (
-  <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={sectionItemVariants}>
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-          <VideoIcon className="w-6 h-6 mr-2 text-orange-500" />
-          Latest Videos
-        </h3>
-        <Button variant="ghost" size="sm" className="text-orange-500 hover:text-orange-400">
-          <span>View All</span>
-          <ChartBar className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-      
-      <div className="space-y-4">
-        {isLoadingVideos ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="relative">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <VideoIcon className="h-4 w-4 text-orange-300" />
-              </div>
-            </div>
-            <p className="ml-3 text-orange-300">Cargando videos...</p>
-          </div>
-        ) : videos && videos.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {videos.map((video) => {
-              const videoId = video.url ? getYoutubeVideoId(video.url) : '';
-              return (
-                <motion.div
-                  key={video.id}
-                  className="rounded-xl overflow-hidden bg-gradient-to-br from-black/50 to-black/30 border border-orange-500/10 hover:border-orange-500/30 transition-all duration-300 group"
-                  whileHover={{ 
-                    scale: 1.03,
-                    boxShadow: "0 10px 30px -15px rgba(249, 115, 22, 0.4)"
-                  }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="aspect-video relative">
-                    <iframe
-                      className="w-full h-full rounded-t-lg"
-                      src={`https://www.youtube.com/embed/${videoId}?rel=0`}
-                      title={video.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                    
-                    {/* Overlay de gradiente en hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  
-                  <div className="p-4">
-                    <h4 className="font-medium mb-1 line-clamp-1">{video.title}</h4>
-                    <div className="flex justify-between items-center text-xs text-white/60">
-                      <span>{video.createdAt ? new Date(video.createdAt).toLocaleDateString() : 'No date'}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center">
-                          <Play className="h-3 w-3 mr-1" /> 
-                          {video.views?.toLocaleString() || '0'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="bg-black/20 rounded-lg p-8 text-center">
-            <VideoIcon className="h-12 w-12 text-orange-500/40 mx-auto mb-3" />
-            <p className="text-orange-100/70">No hay videos disponibles</p>
-            <p className="text-sm text-orange-300/50 mt-2">Los videos que subas aparecerán aquí</p>
-            <Button variant="outline" className="mt-4 border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Subir video
-            </Button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  </Card>
-);
+// El componente VideosSection ahora se importa desde videos-section.tsx
 
 // Implementación del componente ShowsSection
 const ShowsSection = () => (

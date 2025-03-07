@@ -1,10 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, Eye, ThumbsUp, Video } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Play, 
+  PlusCircle,
+  Loader2,
+  ChartBar,
+  Video as VideoIcon
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 
 interface Video {
   id: string;
@@ -17,122 +21,116 @@ interface Video {
   likes?: number;
 }
 
-interface VideosSectionProps {
+export interface VideosSectionProps {
   videos: Video[];
   isLoading: boolean;
 }
 
-/**
- * Extrae el ID de un video de YouTube de una URL
- */
-const getYoutubeVideoId = (url: string): string | null => {
-  if (!url) return null;
+// Utilidad para extraer el ID de un video de YouTube desde la URL
+const getYoutubeVideoId = (url: string): string => {
+  if (!url) return '';
   
-  // Patrones posibles de URLs de YouTube
-  const patterns = [
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/i,
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^/?]+)/i,
-    /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^/?]+)/i,
-  ];
+  // Patrón para URLs de formato: https://www.youtube.com/watch?v=VIDEO_ID
+  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  const match = url.match(regExp);
   
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-  
-  return null;
+  return (match && match[7].length === 11) ? match[7] : '';
 };
 
-export function VideosSection({ videos, isLoading }: VideosSectionProps) {
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
+export const VideosSection: React.FC<VideosSectionProps> = ({ 
+  videos,
+  isLoading
+}) => {
+  const sectionItemVariants = {
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
-      x: 0,
-      transition: { duration: 0.3 },
-    },
+      y: 0,
+      transition: { duration: 0.5 }
+    }
   };
 
-  if (isLoading) {
-    return (
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-lg overflow-hidden">
-            <Skeleton className="h-40 w-full" />
-            <div className="p-3 space-y-2">
-              <Skeleton className="h-5 w-[80%]" />
-              <Skeleton className="h-4 w-[60%]" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (videos.length === 0) {
-    return (
-      <Card className="bg-gradient-to-b from-black/40 to-black/20 border-orange-500/10 mt-6">
-        <CardContent className="p-8 text-center">
-          <Video className="w-12 h-12 mx-auto text-orange-500/50 mb-4" />
-          <h3 className="text-xl font-semibold text-white/90 mb-2">No hay videos</h3>
-          <p className="text-white/60 max-w-md mx-auto">
-            Este artista aún no ha subido videos a su perfil.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <motion.div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-      {videos.map((video) => {
-        const videoId = getYoutubeVideoId(video.url);
-        const thumbnailUrl = video.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '/assets/freepik__boostify_music_video_placeholder.png');
+    <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
+      <motion.div variants={sectionItemVariants}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
+            <VideoIcon className="w-6 h-6 mr-2 text-orange-500" />
+            Latest Videos
+          </h3>
+          <Button variant="ghost" size="sm" className="text-orange-500 hover:text-orange-400">
+            <span>View All</span>
+            <ChartBar className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
         
-        return (
-          <motion.div
-            key={video.id}
-            variants={itemVariants}
-            className="group rounded-lg overflow-hidden bg-black/20 border border-orange-500/10 hover:border-orange-500/30 transition-all duration-300"
-          >
-            <div className="relative aspect-video bg-gradient-to-br from-orange-800/20 to-black/40 overflow-hidden">
-              <img
-                src={thumbnailUrl}
-                alt={video.title}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-orange-500/90 hover:bg-orange-600 text-white rounded-full w-12 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                onClick={() => window.open(video.url, '_blank')}
-              >
-                <Play className="h-5 w-5" />
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="relative">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <VideoIcon className="h-4 w-4 text-orange-300" />
+                </div>
+              </div>
+              <p className="ml-3 text-orange-300">Cargando videos...</p>
+            </div>
+          ) : videos && videos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {videos.map((video) => {
+                const videoId = video.url ? getYoutubeVideoId(video.url) : '';
+                return (
+                  <motion.div
+                    key={video.id}
+                    className="rounded-xl overflow-hidden bg-gradient-to-br from-black/50 to-black/30 border border-orange-500/10 hover:border-orange-500/30 transition-all duration-300 group"
+                    whileHover={{ 
+                      scale: 1.03,
+                      boxShadow: "0 10px 30px -15px rgba(249, 115, 22, 0.4)"
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="aspect-video relative">
+                      <iframe
+                        className="w-full h-full rounded-t-lg"
+                        src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+                        title={video.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                      
+                      {/* Overlay de gradiente en hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                    
+                    <div className="p-4">
+                      <h4 className="font-medium mb-1 line-clamp-1">{video.title}</h4>
+                      <div className="flex justify-between items-center text-xs text-white/60">
+                        <span>{video.createdAt ? new Date(video.createdAt).toLocaleDateString() : 'No date'}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center">
+                            <Play className="h-3 w-3 mr-1" /> 
+                            {video.views?.toLocaleString() || '0'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-black/20 rounded-lg p-8 text-center">
+              <VideoIcon className="h-12 w-12 text-orange-500/40 mx-auto mb-3" />
+              <p className="text-orange-100/70">No hay videos disponibles</p>
+              <p className="text-sm text-orange-300/50 mt-2">Los videos que subas aparecerán aquí</p>
+              <Button variant="outline" className="mt-4 border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Subir video
               </Button>
             </div>
-            
-            <div className="p-4">
-              <h3 className="font-semibold text-white mb-2 line-clamp-2">{video.title}</h3>
-              
-              <div className="flex items-center gap-3 text-xs text-white/70">
-                <Badge variant="secondary" className="bg-orange-500/10 hover:bg-orange-500/20">
-                  <Eye className="w-3 h-3 mr-1" />
-                  {video.views?.toLocaleString() || '0'} views
-                </Badge>
-                
-                <Badge variant="secondary" className="bg-orange-500/10 hover:bg-orange-500/20">
-                  <ThumbsUp className="w-3 h-3 mr-1" />
-                  {video.likes?.toLocaleString() || '0'}
-                </Badge>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </motion.div>
+          )}
+        </div>
+      </motion.div>
+    </Card>
   );
-}
+};
