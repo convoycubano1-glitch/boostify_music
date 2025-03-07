@@ -44,9 +44,8 @@ import {
   DownloadCloud,
   CreditCard
 } from "lucide-react";
-// Importamos nuestros componentes de navegación
+// Importamos nuestro componente de navegación
 import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
-import { NavigationHeader, SimpleNavigationHeader } from "@/components/artist/section-navigation-wrapper";
 import {
   Dialog,
   DialogContent,
@@ -411,8 +410,16 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     );
   };
 
-  // Eliminamos la implementación local del componente NavigationHeader ya que ahora 
-  // usamos el componente importado de section-navigation-wrapper.tsx
+  // Utilizamos el componente SectionNavigation importado
+  const NavigationHeader = () => (
+    <SectionNavigation 
+      activeSection={activeSection}
+      onSectionChange={setActiveSection}
+      onShare={() => setShowShareDialog(true)}
+      onMessage={() => setShowMessageDialog(true)}
+      showActions={true}
+    />
+  );
 
   return (
     <>
@@ -648,12 +655,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </Card>
           
           {/* Componente de navegación para secciones */}
-          <NavigationHeader 
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-            onShare={() => setShowShareDialog(true)}
-            onMessage={() => setShowMessageDialog(true)}
-          />
+          <NavigationHeader />
           
           {/* Contenido de secciones */}
           <div className="space-y-6 mb-20">
