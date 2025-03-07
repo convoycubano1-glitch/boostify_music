@@ -636,25 +636,25 @@ export function AudioMastering() {
       </h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-2 p-1">
-          <TabsTrigger value="mastering" className="flex flex-row items-center justify-center gap-1 sm:gap-3 py-2 sm:py-3 px-1 sm:px-2 text-xs sm:text-sm">
-            <Waves className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Audio" : "Audio Processing"}</span>
+          <TabsTrigger value="mastering" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
+            <Waves className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Audio" : "Audio Processing"}</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-conversion" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
-            <Mic className="h-5 w-5" />
-            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Voice" : "Voice Conversion"}</span>
+          <TabsTrigger value="voice-conversion" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
+            <Mic className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Voice" : "Voice Conversion"}</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-model" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
-            <Music className="h-5 w-5" />
-            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Train" : "Train Voice"}</span>
+          <TabsTrigger value="voice-model" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
+            <Music className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Train" : "Train Voice"}</span>
           </TabsTrigger>
-          <TabsTrigger value="separation" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
-            <Split className="h-5 w-5" />
-            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">{isMobile ? "Split" : "Stem Separation"}</span>
+          <TabsTrigger value="separation" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
+            <Split className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center">{isMobile ? "Split" : "Stem Separation"}</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex flex-row items-center justify-center gap-3 py-3 px-2">
-            <History className="h-5 w-5" />
-            <span className="text-xs sm:text-sm whitespace-nowrap font-medium">History</span>
+          <TabsTrigger value="history" className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 sm:p-3 h-auto">
+            <History className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0" />
+            <span className="text-[10px] sm:text-sm font-medium text-center">History</span>
           </TabsTrigger>
         </TabsList>
         
@@ -1093,82 +1093,84 @@ export function AudioMastering() {
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TooltipProvider>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
-                              <Mic className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Extract vocals from the mix</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <div className="text-center">
-                          <h3 className="font-medium text-sm sm:text-base">Vocals</h3>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
+                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
+                                <Mic className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Extract vocals from the mix</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <div className="text-center">
+                            <h3 className="font-medium text-xs sm:text-sm">Vocals</h3>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
+                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
+                                <Music className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Extract instrumentals (no vocals)</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <div className="text-center">
+                            <h3 className="font-medium text-xs sm:text-sm">Instrumental</h3>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                     
-                    <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
-                              <Music className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Extract instrumentals (no vocals)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <div className="text-center">
-                          <h3 className="font-medium text-sm sm:text-base">Instrumental</h3>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
-                              <Waves className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Extract drum tracks</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <div className="text-center">
-                          <h3 className="font-medium text-sm sm:text-base">Drums</h3>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
-                      <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2 sm:gap-3">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="rounded-full bg-primary/10 p-2 sm:p-3">
-                              <AudioLines className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Extract bass lines</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <div className="text-center">
-                          <h3 className="font-medium text-sm sm:text-base">Bass</h3>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
+                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
+                                <Waves className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Extract drum tracks</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <div className="text-center">
+                            <h3 className="font-medium text-xs sm:text-sm">Drums</h3>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-primary/5 border-0 hover:bg-primary/10 transition-colors cursor-pointer">
+                        <CardContent className="p-2 sm:p-4 flex flex-col items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="rounded-full bg-primary/10 p-1.5 sm:p-3">
+                                <AudioLines className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Extract bass lines</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <div className="text-center">
+                            <h3 className="font-medium text-xs sm:text-sm">Bass</h3>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </TooltipProvider>
                 
@@ -1274,38 +1276,39 @@ export function AudioMastering() {
                           />
                         </div>
                         
-                        <CardContent className={`p-3 sm:p-4 relative ${
+                        <CardContent className={`p-4 relative ${
                           conversion.status === "completed" 
                             ? "bg-green-50/30 dark:bg-green-950/10" 
                             : conversion.status === "failed" 
                             ? "bg-red-50/30 dark:bg-red-950/10" 
                             : ""
                         }`}>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                {/* Icon based on status */}
-                                {conversion.status === "completed" ? (
-                                  <div className="rounded-full bg-green-100 p-1 dark:bg-green-900/30 flex-shrink-0">
-                                    <Music className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                                  </div>
-                                ) : conversion.status === "failed" ? (
-                                  <div className="rounded-full bg-red-100 p-1 dark:bg-red-900/30 flex-shrink-0">
-                                    <Info className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-                                  </div>
-                                ) : (
-                                  <div className="rounded-full bg-primary/10 p-1 flex-shrink-0">
-                                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-                                  </div>
-                                )}
-                                
-                                <h4 className="text-sm font-medium line-clamp-1">
-                                  {conversion.fileName || "Voice conversion"}
-                                </h4>
-                              </div>
-                              
-                              <div className="flex items-center gap-1 mt-1.5">
-                                <p className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+                          <div className="flex flex-col gap-3">
+                            {/* Header with icon and file name */}
+                            <div className="flex items-center gap-3">
+                              {conversion.status === "completed" ? (
+                                <div className="rounded-full bg-green-100 p-1.5 dark:bg-green-900/30 flex-shrink-0">
+                                  <Music className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                </div>
+                              ) : conversion.status === "failed" ? (
+                                <div className="rounded-full bg-red-100 p-1.5 dark:bg-red-900/30 flex-shrink-0">
+                                  <Info className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                </div>
+                              ) : (
+                                <div className="rounded-full bg-primary/10 p-1.5 flex-shrink-0">
+                                  <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                                </div>
+                              )}
+                              <h4 className="text-sm font-medium line-clamp-1">
+                                {conversion.fileName || "Voice conversion"}
+                              </h4>
+                            </div>
+                            
+                            {/* Date and model info */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 mt-1">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground mb-1">Date</span>
+                                <p className="text-xs overflow-hidden text-ellipsis">
                                   {new Date(conversion.createdAt).toLocaleString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
@@ -1313,82 +1316,81 @@ export function AudioMastering() {
                                     minute: '2-digit'
                                   })}
                                 </p>
-                                <span className="text-muted-foreground hidden sm:inline">•</span>
+                              </div>
+                              
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground mb-1">Model</span>
                                 <p className="text-xs font-medium text-primary/90 truncate">{modelName}</p>
                               </div>
                             </div>
                             
-                            {/* Badges in a flex-wrap container to prevent overflow */}
-                            <div className="flex flex-wrap items-center gap-1">
+                            {/* Status badges */}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               {conversion.status === "completed" ? (
-                                <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 text-[10px] py-0 h-5 px-1.5">
+                                <Badge variant="outline" className="bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 text-[10px] py-0 h-5 px-2">
                                   Completed
                                 </Badge>
                               ) : conversion.status === "failed" ? (
-                                <Badge variant="outline" className="bg-red-100/50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 text-[10px] py-0 h-5 px-1.5">
+                                <Badge variant="outline" className="bg-red-100/50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 text-[10px] py-0 h-5 px-2">
                                   Failed
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 animate-pulse text-[10px] py-0 h-5 px-1.5">
+                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 animate-pulse text-[10px] py-0 h-5 px-2">
                                   Processing
                                 </Badge>
                               )}
                               
-                              {/* Show duration if available */}
                               {conversion.duration && conversion.duration !== "Unknown" && (
-                                <Badge variant="outline" className="bg-muted/50 border-muted text-[10px] py-0 h-5 px-1.5">
+                                <Badge variant="outline" className="bg-muted/50 border-muted text-[10px] py-0 h-5 px-2">
                                   {conversion.duration}
                                 </Badge>
                               )}
                             </div>
+                            
+                            {/* Download button */}
+                            {conversion.status === "completed" && conversion.resultUrl && (
+                              <div className="mt-2 flex justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 min-w-0 ml-auto"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const fileName = conversion.fileName || `converted_${new Date().getTime()}.wav`;
+                                    const processedName = `processed_${fileName}`;
+                                    
+                                    try {
+                                      toast({
+                                        title: "Download Started",
+                                        description: "Your file is downloading...",
+                                        duration: 3000,
+                                      });
+                                      
+                                      if (conversion.resultUrl) {
+                                        downloadFileFromStorage(conversion.resultUrl, processedName);
+                                      } else {
+                                        throw new Error("No URL available for download");
+                                      }
+                                    } catch (error) {
+                                      console.error("Download error:", error);
+                                      toast({
+                                        title: "Error",
+                                        description: "Could not download the file",
+                                        variant: "destructive"
+                                      });
+                                      
+                                      if (conversion.resultUrl) {
+                                        window.open(conversion.resultUrl, '_blank');
+                                      }
+                                    }
+                                  }}
+                                  aria-label="Download file"
+                                >
+                                  <Download className="h-4 w-4 text-primary" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                          
-                          {/* Quick action buttons */}
-                          {conversion.status === "completed" && conversion.resultUrl && (
-                            <div className="mt-2 flex justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 min-w-8 ml-auto" /* Agregado min-w-8 y ml-auto para evitar superposición */
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  
-                                  // Usar la función personalizada para descargar archivos de Firebase Storage
-                                  const fileName = conversion.fileName || `converted_${new Date().getTime()}.wav`;
-                                  const processedName = `processed_${fileName}`;
-                                  
-                                  try {
-                                    toast({
-                                      title: "Download Started",
-                                      description: "Your file is downloading...",
-                                      duration: 3000,
-                                    });
-                                    
-                                    if (conversion.resultUrl) {
-                                      downloadFileFromStorage(conversion.resultUrl, processedName);
-                                    } else {
-                                      throw new Error("No URL available for download");
-                                    }
-                                  } catch (error) {
-                                    console.error("Download error:", error);
-                                    toast({
-                                      title: "Error",
-                                      description: "Could not download the file",
-                                      variant: "destructive"
-                                    });
-                                    
-                                    // Intento alternativo de descarga
-                                    if (conversion.resultUrl) {
-                                      window.open(conversion.resultUrl, '_blank');
-                                    }
-                                  }
-                                }}
-                                aria-label="Download file"
-                              >
-                                <Download className="h-4 w-4 text-primary" />
-                              </Button>
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
                     );
@@ -1398,42 +1400,52 @@ export function AudioMastering() {
             </CardContent>
             
             {selectedConversion && (
-              <CardFooter className="flex-col items-start p-3 sm:p-4">
-                <Separator className="my-1 sm:my-2" />
-                <div className="w-full space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
-                    <Info className="h-3 w-3 text-primary" />
-                    {isMobile ? "Details" : "Selected Conversion Details"}
+              <CardFooter className="flex-col items-start p-4 sm:p-5">
+                <Separator className="my-2 sm:my-3" />
+                <div className="w-full space-y-3 sm:space-y-4">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    {isMobile ? "Conversion Details" : "Selected Conversion Details"}
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                    <span className="text-muted-foreground">ID:</span>
-                    <span className="truncate">{selectedConversion.id}</span>
+                  
+                  {/* Detalles en formato vertical para móvil, mejor organización */}
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-muted-foreground">ID</span>
+                      <div className="text-xs px-2 py-1.5 bg-muted/30 rounded-md truncate">
+                        {selectedConversion.id}
+                      </div>
+                    </div>
                     
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className={`capitalize font-medium ${
-                      selectedConversion.status === 'completed' ? 'text-green-600' :
-                      selectedConversion.status === 'running' ? 'text-blue-600' :
-                      selectedConversion.status === 'failed' ? 'text-red-600' : ''
-                    }`}>
-                      {selectedConversion.status}
-                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-muted-foreground">Status</span>
+                        <span className={`text-xs px-2 py-1.5 rounded-md flex items-center justify-center capitalize font-medium ${
+                          selectedConversion.status === 'completed' 
+                            ? 'text-green-700 bg-green-100/50 dark:bg-green-950/20 dark:text-green-400' :
+                          selectedConversion.status === 'running' 
+                            ? 'text-blue-700 bg-blue-100/50 dark:bg-blue-950/20 dark:text-blue-400' :
+                          selectedConversion.status === 'failed' 
+                            ? 'text-red-700 bg-red-100/50 dark:bg-red-950/20 dark:text-red-400'
+                            : 'bg-muted/30'
+                        }`}>
+                          {selectedConversion.status}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-muted-foreground">File Type</span>
+                        <span className="text-xs px-2 py-1.5 bg-muted/30 rounded-md truncate">
+                          {selectedConversion.fileName?.split('.').pop()?.toUpperCase() || "WAV"}
+                        </span>
+                      </div>
+                    </div>
                     
-                    <span className="text-muted-foreground">Started:</span>
-                    <span className="truncate">
-                      {new Date(selectedConversion.jobStartTime).toLocaleString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: !isMobile
-                      })}
-                    </span>
-                    
-                    {selectedConversion.jobEndTime && (
-                      <>
-                        <span className="text-muted-foreground">Completed:</span>
-                        <span className="truncate">
-                          {new Date(selectedConversion.jobEndTime).toLocaleString(undefined, {
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-muted-foreground">Started</span>
+                        <span className="text-xs px-2 py-1.5 bg-muted/30 rounded-md truncate">
+                          {new Date(selectedConversion.jobStartTime).toLocaleString(undefined, {
                             month: 'short',
                             day: 'numeric',
                             hour: '2-digit',
@@ -1441,12 +1453,27 @@ export function AudioMastering() {
                             hour12: !isMobile
                           })}
                         </span>
-                      </>
-                    )}
+                      </div>
+                      
+                      {selectedConversion.jobEndTime && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-muted-foreground">Completed</span>
+                          <span className="text-xs px-2 py-1.5 bg-muted/30 rounded-md truncate">
+                            {new Date(selectedConversion.jobEndTime).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: !isMobile
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {selectedConversion.status === 'completed' && selectedConversion.resultUrl && (
-                    <div className="pt-1.5 sm:pt-3">
+                    <div className="pt-2 sm:pt-3">
                       <Button 
                         className="w-full text-xs sm:text-sm bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90" 
                         onClick={() => {
@@ -1456,21 +1483,21 @@ export function AudioMastering() {
                           
                           try {
                             toast({
-                              title: "Descarga iniciada",
-                              description: "El archivo procesado se está descargando...",
+                              title: "Download Started",
+                              description: "Your file is downloading...",
                               duration: 3000,
                             });
                             
                             if (selectedConversion.resultUrl) {
                               downloadFileFromStorage(selectedConversion.resultUrl, processedName);
                             } else {
-                              throw new Error("No URL disponible para descargar");
+                              throw new Error("No URL available for download");
                             }
                           } catch (error) {
-                            console.error("Error al descargar:", error);
+                            console.error("Download error:", error);
                             toast({
                               title: "Error",
-                              description: "No se pudo descargar el archivo",
+                              description: "Could not download the file",
                               variant: "destructive"
                             });
                             
@@ -1481,8 +1508,8 @@ export function AudioMastering() {
                           }
                         }}
                       >
-                        <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        {isMobile ? "Download" : "Download Result"}
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Converted File
                       </Button>
                     </div>
                   )}
