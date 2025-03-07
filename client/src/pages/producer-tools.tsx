@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { motion } from "framer-motion";
 import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,6 +28,7 @@ import { ProductionProgressContainer } from "@/components/producer/ProductionPro
 import { VersionControl } from "@/components/producer/VersionControl";
 import { MusicAIGenerator } from "@/components/music/music-ai-generator";
 import { AudioMastering } from "@/components/music/audio-mastering";
+import { ModernAudioSuite } from "@/components/music/modern-audio-suite";
 
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
@@ -277,6 +279,7 @@ export default function ProducerToolsPage() {
   const [musiciansState, setMusiciansState] = useState(musicians);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
+  const [useModernUI, setUseModernUI] = useState(false);
 
   const loadMusicianImages = async () => {
     try {
@@ -794,7 +797,22 @@ export default function ProducerToolsPage() {
                 transition={{ duration: 0.3, delay: 0.1 }}
                 className="backdrop-blur-sm border border-blue-500/10 rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300"
               >
-                <AudioMastering />
+                <div className="relative">
+                  {/* Selector para cambiar entre la versión antigua y moderna */}
+                  <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-muted shadow-sm">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {useModernUI ? "Moderna" : "Clásica"}
+                    </span>
+                    <Switch
+                      checked={useModernUI}
+                      onCheckedChange={setUseModernUI}
+                      className="data-[state=checked]:bg-blue-500"
+                    />
+                  </div>
+                  
+                  {/* Renderizado condicional del componente */}
+                  {useModernUI ? <ModernAudioSuite /> : <AudioMastering />}
+                </div>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
