@@ -52,6 +52,7 @@ import {
   Calendar,
   DollarSign,
   ArrowRight,
+  ArrowLeft,
   Home,
   Check,
   Image,
@@ -841,51 +842,110 @@ export default function VirtualRecordLabelPage() {
       {/* Under Review Screen */}
       {isUnderReview && <UnderReviewScreen />}
       
-      {/* Enhanced Hero Section */}
+      {/* Enhanced Hero Section con video y animaciones */}
       <HeroSection handleCreateLabel={() => setCurrentStep(1)} />
 
       {/* Configuration Steps */}
-      <section className="container mb-16">
+      <section className="container py-16 mb-8">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-12"
+          >
             <div className="relative">
               {/* Progress Bar */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700">
-                <div 
-                  className="h-1 bg-[#121212] transition-all duration-300"
-                  style={{ width: `${(currentStep - 1) * 25}%` }}
+              <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-2 rounded-full bg-gray-200/50 dark:bg-gray-700/30 backdrop-blur-sm">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(currentStep - 1) * 25}%` }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="h-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600"
                 />
               </div>
               
               {/* Step Indicators */}
               <div className="relative flex justify-between">
                 {[1, 2, 3, 4, 5].map((step) => (
-                  <div 
+                  <motion.div 
                     key={step}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    initial={{ scale: 0.9, opacity: 0.7 }}
+                    animate={{ 
+                      scale: currentStep >= step ? 1 : 0.9,
+                      opacity: currentStep >= step ? 1 : 0.7
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
+                    className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
                       currentStep >= step 
-                        ? 'bg-[#121212] text-white' 
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' 
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     {currentStep > step ? (
                       <Check className="h-5 w-5" />
                     ) : (
-                      step
+                      <span className="font-semibold">{step}</span>
                     )}
-                  </div>
+                    
+                    {/* Efecto de resplandor para el paso actual */}
+                    {currentStep === step && (
+                      <span className="absolute inset-0 rounded-full animate-pulse-slow bg-orange-400/20 -z-10 blur-sm"></span>
+                    )}
+                  </motion.div>
                 ))}
               </div>
             </div>
             
-            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-              <span>Label Type</span>
-              <span>Genre & Platform</span>
-              <span>Artists</span>
-              <span>Summary</span>
-              <span>Done</span>
+            <div className="flex justify-between mt-3 text-sm">
+              <motion.span 
+                animate={{ 
+                  opacity: currentStep >= 1 ? 1 : 0.5,
+                  color: currentStep >= 1 ? 'rgb(245, 120, 63)' : 'rgb(156, 163, 175)'
+                }}
+                className="font-medium max-w-[80px] text-center"
+              >
+                Tipo de Sello
+              </motion.span>
+              <motion.span 
+                animate={{ 
+                  opacity: currentStep >= 2 ? 1 : 0.5,
+                  color: currentStep >= 2 ? 'rgb(245, 120, 63)' : 'rgb(156, 163, 175)'
+                }}
+                className="font-medium max-w-[80px] text-center"
+              >
+                Género y Plataformas
+              </motion.span>
+              <motion.span 
+                animate={{ 
+                  opacity: currentStep >= 3 ? 1 : 0.5,
+                  color: currentStep >= 3 ? 'rgb(245, 120, 63)' : 'rgb(156, 163, 175)'
+                }}
+                className="font-medium max-w-[80px] text-center"
+              >
+                Artistas
+              </motion.span>
+              <motion.span 
+                animate={{ 
+                  opacity: currentStep >= 4 ? 1 : 0.5,
+                  color: currentStep >= 4 ? 'rgb(245, 120, 63)' : 'rgb(156, 163, 175)'
+                }}
+                className="font-medium max-w-[80px] text-center"
+              >
+                Resumen
+              </motion.span>
+              <motion.span 
+                animate={{ 
+                  opacity: currentStep >= 5 ? 1 : 0.5,
+                  color: currentStep >= 5 ? 'rgb(245, 120, 63)' : 'rgb(156, 163, 175)'
+                }}
+                className="font-medium max-w-[80px] text-center"
+              >
+                Finalizar
+              </motion.span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Step 1: Label Type */}
           {currentStep === 1 && (
@@ -941,7 +1001,7 @@ export default function VirtualRecordLabelPage() {
                 
                 <div className="flex items-end">
                   <Button 
-                    className="w-full bg-[#121212] hover:bg-[#202020]"
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
                     disabled={!config.type || !config.name}
                     onClick={nextStep}
                   >
@@ -1016,11 +1076,13 @@ export default function VirtualRecordLabelPage() {
                 <Button 
                   variant="outline"
                   onClick={prevStep}
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 transition-all"
                 >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
                 <Button 
-                  className="bg-[#121212] hover:bg-[#202020]"
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
                   disabled={!config.genre || !(config.platforms || []).length}
                   onClick={nextStep}
                 >
@@ -1101,11 +1163,13 @@ export default function VirtualRecordLabelPage() {
                 <Button 
                   variant="outline"
                   onClick={prevStep}
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 transition-all"
                 >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
                 <Button 
-                  className="bg-[#121212] hover:bg-[#202020]"
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
                   disabled={!config.artistCount}
                   onClick={nextStep}
                 >
@@ -1297,11 +1361,13 @@ export default function VirtualRecordLabelPage() {
                 <Button 
                   variant="outline"
                   onClick={prevStep}
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 transition-all"
                 >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
                 <Button 
-                  className="bg-[#121212] hover:bg-[#202020]"
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
                   onClick={createRecordLabel}
                   disabled={isCreatingLabel}
                 >
@@ -1314,7 +1380,7 @@ export default function VirtualRecordLabelPage() {
                     <>
                       <Building2 className="mr-2 h-4 w-4" />
                       Create My Virtual Record Label
-                      <Bot className="ml-2 h-4 w-4 text-orange-500" />
+                      <Bot className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>
@@ -1345,7 +1411,7 @@ export default function VirtualRecordLabelPage() {
               
               <div className="flex flex-col md:flex-row gap-4 justify-center">
                 <Button 
-                  className="bg-[#121212] hover:bg-[#202020]"
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
                   size="lg"
                 >
                   <Building2 className="mr-2 h-5 w-5" />
@@ -1354,6 +1420,7 @@ export default function VirtualRecordLabelPage() {
                 <Button 
                   variant="outline"
                   size="lg"
+                  className="border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 transition-all"
                 >
                   <ArrowRight className="mr-2 h-5 w-5" />
                   Explore Label Tools
@@ -1482,7 +1549,7 @@ export default function VirtualRecordLabelPage() {
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-6">Still have questions?</p>
           <Button 
-            className="bg-[#121212] hover:bg-[#202020]"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
             size="lg"
           >
             <MessageSquare className="mr-2 h-5 w-5" />
@@ -1500,7 +1567,7 @@ export default function VirtualRecordLabelPage() {
           </p>
           <Button 
             size="lg" 
-            className="bg-white text-[#121212] hover:bg-white/90"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
             onClick={() => setCurrentStep(1)}
           >
             <Building2 className="mr-2 h-5 w-5" />
