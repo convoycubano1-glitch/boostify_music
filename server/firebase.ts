@@ -56,7 +56,7 @@ service cloud.firestore {
       // Simplify rules for development
       allow read, write: if request.auth != null;
     }
-    // Nuevas colecciones para la red social
+    // New collections for the social network
     match /social_users/{userId} {
       allow read: if true;
       allow write: if request.auth != null;

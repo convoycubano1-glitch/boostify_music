@@ -28,13 +28,13 @@ import artistRouter from './routes/artist';
 import artistGeneratorRouter from './routes/artist-generator'; // Added import
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
-import videoGenerationRouter from './routes/video-generation'; // Router directo para generación de videos con PiAPI
+import videoGenerationRouter from './routes/video-generation'; // Direct router for PiAPI video generation
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
-import apiProxyRouter from './routes/api-proxy'; // Importamos el router de proxy para APIs externas
-import videoStatusRouter from './routes/video-status'; // Importamos el router dedicado para estado de videos
-import musicRouter from './routes/music'; // Importamos el router de generación de música
-import { v4 as uuidv4 } from 'uuid'; // Para generar IDs únicos para tareas
+import apiProxyRouter from './routes/api-proxy'; // Import the proxy router for external APIs
+import videoStatusRouter from './routes/video-status'; // Import the dedicated router for video status
+import musicRouter from './routes/music'; // Import the music generation router
+import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 import { Request, Response } from 'express';
@@ -98,7 +98,7 @@ export function registerRoutes(app: Express): Server {
   // Register translation routes
   app.use('/api', translationRouter);
 
-  // Registro del router de generación de video (implementación directa)
+  // Register video generation router (direct implementation)
   app.use('/api/video-generation', videoGenerationRouter);
 
   app.use('/api/manager', managerRouter);

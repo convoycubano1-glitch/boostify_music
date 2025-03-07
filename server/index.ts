@@ -20,10 +20,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "img-src 'self' data: https: blob: *; " + // Permitir todas las imágenes
+    "img-src 'self' data: https: blob: *; " + // Allow all images
     "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.kling.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com *; " + // Ampliar connect-src
-    "media-src 'self' https: blob: *; " + // Ampliar media-src
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.kling.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com *; " + // Extend connect-src
+    "media-src 'self' https: blob: *; " + // Extend media-src
     "worker-src 'self' blob:; " +
     "frame-src 'self';"
   );
@@ -45,11 +45,11 @@ app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
   createParentPath: true,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB máximo
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB maximum
   abortOnLimit: true
 }));
 
-// Health check endpoint para monitoreo
+// Health check endpoint for monitoring
 app.get('/api/health', (req, res) => {
   const healthData = {
     uptime: process.uptime(),
@@ -273,12 +273,12 @@ if (process.env.NODE_ENV === "production") {
 } else {
   log('🛠 Running in development mode');
   
-  // En modo desarrollo, dejamos que el middleware de Vite maneje todas las rutas de frontend
-  // Importante: No definimos manejadores específicos para rutas frontend como '/'
-  // Los archivos estáticos se sirven automáticamente
+  // In development mode, we let the Vite middleware handle all frontend routes
+  // Important: We don't define specific handlers for frontend routes like '/'
+  // Static files are served automatically
   app.use(express.static(path.join(process.cwd(), 'client/public')));
   
-  // Agregamos un diagnóstico para depurar el manejo de rutas
+  // Add diagnostics to debug route handling
   log('🔍 Vite will handle frontend routes in development mode');
 }
 
@@ -337,20 +337,20 @@ if (process.env.NODE_ENV === "production") {
       log('✅ OPENAI_API_KEY is configured and ready for use');
     }
 
-    // Setup Vite in development - IMPORTANTE: Esto debe ir DESPUÉS de registrar las rutas de API
-    // pero ANTES de cualquier middleware que maneje todas las rutas (como '*')
+    // Setup Vite in development - IMPORTANT: This must go AFTER registering the API routes
+    // but BEFORE any middleware that handles all routes (like '*')
     if (process.env.NODE_ENV !== "production") {
       log('🛠 Setting up Vite development server');
       
-      // Diagnóstico adicional para identificar el orden de inicialización
+      // Additional diagnostics to identify initialization order
       log('📌 Configuring Vite to handle frontend routes like "/"');
       
-      // Configuramos Vite con mayor prioridad para rutas no-API
+      // Configure Vite with higher priority for non-API routes
       await setupVite(app, server);
       
-      // Agregamos un middleware de último recurso para debugging
+      // Add a last-resort middleware for debugging
       app.use('*', (req, res, next) => {
-        // Solo para rutas que no sean API y que Vite no haya manejado
+        // Only for non-API routes that Vite hasn't handled
         if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
           log(`⚠️ Route not handled by Vite: ${req.method} ${req.path}`);
         }
@@ -358,20 +358,20 @@ if (process.env.NODE_ENV === "production") {
       });
     }
 
-    // Usar el puerto configurado, puerto de Replit, o 5000 como fallback
+    // Use the configured port, Replit port, or 5000 as fallback
     const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 
                 (process.env.REPLIT_PORT ? parseInt(process.env.REPLIT_PORT, 10) : 5000);
     
-    // Determinar si estamos en un entorno de Replit
+    // Determine if we're in a Replit environment
     const isReplitEnv = !!process.env.REPL_SLUG || !!process.env.REPLIT_IDENTITY;
     
-    // En producción, asegurarnos de que escuchamos en el puerto correcto
+    // In production, ensure we're listening on the correct port
     if (process.env.NODE_ENV === "production") {
       log(`🚀 Starting server in production mode on port ${PORT}`);
     }
     
-    // Iniciar el servidor en un puerto específico - siempre en 0.0.0.0 para asegurar accesibilidad externa
-    // El valor 0.0.0.0 hace que el servidor escuche en todas las interfaces de red (incluida localhost)
+    // Start the server on a specific port - always on 0.0.0.0 to ensure external accessibility
+    // The value 0.0.0.0 makes the server listen on all network interfaces (including localhost)
     server.listen(PORT, '0.0.0.0', () => {
       log(`✅ Server started on port ${PORT}`);
       log(`🌍 Environment: ${app.get("env")}`);
@@ -379,7 +379,7 @@ if (process.env.NODE_ENV === "production") {
         path.resolve(process.cwd(), 'dist', 'public') : 
         path.join(process.cwd(), 'client/public')}`);
       
-      // URL de acceso adaptada al entorno
+      // Access URL adapted to the environment
       const accessURL = isReplitEnv ? 
         `https://${process.env.REPL_SLUG || 'your-replit'}.replit.app` : 
         process.env.NODE_ENV === "production" ? 
@@ -389,7 +389,7 @@ if (process.env.NODE_ENV === "production") {
       log(`🔗 Access URL: ${accessURL}`);
     });
     
-    // Manejar errores del servidor
+    // Handle server errors
     server.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
         log(`❌ Error: Port ${PORT} is already in use. Please kill any processes using this port and try again.`);
