@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Video,
   Music2,
@@ -12,15 +12,23 @@ import {
   Users,
   Plus,
   PlayCircle,
+  PauseCircle,
   Mic2,
   Upload,
   Loader2,
   X,
   Grid,
+  TrendingUp,
+  Award,
+  RefreshCw,
   Info,
   ChevronRight,
   Trash2,
   CheckCircle2,
+  ExternalLink,
+  Clock,
+  Calendar,
+  Zap,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -51,9 +59,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { StrategyDialog } from "@/components/strategy/strategy-dialog";
 import { ActivityFeed } from "@/components/activity/activity-feed";
 import { RightsManagementCard } from "@/components/rights/rights-management-card";
@@ -95,6 +109,12 @@ interface Phase {
   description: string;
   completed: boolean;
 }
+
+const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
 
 function getYouTubeVideoId(url: string | undefined) {
   if (!url) return null;
@@ -512,8 +532,8 @@ export default function ArtistDashboard() {
     <div className="min-h-screen flex flex-col bg-background text-gray-100">
       <Header />
       <main className="flex-1">
-        {/* Sección Hero con video de fondo y overlay */}
-        <div className="relative w-full h-[80vh] md:h-[90vh] overflow-hidden">
+        {/* Sección Hero con video de fondo y overlay mejorado */}
+        <div className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden">
           <video
             autoPlay
             loop
@@ -522,17 +542,18 @@ export default function ArtistDashboard() {
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source
-              src="/assets/Standard_Mode_Generated_Video (7).mp4"
+              src="/src/images/videos/Standard_Mode_Generated_Video.mp4"
               type="video/mp4"
             />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-background" />
+          
           <div className="relative z-10 container mx-auto h-full flex flex-col justify-end items-center md:items-start px-4 md:px-8 py-8">
-            <div className="text-center md:text-left mb-12">
+            <div className="text-center md:text-left mb-8">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70 drop-shadow-lg"
+                className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600 drop-shadow-lg"
               >
                 Welcome to Your Creative Hub
               </motion.h1>
@@ -546,81 +567,159 @@ export default function ArtistDashboard() {
               </motion.p>
             </div>
 
-            {/* Estadísticas en tarjetas */}
+            {/* Estadísticas en tarjetas mejoradas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Published Videos
-                    </p>
-                    <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Published Videos
+                      </p>
+                      <h3 className="text-2xl font-bold mt-1">{videos.length}</h3>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <Video className="h-6 w-6 text-orange-500" />
+                    </div>
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                    <Video className="h-6 w-6 text-orange-500" />
+                </Card>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Uploaded Songs
+                      </p>
+                      <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <Music2 className="h-6 w-6 text-orange-500" />
+                    </div>
                   </div>
-                </div>
-              </Card>
-              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Uploaded Songs
-                    </p>
-                    <h3 className="text-2xl font-bold mt-1">{songs.length}</h3>
+                </Card>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Active Strategies
+                      </p>
+                      <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <BarChart2 className="h-6 w-6 text-orange-500" />
+                    </div>
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                    <Music2 className="h-6 w-6 text-orange-500" />
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-6 border-l-4 border-orange-500 bg-background/80 backdrop-blur-sm shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Active Strategies
-                    </p>
-                    <h3 className="text-2xl font-bold mt-1">{currentStrategy.length}</h3>
-                  </div>
-                  <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                    <BarChart2 className="h-6 w-6 text-orange-500" />
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             </div>
           </div>
         </div>
 
         {/* Contenido principal con ScrollArea */}
         <ScrollArea className="flex-1">
-          <div className="container mx-auto px-4 py-8 space-y-8">
-            {/* Sección de Tips */}
-            <div className="bg-orange-500/5 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Info className="h-5 w-5 text-orange-500" />
+          <div className="container mx-auto px-4 py-10 space-y-10">
+            {/* Sección de Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gradient-to-r from-orange-500/10 to-orange-500/5 rounded-xl p-6 border border-orange-500/20"
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <BarChart2 className="h-6 w-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">Quick Actions</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Get started with these common tasks
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    Tips to Optimize Your Dashboard
-                  </h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <ChevronRight className="h-4 w-4 text-orange-500" />
-                      Keep your content fresh by regularly uploading videos and music
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <ChevronRight className="h-4 w-4 text-orange-500" />
-                      Review and update your strategy monthly to maintain focus
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <ChevronRight className="h-4 w-4 text-orange-500" />
-                      Use our AI tools to generate ideas and optimize your content
-                    </li>
-                  </ul>
+                
+                <div className="flex flex-wrap gap-3 md:ml-auto">
+                  <Button 
+                    onClick={() => setIsVideoDialogOpen(true)}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Video className="mr-2 h-4 w-4" />
+                    Add Video
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setIsSongDialogOpen(true)}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Music2 className="mr-2 h-4 w-4" />
+                    Upload Song
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setIsStrategyDialogOpen(true)}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    Update Strategy
+                  </Button>
                 </div>
               </div>
-            </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-start gap-3 p-4 bg-background/70 backdrop-blur-sm rounded-lg">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center mt-1">
+                    <TrendingUp className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Keep Growing</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Regularly upload fresh content to maintain audience engagement
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-4 bg-background/70 backdrop-blur-sm rounded-lg">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center mt-1">
+                    <RefreshCw className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Stay Focused</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Review and update your strategy monthly to maintain focus
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-4 bg-background/70 backdrop-blur-sm rounded-lg">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center mt-1">
+                    <Award className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Optimize Content</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Use our AI tools to generate ideas and improve your content
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
