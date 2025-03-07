@@ -276,62 +276,67 @@ export function Header() {
                     <Menu className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[300px] bg-[#1B1B1B] border-[#2A2A2A]">
-                  {/* Agrupación del menú desplegable por categorías */}
-                  <div className="py-1 px-3 text-xs text-orange-500 font-semibold">Featured</div>
-                  {featuredNavigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-[300px] bg-[#1B1B1B] border-[#2A2A2A] max-h-[80vh] overflow-hidden"
+                >
+                  <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
+                    {/* Agrupación del menú desplegable por categorías */}
+                    <div className="py-1 px-3 text-xs text-orange-500 font-semibold sticky top-0 bg-[#1B1B1B] z-10">Featured</div>
+                    {featuredNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <item.icon className="mr-2 h-4 w-4 text-orange-500" />
+                          {item.name}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    
+                    <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1 sticky top-7 bg-[#1B1B1B] z-10">Main</div>
+                    {mainNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    
+                    <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1 sticky top-14 bg-[#1B1B1B] z-10">More</div>
+                    {secondaryNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    
+                    {/* Settings link */}
+                    <Link href="/settings">
                       <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <item.icon className="mr-2 h-4 w-4 text-orange-500" />
-                        {item.name}
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
                       </DropdownMenuItem>
                     </Link>
-                  ))}
-                  
-                  <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1">Main</div>
-                  {mainNavigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </DropdownMenuItem>
-                    </Link>
-                  ))}
-                  
-                  <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1">More</div>
-                  {secondaryNavigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </DropdownMenuItem>
-                    </Link>
-                  ))}
-                  
-                  {/* Settings link */}
-                  <Link href="/settings">
-                    <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                    
+                    {/* Admin panel link - only visible to admins */}
+                    {isAdmin && (
+                      <Link href="/admin">
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </DropdownMenuItem>
+                      </Link>
+                    )}
+                    
+                    <DropdownMenuItem 
+                      onSelect={() => logout()} 
+                      className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A]"
+                    >
+                      Logout
                     </DropdownMenuItem>
-                  </Link>
-                  
-                  {/* Admin panel link - only visible to admins */}
-                  {isAdmin && (
-                    <Link href="/admin">
-                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Admin Panel
-                      </DropdownMenuItem>
-                    </Link>
-                  )}
-                  
-                  <DropdownMenuItem 
-                    onSelect={() => logout()} 
-                    className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A]"
-                  >
-                    Logout
-                  </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
 

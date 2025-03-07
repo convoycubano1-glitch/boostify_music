@@ -19,9 +19,37 @@ export const SectionNavigation: React.FC<SectionNavigationProps> = ({
   showActions = false
 }) => {
   return (
-    <Card className="p-3 bg-black/60 backdrop-blur-md border-orange-500/20 sticky top-4 z-30 mb-6">
-      <div className="flex justify-between items-center">
-        <div className="flex overflow-x-auto gap-1 pb-1 hide-scrollbar">
+    <Card className="p-3 bg-black/60 backdrop-blur-md border-orange-500/20 sticky top-4 z-30 mb-6 max-h-60">
+      <div className="flex flex-col">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-medium text-orange-500">Secciones</h3>
+          {showActions && (
+            <div className="flex gap-1">
+              {onShare && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full hover:bg-orange-500/10 text-orange-500"
+                  onClick={onShare}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onMessage && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full hover:bg-orange-500/10 text-orange-500"
+                  onClick={onMessage}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col overflow-y-auto overflow-x-hidden gap-2 pr-1 custom-scrollbar">
           <Button 
             size="sm" 
             variant={activeSection === 'music' ? 'default' : 'outline'}
@@ -75,32 +103,6 @@ export const SectionNavigation: React.FC<SectionNavigationProps> = ({
             Merch
           </Button>
         </div>
-        
-        {showActions && (
-          <div className="flex gap-1">
-            {onShare && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-full hover:bg-orange-500/10 text-orange-500"
-                onClick={onShare}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {onMessage && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-full hover:bg-orange-500/10 text-orange-500"
-                onClick={onMessage}
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        )}
       </div>
     </Card>
   );
