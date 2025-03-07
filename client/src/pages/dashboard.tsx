@@ -35,7 +35,6 @@ import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
-import { Header } from "@/components/layout/header";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from 'framer-motion';
@@ -214,9 +213,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+      {/* Se eliminó el Header para esta página específica */}
       <main className="flex-1">
-        <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
+        <ScrollArea className="flex-1 h-[calc(100vh-0rem)]">
           <div className="container mx-auto px-4 py-4">
             <div className="mb-6">
               <div className="relative w-full rounded-xl overflow-hidden shadow-xl" style={{ minHeight: "300px" }}>
