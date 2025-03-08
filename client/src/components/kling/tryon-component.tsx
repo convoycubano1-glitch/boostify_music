@@ -6,7 +6,7 @@
  * 
  * Image Validation & Error Handling:
  * - Accepted formats: .jpg, .jpeg, .png only (validated both at HTML input and data URL levels)
- * - File format validation in handleModelImageChange and handleClothingImageChange
+ * - Strict JPEG format validation and conversion using image-conversion utilities
  * - Data URL validation in validateImageData before submission
  * - Enhanced error handling in loadSavedResults with improved JSON parsing
  * - Robust error handling in checkTaskStatus with specific error messages
@@ -25,6 +25,7 @@ import { Slider } from '@/components/ui/slider';
 import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
+import { convertToKlingFormatJpeg, validateImageForKling } from '@/utils/image-conversion';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -636,26 +637,6 @@ export function VirtualTryOnComponent() {
       return;
     }
 
-    // Validate image data format for model image
-    if (!validateImageData(modelImage)) {
-      toast({
-        title: "Invalid Model Image",
-        description: "The model image format is invalid. Please upload a proper JPEG or PNG image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate image data format for clothing image
-    if (!validateImageData(clothingImage)) {
-      toast({
-        title: "Invalid Clothing Image",
-        description: "The clothing image format is invalid. Please upload a proper JPEG or PNG image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Start loading and reset state
     setIsLoading(true);
     setTaskId(null);
@@ -663,7 +644,61 @@ export function VirtualTryOnComponent() {
     setResult(null);
     
     try {
-      // Configuration for the request
+      // Show initial loading toast
+      toast({
+        title: "Preparing Process",
+        description: "Validating and processing images...",
+      });
+      
+      // Perform strict validation and conversion of images using the new utilities
+      let validatedModelImage = modelImage;
+      let validatedClothingImage = clothingImage;
+      
+      // First validate the model image
+      const modelValidationResult = validateImageForKling(modelImage);
+      if (!modelValidationResult.isValid) {
+        console.log("Model image validation failed, attempting conversion:", modelValidationResult.errorMessage);
+        
+        // If it fails validation, try to convert it
+        const modelConversionResult = await convertToKlingFormatJpeg(modelImage);
+        if (!modelConversionResult.isValid) {
+          throw new Error(`Model image format error: ${modelConversionResult.errorMessage}`);
+        }
+        validatedModelImage = modelConversionResult.processedImage!;
+        console.log("Model image successfully converted to proper JPEG format");
+        
+        toast({
+          title: "Model Image Processed",
+          description: "Your model image has been automatically converted to the required format.",
+        });
+      } else if (modelValidationResult.processedImage) {
+        // If validation succeeded but returned a normalized version
+        validatedModelImage = modelValidationResult.processedImage;
+      }
+      
+      // Then validate the clothing image
+      const clothingValidationResult = validateImageForKling(clothingImage);
+      if (!clothingValidationResult.isValid) {
+        console.log("Clothing image validation failed, attempting conversion:", clothingValidationResult.errorMessage);
+        
+        // If it fails validation, try to convert it
+        const clothingConversionResult = await convertToKlingFormatJpeg(clothingImage);
+        if (!clothingConversionResult.isValid) {
+          throw new Error(`Clothing image format error: ${clothingConversionResult.errorMessage}`);
+        }
+        validatedClothingImage = clothingConversionResult.processedImage!;
+        console.log("Clothing image successfully converted to proper JPEG format");
+        
+        toast({
+          title: "Clothing Image Processed",
+          description: "Your clothing image has been automatically converted to the required format.",
+        });
+      } else if (clothingValidationResult.processedImage) {
+        // If validation succeeded but returned a normalized version
+        validatedClothingImage = clothingValidationResult.processedImage;
+      }
+      
+      // Create settings for the request
       const settings = {
         preserve_model_details: preserveModelDetails,
         preserve_clothing_details: preserveClothingDetails,
@@ -672,13 +707,14 @@ export function VirtualTryOnComponent() {
         position_offset: alignment === 'manual' ? { x: offsetX, y: offsetY } : undefined
       };
       
-      // Show loading toast to provide feedback
+      // Show uploading toast
       toast({
-        title: "Preparing Process",
-        description: "Uploading and validating images...",
+        title: "Uploading Images",
+        description: "Sending validated images to the server...",
       });
       
-      const newTaskId = await klingService.startTryOn(modelImage, clothingImage, settings);
+      // Start try-on process with validated images
+      const newTaskId = await klingService.startTryOn(validatedModelImage, validatedClothingImage, settings);
       
       if (!newTaskId) {
         throw new Error("Failed to get a valid task ID from the server");

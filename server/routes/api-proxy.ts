@@ -1731,6 +1731,18 @@ router.get('/proxy/face-swap/status', async (req, res) => {
  */
 router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
   try {
+    // Importamos la utilidad de procesamiento de imágenes
+    const { processImageForKling } = await import('../utils/image-processor');
+    
+    // Definimos la interfaz de resultado de procesamiento internamente para evitar problemas de importación
+    interface ImageProcessingResult {
+      isValid: boolean;
+      normalizedUrl?: string;
+      errorMessage?: string;
+      width?: number;
+      height?: number;
+    }
+    
     console.log('Recibida solicitud para iniciar Virtual Try-On');
     
     // Obtener imágenes y parámetros del body
@@ -1776,48 +1788,98 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
         });
       }
       
-      // Validación específica para el formato de imagen JPEG que requiere la API
-      const validateImageFormat = (url: string): boolean => {
-        if (!url) return true; // Si no está presente, se considera válido
-        
-        if (url.startsWith('data:image/')) {
-          // Para data URLs, verificamos que sea JPEG/JPG
-          return url.startsWith('data:image/jpeg') || url.startsWith('data:image/jpg');
-        } else if (url.startsWith('http://') || url.startsWith('https://')) {
-          // Para URLs externas, intentamos inferir el tipo por la extensión
-          const urlLower = url.toLowerCase();
-          return urlLower.endsWith('.jpg') || urlLower.endsWith('.jpeg') || 
-                 urlLower.includes('.jpg?') || urlLower.includes('.jpeg?');
-        }
-        
-        return false;
-      };
+      console.log('Procesando y validando imágenes para Virtual Try-On con Kling API...');
       
-      // Verificamos el formato de las imágenes proporcionadas
-      const modelIsValid = validateImageFormat(model_input);
-      const dressIsValid = !dress_input || validateImageFormat(dress_input);
-      const upperIsValid = !upper_input || validateImageFormat(upper_input);
-      const lowerIsValid = !lower_input || validateImageFormat(lower_input);
+      // Utilizamos nuestro nuevo procesador de imágenes para mayor rigurosidad
+      // Esto garantiza cumplimiento estricto con los requisitos de formato de Kling
       
-      if (!modelIsValid || !dressIsValid || !upperIsValid || !lowerIsValid) {
-        console.error('Las imágenes deben estar en formato JPEG/JPG');
+      // Procesar imagen del modelo (obligatoria)
+      console.log('Procesando imagen del modelo...');
+      const modelProcessingResult = await processImageForKling(model_input);
+      
+      if (!modelProcessingResult.isValid) {
+        console.error('Error al procesar imagen del modelo:', modelProcessingResult.errorMessage);
         return res.status(400).json({
           success: false,
-          error: 'Error de formato: PiAPI solo acepta imágenes en formato JPEG/JPG. Por favor, convierta las imágenes antes de enviarlas.'
+          error: `Error en imagen del modelo: ${modelProcessingResult.errorMessage || 'Formato no soportado'}`
         });
       }
       
+      // Procesar imágenes de prendas (al menos una es obligatoria)
+      let dressProcessingResult: ImageProcessingResult = { isValid: true };
+      let upperProcessingResult: ImageProcessingResult = { isValid: true };
+      let lowerProcessingResult: ImageProcessingResult = { isValid: true };
+      
+      if (dress_input) {
+        console.log('Procesando imagen del vestido...');
+        dressProcessingResult = await processImageForKling(dress_input);
+        if (!dressProcessingResult.isValid) {
+          console.error('Error al procesar imagen del vestido:', dressProcessingResult.errorMessage);
+          return res.status(400).json({
+            success: false,
+            error: `Error en imagen del vestido: ${dressProcessingResult.errorMessage || 'Formato no soportado'}`
+          });
+        }
+      }
+      
+      if (upper_input) {
+        console.log('Procesando imagen de la prenda superior...');
+        upperProcessingResult = await processImageForKling(upper_input);
+        if (!upperProcessingResult.isValid) {
+          console.error('Error al procesar imagen de la prenda superior:', upperProcessingResult.errorMessage);
+          return res.status(400).json({
+            success: false,
+            error: `Error en imagen de la prenda superior: ${upperProcessingResult.errorMessage || 'Formato no soportado'}`
+          });
+        }
+      }
+      
+      if (lower_input) {
+        console.log('Procesando imagen de la prenda inferior...');
+        lowerProcessingResult = await processImageForKling(lower_input);
+        if (!lowerProcessingResult.isValid) {
+          console.error('Error al procesar imagen de la prenda inferior:', lowerProcessingResult.errorMessage);
+          return res.status(400).json({
+            success: false,
+            error: `Error en imagen de la prenda inferior: ${lowerProcessingResult.errorMessage || 'Formato no soportado'}`
+          });
+        }
+      }
+      
+      console.log('Todas las imágenes procesadas correctamente');
       console.log('Llamando a PiAPI para Virtual Try-On');
       
-      // Construimos el objeto de input, solo incluyendo los campos que están presentes
-      const inputObj: any = {
-        model_input: model_input,
+      // Construimos el objeto de input usando las versiones procesadas y normalizadas
+      const inputObj: Record<string, any> = {
+        model_input: modelProcessingResult.normalizedUrl || model_input,
         batch_size: batch_size
       };
       
-      if (dress_input) inputObj.dress_input = dress_input;
-      if (upper_input) inputObj.upper_input = upper_input;
-      if (lower_input) inputObj.lower_input = lower_input;
+      if (dress_input && dressProcessingResult.normalizedUrl) {
+        inputObj.dress_input = dressProcessingResult.normalizedUrl;
+      } else if (dress_input) {
+        inputObj.dress_input = dress_input;
+      }
+      
+      if (upper_input && upperProcessingResult.normalizedUrl) {
+        inputObj.upper_input = upperProcessingResult.normalizedUrl;
+      } else if (upper_input) {
+        inputObj.upper_input = upper_input;
+      }
+      
+      if (lower_input && lowerProcessingResult.normalizedUrl) {
+        inputObj.lower_input = lowerProcessingResult.normalizedUrl;
+      } else if (lower_input) {
+        inputObj.lower_input = lower_input;
+      }
+      
+      // Registro de depuración (eliminando los datos base64 por brevedad)
+      console.log('Enviando model_input con encabezado:', 
+                 inputObj.model_input ? inputObj.model_input.substring(0, 50) + '...' : 'none');
+      if (inputObj.dress_input) {
+        console.log('Enviando dress_input con encabezado:', 
+                   inputObj.dress_input.substring(0, 50) + '...');
+      }
       
       // Llamada real a la API de PiAPI para Virtual Try-On
       const response = await axios.post('https://api.piapi.ai/api/v1/task', {

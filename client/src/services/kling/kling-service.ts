@@ -1,4 +1,5 @@
 import { apiRequest } from '@/lib/queryClient';
+import { validateImageForKling, convertToKlingFormatJpeg, ImageProcessingResult } from '@/utils/image-conversion';
 
 /**
  * Tipos para las funciones de Kling API
@@ -176,6 +177,7 @@ class KlingService {
   
   /**
    * Valida que un data URL de imagen cumpla con los requisitos de la API
+   * Utiliza las nuevas utilidades de procesamiento de imágenes para validación rigurosa
    * @param dataUrl URL de datos de la imagen
    * @param tipo Tipo de imagen (para mensajes de error más claros)
    * @throws Error si la imagen no cumple con los requisitos
@@ -185,39 +187,27 @@ class KlingService {
       throw new Error(`La imagen de ${tipo} no es válida`);
     }
     
-    if (!dataUrl.startsWith('data:image/')) {
-      throw new Error(`La imagen de ${tipo} no tiene un formato de data URL válido`);
+    // Realizar validación básica para determinar si es posible convertir la imagen
+    // Usamos la nueva utilidad validateImageForKling que es más estricta
+    const validationResult = validateImageForKling(dataUrl);
+    
+    if (!validationResult.isValid) {
+      console.warn(`Formato de imagen de ${tipo} no válido: ${validationResult.errorMessage}`);
+      
+      // Si la validación falla por no ser JPEG, sugerimos la conversión automática
+      if (validationResult.errorMessage?.includes('Solo se aceptan imágenes JPEG')) {
+        throw new Error(`Error de formato: La imagen de ${tipo} debe estar en formato JPEG con encabezado específico. Por favor, utilice la función de conversión de imagen antes de enviarla.`);
+      }
+      
+      // En otros casos, usamos el mensaje de error específico de la validación
+      throw new Error(`Error en imagen de ${tipo}: ${validationResult.errorMessage}`);
     }
     
-    // PiAPI/Kling solo acepta imágenes JPEG
-    const isJpeg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
-    if (!isJpeg) {
-      console.warn(`Formato de imagen de ${tipo} no soportado. Solo se acepta JPEG.`);
-      throw new Error(`Error de formato: La imagen de ${tipo} debe estar en formato JPEG. Por favor, convierta la imagen antes de enviarla.`);
-    }
-    
-    // Verificar estructura del data URL
-    const parts = dataUrl.split(',');
-    if (parts.length !== 2 || !parts[1]) {
-      throw new Error(`La estructura del data URL de la imagen de ${tipo} no es válida`);
-    }
-    
-    // Verificar que la codificación es base64
-    if (!parts[0].toLowerCase().includes('base64')) {
-      throw new Error(`La imagen de ${tipo} debe estar codificada en base64`);
-    }
-    
-    // Verificar tamaño mínimo
-    if (parts[1].length < 100) {
-      throw new Error(`La imagen de ${tipo} es demasiado pequeña o está vacía`);
-    }
-    
-    // Verificar tamaño máximo (aproximadamente 10MB en base64)
-    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
-    const estimatedSizeInBytes = (parts[1].length * 3) / 4; // Estimación aproximada
-    
-    if (estimatedSizeInBytes > maxSizeInBytes) {
-      throw new Error(`La imagen de ${tipo} es demasiado grande (>10MB). Por favor, reduzca su tamaño.`);
+    // Si la imagen ya fue procesada/normalizada por el validador, usar esa versión
+    if (validationResult.processedImage && validationResult.processedImage !== dataUrl) {
+      console.log(`Imagen de ${tipo} normalizada automáticamente para compatibilidad con Kling API`);
+      // No hacemos nada aquí porque el componente debería usar convertToKlingFormatJpeg
+      // que devuelve la imagen procesada
     }
   }
 
