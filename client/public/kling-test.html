@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Kling API Extractor</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #fff;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button.error {
+      background-color: #f44336;
+    }
+    button.error:hover {
+      background-color: #d32f2f;
+    }
+    button.processing {
+      background-color: #2196F3;
+    }
+    button.processing:hover {
+      background-color: #0b7dda;
+    }
+    button.unusual {
+      background-color: #ff9800;
+    }
+    button.unusual:hover {
+      background-color: #e68a00;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    pre {
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #09f;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .hidden {
+      display: none;
+    }
+    .result-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .result-box {
+      flex: 1;
+      min-width: 300px;
+    }
+    .success {
+      color: #4CAF50;
+    }
+    .failure {
+      color: #f44336;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #eee;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      margin-right: 5px;
+    }
+    .tab.active {
+      background-color: white;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test del Extractor API de Kling</h1>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="simulated">Respuestas Simuladas</div>
+    <div class="tab" data-tab="extractor">Verificación del Extractor</div>
+    <div class="tab" data-tab="real">API Real</div>
+  </div>
+  
+  <div id="simulated" class="tab-content active">
+    <div class="container">
+      <h2>Respuestas Simuladas</h2>
+      <p>Prueba los diferentes formatos de respuesta simulados para verificar que el extractor funciona correctamente.</p>
+      
+      <div>
+        <button id="btn-simple">Respuesta Simple</button>
+        <button id="btn-nested" style="background-color: #673AB7;">Respuesta Anidada</button>
+        <button id="btn-error" class="error">Respuesta de Error</button>
+        <button id="btn-nested-error" style="background-color: #9C27B0;">Error Anidado</button>
+        <button id="btn-processing" class="processing">Procesando</button>
+        <button id="btn-unusual" class="unusual">Formato Inusual</button>
+      </div>
+      
+      <div id="simulated-loading" class="hidden">
+        <div class="spinner"></div>
+        <span>Cargando respuesta...</span>
+      </div>
+      
+      <div id="simulated-result" class="hidden">
+        <h3>Resultado</h3>
+        <pre id="simulated-json"></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div id="extractor" class="tab-content">
+    <div class="container">
+      <h2>Verificación del Extractor</h2>
+      <p>Prueba el proceso completo de extracción de respuestas para diferentes formatos.</p>
+      
+      <div>
+        <button id="btn-extract-simple">Extractor: Simple</button>
+        <button id="btn-extract-nested" style="background-color: #673AB7;">Extractor: Anidada</button>
+        <button id="btn-extract-error" class="error">Extractor: Error</button>
+        <button id="btn-extract-nested-error" style="background-color: #9C27B0;">Extractor: Error Anidado</button>
+        <button id="btn-extract-processing" class="processing">Extractor: Procesando</button>
+        <button id="btn-extract-unusual" class="unusual">Extractor: Inusual</button>
+      </div>
+      
+      <div id="extractor-loading" class="hidden">
+        <div class="spinner"></div>
+        <span>Procesando extracción...</span>
+      </div>
+      
+      <div id="extractor-result" class="hidden">
+        <h3>Resultado de la Extracción</h3>
+        
+        <div class="result-container">
+          <div class="result-box">
+            <h4>Respuesta Original</h4>
+            <pre id="original-json"></pre>
+          </div>
+          
+          <div class="result-box">
+            <h4>Respuesta Procesada</h4>
+            <pre id="processed-json"></pre>
+          </div>
+        </div>
+        
+        <h4>Detalles de la Extracción</h4>
+        <pre id="extraction-details"></pre>
+      </div>
+    </div>
+  </div>
+  
+  <div id="real" class="tab-content">
+    <div class="container">
+      <h2>Prueba con API Real de Kling</h2>
+      <p>Introduce un ID de tarea real para verificar el estado utilizando el extractor mejorado.</p>
+      
+      <div>
+        <input type="text" id="task-id" placeholder="Introduce ID de tarea" style="padding: 8px; width: 300px;">
+        <button id="btn-check-task">Verificar Estado</button>
+      </div>
+      
+      <div id="real-loading" class="hidden">
+        <div class="spinner"></div>
+        <span>Verificando estado...</span>
+      </div>
+      
+      <div id="real-result" class="hidden">
+        <h3>Respuesta de la API Real</h3>
+        <pre id="real-json"></pre>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Cambio de pestañas
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Desactivar todas las pestañas
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Activar la pestaña seleccionada
+        tab.classList.add('active');
+        const tabId = tab.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+    
+    // URL base para las solicitudes
+    const BASE_URL = '/api/kling-test';
+    
+    // Función para obtener respuestas simuladas
+    async function getSimulatedResponse(type) {
+      document.getElementById('simulated-loading').classList.remove('hidden');
+      document.getElementById('simulated-result').classList.add('hidden');
+      
+      try {
+        const response = await fetch(`${BASE_URL}/simulate/${type}`);
+        const data = await response.json();
+        
+        document.getElementById('simulated-json').textContent = JSON.stringify(data.rawResponse, null, 2);
+        document.getElementById('simulated-result').classList.remove('hidden');
+      } catch (error) {
+        document.getElementById('simulated-json').textContent = `Error: ${error.message}`;
+        document.getElementById('simulated-result').classList.remove('hidden');
+      }
+      
+      document.getElementById('simulated-loading').classList.add('hidden');
+    }
+    
+    // Función para probar el extractor
+    async function testExtractor(type) {
+      document.getElementById('extractor-loading').classList.remove('hidden');
+      document.getElementById('extractor-result').classList.add('hidden');
+      
+      try {
+        const response = await fetch(`${BASE_URL}/verify-extractor`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ responseType: type })
+        });
+        
+        const data = await response.json();
+        
+        document.getElementById('original-json').textContent = JSON.stringify(data.original, null, 2);
+        document.getElementById('processed-json').textContent = JSON.stringify(data.processed, null, 2);
+        document.getElementById('extraction-details').textContent = JSON.stringify(data.extractionDetails, null, 2);
+        
+        document.getElementById('extractor-result').classList.remove('hidden');
+      } catch (error) {
+        document.getElementById('original-json').textContent = `Error: ${error.message}`;
+        document.getElementById('extractor-result').classList.remove('hidden');
+      }
+      
+      document.getElementById('extractor-loading').classList.add('hidden');
+    }
+    
+    // Función para verificar un estado de tarea real
+    async function checkRealTask(taskId) {
+      document.getElementById('real-loading').classList.remove('hidden');
+      document.getElementById('real-result').classList.add('hidden');
+      
+      try {
+        const response = await fetch(`${BASE_URL}/task-status/${taskId}`);
+        const data = await response.json();
+        
+        document.getElementById('real-json').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('real-result').classList.remove('hidden');
+      } catch (error) {
+        document.getElementById('real-json').textContent = `Error: ${error.message}`;
+        document.getElementById('real-result').classList.remove('hidden');
+      }
+      
+      document.getElementById('real-loading').classList.add('hidden');
+    }
+    
+    // Configurar event listeners para los botones
+    document.getElementById('btn-simple').addEventListener('click', () => getSimulatedResponse('simple'));
+    document.getElementById('btn-nested').addEventListener('click', () => getSimulatedResponse('nested'));
+    document.getElementById('btn-error').addEventListener('click', () => getSimulatedResponse('error'));
+    document.getElementById('btn-nested-error').addEventListener('click', () => getSimulatedResponse('nested-error'));
+    document.getElementById('btn-processing').addEventListener('click', () => getSimulatedResponse('processing'));
+    document.getElementById('btn-unusual').addEventListener('click', () => getSimulatedResponse('unusual'));
+    
+    document.getElementById('btn-extract-simple').addEventListener('click', () => testExtractor('simple'));
+    document.getElementById('btn-extract-nested').addEventListener('click', () => testExtractor('nested'));
+    document.getElementById('btn-extract-error').addEventListener('click', () => testExtractor('error'));
+    document.getElementById('btn-extract-nested-error').addEventListener('click', () => testExtractor('nested-error'));
+    document.getElementById('btn-extract-processing').addEventListener('click', () => testExtractor('processing'));
+    document.getElementById('btn-extract-unusual').addEventListener('click', () => testExtractor('unusual'));
+    
+    document.getElementById('btn-check-task').addEventListener('click', () => {
+      const taskId = document.getElementById('task-id').value.trim();
+      if (taskId) {
+        checkRealTask(taskId);
+      } else {
+        alert('Por favor, introduce un ID de tarea válido.');
+      }
+    });
+  </script>
+</body>
+</html>

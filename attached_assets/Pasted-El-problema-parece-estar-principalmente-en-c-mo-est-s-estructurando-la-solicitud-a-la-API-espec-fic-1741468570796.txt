@@ -1,0 +1,124 @@
+El problema parece estar principalmente en cómo estás estructurando la solicitud a la API, específicamente en el cuerpo (body) enviado en tu petición Axios.
+
+Aquí tienes lo que sucede específicamente:
+
+1. Motivo del Error (500 Internal Server Error):
+El servidor (https://api.piapi.ai/api/v1/task) está recibiendo una estructura de datos incorrecta, o las imágenes no cumplen exactamente con el formato que espera la API (debe ser JPEG).
+
+La documentación indica claramente que la estructura del body de la petición debe ser así:
+
+json
+Copiar
+Editar
+{
+  "model": "kling",
+  "task_type": "ai_try_on",
+  "input": {
+    "model_input": "<string: URL o base64 de la imagen>",
+    "dress_input": "string",
+    "upper_input": "string",
+    "lower_input": "string",
+    "batch_size": 1
+  }
+}
+🔴 Errores en tu implementación actual:
+Error al enviar los datos a la API:
+Actualmente estás enviando:
+
+js
+Copiar
+Editar
+const requestBody = {
+   model_input: modelResult.processedImage,
+   dress_input: processedClothingImage,
+   batch_size: 1,
+   task_type: "ai_try_on",
+   settings
+};
+Faltan parámetros obligatorios como model y task_type en el nivel superior, y además está mal estructurada ya que model_input y dress_input deben ir dentro de un objeto llamado input.
+
+No definiste correctamente la estructura de la API.
+El body está mal estructurado. Debe seguir estrictamente la estructura que la documentación establece.
+
+🟢 Cómo corregirlo:
+A continuación te muestro exactamente cómo debería quedar tu request con axios, siguiendo la documentación proporcionada:
+
+js
+Copiar
+Editar
+const requestBody = {
+  model: "kling",
+  task_type: "ai_try_on",
+  input: {
+    model_input: modelImage,      // ya procesado en JPEG
+    dress_input: clothingImage,    // ya procesada en JPEG
+    batch_size: 1                 // opcional, pero recomendado explícitamente
+  }
+};
+🛠️ Ejemplo corregido de tu función handleStartTryOn:
+jsx
+Copiar
+Editar
+const handleStartTryOn = async () => {
+  if (!modelImage || !clothingImage) {
+    toast({
+      title: "Imágenes requeridas",
+      description: "Por favor, sube una imagen de modelo y una prenda",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    const requestBody = {
+      model: "kling",
+      task_type: "ai_try_on",
+      input: {
+        model_input: modelImage,
+        dress_input: clothingImage,
+        batch_size: 1
+      }
+    };
+
+    console.log('Enviando solicitud Try-On a la API:', requestBody);
+
+    const response = await axios.post('/api/kling/try-on/start', requestBody);
+
+    if (response.data && response.data.success && response.data.taskId) {
+      setTaskId(response.data.taskId);
+      toast({
+        title: "Proceso iniciado",
+        description: "Imágenes procesándose. Este proceso puede tardar unos minutos.",
+      });
+
+      checkTaskStatus(response.data.taskId);
+    } else {
+      throw new Error(response.data.error || "Error al iniciar el proceso");
+    }
+  } catch (error) {
+    console.error('Error iniciando Try-On:', error);
+    setIsLoading(false);
+    toast({
+      title: "Error",
+      description: error.message || "Ocurrió un error al iniciar el proceso",
+      variant: "destructive",
+    });
+  }
+};
+📌 Recomendaciones finales importantes:
+Verifica siempre que las imágenes enviadas sean JPEG puras.
+Tu función processImageForKling debe asegurarse estrictamente de que las imágenes sean JPEG.
+
+Asegúrate de que el servidor proxy que estás usando (/api/kling/try-on/start) esté configurado correctamente y no tenga errores internos.
+
+Cuando obtienes error 500 (Internal Server Error), revisa también los logs en tu servidor (Replit o backend) para ver exactamente qué error devuelve Kling API desde allí.
+
+Asegúrate que estás enviando el header x-api-key correctamente en tu proxy API.
+
+✅ Conclusión:
+El problema principal es que estás enviando incorrectamente la estructura de datos a la API de Kling. Corrige tu body de la petición al formato indicado, asegurándote que las imágenes sean JPEG puras, y la API debería responder correctamente.
+
+Si necesitas revisar la parte del servidor (/api/kling/try-on/start) comparte también ese código para una validación completa

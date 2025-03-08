@@ -26,30 +26,100 @@ if (!PIAPI_API_KEY) {
  */
 router.post('/try-on/start', async (req, res) => {
   try {
-    console.log('Recibida solicitud para iniciar Virtual Try-On', req.body);
-    const { input } = req.body || {};
-    const { model_input, dress_input, batch_size = 1 } = input || {};
-
-    if (!model_input || !dress_input) {
-      console.log('Faltan imágenes requeridas para Virtual Try-On');
+    console.log('Recibida solicitud para iniciar Virtual Try-On', JSON.stringify(req.body));
+    
+    // Extraer datos de la solicitud con manejo mejorado de estructura
+    // Estructura esperada: { model: "kling", task_type: "ai_try_on", input: { ... } }
+    const { model, task_type, input } = req.body || {};
+    
+    // Estructura asumida si el frontend envía directamente model_input y dress_input
+    // Esta es una compatibilidad con versiones anteriores del cliente
+    if (!input && req.body.model_input && req.body.dress_input) {
+      console.log('Detectada estructura antigua, adaptando automáticamente');
+      // Reconfigurar para mantener compatibilidad con cliente anterior
+      const klingRequest = {
+        model: "kling",
+        task_type: "ai_try_on",
+        input: {
+          model_input: req.body.model_input,
+          dress_input: req.body.dress_input,
+          batch_size: req.body.batch_size || 1
+        }
+      };
+      
+      // Realizar la llamada a la API de Kling
+      const response = await axios.post(KLING_API_URL, klingRequest, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': PIAPI_API_KEY
+        }
+      });
+      
+      // Procesar respuesta
+      if (response.data && response.data.task_id) {
+        console.log(`✅ Try-On (estructura antigua) iniciado con éxito: ${response.data.task_id}`);
+        return res.json({
+          success: true,
+          taskId: response.data.task_id
+        });
+      } else {
+        throw new Error('Formato de respuesta inesperado de la API de Kling');
+      }
+    }
+    
+    // Validar requerimientos básicos
+    if (!model || !task_type || !input) {
+      console.error('Estructura de solicitud inválida');
       return res.status(400).json({ 
         success: false, 
-        error: 'Se requieren imágenes del modelo y la prenda'
+        error: 'Estructura de solicitud inválida. Se requiere: model, task_type, input'
       });
     }
     
-    console.log('Imágenes validadas, enviando a Kling API');
+    // Extraer y validar inputs específicos
+    const { model_input, dress_input, batch_size = 1 } = input;
+    
+    if (!model_input || !dress_input) {
+      console.error('Faltan imágenes requeridas para Virtual Try-On');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Se requieren imágenes del modelo y la prenda en el objeto input'
+      });
+    }
+    
+    // Validar tipo de tarea
+    if (task_type !== 'ai_try_on') {
+      console.error(`Tipo de tarea inválido: ${task_type}`);
+      return res.status(400).json({
+        success: false,
+        error: 'El tipo de tarea debe ser ai_try_on para este endpoint'
+      });
+    }
+    
+    console.log('Datos validados, enviando a Kling API');
 
     // Configuración de la solicitud a Kling API
+    // Usamos los datos validados directamente del cliente
     const klingRequest = {
-      model: "kling",
-      task_type: "ai_try_on",
+      model,
+      task_type,
       input: {
         model_input,
         dress_input,
         batch_size
       }
     };
+    
+    console.log('Enviando solicitud a Kling API:', JSON.stringify({
+      url: KLING_API_URL,
+      model: klingRequest.model,
+      task_type: klingRequest.task_type,
+      input_structure: {
+        model_input: 'data:image/jpeg;base64,...', // Truncado para logs
+        dress_input: 'data:image/jpeg;base64,...',  // Truncado para logs
+        batch_size: klingRequest.input.batch_size
+      }
+    }));
 
     // Realizar la llamada a la API de Kling
     const response = await axios.post(KLING_API_URL, klingRequest, {
@@ -59,37 +129,90 @@ router.post('/try-on/start', async (req, res) => {
       }
     });
 
-    // Procesar respuesta exitosa
-    if (response.data && response.data.task_id) {
-      console.log(`✅ Try-On iniciado con éxito: ${response.data.task_id}`);
-      return res.json({
-        success: true,
-        taskId: response.data.task_id
-      });
-    } else {
-      // Error en respuesta
-      console.error('❌ Error en respuesta de Kling:', response.data);
+    // Procesar respuesta exitosa - versión optimizada para estructuras variadas de respuesta
+    console.log('Respuesta completa de Kling API:', JSON.stringify(response.data));
+    
+    if (response.data) {
+      // 1. Extraer el task_id de cualquier ubicación posible en la respuesta
+      let taskId = null;
+      
+      // Caso 1: task_id en la raíz de la respuesta
+      if (response.data.task_id) {
+        taskId = response.data.task_id;
+      }
+      // Caso 2: task_id en un objeto data anidado (formato observado)
+      else if (response.data.data && response.data.data.task_id) {
+        taskId = response.data.data.task_id;
+      }
+      
+      // 2. Si encontramos un task_id válido, la solicitud fue exitosa
+      if (taskId) {
+        console.log(`✅ Try-On iniciado con éxito (taskId: ${taskId})`);
+        return res.json({
+          success: true,
+          taskId: taskId
+        });
+      }
+      
+      // 3. Si la respuesta tiene mensaje de éxito pero no encontramos un task_id,
+      // intentemos extraer más información de diagnóstico
+      if (response.data.message === 'success') {
+        console.log(`⚠️ Respuesta indica éxito pero sin task_id claro`);
+        
+        // Revisar si podemos encontrar alguna información útil en la estructura
+        const dataInfo = response.data.data ? JSON.stringify(response.data.data) : 'No hay datos anidados';
+        console.log(`Información de diagnóstico - data: ${dataInfo}`);
+        
+        // Si la respuesta tiene código 200, asumimos que el request fue procesado
+        // en este caso específico podríamos intentar extraer el task_id de otra forma
+        if (response.data.code === 200 && response.data.data) {
+          // Última verificación si hay task_id en algún lugar de la estructura
+          if (response.data.data.task_id) {
+            console.log(`✅ Encontrado task_id en estructura anidada: ${response.data.data.task_id}`);
+            return res.json({
+              success: true,
+              taskId: response.data.data.task_id
+            });
+          }
+        }
+      }
+      
+      // Si llegamos aquí, no encontramos un task_id válido en ninguna estructura
+      console.error('❌ Error en respuesta de Kling (sin task_id):', JSON.stringify(response.data));
       return res.status(500).json({
         success: false,
-        error: 'Error en la respuesta de Kling API',
+        error: 'No se encontró un ID de tarea en la respuesta de Kling API',
         details: response.data
+      });
+    } else {
+      // Respuesta vacía o inválida
+      console.error('❌ Error en respuesta de Kling (respuesta vacía)');
+      return res.status(500).json({
+        success: false,
+        error: 'Respuesta vacía o inválida de Kling API'
       });
     }
   } catch (error: any) {
-    console.error('❌ Error al conectar con Kling API:', error);
+    console.error('❌ Error al conectar con Kling API:', error.message);
+    if (error.response) {
+      console.error('❌ Detalles de error en respuesta:', JSON.stringify(error.response.data || {}));
+    }
     
     // Manejar errores de forma descriptiva
     const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
     return res.status(500).json({
       success: false,
       error: errorMessage,
-      details: error.response?.data
+      details: error.response?.data || {}
     });
   }
 });
 
 /**
  * Endpoint para verificar el estado de un proceso de Virtual Try-On
+ * 
+ * Este endpoint maneja la compleja estructura de respuestas anidadas de la API de Kling
+ * y proporciona un formato de respuesta unificado y simplificado.
  */
 router.post('/try-on/status', async (req, res) => {
   try {
@@ -102,6 +225,8 @@ router.post('/try-on/status', async (req, res) => {
       });
     }
 
+    console.log(`Verificando estado de tarea Try-On: ${taskId}`);
+
     // Verificar estado en Kling API
     const response = await axios.get(`${KLING_API_URL}/${taskId}`, {
       headers: {
@@ -109,40 +234,170 @@ router.post('/try-on/status', async (req, res) => {
       }
     });
 
-    // Procesar respuesta según estado
-    if (response.data && response.data.status) {
-      const status = response.data.status;
+    console.log('Respuesta bruta de verificación de estado:', JSON.stringify(response.data));
+    
+    // Estrategia de extracción de datos en múltiples capas
+    // 1. Primero intentamos manejar el caso donde la respuesta tiene un formato anidado
+    let statusData = response.data;
+    let detailedLog = {};
+    
+    // Caso 1: Estructura anidada con código 200, mensaje success y objeto data
+    if (response.data && response.data.code === 200 && response.data.data && response.data.message === 'success') {
+      statusData = response.data.data;
+      detailedLog = {
+        extractionPath: 'response.data.data',
+        nestedFormat: true,
+        statusSource: 'normalizedResponse'
+      };
+      console.log('Usando datos anidados para verificación de estado:', JSON.stringify(statusData));
+    } 
+    // Caso 2: Estructura donde el status viene directamente en el primer nivel
+    else if (response.data && response.data.status) {
+      detailedLog = {
+        extractionPath: 'response.data',
+        nestedFormat: false,
+        statusSource: 'directResponse'
+      };
+      console.log('Usando datos directos para verificación de estado');
+    }
+    // Caso 3: Estructura antigua donde la respuesta contiene directamente output sin status
+    else if (response.data && response.data.output && response.data.output.images) {
+      statusData = { 
+        status: 'success',  // Asumimos éxito si hay imágenes
+        output: response.data.output
+      };
+      detailedLog = {
+        extractionPath: 'response.data.output',
+        nestedFormat: false,
+        statusSource: 'inferredFromOutput',
+        hasImages: true
+      };
+      console.log('Inferido estado success a partir de la presencia de imágenes de salida');
+    }
+    // Caso 4: Estructura de error con mensaje pero sin status específico
+    else if (response.data && response.data.message && !response.data.status) {
+      // Si el mensaje es 'success' pero no hay status, asumimos que está pendiente
+      if (response.data.message === 'success') {
+        statusData = { 
+          status: 'processing',
+          message: 'Task is still processing'
+        };
+        detailedLog = {
+          extractionPath: 'message=success',
+          nestedFormat: false,
+          statusSource: 'inferredFromMessage',
+          message: response.data.message
+        };
+        console.log('Inferido estado processing a partir del mensaje success sin datos de salida');
+      }
+      // Si es otro mensaje, asumimos error
+      else {
+        statusData = { 
+          status: 'failed',
+          message: response.data.message || 'Unknown error'
+        };
+        detailedLog = {
+          extractionPath: 'message=error',
+          nestedFormat: false,
+          statusSource: 'inferredFromErrorMessage',
+          message: response.data.message
+        };
+        console.log(`Inferido estado failed a partir del mensaje: ${response.data.message}`);
+      }
+    }
+    
+    console.log('Estrategia de extracción de datos:', detailedLog);
+    
+    // Procesar respuesta según estado extraído
+    if (statusData && statusData.status) {
+      const status = statusData.status;
       
+      // Caso Kling API: status puede ser "pending", "processing", "success", "failed"
       if (status === 'success') {
+        // Extraer imágenes resultantes, pueden estar en diferentes ubicaciones según la respuesta
+        const resultImages = statusData.output?.images || 
+                             statusData.images || 
+                             (statusData.output ? [statusData.output] : []);
+        
+        // Extraer URL de imagen principal si existe
+        let resultImageUrl = null;
+        if (resultImages && resultImages.length > 0) {
+          if (typeof resultImages[0] === 'string') {
+            resultImageUrl = resultImages[0];
+          } else if (resultImages[0].url) {
+            resultImageUrl = resultImages[0].url;
+          }
+        }
+        
         // Tarea completada con éxito
         console.log(`✅ Tarea Try-On completada: ${taskId}`);
         return res.json({
           success: true,
           status: 'completed',
-          images: response.data.output?.images || response.data.images || []
+          images: resultImages,
+          resultImage: resultImageUrl, // Para mantener compatibilidad con el cliente
+          requestId: taskId // Para mantener compatibilidad con el cliente
         });
       } else if (status === 'failed') {
-        // Tarea falló
-        console.error(`❌ Tarea fallida. Mensaje de error: ${response.data.message || 'No hay mensaje de error'}`);
+        // Tarea falló - extraer mensaje de error
+        const errorMsg = statusData.message || 
+                         statusData.errorMessage || 
+                         statusData.error || 
+                         'task failed';
+        
+        console.error(`❌ Tarea fallida. Mensaje de error: ${errorMsg}`);
         return res.json({
           success: false,
           status: 'failed',
-          errorMessage: response.data.message || response.data.errorMessage || 'task failed'
+          errorMessage: errorMsg,
+          requestId: taskId // Para mantener compatibilidad con el cliente
         });
-      } else {
+      } else if (status === 'pending' || status === 'processing') {
+        // Calcular progreso si está disponible
+        let progress = 0;
+        if (statusData.progress) {
+          progress = typeof statusData.progress === 'number' ? 
+            statusData.progress : 
+            (parseInt(statusData.progress) || 0);
+        }
+        
         // Tarea en progreso
+        console.log(`⏳ Tarea Try-On en proceso: ${taskId} (${status}, progreso: ${progress}%)`);
         return res.json({
           success: true,
-          status: 'processing'
+          status: 'processing',
+          progress: progress,
+          requestId: taskId // Para mantener compatibilidad con el cliente
+        });
+      } else {
+        // Estado desconocido - tratamos como processing para evitar bloqueos en el cliente
+        console.log(`⚠️ Estado desconocido para tarea: ${status}`);
+        return res.json({
+          success: true,
+          status: 'processing',
+          message: `Estado actual: ${status}`,
+          requestId: taskId // Para mantener compatibilidad con el cliente
         });
       }
     } else {
+      // Respuesta sin estado - considerar como procesando si no hay señales claras de error
+      if (response.data && response.data.message === 'success') {
+        console.log(`⏳ Tarea sin estado pero con mensaje='success'. Asumiendo procesamiento: ${taskId}`);
+        return res.json({
+          success: true,
+          status: 'processing',
+          message: 'No status information available yet',
+          requestId: taskId
+        });
+      }
+      
       // Respuesta inesperada
       console.error('❌ Respuesta inesperada de Kling API:', response.data);
       return res.status(500).json({
         success: false,
         error: 'Respuesta inesperada de Kling API',
-        details: response.data
+        details: response.data,
+        requestId: taskId
       });
     }
   } catch (error: any) {
@@ -153,7 +408,7 @@ router.post('/try-on/status', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: errorMessage,
-      details: error.response?.data
+      details: error.response?.data || {}
     });
   }
 });
@@ -419,6 +674,9 @@ router.post('/effects/start', async (req, res) => {
 
 /**
  * Endpoint para verificar el estado de una tarea de Effects
+ * 
+ * Utiliza la misma estrategia de extracción que try-on/status para manejar
+ * las respuestas anidadas de la API de Kling.
  */
 router.post('/effects/status', async (req, res) => {
   try {
@@ -431,6 +689,8 @@ router.post('/effects/status', async (req, res) => {
       });
     }
 
+    console.log(`Verificando estado de tarea Effects: ${taskId}`);
+
     // Verificar estado en Kling API
     const response = await axios.get(`${KLING_API_URL}/${taskId}`, {
       headers: {
@@ -438,51 +698,164 @@ router.post('/effects/status', async (req, res) => {
       }
     });
 
-    // Procesar respuesta según estado
-    if (response.data && response.data.status) {
-      const status = response.data.status;
+    console.log('Respuesta bruta de verificación de estado Effects:', JSON.stringify(response.data));
+    
+    // Estrategia de extracción de datos en múltiples capas
+    let statusData = response.data;
+    let detailedLog = {};
+    
+    // Caso 1: Estructura anidada con código 200, mensaje success y objeto data
+    if (response.data && response.data.code === 200 && response.data.data && response.data.message === 'success') {
+      statusData = response.data.data;
+      detailedLog = {
+        extractionPath: 'response.data.data',
+        nestedFormat: true
+      };
+      console.log('Usando datos anidados para verificación de estado de Effects:', JSON.stringify(statusData));
+    } 
+    // Caso 2: Estructura donde el status viene directamente en el primer nivel
+    else if (response.data && response.data.status) {
+      detailedLog = {
+        extractionPath: 'response.data',
+        nestedFormat: false
+      };
+      console.log('Usando datos directos para verificación de estado de Effects');
+    }
+    // Caso 3: Estructura antigua donde la respuesta contiene directamente output sin status
+    else if (response.data && (response.data.output?.video || response.data.video || response.data.output_url)) {
+      statusData = { 
+        status: 'success',  // Asumimos éxito si hay video
+        output: {
+          video: response.data.output?.video || response.data.video || response.data.output_url
+        }
+      };
+      detailedLog = {
+        extractionPath: 'response.data.output/video/output_url',
+        nestedFormat: false,
+        statusSource: 'inferredFromVideoOutput'
+      };
+      console.log('Inferido estado success a partir de la presencia de video de salida');
+    }
+    // Caso 4: Estructura de error con mensaje pero sin status específico
+    else if (response.data && response.data.message && !response.data.status) {
+      // Si el mensaje es 'success' pero no hay status, asumimos que está pendiente
+      if (response.data.message === 'success') {
+        statusData = { 
+          status: 'processing',
+          message: 'Task is still processing'
+        };
+        detailedLog = {
+          extractionPath: 'message=success',
+          statusSource: 'inferredFromMessage'
+        };
+        console.log('Inferido estado processing a partir del mensaje success sin datos de salida');
+      }
+      // Si es otro mensaje, asumimos error
+      else {
+        statusData = { 
+          status: 'failed',
+          message: response.data.message || 'Unknown error'
+        };
+        detailedLog = {
+          extractionPath: 'message=error',
+          statusSource: 'inferredFromErrorMessage'
+        };
+        console.log(`Inferido estado failed a partir del mensaje: ${response.data.message}`);
+      }
+    }
+    
+    console.log('Estrategia de extracción de datos Effects:', detailedLog);
+    
+    // Procesar respuesta según estado extraído
+    if (statusData && statusData.status) {
+      const status = statusData.status;
       
       if (status === 'success') {
+        // Extraer URL de video resultante, pueden estar en diferentes ubicaciones según la respuesta
+        const resultVideoUrl = statusData.output?.video || 
+                              statusData.video || 
+                              statusData.output_url ||
+                              (statusData.output ? statusData.output : null);
+        
         // Tarea completada con éxito
         console.log(`✅ Tarea Effects completada: ${taskId}`);
         return res.json({
           success: true,
           status: 'completed',
-          resultVideo: response.data.output?.video || response.data.video || response.data.output_url
+          resultVideo: resultVideoUrl,
+          requestId: taskId // Para mantener compatibilidad con el cliente
         });
       } else if (status === 'failed') {
-        // Tarea falló
-        console.error(`❌ Tarea Effects fallida. Mensaje: ${response.data.message || 'No hay mensaje de error'}`);
+        // Tarea falló - extraer mensaje de error
+        const errorMsg = statusData.message || 
+                        statusData.errorMessage || 
+                        statusData.error || 
+                        'task failed';
+        
+        console.error(`❌ Tarea Effects fallida. Mensaje de error: ${errorMsg}`);
         return res.json({
           success: false,
           status: 'failed',
-          errorMessage: response.data.message || response.data.errorMessage || 'task failed'
+          errorMessage: errorMsg,
+          requestId: taskId // Para mantener compatibilidad con el cliente
         });
-      } else {
+      } else if (status === 'pending' || status === 'processing') {
+        // Calcular progreso si está disponible
+        let progress = 0;
+        if (statusData.progress) {
+          progress = typeof statusData.progress === 'number' ? 
+            statusData.progress : 
+            (parseInt(statusData.progress) || 0);
+        }
+        
         // Tarea en progreso
+        console.log(`⏳ Tarea Effects en proceso: ${taskId} (${status}, progreso: ${progress}%)`);
         return res.json({
           success: true,
-          status: 'processing'
+          status: 'processing',
+          progress: progress,
+          requestId: taskId // Para mantener compatibilidad con el cliente
+        });
+      } else {
+        // Estado desconocido - tratamos como processing para evitar bloqueos en el cliente
+        console.log(`⚠️ Estado desconocido para tarea Effects: ${status}`);
+        return res.json({
+          success: true,
+          status: 'processing',
+          message: `Estado actual: ${status}`,
+          requestId: taskId // Para mantener compatibilidad con el cliente
         });
       }
     } else {
+      // Respuesta sin estado - considerar como procesando si no hay señales claras de error
+      if (response.data && response.data.message === 'success') {
+        console.log(`⏳ Tarea Effects sin estado pero con mensaje='success'. Asumiendo procesamiento: ${taskId}`);
+        return res.json({
+          success: true,
+          status: 'processing',
+          message: 'No status information available yet',
+          requestId: taskId
+        });
+      }
+      
       // Respuesta inesperada
-      console.error('❌ Respuesta inesperada de Kling API:', response.data);
+      console.error('❌ Respuesta inesperada de Kling API para Effects:', response.data);
       return res.status(500).json({
         success: false,
         error: 'Respuesta inesperada de Kling API',
-        details: response.data
+        details: response.data,
+        requestId: taskId
       });
     }
   } catch (error: any) {
-    console.error('❌ Error al verificar estado en Kling API:', error);
+    console.error('❌ Error al verificar estado de Effects en Kling API:', error);
     
     // Manejar errores de forma descriptiva
     const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
     return res.status(500).json({
       success: false,
       error: errorMessage,
-      details: error.response?.data
+      details: error.response?.data || {}
     });
   }
 });
@@ -700,6 +1073,9 @@ router.post('/generate-video', async (req, res) => {
 /**
  * Endpoint general para verificar el estado de una tarea
  * Funciona para cualquier tipo de tarea: try-on, lipsync, effects, text_to_image, text_to_video
+ * 
+ * Utiliza la misma estrategia de extracción de datos anidados para manejar
+ * las múltiples estructuras de respuesta de la API de Kling/PiAPI.
  */
 router.get('/task-status/:taskId', async (req, res) => {
   try {
@@ -721,40 +1097,97 @@ router.get('/task-status/:taskId', async (req, res) => {
       }
     });
 
-    // Procesar respuesta según estado
-    if (response.data && response.data.status) {
-      const status = response.data.status;
+    console.log('Respuesta bruta de verificación de estado general:', JSON.stringify(response.data));
+    
+    // Extraer datos usando la estrategia de múltiples capas
+    let statusData = response.data;
+    
+    // Caso 1: Estructura anidada con código 200, mensaje success y objeto data
+    if (response.data && response.data.code === 200 && response.data.data && response.data.message === 'success') {
+      statusData = response.data.data;
+      console.log('Usando datos anidados para verificación de estado general:', JSON.stringify(statusData));
+    }
+    
+    // Procesar respuesta según estado extraído
+    if (statusData && statusData.status) {
+      const status = statusData.status;
       
       if (status === 'success') {
+        // Extraer resultados, que pueden estar en diferentes ubicaciones según el tipo de tarea
+        const resultData = statusData.output || 
+                           statusData.images || 
+                           statusData.videos || 
+                           statusData.result ||
+                           statusData;
+        
         // Tarea completada con éxito
         console.log(`✅ Tarea completada: ${taskId}`);
         return res.json({
           success: true,
           status: 'completed',
-          result: response.data.output || response.data // Para abarcar cualquier tipo de salida
+          result: resultData,
+          requestId: taskId
         });
       } else if (status === 'failed') {
-        // Tarea falló
-        console.error(`❌ Tarea fallida. Mensaje: ${response.data.message || 'No hay mensaje de error'}`);
+        // Tarea falló - extraer mensaje de error
+        const errorMsg = statusData.message || 
+                        statusData.errorMessage || 
+                        statusData.error || 
+                        'task failed';
+        
+        console.error(`❌ Tarea fallida. Mensaje de error: ${errorMsg}`);
         return res.json({
           success: false,
           status: 'failed',
-          errorMessage: response.data.message || response.data.errorMessage || 'task failed'
+          errorMessage: errorMsg,
+          requestId: taskId
         });
-      } else {
+      } else if (status === 'pending' || status === 'processing') {
+        // Calcular progreso si está disponible
+        let progress = 0;
+        if (statusData.progress) {
+          progress = typeof statusData.progress === 'number' ? 
+            statusData.progress : 
+            (parseInt(statusData.progress) || 0);
+        }
+        
         // Tarea en progreso
+        console.log(`⏳ Tarea en proceso: ${taskId} (${status}, progreso: ${progress}%)`);
         return res.json({
           success: true,
-          status: 'processing'
+          status: 'processing',
+          progress: progress,
+          requestId: taskId
+        });
+      } else {
+        // Estado desconocido
+        console.log(`⚠️ Estado desconocido para tarea: ${status}`);
+        return res.json({
+          success: true,
+          status: 'processing',
+          message: `Estado actual: ${status}`,
+          requestId: taskId
         });
       }
     } else {
+      // Si no hay status explícito pero hay mensaje de éxito, considerar como en progreso
+      if (response.data && response.data.message === 'success') {
+        console.log(`⏳ Tarea sin estado pero con mensaje='success'. Asumiendo procesamiento: ${taskId}`);
+        return res.json({
+          success: true,
+          status: 'processing',
+          message: 'No status information available yet',
+          requestId: taskId
+        });
+      }
+      
       // Respuesta inesperada
-      console.error('❌ Respuesta inesperada de Kling API:', response.data);
+      console.error('❌ Respuesta inesperada de Kling API para verificación general:', response.data);
       return res.status(500).json({
         success: false,
         error: 'Respuesta inesperada de Kling API',
-        details: response.data
+        details: response.data,
+        requestId: taskId
       });
     }
   } catch (error: any) {
@@ -765,7 +1198,7 @@ router.get('/task-status/:taskId', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: errorMessage,
-      details: error.response?.data
+      details: error.response?.data || {}
     });
   }
 });
