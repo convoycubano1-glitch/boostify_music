@@ -36,13 +36,37 @@ router.post('/try-on/start', async (req, res) => {
     // Esta es una compatibilidad con versiones anteriores del cliente
     if (!input && req.body.model_input && req.body.dress_input) {
       console.log('Detectada estructura antigua, adaptando automáticamente');
-      // Reconfigurar para mantener compatibilidad con cliente anterior
+      
+      // MEJORA CRÍTICA: Procesar ambas imágenes para asegurar compatibilidad con Kling API
+      console.log('Procesando imagen del modelo (formato antiguo) para compatibilidad con Kling API...');
+      const processedModelResult = await processImageForKling(req.body.model_input);
+      if (!processedModelResult.isValid) {
+        console.error('Error al procesar imagen del modelo:', processedModelResult.errorMessage);
+        return res.status(400).json({
+          success: false,
+          error: `Error al procesar imagen del modelo: ${processedModelResult.errorMessage}`
+        });
+      }
+      
+      console.log('Procesando imagen de la prenda (formato antiguo) para compatibilidad con Kling API...');
+      const processedDressResult = await processImageForKling(req.body.dress_input);
+      if (!processedDressResult.isValid) {
+        console.error('Error al procesar imagen de la prenda:', processedDressResult.errorMessage);
+        return res.status(400).json({
+          success: false,
+          error: `Error al procesar imagen de la prenda: ${processedDressResult.errorMessage}`
+        });
+      }
+      
+      console.log('Ambas imágenes procesadas correctamente (formato antiguo), enviando a Kling API');
+      
+      // Reconfigurar para mantener compatibilidad con cliente anterior, usando imágenes procesadas
       const klingRequest = {
         model: "kling",
         task_type: "ai_try_on",
         input: {
-          model_input: req.body.model_input,
-          dress_input: req.body.dress_input,
+          model_input: processedModelResult.normalizedUrl,
+          dress_input: processedDressResult.normalizedUrl,
           batch_size: req.body.batch_size || 1
         }
       };
@@ -96,16 +120,39 @@ router.post('/try-on/start', async (req, res) => {
       });
     }
     
-    console.log('Datos validados, enviando a Kling API');
+    console.log('Datos validados, procesando imágenes para compatibilidad con Kling API');
+    
+    // MEJORA CRÍTICA: Procesar ambas imágenes para asegurar compatibilidad con Kling API
+    console.log('Procesando imagen del modelo para compatibilidad con Kling API...');
+    const processedModelResult = await processImageForKling(model_input);
+    if (!processedModelResult.isValid) {
+      console.error('Error al procesar imagen del modelo:', processedModelResult.errorMessage);
+      return res.status(400).json({
+        success: false,
+        error: `Error al procesar imagen del modelo: ${processedModelResult.errorMessage}`
+      });
+    }
+    
+    console.log('Procesando imagen de la prenda para compatibilidad con Kling API...');
+    const processedDressResult = await processImageForKling(dress_input);
+    if (!processedDressResult.isValid) {
+      console.error('Error al procesar imagen de la prenda:', processedDressResult.errorMessage);
+      return res.status(400).json({
+        success: false,
+        error: `Error al procesar imagen de la prenda: ${processedDressResult.errorMessage}`
+      });
+    }
+    
+    console.log('Ambas imágenes procesadas correctamente, enviando a Kling API');
 
-    // Configuración de la solicitud a Kling API
-    // Usamos los datos validados directamente del cliente
+    // Configuración de la solicitud a Kling API con imágenes procesadas
     const klingRequest = {
       model,
       task_type,
       input: {
-        model_input,
-        dress_input,
+        // Usar las imágenes procesadas en lugar de las originales
+        model_input: processedModelResult.normalizedUrl,
+        dress_input: processedDressResult.normalizedUrl,
         batch_size
       }
     };
@@ -340,10 +387,19 @@ router.post('/try-on/status', async (req, res) => {
         });
       } else if (status === 'failed') {
         // Tarea falló - extraer mensaje de error
-        const errorMsg = statusData.message || 
-                         statusData.errorMessage || 
-                         statusData.error || 
-                         'task failed';
+        let errorMsg = statusData.message || 
+                      statusData.errorMessage || 
+                      statusData.error || 
+                      'task failed';
+        
+        // Asegurar que el mensaje de error sea siempre un string
+        if (typeof errorMsg === 'object') {
+          try {
+            errorMsg = JSON.stringify(errorMsg);
+          } catch (e) {
+            errorMsg = 'Error durante el procesamiento (no se pudo convertir el objeto de error)';
+          }
+        }
         
         console.error(`❌ Tarea fallida. Mensaje de error: ${errorMsg}`);
         return res.json({

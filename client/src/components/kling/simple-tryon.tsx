@@ -61,12 +61,30 @@ const klingService = {
     try {
       // Cambiado de GET a POST para coincidir con la implementación del servidor
       const response = await axios.post('/api/kling/try-on/status', { taskId });
+      
+      // Asegurarnos que si hay un objeto de error en la respuesta, lo convertimos a string
+      if (response.data.errorMessage && typeof response.data.errorMessage === 'object') {
+        response.data.errorMessage = JSON.stringify(response.data.errorMessage);
+      }
+      
       return response.data;
     } catch (error: any) {
       console.error('Error verificando estado:', error);
+      
+      // Asegurarnos de que el mensaje de error es siempre un string
+      let errorMessage = 'Error desconocido al verificar estado';
+      
+      if (error.response?.data?.error) {
+        errorMessage = typeof error.response.data.error === 'object' 
+          ? JSON.stringify(error.response.data.error) 
+          : error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        errorMessage: error.response?.data?.error || error.message || 'Error desconocido al verificar estado'
+        errorMessage: errorMessage
       };
     }
   },
