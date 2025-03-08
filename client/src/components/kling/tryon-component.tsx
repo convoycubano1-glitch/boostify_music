@@ -414,27 +414,58 @@ export function VirtualTryOnComponent() {
         }
       });
     } else {
-      // Para JPEG/JPG simplemente leemos el archivo
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        // Validar el formato y estructura del data URL
-        if (validateImageData(dataUrl)) {
-          setModelImage(dataUrl);
+      // Para JPEG/JPG, también necesitamos estandarizar el formato
+      // ya que algunos navegadores pueden generar variaciones en el encabezado
+      convertImageToJpeg(file, (jpegDataUrl) => {
+        if (jpegDataUrl) {
+          console.log('Imagen JPEG estandarizada al formato requerido');
+          setModelImage(jpegDataUrl);
         } else {
-          toast({
-            title: "Formato inválido",
-            description: "La imagen no tiene un formato válido para la API.",
-            variant: "destructive",
-          });
+          // Intentar leerlo directamente como respaldo
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result as string;
+            
+            // Verificar si el formato es adecuado
+            if (validateImageData(dataUrl)) {
+              setModelImage(dataUrl);
+            } else {
+              // Si aún no es válido, intenta reformatear manualmente
+              try {
+                const parts = dataUrl.split(',');
+                if (parts.length === 2) {
+                  const strictFormat = 'data:image/jpeg;base64,' + parts[1];
+                  if (validateImageData(strictFormat)) {
+                    setModelImage(strictFormat);
+                    return;
+                  }
+                }
+                
+                // Si llegamos aquí, ningún formato funciona
+                toast({
+                  title: "Formato inválido",
+                  description: "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
+                  variant: "destructive",
+                });
+              } catch (error) {
+                console.error('Error al reformatear JPEG:', error);
+                toast({
+                  title: "Error de procesamiento",
+                  description: "No se pudo procesar la imagen. Intente con otra imagen.",
+                  variant: "destructive",
+                });
+              }
+            }
+          };
+          reader.readAsDataURL(file);
         }
-      };
-      reader.readAsDataURL(file);
+      });
     }
   };
   
-  // Función auxiliar para convertir PNG a JPEG
+  // Función auxiliar para convertir PNG a JPEG con formato específico
   const convertImageToJpeg = (file: File, callback: (dataUrl: string | null) => void) => {
+    console.log('Iniciando conversión a JPEG de:', file.name, 'tipo:', file.type);
     const img = new Image();
     const reader = new FileReader();
     
@@ -442,6 +473,7 @@ export function VirtualTryOnComponent() {
       img.src = e.target?.result as string;
       
       img.onload = () => {
+        console.log('Imagen cargada, dimensiones:', img.width, 'x', img.height);
         // Crear un canvas para dibujar la imagen
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -455,22 +487,45 @@ export function VirtualTryOnComponent() {
           return;
         }
         
-        // Fondo blanco para evitar transparencia
+        // Fondo blanco para evitar transparencia (crucial para imágenes PNG)
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Dibujar la imagen
+        // Dibujar la imagen sobre el fondo blanco
         ctx.drawImage(img, 0, 0);
         
-        // Convertir a JPEG
+        // Convertir a JPEG con formato específico
         try {
+          // Calidad 0.92 es un buen equilibrio entre tamaño y calidad
           const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
           
+          // Asegurar que el formato del encabezado es exactamente lo que espera la API
+          // Extraer la parte de datos Base64
+          const base64Data = jpegDataUrl.split(',')[1];
+          
+          // Crear un nuevo dataURL con el encabezado exacto requerido
+          const formattedJpegDataUrl = 'data:image/jpeg;base64,' + base64Data;
+          
+          console.log('JPEG generado correctamente con encabezado específico');
+          
           // Validar el formato del data URL generado
-          if (validateImageData(jpegDataUrl)) {
-            callback(jpegDataUrl);
+          if (validateImageData(formattedJpegDataUrl)) {
+            console.log('Validación exitosa, imagen lista para enviar a la API');
+            callback(formattedJpegDataUrl);
           } else {
-            console.error('Data URL generado no pasó la validación');
+            console.error('El JPEG generado no pasó la validación');
+            // Intentar corregir el formato nuevamente si falló
+            const parts = jpegDataUrl.split(';base64,');
+            if (parts.length === 2) {
+              const strictFormat = 'data:image/jpeg;base64,' + parts[1];
+              console.log('Intentando con formato estricto:', strictFormat.substring(0, 50) + '...');
+              
+              if (validateImageData(strictFormat)) {
+                console.log('Validación con formato estricto exitosa');
+                callback(strictFormat);
+                return;
+              }
+            }
             callback(null);
           }
         } catch (error) {
@@ -521,22 +576,52 @@ export function VirtualTryOnComponent() {
         }
       });
     } else {
-      // Para JPEG/JPG simplemente leemos el archivo
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        // Validar el formato y estructura del data URL
-        if (validateImageData(dataUrl)) {
-          setClothingImage(dataUrl);
+      // Para JPEG/JPG, también necesitamos estandarizar el formato
+      // ya que algunos navegadores pueden generar variaciones en el encabezado
+      convertImageToJpeg(file, (jpegDataUrl) => {
+        if (jpegDataUrl) {
+          console.log('Imagen JPEG estandarizada al formato requerido');
+          setClothingImage(jpegDataUrl);
         } else {
-          toast({
-            title: "Formato inválido",
-            description: "La imagen no tiene un formato válido para la API.",
-            variant: "destructive",
-          });
+          // Intentar leerlo directamente como respaldo
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result as string;
+            
+            // Verificar si el formato es adecuado
+            if (validateImageData(dataUrl)) {
+              setClothingImage(dataUrl);
+            } else {
+              // Si aún no es válido, intenta reformatear manualmente
+              try {
+                const parts = dataUrl.split(',');
+                if (parts.length === 2) {
+                  const strictFormat = 'data:image/jpeg;base64,' + parts[1];
+                  if (validateImageData(strictFormat)) {
+                    setClothingImage(strictFormat);
+                    return;
+                  }
+                }
+                
+                // Si llegamos aquí, ningún formato funciona
+                toast({
+                  title: "Formato inválido",
+                  description: "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
+                  variant: "destructive",
+                });
+              } catch (error) {
+                console.error('Error al reformatear JPEG:', error);
+                toast({
+                  title: "Error de procesamiento",
+                  description: "No se pudo procesar la imagen. Intente con otra imagen.",
+                  variant: "destructive",
+                });
+              }
+            }
+          };
+          reader.readAsDataURL(file);
         }
-      };
-      reader.readAsDataURL(file);
+      });
     }
   };
 
@@ -663,15 +748,16 @@ export function VirtualTryOnComponent() {
         return false;
       }
       
-      // Verificar formatos soportados (Solo JPEG/JPG están permitidos según el error)
-      const isJpeg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
+      // Verificación más estricta: DEBE ser JPEG/JPG exactamente
+      // API de PiAPI/Kling rechaza cualquier otro formato
+      const isJpeg = dataUrl.startsWith('data:image/jpeg;base64,');
       
-      // Según el error de la API, solo aceptamos JPEG
+      // Según el error de la API, solo aceptamos JPEG con encabezado exacto
       if (!isJpeg) {
-        console.warn('Formato de imagen no soportado. Solo se acepta JPEG/JPG.');
+        console.warn('Formato de imagen no soportado. Solo se acepta JPEG con formato específico.');
         toast({
           title: "Formato no soportado",
-          description: "La API solo acepta imágenes en formato JPEG/JPG. Por favor, convierte tu imagen.",
+          description: "La API solo acepta imágenes en formato JPEG específico. Se realizará una conversión automática.",
           variant: "destructive",
         });
         return false;
@@ -684,10 +770,10 @@ export function VirtualTryOnComponent() {
         return false;
       }
       
-      // Verificar que la primera parte contiene la codificación correcta
+      // Verificar que la primera parte contiene la codificación correcta de jpeg
       const headerPart = parts[0].toLowerCase();
-      if (!headerPart.includes('base64')) {
-        console.warn('La imagen debe estar codificada en base64');
+      if (headerPart !== 'data:image/jpeg;base64') {
+        console.warn('El encabezado de la imagen debe ser exactamente data:image/jpeg;base64');
         return false;
       }
       
@@ -711,6 +797,8 @@ export function VirtualTryOnComponent() {
         return false;
       }
       
+      // Validación exitosa
+      console.log('Validación de formato JPEG exitosa');
       return true;
     } catch (error) {
       console.error('Error al validar la imagen:', error);
