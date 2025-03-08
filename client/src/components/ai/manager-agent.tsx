@@ -19,7 +19,7 @@ export function ManagerAgent() {
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<Step[]>([]);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<{ id?: string; response: string; timestamp?: Date } | null>(null);
 
   const theme: AgentTheme = {
     gradient: "from-red-500 to-orange-600",
@@ -116,14 +116,18 @@ export function ManagerAgent() {
           });
 
           return response;
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error?.message || "Failed to complete analysis. Please try again.";
+          const errorStack = error?.stack || "No stack trace";
+          
           console.error("Detailed error analyzing performance:", {
-            message: error.message,
-            stack: error.stack,
+            message: errorMessage,
+            stack: errorStack,
           });
+          
           toast({
             title: "Error",
-            description: error.message || "Failed to complete analysis. Please try again.",
+            description: errorMessage,
             variant: "destructive",
           });
           throw error;
@@ -175,14 +179,18 @@ export function ManagerAgent() {
             description: "Your strategic plan is ready.",
           });
           return response;
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error?.message || "Failed to complete plan. Please try again.";
+          const errorStack = error?.stack || "No stack trace";
+          
           console.error("Detailed error planning strategy:", {
-            message: error.message,
-            stack: error.stack,
+            message: errorMessage,
+            stack: errorStack,
           });
+          
           toast({
             title: "Error",
-            description: error.message || "Failed to complete plan. Please try again.",
+            description: errorMessage,
             variant: "destructive",
           });
           throw error;
@@ -234,14 +242,18 @@ export function ManagerAgent() {
             description: "Your activity plan is ready.",
           });
           return response;
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error?.message || "Failed to coordinate activities. Please try again.";
+          const errorStack = error?.stack || "No stack trace";
+          
           console.error("Detailed error coordinating activities:", {
-            message: error.message,
-            stack: error.stack,
+            message: errorMessage,
+            stack: errorStack,
           });
+          
           toast({
             title: "Error",
-            description: error.message || "Failed to coordinate activities. Please try again.",
+            description: errorMessage,
             variant: "destructive",
           });
           throw error;
@@ -272,7 +284,7 @@ export function ManagerAgent() {
       {result && (
         <div className="mt-4 p-4 bg-muted rounded-lg">
           <h3 className="font-semibold mb-2">Generated Result:</h3>
-          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+          <pre className="whitespace-pre-wrap text-sm">{result.response}</pre>
         </div>
       )}
     </BaseAgent>

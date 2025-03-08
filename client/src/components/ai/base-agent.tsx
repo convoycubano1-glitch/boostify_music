@@ -39,11 +39,17 @@
         defaultValue?: string | number;
       }
 
+      export interface AgentResponse {
+        id?: string;
+        response: string;
+        timestamp?: Date;
+      }
+
       export interface AgentAction {
         name: string;
         description: string;
         parameters?: AgentParameter[];
-        action: (params: Record<string, any>) => Promise<void | string>;
+        action: (params: Record<string, any>) => Promise<void | string | AgentResponse>;
       }
 
       interface BaseAgentProps {
@@ -119,14 +125,18 @@
             });
 
             return result; // Return result if needed by the caller
-          } catch (error) {
+          } catch (error: any) {
+            const errorMessage = error?.message || `Error al ejecutar ${action.name}. Por favor, intente nuevamente.`;
+            const errorStack = error?.stack || 'No stack trace';
+            
             console.error(`Detailed error in ${action.name}:`, {
-              message: error.message,
-              stack: error.stack,
+              message: errorMessage,
+              stack: errorStack,
             });
+            
             toast({
               title: "Error",
-              description: error.message || `Error al ejecutar ${action.name}. Por favor, intente nuevamente.`,
+              description: errorMessage,
               variant: "destructive",
             });
           } finally {
