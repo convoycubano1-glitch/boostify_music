@@ -2862,45 +2862,70 @@ router.get('/proxy/kling/results', authenticate, async (req: Request, res: Respo
     
     let results: any[] = [];
     
+    // Función auxiliar para procesar documentos de Firestore
+    const processSnapshot = (snapshot: any, resultType: string) => {
+      return snapshot.docs.map((doc: any) => {
+        const data = doc.data();
+        let createdAt;
+        
+        // Procesar fecha correctamente
+        if (data.createdAt) {
+          if (typeof data.createdAt.toDate === 'function') {
+            createdAt = data.createdAt.toDate();
+          } else if (data.createdAt.seconds) {
+            createdAt = new Date(data.createdAt.seconds * 1000);
+          } else {
+            createdAt = new Date();
+          }
+        } else {
+          createdAt = new Date();
+        }
+        
+        return { 
+          id: doc.id, 
+          ...data, 
+          createdAt,
+          resultType 
+        };
+      });
+    };
+    
     if (type === 'all') {
-      // Obtener resultados de todos los tipos
+      // Obtener resultados de todos los tipos sin usar orderBy para evitar requerir índices
       const tryOnSnapshot = await db.collection('kling_try-on_results')
         .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
         .get();
         
       const lipsyncSnapshot = await db.collection('kling_lipsync_results')
         .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
         .get();
         
       const effectsSnapshot = await db.collection('kling_effects_results')
         .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
         .get();
       
-      // Convertir los documentos a objetos y combinar los resultados
+      // Procesar y combinar los resultados
       results = [
-        ...tryOnSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() })),
-        ...lipsyncSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() })),
-        ...effectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() }))
+        ...processSnapshot(tryOnSnapshot, 'try-on'),
+        ...processSnapshot(lipsyncSnapshot, 'lipsync'),
+        ...processSnapshot(effectsSnapshot, 'effects')
       ];
       
-      // Ordenar por fecha de creación (más reciente primero)
-      results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      // Ordenar por fecha de creación (más reciente primero) en memoria
+      results.sort((a, b) => {
+        const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+        const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+        return dateB - dateA;
+      });
     } else {
-      // Obtener resultados de un tipo específico
+      // Obtener resultados de un tipo específico sin orderBy
       const collection = `kling_${type}_results`;
       const snapshot = await db.collection(collection)
         .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
         .get();
       
-      results = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data(),
-        createdAt: doc.data().createdAt.toDate()
-      }));
+      // Usar la misma función auxiliar para procesar los resultados
+      results = processSnapshot(snapshot, type as string);
     }
     
     console.log(`Se encontraron ${results.length} resultados`);

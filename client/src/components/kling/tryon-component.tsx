@@ -167,55 +167,105 @@ export function VirtualTryOnComponent() {
     if (!taskId) return;
 
     try {
+      console.log('Verificando estado de tarea Try-On:', taskId);
       const status = await klingService.checkTryOnStatus(taskId);
       
-      // Validate status response
+      // Validar la respuesta
       if (!status || typeof status !== 'object') {
-        throw new Error('Invalid response format received from the server');
+        throw new Error('Formato de respuesta inválido del servidor');
       }
       
+      console.log('Respuesta de estado recibida:', status);
       setTaskStatus(status);
 
-      // Handle different task states
+      // Manejar diferentes estados de la tarea
       if (status.status === 'completed') {
-        // Task completed successfully
+        console.log('¡Tarea completada! Procesando resultados...');
+        // Tarea completada exitosamente
         if (pollInterval) clearInterval(pollInterval);
         setPollInterval(null);
         
-        // If there's an images array available, use the first one
+        // Buscar la URL de la imagen en todos los posibles formatos de respuesta de PiAPI
         let resultImageUrl = '';
         try {
+          console.log('Analizando respuesta para encontrar URL de imagen:', status);
+          
+          // Opción 1: Array de imágenes directo
           if ((status as any).images && Array.isArray((status as any).images) && (status as any).images.length > 0) {
-            resultImageUrl = (status as any).images[0].url;
-            console.log('Result image found:', resultImageUrl);
-          } else if ((status as any).resultUrl) {
+            const imageObj = (status as any).images[0];
+            resultImageUrl = typeof imageObj === 'string' ? imageObj : imageObj.url || '';
+            console.log('URL de imagen encontrada en array images:', resultImageUrl);
+          } 
+          // Opción 2: URL directa en resultUrl o url
+          else if ((status as any).resultUrl) {
             resultImageUrl = (status as any).resultUrl;
-            console.log('Result URL found in resultUrl:', resultImageUrl);
-          } else {
-            // Check for alternative response formats
-            if ((status as any).result && typeof (status as any).result === 'object') {
-              if ((status as any).result.images && Array.isArray((status as any).result.images)) {
-                resultImageUrl = (status as any).result.images[0].url;
-                console.log('Result image found in nested result object:', resultImageUrl);
-              } else if ((status as any).result.image_url) {
-                resultImageUrl = (status as any).result.image_url;
-                console.log('Result image found in result.image_url:', resultImageUrl);
-              }
-            }
+            console.log('URL de imagen encontrada en resultUrl:', resultImageUrl);
+          }
+          else if ((status as any).url) {
+            resultImageUrl = (status as any).url;
+            console.log('URL de imagen encontrada en url:', resultImageUrl);
+          }
+          // Opción 3: Campo resultImage (normalizado por nuestro servicio)
+          else if ((status as any).resultImage) {
+            resultImageUrl = (status as any).resultImage;
+            console.log('URL de imagen encontrada en resultImage:', resultImageUrl);
+          }
+          // Opción 4: Buscar en estructura anidada resultado/output
+          else if ((status as any).result && typeof (status as any).result === 'object') {
+            // Buscar en diferentes formatos de respuesta anidados
+            const result = (status as any).result;
             
-            // If still no valid URL, use fallback
-            if (!resultImageUrl) {
-              console.error('No image URL found in response:', status);
-              // If no valid image is available, use an example for demo
-              resultImageUrl = '/assets/virtual-tryon/example-result.jpg';
-              console.log('Using example image as fallback');
+            if (result.images && Array.isArray(result.images) && result.images.length > 0) {
+              const imageObj = result.images[0];
+              resultImageUrl = typeof imageObj === 'string' ? imageObj : imageObj.url || '';
+              console.log('URL de imagen encontrada en result.images:', resultImageUrl);
+            } 
+            else if (result.image_url) {
+              resultImageUrl = result.image_url;
+              console.log('URL de imagen encontrada en result.image_url:', resultImageUrl);
+            }
+            else if (result.url) {
+              resultImageUrl = result.url;
+              console.log('URL de imagen encontrada en result.url:', resultImageUrl);
             }
           }
-        } catch (parseError) {
-          console.error('Error parsing response data:', parseError);
-          // Use fallback image if parsing fails
-          resultImageUrl = '/assets/virtual-tryon/example-result.jpg';
-          console.log('Using example image as fallback due to parsing error');
+          // Opción 5: Buscar en structure output (común en la API de PiAPI)
+          else if ((status as any).output) {
+            const output = (status as any).output;
+            
+            if (typeof output === 'string') {
+              resultImageUrl = output;
+              console.log('URL de imagen encontrada en output (string):', resultImageUrl);
+            }
+            else if (output && typeof output === 'object') {
+              if (output.url) {
+                resultImageUrl = output.url;
+                console.log('URL de imagen encontrada en output.url:', resultImageUrl);
+              }
+              else if (output.images && Array.isArray(output.images) && output.images.length > 0) {
+                const imageObj = output.images[0];
+                resultImageUrl = typeof imageObj === 'string' ? imageObj : imageObj.url || '';
+                console.log('URL de imagen encontrada en output.images:', resultImageUrl);
+              }
+              else if (output.image_url) {
+                resultImageUrl = output.image_url;
+                console.log('URL de imagen encontrada en output.image_url:', resultImageUrl);
+              }
+            }
+          }
+          
+          // Si no se encontró una URL válida, mostrar advertencia
+          if (!resultImageUrl) {
+            console.error('No se encontró URL de imagen en la respuesta:', status);
+            throw new Error('No se pudo encontrar la URL de la imagen en la respuesta del servidor');
+          }
+        } catch (error: unknown) {
+          const parseError = error instanceof Error 
+            ? error
+            : new Error('Error desconocido al analizar la respuesta');
+          
+          console.error('Error al analizar datos de respuesta:', parseError);
+          throw new Error('Error al procesar la respuesta del servidor: ' + parseError.message);
         }
         
         const resultData: TryOnResult = {
@@ -276,7 +326,11 @@ export function VirtualTryOnComponent() {
           } else if (errorMsg.includes('size')) {
             errorMsg = "Image size too large. Please use smaller images.";
           }
-        } catch (parseError) {
+        } catch (error: unknown) {
+          const parseError = error instanceof Error 
+            ? error
+            : new Error('Error desconocido al analizar el mensaje de error');
+          
           console.error('Error parsing error message:', parseError);
         }
         
@@ -306,7 +360,11 @@ export function VirtualTryOnComponent() {
           } else if (responseData.message) {
             errorMessage = responseData.message;
           }
-        } catch (parseError) {
+        } catch (error: unknown) {
+          const parseError = error instanceof Error 
+            ? error
+            : new Error('Error desconocido al analizar la respuesta de API');
+          
           console.error('Error parsing API error response:', parseError);
         }
       }
@@ -463,7 +521,11 @@ export function VirtualTryOnComponent() {
           } else if (responseData.message) {
             errorMessage = responseData.message;
           }
-        } catch (parseError) {
+        } catch (error: unknown) {
+          const parseError = error instanceof Error 
+            ? error
+            : new Error('Error desconocido al analizar la respuesta de API');
+          
           console.error('Error parsing API error response:', parseError);
         }
       }

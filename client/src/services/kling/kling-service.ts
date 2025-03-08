@@ -105,17 +105,33 @@ class KlingService {
     clothingImage: string,
     settings?: TryOnRequest['settings']
   ): Promise<string> {
-    const response = await apiRequest({
-      url: '/api/proxy/kling/try-on/start',
-      method: 'POST',
-      data: {
-        model_input: modelImage,
-        dress_input: clothingImage,
-        settings
-      }
-    });
+    try {
+      console.log('Iniciando proceso de Try-On con PiAPI/Kling');
+      
+      const response = await apiRequest({
+        url: '/api/proxy/kling/try-on/start',
+        method: 'POST',
+        data: {
+          model_input: modelImage,
+          dress_input: clothingImage,
+          // Configuración requerida por PiAPI
+          batch_size: 1,
+          task_type: "ai_try_on",
+          settings
+        }
+      });
 
-    return response.taskId;
+      if (!response.success && !response.taskId) {
+        console.error('Error en respuesta de PiAPI/Kling:', response);
+        throw new Error(response.error || 'Error iniciando proceso de Try-On');
+      }
+
+      console.log('Try-On iniciado con éxito:', response.taskId);
+      return response.taskId;
+    } catch (error) {
+      console.error('Error en startTryOn:', error);
+      throw error;
+    }
   }
 
   /**
@@ -124,13 +140,86 @@ class KlingService {
    * @returns Estado actual de la tarea
    */
   async checkTryOnStatus(taskId: string): Promise<TryOnRequest> {
-    const response = await apiRequest({
-      url: `/api/proxy/kling/try-on/status`,
-      method: 'POST',
-      data: { taskId }
-    });
+    try {
+      console.log('Verificando estado de Try-On:', taskId);
+      
+      const response = await apiRequest({
+        url: `/api/proxy/kling/try-on/status`,
+        method: 'POST',
+        data: { taskId }
+      });
 
-    return response;
+      // Validación mejorada de la respuesta
+      if (!response) {
+        console.error('Respuesta vacía al verificar estado de Try-On');
+        throw new Error('No se recibió respuesta del servidor al verificar el estado');
+      }
+
+      if (!response.success) {
+        console.error('Error en respuesta de status de PiAPI/Kling:', response);
+        throw new Error(response.error || 'Error al verificar estado de Try-On');
+      }
+
+      // Normalizamos la respuesta para que sea compatible con nuestra interfaz
+      // Esto mejora la compatibilidad entre diferentes formatos de respuesta de la API
+      
+      // Normalizar el campo status si no existe
+      if (!response.status && (response.state || response.task_status)) {
+        response.status = response.state || response.task_status;
+      }
+      
+      // Normalizar URL del resultado para diferentes formatos de respuesta
+      if (response.status === 'completed') {
+        // Buscamos la URL en diferentes ubicaciones posibles
+        if (!response.resultImage) {
+          // Opción 1: URL directa
+          if (response.url) {
+            response.resultImage = response.url;
+            console.log('URL normalizada desde campo url');
+          } 
+          // Opción 2: Array de imágenes
+          else if (response.images && Array.isArray(response.images) && response.images.length > 0) {
+            const firstImage = response.images[0];
+            response.resultImage = typeof firstImage === 'string' ? firstImage : firstImage.url;
+            console.log('URL normalizada desde images[0]');
+          }
+          // Opción 3: En objeto output
+          else if (response.output) {
+            if (typeof response.output === 'string') {
+              response.resultImage = response.output;
+              console.log('URL normalizada desde output (string)');
+            } else if (response.output.url) {
+              response.resultImage = response.output.url;
+              console.log('URL normalizada desde output.url');
+            } else if (response.output.images && Array.isArray(response.output.images) && response.output.images.length > 0) {
+              const firstImage = response.output.images[0];
+              response.resultImage = typeof firstImage === 'string' ? firstImage : firstImage.url;
+              console.log('URL normalizada desde output.images[0]');
+            }
+          }
+          // Opción 4: En objeto result
+          else if (response.result) {
+            if (typeof response.result === 'string') {
+              response.resultImage = response.result;
+              console.log('URL normalizada desde result (string)');
+            } else if (response.result.url) {
+              response.resultImage = response.result.url;
+              console.log('URL normalizada desde result.url');
+            } else if (response.result.images && Array.isArray(response.result.images) && response.result.images.length > 0) {
+              const firstImage = response.result.images[0];
+              response.resultImage = typeof firstImage === 'string' ? firstImage : firstImage.url;
+              console.log('URL normalizada desde result.images[0]');
+            }
+          }
+        }
+      }
+
+      console.log('Estado normalizado de Try-On:', response.status);
+      return response;
+    } catch (error) {
+      console.error('Error en checkTryOnStatus:', error);
+      throw error;
+    }
   }
 
   /**

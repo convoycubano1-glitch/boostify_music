@@ -223,31 +223,31 @@ export const imageAdvisorService = {
       const user = auth.currentUser;
       const userId = user?.uid || 'anonymous';
       
-      // Query Firestore for results using Firebase v9 syntax
+      // Modificamos la consulta para evitar el uso de índices compuestos
+      // Primero filtramos solo por userId sin ordenamiento
       const resultsCollection = collection(db, 'image_advisor_results');
       const q = query(
         resultsCollection,
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', userId)
       );
       const snapshot = await getDocs(q);
       
-      // Convert to array of results
-      return snapshot.docs.map(docSnapshot => {
-        const data = docSnapshot.data();
+      // Luego procesamos y convertimos los documentos en objetos con el formato adecuado
+      const results: SavedImageAdvice[] = snapshot.docs.map(doc => {
+        const data = doc.data();
         
-        // Handle Firestore Timestamp conversion properly
+        // Procesar fecha correctamente
         let createdAt: Date;
         if (data.createdAt instanceof Timestamp) {
           createdAt = data.createdAt.toDate();
         } else if (data.createdAt?.seconds) {
           createdAt = new Date(data.createdAt.seconds * 1000);
         } else {
-          createdAt = new Date(); // Fallback to current date if no timestamp
+          createdAt = new Date(); // Fallback
         }
         
         return {
-          id: docSnapshot.id,
+          id: doc.id,
           styleAnalysis: data.styleAnalysis || '',
           recommendations: data.recommendations || [],
           colorPalette: data.colorPalette || [],
@@ -256,8 +256,15 @@ export const imageAdvisorService = {
           genre: data.genre,
           style: data.style,
           createdAt: createdAt,
-          userId: data.userId
+          userId: data.userId || 'anonymous'
         };
+      });
+      
+      // Ordenamos manualmente por fecha (más recientes primero)
+      return results.sort((a, b) => {
+        const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+        const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+        return dateB - dateA;
       });
     } catch (error) {
       console.error("Error retrieving saved results:", error);
