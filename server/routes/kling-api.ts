@@ -23,16 +23,21 @@ if (!PIAPI_API_KEY) {
  * Endpoint para iniciar un proceso de Virtual Try-On
  * Conecta directamente con la API de Kling
  */
-router.post('/proxy/kling/try-on/start', async (req, res) => {
+router.post('/kling/try-on/start', async (req, res) => {
   try {
-    const { model_input, dress_input, batch_size = 1 } = req.body.input || {};
+    console.log('Recibida solicitud para iniciar Virtual Try-On', req.body);
+    const { input } = req.body || {};
+    const { model_input, dress_input, batch_size = 1 } = input || {};
 
     if (!model_input || !dress_input) {
+      console.log('Faltan imágenes requeridas para Virtual Try-On');
       return res.status(400).json({ 
         success: false, 
         error: 'Se requieren imágenes del modelo y la prenda'
       });
     }
+    
+    console.log('Imágenes validadas, enviando a Kling API');
 
     // Configuración de la solicitud a Kling API
     const klingRequest = {
@@ -85,7 +90,7 @@ router.post('/proxy/kling/try-on/start', async (req, res) => {
 /**
  * Endpoint para verificar el estado de un proceso de Virtual Try-On
  */
-router.post('/proxy/kling/try-on/status', async (req, res) => {
+router.post('/kling/try-on/status', async (req, res) => {
   try {
     const { taskId } = req.body;
 

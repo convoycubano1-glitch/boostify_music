@@ -107,8 +107,6 @@ export function SimpleTryOnComponent() {
       
       // Preparar datos directamente para la API de Kling
       const requestBody = {
-        model: "kling",
-        task_type: "ai_try_on",
         input: {
           model_input: modelImage,
           dress_input: clothingImage,
@@ -116,8 +114,13 @@ export function SimpleTryOnComponent() {
         }
       };
       
+      console.log('Enviando solicitud Try-On con imágenes', {
+        modelImageLength: modelImage?.length || 0,
+        clothingImageLength: clothingImage?.length || 0
+      });
+      
       // Hacer la llamada a través del proxy (para manejar CORS y proteger la API key)
-      const response = await axios.post('/api/proxy/kling/try-on/start', requestBody);
+      const response = await axios.post('/api/kling/try-on/start', requestBody);
       
       if (response.data.success && response.data.taskId) {
         setTaskId(response.data.taskId);
@@ -147,7 +150,7 @@ export function SimpleTryOnComponent() {
   // Función para verificar el estado de la tarea
   const checkTaskStatus = async (taskId: string) => {
     try {
-      const response = await axios.post('/api/proxy/kling/try-on/status', { taskId });
+      const response = await axios.post('/api/kling/try-on/status', { taskId });
       
       if (response.data.status === 'completed') {
         setIsLoading(false);

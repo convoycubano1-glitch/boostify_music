@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de API de Kling</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #e74c3c;
+            text-align: center;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .input-section, .result-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .preview {
+            width: 100%;
+            height: 300px;
+            border: 1px dashed #ccc;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .log-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .success {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prueba de API de Kling - Virtual Try-On</h1>
+    
+    <div class="container">
+        <div class="input-section">
+            <h2>Imagen de Modelo</h2>
+            <input type="file" id="model-input" accept="image/*">
+            <div class="preview" id="model-preview">
+                <p>Selecciona una imagen de modelo</p>
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <h2>Imagen de Prenda</h2>
+            <input type="file" id="clothing-input" accept="image/*">
+            <div class="preview" id="clothing-preview">
+                <p>Selecciona una imagen de prenda</p>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center;">
+        <button id="start-button" disabled>Iniciar Virtual Try-On</button>
+    </div>
+    
+    <div class="status" id="status-container">
+        Estado: Esperando imágenes...
+    </div>
+    
+    <div class="result-section" id="result-container" style="display: none;">
+        <h2>Resultado</h2>
+        <div class="preview" id="result-preview">
+            <p>Procesando resultado...</p>
+        </div>
+    </div>
+    
+    <div class="log-container">
+        <h3>Logs</h3>
+        <div id="log-output"></div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let modelImage = null;
+        let clothingImage = null;
+        let taskId = null;
+        let statusCheckInterval = null;
+        
+        // Elementos del DOM
+        const modelInput = document.getElementById('model-input');
+        const clothingInput = document.getElementById('clothing-input');
+        const modelPreview = document.getElementById('model-preview');
+        const clothingPreview = document.getElementById('clothing-preview');
+        const startButton = document.getElementById('start-button');
+        const statusContainer = document.getElementById('status-container');
+        const resultContainer = document.getElementById('result-container');
+        const resultPreview = document.getElementById('result-preview');
+        const logOutput = document.getElementById('log-output');
+        
+        // Función para agregar logs
+        function log(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logOutput.appendChild(logEntry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        // Inicializar listeners
+        modelInput.addEventListener('change', handleModelUpload);
+        clothingInput.addEventListener('change', handleClothingUpload);
+        startButton.addEventListener('click', startTryOn);
+        
+        // Función para manejar la carga de imagen de modelo
+        function handleModelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                log('El archivo seleccionado no es una imagen válida', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                convertToJpeg(dataUrl, (jpegDataUrl) => {
+                    modelImage = jpegDataUrl;
+                    displayPreview(modelPreview, jpegDataUrl);
+                    log('Imagen de modelo cargada y convertida a JPEG');
+                    updateButtonState();
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Función para manejar la carga de imagen de prenda
+        function handleClothingUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                log('El archivo seleccionado no es una imagen válida', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                convertToJpeg(dataUrl, (jpegDataUrl) => {
+                    clothingImage = jpegDataUrl;
+                    displayPreview(clothingPreview, jpegDataUrl);
+                    log('Imagen de prenda cargada y convertida a JPEG');
+                    updateButtonState();
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Función para mostrar la vista previa de la imagen
+        function displayPreview(container, dataUrl) {
+            container.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            container.appendChild(img);
+        }
+        
+        // Función para actualizar el estado del botón
+        function updateButtonState() {
+            startButton.disabled = !(modelImage && clothingImage);
+        }
+        
+        // Función para convertir imagen a JPEG usando Canvas
+        function convertToJpeg(dataUrl, callback) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                const ctx = canvas.getContext('2d');
+                // Dibujar fondo blanco primero para eliminar transparencia
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Dibujar la imagen
+                ctx.drawImage(img, 0, 0);
+                
+                // Convertir a JPEG
+                const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                log(`Imagen convertida a JPEG: ${canvas.width}x${canvas.height}`);
+                callback(jpegDataUrl);
+            };
+            img.src = dataUrl;
+        }
+        
+        // Función para iniciar el proceso de Try-On
+        async function startTryOn() {
+            if (!modelImage || !clothingImage) {
+                log('Se requieren ambas imágenes para iniciar el proceso', 'error');
+                return;
+            }
+            
+            try {
+                startButton.disabled = true;
+                statusContainer.textContent = 'Estado: Iniciando proceso...';
+                statusContainer.className = 'status';
+                
+                log('Preparando solicitud de Try-On');
+                
+                // Datos para la API
+                const requestBody = {
+                    input: {
+                        model_input: modelImage,
+                        dress_input: clothingImage,
+                        batch_size: 1
+                    }
+                };
+                
+                log('Enviando solicitud al servidor');
+                
+                // Enviar solicitud al endpoint
+                const response = await fetch('/api/kling/try-on/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const responseData = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(responseData.error || 'Error al iniciar el proceso');
+                }
+                
+                if (responseData.success && responseData.taskId) {
+                    taskId = responseData.taskId;
+                    log(`Proceso iniciado correctamente. ID de tarea: ${taskId}`, 'success');
+                    statusContainer.textContent = 'Estado: Procesando imágenes...';
+                    resultContainer.style.display = 'block';
+                    
+                    // Iniciar verificación periódica
+                    startStatusCheck(taskId);
+                } else {
+                    throw new Error('Respuesta inesperada del servidor');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                statusContainer.textContent = `Estado: Error - ${error.message}`;
+                statusContainer.className = 'status error';
+                startButton.disabled = false;
+            }
+        }
+        
+        // Función para verificar el estado de la tarea
+        async function startStatusCheck(id) {
+            clearInterval(statusCheckInterval);
+            
+            statusCheckInterval = setInterval(async () => {
+                try {
+                    log(`Verificando estado de tarea: ${id}`);
+                    
+                    const response = await fetch('/api/kling/try-on/status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ taskId: id })
+                    });
+                    
+                    const responseData = await response.json();
+                    
+                    if (responseData.status === 'completed') {
+                        clearInterval(statusCheckInterval);
+                        log('Proceso completado correctamente', 'success');
+                        statusContainer.textContent = 'Estado: Completado';
+                        statusContainer.className = 'status success';
+                        
+                        // Mostrar imagen resultante
+                        if (responseData.images && responseData.images.length > 0) {
+                            const resultUrl = responseData.images[0].url || responseData.images[0];
+                            displayPreview(resultPreview, resultUrl);
+                            log(`URL de imagen resultante: ${resultUrl.substring(0, 30)}...`);
+                        } else {
+                            throw new Error('No se encontraron imágenes en la respuesta');
+                        }
+                        
+                        startButton.disabled = false;
+                    } else if (responseData.status === 'failed') {
+                        clearInterval(statusCheckInterval);
+                        const errorMsg = responseData.errorMessage || 'Error desconocido';
+                        log(`Error en el procesamiento: ${errorMsg}`, 'error');
+                        statusContainer.textContent = `Estado: Error - ${errorMsg}`;
+                        statusContainer.className = 'status error';
+                        startButton.disabled = false;
+                    } else {
+                        log('Procesamiento en curso, esperando...');
+                        statusContainer.textContent = 'Estado: Procesando...';
+                    }
+                } catch (error) {
+                    clearInterval(statusCheckInterval);
+                    log(`Error al verificar estado: ${error.message}`, 'error');
+                    statusContainer.textContent = `Estado: Error - ${error.message}`;
+                    statusContainer.className = 'status error';
+                    startButton.disabled = false;
+                }
+            }, 3000);
+        }
+        
+        // Iniciar la aplicación
+        log('Aplicación de prueba de Kling API iniciada');
+    </script>
+</body>
+</html>
