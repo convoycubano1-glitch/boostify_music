@@ -36,9 +36,15 @@ const klingService = {
   // Iniciar el proceso de Try-On
   startTryOn: async (modelImage: string, clothingImage: string): Promise<TryOnResult> => {
     try {
+      // Estructura siguiendo el formato esperado por el API de Kling
       const response = await axios.post('/api/kling/try-on/start', {
-        modelImage,
-        clothingImage
+        model: "kling",
+        task_type: "ai_try_on",
+        input: {
+          model_input: modelImage,
+          dress_input: clothingImage,
+          batch_size: 1
+        }
       });
       return response.data;
     } catch (error: any) {
@@ -53,7 +59,8 @@ const klingService = {
   // Verificar el estado del proceso
   checkTryOnStatus: async (taskId: string): Promise<TryOnResult> => {
     try {
-      const response = await axios.get(`/api/kling/try-on/status?taskId=${taskId}`);
+      // Cambiado de GET a POST para coincidir con la implementación del servidor
+      const response = await axios.post('/api/kling/try-on/status', { taskId });
       return response.data;
     } catch (error: any) {
       console.error('Error verificando estado:', error);

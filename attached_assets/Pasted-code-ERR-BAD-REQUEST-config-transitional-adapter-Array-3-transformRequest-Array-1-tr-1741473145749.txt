@@ -1,0 +1,425 @@
+code: "ERR_BAD_REQUEST"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Request failed with status code 401"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}response: {data: {…}, status: 401, statusText: 'Unauthorized', headers: AxiosHeaders, config: {…}, …}status: 401stack: "AxiosError: Request failed with status code 401\n    at settle (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=7c28a490:1235:12)\n    at XMLHttpRequest.onloadend (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=7c28a490:1566:7)\n    at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=7c28a490:2124:41)\n    at async Object.checkTryOnStatus (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/kling/simple-tryon.tsx:52:24)\n    at async https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/kling/simple-tryon.tsx:181:32"[[Prototype]]: Error
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}code: "ERR_BAD_REQUEST"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Request failed with status code 401"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}response: {data: {…}, status: 401, statusText: 'Unauthorized', headers: AxiosHeaders, config: {…}, …}status: 401stack: "AxiosError: Request failed with status code 401\n    at settle (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=7c28a490:1235:12)\n    at XMLHttpRequest.onloadend (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=7c28a490:1566:7)\n    at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=7c28a490:2124:41)\n    at async Object.checkTryOnStatus (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/kling/simple-tryon.tsx:52:24)\n    at async https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/kling/simple-tryon.tsx:181:32"[[Prototype]]: Error
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+checkTryOnStatus @ simple-tryon.tsx:65
+await in checkTryOnStatus
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:62 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/kling/try-on/status?taskId=2168ec85-d6d8-4241-896e-d6831b390a9a 401 (Unauthorized)
+dispatchXhrRequest @ axios.js?v=7c28a490:1653
+xhr @ axios.js?v=7c28a490:1533
+dispatchRequest @ axios.js?v=7c28a490:2008
+_request @ axios.js?v=7c28a490:2223
+request @ axios.js?v=7c28a490:2120
+Axios.<computed> @ axios.js?v=7c28a490:2242
+wrap @ axios.js?v=7c28a490:8
+checkTryOnStatus @ simple-tryon.tsx:62
+(anonymous) @ simple-tryon.tsx:224
+setInterval
+handleStartTryOn @ simple-tryon.tsx:223
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+simple-tryon.tsx:65 Error verificando estado: AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
