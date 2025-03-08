@@ -1,15 +1,27 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Upload, Camera, Sparkles, Palette, UserCircle2 } from "lucide-react";
+import { 
+  Loader2, Upload, Camera, Sparkles, Palette, UserCircle2, 
+  Clock, History, Bookmark, ArrowLeft, CheckCircle, X, Trash2,
+  Save, Info, FileText
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { imageAdvisorService } from "@/lib/services/image-advisor-service";
-import { useMutation } from "@tanstack/react-query";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Dialog, DialogContent, DialogDescription, 
+  DialogHeader, DialogTitle, DialogTrigger, DialogFooter 
+} from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { imageAdvisorService, SavedImageAdvice } from "@/lib/services/image-advisor-service";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 export function ImageStyleAdvisor() {
   const { toast } = useToast();
@@ -17,6 +29,10 @@ export function ImageStyleAdvisor() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [styleRecommendation, setStyleRecommendation] = useState<string>("");
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [colorPalette, setColorPalette] = useState<string[]>([]);
+  const [brandingTips, setBrandingTips] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
+  const [selectedResult, setSelectedResult] = useState<SavedImageAdvice | null>(null);
 
   const [artistStyle, setArtistStyle] = useState({
     genre: "",
@@ -25,6 +41,21 @@ export function ImageStyleAdvisor() {
     colorPalette: "Vibrant",
   });
 
+  // Query for saved results
+  const { data: savedResults = [], refetch: refetchResults } = useQuery({
+    queryKey: ["imageAdviceResults"],
+    queryFn: async () => {
+      try {
+        return await imageAdvisorService.getSavedResults();
+      } catch (err) {
+        console.error("Failed to load saved results:", err);
+        return [];
+      }
+    },
+    staleTime: 30000 // 30 seconds
+  });
+
+  // Image analysis mutation
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageUrl: string) => {
       return await imageAdvisorService.analyzeImage(imageUrl);
@@ -32,20 +63,25 @@ export function ImageStyleAdvisor() {
     onSuccess: (data) => {
       setStyleRecommendation(data.styleAnalysis);
       setRecommendations(data.recommendations);
+      setColorPalette(data.colorPalette || []);
+      setBrandingTips(data.brandingTips || []);
       toast({
         title: "Success",
         description: "Image analyzed successfully!",
       });
+      refetchResults();
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to analyze image';
       toast({
         title: "Error",
-        description: error.message || "Failed to analyze image",
+        description: errorMessage,
         variant: "destructive",
       });
     }
   });
 
+  // Style recommendations mutation
   const generateRecommendationsMutation = useMutation({
     mutationFn: async ({ style, genre }: { style: string; genre: string }) => {
       return await imageAdvisorService.generateVisualRecommendations(style, genre);
@@ -56,11 +92,13 @@ export function ImageStyleAdvisor() {
         title: "Success",
         description: "Recommendations generated successfully!",
       });
+      refetchResults();
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate recommendations';
       toast({
         title: "Error",
-        description: error.message || "Failed to generate recommendations",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -111,163 +149,472 @@ export function ImageStyleAdvisor() {
     }
   };
 
+  const loadSavedResult = (result: SavedImageAdvice) => {
+    setSelectedResult(result);
+    setStyleRecommendation(result.styleAnalysis);
+    setRecommendations(result.recommendations);
+    setColorPalette(result.colorPalette || []);
+    setBrandingTips(result.brandingTips || []);
+    
+    if (result.referenceImage) {
+      setReferenceImage(result.referenceImage);
+    }
+    
+    if (result.genre) {
+      setArtistStyle(prev => ({
+        ...prev,
+        genre: result.genre || ""
+      }));
+    }
+    
+    if (result.style) {
+      const styleParts = (result.style || "").split(" ");
+      if (styleParts.length > 0) {
+        setArtistStyle(prev => ({
+          ...prev,
+          vibe: styleParts[0] || "Professional",
+          aesthetic: styleParts[1] || "Modern"
+        }));
+      }
+    }
+    
+    setActiveTab("upload");
+    
+    toast({
+      title: "Result Loaded",
+      description: "Saved analysis has been loaded successfully",
+    });
+  };
+
+  const clearResults = () => {
+    setReferenceImage(null);
+    setStyleRecommendation("");
+    setRecommendations([]);
+    setColorPalette([]);
+    setBrandingTips([]);
+    setSelectedResult(null);
+    
+    toast({
+      title: "Cleared",
+      description: "Analysis results have been cleared",
+    });
+  };
+  
+  // Helper function to format dates properly from Firestore Timestamps
+  const formatDate = (date: Date | undefined | null): string => {
+    if (!date) return "Unknown date";
+    
+    try {
+      return new Date(date).toLocaleString();
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
   return (
     <div className="space-y-8">
-      <div className="grid gap-6 md:gap-8">
-        <div className="space-y-4">
-          <Label className="text-base font-medium">Musical Genre</Label>
-          <Select
-            value={artistStyle.genre}
-            onValueChange={(value) => setArtistStyle(prev => ({ ...prev, genre: value }))}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select your genre" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pop">Pop</SelectItem>
-              <SelectItem value="rock">Rock</SelectItem>
-              <SelectItem value="hiphop">Hip Hop</SelectItem>
-              <SelectItem value="electronic">Electronic</SelectItem>
-              <SelectItem value="jazz">Jazz</SelectItem>
-              <SelectItem value="classical">Classical</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(value) => setActiveTab(value as "upload" | "history")}
+        className="w-full mb-4"
+      >
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="upload" className="flex items-center space-x-2">
+            <Camera className="h-4 w-4" />
+            <span>Upload & Analyze</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center space-x-2">
+            <History className="h-4 w-4" />
+            <span>History ({savedResults.length})</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload" className="space-y-8">
+          <div className="grid gap-6 md:gap-8">
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Musical Genre</Label>
+              <Select
+                value={artistStyle.genre}
+                onValueChange={(value) => setArtistStyle(prev => ({ ...prev, genre: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select your genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pop">Pop</SelectItem>
+                  <SelectItem value="rock">Rock</SelectItem>
+                  <SelectItem value="hiphop">Hip Hop</SelectItem>
+                  <SelectItem value="electronic">Electronic</SelectItem>
+                  <SelectItem value="jazz">Jazz</SelectItem>
+                  <SelectItem value="classical">Classical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-4">
-          <Label className="text-base font-medium">Desired Vibe</Label>
-          <Select
-            value={artistStyle.vibe}
-            onValueChange={(value) => setArtistStyle(prev => ({ ...prev, vibe: value }))}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select the vibe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Professional">Professional</SelectItem>
-              <SelectItem value="Edgy">Edgy</SelectItem>
-              <SelectItem value="Artistic">Artistic</SelectItem>
-              <SelectItem value="Minimalist">Minimalist</SelectItem>
-              <SelectItem value="Avant-garde">Avant-garde</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Desired Vibe</Label>
+              <Select
+                value={artistStyle.vibe}
+                onValueChange={(value) => setArtistStyle(prev => ({ ...prev, vibe: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select the vibe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Professional">Professional</SelectItem>
+                  <SelectItem value="Edgy">Edgy</SelectItem>
+                  <SelectItem value="Artistic">Artistic</SelectItem>
+                  <SelectItem value="Minimalist">Minimalist</SelectItem>
+                  <SelectItem value="Avant-garde">Avant-garde</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-4">
-          <Label className="text-base font-medium">Aesthetic Style</Label>
-          <Select
-            value={artistStyle.aesthetic}
-            onValueChange={(value) => setArtistStyle(prev => ({ ...prev, aesthetic: value }))}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select aesthetic style" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Modern">Modern</SelectItem>
-              <SelectItem value="Vintage">Vintage</SelectItem>
-              <SelectItem value="Urban">Urban</SelectItem>
-              <SelectItem value="Natural">Natural</SelectItem>
-              <SelectItem value="Futuristic">Futuristic</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Aesthetic Style</Label>
+              <Select
+                value={artistStyle.aesthetic}
+                onValueChange={(value) => setArtistStyle(prev => ({ ...prev, aesthetic: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select aesthetic style" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Modern">Modern</SelectItem>
+                  <SelectItem value="Vintage">Vintage</SelectItem>
+                  <SelectItem value="Urban">Urban</SelectItem>
+                  <SelectItem value="Natural">Natural</SelectItem>
+                  <SelectItem value="Futuristic">Futuristic</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-4">
-          <Label className="text-base font-medium">Reference Image (Optional)</Label>
-          <div className="flex items-center justify-center w-full">
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer border-orange-500/20 bg-black/20 hover:bg-black/30">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <Upload className="w-8 h-8 mb-4 text-orange-500" />
-                <p className="mb-2 text-sm text-orange-500">
-                  <span className="font-semibold">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PNG, JPG or GIF (MAX. 5MB)
-                </p>
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Reference Image (Optional)</Label>
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer border-orange-500/20 bg-black/20 hover:bg-black/30">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-4 text-orange-500" />
+                    <p className="mb-2 text-sm text-orange-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG or GIF (MAX. 5MB)
+                    </p>
+                  </div>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
               </div>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
+
+              {referenceImage && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-4"
+                >
+                  <Card className="overflow-hidden">
+                    <img 
+                      src={referenceImage} 
+                      alt="Reference" 
+                      className="w-full h-64 object-cover"
+                    />
+                  </Card>
+                </motion.div>
+              )}
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                onClick={handleGenerateRecommendations}
+                disabled={isGenerating || !artistStyle.genre}
+                className="flex-1 bg-orange-500 hover:bg-orange-600"
+              >
+                {isGenerating ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Generating...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Generate Recommendations</span>
+                  </div>
+                )}
+              </Button>
+              
+              {styleRecommendation && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={clearResults}
+                        variant="outline"
+                        className="border-orange-500/20"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Clear results</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+
+            {/* Results Section */}
+            {styleRecommendation && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20">
+                  <div className="flex items-start gap-4">
+                    <UserCircle2 className="h-6 w-6 text-orange-500 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                        Style Analysis
+                        {selectedResult && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            <Clock className="h-3 w-3 mr-1" /> 
+                            Loaded from history
+                          </Badge>
+                        )}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{styleRecommendation}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                {recommendations.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Recommendations</h3>
+                    <div className="grid gap-4">
+                      {recommendations.map((recommendation, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <Card className="p-4 bg-black/40 backdrop-blur-sm border-orange-500/20">
+                            <p className="text-sm">{recommendation}</p>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {colorPalette.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg flex items-center">
+                      <Palette className="h-5 w-5 mr-2 text-orange-500" />
+                      Color Palette
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {colorPalette.map((color, index) => (
+                        <div key={index} className="space-y-2">
+                          <div 
+                            className="h-16 rounded-md" 
+                            style={{ 
+                              backgroundColor: color.startsWith('#') ? color : '#' + color,
+                              border: '1px solid rgba(255,255,255,0.1)'
+                            }}
+                          ></div>
+                          <p className="text-xs text-center">{color}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {brandingTips.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Branding Tips</h3>
+                    <div className="grid gap-4">
+                      {brandingTips.map((tip, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <Card className="p-4 bg-black/40 backdrop-blur-sm border-orange-500/20">
+                            <div className="flex items-start gap-2">
+                              <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
+                                <span className="text-orange-500 text-xs">{index + 1}</span>
+                              </div>
+                              <p className="text-sm">{tip}</p>
+                            </div>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
-
-          {referenceImage && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-4"
-            >
-              <Card className="overflow-hidden">
-                <img 
-                  src={referenceImage} 
-                  alt="Reference" 
-                  className="w-full h-64 object-cover"
-                />
-              </Card>
-            </motion.div>
-          )}
-        </div>
-
-        <Button
-          onClick={handleGenerateRecommendations}
-          disabled={isGenerating || !artistStyle.genre}
-          className="w-full bg-orange-500 hover:bg-orange-600"
-        >
-          {isGenerating ? (
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Generating Recommendations...</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span>Generate Style Recommendations</span>
-            </div>
-          )}
-        </Button>
-
-        {/* Results Section */}
-        {styleRecommendation && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20">
-              <div className="flex items-start gap-4">
-                <UserCircle2 className="h-6 w-6 text-orange-500 mt-1" />
+        </TabsContent>
+        
+        <TabsContent value="history" className="space-y-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold">Your Style Analysis History</h2>
+            <p className="text-muted-foreground">
+              View and load your previous style analyses and recommendations
+            </p>
+          </div>
+          
+          {savedResults.length === 0 ? (
+            <Card className="p-8 bg-black/40 backdrop-blur-sm border-orange-500/20 text-center">
+              <div className="flex flex-col items-center justify-center gap-4">
+                <FileText className="h-12 w-12 text-muted-foreground" />
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Style Analysis</h3>
-                  <p className="text-sm text-muted-foreground">{styleRecommendation}</p>
+                  <h3 className="font-semibold text-lg mb-2">No saved analyses yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Upload an image or generate style recommendations to create your first analysis.
+                  </p>
                 </div>
+                <Button 
+                  onClick={() => setActiveTab("upload")}
+                  className="mt-4 bg-orange-500 hover:bg-orange-600"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Go to Image Upload
+                </Button>
               </div>
             </Card>
-
-            {recommendations.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Recommendations</h3>
-                <div className="grid gap-4">
-                  {recommendations.map((recommendation, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Card className="p-4 bg-black/40 backdrop-blur-sm border-orange-500/20">
-                        <p className="text-sm">{recommendation}</p>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
+          ) : (
+            <ScrollArea className="h-[600px] pr-4">
+              <div className="grid gap-4">
+                {savedResults.map((result, index) => (
+                  <motion.div
+                    key={result.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card className="overflow-hidden border-orange-500/20 hover:border-orange-500/40 transition-colors">
+                      <CardHeader className="p-4 pb-0">
+                        <CardTitle className="text-md font-medium flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {result.genre && (
+                              <Badge variant="outline" className="text-xs">
+                                {result.genre}
+                              </Badge>
+                            )}
+                            {result.style && (
+                              <Badge variant="outline" className="text-xs bg-orange-500/10">
+                                {result.style}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(result.createdAt).split(',')[0]} {/* Mostrar solo la fecha */}
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          {result.referenceImage && (
+                            <div className="w-24 h-24 flex-shrink-0">
+                              <img 
+                                src={result.referenceImage} 
+                                alt="Reference" 
+                                className="w-full h-full object-cover rounded-md"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {result.styleAnalysis}
+                            </p>
+                            {result.recommendations.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {result.recommendations.length} recommendations
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0 flex justify-end gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Info className="h-4 w-4 mr-1" />
+                              Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Style Analysis Details</DialogTitle>
+                              <DialogDescription>
+                                Analysis from {formatDate(result.createdAt)}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="mt-4 space-y-4">
+                              {result.referenceImage && (
+                                <div className="mb-4">
+                                  <img
+                                    src={result.referenceImage}
+                                    alt="Reference"
+                                    className="w-full h-48 object-contain rounded-md"
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="font-medium text-sm">Style Analysis</h4>
+                                <p className="text-sm mt-1 text-muted-foreground">{result.styleAnalysis}</p>
+                              </div>
+                              {result.recommendations.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium text-sm">Recommendations</h4>
+                                  <ul className="mt-1 space-y-2">
+                                    {result.recommendations.map((rec, i) => (
+                                      <li key={i} className="text-sm text-muted-foreground flex gap-2">
+                                        <CheckCircle className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                                        <span>{rec}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                            <DialogFooter className="mt-4">
+                              <Button variant="outline" onClick={() => loadSavedResult(result)}>
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Load This Analysis
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          className="bg-orange-500 hover:bg-orange-600"
+                          onClick={() => loadSavedResult(result)}
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-1" />
+                          Load
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
               </div>
-            )}
-          </motion.div>
-        )}
-      </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

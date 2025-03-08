@@ -9,7 +9,8 @@ export interface KlingAsyncRequest {
   id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
-  startTime: Date;
+  startTime: Date | any; // 'any' para manejar Timestamps de Firestore
+  createdAt?: Date | any; // Campo adicional para manejar Timestamps de Firestore
   error?: string;
 }
 
@@ -31,6 +32,8 @@ export interface TryOnResult {
   requestId: string;
   modelImage: string;
   clothingImage: string;
+  createdAt?: Date | any; // Campo de fecha para el ordenamiento y visualización
+  id?: string; // Para identificar documentos guardados en Firestore
 }
 
 // Lipsync
@@ -51,6 +54,8 @@ export interface LipsyncResult {
   requestId: string;
   originalVideo: string;
   audioUsed?: string;
+  createdAt?: Date | any; // Campo de fecha para el ordenamiento y visualización
+  id?: string; // Para identificar documentos guardados en Firestore
 }
 
 // Effects
@@ -75,6 +80,8 @@ export interface EffectsResult {
   requestId: string;
   originalImage: string;
   effectType: string;
+  createdAt?: Date | any; // Campo de fecha para el ordenamiento y visualización
+  id?: string; // Para identificar documentos guardados en Firestore
 }
 
 /**
@@ -250,8 +257,23 @@ class KlingService {
       url: `/api/proxy/kling/results?type=${type}`,
       method: 'GET'
     });
-
-    return response.results || [];
+    
+    // Process all results to properly handle dates from Firestore
+    const results = response.results || [];
+    
+    return results.map((result: any) => {
+      // Normalize creation date if present
+      if (result.createdAt) {
+        // Handle Firebase Timestamp format
+        if (result.createdAt.seconds) {
+          result.createdAt = new Date(result.createdAt.seconds * 1000);
+        } else if (typeof result.createdAt === 'string') {
+          result.createdAt = new Date(result.createdAt);
+        }
+      }
+      
+      return result;
+    });
   }
 }
 

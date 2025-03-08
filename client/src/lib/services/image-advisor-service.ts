@@ -1,11 +1,22 @@
 import { env } from "@/env";
-import { generateId } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { auth, db } from "@/firebase";
+import { collection, addDoc, getDocs, doc, getDoc, query, where, orderBy, Timestamp, serverTimestamp } from "firebase/firestore";
 
 interface ImageAdvice {
   styleAnalysis: string;
   recommendations: string[];
   colorPalette: string[];
   brandingTips: string[];
+}
+
+export interface SavedImageAdvice extends ImageAdvice {
+  id: string;
+  createdAt: Date | any;
+  userId: string;
+  referenceImage?: string;
+  genre?: string;
+  style?: string;
 }
 
 export const imageAdvisorService = {
@@ -47,7 +58,19 @@ export const imageAdvisorService = {
       }
 
       const data = await response.json();
-      return JSON.parse(data.choices[0].message.content);
+      const analysis = JSON.parse(data.choices[0].message.content);
+      
+      // Save the analysis results to Firestore
+      try {
+        await this.saveImageAdvice({
+          ...analysis,
+          referenceImage: imageUrl
+        });
+      } catch (saveError) {
+        console.warn("Analysis completed but could not save results:", saveError);
+      }
+      
+      return analysis;
     } catch (error) {
       console.error("Error analyzing image:", error);
       throw error;
@@ -86,10 +109,140 @@ export const imageAdvisorService = {
       }
 
       const data = await response.json();
-      return JSON.parse(data.choices[0].message.content).recommendations;
+      const recommendations = JSON.parse(data.choices[0].message.content).recommendations;
+      
+      // Also save these genre-specific recommendations
+      try {
+        await this.saveImageAdvice({
+          styleAnalysis: `Genre-based style analysis for ${genre} with ${style} aesthetic.`,
+          recommendations: recommendations,
+          colorPalette: [],
+          brandingTips: [],
+          genre,
+          style
+        });
+      } catch (saveError) {
+        console.warn("Recommendations generated but could not save results:", saveError);
+      }
+      
+      return recommendations;
     } catch (error) {
       console.error("Error generating recommendations:", error);
       throw error;
+    }
+  },
+  
+  async saveImageAdvice(advice: Partial<ImageAdvice & { referenceImage?: string, genre?: string, style?: string }>): Promise<string> {
+    try {
+      // Get current user
+      const user = auth.currentUser;
+      const userId = user?.uid || 'anonymous';
+      
+      // Prepare data to save
+      const adviceData = {
+        ...advice,
+        userId,
+        // Use serverTimestamp for better consistency across clients
+        createdAt: serverTimestamp(),
+      };
+      
+      // Save to Firestore using Firebase v9 syntax
+      const resultsCollection = collection(db, 'image_advisor_results');
+      const docRef = await addDoc(resultsCollection, adviceData);
+      console.log("Image advice saved with ID:", docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error("Error saving image advice:", error);
+      // Return an empty string instead of throwing to prevent cascading failures
+      return "";
+    }
+  },
+  
+  async getSavedResults(): Promise<SavedImageAdvice[]> {
+    try {
+      // Get current user
+      const user = auth.currentUser;
+      const userId = user?.uid || 'anonymous';
+      
+      // Query Firestore for results using Firebase v9 syntax
+      const resultsCollection = collection(db, 'image_advisor_results');
+      const q = query(
+        resultsCollection,
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      
+      // Convert to array of results
+      return snapshot.docs.map(docSnapshot => {
+        const data = docSnapshot.data();
+        
+        // Handle Firestore Timestamp conversion properly
+        let createdAt: Date;
+        if (data.createdAt instanceof Timestamp) {
+          createdAt = data.createdAt.toDate();
+        } else if (data.createdAt?.seconds) {
+          createdAt = new Date(data.createdAt.seconds * 1000);
+        } else {
+          createdAt = new Date(); // Fallback to current date if no timestamp
+        }
+        
+        return {
+          id: docSnapshot.id,
+          styleAnalysis: data.styleAnalysis || '',
+          recommendations: data.recommendations || [],
+          colorPalette: data.colorPalette || [],
+          brandingTips: data.brandingTips || [],
+          referenceImage: data.referenceImage,
+          genre: data.genre,
+          style: data.style,
+          createdAt: createdAt,
+          userId: data.userId
+        };
+      });
+    } catch (error) {
+      console.error("Error retrieving saved results:", error);
+      return [];
+    }
+  },
+  
+  async getResultById(id: string): Promise<SavedImageAdvice | null> {
+    try {
+      const resultsCollection = collection(db, 'image_advisor_results');
+      const docRef = doc(resultsCollection, id);
+      const docSnapshot = await getDoc(docRef);
+      
+      if (!docSnapshot.exists()) {
+        return null;
+      }
+      
+      const data = docSnapshot.data();
+      
+      // Handle Firestore Timestamp conversion properly
+      let createdAt: Date;
+      if (data.createdAt instanceof Timestamp) {
+        createdAt = data.createdAt.toDate();
+      } else if (data.createdAt?.seconds) {
+        createdAt = new Date(data.createdAt.seconds * 1000);
+      } else {
+        createdAt = new Date(); // Fallback to current date if no timestamp
+      }
+      
+      return {
+        id: docSnapshot.id,
+        styleAnalysis: data?.styleAnalysis || '',
+        recommendations: data?.recommendations || [],
+        colorPalette: data?.colorPalette || [],
+        brandingTips: data?.brandingTips || [],
+        referenceImage: data?.referenceImage,
+        genre: data?.genre,
+        style: data?.style,
+        createdAt: createdAt,
+        userId: data?.userId
+      };
+    } catch (error) {
+      console.error("Error retrieving result by ID:", error);
+      return null;
     }
   }
 };

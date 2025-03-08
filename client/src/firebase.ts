@@ -1,10 +1,19 @@
 /**
  * Firebase setup for the client
  * Initializes Firebase app, auth, Firestore, and storage
+ * 
+ * Updated with improved persistence configuration for production
  */
 import { initializeApp, FirebaseApp, FirebaseOptions } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { 
+  getFirestore, 
+  Firestore, 
+  initializeFirestore, 
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  CACHE_SIZE_UNLIMITED
+} from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
 /**
@@ -48,28 +57,21 @@ try {
 // Initialize Firebase app
 const app = initializeApp(enhancedConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Initialize Firestore with optimized cache settings for production
+// Using persistentMultipleTabManager allows multi-tab sync
+// This replaces the deprecated enableIndexedDbPersistence method
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+    tabManager: persistentMultipleTabManager()
+  })
+});
+
 const storage = getStorage(app);
 
-// Enable offline persistence for Firestore (with error handling)
-try {
-  enableIndexedDbPersistence(db).then(() => {
-    console.log("Firestore persistence enabled");
-  }).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn("Multiple tabs open, persistence can only be enabled in one tab at a a time.");
-    } else if (err.code === 'unimplemented') {
-      console.warn("The current browser does not support all of the features required to enable persistence");
-    } else {
-      console.error("Error enabling Firestore persistence:", err);
-    }
-  });
-} catch (error) {
-  console.error("Error setting up Firestore persistence:", error);
-}
-
 // Log initialization success
-console.log("Firebase initialized with enhanced network resilience");
+console.log("Firebase initialized with enhanced network resilience and multi-tab support");
 
 // Export the initialized services
 export { app, auth, db, storage };

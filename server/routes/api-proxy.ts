@@ -14,6 +14,9 @@ import { log } from '../vite';
 import { UploadedFile } from 'express-fileupload';
 import path from 'path';
 import fs from 'fs';
+import { db } from '../firebase';
+import { Timestamp } from 'firebase-admin/firestore';
+import { authenticate } from '../middleware/auth';
 
 // Definir el tipo correcto para las solicitudes con archivos
 import { FileArray } from 'express-fileupload';
@@ -2795,6 +2798,123 @@ router.get('/proxy/piapi/video/status', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: error.message || 'Error al verificar el estado de la generación de video'
+    });
+  }
+});
+
+/**
+ * Endpoint para guardar resultados de Kling en Firestore
+ * Soporta los tipos: try-on, lipsync, effects
+ */
+router.post('/proxy/kling/save-result', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { type, result } = req.body;
+    const userId = req.user?.uid || 'anonymous';
+    
+    if (!type || !result) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing type or result data',
+      });
+    }
+    
+    console.log(`Guardando resultado de tipo ${type} para usuario ${userId}`);
+    
+    // Colección en Firestore donde guardaremos los resultados
+    const collection = `kling_${type}_results`;
+    
+    // Preparar los datos para guardar en Firestore
+    const dataToSave = {
+      ...result,
+      userId,
+      createdAt: Timestamp.now(),
+      type
+    };
+    
+    // Guardar en Firestore
+    const docRef = await db.collection(collection).add(dataToSave);
+    console.log(`Resultado guardado con ID: ${docRef.id}`);
+    
+    return res.json({
+      success: true,
+      id: docRef.id,
+      message: 'Result saved successfully'
+    });
+  } catch (error: any) {
+    console.error('Error saving Kling result to Firestore:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error saving result'
+    });
+  }
+});
+
+/**
+ * Endpoint para obtener los resultados guardados de Kling desde Firestore
+ * Filtra por tipo: try-on, lipsync, effects, o all para todos
+ */
+router.get('/proxy/kling/results', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { type = 'all' } = req.query;
+    const userId = req.user?.uid || 'anonymous';
+    
+    console.log(`Obteniendo resultados de Kling, tipo: ${type}, usuario: ${userId}`);
+    
+    let results: any[] = [];
+    
+    if (type === 'all') {
+      // Obtener resultados de todos los tipos
+      const tryOnSnapshot = await db.collection('kling_try-on_results')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+        
+      const lipsyncSnapshot = await db.collection('kling_lipsync_results')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+        
+      const effectsSnapshot = await db.collection('kling_effects_results')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+      
+      // Convertir los documentos a objetos y combinar los resultados
+      results = [
+        ...tryOnSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() })),
+        ...lipsyncSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() })),
+        ...effectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() }))
+      ];
+      
+      // Ordenar por fecha de creación (más reciente primero)
+      results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else {
+      // Obtener resultados de un tipo específico
+      const collection = `kling_${type}_results`;
+      const snapshot = await db.collection(collection)
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+      
+      results = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        createdAt: doc.data().createdAt.toDate()
+      }));
+    }
+    
+    console.log(`Se encontraron ${results.length} resultados`);
+    
+    return res.json({
+      success: true,
+      results
+    });
+  } catch (error: any) {
+    console.error('Error obteniendo resultados de Kling:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error retrieving results',
+      results: []
     });
   }
 });
