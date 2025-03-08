@@ -469,6 +469,47 @@ router.post('/process-image', async (req, res) => {
 });
 
 /**
+ * Endpoint para validar imágenes para Kling API
+ * Este endpoint verifica si una imagen cumple con los requisitos para ser usada
+ * con la API de Kling y devuelve información detallada sobre la imagen.
+ */
+router.post('/validate-image', async (req, res) => {
+  try {
+    const { imageDataUrl } = req.body;
+    
+    if (!imageDataUrl) {
+      return res.status(400).json({
+        isValid: false,
+        errorMessage: 'Se requiere una imagen en formato data URL'
+      });
+    }
+    
+    console.log('Validando imagen para compatibilidad con Kling API');
+    
+    // Usar la función unificada para validar la imagen
+    const result = await processImageForKling(imageDataUrl);
+    
+    // Adaptamos la respuesta al formato esperado por el cliente
+    return res.json({
+      isValid: result.isValid,
+      errorMessage: result.errorMessage || null,
+      width: result.width,
+      height: result.height,
+      originalFormat: result.originalFormat,
+      sizeInMB: result.sizeInMB,
+      processedImage: result.isValid ? (result.processedImage || result.normalizedUrl) : null
+    });
+  } catch (error: any) {
+    console.error('❌ Error en la validación de imagen:', error);
+    
+    return res.status(500).json({
+      isValid: false,
+      errorMessage: error.message || 'Error interno del servidor al validar la imagen'
+    });
+  }
+});
+
+/**
  * Endpoint para iniciar una tarea de Lipsync
  * Conecta directamente con la API de Kling
  */

@@ -32,6 +32,7 @@ import ImageGeneratorSimplePage from "@/pages/image-generator-simple";
 import InstagramBoostPage from "@/pages/instagram-boost";
 import KlingToolsPage from "@/pages/kling-tools";
 import KlingStorePage from "@/pages/kling-store";
+import KlingTestPage from "@/pages/kling-test";
 import ManagerToolsPage from "@/pages/manager-tools";
 import MerchandisePage from "@/pages/merchandise";
 import MessagesPage from "@/pages/messages";
@@ -196,6 +197,7 @@ const Router = () => {
   const WrappedFaceSwapPage = withPageWrapper(FaceSwapPage);
   const WrappedKlingToolsPage = withPageWrapper(KlingToolsPage);
   const WrappedKlingStorePage = withPageWrapper(KlingStorePage);
+  const WrappedKlingTestPage = withPageWrapper(KlingTestPage);
   const WrappedVideoGenerationTestPage = withPageWrapper(VideoGenerationTestPage);
   const WrappedMusicMasteringPage = withPageWrapper(MusicMasteringPage);
   const WrappedVirtualRecordLabelPage = withPageWrapper(VirtualRecordLabelPage);
@@ -265,6 +267,7 @@ const Router = () => {
         <Route path="/face-swap" component={WrappedFaceSwapPage} />
         <Route path="/kling-tools" component={WrappedKlingToolsPage} />
         <Route path="/kling-store" component={WrappedKlingStorePage} />
+        <Route path="/kling-test" component={WrappedKlingTestPage} />
         <Route path="/video-generation-test" component={WrappedVideoGenerationTestPage} />
         <Route path="/music-mastering" component={WrappedMusicMasteringPage} />
         <Route path="/vrl" component={WrappedVirtualRecordLabelPage} />
