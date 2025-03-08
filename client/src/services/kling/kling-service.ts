@@ -16,9 +16,21 @@ export interface TryOnResult {
   success: boolean;
   taskId?: string;
   status?: string;
-  error?: string;
+  error?: string | {
+    message?: string;
+    error?: string;
+    code?: number | string;
+    [key: string]: any; // Para cualquier otra propiedad que pueda contener el objeto de error
+  };
   images?: Array<{url: string} | string>;
-  errorMessage?: string;
+  errorMessage?: string | {
+    message?: string;
+    error?: string;
+    code?: number | string;
+    [key: string]: any; // Para cualquier otra propiedad que pueda contener el objeto de error
+  };
+  resultImage?: string; // Para mantener compatibilidad con la interfaz del servidor
+  requestId?: string;  // Para mantener compatibilidad con la interfaz del servidor
 }
 
 // Servicio para interactuar con la API de Kling

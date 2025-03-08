@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { klingService, TryOnResult } from '@/services/kling/kling-service';
+
+interface ImageResponse {
+  url?: string;
+}
 
 export function SimpleTryOnComponent() {
   const [modelImage, setModelImage] = useState<string | null>(null);
@@ -36,24 +40,44 @@ export function SimpleTryOnComponent() {
 
   const checkTaskStatus = async (taskId: string) => {
     try {
-      const result = await klingService.checkTryOnStatus(taskId);
+      const statusResponse = await axios.post('/api/kling/try-on/status', { taskId });
+      const responseData = statusResponse.data;
 
-      if (result.status === 'completed') {
-        // Manejar las diferentes formas en que puede venir la URL de la imagen resultante
-        if (result.images && result.images.length > 0) {
-          const imageResult = result.images[0];
+      if (responseData.status === 'completed') {
+        if (responseData.images && responseData.images.length > 0) {
+          const imageResult = responseData.images[0];
           if (typeof imageResult === 'string') {
             setResultImage(imageResult);
           } else if (typeof imageResult === 'object' && 'url' in imageResult) {
-            setResultImage(imageResult.url);
+            setResultImage((imageResult as ImageResponse).url || '');
           }
+        } else if (responseData.resultImage) {
+          setResultImage(responseData.resultImage);
         }
         
         setIsLoading(false);
         toast({ title: "¡Proceso completado!", description: "Imagen generada correctamente." });
-      } else if (result.status === 'failed') {
+      } else if (responseData.status === 'failed') {
         setIsLoading(false);
-        throw new Error(result.errorMessage || 'El proceso falló. Intenta con otras imágenes.');
+        
+        // Extraer mensaje de error, manejar caso cuando es objeto
+        let errorMessage = 'El proceso falló. Intenta con otras imágenes.';
+        
+        if (responseData.errorMessage) {
+          if (typeof responseData.errorMessage === 'string') {
+            errorMessage = responseData.errorMessage;
+          } else if (typeof responseData.errorMessage === 'object' && responseData.errorMessage !== null) {
+            errorMessage = JSON.stringify(responseData.errorMessage);
+          }
+        } else if (responseData.error) {
+          if (typeof responseData.error === 'string') {
+            errorMessage = responseData.error;
+          } else if (typeof responseData.error === 'object' && responseData.error !== null) {
+            errorMessage = JSON.stringify(responseData.error);
+          }
+        }
+        
+        throw new Error(errorMessage);
       } else {
         // Si aún está procesando, consultar nuevamente en 3 segundos
         setTimeout(() => checkTaskStatus(taskId), 3000);
@@ -83,17 +107,40 @@ export function SimpleTryOnComponent() {
       setIsLoading(true);
       setResultImage(null);
       
-      const result = await klingService.startTryOn(modelImage, clothingImage);
+      const requestBody = {
+        model: "kling",
+        task_type: "ai_try_on",
+        input: {
+          model_input: modelImage,
+          dress_input: clothingImage,
+          batch_size: 1
+        }
+      };
 
-      if (result.success && result.taskId) {
+      const response = await axios.post('/api/kling/try-on/start', requestBody);
+      const responseData = response.data;
+
+      if (responseData.success && responseData.taskId) {
         toast({ 
           title: "Proceso iniciado", 
           description: "Las imágenes se están procesando. Este proceso puede tardar entre 10-20 segundos." 
         });
-        checkTaskStatus(result.taskId);
+        checkTaskStatus(responseData.taskId);
       } else {
         setIsLoading(false);
-        throw new Error(result.error || "Error al iniciar el proceso. Verifica las imágenes e intenta nuevamente.");
+        
+        // Extraer mensaje de error
+        let errorMessage = "Error al iniciar el proceso. Verifica las imágenes e intenta nuevamente.";
+        
+        if (responseData.error) {
+          if (typeof responseData.error === 'string') {
+            errorMessage = responseData.error;
+          } else if (typeof responseData.error === 'object' && responseData.error !== null) {
+            errorMessage = JSON.stringify(responseData.error);
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error) {
       setIsLoading(false);
@@ -116,7 +163,7 @@ export function SimpleTryOnComponent() {
               type="file" 
               onChange={(e) => handleFileUpload(e, setModelImage)} 
               className="cursor-pointer"
-              accept="image/*"
+              accept="image/jpeg"
               disabled={isLoading}
             />
             {modelImage && (
@@ -138,7 +185,7 @@ export function SimpleTryOnComponent() {
               type="file" 
               onChange={(e) => handleFileUpload(e, setClothingImage)} 
               className="cursor-pointer"
-              accept="image/*"
+              accept="image/jpeg"
               disabled={isLoading}
             />
             {clothingImage && (
@@ -160,7 +207,7 @@ export function SimpleTryOnComponent() {
           disabled={!modelImage || !clothingImage || isLoading}
           className="w-full md:w-auto"
         >
-          <Sparkles className="mr-2 h-4 w-4" /> 
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
           {isLoading ? 'Procesando...' : 'Probar Virtualmente'}
         </Button>
         
