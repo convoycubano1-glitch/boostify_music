@@ -17,8 +17,16 @@ import {
   Sparkles,
   Star,
   History,
-  Bookmark
+  Bookmark,
+  Info,
+  Lightbulb,
+  TrendingUp,
+  Calendar,
+  Clock,
+  Award,
+  CheckCircle2
 } from "lucide-react";
+import { agentUsageService } from "@/lib/services/agent-usage-service";
 import { ComposerAgent } from "@/components/ai/composer-agent";
 import { VideoDirectorAgent } from "@/components/ai/video-director-agent";
 import { MarketingAgent } from "@/components/ai/marketing-agent";
@@ -37,6 +45,14 @@ import {
   CardHeader,
   CardTitle 
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -50,7 +66,7 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
-// Agentes con información mejorada
+// Agentes con información mejorada y metadatos adicionales
 const agentInfo = [
   {
     id: "composer",
@@ -60,6 +76,19 @@ const agentInfo = [
     color: "from-purple-600 to-blue-600",
     category: "creative",
     component: ComposerAgent,
+    trending: true,
+    useCases: [
+      "Create original songs matching your style",
+      "Generate lyrics for specific themes",
+      "Experiment with new music genres"
+    ],
+    quickTip: "Include references to similar artists for better results",
+    benefits: [
+      "Save time in creative processes",
+      "Overcome writer's block",
+      "Explore new musical possibilities"
+    ],
+    recommendedWith: ["video-director", "marketing"]
   },
   {
     id: "video-director",
@@ -69,6 +98,19 @@ const agentInfo = [
     color: "from-rose-500 to-pink-600",
     category: "visual",
     component: VideoDirectorAgent,
+    trending: true,
+    useCases: [
+      "Conceptualize innovative music videos",
+      "Create detailed scene-by-scene scripts",
+      "Get visual ideas that complement your music"
+    ],
+    quickTip: "Include the emotional tone you want to convey for better concepts",
+    benefits: [
+      "Reduce pre-production planning time",
+      "Find unique visual concepts",
+      "Better align visuals with your music"
+    ],
+    recommendedWith: ["composer", "social-media"]
   },
   {
     id: "marketing",
@@ -78,6 +120,19 @@ const agentInfo = [
     color: "from-blue-500 to-indigo-600",
     category: "marketing",
     component: MarketingAgent,
+    trending: false,
+    useCases: [
+      "Create launch plans for singles and albums",
+      "Develop optimized social media campaigns",
+      "Analyze metrics and improve existing strategies"
+    ],
+    quickTip: "Clearly define your target audience for more effective strategies",
+    benefits: [
+      "Increase audience reach",
+      "Optimize marketing budget",
+      "Personalize promotion for different platforms"
+    ],
+    recommendedWith: ["social-media", "manager"]
   },
   {
     id: "social-media",
@@ -87,6 +142,19 @@ const agentInfo = [
     color: "from-green-500 to-emerald-600",
     category: "marketing",
     component: SocialMediaAgent,
+    trending: true,
+    useCases: [
+      "Develop optimized content calendars",
+      "Generate post ideas to increase engagement",
+      "Create platform-specific strategies"
+    ],
+    quickTip: "Share examples of successful previous posts for better recommendations",
+    benefits: [
+      "Save time on content planning",
+      "Maintain consistent posting schedule",
+      "Increase follower engagement"
+    ],
+    recommendedWith: ["marketing", "video-director"]
   },
   {
     id: "merchandise",
@@ -96,6 +164,19 @@ const agentInfo = [
     color: "from-amber-500 to-orange-600",
     category: "visual",
     component: MerchandiseAgent,
+    trending: false,
+    useCases: [
+      "Design unique merch based on your artistic identity",
+      "Create themed collections for events and releases",
+      "Get suggestions to maximize revenue with merchandise"
+    ],
+    quickTip: "Provide visual elements of your brand for consistent designs",
+    benefits: [
+      "Create multiple design concepts quickly",
+      "Align merchandise with your brand identity",
+      "Expand revenue streams beyond music"
+    ],
+    recommendedWith: ["marketing", "manager"]
   },
   {
     id: "manager",
@@ -105,6 +186,19 @@ const agentInfo = [
     color: "from-cyan-500 to-blue-600",
     category: "business",
     component: ManagerAgent,
+    trending: false,
+    useCases: [
+      "Plan and optimize your music career path",
+      "Receive guidance on strategic decisions",
+      "Get help with contracts and negotiations"
+    ],
+    quickTip: "Be specific about your short and long-term goals for better advice",
+    benefits: [
+      "Make more informed business decisions",
+      "Develop a structured career plan",
+      "Optimize resources and opportunities"
+    ],
+    recommendedWith: ["marketing", "social-media"]
   }
 ];
 
@@ -126,123 +220,123 @@ export default function AIAgentsPage() {
   const [recentAgents, setRecentAgents] = useState<string[]>([]);
   const [bookmarkedAgents, setBookmarkedAgents] = useState<string[]>([]);
   
-  // Cargar historial reciente y agentes favoritos de Firestore
+  // Cargar historial reciente y agentes favoritos
   useEffect(() => {
-    // Si no hay usuario, usar datos de localStorage
-    if (!user) {
+    const loadUserPreferences = async () => {
       try {
-        const storedRecent = localStorage.getItem('recentAgents');
-        const storedBookmarked = localStorage.getItem('bookmarkedAgents');
-        
-        // Verificar que los datos de localStorage sean arrays válidos
-        const parsedRecent = storedRecent ? JSON.parse(storedRecent) : null;
-        const parsedBookmarked = storedBookmarked ? JSON.parse(storedBookmarked) : null;
-        
-        setRecentAgents(
-          Array.isArray(parsedRecent) && parsedRecent.length > 0 
-            ? parsedRecent 
-            : ["composer", "marketing", "video-director"]
-        );
-        
-        setBookmarkedAgents(
-          Array.isArray(parsedBookmarked) && parsedBookmarked.length > 0 
-            ? parsedBookmarked 
-            : ["composer", "manager"]
-        );
-      } catch (parseError) {
-        console.error("Error parsing localStorage data:", parseError);
-        // Fallback seguro usando valores predeterminados
-        setRecentAgents(["composer", "marketing", "video-director"]);
-        setBookmarkedAgents(["composer", "manager"]);
-      }
-      return;
-    }
-    
-    const loadUserData = async () => {
-      try {
-        // Importamos las funciones de Firebase aquí para evitar problemas si no hay conexión a Firebase
-        const { db } = await import('@/lib/firebase');
-        const { doc, getDoc, collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
-        
-        // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
+        // Usar el servicio de agentes para obtener los datos del usuario
         const userId = user?.uid || 'anonymous';
         console.log(`Loading user data for ${userId}`);
         
-        // Consultar preferencias del usuario para favoritos
-        const userPrefsRef = doc(db, 'userPreferences', userId);
-        const userPrefsSnap = await getDoc(userPrefsRef);
+        // Obtener agentes favoritos usando el servicio
+        const savedBookmarks = await agentUsageService.getBookmarkedAgents(userId);
         
-        if (userPrefsSnap.exists()) {
-          const userData = userPrefsSnap.data();
-          console.log("User preferences found:", userData);
-          
-          // Cargar agentes favoritos (con validación de tipo)
-          if (userData.bookmarkedAgents && Array.isArray(userData.bookmarkedAgents)) {
-            setBookmarkedAgents(userData.bookmarkedAgents);
-          } else {
-            console.log("No valid bookmarked agents found in user data, using defaults");
+        // Verificar si tenemos datos válidos
+        if (savedBookmarks && Array.isArray(savedBookmarks) && savedBookmarks.length > 0) {
+          setBookmarkedAgents(savedBookmarks);
+          console.log("Bookmarked agents loaded from service:", savedBookmarks);
+        } else {
+          // Si no hay datos en el servicio, intentar con localStorage como fallback
+          try {
+            const storedBookmarked = localStorage.getItem('bookmarkedAgents');
+            const parsedBookmarked = storedBookmarked ? JSON.parse(storedBookmarked) : null;
+            
+            if (Array.isArray(parsedBookmarked) && parsedBookmarked.length > 0) {
+              setBookmarkedAgents(parsedBookmarked);
+              console.log("Bookmarked agents loaded from localStorage:", parsedBookmarked);
+            } else {
+              // Si no hay datos en localStorage, usar valores predeterminados
+              setBookmarkedAgents(["composer", "manager"]);
+              console.log("Using default bookmarked agents");
+            }
+          } catch (localError) {
+            console.error("Error loading bookmarks from localStorage:", localError);
             setBookmarkedAgents(["composer", "manager"]);
           }
+        }
+        
+        // Obtener agentes recientes usando el servicio
+        const savedRecentAgents = await agentUsageService.getRecentAgents(userId);
+        
+        // Verificar si tenemos datos válidos
+        if (savedRecentAgents && Array.isArray(savedRecentAgents) && savedRecentAgents.length > 0) {
+          setRecentAgents(savedRecentAgents);
+          console.log("Recent agents loaded from service:", savedRecentAgents);
+          return; // Si ya tenemos datos válidos, no es necesario seguir
+        } 
+        
+        // Si no hay datos en el servicio, intentar con localStorage como fallback
+        try {
+          const storedRecent = localStorage.getItem('recentAgents');
+          const parsedRecent = storedRecent ? JSON.parse(storedRecent) : null;
           
-          // Cargar agentes recientes guardados (con validación de tipo)
-          if (userData.recentAgents && Array.isArray(userData.recentAgents)) {
-            setRecentAgents(userData.recentAgents);
-            // Si hay agentes recientes guardados, no necesitamos consultar el historial
-            return;
+          if (Array.isArray(parsedRecent) && parsedRecent.length > 0) {
+            setRecentAgents(parsedRecent);
+            console.log("Recent agents loaded from localStorage:", parsedRecent);
+            return; // Si ya obtuvimos datos, no es necesario seguir
           }
-        } else {
-          console.log("No user preferences document found, creating new preferences");
-          // Si no hay documento de preferencias, crearlo con valores predeterminados
-          // Pero lo haremos más adelante cuando el usuario interactúe con la app
+        } catch (localError) {
+          console.error("Error loading recent agents from localStorage:", localError);
         }
         
-        // Consultar historial reciente basado en las últimas interacciones
-        const recentAgentTypes = new Set<string>();
+        // Si todavía no tenemos datos, buscar en las colecciones
+        console.log("No stored interactions found, checking collections...");
         
-        // Importar explícitamente AGENT_COLLECTIONS para asegurar su disponibilidad
-        const { AGENT_COLLECTIONS } = await import('@/lib/api/openrouteraiagents');
-        
-        // Consulta en todas las colecciones de agentes
-        for (const agentType of Object.keys(AGENT_COLLECTIONS)) {
-          try {
-            const collectionName = AGENT_COLLECTIONS[agentType];
-            const recentQuery = query(
-              collection(db, collectionName), 
-              where('userId', '==', userId),
-              orderBy('timestamp', 'desc'),
-              limit(3)
-            );
-            
-            const querySnapshot = await getDocs(recentQuery);
-            if (!querySnapshot.empty) {
-              recentAgentTypes.add(agentType);
-              console.log(`Found recent interactions with ${agentType} agent`);
+        try {
+          // Importamos las funciones de Firebase aquí para evitar problemas 
+          const { db } = await import('@/lib/firebase');
+          const { collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
+          const { AGENT_COLLECTIONS } = await import('@/lib/api/openrouteraiagents');
+          
+          // Consultar historial reciente basado en las últimas interacciones
+          const recentAgentTypes = new Set<string>();
+          
+          // Consulta en todas las colecciones de agentes
+          for (const agentType of Object.keys(AGENT_COLLECTIONS)) {
+            try {
+              const collectionName = AGENT_COLLECTIONS[agentType];
+              const recentQuery = query(
+                collection(db, collectionName), 
+                where('userId', '==', userId),
+                orderBy('timestamp', 'desc'),
+                limit(3)
+              );
+              
+              const querySnapshot = await getDocs(recentQuery);
+              if (!querySnapshot.empty) {
+                recentAgentTypes.add(agentType);
+                console.log(`Found recent interactions with ${agentType} agent`);
+              }
+            } catch (error) {
+              console.error(`Error querying collection for ${agentType}:`, error);
             }
-          } catch (error) {
-            console.error(`Error querying collection for ${agentType}:`, error);
           }
-        }
-        
-        if (recentAgentTypes.size > 0) {
-          // Convertir el Set a un Array compatible con TypeScript
-          const recentAgentsArray = Array.from(recentAgentTypes);
-          console.log("Setting recent agents from Firestore:", recentAgentsArray);
-          setRecentAgents(recentAgentsArray);
-        } else {
-          console.log("No recent agent interactions found, using defaults");
-          // Usar valores predeterminados si no hay interacciones recientes
+          
+          if (recentAgentTypes.size > 0) {
+            // Convertir el Set a un Array compatible con TypeScript
+            const recentAgentsArray = Array.from(recentAgentTypes);
+            console.log("Setting recent agents from Firestore:", recentAgentsArray);
+            setRecentAgents(recentAgentsArray);
+          } else {
+            // Usar valores predeterminados si no hay interacciones recientes
+            console.log("No recent agent interactions found, using defaults");
+            setRecentAgents(["composer", "marketing", "video-director"]);
+          }
+        } catch (firebaseError) {
+          console.error("Error querying Firestore collections:", firebaseError);
+          // Usar valores predeterminados en caso de error
           setRecentAgents(["composer", "marketing", "video-director"]);
         }
         
       } catch (error) {
-        console.error("Error loading user data from Firestore:", error);
+        console.error("Error loading user preferences:", error);
         // Usar valores predeterminados en caso de error
         setRecentAgents(["composer", "marketing", "video-director"]);
         setBookmarkedAgents(["composer", "manager"]);
       }
     };
     
-    loadUserData();
+    loadUserPreferences();
   }, [user]);
 
   // Filtrar agentes según búsqueda y categoría
@@ -263,43 +357,64 @@ export default function AIAgentsPage() {
       console.error('Invalid agent ID provided to toggleBookmark');
       return;
     }
+
+    try {
+      // Primero intentamos usar el servicio de agentes que maneja
+      // tanto Firestore como localStorage de manera centralizada
+      const userId = user?.uid || 'anonymous';
+      console.log(`Toggling bookmark for agent ${agentId} for user ${userId}`);
+      
+      // El servicio devuelve true si se añadió, false si se quitó
+      const isNowBookmarked = await agentUsageService.toggleBookmark(agentId, userId);
+      
+      // Luego obtenemos la lista actualizada 
+      const updatedBookmarks = await agentUsageService.getBookmarkedAgents(userId);
+      
+      // Si el servicio nos devuelve datos válidos, actualizamos la UI
+      if (updatedBookmarks) {
+        setBookmarkedAgents(updatedBookmarks);
+        console.log(`Agent ${agentId} ${isNowBookmarked ? 'added to' : 'removed from'} bookmarks via service`);
+        return;
+      }
+    } catch (error) {
+      console.error('Error using agent usage service for bookmarks:', error);
+    }
+    
+    // Si el servicio falló o devolvió datos vacíos, usamos el enfoque anterior
+    console.log("Using fallback method for bookmarks");
     
     let newBookmarked: string[] = [];
     
     if (bookmarkedAgents.includes(agentId)) {
       // Quitar de favoritos
       newBookmarked = bookmarkedAgents.filter(id => id !== agentId);
-      console.log(`Removing ${agentId} from bookmarks`);
+      console.log(`Removing ${agentId} from bookmarks (fallback)`);
     } else {
       // Añadir a favoritos
       newBookmarked = [...bookmarkedAgents, agentId];
-      console.log(`Adding ${agentId} to bookmarks`);
+      console.log(`Adding ${agentId} to bookmarks (fallback)`);
     }
     
     // Actualizar estado local inmediatamente para mejor UX
     setBookmarkedAgents(newBookmarked);
     
-    // Guardar en localStorage para usuarios no autenticados
-    if (!user) {
-      try {
-        localStorage.setItem('bookmarkedAgents', JSON.stringify(newBookmarked));
-        console.log('Bookmarks saved to localStorage:', newBookmarked);
-      } catch (error) {
-        console.error('Error saving bookmarks to localStorage:', error);
-      }
-      return;
+    // Guardar siempre en localStorage como respaldo
+    try {
+      localStorage.setItem('bookmarkedAgents', JSON.stringify(newBookmarked));
+      console.log('Bookmarks saved to localStorage:', newBookmarked);
+    } catch (error) {
+      console.error('Error saving bookmarks to localStorage:', error);
     }
+    
+    // Si no hay usuario autenticado, terminamos aquí
+    if (!user) return;
     
     try {
       // Guardar en Firestore para usuarios autenticados
       const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase');
       
-      // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
-      const userId = user?.uid || 'anonymous';
-      console.log(`Saving bookmarks for user ${userId}`);
-      
-      const userPrefsRef = doc(db, 'userPreferences', userId);
+      const userPrefsRef = doc(db, 'userPreferences', user.uid);
       
       // Verificar si el documento existe
       const userPrefsSnap = await getDoc(userPrefsRef);
@@ -315,28 +430,16 @@ export default function AIAgentsPage() {
       } else {
         // Crear nuevo documento
         await setDoc(userPrefsRef, {
-          userId: userId,
-          bookmarkedAgents: newBookmarked,
+          userId: user.uid,
           recentAgents: recentAgents, // Guardar también los agentes recientes actuales
+          bookmarkedAgents: newBookmarked,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
         console.log('New preferences document created in Firestore with bookmarks');
       }
-      
-      console.log('Bookmarks saved to Firestore:', newBookmarked);
     } catch (error) {
       console.error('Error saving bookmarks to Firestore:', error);
-      // Si hay error, revertir al estado anterior para mantener consistencia
-      setBookmarkedAgents(bookmarkedAgents);
-      
-      // Guardar en localStorage como fallback si falla Firestore
-      try {
-        localStorage.setItem('bookmarkedAgents', JSON.stringify(newBookmarked));
-        console.log('Bookmarks saved to localStorage as fallback');
-      } catch (localError) {
-        console.error('Error saving bookmarks to localStorage:', localError);
-      }
     }
   };
 
@@ -347,6 +450,31 @@ export default function AIAgentsPage() {
       console.error('Invalid agent ID provided to updateRecentAgents');
       return;
     }
+    
+    try {
+      // Primero, registrar el uso del agente en nuestro servicio
+      // Esto manejará tanto usuarios autenticados como anónimos
+      const userId = user?.uid || 'anonymous';
+      console.log(`Recording usage of agent ${agentId} for user ${userId}`);
+      
+      await agentUsageService.recordAgentUsage(agentId, userId);
+      
+      // Luego obtener la lista actualizada de agentes recientes
+      const updatedRecentAgents = await agentUsageService.getRecentAgents(userId);
+      
+      // Actualizar el estado local para la UI
+      if (updatedRecentAgents && updatedRecentAgents.length > 0) {
+        setRecentAgents(updatedRecentAgents);
+        console.log('Recent agents updated from service:', updatedRecentAgents);
+        return;
+      }
+    } catch (error) {
+      console.error('Error using agent usage service:', error);
+    }
+    
+    // Si llegamos aquí, el servicio falló o devolvió datos vacíos
+    // Usamos el enfoque anterior como respaldo
+    console.log("Using fallback method for recent agents");
     
     // Evitar duplicados moviendo el agentId al principio si ya existe
     let updatedRecentAgents: string[] = [];
@@ -592,7 +720,20 @@ export default function AIAgentsPage() {
                                 <div className={`p-2 rounded-lg bg-gradient-to-br ${agent.color}`}>
                                   <agent.icon className="h-5 w-5 text-white" />
                                 </div>
-                                <CardTitle className="text-lg">{agent.name}</CardTitle>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <CardTitle className="text-lg text-white">{agent.name}</CardTitle>
+                                    {agent.trending && (
+                                      <Badge className="bg-orange-500 text-white hover:bg-orange-600 text-xs flex items-center gap-1">
+                                        <TrendingUp className="h-3 w-3" />
+                                        <span>Trending</span>
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <CardDescription className="text-gray-400 mt-1">
+                                    {agent.description}
+                                  </CardDescription>
+                                </div>
                               </div>
                               <Button 
                                 variant="ghost" 
@@ -622,6 +763,95 @@ export default function AIAgentsPage() {
                             </CardFooter>
                           </Card>
                         );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+                
+                {/* Recommended based on history */}
+                {recentAgents.length > 0 && (
+                  <motion.div variants={item} className="space-y-4 mt-8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Award className="h-5 w-5 text-orange-500 mr-2" />
+                        <h2 className="text-xl font-semibold text-white">Recomendaciones personalizadas</h2>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="bg-orange-500/10 p-2 rounded-full">
+                              <Info className="h-4 w-4 text-orange-500" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-xs">
+                            <p>Sugerencias basadas en tus interacciones previas y preferencias personales.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {recentAgents.slice(0, 1).map(recentAgentId => {
+                        const recentAgent = agentInfo.find(a => a.id === recentAgentId);
+                        if (!recentAgent || !recentAgent.recommendedWith) return null;
+                        
+                        // Mostrar agentes recomendados basados en el agente usado recientemente
+                        return recentAgent.recommendedWith.map(recommendedId => {
+                          const recommendedAgent = agentInfo.find(a => a.id === recommendedId);
+                          if (!recommendedAgent) return null;
+                          return (
+                            <Card 
+                              key={`recommendation-${recommendedAgent.id}`}
+                              className="bg-[#1C1C24] border-[#27272A] border-orange-500/30 hover:border-orange-500 transition-all duration-300 cursor-pointer group"
+                              onClick={() => {
+                                setSelectedAgent(recommendedAgent.id);
+                                setActiveTab("agents");
+                              }}
+                            >
+                              <div className="h-2 w-full bg-gradient-to-r rounded-t-lg" style={{ backgroundImage: `linear-gradient(to right, var(--${recommendedAgent.color}))` }}></div>
+                              <CardHeader className="flex flex-row items-start justify-between pb-2">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${recommendedAgent.color}`}>
+                                      <recommendedAgent.icon className="h-5 w-5 text-white" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-lg text-white">{recommendedAgent.name}</CardTitle>
+                                      <p className="text-xs text-orange-500 mt-1">
+                                        Recomendado porque usaste <span className="font-medium">{recentAgent.name}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleBookmark(recommendedAgent.id);
+                                  }}
+                                >
+                                  <Star className={`h-4 w-4 ${bookmarkedAgents.includes(recommendedAgent.id) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'}`} />
+                                </Button>
+                              </CardHeader>
+                              <CardContent className="py-2">
+                                <CardDescription className="text-gray-400">
+                                  {recommendedAgent.description}
+                                </CardDescription>
+                              </CardContent>
+                              <CardFooter className="border-t border-[#27272A]/50 pt-3 mt-2">
+                                <Button 
+                                  variant="ghost" 
+                                  className="gap-1 text-sm font-medium text-orange-500 hover:bg-orange-500/10"
+                                >
+                                  <span>Usar agente</span>
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          )
+                        })
                       })}
                     </div>
                   </motion.div>
@@ -671,11 +901,26 @@ export default function AIAgentsPage() {
                         >
                           <div className="h-2 w-full bg-gradient-to-r rounded-t-lg" style={{ backgroundImage: `linear-gradient(to right, var(--${agent.color}))` }}></div>
                           <CardHeader className="flex flex-row items-start justify-between pb-2">
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2.5 rounded-xl bg-gradient-to-br ${agent.color}`}>
-                                <agent.icon className="h-5 w-5 text-white" />
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${agent.color}`}>
+                                  <agent.icon className="h-5 w-5 text-white" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <CardTitle className="text-lg text-white">{agent.name}</CardTitle>
+                                    {agent.trending && (
+                                      <Badge className="bg-orange-500 text-white hover:bg-orange-600 text-xs flex items-center gap-1">
+                                        <TrendingUp className="h-3 w-3" />
+                                        <span>Trending</span>
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <CardDescription className="text-gray-400 mt-1">
+                                    {agent.description}
+                                  </CardDescription>
+                                </div>
                               </div>
-                              <CardTitle className="text-lg text-white">{agent.name}</CardTitle>
                             </div>
                             <Button 
                               variant="ghost" 
@@ -689,12 +934,40 @@ export default function AIAgentsPage() {
                               <Star className={`h-4 w-4 ${bookmarkedAgents.includes(agent.id) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'}`} />
                             </Button>
                           </CardHeader>
-                          <CardContent className="py-2">
-                            <CardDescription className="text-gray-400">
-                              {agent.description}
-                            </CardDescription>
+                          <CardContent className="py-2 space-y-3">
+                            {agent.quickTip && (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-orange-500 text-sm">
+                                  <Lightbulb className="h-4 w-4" />
+                                  <span className="font-medium">Consejo rápido:</span>
+                                </div>
+                                <p className="text-gray-400 text-sm">
+                                  {agent.quickTip}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {agent.useCases && (
+                              <Accordion type="single" collapsible className="w-full">
+                                <AccordionItem value="use-cases" className="border-[#27272A]">
+                                  <AccordionTrigger className="text-sm py-2 text-gray-300 hover:text-white">
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle2 className="h-4 w-4 text-orange-500" />
+                                      <span>Casos de uso</span>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent className="text-xs text-gray-400">
+                                    <ul className="space-y-1 list-disc list-inside">
+                                      {agent.useCases.map((useCase, index) => (
+                                        <li key={index}>{useCase}</li>
+                                      ))}
+                                    </ul>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              </Accordion>
+                            )}
                           </CardContent>
-                          <CardFooter className="border-t border-[#27272A]/50 pt-3 mt-2">
+                          <CardFooter className="border-t border-[#27272A]/50 pt-3 mt-2 flex justify-between">
                             <Button 
                               variant="ghost" 
                               className="gap-1 text-sm font-medium text-orange-500 hover:bg-orange-500/10"
@@ -702,6 +975,20 @@ export default function AIAgentsPage() {
                               <span>Usar agente</span>
                               <ChevronRight className="h-4 w-4" />
                             </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-xs text-gray-500 px-2 py-1 rounded-full border border-gray-700">
+                                    {agent.category === "creative" ? "Creatividad" : 
+                                     agent.category === "marketing" ? "Marketing" :
+                                     agent.category === "visual" ? "Visual" : "Negocios"}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>Categoría del agente</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </CardFooter>
                         </Card>
                       </motion.div>
@@ -730,11 +1017,26 @@ export default function AIAgentsPage() {
                             }}
                           >
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                              <div className="flex items-center gap-2">
-                                <div className={`p-2 rounded-lg bg-gradient-to-br ${agent.color}`}>
-                                  <agent.icon className="h-5 w-5 text-white" />
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <div className={`p-2 rounded-lg bg-gradient-to-br ${agent.color}`}>
+                                    <agent.icon className="h-5 w-5 text-white" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <CardTitle className="text-lg text-white">{agent.name}</CardTitle>
+                                      {agent.trending && (
+                                        <Badge className="bg-orange-500 text-white hover:bg-orange-600 text-xs flex items-center gap-1">
+                                          <TrendingUp className="h-3 w-3" />
+                                          <span>Trending</span>
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <CardDescription className="text-gray-400 mt-1">
+                                      {agent.description}
+                                    </CardDescription>
+                                  </div>
                                 </div>
-                                <CardTitle className="text-lg">{agent.name}</CardTitle>
                               </div>
                               <Button 
                                 variant="ghost" 
@@ -749,18 +1051,40 @@ export default function AIAgentsPage() {
                               </Button>
                             </CardHeader>
                             <CardContent className="py-2">
-                              <CardDescription className="text-gray-400">
-                                {agent.description}
-                              </CardDescription>
+                              {agent.quickTip && (
+                                <div className="space-y-1 mb-2">
+                                  <div className="flex items-center gap-1 text-orange-500 text-sm">
+                                    <Lightbulb className="h-4 w-4" />
+                                    <span className="font-medium">Consejo rápido:</span>
+                                  </div>
+                                  <p className="text-gray-400 text-sm">
+                                    {agent.quickTip}
+                                  </p>
+                                </div>
+                              )}
                             </CardContent>
-                            <CardFooter>
+                            <CardFooter className="border-t border-[#27272A]/50 pt-3 mt-2 flex justify-between">
                               <Button 
                                 variant="ghost" 
-                                className="text-orange-500 hover:bg-orange-500/10 p-0 gap-1 text-sm font-medium"
+                                className="gap-1 text-sm font-medium text-orange-500 hover:bg-orange-500/10"
                               >
                                 <span>Usar agente</span>
                                 <ChevronRight className="h-4 w-4" />
                               </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-xs text-gray-500 px-2 py-1 rounded-full border border-gray-700">
+                                      {agent.category === "creative" ? "Creatividad" : 
+                                       agent.category === "marketing" ? "Marketing" :
+                                       agent.category === "visual" ? "Visual" : "Negocios"}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p>Categoría del agente</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </CardFooter>
                           </Card>
                         );
