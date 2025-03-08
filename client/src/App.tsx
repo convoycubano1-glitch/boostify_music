@@ -275,6 +275,7 @@ const Router = () => {
         <Route path="/test-progress" component={WrappedTestProgressPage} />
         <Route path="/plugins" component={WrappedPluginsPage} />
         <Route path="/try-on" component={WrappedTryOnPage} />
+        <Route path="/try-on-page" component={WrappedTryOnPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
