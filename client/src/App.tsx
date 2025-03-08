@@ -47,6 +47,7 @@ import SettingsPage from "@/pages/settings";
 import SpotifyPage from "@/pages/spotify";
 import StorePage from "@/pages/store";
 import TermsPage from "@/pages/terms";
+import TryOnPage from "@/pages/try-on-page";
 import VideosPage from "@/pages/videos";
 import VideoGenerationTestPage from "@/pages/video-generation-test";
 import YoutubeViewsPage from "@/pages/youtube-views";
@@ -201,6 +202,7 @@ const Router = () => {
   const WrappedTestProgressPage = withPageWrapper(TestProgressPage);
   const WrappedAuthPage = withPageWrapper(AuthPage);
   const WrappedPluginsPage = withPageWrapper(PluginsPage);
+  const WrappedTryOnPage = withPageWrapper(TryOnPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -269,6 +271,7 @@ const Router = () => {
         <Route path="/virtual-record-label" component={WrappedVirtualRecordLabelPage} />
         <Route path="/test-progress" component={WrappedTestProgressPage} />
         <Route path="/plugins" component={WrappedPluginsPage} />
+        <Route path="/try-on" component={WrappedTryOnPage} />
         
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />

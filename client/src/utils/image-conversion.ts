@@ -29,28 +29,33 @@ export interface ImageProcessingResult {
 }
 
 /**
- * Procesa y verifica si una imagen cumple con los requisitos de la API de Kling
+ * Verifica si una imagen cumple con los requisitos básicos de la API de Kling (versión síncrona)
+ * Esta función se mantiene por compatibilidad con código existente.
+ * Se recomienda usar la versión asíncrona processImageForKling para nuevas implementaciones.
  * 
+ * @deprecated Use processImageForKling en su lugar
  * @param imageDataUrl URL de datos de la imagen (data URL)
- * @returns Promesa con objeto de resultado de validación y procesamiento
+ * @returns Objeto con resultado de validación
  */
-export async function processImageForKling(imageDataUrl: string): Promise<ImageProcessingResult> {
+export function validateImageForKling(imageDataUrl: string): ImageProcessingResult {
+  console.warn('validateImageForKling está obsoleta, use processImageForKling que es asíncrona');
+  
   // Verificar si tenemos una imagen
   if (!imageDataUrl) {
-    return {
-      isValid: false,
-      errorMessage: 'No se proporcionó imagen'
+    return { 
+      isValid: false, 
+      errorMessage: 'No se proporcionó imagen' 
     };
   }
-
+  
   // Verificar si es una data URL de imagen
   if (!imageDataUrl.startsWith('data:image/')) {
-    return {
-      isValid: false,
-      errorMessage: 'Formato inválido: la imagen debe estar en formato data:image/...'
+    return { 
+      isValid: false, 
+      errorMessage: 'Formato inválido: la imagen debe estar en formato data:image/...' 
     };
   }
-
+  
   // Verificar si es JPEG
   const isJpeg = imageDataUrl.startsWith('data:image/jpeg') || imageDataUrl.startsWith('data:image/jpg');
   if (!isJpeg) {
@@ -59,39 +64,55 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       errorMessage: 'Solo se aceptan imágenes JPEG. Por favor, convierte la imagen antes de subirla.'
     };
   }
-
-  // Verifica si tiene el formato de encabezado correcto
-  if (!imageDataUrl.startsWith('data:image/jpeg;base64,')) {
-    // Intentamos normalizar el encabezado
-    try {
-      const base64Data = imageDataUrl.split(',')[1];
-      if (!base64Data) {
-        return {
-          isValid: false,
-          errorMessage: 'Formato inválido: no se pudieron extraer los datos base64'
-        };
-      }
-      
-      // Reconstruir con el encabezado correcto
-      const normalizedUrl = 'data:image/jpeg;base64,' + base64Data;
-      return {
-        isValid: true,
-        processedImage: normalizedUrl
-      };
-    } catch (error) {
-      console.error('Error al normalizar encabezado:', error);
-      return {
-        isValid: false,
-        errorMessage: 'Error al procesar el formato de la imagen'
-      };
-    }
-  }
-
+  
   // Si ya tiene el formato correcto
   return {
     isValid: true,
     processedImage: imageDataUrl
   };
+}
+
+/**
+ * Procesa y verifica si una imagen cumple con los requisitos de la API de Kling
+ * 
+ * Esta implementación utiliza convertToKlingFormatJpeg internamente para asegurar
+ * una conversión completa y validación estricta según los requisitos de Kling:
+ * - Formato JPEG puro sin metadatos extra
+ * - Encabezado exacto: data:image/jpeg;base64,
+ * - Dimensiones: lado corto >= 512px, lado largo <= 4096px
+ * - Tamaño máximo: 50MB
+ * 
+ * @param imageDataUrl URL de datos de la imagen (data URL)
+ * @returns Promesa con objeto de resultado de validación y procesamiento
+ */
+export async function processImageForKling(imageDataUrl: string): Promise<ImageProcessingResult> {
+  // Verificación preliminar sin procesar la imagen
+  if (!imageDataUrl) {
+    return {
+      isValid: false,
+      errorMessage: 'No se proporcionó imagen'
+    };
+  }
+
+  if (!imageDataUrl.startsWith('data:image/')) {
+    return {
+      isValid: false,
+      errorMessage: 'Formato inválido: la imagen debe estar en formato data:image/...'
+    };
+  }
+
+  // Utilizar la función especializada para procesar la imagen para Kling
+  // Esta función realiza una conversión completa y validación exhaustiva
+  try {
+    console.log('Procesando imagen con convertToKlingFormatJpeg para requisitos estrictos de Kling...');
+    return await convertToKlingFormatJpeg(imageDataUrl);
+  } catch (error: any) {
+    console.error('Error en processImageForKling:', error);
+    return {
+      isValid: false,
+      errorMessage: `Error procesando imagen: ${error?.message || 'Error desconocido'}`
+    };
+  }
 }
 
 /**

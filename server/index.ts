@@ -22,7 +22,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "img-src 'self' data: https: blob: *; " + // Allow all images
     "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.kling.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com *; " + // Extend connect-src
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com *; " + // Extend connect-src
     "media-src 'self' https: blob: *; " + // Extend media-src
     "worker-src 'self' blob:; " +
     "frame-src 'self';"

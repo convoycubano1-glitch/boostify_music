@@ -292,19 +292,23 @@ router.post('/kling/generate-image', async (req, res) => {
     try {
       // Intentar hacer la solicitud a la API externa con un timeout para evitar esperas largas
       const response = await axios.post(
-        'https://api.kling.ai/v1/images/generations',
+        'https://api.piapi.ai/api/v1/task',
         {
-          prompt,
-          negative_prompt,
-          size,
-          n,
-          style,
-          quality
+          model: "kling",
+          task_type: "text_to_image",
+          input: {
+            prompt,
+            negative_prompt,
+            size,
+            num_images: n || 1,
+            style,
+            quality
+          }
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${KLING_API_KEY}`
+            'x-api-key': PIAPI_API_KEY
           },
           timeout: 8000 // Timeout ampliado a 8 segundos para dar más tiempo a la generación
         }
@@ -514,12 +518,16 @@ router.post('/kling/generate-video', async (req, res) => {
       console.log('Parámetros para API de Kling Videos:', apiParams);
       
       const response = await axios.post(
-        'https://api.kling.ai/v1/videos/generations',
-        apiParams,
+        'https://api.piapi.ai/api/v1/task',
+        {
+          model: "kling",
+          task_type: "text_to_video",
+          input: apiParams
+        },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${KLING_API_KEY}`
+            'x-api-key': PIAPI_API_KEY
           },
           timeout: 20000 // Timeout más largo porque la generación de video toma tiempo
         }
@@ -692,10 +700,10 @@ router.get('/kling/video/:taskId', async (req, res) => {
       console.log('Verificando estado de video en Kling, task_id:', taskId);
       
       const response = await axios.get(
-        `https://api.kling.ai/v1/videos/generations/${taskId}`,
+        `https://api.piapi.ai/api/v1/task/${taskId}`,
         {
           headers: {
-            'Authorization': `Bearer ${KLING_API_KEY}`
+            'x-api-key': PIAPI_API_KEY
           },
           timeout: 10000
         }

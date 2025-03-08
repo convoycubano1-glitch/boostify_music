@@ -25,7 +25,7 @@ import { Slider } from '@/components/ui/slider';
 import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
-import { convertToKlingFormatJpeg, validateKlingImageFormat } from '@/lib/image-processing';
+import { processImageForKling } from '@/utils/image-conversion';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -424,38 +424,30 @@ export function VirtualTryOnComponent() {
         } else {
           // Intentar leerlo directamente como respaldo
           const reader = new FileReader();
-          reader.onload = () => {
+          reader.onload = async () => {
             const dataUrl = reader.result as string;
             
-            // Verificar si el formato es adecuado
-            if (validateImageData(dataUrl)) {
-              setModelImage(dataUrl);
-            } else {
-              // Si aún no es válido, intenta reformatear manualmente
-              try {
-                const parts = dataUrl.split(',');
-                if (parts.length === 2) {
-                  const strictFormat = 'data:image/jpeg;base64,' + parts[1];
-                  if (validateImageData(strictFormat)) {
-                    setModelImage(strictFormat);
-                    return;
-                  }
-                }
-                
-                // Si llegamos aquí, ningún formato funciona
+            // Procesar la imagen con la función unificada
+            try {
+              const processResult = await processImageForKling(dataUrl);
+              
+              if (processResult.isValid && processResult.processedImage) {
+                console.log('Imagen procesada correctamente con método alternativo');
+                setModelImage(processResult.processedImage);
+              } else {
                 toast({
                   title: "Formato inválido",
-                  description: "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
-                  variant: "destructive",
-                });
-              } catch (error) {
-                console.error('Error al reformatear JPEG:', error);
-                toast({
-                  title: "Error de procesamiento",
-                  description: "No se pudo procesar la imagen. Intente con otra imagen.",
+                  description: processResult.errorMessage || "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
                   variant: "destructive",
                 });
               }
+            } catch (error) {
+              console.error('Error al procesar la imagen:', error);
+              toast({
+                title: "Error de procesamiento",
+                description: "No se pudo procesar la imagen. Intente con otra imagen.",
+                variant: "destructive",
+              });
             }
           };
           reader.readAsDataURL(file);
@@ -468,7 +460,7 @@ export function VirtualTryOnComponent() {
   /**
    * Convierte una imagen a formato JPEG cumpliendo con los requisitos estrictos de Kling API
    * 
-   * Esta función utiliza nuestra utilidad mejorada convertToKlingFormatJpeg para garantizar:
+   * Esta función utiliza nuestra función unificada processImageForKling para garantizar:
    * - Formato JPEG exacto con encabezado "data:image/jpeg;base64,"
    * - Correcta validación de dimensiones, tamaño y estructura JPEG
    * - Optimización de calidad para mantener detalles mientras se cumple con requisitos
@@ -494,15 +486,15 @@ export function VirtualTryOnComponent() {
         
         console.log('Imagen cargada, procesando para requisitos estrictos de Kling...');
         
-        // Utilizamos la utilidad mejorada que realiza validaciones y conversiones más robustas
-        // Esta utilidad maneja: verificación de firma JPEG, normalización de encabezado, validación de dimensiones
-        const conversionResult = await convertToKlingFormatJpeg(sourceDataUrl);
+        // Utilizamos la función unificada processImageForKling que realiza todas 
+        // las validaciones y conversiones necesarias en un solo paso
+        const processResult = await processImageForKling(sourceDataUrl);
         
-        if (!conversionResult.isValid || !conversionResult.processedImage) {
-          console.error('Error en la conversión optimizada:', conversionResult.errorMessage);
+        if (!processResult.isValid || !processResult.processedImage) {
+          console.error('Error en el procesamiento de imagen:', processResult.errorMessage);
           toast({
-            title: "Error de Conversión",
-            description: conversionResult.errorMessage || "No se pudo convertir la imagen al formato requerido.",
+            title: "Error de Procesamiento",
+            description: processResult.errorMessage || "No se pudo procesar la imagen al formato requerido.",
             variant: "destructive",
           });
           callback(null);
@@ -510,29 +502,19 @@ export function VirtualTryOnComponent() {
         }
         
         // Obtener información de la imagen procesada para feedback
-        const dimensions = conversionResult.width && conversionResult.height 
-          ? `${conversionResult.width}x${conversionResult.height}`
+        const dimensions = processResult.width && processResult.height 
+          ? `${processResult.width}x${processResult.height}`
           : 'dimensiones desconocidas';
         
-        const size = conversionResult.sizeInMB 
-          ? `${conversionResult.sizeInMB.toFixed(2)}MB`
+        const size = processResult.sizeInMB 
+          ? `${processResult.sizeInMB.toFixed(2)}MB`
           : 'tamaño desconocido';
         
-        console.log(`JPEG optimizado generado correctamente: ${dimensions}, ${size}`);
+        console.log(`Imagen procesada correctamente: ${dimensions}, ${size}`);
         
-        // Verificación final con nuestra función personalizada de validación
-        if (validateImageData(conversionResult.processedImage)) {
-          console.log('Validación final exitosa, imagen lista para enviar a Kling API');
-          callback(conversionResult.processedImage);
-        } else {
-          console.error('El JPEG generado no pasó la validación final');
-          toast({
-            title: "Error de Validación",
-            description: "La imagen convertida no pasó la validación final. Por favor, intente con otra imagen.",
-            variant: "destructive",
-          });
-          callback(null);
-        }
+        // La imagen ya ha sido validada por processImageForKling, no necesitamos una validación adicional
+        console.log('Validación exitosa, imagen lista para enviar a Kling API');
+        callback(processResult.processedImage);
       } catch (error) {
         console.error('Error en el proceso de conversión:', error);
         toast({
@@ -598,40 +580,32 @@ export function VirtualTryOnComponent() {
           console.log('Imagen JPEG estandarizada al formato requerido');
           setClothingImage(jpegDataUrl);
         } else {
-          // Intentar leerlo directamente como respaldo
+          // Intentar procesar la imagen directamente como respaldo
           const reader = new FileReader();
-          reader.onload = () => {
+          reader.onload = async () => {
             const dataUrl = reader.result as string;
             
-            // Verificar si el formato es adecuado
-            if (validateImageData(dataUrl)) {
-              setClothingImage(dataUrl);
-            } else {
-              // Si aún no es válido, intenta reformatear manualmente
-              try {
-                const parts = dataUrl.split(',');
-                if (parts.length === 2) {
-                  const strictFormat = 'data:image/jpeg;base64,' + parts[1];
-                  if (validateImageData(strictFormat)) {
-                    setClothingImage(strictFormat);
-                    return;
-                  }
-                }
-                
-                // Si llegamos aquí, ningún formato funciona
+            // Procesar la imagen con la función unificada
+            try {
+              const processResult = await processImageForKling(dataUrl);
+              
+              if (processResult.isValid && processResult.processedImage) {
+                console.log('Imagen procesada correctamente con método alternativo');
+                setClothingImage(processResult.processedImage);
+              } else {
                 toast({
                   title: "Formato inválido",
-                  description: "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
-                  variant: "destructive",
-                });
-              } catch (error) {
-                console.error('Error al reformatear JPEG:', error);
-                toast({
-                  title: "Error de procesamiento",
-                  description: "No se pudo procesar la imagen. Intente con otra imagen.",
+                  description: processResult.errorMessage || "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
                   variant: "destructive",
                 });
               }
+            } catch (error) {
+              console.error('Error al procesar la imagen:', error);
+              toast({
+                title: "Error de procesamiento",
+                description: "No se pudo procesar la imagen. Intente con otra imagen.",
+                variant: "destructive",
+              });
             }
           };
           reader.readAsDataURL(file);
@@ -664,52 +638,48 @@ export function VirtualTryOnComponent() {
         description: "Validating and processing images...",
       });
       
-      // Perform strict validation and conversion of images using the new utilities
-      let validatedModelImage = modelImage;
-      let validatedClothingImage = clothingImage;
+      // Procesar imágenes de manera asíncrona usando la nueva función unificada
+      let validatedModelImage: string;
+      let validatedClothingImage: string;
       
-      // First validate the model image
-      const modelValidationResult = await validateKlingImageFormat(modelImage);
-      if (!modelValidationResult.isValid) {
-        console.log("Model image validation failed, attempting conversion:", modelValidationResult.errorMessage);
-        
-        // If it fails validation, try to convert it
-        const modelConversionResult = await convertToKlingFormatJpeg(modelImage);
-        if (!modelConversionResult.isValid) {
-          throw new Error(`Model image format error: ${modelConversionResult.errorMessage}`);
-        }
-        validatedModelImage = modelConversionResult.processedImage!;
-        console.log("Model image successfully converted to proper JPEG format");
-        
-        toast({
-          title: "Model Image Processed",
-          description: "Your model image has been automatically converted to the required format.",
-        });
-      } else if (modelValidationResult.processedImage) {
-        // If validation succeeded but returned a normalized version
-        validatedModelImage = modelValidationResult.processedImage;
+      // Procesar imagen del modelo
+      console.log("Procesando imagen del modelo con processImageForKling...");
+      const modelResult = await processImageForKling(modelImage);
+      
+      if (!modelResult.isValid || !modelResult.processedImage) {
+        throw new Error(`Error en imagen del modelo: ${modelResult.errorMessage || 'Formato no soportado'}`);
       }
       
-      // Then validate the clothing image
-      const clothingValidationResult = await validateKlingImageFormat(clothingImage);
-      if (!clothingValidationResult.isValid) {
-        console.log("Clothing image validation failed, attempting conversion:", clothingValidationResult.errorMessage);
-        
-        // If it fails validation, try to convert it
-        const clothingConversionResult = await convertToKlingFormatJpeg(clothingImage);
-        if (!clothingConversionResult.isValid) {
-          throw new Error(`Clothing image format error: ${clothingConversionResult.errorMessage}`);
-        }
-        validatedClothingImage = clothingConversionResult.processedImage!;
-        console.log("Clothing image successfully converted to proper JPEG format");
-        
+      validatedModelImage = modelResult.processedImage;
+      console.log("Imagen del modelo procesada correctamente:", 
+        `Dimensiones: ${modelResult.width}x${modelResult.height}, Tamaño: ${modelResult.sizeInMB?.toFixed(2)}MB`);
+      
+      // Notificar al usuario si la imagen fue modificada
+      if (modelResult.processedImage !== modelImage) {
         toast({
-          title: "Clothing Image Processed",
-          description: "Your clothing image has been automatically converted to the required format.",
+          title: "Imagen del modelo procesada",
+          description: "La imagen ha sido optimizada para el formato requerido por Kling API.",
         });
-      } else if (clothingValidationResult.processedImage) {
-        // If validation succeeded but returned a normalized version
-        validatedClothingImage = clothingValidationResult.processedImage;
+      }
+      
+      // Procesar imagen de la prenda
+      console.log("Procesando imagen de la prenda con processImageForKling...");
+      const clothingResult = await processImageForKling(clothingImage);
+      
+      if (!clothingResult.isValid || !clothingResult.processedImage) {
+        throw new Error(`Error en imagen de la prenda: ${clothingResult.errorMessage || 'Formato no soportado'}`);
+      }
+      
+      validatedClothingImage = clothingResult.processedImage;
+      console.log("Imagen de la prenda procesada correctamente:", 
+        `Dimensiones: ${clothingResult.width}x${clothingResult.height}, Tamaño: ${clothingResult.sizeInMB?.toFixed(2)}MB`);
+      
+      // Notificar al usuario si la imagen fue modificada
+      if (clothingResult.processedImage !== clothingImage) {
+        toast({
+          title: "Imagen de la prenda procesada",
+          description: "La imagen ha sido optimizada para el formato requerido por Kling API.",
+        });
       }
       
       // Create settings for the request
