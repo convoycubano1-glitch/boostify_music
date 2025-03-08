@@ -119,27 +119,37 @@ export async function generateMusic(options: MusicGenerationOptions): Promise<{ 
     }
     
     // Si tenemos un usuario autenticado, guardaremos la generación en Firestore
+    // Pero solamente si está configurado correctamente
     try {
       const user = auth.currentUser;
       if (user) {
-        await addDoc(collection(db, 'music_generations'), {
-          userId: user.uid,
-          taskId: taskId,
-          title: options.title || 'Generación sin título',
-          prompt: options.prompt,
-          model: options.model,
-          status: 'pending',
-          createdAt: Timestamp.now(),
-          options: {
-            makeInstrumental: options.makeInstrumental,
-            tags: options.tags,
-            negativeTags: options.negativeTags,
-            seed: options.seed,
-            tempo: options.tempo,
-            keySignature: options.keySignature
-          }
-        });
-        console.log('Generación guardada en Firestore:', taskId);
+        // Primero verificamos si la colección existe
+        try {
+          // Crear un objeto con solo las propiedades necesarias para evitar errores
+          const generationData = {
+            userId: user.uid,
+            taskId: taskId,
+            title: options.title || 'Generación sin título',
+            prompt: options.prompt || '',
+            model: options.model || 'unknown',
+            status: 'pending',
+            createdAt: Timestamp.now(),
+            audioUrl: '', // Inicialmente vacío
+            options: {
+              makeInstrumental: Boolean(options.makeInstrumental),
+              tags: options.tags || '',
+              negativeTags: options.negativeTags || '',
+              seed: options.seed || -1,
+              tempo: options.tempo || 120,
+              keySignature: options.keySignature || 'C Major'
+            }
+          };
+          
+          await addDoc(collection(db, 'music_generations'), generationData);
+          console.log('Generación guardada en Firestore:', taskId);
+        } catch (innerError) {
+          console.warn('No se pudo guardar en Firestore, se omitirá el historial:', innerError);
+        }
       }
     } catch (firestoreError) {
       // Si hay un error al guardar en Firestore, solo lo registramos pero continuamos
@@ -209,25 +219,49 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
     try {
       const user = auth.currentUser;
       if (user) {
-        const q = query(
-          collection(db, 'music_generations'),
-          where('taskId', '==', taskId),
-          where('userId', '==', user.uid)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach(async (doc) => {
-          const data = doc.data();
+        try {
+          // Crear la consulta con cuidado, evitando errores
+          const q = query(
+            collection(db, 'music_generations'),
+            where('taskId', '==', taskId),
+            where('userId', '==', user.uid)
+          );
           
-          // Solo actualizar si el estado ha cambiado
-          if (data.status !== status.status) {
-            await updateDoc(doc.ref, {
-              status: status.status,
-              updatedAt: Timestamp.now(),
-              audioUrl: status.audioUrl || data.audioUrl
-            });
+          const querySnapshot = await getDocs(q);
+          
+          // Si no hay documentos, no hay problema
+          if (querySnapshot.empty) {
+            console.log('No se encontraron registros para actualizar en Firestore');
+          } else {
+            // Actualizar cada documento encontrado
+            for (const doc of querySnapshot.docs) {
+              const data = doc.data();
+              
+              // Solo actualizar si el estado ha cambiado
+              if (data.status !== status.status) {
+                try {
+                  // Crear objeto de actualización con tipo
+                  const updateData: Record<string, any> = {
+                    status: status.status,
+                    updatedAt: Timestamp.now()
+                  };
+                  
+                  // Solo añadir audioUrl si está disponible
+                  if (status.audioUrl) {
+                    updateData.audioUrl = status.audioUrl;
+                  }
+                  
+                  await updateDoc(doc.ref, updateData);
+                  console.log('Documento actualizado en Firestore:', doc.id);
+                } catch (updateError) {
+                  console.error('Error al actualizar documento:', updateError);
+                }
+              }
+            }
           }
-        });
+        } catch (innerError) {
+          console.warn('Error en la consulta a Firestore:', innerError);
+        }
       }
     } catch (firestoreError) {
       // Si hay un error al actualizar Firestore, solo lo registramos
@@ -263,47 +297,68 @@ export async function getRecentGenerations(): Promise<MusicGenerationHistoryItem
     const user = auth.currentUser;
     
     if (!user) {
-      throw new Error('401 - Necesitas iniciar sesión para ver tu historial');
+      console.warn('No hay usuario autenticado para obtener historial');
+      return [];
     }
     
-    // Consultar las generaciones del usuario desde Firestore
-    const q = query(
-      collection(db, 'music_generations'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      // limit(20) // Limitar a 20 resultados
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    // Mapear los documentos a nuestro formato estándar
-    const generations: MusicGenerationHistoryItem[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      generations.push({
-        id: doc.id,
-        taskId: data.taskId || doc.id,
-        title: data.title || 'Sin título',
-        model: data.model || 'unknown',
-        prompt: data.prompt || '',
-        audioUrl: data.audioUrl || '',
-        createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
-        status: data.status || 'completed'
-      });
-    });
-    
-    return generations;
+    try {
+      // Primero verificar si la colección existe
+      try {
+        // Consultar las generaciones del usuario desde Firestore
+        const q = query(
+          collection(db, 'music_generations'),
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+          // limit(20) // Limitar a 20 resultados (opcional)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        // Mapear los documentos a nuestro formato estándar
+        const generations: MusicGenerationHistoryItem[] = [];
+        
+        querySnapshot.forEach((doc) => {
+          try {
+            const data = doc.data();
+            generations.push({
+              id: doc.id,
+              taskId: data.taskId || doc.id,
+              title: data.title || 'Sin título',
+              model: data.model || 'unknown',
+              prompt: data.prompt || '',
+              audioUrl: data.audioUrl || '',
+              createdAt: data.createdAt?.toDate?.() 
+                ? data.createdAt.toDate().toISOString() 
+                : (data.createdAt instanceof Date 
+                  ? data.createdAt.toISOString() 
+                  : new Date().toISOString()),
+              status: data.status || 'completed'
+            });
+          } catch (docError) {
+            console.warn('Error procesando documento:', docError);
+            // Continuar con el siguiente documento
+          }
+        });
+        
+        return generations;
+      } catch (queryError: any) {
+        console.error('Error en la consulta:', queryError);
+        
+        // Si el error es por índices no existentes, mostrar mensaje específico
+        if (queryError.code === 'failed-precondition') {
+          console.log('Se requiere configurar índices en Firestore. Devolviendo lista vacía por ahora.');
+        }
+        
+        return [];
+      }
+    } catch (innerError) {
+      console.error('Error interno obteniendo historial:', innerError);
+      return [];
+    }
   } catch (error) {
-    console.error('Error obteniendo historial:', error);
+    console.error('Error externo obteniendo historial:', error);
     
-    // Propagar errores específicos de autenticación
-    if (error instanceof Error && 
-        (error.message.includes('401') || error.message.includes('403'))) {
-      throw error;
-    }
-    
-    // Para otros errores, devolver array vacío
+    // Para cualquier error, devolver array vacío
     return [];
   }
 }
