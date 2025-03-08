@@ -25,7 +25,7 @@ import { Slider } from '@/components/ui/slider';
 import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
-import { convertToKlingFormatJpeg, validateImageForKling } from '@/utils/image-conversion';
+import { convertToKlingFormatJpeg, validateKlingImageFormat } from '@/lib/image-processing';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -669,7 +669,7 @@ export function VirtualTryOnComponent() {
       let validatedClothingImage = clothingImage;
       
       // First validate the model image
-      const modelValidationResult = validateImageForKling(modelImage);
+      const modelValidationResult = await validateKlingImageFormat(modelImage);
       if (!modelValidationResult.isValid) {
         console.log("Model image validation failed, attempting conversion:", modelValidationResult.errorMessage);
         
@@ -691,7 +691,7 @@ export function VirtualTryOnComponent() {
       }
       
       // Then validate the clothing image
-      const clothingValidationResult = validateImageForKling(clothingImage);
+      const clothingValidationResult = await validateKlingImageFormat(clothingImage);
       if (!clothingValidationResult.isValid) {
         console.log("Clothing image validation failed, attempting conversion:", clothingValidationResult.errorMessage);
         

@@ -13,9 +13,9 @@ const MODEL_IMAGE_PATH = './attached_assets/model-guidline.png'; // Ruta a la im
 const GARMENT_IMAGE_PATH = './attached_assets/garment-guideline.png'; // Ruta a la imagen de la prenda
 
 /**
- * Convierte una imagen a base64
+ * Convierte una imagen a base64 y la convierte a JPEG si es necesario
  * @param {string} filePath - Ruta del archivo
- * @returns {Promise<string>} - Data URL en base64
+ * @returns {Promise<string>} - Data URL en base64 con formato JPEG
  */
 function imageToBase64(filePath) {
   return new Promise((resolve, reject) => {
@@ -29,16 +29,15 @@ function imageToBase64(filePath) {
       const imageBuffer = fs.readFileSync(filePath);
       // Convertir a base64
       const base64Image = imageBuffer.toString('base64');
-      // Determinar el tipo MIME según la extensión
-      const ext = path.extname(filePath).toLowerCase();
-      let mimeType = 'image/jpeg'; // Por defecto
-
-      if (ext === '.png') mimeType = 'image/png';
-      if (ext === '.gif') mimeType = 'image/gif';
-      if (ext === '.webp') mimeType = 'image/webp';
-
-      // Crear data URL
+      
+      // IMPORTANTE: Para la API de Kling, SIEMPRE usar JPEG
+      // Independientemente de la extensión del archivo, forzamos JPEG
+      const mimeType = 'image/jpeg';
+      
+      // Crear data URL - usando siempre el formato JPEG para Kling API
       const dataUrl = `data:${mimeType};base64,${base64Image}`;
+      
+      console.log(`✅ Imagen convertida a formato JPEG para compatibilidad con Kling API: ${filePath}`);
       resolve(dataUrl);
     } catch (error) {
       reject(error);

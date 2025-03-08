@@ -1737,10 +1737,13 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
     // Definimos la interfaz de resultado de procesamiento internamente para evitar problemas de importación
     interface ImageProcessingResult {
       isValid: boolean;
-      normalizedUrl?: string;
+      normalizedUrl?: string;       // Campo original
+      processedImage?: string;      // Nuevo campo para consistencia con cliente
       errorMessage?: string;
       width?: number;
       height?: number;
+      originalFormat?: string;
+      sizeInMB?: number;            // Tamaño de la imagen en MB
     }
     
     console.log('Recibida solicitud para iniciar Virtual Try-On');
@@ -1908,7 +1911,8 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
       };
       
       // Asegurarnos que realmente tengamos los datos base64
-      const modelBase64 = extractPureBase64(modelProcessingResult.normalizedUrl || model_input);
+      // Preferimos usar processedImage si está disponible, luego normalizedUrl (para compatibilidad), o el input original como fallback
+      const modelBase64 = extractPureBase64(modelProcessingResult.processedImage || modelProcessingResult.normalizedUrl || model_input);
       if (!modelBase64) {
         console.error('❌ Error crítico: No se pudieron extraer los datos base64 de la imagen del modelo');
         throw new Error('Error procesando imagen del modelo: datos base64 inválidos');
@@ -1924,7 +1928,8 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
       
       // Aplicar mismo procesamiento para cada prenda con la nueva función de extracción
       if (dress_input) {
-        const dressUrl = dressProcessingResult.normalizedUrl || dress_input;
+        // Preferimos usar processedImage si está disponible (nueva versión), luego normalizedUrl, o el input original
+        const dressUrl = dressProcessingResult.processedImage || dressProcessingResult.normalizedUrl || dress_input;
         const dressBase64 = extractPureBase64(dressUrl);
         if (dressBase64) {
           inputObj.dress_input = 'data:image/jpeg;base64,' + dressBase64;
@@ -1934,7 +1939,8 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
       }
       
       if (upper_input) {
-        const upperUrl = upperProcessingResult.normalizedUrl || upper_input;
+        // Preferimos usar processedImage si está disponible (nueva versión), luego normalizedUrl, o el input original
+        const upperUrl = upperProcessingResult.processedImage || upperProcessingResult.normalizedUrl || upper_input;
         const upperBase64 = extractPureBase64(upperUrl);
         if (upperBase64) {
           inputObj.upper_input = 'data:image/jpeg;base64,' + upperBase64;
@@ -1944,7 +1950,8 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
       }
       
       if (lower_input) {
-        const lowerUrl = lowerProcessingResult.normalizedUrl || lower_input;
+        // Preferimos usar processedImage si está disponible (nueva versión), luego normalizedUrl, o el input original
+        const lowerUrl = lowerProcessingResult.processedImage || lowerProcessingResult.normalizedUrl || lower_input;
         const lowerBase64 = extractPureBase64(lowerUrl);
         if (lowerBase64) {
           inputObj.lower_input = 'data:image/jpeg;base64,' + lowerBase64;

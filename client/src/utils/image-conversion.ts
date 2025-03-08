@@ -29,12 +29,12 @@ export interface ImageProcessingResult {
 }
 
 /**
- * Verifica si una imagen cumple con los requisitos de la API de Kling
+ * Procesa y verifica si una imagen cumple con los requisitos de la API de Kling
  * 
  * @param imageDataUrl URL de datos de la imagen (data URL)
- * @returns Objeto con resultado de validación
+ * @returns Promesa con objeto de resultado de validación y procesamiento
  */
-export function validateImageForKling(imageDataUrl: string): ImageProcessingResult {
+export async function processImageForKling(imageDataUrl: string): Promise<ImageProcessingResult> {
   // Verificar si tenemos una imagen
   if (!imageDataUrl) {
     return {

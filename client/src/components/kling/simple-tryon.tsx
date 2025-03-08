@@ -57,8 +57,48 @@ export function SimpleTryOnComponent() {
     reader.readAsDataURL(file);
   };
 
-  // Función simple para convertir cualquier imagen a JPEG usando Canvas
-  const convertToJpeg = (
+  // Función mejorada para convertir a JPEG utilizando el servidor para asegurar compatibilidad con Kling API
+  const convertToJpeg = async (
+    imageDataUrl: string,
+    setImage: React.Dispatch<React.SetStateAction<string | null>>
+  ) => {
+    try {
+      // Mostrar un toast para indicar que se está procesando la imagen
+      toast({
+        title: "Procesando imagen...",
+        description: "Convirtiendo imagen para máxima compatibilidad con Kling API",
+      });
+      
+      // Ahora envía la imagen al servidor para que utilice el procesador de imágenes especializado
+      const response = await axios.post('/api/kling/process-image', {
+        imageDataUrl
+      });
+      
+      if (response.data.success && response.data.processedImage) {
+        // Usar imagen procesada en formato JPEG puro compatible con Kling
+        setImage(response.data.processedImage);
+        
+        console.log('Imagen procesada por el servidor para compatibilidad con Kling API:', 
+          `${response.data.processedImage.substring(0, 30)}...`,
+          `Dimensiones: ${response.data.width}x${response.data.height}`);
+          
+        toast({
+          title: "Imagen lista",
+          description: `Imagen procesada correctamente (${response.data.width}x${response.data.height})`,
+        });
+      } else {
+        // Usar método de canvas como fallback si el servidor no puede procesar
+        processImageWithCanvas(imageDataUrl, setImage);
+      }
+    } catch (error) {
+      console.error('Error al procesar imagen en el servidor:', error);
+      // Usar método de canvas como fallback
+      processImageWithCanvas(imageDataUrl, setImage);
+    }
+  };
+  
+  // Método de fallback usando Canvas si la conversión del servidor falla
+  const processImageWithCanvas = (
     imageDataUrl: string,
     setImage: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
@@ -78,13 +118,19 @@ export function SimpleTryOnComponent() {
         // Dibujar imagen
         ctx.drawImage(img, 0, 0);
         
-        // Convertir a JPEG con calidad 0.9
-        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        // Convertir a JPEG con calidad 0.95 para mayor compatibilidad
+        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.95);
         setImage(jpegDataUrl);
         
-        console.log('Imagen convertida a JPEG:', 
+        console.log('Imagen convertida con Canvas a JPEG:', 
           `${jpegDataUrl.substring(0, 30)}...`,
           `Dimensiones: ${canvas.width}x${canvas.height}`);
+          
+        toast({
+          title: "Imagen procesada localmente",
+          description: "La imagen se procesó en tu navegador. La compatibilidad con Kling API podría ser limitada.",
+          variant: "warning"
+        });
       }
     };
     img.src = imageDataUrl;
