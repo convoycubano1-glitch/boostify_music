@@ -465,82 +465,96 @@ export function VirtualTryOnComponent() {
   };
   
   // Función auxiliar para convertir PNG a JPEG con formato específico
+  /**
+   * Convierte una imagen a formato JPEG cumpliendo con los requisitos estrictos de Kling API
+   * 
+   * Esta función utiliza nuestra utilidad mejorada convertToKlingFormatJpeg para garantizar:
+   * - Formato JPEG exacto con encabezado "data:image/jpeg;base64,"
+   * - Correcta validación de dimensiones, tamaño y estructura JPEG
+   * - Optimización de calidad para mantener detalles mientras se cumple con requisitos
+   * 
+   * @param file Archivo de imagen a convertir
+   * @param callback Función de retorno con la URL de datos JPEG o null si hay error
+   */
   const convertImageToJpeg = (file: File, callback: (dataUrl: string | null) => void) => {
-    console.log('Iniciando conversión a JPEG de:', file.name, 'tipo:', file.type);
-    const img = new Image();
+    console.log('Iniciando conversión a JPEG optimizada de:', file.name, 'tipo:', file.type, 'tamaño:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+    
+    // Usamos un FileReader para obtener el dataURL inicial
     const reader = new FileReader();
     
-    reader.onload = (e) => {
-      img.src = e.target?.result as string;
-      
-      img.onload = () => {
-        console.log('Imagen cargada, dimensiones:', img.width, 'x', img.height);
-        // Crear un canvas para dibujar la imagen
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+    reader.onload = async (e) => {
+      try {
+        const sourceDataUrl = e.target?.result as string;
         
-        // Dibujar la imagen en el canvas con fondo blanco para quitar transparencia
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          console.error('No se pudo obtener el contexto 2D del canvas');
+        if (!sourceDataUrl) {
+          console.error('Error: No se pudo obtener datos del archivo');
           callback(null);
           return;
         }
         
-        // Fondo blanco para evitar transparencia (crucial para imágenes PNG)
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        console.log('Imagen cargada, procesando para requisitos estrictos de Kling...');
         
-        // Dibujar la imagen sobre el fondo blanco
-        ctx.drawImage(img, 0, 0);
+        // Utilizamos la utilidad mejorada que realiza validaciones y conversiones más robustas
+        // Esta utilidad maneja: verificación de firma JPEG, normalización de encabezado, validación de dimensiones
+        const conversionResult = await convertToKlingFormatJpeg(sourceDataUrl);
         
-        // Convertir a JPEG con formato específico
-        try {
-          // Calidad 0.92 es un buen equilibrio entre tamaño y calidad
-          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
-          
-          // Asegurar que el formato del encabezado es exactamente lo que espera la API
-          // Extraer la parte de datos Base64
-          const base64Data = jpegDataUrl.split(',')[1];
-          
-          // Crear un nuevo dataURL con el encabezado exacto requerido
-          const formattedJpegDataUrl = 'data:image/jpeg;base64,' + base64Data;
-          
-          console.log('JPEG generado correctamente con encabezado específico');
-          
-          // Validar el formato del data URL generado
-          if (validateImageData(formattedJpegDataUrl)) {
-            console.log('Validación exitosa, imagen lista para enviar a la API');
-            callback(formattedJpegDataUrl);
-          } else {
-            console.error('El JPEG generado no pasó la validación');
-            // Intentar corregir el formato nuevamente si falló
-            const parts = jpegDataUrl.split(';base64,');
-            if (parts.length === 2) {
-              const strictFormat = 'data:image/jpeg;base64,' + parts[1];
-              console.log('Intentando con formato estricto:', strictFormat.substring(0, 50) + '...');
-              
-              if (validateImageData(strictFormat)) {
-                console.log('Validación con formato estricto exitosa');
-                callback(strictFormat);
-                return;
-              }
-            }
-            callback(null);
-          }
-        } catch (error) {
-          console.error('Error al convertir a JPEG:', error);
+        if (!conversionResult.isValid || !conversionResult.processedImage) {
+          console.error('Error en la conversión optimizada:', conversionResult.errorMessage);
+          toast({
+            title: "Error de Conversión",
+            description: conversionResult.errorMessage || "No se pudo convertir la imagen al formato requerido.",
+            variant: "destructive",
+          });
+          callback(null);
+          return;
+        }
+        
+        // Obtener información de la imagen procesada para feedback
+        const dimensions = conversionResult.width && conversionResult.height 
+          ? `${conversionResult.width}x${conversionResult.height}`
+          : 'dimensiones desconocidas';
+        
+        const size = conversionResult.sizeInMB 
+          ? `${conversionResult.sizeInMB.toFixed(2)}MB`
+          : 'tamaño desconocido';
+        
+        console.log(`JPEG optimizado generado correctamente: ${dimensions}, ${size}`);
+        
+        // Verificación final con nuestra función personalizada de validación
+        if (validateImageData(conversionResult.processedImage)) {
+          console.log('Validación final exitosa, imagen lista para enviar a Kling API');
+          callback(conversionResult.processedImage);
+        } else {
+          console.error('El JPEG generado no pasó la validación final');
+          toast({
+            title: "Error de Validación",
+            description: "La imagen convertida no pasó la validación final. Por favor, intente con otra imagen.",
+            variant: "destructive",
+          });
           callback(null);
         }
-      };
-      
-      img.onerror = () => {
-        console.error('Error al cargar la imagen');
+      } catch (error) {
+        console.error('Error en el proceso de conversión:', error);
+        toast({
+          title: "Error Inesperado",
+          description: "Ocurrió un error inesperado al procesar la imagen. Por favor, intente con otra imagen.",
+          variant: "destructive",
+        });
         callback(null);
-      };
+      }
     };
     
+    reader.onerror = () => {
+      console.error('Error al leer el archivo');
+      toast({
+        title: "Error de Archivo",
+        description: "No se pudo leer el archivo seleccionado. Por favor, verifique que es una imagen válida.",
+        variant: "destructive",
+      });
+      callback(null);
+    };
+    
+    // Iniciar la lectura del archivo
     reader.readAsDataURL(file);
   };
 
@@ -771,6 +785,18 @@ export function VirtualTryOnComponent() {
   };
   
   // Helper function to validate image data URLs
+  /**
+   * Función para validar que una URL de datos cumple con los requisitos estrictos de Kling API
+   * 
+   * Kling requiere:
+   * - Formato JPEG exacto con encabezado "data:image/jpeg;base64,"
+   * - Tamaño máximo de 50MB (validación aproximada en cliente)
+   * - Dimensiones específicas (lado corto ≥ 512px, lado largo ≤ 4096px) - verificado en servidor
+   * - Firma binaria JPEG válida (verificación preliminar)
+   * 
+   * @param dataUrl URL de datos a validar
+   * @returns true si la imagen cumple con los requisitos, false en caso contrario
+   */
   const validateImageData = (dataUrl: string): boolean => {
     try {
       // Validation básica para URLs de datos
@@ -784,27 +810,30 @@ export function VirtualTryOnComponent() {
         return false;
       }
       
-      // Verificación más estricta: DEBE ser JPEG/JPG exactamente
-      // API de PiAPI/Kling rechaza cualquier otro formato
-      const isJpeg = dataUrl.startsWith('data:image/jpeg;base64,');
+      // Verificación estricta: DEBE ser JPEG con encabezado EXACTO
+      // Kling API rechaza cualquier variación o formato alternativo
+      const hasExactJpegFormat = dataUrl.startsWith('data:image/jpeg;base64,');
       
-      // Según el error de la API, solo aceptamos JPEG con encabezado exacto
-      if (!isJpeg) {
-        console.warn('Formato de imagen no soportado. Solo se acepta JPEG con formato específico.');
+      // Según requisitos exactos de Kling, solo aceptamos JPEG con encabezado específico
+      if (!hasExactJpegFormat) {
+        console.warn('Formato de imagen no soportado. Solo se acepta JPEG con encabezado exacto: data:image/jpeg;base64,');
         toast({
           title: "Formato no soportado",
-          description: "La API solo acepta imágenes en formato JPEG específico. Se realizará una conversión automática.",
+          description: "La API de Kling solo acepta imágenes JPEG con encabezado específico. Se realizará una conversión automática.",
           variant: "destructive",
         });
         return false;
       }
       
-      // Verificación más estricta del formato y contenido
+      // Verificación estricta del formato y contenido
       const parts = dataUrl.split(',');
       if (parts.length !== 2 || !parts[1]) {
         console.warn('La estructura del data URL no es válida');
         return false;
       }
+      
+      // Base64 data
+      const base64Data = parts[1];
       
       // Verificar que la primera parte contiene la codificación correcta de jpeg
       const headerPart = parts[0].toLowerCase();
@@ -814,27 +843,55 @@ export function VirtualTryOnComponent() {
       }
       
       // Verificar tamaño mínimo para asegurar que no es una imagen vacía
-      if (parts[1].length < 100) {
+      if (base64Data.length < 100) {
         console.warn('La imagen es demasiado pequeña o está vacía');
         return false;
       }
       
-      // Verificar tamaño máximo (aproximadamente 10MB en base64)
-      const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
-      const estimatedSizeInBytes = (parts[1].length * 3) / 4; // Estimación aproximada
+      // Verificar tamaño máximo (Kling acepta hasta 50MB)
+      const maxSizeInBytes = 50 * 1024 * 1024; // 50MB (límite de Kling)
+      const estimatedSizeInBytes = (base64Data.length * 3) / 4; // Estimación aproximada
+      const estimatedSizeMB = estimatedSizeInBytes / (1024 * 1024);
       
       if (estimatedSizeInBytes > maxSizeInBytes) {
-        console.warn('La imagen es demasiado grande (>10MB)');
+        console.warn(`La imagen es demasiado grande (${estimatedSizeMB.toFixed(2)}MB > 50MB)`);
         toast({
           title: "Imagen demasiado grande",
-          description: "La imagen supera el tamaño máximo permitido (10MB). Por favor, reduzca su tamaño.",
+          description: `La imagen supera el tamaño máximo permitido por Kling (${estimatedSizeMB.toFixed(2)}MB > 50MB). Por favor, reduzca su tamaño.`,
           variant: "destructive",
         });
         return false;
       }
       
+      // Validación avanzada: verificar firma binaria JPEG
+      try {
+        // Decodificar los primeros bytes para verificar la firma JPEG
+        // Un archivo JPEG siempre comienza con la secuencia FF D8
+        const binaryStart = atob(base64Data.substring(0, 8));
+        const byte1 = binaryStart.charCodeAt(0);
+        const byte2 = binaryStart.charCodeAt(1);
+        
+        if (byte1 !== 0xFF || byte2 !== 0xD8) {
+          console.warn(`Firma JPEG inválida: ${byte1.toString(16)},${byte2.toString(16)} (esperado: FF,D8)`);
+          toast({
+            title: "Formato JPEG inválido",
+            description: "La imagen no tiene una estructura JPEG válida aunque el encabezado lo indique. Se intentará convertir automáticamente.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        // Verificación avanzada: buscar el marcador de fin de imagen (FF D9)
+        // Esta es una verificación parcial, ya que no podemos leer todo el archivo en el navegador
+        // pero ayuda a detectar algunos JPEGs malformados
+        // Se omite por rendimiento, pero se puede agregar si es necesario
+      } catch (binaryError) {
+        console.warn('Error al verificar firma binaria JPEG:', binaryError);
+        // Continuamos porque esta verificación es adicional y puede fallar en algunos navegadores
+      }
+      
       // Validación exitosa
-      console.log('Validación de formato JPEG exitosa');
+      console.log(`Validación de formato JPEG exitosa: ~${estimatedSizeMB.toFixed(2)}MB`);
       return true;
     } catch (error) {
       console.error('Error al validar la imagen:', error);

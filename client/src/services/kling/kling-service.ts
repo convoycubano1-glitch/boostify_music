@@ -109,17 +109,37 @@ class KlingService {
     try {
       console.log('Iniciando proceso de Try-On con PiAPI/Kling');
       
-      // Validación de formato de imagen antes de enviar al servidor
+      // Validación básica de formato antes de procesar
       this.validateImageDataUrl(modelImage, 'modelo');
       this.validateImageDataUrl(clothingImage, 'prenda');
       
-      // Proceder con la solicitud después de validar
+      console.log('⏳ Procesando imágenes para máxima compatibilidad con Kling API...');
+      
+      // Convertir ambas imágenes a formato compatible con Kling
+      const modelResult = await convertToKlingFormatJpeg(modelImage);
+      if (!modelResult.isValid || !modelResult.processedImage) {
+        throw new Error(`Error procesando imagen del modelo: ${modelResult.errorMessage}`);
+      }
+      
+      // Procesar imagen de prenda solo si es válida
+      let processedClothingImage = clothingImage;
+      if (clothingImage) {
+        const clothingResult = await convertToKlingFormatJpeg(clothingImage);
+        if (!clothingResult.isValid || !clothingResult.processedImage) {
+          throw new Error(`Error procesando imagen de prenda: ${clothingResult.errorMessage}`);
+        }
+        processedClothingImage = clothingResult.processedImage;
+      }
+      
+      console.log('✅ Imágenes procesadas correctamente para Kling API');
+      
+      // Proceder con la solicitud usando las imágenes procesadas
       const response = await apiRequest({
         url: '/api/proxy/kling/try-on/start',
         method: 'POST',
         data: {
-          model_input: modelImage,
-          dress_input: clothingImage,
+          model_input: modelResult.processedImage,
+          dress_input: processedClothingImage,
           // Configuración requerida por PiAPI
           batch_size: 1,
           task_type: "ai_try_on",

@@ -1849,28 +1849,108 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
       console.log('Todas las imágenes procesadas correctamente');
       console.log('Llamando a PiAPI para Virtual Try-On');
       
-      // Construimos el objeto de input usando las versiones procesadas y normalizadas
-      const inputObj: Record<string, any> = {
-        model_input: modelProcessingResult.normalizedUrl || model_input,
-        batch_size: batch_size
+      // SOLUCIÓN CRÍTICA FINAL: Asegurar formato JPEG absolutamente puro para Kling API
+      console.log('⚠️ Aplicando solución crítica FINAL para compatibilidad con Kling API');
+      
+      // Técnica más simple pero totalmente compatible con Kling:
+      // 1. Extraer solo los datos base64 puros
+      // 2. Re-aplicar el encabezado exacto que pide Kling
+      
+      /**
+       * Extrae solo la parte base64 pura de una data URL, sin encabezado
+       * Esta función mejorada elimina el prefijo 'data:image/xyz;base64,' para obtener solo los datos
+       * Versión 2.0 con validación más robusta y detección de formatos múltiples
+       * 
+       * @param dataUrl URL de datos (data URL) o URL regular
+       * @returns String con los datos base64 puros o cadena vacía si no es una data URL válida
+       */
+      const extractPureBase64 = (dataUrl: string): string => {
+        // Si no es una string o está vacía, retornar cadena vacía
+        if (!dataUrl || typeof dataUrl !== 'string') {
+          console.warn('❌ extractPureBase64: Input inválido');
+          return '';
+        }
+        
+        try {
+          // Eliminar espacios y caracteres extraños
+          const cleanDataUrl = dataUrl.trim();
+          
+          // Método 1: Si es una data URL con formato estándar (más común)
+          if (cleanDataUrl.includes(';base64,')) {
+            const parts = cleanDataUrl.split(';base64,');
+            if (parts.length === 2) {
+              // El segundo elemento es la base64 pura
+              return parts[1].trim();
+            }
+          } 
+          
+          // Método 2: Si hay una coma (formato menos estándar o parcial)
+          if (cleanDataUrl.includes(',')) {
+            const parts = cleanDataUrl.split(',');
+            // Verificar que parezca base64 (caracteres válidos)
+            if (parts.length === 2 && /^[A-Za-z0-9+/=]+$/.test(parts[1].trim())) {
+              return parts[1].trim();
+            }
+          }
+          
+          // Método 3: Si ya parece ser base64 pura (sin encabezado)
+          if (/^[A-Za-z0-9+/=]+$/.test(cleanDataUrl)) {
+            return cleanDataUrl;
+          }
+          
+          // No pudimos extraer base64 válido
+          console.warn('❌ extractPureBase64: No se pudo extraer datos base64 válidos');
+          return '';
+        } catch (error) {
+          console.error('❌ Error en extractPureBase64:', error);
+          return '';
+        }
       };
       
-      if (dress_input && dressProcessingResult.normalizedUrl) {
-        inputObj.dress_input = dressProcessingResult.normalizedUrl;
-      } else if (dress_input) {
-        inputObj.dress_input = dress_input;
+      // Asegurarnos que realmente tengamos los datos base64
+      const modelBase64 = extractPureBase64(modelProcessingResult.normalizedUrl || model_input);
+      if (!modelBase64) {
+        console.error('❌ Error crítico: No se pudieron extraer los datos base64 de la imagen del modelo');
+        throw new Error('Error procesando imagen del modelo: datos base64 inválidos');
       }
       
-      if (upper_input && upperProcessingResult.normalizedUrl) {
-        inputObj.upper_input = upperProcessingResult.normalizedUrl;
-      } else if (upper_input) {
-        inputObj.upper_input = upper_input;
+      // Construir el objeto de input con el formato exacto que acepta Kling
+      const inputObj: Record<string, any> = {
+        // Importante: Usamos exactamente este formato de encabezado sin espacios adicionales
+        model_input: 'data:image/jpeg;base64,' + modelBase64,
+        batch_size: batch_size
+        // El task_type va fuera, en el objeto principal de la solicitud
+      };
+      
+      // Aplicar mismo procesamiento para cada prenda con la nueva función de extracción
+      if (dress_input) {
+        const dressUrl = dressProcessingResult.normalizedUrl || dress_input;
+        const dressBase64 = extractPureBase64(dressUrl);
+        if (dressBase64) {
+          inputObj.dress_input = 'data:image/jpeg;base64,' + dressBase64;
+        } else {
+          console.error('❌ Error al extraer datos base64 de la imagen de vestido');
+        }
       }
       
-      if (lower_input && lowerProcessingResult.normalizedUrl) {
-        inputObj.lower_input = lowerProcessingResult.normalizedUrl;
-      } else if (lower_input) {
-        inputObj.lower_input = lower_input;
+      if (upper_input) {
+        const upperUrl = upperProcessingResult.normalizedUrl || upper_input;
+        const upperBase64 = extractPureBase64(upperUrl);
+        if (upperBase64) {
+          inputObj.upper_input = 'data:image/jpeg;base64,' + upperBase64;
+        } else {
+          console.error('❌ Error al extraer datos base64 de la imagen de prenda superior');
+        }
+      }
+      
+      if (lower_input) {
+        const lowerUrl = lowerProcessingResult.normalizedUrl || lower_input;
+        const lowerBase64 = extractPureBase64(lowerUrl);
+        if (lowerBase64) {
+          inputObj.lower_input = 'data:image/jpeg;base64,' + lowerBase64;
+        } else {
+          console.error('❌ Error al extraer datos base64 de la imagen de prenda inferior');
+        }
       }
       
       // Registro de depuración (eliminando los datos base64 por brevedad)

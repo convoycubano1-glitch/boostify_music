@@ -34,7 +34,8 @@ export interface ImageProcessingResult {
 /**
  * Procesa una imagen para su uso con Kling API, validando y normalizando
  * 
- * Implementación mejorada con manejo robusto de errores y validación estable
+ * Implementación mejorada con manejo robusto de errores y validación estricta
+ * para cumplir con los requisitos específicos de Kling API.
  * 
  * @param imageDataUrl URL de datos de la imagen (data URL)
  * @returns Objeto con resultado de validación y URL normalizada si es válida
@@ -120,7 +121,7 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       };
     }
 
-    // Si no es JPEG, informamos que necesitamos conversión
+    // Estricta comprobación del formato JPEG
     if (!mimeType.includes('jpeg') && !mimeType.includes('jpg')) {
       return {
         isValid: false,
@@ -129,9 +130,135 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       };
     }
     
-    // Siempre normalizar a 'data:image/jpeg;base64,' incluso si ya es JPEG
-    // Esto garantiza que el encabezado sea exactamente como lo espera Kling
-    const normalizedUrl = 'data:image/jpeg;base64,' + base64Data;
+    // Verificar firma JPEG en los datos binarios
+    if (binaryData[0] !== 0xFF || binaryData[1] !== 0xD8) {
+      return {
+        isValid: false,
+        errorMessage: 'La imagen no tiene una firma JPEG válida aunque el mime-type lo indique.',
+        originalFormat
+      };
+    }
+    
+    // SOLUCIÓN CRÍTICA FINAL: Garantizar imagen JPEG 100% compatible con Kling
+    console.log('⚠️ Aplicando solución crítica para compatibilidad con Kling API');
+    
+    // 1. Verificar EOI (End Of Image marker) para validar estructura JPEG completa
+    const hasValidEOI = binaryData.length >= 2 && 
+                        binaryData[binaryData.length - 2] === 0xFF && 
+                        binaryData[binaryData.length - 1] === 0xD9;
+    
+    if (!hasValidEOI) {
+      console.warn('⚠️ Advertencia: La imagen JPEG no tiene un marcador EOI válido al final - corrigiendo');
+      // Añadir marcador EOI si falta
+      const newBuffer = Buffer.alloc(binaryData.length + 2);
+      binaryData.copy(newBuffer);
+      newBuffer[newBuffer.length - 2] = 0xFF;
+      newBuffer[newBuffer.length - 1] = 0xD9;
+      binaryData = newBuffer;
+    }
+    
+    // 2. Eliminar todos los metadatos y marcadores opcionales JPEG
+    // Implementamos una limpieza básica manteniendo solo los markers esenciales
+    
+    // Crear nuevo buffer limpio
+    try {
+      // Intentamos quitar marcadores no esenciales
+      let cleanBuffer = Buffer.alloc(0);
+      let offset = 0;
+      
+      // Garantizar que empezamos con SOI
+      cleanBuffer = Buffer.concat([cleanBuffer, Buffer.from([0xFF, 0xD8])]);
+      offset = 2;
+      
+      // Limpiar marcadores, preservando solo los esenciales
+      while (offset < binaryData.length - 1) {
+        // Buscar el próximo marcador
+        if (binaryData[offset] !== 0xFF) {
+          offset++;
+          continue;
+        }
+        
+        const marker = binaryData[offset + 1];
+        
+        // Saltarse EOI (lo añadiremos nosotros al final)
+        if (marker === 0xD9) {
+          break;
+        }
+        
+        // Para SOF y SOS (partes esenciales)
+        if ((marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) || 
+            marker === 0xDA) {
+          
+          // Leer longitud del segmento
+          if (offset + 3 >= binaryData.length) break;
+          
+          const segmentLength = (binaryData[offset + 2] << 8) | binaryData[offset + 3];
+          
+          // Si la longitud está fuera de rango, esto podría estar corrupto
+          if (segmentLength < 2 || offset + 2 + segmentLength > binaryData.length) {
+            offset += 2;
+            continue;
+          }
+          
+          // Extraer segmento completo y añadirlo al buffer limpio
+          const segment = binaryData.subarray(offset, offset + 2 + segmentLength);
+          cleanBuffer = Buffer.concat([cleanBuffer, segment]);
+          
+          // Avanzar al siguiente segmento
+          offset += 2 + segmentLength;
+          
+          // Si es SOS (Start of Scan), copiar datos hasta EOI o fin
+          if (marker === 0xDA) {
+            let endOffset = offset;
+            // Buscar EOI o llegar al final
+            while (endOffset < binaryData.length - 1) {
+              if (binaryData[endOffset] === 0xFF && binaryData[endOffset + 1] === 0xD9) {
+                break;
+              }
+              endOffset++;
+            }
+            
+            // Copiar todos los datos de escaneo
+            const scanData = binaryData.subarray(offset, endOffset);
+            cleanBuffer = Buffer.concat([cleanBuffer, scanData]);
+            
+            offset = endOffset;
+          }
+        } else {
+          // Para otros marcadores no esenciales, los saltamos
+          if (offset + 3 >= binaryData.length) break;
+          
+          const segmentLength = (binaryData[offset + 2] << 8) | binaryData[offset + 3];
+          
+          // Si la longitud es inválida, avanzamos de a poco
+          if (segmentLength < 2 || offset + 2 + segmentLength > binaryData.length) {
+            offset += 2;
+          } else {
+            offset += 2 + segmentLength;
+          }
+        }
+      }
+      
+      // Finalizar con EOI
+      cleanBuffer = Buffer.concat([cleanBuffer, Buffer.from([0xFF, 0xD9])]);
+      
+      // Verificar tamaño mínimo para un JPEG válido
+      if (cleanBuffer.length < 150) {
+        console.warn('⚠️ La limpieza ha producido un JPEG demasiado pequeño, usando original');
+      } else {
+        // Usar el buffer limpio
+        binaryData = cleanBuffer;
+        console.log('✅ Imagen JPEG limpiada correctamente, tamaño final:', binaryData.length);
+      }
+    } catch (cleanError) {
+      console.error('Error al limpiar JPEG, usando original:', cleanError);
+    }
+    
+    // PASO FINAL: Convertir a data URL exactamente con el formato requerido
+    const normalizedBase64 = binaryData.toString('base64');
+    
+    // Usar exactamente el formato que Kling espera, sin espacios ni caracteres extra
+    const normalizedUrl = 'data:image/jpeg;base64,' + normalizedBase64;
     
     // Validación de dimensiones con manejo mejorado de errores
     try {
@@ -149,7 +276,19 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       const width = dimensionsResult.width;
       const height = dimensionsResult.height;
       
+      // Verificación extra: asegurarse que el contenido JPEG sea válido
+      // A veces los errores de formato no se detectan hasta que se accede a dimensiones
+      if (!width || !height || width < 1 || height < 1) {
+        return {
+          isValid: false,
+          errorMessage: 'No se pudieron determinar dimensiones válidas, posible JPEG corrupto',
+          originalFormat
+        };
+      }
+      
       // Validación exitosa con URL normalizada y dimensiones
+      console.log(`Imagen procesada correctamente: JPEG de ${width}x${height} (${fileSizeInMB.toFixed(2)}MB)`);
+      
       return {
         isValid: true,
         normalizedUrl,
@@ -158,18 +297,14 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
         originalFormat
       };
     } catch (dimError) {
-      // Si hay un error al obtener dimensiones, continuamos sin ellas pero con manejo de error mejorado
-      console.warn('No se pudieron obtener dimensiones, pero la imagen es válida');
-      
-      // No exponer el error completo en los logs para evitar sobrecarga
-      // Registramos un mensaje simplificado
-      if (dimError instanceof Error) {
-        console.warn('Razón:', dimError.message);
-      }
+      // Si hay un error al obtener dimensiones, esto es serio cuando queremos garantizar compatibilidad
+      // ya que Kling necesita dimensiones específicas
+      console.error('Error al obtener dimensiones de la imagen:', 
+        dimError instanceof Error ? dimError.message : 'Error desconocido');
       
       return {
-        isValid: true,
-        normalizedUrl,
+        isValid: false,
+        errorMessage: 'Error al verificar dimensiones de la imagen JPEG, podría estar corrupta',
         originalFormat
       };
     }

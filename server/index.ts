@@ -36,18 +36,43 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Increase JSON size limit to handle image data URLs
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+// Increase JSON size limit to handle image data URLs, pero con límite razonable para evitar problemas de memoria
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: false, limit: '20mb' }));
+
+// Gestión de errores para express.json
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err && err.type === 'entity.too.large') {
+    console.error('Error al procesar JSON: payload demasiado grande');
+    return res.status(413).json({
+      success: false,
+      error: 'La imagen es demasiado grande. El tamaño máximo permitido es 20MB.'
+    });
+  }
+  next(err);
+});
 
 // Configure middleware for file processing
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
   createParentPath: true,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB maximum
-  abortOnLimit: true
+  limits: { fileSize: 8 * 1024 * 1024 }, // Reducido a 8MB para mejor estabilidad
+  abortOnLimit: true,
+  debug: false // Desactivar debug para reducir logs
 }));
+
+// Manejo de errores para fileUpload
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    console.error('Error al cargar archivo: tamaño excedido');
+    return res.status(413).json({
+      success: false,
+      error: 'El archivo es demasiado grande. El tamaño máximo permitido es 8MB.'
+    });
+  }
+  next(err);
+});
 
 // Health check endpoint for monitoring
 app.get('/api/health', (req, res) => {

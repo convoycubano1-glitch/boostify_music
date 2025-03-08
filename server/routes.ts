@@ -28,6 +28,7 @@ import artistRouter from './routes/artist';
 import artistGeneratorRouter from './routes/artist-generator'; // Added import
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
+import klingApiRouter from './routes/kling-api'; // Importamos el router de Kling API
 import videoGenerationRouter from './routes/video-generation'; // Direct router for PiAPI video generation
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
@@ -123,6 +124,9 @@ export function registerRoutes(app: Express): Server {
   
   // Registrar el router para generación de música (requiere autenticación parcial)
   app.use('/api/music', musicRouter);
+  
+  // Registrar el router simplificado para Kling API (sin autenticación)
+  app.use('/api', klingApiRouter);
 
   // Ruta específica para generación de video (sin autenticación)
   app.post('/api/video/generate', async (req, res) => {

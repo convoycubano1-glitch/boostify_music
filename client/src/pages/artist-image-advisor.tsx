@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { ImageStyleAdvisor } from "@/components/image-advisor/image-style-advisor";
 import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
+import { SimpleTryOnComponent } from "@/components/kling/simple-tryon";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -324,7 +325,7 @@ export default function ArtistImageAdvisorPage() {
                       </div>
                     </div>
                     
-                    <VirtualTryOnComponent />
+                    <SimpleTryOnComponent />
                   </div>
                 </motion.div>
               </TabsContent>
