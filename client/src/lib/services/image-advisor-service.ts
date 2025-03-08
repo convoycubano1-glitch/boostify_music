@@ -22,6 +22,16 @@ export interface SavedImageAdvice extends ImageAdvice {
 export const imageAdvisorService = {
   async analyzeImage(imageUrl: string): Promise<ImageAdvice> {
     try {
+      // Verificar que la API key esté configurada
+      if (!env.VITE_OPENROUTER_API_KEY) {
+        throw new Error("OpenRouter API key not configured");
+      }
+      
+      // Verificar que imageUrl no sea demasiado larga
+      if (imageUrl.length > 12000) {
+        throw new Error("Image URL too long - please use a smaller image");
+      }
+      
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -54,20 +64,39 @@ export const imageAdvisorService = {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to analyze image");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const analysis = JSON.parse(data.choices[0].message.content);
       
-      // Save the analysis results to Firestore
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        throw new Error("Invalid API response format");
+      }
+      
+      let analysis;
       try {
-        await this.saveImageAdvice({
-          ...analysis,
-          referenceImage: imageUrl
-        });
-      } catch (saveError) {
-        console.warn("Analysis completed but could not save results:", saveError);
+        analysis = JSON.parse(data.choices[0].message.content);
+      } catch (parseError) {
+        throw new Error("Failed to parse API response");
+      }
+      
+      // Validar que el análisis tenga la estructura correcta
+      if (!analysis.styleAnalysis || !analysis.recommendations) {
+        throw new Error("API returned incomplete data");
+      }
+      
+      // Solo guardar en Firestore si tenemos datos válidos
+      if (analysis.styleAnalysis && analysis.recommendations) {
+        try {
+          await this.saveImageAdvice({
+            ...analysis,
+            referenceImage: imageUrl
+          });
+        } catch (saveError) {
+          console.warn("Analysis completed but could not save results:", saveError);
+          // No lanzamos error aquí para que el análisis se muestre aunque el guardado falle
+        }
       }
       
       return analysis;
@@ -79,6 +108,16 @@ export const imageAdvisorService = {
 
   async generateVisualRecommendations(style: string, genre: string): Promise<string[]> {
     try {
+      // Verificar que la API key esté configurada
+      if (!env.VITE_OPENROUTER_API_KEY) {
+        throw new Error("OpenRouter API key not configured");
+      }
+      
+      // Verificar parámetros
+      if (!style || !genre) {
+        throw new Error("Style and genre are required parameters");
+      }
+      
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -105,24 +144,44 @@ export const imageAdvisorService = {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate recommendations");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const recommendations = JSON.parse(data.choices[0].message.content).recommendations;
       
-      // Also save these genre-specific recommendations
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        throw new Error("Invalid API response format");
+      }
+      
+      let parsedResponse;
       try {
-        await this.saveImageAdvice({
-          styleAnalysis: `Genre-based style analysis for ${genre} with ${style} aesthetic.`,
-          recommendations: recommendations,
-          colorPalette: [],
-          brandingTips: [],
-          genre,
-          style
-        });
-      } catch (saveError) {
-        console.warn("Recommendations generated but could not save results:", saveError);
+        parsedResponse = JSON.parse(data.choices[0].message.content);
+      } catch (parseError) {
+        throw new Error("Failed to parse API response");
+      }
+      
+      if (!parsedResponse.recommendations || !Array.isArray(parsedResponse.recommendations)) {
+        throw new Error("API response missing recommendations array");
+      }
+      
+      const recommendations = parsedResponse.recommendations;
+      
+      // Solo guardar en Firestore si tenemos datos válidos y no hay errores
+      if (recommendations && recommendations.length > 0) {
+        try {
+          await this.saveImageAdvice({
+            styleAnalysis: `Genre-based style analysis for ${genre} with ${style} aesthetic.`,
+            recommendations: recommendations,
+            colorPalette: [],
+            brandingTips: [],
+            genre,
+            style
+          });
+        } catch (saveError) {
+          console.warn("Recommendations generated but could not save results:", saveError);
+          // No lanzamos error aquí para que las recomendaciones se muestren aunque el guardado falle
+        }
       }
       
       return recommendations;

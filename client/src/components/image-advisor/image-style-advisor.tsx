@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,9 @@ export function ImageStyleAdvisor() {
   const [brandingTips, setBrandingTips] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
   const [selectedResult, setSelectedResult] = useState<SavedImageAdvice | null>(null);
+  
+  // Ref para evitar múltiples actualizaciones simultáneas
+  const refreshInProgress = useRef(false);
 
   const [artistStyle, setArtistStyle] = useState({
     genre: "",
@@ -41,38 +44,59 @@ export function ImageStyleAdvisor() {
     colorPalette: "Vibrant",
   });
 
-  // Query for saved results
-  const { data: savedResults = [], refetch: refetchResults } = useQuery({
+  // Query for saved results con mejor manejo de errores
+  const { data: savedResults = [], refetch: refetchResults, isLoading: isLoadingResults } = useQuery({
     queryKey: ["imageAdviceResults"],
     queryFn: async () => {
       try {
-        return await imageAdvisorService.getSavedResults();
+        const results = await imageAdvisorService.getSavedResults();
+        return results;
       } catch (err) {
-        console.error("Failed to load saved results:", err);
+        console.error("Error retrieving saved results:", err);
+        // No mostramos toast aquí para evitar errores en la carga inicial
         return [];
       }
     },
-    staleTime: 30000 // 30 seconds
+    // No vuelve a cargar automáticamente para evitar ciclos
+    staleTime: 5 * 60 * 1000, // 5 minutos (reducimos las consultas innecesarias)
+    retry: 1 // Reducimos los reintentos para evitar ciclos
   });
 
-  // Image analysis mutation
+  // Image analysis mutation con mejor manejo de errores
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageUrl: string) => {
       return await imageAdvisorService.analyzeImage(imageUrl);
     },
     onSuccess: (data) => {
-      setStyleRecommendation(data.styleAnalysis);
-      setRecommendations(data.recommendations);
+      // Verificamos que los datos tengan el formato correcto
+      if (!data || typeof data !== 'object') {
+        throw new Error("Invalid response format");
+      }
+      
+      setStyleRecommendation(data.styleAnalysis || '');
+      setRecommendations(data.recommendations || []);
       setColorPalette(data.colorPalette || []);
       setBrandingTips(data.brandingTips || []);
+      
       toast({
-        title: "Success",
-        description: "Image analyzed successfully!",
+        title: "Análisis completado",
+        description: "Imagen analizada correctamente",
       });
-      refetchResults();
+      
+      // Ejecutamos refetch solo si el análisis fue exitoso y no hay otro en progreso
+      setTimeout(() => {
+        if (!refreshInProgress.current) {
+          refreshInProgress.current = true;
+          refetchResults().finally(() => {
+            refreshInProgress.current = false;
+          });
+        }
+      }, 1000); // Retrasamos para evitar ciclos
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to analyze image';
+      const errorMessage = error instanceof Error ? error.message : 'Error al analizar la imagen';
+      console.error("Error analyzing image:", error);
+      
       toast({
         title: "Error",
         description: errorMessage,
@@ -81,21 +105,42 @@ export function ImageStyleAdvisor() {
     }
   });
 
-  // Style recommendations mutation
+  // Style recommendations mutation con mejor manejo de errores
   const generateRecommendationsMutation = useMutation({
     mutationFn: async ({ style, genre }: { style: string; genre: string }) => {
+      // Validación de parámetros
+      if (!style || !genre) {
+        throw new Error("Es necesario seleccionar género y estilo");
+      }
       return await imageAdvisorService.generateVisualRecommendations(style, genre);
     },
     onSuccess: (data) => {
+      // Verificamos que los datos tengan el formato correcto
+      if (!data || !Array.isArray(data)) {
+        throw new Error("Formato de respuesta inválido");
+      }
+      
       setRecommendations(data);
+      
       toast({
-        title: "Success",
-        description: "Recommendations generated successfully!",
+        title: "Recomendaciones generadas",
+        description: "Se han generado recomendaciones de estilo",
       });
-      refetchResults();
+      
+      // Ejecutamos refetch solo si la generación fue exitosa y no hay otro en progreso
+      setTimeout(() => {
+        if (!refreshInProgress.current) {
+          refreshInProgress.current = true;
+          refetchResults().finally(() => {
+            refreshInProgress.current = false;
+          });
+        }
+      }, 1000); // Retrasamos para evitar ciclos
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate recommendations';
+      const errorMessage = error instanceof Error ? error.message : 'Error al generar recomendaciones';
+      console.error("Error generating style recommendations:", error);
+      
       toast({
         title: "Error",
         description: errorMessage,

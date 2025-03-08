@@ -58,15 +58,24 @@ try {
 const app = initializeApp(enhancedConfig);
 const auth = getAuth(app);
 
-// Initialize Firestore with optimized cache settings for production
-// Using persistentMultipleTabManager allows multi-tab sync
-// This replaces the deprecated enableIndexedDbPersistence method
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-    tabManager: persistentMultipleTabManager()
-  })
-});
+// Initialize Firestore with more reliable settings to prevent "failed-precondition" errors
+// We're using a simplified configuration that's more stable across browsers and environments
+let db: Firestore;
+
+try {
+  // First attempt: Create with advanced persistence settings
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+  console.log("Firestore initialized with enhanced persistence");
+} catch (error) {
+  // Fallback: If advanced persistence fails, use standard Firestore
+  console.warn("Enhanced persistence failed, using standard Firestore:", error);
+  db = getFirestore(app);
+}
 
 const storage = getStorage(app);
 
