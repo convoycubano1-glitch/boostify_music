@@ -5,6 +5,7 @@ import { ProgressIndicator } from "./progress-indicator";
 import { openRouterService } from "@/lib/api/openrouteraiagents";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+// @ts-ignore
 import html2pdf from 'html2pdf.js';
 
 interface Step {
@@ -38,7 +39,11 @@ export function VideoDirectorAgent() {
       filename: 'video_script.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF: { 
+        unit: 'in', 
+        format: 'letter', 
+        orientation: 'portrait' as 'portrait' 
+      }
     };
 
     html2pdf().set(opt).from(content).save();
@@ -64,7 +69,7 @@ export function VideoDirectorAgent() {
     }
   };
 
-  const generateScript = async (params: any) => {
+  const generateScript = async (params: any): Promise<string | void> => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -92,17 +97,18 @@ export function VideoDirectorAgent() {
       const response = await openRouterService.chatWithAgent(
         prompt,
         "videoDirector",
-        user.uid,
+        user?.uid || 'anonymous',
         "You are an experienced music video director with expertise in visual storytelling and cinematography."
       );
 
-      setResult(response);
+      // Extraer solo la respuesta textual del objeto devuelto por el servicio
+      setResult(response.response);
       toast({
         title: "Script Generated",
         description: "Your music video script has been created successfully.",
       });
 
-      return response;
+      return response.response;
     } catch (error) {
       console.error("Error generating script:", error);
       toast({

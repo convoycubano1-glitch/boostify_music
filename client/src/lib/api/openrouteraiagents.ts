@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { env } from '@/env';
 
 // Función para obtener la clave API de diferentes fuentes
@@ -23,6 +23,17 @@ function getAPIKey() {
 // Obtenemos la clave API de OpenRouter
 const OPEN_ROUTER_API_KEY = getAPIKey();
 const OPEN_ROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+// Colecciones de Firestore para cada tipo de agente
+export const AGENT_COLLECTIONS: Record<string, string> = {
+  composer: 'AI_Music_Composer',
+  videoDirector: 'Video_Director_AI',
+  marketing: 'Strategic_Marketing_AI',
+  socialMedia: 'Social_Media_AI',
+  merchandiseDesigner: 'Merchandise_Designer_AI',
+  manager: 'Manager_AI',
+  customerService: 'Customer_Service_AI'
+};
 
 export class OpenRouterService {
   private static instance: OpenRouterService;
@@ -101,153 +112,159 @@ export class OpenRouterService {
       console.log(`OpenRouter response for ${agentType}:`, result);
 
       try {
-        // Guardar en la colección específica para cada tipo de agente
-        if (agentType === 'videoDirector') {
-          const videoDirectorRef = collection(db, 'Video_Director_AI');
-          await addDoc(videoDirectorRef, {
-            userId,
-            prompt,
-            script: result,
-            timestamp: serverTimestamp(),
-            metadata: {
-              model: 'anthropic/claude-3-sonnet',
-              temperature: 0.7,
-              systemInstruction
-            },
-            format: {
-              sections: [
-                'Scene Breakdown',
-                'Visual Direction',
-                'Camera Movements',
-                'Special Effects',
-                'Narrative Elements'
-              ],
-              version: '1.0'
-            }
-          });
-          console.log('Script saved to Video_Director_AI collection');
-        } else if (agentType === 'marketing') {
-          const marketingRef = collection(db, 'Strategic_Marketing_AI');
-          await addDoc(marketingRef, {
-            userId,
-            prompt,
-            strategy: result,
-            timestamp: serverTimestamp(),
-            metadata: {
-              model: 'anthropic/claude-3-sonnet',
-              temperature: 0.7,
-              systemInstruction
-            },
-            format: {
-              sections: [
-                'Campaign Strategy',
-                'Content Calendar',
-                'Budget Allocation',
-                'KPIs and Metrics',
-                'Growth Projections'
-              ],
-              version: '1.0'
-            }
-          });
-          console.log('Strategy saved to Strategic_Marketing_AI collection');
-        } else if (agentType === 'socialMedia') {
-          const socialMediaRef = collection(db, 'Social_Media_AI');
-          await addDoc(socialMediaRef, {
-            userId,
-            prompt,
-            content: result,
-            timestamp: serverTimestamp(),
-            metadata: {
-              model: 'anthropic/claude-3-sonnet',
-              temperature: 0.7,
-              systemInstruction
-            },
-            format: {
-              sections: [
-                'Content Strategy',
-                'Post Schedule',
-                'Hashtag Strategy',
-                'Engagement Tactics',
-                'Performance Metrics'
-              ],
-              version: '1.0'
-            }
-          });
-          console.log('Content saved to Social_Media_AI collection');
-        } else if (agentType === 'merchandiseDesigner') {
-          const merchandiseRef = collection(db, 'Merchandise_Designer_AI');
-          await addDoc(merchandiseRef, {
-            userId,
-            prompt,
-            design: result,
-            timestamp: serverTimestamp(),
-            metadata: {
-              model: 'anthropic/claude-3-sonnet',
-              temperature: 0.7,
-              systemInstruction
-            },
-            format: {
-              sections: [
-                'Design Concept',
-                'Product Type',
-                'Color Scheme',
-                'Typography',
-                'Visual Elements',
-                'Placement Details'
-              ],
-              version: '1.0'
-            }
-          });
-          console.log('Design saved to Merchandise_Designer_AI collection');
-        } else if (agentType === 'manager') {
-          const managerRef = collection(db, 'Manager_AI');
-          await addDoc(managerRef, {
-            userId,
-            prompt,
-            advice: result,
-            timestamp: serverTimestamp(),
-            metadata: {
-              model: 'anthropic/claude-3-sonnet',
-              temperature: 0.7,
-              systemInstruction
-            },
-            format: {
-              sections: [
-                'Career Analysis',
-                'Industry Insights',
-                'Professional Development',
-                'Networking Strategy',
-                'Action Items'
-              ],
-              version: '1.0'
-            }
-          });
-          console.log('Advice saved to Manager_AI collection');
+        // Determinar la colección de Firestore según el tipo de agente
+        const collectionName = AGENT_COLLECTIONS[agentType] || `AI_${agentType}_Agent`;
+        
+        // Datos comunes para todos los agentes
+        const baseData = {
+          userId: userId || 'anonymous',
+          prompt,
+          timestamp: serverTimestamp(),
+          created: new Date().toISOString(),
+          metadata: {
+            model: 'anthropic/claude-3-sonnet',
+            temperature: 0.7,
+            systemInstruction
+          }
+        };
+        
+        // Datos específicos según el tipo de agente
+        let specificData = {};
+        let logMessage = '';
+        
+        switch(agentType) {
+          case 'videoDirector':
+            specificData = {
+              script: result,
+              format: {
+                sections: [
+                  'Scene Breakdown',
+                  'Visual Direction',
+                  'Camera Movements',
+                  'Special Effects',
+                  'Narrative Elements'
+                ],
+                version: '1.0'
+              }
+            };
+            logMessage = 'Script saved to Video_Director_AI collection';
+            break;
+            
+          case 'marketing':
+            specificData = {
+              strategy: result,
+              format: {
+                sections: [
+                  'Campaign Strategy',
+                  'Content Calendar',
+                  'Budget Allocation',
+                  'KPIs and Metrics',
+                  'Growth Projections'
+                ],
+                version: '1.0'
+              }
+            };
+            logMessage = 'Strategy saved to Strategic_Marketing_AI collection';
+            break;
+            
+          case 'socialMedia':
+            specificData = {
+              content: result,
+              format: {
+                sections: [
+                  'Content Strategy',
+                  'Post Schedule',
+                  'Hashtag Strategy',
+                  'Engagement Tactics',
+                  'Performance Metrics'
+                ],
+                version: '1.0'
+              }
+            };
+            logMessage = 'Content saved to Social_Media_AI collection';
+            break;
+            
+          case 'merchandiseDesigner':
+            specificData = {
+              design: result,
+              format: {
+                sections: [
+                  'Design Concept',
+                  'Product Type',
+                  'Color Scheme',
+                  'Typography',
+                  'Visual Elements',
+                  'Placement Details'
+                ],
+                version: '1.0'
+              }
+            };
+            logMessage = 'Design saved to Merchandise_Designer_AI collection';
+            break;
+            
+          case 'manager':
+            specificData = {
+              advice: result,
+              format: {
+                sections: [
+                  'Career Analysis',
+                  'Industry Insights',
+                  'Professional Development',
+                  'Networking Strategy',
+                  'Action Items'
+                ],
+                version: '1.0'
+              }
+            };
+            logMessage = 'Advice saved to Manager_AI collection';
+            break;
+            
+          case 'customerService':
+            specificData = {
+              response: result
+            };
+            logMessage = 'Conversation saved to Customer_Service_AI collection';
+            break;
+            
+          case 'composer':
+            specificData = {
+              composition: result,
+              format: {
+                sections: [
+                  'Lyrics',
+                  'Musical Structure',
+                  'Arrangement',
+                  'Instrumentation',
+                  'Performance Notes'
+                ],
+                version: '1.0'
+              }
+            };
+            logMessage = 'Composition saved to AI_Music_Composer collection';
+            break;
+            
+          default:
+            specificData = {
+              response: result
+            };
+            logMessage = `Response saved to ${collectionName} collection`;
         }
+        
+        // Combinar datos base con datos específicos
+        const documentData = {
+          ...baseData,
+          ...specificData
+        };
+        
+        // Guardar en Firestore
+        const collectionRef = collection(db, collectionName);
+        const docRef = await addDoc(collectionRef, documentData);
+        
+        console.log(logMessage, `with ID: ${docRef.id}`);
+        
       } catch (error) {
         console.error('Error saving to Firestore:', error);
         // No propagamos el error para que no afecte la funcionalidad principal
-      }
-
-      // Store conversation in Customer Service collection if agent type is customerService
-      if (agentType === 'customerService') {
-        try {
-          const customerServiceRef = collection(db, 'Customer_Service_AI');
-          await addDoc(customerServiceRef, {
-            userId,
-            prompt,
-            response: result,
-            timestamp: serverTimestamp(),
-            metadata: {
-              model: 'anthropic/claude-3-sonnet',
-              temperature: 0.7,
-              systemInstruction
-            }
-          });
-          console.log('Conversation saved to Customer_Service_AI collection');
-        } catch (error) {
-          console.error('Error saving customer service conversation to Firestore:', error);
-        }
       }
       
       // Return formatted response with id and timestamp

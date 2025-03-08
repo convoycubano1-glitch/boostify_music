@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
+import { db } from "@/lib/firebase";
 import { 
   Brain, 
   Database, 
@@ -125,12 +126,124 @@ export default function AIAgentsPage() {
   const [recentAgents, setRecentAgents] = useState<string[]>([]);
   const [bookmarkedAgents, setBookmarkedAgents] = useState<string[]>([]);
   
-  // Simulación de historial reciente y agentes favoritos
+  // Cargar historial reciente y agentes favoritos de Firestore
   useEffect(() => {
-    // Podríamos obtener esto de localStorage o de una base de datos
-    setRecentAgents(["composer", "marketing", "video-director"]);
-    setBookmarkedAgents(["composer", "manager"]);
-  }, []);
+    // Si no hay usuario, usar datos de localStorage
+    if (!user) {
+      try {
+        const storedRecent = localStorage.getItem('recentAgents');
+        const storedBookmarked = localStorage.getItem('bookmarkedAgents');
+        
+        // Verificar que los datos de localStorage sean arrays válidos
+        const parsedRecent = storedRecent ? JSON.parse(storedRecent) : null;
+        const parsedBookmarked = storedBookmarked ? JSON.parse(storedBookmarked) : null;
+        
+        setRecentAgents(
+          Array.isArray(parsedRecent) && parsedRecent.length > 0 
+            ? parsedRecent 
+            : ["composer", "marketing", "video-director"]
+        );
+        
+        setBookmarkedAgents(
+          Array.isArray(parsedBookmarked) && parsedBookmarked.length > 0 
+            ? parsedBookmarked 
+            : ["composer", "manager"]
+        );
+      } catch (parseError) {
+        console.error("Error parsing localStorage data:", parseError);
+        // Fallback seguro usando valores predeterminados
+        setRecentAgents(["composer", "marketing", "video-director"]);
+        setBookmarkedAgents(["composer", "manager"]);
+      }
+      return;
+    }
+    
+    const loadUserData = async () => {
+      try {
+        // Importamos las funciones de Firebase aquí para evitar problemas si no hay conexión a Firebase
+        const { db } = await import('@/lib/firebase');
+        const { doc, getDoc, collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
+        
+        // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
+        const userId = user?.uid || 'anonymous';
+        console.log(`Loading user data for ${userId}`);
+        
+        // Consultar preferencias del usuario para favoritos
+        const userPrefsRef = doc(db, 'userPreferences', userId);
+        const userPrefsSnap = await getDoc(userPrefsRef);
+        
+        if (userPrefsSnap.exists()) {
+          const userData = userPrefsSnap.data();
+          console.log("User preferences found:", userData);
+          
+          // Cargar agentes favoritos (con validación de tipo)
+          if (userData.bookmarkedAgents && Array.isArray(userData.bookmarkedAgents)) {
+            setBookmarkedAgents(userData.bookmarkedAgents);
+          } else {
+            console.log("No valid bookmarked agents found in user data, using defaults");
+            setBookmarkedAgents(["composer", "manager"]);
+          }
+          
+          // Cargar agentes recientes guardados (con validación de tipo)
+          if (userData.recentAgents && Array.isArray(userData.recentAgents)) {
+            setRecentAgents(userData.recentAgents);
+            // Si hay agentes recientes guardados, no necesitamos consultar el historial
+            return;
+          }
+        } else {
+          console.log("No user preferences document found, creating new preferences");
+          // Si no hay documento de preferencias, crearlo con valores predeterminados
+          // Pero lo haremos más adelante cuando el usuario interactúe con la app
+        }
+        
+        // Consultar historial reciente basado en las últimas interacciones
+        const recentAgentTypes = new Set<string>();
+        
+        // Importar explícitamente AGENT_COLLECTIONS para asegurar su disponibilidad
+        const { AGENT_COLLECTIONS } = await import('@/lib/api/openrouteraiagents');
+        
+        // Consulta en todas las colecciones de agentes
+        for (const agentType of Object.keys(AGENT_COLLECTIONS)) {
+          try {
+            const collectionName = AGENT_COLLECTIONS[agentType];
+            const recentQuery = query(
+              collection(db, collectionName), 
+              where('userId', '==', userId),
+              orderBy('timestamp', 'desc'),
+              limit(3)
+            );
+            
+            const querySnapshot = await getDocs(recentQuery);
+            if (!querySnapshot.empty) {
+              recentAgentTypes.add(agentType);
+              console.log(`Found recent interactions with ${agentType} agent`);
+            }
+          } catch (error) {
+            console.error(`Error querying collection for ${agentType}:`, error);
+          }
+        }
+        
+        if (recentAgentTypes.size > 0) {
+          // Convertir el Set a un Array compatible con TypeScript
+          const recentAgentsArray = Array.from(recentAgentTypes);
+          console.log("Setting recent agents from Firestore:", recentAgentsArray);
+          setRecentAgents(recentAgentsArray);
+        } else {
+          console.log("No recent agent interactions found, using defaults");
+          // Usar valores predeterminados si no hay interacciones recientes
+          setRecentAgents(["composer", "marketing", "video-director"]);
+        }
+        
+      } catch (error) {
+        console.error("Error loading user data from Firestore:", error);
+        // Usar valores predeterminados en caso de error
+        setRecentAgents(["composer", "marketing", "video-director"]);
+        setBookmarkedAgents(["composer", "manager"]);
+      }
+    };
+    
+    loadUserData();
+  }, [user]);
 
   // Filtrar agentes según búsqueda y categoría
   const filteredAgents = agentInfo.filter(agent => {
@@ -144,11 +257,173 @@ export default function AIAgentsPage() {
   });
 
   // Función para alternar un agente en favoritos
-  const toggleBookmark = (agentId: string) => {
+  const toggleBookmark = async (agentId: string) => {
+    // Asegurarse de que el agentId sea válido
+    if (!agentId || typeof agentId !== 'string') {
+      console.error('Invalid agent ID provided to toggleBookmark');
+      return;
+    }
+    
+    let newBookmarked: string[] = [];
+    
     if (bookmarkedAgents.includes(agentId)) {
-      setBookmarkedAgents(bookmarkedAgents.filter(id => id !== agentId));
+      // Quitar de favoritos
+      newBookmarked = bookmarkedAgents.filter(id => id !== agentId);
+      console.log(`Removing ${agentId} from bookmarks`);
     } else {
-      setBookmarkedAgents([...bookmarkedAgents, agentId]);
+      // Añadir a favoritos
+      newBookmarked = [...bookmarkedAgents, agentId];
+      console.log(`Adding ${agentId} to bookmarks`);
+    }
+    
+    // Actualizar estado local inmediatamente para mejor UX
+    setBookmarkedAgents(newBookmarked);
+    
+    // Guardar en localStorage para usuarios no autenticados
+    if (!user) {
+      try {
+        localStorage.setItem('bookmarkedAgents', JSON.stringify(newBookmarked));
+        console.log('Bookmarks saved to localStorage:', newBookmarked);
+      } catch (error) {
+        console.error('Error saving bookmarks to localStorage:', error);
+      }
+      return;
+    }
+    
+    try {
+      // Guardar en Firestore para usuarios autenticados
+      const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      
+      // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
+      const userId = user?.uid || 'anonymous';
+      console.log(`Saving bookmarks for user ${userId}`);
+      
+      const userPrefsRef = doc(db, 'userPreferences', userId);
+      
+      // Verificar si el documento existe
+      const userPrefsSnap = await getDoc(userPrefsRef);
+      
+      if (userPrefsSnap.exists()) {
+        // Actualizar documento existente
+        await setDoc(userPrefsRef, {
+          ...userPrefsSnap.data(),
+          bookmarkedAgents: newBookmarked,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log('Bookmarks updated in existing Firestore document');
+      } else {
+        // Crear nuevo documento
+        await setDoc(userPrefsRef, {
+          userId: userId,
+          bookmarkedAgents: newBookmarked,
+          recentAgents: recentAgents, // Guardar también los agentes recientes actuales
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log('New preferences document created in Firestore with bookmarks');
+      }
+      
+      console.log('Bookmarks saved to Firestore:', newBookmarked);
+    } catch (error) {
+      console.error('Error saving bookmarks to Firestore:', error);
+      // Si hay error, revertir al estado anterior para mantener consistencia
+      setBookmarkedAgents(bookmarkedAgents);
+      
+      // Guardar en localStorage como fallback si falla Firestore
+      try {
+        localStorage.setItem('bookmarkedAgents', JSON.stringify(newBookmarked));
+        console.log('Bookmarks saved to localStorage as fallback');
+      } catch (localError) {
+        console.error('Error saving bookmarks to localStorage:', localError);
+      }
+    }
+  };
+
+  // Función para actualizar el historial de agentes recientes cuando se selecciona uno
+  const updateRecentAgents = async (agentId: string) => {
+    // Asegurarse de que el agentId sea válido
+    if (!agentId || typeof agentId !== 'string') {
+      console.error('Invalid agent ID provided to updateRecentAgents');
+      return;
+    }
+    
+    // Evitar duplicados moviendo el agentId al principio si ya existe
+    let updatedRecentAgents: string[] = [];
+    if (recentAgents.includes(agentId)) {
+      updatedRecentAgents = [
+        agentId,
+        ...recentAgents.filter(id => id !== agentId)
+      ];
+      console.log(`Repositioning ${agentId} at the top of recent agents`);
+    } else {
+      // Agregar al principio, manteniendo sólo los 3 más recientes
+      updatedRecentAgents = [
+        agentId,
+        ...recentAgents.slice(0, 2)
+      ];
+      console.log(`Adding ${agentId} to recent agents`);
+    }
+    
+    // Actualizar estado local inmediatamente para mejor UX
+    setRecentAgents(updatedRecentAgents);
+    
+    // Guardar en localStorage para usuarios no autenticados
+    if (!user) {
+      try {
+        localStorage.setItem('recentAgents', JSON.stringify(updatedRecentAgents));
+        console.log('Recent agents saved to localStorage:', updatedRecentAgents);
+      } catch (error) {
+        console.error('Error saving recent agents to localStorage:', error);
+      }
+      return;
+    }
+    
+    try {
+      // Guardar en Firestore para usuarios autenticados
+      const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      
+      // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
+      const userId = user?.uid || 'anonymous';
+      console.log(`Saving recent agents for user ${userId}`);
+      
+      const userPrefsRef = doc(db, 'userPreferences', userId);
+      
+      // Verificar si el documento existe
+      const userPrefsSnap = await getDoc(userPrefsRef);
+      
+      if (userPrefsSnap.exists()) {
+        // Actualizar documento existente
+        await setDoc(userPrefsRef, {
+          ...userPrefsSnap.data(),
+          recentAgents: updatedRecentAgents,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log('Recent agents updated in existing Firestore document');
+      } else {
+        // Crear nuevo documento
+        await setDoc(userPrefsRef, {
+          userId: userId,
+          recentAgents: updatedRecentAgents,
+          bookmarkedAgents: bookmarkedAgents, // Guardar también los favoritos actuales
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log('New preferences document created in Firestore with recent agents');
+      }
+      
+      console.log('Recent agents saved to Firestore:', updatedRecentAgents);
+    } catch (error) {
+      console.error('Error saving recent agents to Firestore:', error);
+      
+      // Guardar en localStorage como fallback si falla Firestore
+      try {
+        localStorage.setItem('recentAgents', JSON.stringify(updatedRecentAgents));
+        console.log('Recent agents saved to localStorage as fallback');
+      } catch (localError) {
+        console.error('Error saving recent agents to localStorage:', localError);
+      }
     }
   };
 
@@ -156,6 +431,13 @@ export default function AIAgentsPage() {
   const SelectedAgentComponent = selectedAgent 
     ? agentInfo.find(a => a.id === selectedAgent)?.component
     : null;
+    
+  // Actualizar historial reciente cuando se selecciona un agente
+  useEffect(() => {
+    if (selectedAgent) {
+      updateRecentAgents(selectedAgent);
+    }
+  }, [selectedAgent]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0F0F13]">

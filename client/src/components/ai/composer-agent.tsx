@@ -70,14 +70,26 @@ export function ComposerAgent() {
     Please write emotive and meaningful lyrics that capture the essence of the theme.
     Structure the output with clear verse and chorus sections.`;
 
-    const response = await openRouterService.chatWithAgent(
-      lyricsPrompt,
-      'composer',
-      user.uid,
-      "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
-    );
+    try {
+      const response = await openRouterService.chatWithAgent(
+        lyricsPrompt,
+        'composer',
+        user?.uid || 'anonymous',
+        "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
+      );
 
-    return response;
+      // Verifica si la respuesta existe o tiene una propiedad response
+      if (!response || typeof response.response !== 'string') {
+        console.error('Error: openRouterService.chatWithAgent returned invalid response', response);
+        throw new Error('No se pudo generar la letra. Por favor, intenta de nuevo.');
+      }
+      
+      // Extraer solo la respuesta textual del objeto devuelto por el servicio
+      return response.response;
+    } catch (error) {
+      console.error('Error generating lyrics:', error);
+      throw new Error('No se pudo generar la letra. Por favor, intenta de nuevo.');
+    }
   };
 
   const createMusicPrompt = (params: any, lyrics: string) => {
@@ -208,7 +220,7 @@ ${firstVerseAndChorus}
               language: params.language,
               structure: params.structure
             },
-            user.uid,
+            user?.uid || 'anonymous',
             musicPrompt
           );
 
