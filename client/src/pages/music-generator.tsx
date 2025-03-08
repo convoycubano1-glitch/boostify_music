@@ -7,7 +7,7 @@ import {
   getDetailedPrompt,
   MusicGenreTemplate
 } from "@/components/music/genre-templates/genre-data";
-import { generateMusic, checkGenerationStatus, getRecentGenerations } from "@/lib/api/zuno-ai";
+import { generateMusic, checkGenerationStatus, getRecentGenerations } from "@/lib/api/music-generator-service";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/header";
 import { motion } from "framer-motion";

@@ -371,8 +371,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Las demás rutas de música requieren autenticación
-  app.use('/api/music', musicRouter);
+  // Eliminamos la línea duplicada que registra las rutas de música
+  // (ya está registrada en la línea 125)
 
 
   // AI Campaign Suggestions Route
