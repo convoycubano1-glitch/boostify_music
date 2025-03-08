@@ -108,6 +108,11 @@ class KlingService {
     try {
       console.log('Iniciando proceso de Try-On con PiAPI/Kling');
       
+      // Validación de formato de imagen antes de enviar al servidor
+      this.validateImageDataUrl(modelImage, 'modelo');
+      this.validateImageDataUrl(clothingImage, 'prenda');
+      
+      // Proceder con la solicitud después de validar
       const response = await apiRequest({
         url: '/api/proxy/kling/try-on/start',
         method: 'POST',
@@ -121,9 +126,44 @@ class KlingService {
         }
       });
 
+      // Validación mejorada de la respuesta
+      if (!response) {
+        console.error('Respuesta vacía de PiAPI/Kling');
+        throw new Error('No se recibió respuesta del servidor al iniciar el proceso');
+      }
+
       if (!response.success && !response.taskId) {
         console.error('Error en respuesta de PiAPI/Kling:', response);
-        throw new Error(response.error || 'Error iniciando proceso de Try-On');
+        
+        // Extraer mensaje de error específico si está disponible
+        let errorMessage = 'Error iniciando proceso de Try-On';
+        
+        if (response.error) {
+          if (typeof response.error === 'string') {
+            errorMessage = response.error;
+          } else if (typeof response.error === 'object') {
+            errorMessage = response.error.message || 
+                         response.error.detail || 
+                         JSON.stringify(response.error);
+          }
+        } else if (response.message) {
+          errorMessage = response.message;
+        } else if (response.detail) {
+          errorMessage = typeof response.detail === 'string' ? 
+                        response.detail : 
+                        JSON.stringify(response.detail);
+        }
+        
+        // Agregar contexto específico para errores de formato de imagen
+        if (errorMessage.includes('format') || 
+            errorMessage.includes('jpeg') || 
+            errorMessage.includes('jpg') || 
+            errorMessage.includes('png')) {
+          errorMessage = 'Error de formato: ' + errorMessage + 
+                       '. La API solo acepta imágenes en formato JPEG.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       console.log('Try-On iniciado con éxito:', response.taskId);
@@ -131,6 +171,53 @@ class KlingService {
     } catch (error) {
       console.error('Error en startTryOn:', error);
       throw error;
+    }
+  }
+  
+  /**
+   * Valida que un data URL de imagen cumpla con los requisitos de la API
+   * @param dataUrl URL de datos de la imagen
+   * @param tipo Tipo de imagen (para mensajes de error más claros)
+   * @throws Error si la imagen no cumple con los requisitos
+   */
+  private validateImageDataUrl(dataUrl: string, tipo: string): void {
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      throw new Error(`La imagen de ${tipo} no es válida`);
+    }
+    
+    if (!dataUrl.startsWith('data:image/')) {
+      throw new Error(`La imagen de ${tipo} no tiene un formato de data URL válido`);
+    }
+    
+    // PiAPI/Kling solo acepta imágenes JPEG
+    const isJpeg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
+    if (!isJpeg) {
+      console.warn(`Formato de imagen de ${tipo} no soportado. Solo se acepta JPEG.`);
+      throw new Error(`Error de formato: La imagen de ${tipo} debe estar en formato JPEG. Por favor, convierta la imagen antes de enviarla.`);
+    }
+    
+    // Verificar estructura del data URL
+    const parts = dataUrl.split(',');
+    if (parts.length !== 2 || !parts[1]) {
+      throw new Error(`La estructura del data URL de la imagen de ${tipo} no es válida`);
+    }
+    
+    // Verificar que la codificación es base64
+    if (!parts[0].toLowerCase().includes('base64')) {
+      throw new Error(`La imagen de ${tipo} debe estar codificada en base64`);
+    }
+    
+    // Verificar tamaño mínimo
+    if (parts[1].length < 100) {
+      throw new Error(`La imagen de ${tipo} es demasiado pequeña o está vacía`);
+    }
+    
+    // Verificar tamaño máximo (aproximadamente 10MB en base64)
+    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+    const estimatedSizeInBytes = (parts[1].length * 3) / 4; // Estimación aproximada
+    
+    if (estimatedSizeInBytes > maxSizeInBytes) {
+      throw new Error(`La imagen de ${tipo} es demasiado grande (>10MB). Por favor, reduzca su tamaño.`);
     }
   }
 
@@ -155,9 +242,32 @@ class KlingService {
         throw new Error('No se recibió respuesta del servidor al verificar el estado');
       }
 
-      if (!response.success) {
+      // Si la tarea falló, extraemos el mensaje de error más claro posible
+      if (!response.success || response.status === 'failed') {
         console.error('Error en respuesta de status de PiAPI/Kling:', response);
-        throw new Error(response.error || 'Error al verificar estado de Try-On');
+        
+        // Extraer mensaje de error de diferentes posibles estructuras de respuesta
+        let errorMessage = 'Error al verificar estado de Try-On';
+        
+        if (response.error) {
+          if (typeof response.error === 'string') {
+            errorMessage = response.error;
+          } else if (typeof response.error === 'object') {
+            // Buscar el mensaje de error en diferentes propiedades del objeto
+            errorMessage = response.error.message || 
+                          response.error.raw_message || 
+                          response.error.detail || 
+                          JSON.stringify(response.error);
+          }
+        } else if (response.errorMessage) {
+          errorMessage = response.errorMessage;
+        } else if (response.message) {
+          errorMessage = response.message;
+        } else if (response.detail && typeof response.detail === 'object' && response.detail.error) {
+          errorMessage = response.detail.error;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // Normalizamos la respuesta para que sea compatible con nuestra interfaz

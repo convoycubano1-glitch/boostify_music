@@ -385,12 +385,13 @@ export function VirtualTryOnComponent() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Validate image format - only accept jpeg, jpg, png
+    // Validación inicial de formato - aceptamos jpeg, jpg, png para la interfaz
+    // pero luego convertiremos todo a JPEG que es lo que acepta la API
     const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!supportedFormats.includes(file.type)) {
       toast({
-        title: "Unsupported Format",
-        description: "Please upload only JPG or PNG images. Other formats are not supported.",
+        title: "Formato no soportado",
+        description: "Por favor, suba solo imágenes JPG o PNG. Otros formatos no son soportados.",
         variant: "destructive",
       });
       return;
@@ -398,10 +399,92 @@ export function VirtualTryOnComponent() {
     
     setModelFileInput(file);
     
+    // Si es PNG, convertimos a JPEG para asegurar compatibilidad con la API
+    if (file.type === 'image/png') {
+      convertImageToJpeg(file, (jpegDataUrl) => {
+        if (jpegDataUrl) {
+          console.log('Imagen PNG convertida a JPEG');
+          setModelImage(jpegDataUrl);
+        } else {
+          toast({
+            title: "Error de conversión",
+            description: "No se pudo convertir la imagen PNG a JPEG. Intente con otro archivo.",
+            variant: "destructive",
+          });
+        }
+      });
+    } else {
+      // Para JPEG/JPG simplemente leemos el archivo
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        // Validar el formato y estructura del data URL
+        if (validateImageData(dataUrl)) {
+          setModelImage(dataUrl);
+        } else {
+          toast({
+            title: "Formato inválido",
+            description: "La imagen no tiene un formato válido para la API.",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Función auxiliar para convertir PNG a JPEG
+  const convertImageToJpeg = (file: File, callback: (dataUrl: string | null) => void) => {
+    const img = new Image();
     const reader = new FileReader();
-    reader.onload = () => {
-      setModelImage(reader.result as string);
+    
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+      
+      img.onload = () => {
+        // Crear un canvas para dibujar la imagen
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Dibujar la imagen en el canvas con fondo blanco para quitar transparencia
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          console.error('No se pudo obtener el contexto 2D del canvas');
+          callback(null);
+          return;
+        }
+        
+        // Fondo blanco para evitar transparencia
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Dibujar la imagen
+        ctx.drawImage(img, 0, 0);
+        
+        // Convertir a JPEG
+        try {
+          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          
+          // Validar el formato del data URL generado
+          if (validateImageData(jpegDataUrl)) {
+            callback(jpegDataUrl);
+          } else {
+            console.error('Data URL generado no pasó la validación');
+            callback(null);
+          }
+        } catch (error) {
+          console.error('Error al convertir a JPEG:', error);
+          callback(null);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Error al cargar la imagen');
+        callback(null);
+      };
     };
+    
     reader.readAsDataURL(file);
   };
 
@@ -409,12 +492,13 @@ export function VirtualTryOnComponent() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Validate image format - only accept jpeg, jpg, png
+    // Validación inicial de formato - aceptamos jpeg, jpg, png para la interfaz
+    // pero luego convertiremos todo a JPEG que es lo que acepta la API
     const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!supportedFormats.includes(file.type)) {
       toast({
-        title: "Unsupported Format",
-        description: "Please upload only JPG or PNG images. Other formats are not supported.",
+        title: "Formato no soportado",
+        description: "Por favor, suba solo imágenes JPG o PNG. Otros formatos no son soportados.",
         variant: "destructive",
       });
       return;
@@ -422,11 +506,38 @@ export function VirtualTryOnComponent() {
     
     setClothingFileInput(file);
     
-    const reader = new FileReader();
-    reader.onload = () => {
-      setClothingImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // Si es PNG, convertimos a JPEG para asegurar compatibilidad con la API
+    if (file.type === 'image/png') {
+      convertImageToJpeg(file, (jpegDataUrl) => {
+        if (jpegDataUrl) {
+          console.log('Imagen PNG convertida a JPEG');
+          setClothingImage(jpegDataUrl);
+        } else {
+          toast({
+            title: "Error de conversión",
+            description: "No se pudo convertir la imagen PNG a JPEG. Intente con otro archivo.",
+            variant: "destructive",
+          });
+        }
+      });
+    } else {
+      // Para JPEG/JPG simplemente leemos el archivo
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        // Validar el formato y estructura del data URL
+        if (validateImageData(dataUrl)) {
+          setClothingImage(dataUrl);
+        } else {
+          toast({
+            title: "Formato inválido",
+            description: "La imagen no tiene un formato válido para la API.",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleStartTryOn = async () => {
@@ -540,31 +651,71 @@ export function VirtualTryOnComponent() {
   
   // Helper function to validate image data URLs
   const validateImageData = (dataUrl: string): boolean => {
-    // Basic validation for data URLs
-    if (!dataUrl.startsWith('data:image/')) {
+    try {
+      // Validation básica para URLs de datos
+      if (!dataUrl || typeof dataUrl !== 'string') {
+        console.warn('La imagen no es una cadena válida');
+        return false;
+      }
+      
+      if (!dataUrl.startsWith('data:image/')) {
+        console.warn('La imagen no tiene un formato de data URL válido');
+        return false;
+      }
+      
+      // Verificar formatos soportados (Solo JPEG/JPG están permitidos según el error)
+      const isJpeg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
+      
+      // Según el error de la API, solo aceptamos JPEG
+      if (!isJpeg) {
+        console.warn('Formato de imagen no soportado. Solo se acepta JPEG/JPG.');
+        toast({
+          title: "Formato no soportado",
+          description: "La API solo acepta imágenes en formato JPEG/JPG. Por favor, convierte tu imagen.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Verificación más estricta del formato y contenido
+      const parts = dataUrl.split(',');
+      if (parts.length !== 2 || !parts[1]) {
+        console.warn('La estructura del data URL no es válida');
+        return false;
+      }
+      
+      // Verificar que la primera parte contiene la codificación correcta
+      const headerPart = parts[0].toLowerCase();
+      if (!headerPart.includes('base64')) {
+        console.warn('La imagen debe estar codificada en base64');
+        return false;
+      }
+      
+      // Verificar tamaño mínimo para asegurar que no es una imagen vacía
+      if (parts[1].length < 100) {
+        console.warn('La imagen es demasiado pequeña o está vacía');
+        return false;
+      }
+      
+      // Verificar tamaño máximo (aproximadamente 10MB en base64)
+      const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+      const estimatedSizeInBytes = (parts[1].length * 3) / 4; // Estimación aproximada
+      
+      if (estimatedSizeInBytes > maxSizeInBytes) {
+        console.warn('La imagen es demasiado grande (>10MB)');
+        toast({
+          title: "Imagen demasiado grande",
+          description: "La imagen supera el tamaño máximo permitido (10MB). Por favor, reduzca su tamaño.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error al validar la imagen:', error);
       return false;
     }
-    
-    // Check for supported formats
-    const isJpeg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
-    const isPng = dataUrl.startsWith('data:image/png');
-    
-    if (!isJpeg && !isPng) {
-      return false;
-    }
-    
-    // Basic check for data presence
-    const parts = dataUrl.split(',');
-    if (parts.length !== 2 || !parts[1]) {
-      return false;
-    }
-    
-    // Optional: check minimum data length to ensure it's not an empty image
-    if (parts[1].length < 100) {
-      return false;
-    }
-    
-    return true;
   };
 
   const handleReset = () => {

@@ -1776,6 +1776,37 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
         });
       }
       
+      // Validación específica para el formato de imagen JPEG que requiere la API
+      const validateImageFormat = (url: string): boolean => {
+        if (!url) return true; // Si no está presente, se considera válido
+        
+        if (url.startsWith('data:image/')) {
+          // Para data URLs, verificamos que sea JPEG/JPG
+          return url.startsWith('data:image/jpeg') || url.startsWith('data:image/jpg');
+        } else if (url.startsWith('http://') || url.startsWith('https://')) {
+          // Para URLs externas, intentamos inferir el tipo por la extensión
+          const urlLower = url.toLowerCase();
+          return urlLower.endsWith('.jpg') || urlLower.endsWith('.jpeg') || 
+                 urlLower.includes('.jpg?') || urlLower.includes('.jpeg?');
+        }
+        
+        return false;
+      };
+      
+      // Verificamos el formato de las imágenes proporcionadas
+      const modelIsValid = validateImageFormat(model_input);
+      const dressIsValid = !dress_input || validateImageFormat(dress_input);
+      const upperIsValid = !upper_input || validateImageFormat(upper_input);
+      const lowerIsValid = !lower_input || validateImageFormat(lower_input);
+      
+      if (!modelIsValid || !dressIsValid || !upperIsValid || !lowerIsValid) {
+        console.error('Las imágenes deben estar en formato JPEG/JPG');
+        return res.status(400).json({
+          success: false,
+          error: 'Error de formato: PiAPI solo acepta imágenes en formato JPEG/JPG. Por favor, convierta las imágenes antes de enviarlas.'
+        });
+      }
+      
       console.log('Llamando a PiAPI para Virtual Try-On');
       
       // Construimos el objeto de input, solo incluyendo los campos que están presentes
