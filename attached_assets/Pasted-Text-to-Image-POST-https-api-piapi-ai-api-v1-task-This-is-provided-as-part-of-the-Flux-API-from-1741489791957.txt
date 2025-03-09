@@ -1,0 +1,238 @@
+Text to Image
+POST
+https://api.piapi.ai/api/v1/task
+This is provided as part of the Flux API from PiAPI. available models:
+
+Qubico/flux1-dev
+
+Qubico/flux1-schnell
+
+Qubico/flux1-dev-advanced
+Check Flux with LoRA and Controlnet to learn how to send Flux with LoRA and Controlnet task.
+Check Flux with Redux and Fill to learn how to send Flux with variation, inpaint and out paint task.
+
+Below is an example of a text-to-image request and response.
+
+Request
+Header Params
+X-API-Key
+string 
+required
+Your API KEY used for request authorization
+
+Body Params application/json
+model
+enum<string> 
+required
+the model name, can be Qubico/flux1-dev or Qubico/flux1-schnell or Qubico/flux1-dev-advanced
+
+Allowed values:
+Qubico/flux1-schnell
+Qubico/flux1-dev
+Qubico/flux1-dev-advanced
+task_type
+enum<string> 
+required
+Allowed values:
+txt2img
+img2img
+txt2img-lora
+img2img-lora
+fill-inpaint
+fill-outpaint
+redux-variation
+controlnet-lora
+input
+object 
+required
+the input param of the flux task
+
+prompt
+string 
+required
+negative_prompt
+string 
+optional
+denoise
+number 
+optional
+<= 1
+> 0
+Default:
+0.7
+guidance_scale
+number 
+optional
+Guidance scale for image generation. High guidance scales improve prompt adherence at the cost of reduced realism.
+
+>= 1.5
+<= 5
+width
+integer 
+optional
+can be used in txt2img ONLY, width*height cannot exceed 1048576
+
+height
+integer 
+optional
+can be used in txt2img ONLY, width*height cannot exceed 1048576
+
+batch_size
+number 
+optional
+number of images, only works for schnell at the moment. Price will be
+batch_size * (price for one generation)
+
+>= 1
+<= 4
+Default:
+1
+lora_settings
+array [object {2}] 
+optional
+Check Flux with LoRA and Controlnet
+
+control_net_settings
+array [object {2}] 
+optional
+Check Flux with LoRA and Controlnet
+
+config
+object 
+optional
+webhook_config
+object 
+optional
+Webhook provides timely task notifications. Check PiAPI webhook for detail.
+
+service_mode
+enum<string> 
+optional
+This allows users to choose whether this specific task will get processed under PAYG or HYA mode. If unspecified, then this task will get processed under whatever mode (PAYG or HYA)
+the user chose on the workspace setting of your account.
+
+public means this task will be processed under PAYG mode.
+
+private means this task will be processed under HYA mode.
+
+Allowed values:
+public
+private
+Example
+{
+  "model": "Qubico/flux1-dev",
+  "task_type": "txt2img",
+  "input": {
+    "prompt": "a little cat",
+    "width": 1024,
+    "height": 1024
+  }
+}
+Request samples
+var axios = require('axios');
+var data = JSON.stringify({
+   "model": "Qubico/flux1-dev",
+   "task_type": "txt2img",
+   "input": {
+      "prompt": "a little cat",
+      "width": 1024,
+      "height": 1024
+   }
+});
+
+var config = {
+   method: 'post',
+   url: 'https://api.piapi.ai/api/v1/task',
+   headers: { 
+      'X-API-Key': '', 
+      'Content-Type': 'application/json'
+   },
+   data : data
+};
+
+axios(config)
+.then(function (response) {
+   console.log(JSON.stringify(response.data));
+})
+.catch(function (error) {
+   console.log(error);
+});
+Responses
+HTTP Code: 200
+Content Type : JSONapplication/json
+Data Schema
+code
+integer 
+required
+data
+object 
+required
+task_id
+string 
+required
+model
+string 
+required
+task_type
+string 
+required
+status
+enum<string> 
+required
+Hover on the "Completed" option and you coult see the explaintion of all status: completed/processing/pending/failed/staged
+
+Allowed values:
+Completed
+Processing
+Pending
+Failed
+Staged
+input
+object 
+required
+output
+object 
+required
+meta
+object 
+required
+detail
+null 
+required
+logs
+array [object] 
+required
+error
+object 
+required
+message
+string 
+required
+If you get non-null error message, here are some steps you chould follow:
+
+Check our common error message
+
+Retry for several times
+
+If you have retried for more than 3 times and still not work, file a ticket on Discord and our support will be with you soon.
+
+Example
+{
+    "code": 200,
+    "message": "success",
+    "data": {
+        "task_id": "0f647527-12bd-48b1-b813-111111111",
+        "model": "Qubico/flux1-dev", 
+        "task_type": "txt2img",
+        "status": "", // pending/processing/failed/completed
+        "input": {}, 
+        "output": {}, 
+        "meta": { 
+        },
+        "logs": [],
+        "error": {
+            "code": 1100,
+            "message": ""
+        } 
+    }
+}

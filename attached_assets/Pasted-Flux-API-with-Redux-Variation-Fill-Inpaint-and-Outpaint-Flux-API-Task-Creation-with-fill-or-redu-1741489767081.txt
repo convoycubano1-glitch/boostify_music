@@ -1,0 +1,64 @@
+Flux API with Redux Variation, Fill, Inpaint and Outpaint
+Flux API (Task Creation with fill or redux)
+Model, Task Type and Usage
+Model Name	Task Type	Usage
+Qubico/flux1-dev-advanced	fill-inpaint	inpaint a masked area of a given image
+Qubico/flux1-dev-advanced	fill-outpaint	outpaint/pan/expand a given image
+Qubico/flux1-dev-advanced	redux-variation	remix/variation on a given image
+Contact Us	contact us if you need a complex workflow customization	-
+Note: Qubico/flux1-dev-advanced is the only model that supports fill-inpaint, fill-outpaint and redux-variation in PiAPI's Flux API.
+
+Example: Request Body of Inpaint Task
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "fill-inpaint",
+    "input": {
+        "prompt": "a girl in blue and red skirt",
+        "image": "https://i.ibb.co/TH7xMvd/girl-mask.png"//should come with a white pixel masked area 
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Example: Request Body of Outpaint Task
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "fill-outpaint",
+    "input": {
+        "prompt": "a girl in a great grass sea",
+        "image": "https://i.ibb.co/TH7xMvd/girl-mask.png",
+        "custom_settings": [ //the total delta pixel size should be less than 1024*1024
+            {
+                "setting_type": "outpaint",
+                "outpaint_left": 500,
+                "outpaint_right": 500,//this result in a 2024x1024 final image
+                "outpaint_top": 0,
+                "outpaint_bottom": 0
+            }
+        ]
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Example: Request Body of Variation(remix) Task
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "redux-variation",
+    "input": {
+        "prompt": "a superman",
+        "image": "https://i.ibb.co/TH7xMvd/girl-mask.png"
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
