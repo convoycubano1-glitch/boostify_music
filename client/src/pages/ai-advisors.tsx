@@ -26,6 +26,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { SubscriptionFeature } from "@/components/subscription/subscription-feature";
 
 interface Advisor {
   id: string;
@@ -157,6 +158,7 @@ export default function AIAdvisorsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // Función para llamar a un asesor, encapsulada para control de acceso
   const callAdvisor = (advisor: Advisor) => {
     setSelectedAdvisor(advisor);
     setCalling(true);
@@ -331,21 +333,28 @@ export default function AIAdvisorsPage() {
                       
                       <p className="text-gray-400 text-sm mb-5 line-clamp-3">{advisor.description}</p>
                       
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full border border-[#27272A] text-white hover:bg-[#27272A] group-hover:border-opacity-0 group-hover:bg-gradient-to-r transition-all duration-300"
-                        style={{ 
-                          backgroundImage: `linear-gradient(to right, var(--${advisor.color}))`,
-                          opacity: 0.9,
-                          backgroundSize: '0 100%',
-                          backgroundRepeat: 'no-repeat',
-                          transition: 'background-size 0.3s ease'
-                        }}
-                        onClick={() => callAdvisor(advisor)}
+                      <SubscriptionFeature
+                        requiredPlan="pro"
+                        title="AI Advisory Team"
+                        description="Contacta con asesores IA expertos para obtener orientación personalizada"
+                        adminEmails={['convoycubano@gmail.com']}
                       >
-                        <Phone className="h-4 w-4 mr-2" /> Contact Advisor
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full border border-[#27272A] text-white hover:bg-[#27272A] group-hover:border-opacity-0 group-hover:bg-gradient-to-r transition-all duration-300"
+                          style={{ 
+                            backgroundImage: `linear-gradient(to right, var(--${advisor.color}))`,
+                            opacity: 0.9,
+                            backgroundSize: '0 100%',
+                            backgroundRepeat: 'no-repeat',
+                            transition: 'background-size 0.3s ease'
+                          }}
+                          onClick={() => callAdvisor(advisor)}
+                        >
+                          <Phone className="h-4 w-4 mr-2" /> Contact Advisor
+                        </Button>
+                      </SubscriptionFeature>
                     </div>
                   </div>
                 </motion.div>

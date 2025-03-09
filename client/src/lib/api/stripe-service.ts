@@ -81,13 +81,11 @@ export async function createCheckoutSession(priceId: string): Promise<string> {
     console.log(`Creando sesión de checkout para: ${actualPriceId}`);
     
     // Crear una sesión dinámica con la API de Stripe
+    // Usar la forma correcta de apiRequest que espera un objeto con url, method y data
     const response = await apiRequest({
       url: '/api/stripe/create-subscription',
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: { priceId: actualPriceId }
+      data: { priceId: actualPriceId }
     });
     
     console.log('Respuesta de API de Stripe:', response);
@@ -136,10 +134,7 @@ export async function updateSubscription(priceId: string): Promise<{success: boo
     const response = await apiRequest({
       url: '/api/stripe/update-subscription',
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: { priceId }
+      data: { priceId }
     });
     
     return response as {success: boolean; message?: string; url?: string};
