@@ -61,50 +61,43 @@ export async function fetchStripePublicKey(): Promise<string> {
 
 /**
  * Crea una sesión de checkout de Stripe para iniciar un proceso de suscripción
+ * Versión 2.0: Usa exclusivamente la API de Stripe para crear sesiones dinámicas
  * 
  * @param priceId El ID del precio/plan al que se quiere suscribir el usuario
  * @returns La URL de la sesión de checkout
  */
 export async function createCheckoutSession(priceId: string): Promise<StripeCheckoutResponse> {
   try {
-    // Enlaces directos de Stripe para cada plan (configurados previamente en el Dashboard de Stripe)
-    const directCheckoutLinks: {[key: string]: string} = {
-      // Plan Basic - Nuevos IDs (marzo 2025)
-      'price_1R0lay2LyFplWimfQxUL6Hn0': 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV',
-      // Plan Pro - Nuevos IDs (marzo 2025)
-      'price_1R0laz2LyFplWimfsBd5ASoa': 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW',
-      // Plan Premium - Nuevos IDs (marzo 2025)
-      'price_1R0lb12LyFplWimf7JpMynKA': 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP',
-      // Accesos directos por clave (para compatibilidad con implementación de componente)
-      'basic': 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV',
-      'pro': 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW',
-      'premium': 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP'
+    // Mapping de claves de plan a IDs de precio (para soporte de claves por nombre)
+    const priceIdMapping: {[key: string]: string} = {
+      'basic': 'price_1R0lay2LyFplWimfQxUL6Hn0',  // Plan Basic - $59.99
+      'pro': 'price_1R0laz2LyFplWimfsBd5ASoa',    // Plan Pro - $99.99
+      'premium': 'price_1R0lb12LyFplWimf7JpMynKA' // Plan Premium - $149.99
     };
     
-    // Si hay un enlace directo disponible para este priceId, usarlo directamente
-    if (directCheckoutLinks[priceId]) {
-      return {
-        success: true,
-        url: directCheckoutLinks[priceId]
-      };
-    }
+    // Si se pasó una clave de plan en lugar de un ID, convertirla
+    const actualPriceId = priceIdMapping[priceId] || priceId;
     
-    // Si no hay un enlace directo, usar el endpoint del servidor para crear una sesión
+    console.log(`Creando sesión de checkout para: ${actualPriceId}`);
+    
+    // Crear una sesión dinámica con la API de Stripe
     const response = await apiRequest({
       url: '/api/stripe/create-subscription',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      data: { priceId }
+      data: { priceId: actualPriceId }
     });
+    
+    console.log('Respuesta de API de Stripe:', response);
     
     return response as StripeCheckoutResponse;
   } catch (error) {
     console.error('Error creating checkout session:', error);
     return {
       success: false,
-      message: 'No se pudo crear la sesión de pago'
+      message: 'No se pudo crear la sesión de pago. Por favor, contacta al soporte.'
     };
   }
 }

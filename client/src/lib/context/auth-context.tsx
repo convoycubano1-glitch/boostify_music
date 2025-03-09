@@ -1,6 +1,86 @@
-/**
- * COMPATIBILITY LAYER: This file is deprecated and will be removed in a future update.
- * Use @/hooks/use-auth directly instead.
- */
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
-export { AuthProvider, useAuth, AuthContext } from '@/hooks/use-auth';
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  signIn: async () => {},
+  signOut: async () => {},
+});
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simular autenticación para propósitos de demo
+  useEffect(() => {
+    // Simular carga de usuario
+    const timer = setTimeout(() => {
+      // Usuario de prueba - administrador
+      setUser({
+        uid: "admin123",
+        email: "convoycubano@gmail.com",
+        displayName: "Admin User",
+        photoURL: null,
+      });
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // En una implementación real, estas funciones se comunicarían con el servidor
+  const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      // Simular login exitoso
+      setUser({
+        uid: "user123",
+        email: email,
+        displayName: "Regular User",
+        photoURL: null,
+      });
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    setIsLoading(true);
+    try {
+      // Simular logout
+      setUser(null);
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}

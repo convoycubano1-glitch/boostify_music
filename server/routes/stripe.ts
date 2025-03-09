@@ -1,512 +1,636 @@
-import { Router, Request, Response, Express } from 'express';
-import { z } from 'zod';
+import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
-import { auth } from '../firebase';
-import { DecodedIdToken } from 'firebase-admin/auth';
-import { 
-  getDocById, setDocument, updateDocument, findUserByStripeCustomerId, queryDocuments
-} from '../utils/firestore-helpers';
 import { authenticate } from '../middleware/auth';
-
-// Initialize Stripe with the secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-01-27.acacia' as any, // Versión actualizada marzo 2025
-});
+import { findUserByStripeCustomerId } from '../utils/firestore-helpers';
+import { db } from '../firebase';
 
 const router = Router();
 
+// Inicializar Stripe con la clave secreta
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-01-27.acacia' as any, // Usar la última versión de la API
+});
+
 /**
- * Setup Stripe routes
- * @param app Express application
+ * URL base para redirecciones de Stripe
+ * En producción, esta URL debería ser configurable y apuntar al dominio real
  */
-export function setupStripeRoutes(app: Express) {
-  // Log Stripe configuration status
-  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY) {
-    console.log('✅ Stripe API keys are configured and ready for use');
-  } else {
-    console.warn('⚠️ Stripe API keys are not configured properly');
-  }
-  
-  // ⚠️ IMPORTANTE: La ruta '/api/stripe/publishable-key' ahora se define directamente en server/routes.ts
-  // para evitar problemas con el middleware de autenticación
-  
-  // Mount all Stripe routes at '/api/stripe'
-  app.use('/api/stripe', router);
-}
+const BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://artistboost.replit.app'
+  : 'https://workspace.replit.app';
 
-// Check if Stripe is properly configured
-if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PUBLISHABLE_KEY) {
-  console.warn('⚠️ Stripe environment variables are not configured properly');
-}
-
-// Define schema for subscription request
-const createSubscriptionSchema = z.object({
-  priceId: z.string(),
-});
-
-// Define schema for subscription update request
-const updateSubscriptionSchema = z.object({
-  priceId: z.string(),
-});
-
-// Price IDs for different subscription tiers
-// En producción, estos vendrían de variables de entorno o de una base de datos
-const PRICES = {
-  // Utilizamos las variables de entorno si están definidas, o los IDs por defecto
-  basic: process.env.STRIPE_PRICE_BASIC || 'price_1R0lay2LyFplWimfQxUL6Hn0', // $59.99/month (Actualizado 2025-03)
-  pro: process.env.STRIPE_PRICE_PRO || 'price_1R0laz2LyFplWimfsBd5ASoa',    // $99.99/month (Actualizado 2025-03)
-  premium: process.env.STRIPE_PRICE_PREMIUM || 'price_1R0lb12LyFplWimf7JpMynKA', // $149.99/month (Actualizado 2025-03)
-};
-
-// Mapa de IDs de precio a nombres de planes
-const PRICE_TO_PLAN: Record<string, string> = {
-  // IDs actualizados (marzo 2025)
-  'price_1R0lay2LyFplWimfQxUL6Hn0': 'basic',    // Plan Basic $59.99
-  'price_1R0laz2LyFplWimfsBd5ASoa': 'pro',      // Plan Pro $99.99
-  'price_1R0lb12LyFplWimf7JpMynKA': 'premium',  // Plan Premium $149.99
-  
-  // IDs anteriores (mantener por compatibilidad)
-  'price_1PdG7a2LyFplWimfJ7FjKMgQ': 'basic',    // Plan Basic anterior
-  'price_1PdG802LyFplWimfQ0vL4rvB': 'pro',      // Plan Pro anterior
-  'price_1PdG8G2LyFplWimfi8nTcmKm': 'premium',  // Plan Premium anterior
-  
-  // Variables de entorno (para flexibilidad)
-  [PRICES.basic]: 'basic',
-  [PRICES.pro]: 'pro',
-  [PRICES.premium]: 'premium',
+/**
+ * Mapeo de planes a IDs de precio en Stripe
+ * Estos IDs deben coincidir con los configurados en el dashboard de Stripe
+ */
+const PLAN_PRICE_IDS = {
+  'basic': 'price_1R0lay2LyFplWimfQxUL6Hn0',
+  'pro': 'price_1R0laz2LyFplWimfsBd5ASoa',
+  'premium': 'price_1R0lb12LyFplWimf7JpMynKA'
 };
 
 /**
- * Create a new subscription checkout session
+ * Mapeo de IDs de precio a nombres de plan
  */
-router.post('/create-subscription', async (req: Request, res: Response) => {
+const PRICE_ID_TO_PLAN = {
+  'price_1R0lay2LyFplWimfQxUL6Hn0': 'basic',
+  'price_1R0laz2LyFplWimfsBd5ASoa': 'pro',
+  'price_1R0lb12LyFplWimf7JpMynKA': 'premium'
+};
+
+/**
+ * Crear una sesión de checkout para una nueva suscripción
+ */
+router.post('/create-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    // Verify the user is authenticated
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const { planId } = req.body;
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
 
-    const token = authHeader.split(' ')[1];
-    let decodedToken: DecodedIdToken;
-    
-    try {
-      decodedToken = await auth.verifyIdToken(token);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return res.status(401).json({ error: 'Invalid token' });
+    if (!planId || !PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS]) {
+      return res.status(400).json({ success: false, message: 'Plan inválido' });
     }
 
-    const userId = decodedToken.uid;
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
     
-    // Validate request body
-    const result = createSubscriptionSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: 'Invalid request body', details: result.error });
-    }
+    // Verificar si el usuario ya tiene un customerID en Stripe
+    let customerId = userData?.stripeCustomerId;
     
-    const { priceId } = result.data;
-    
-    // Log the price ID being used to track potential issues
-    console.log(`Creating subscription with price ID: ${priceId}`);
-    
-    // Validate that the price ID is recognized in Stripe
-    try {
-      const price = await stripe.prices.retrieve(priceId);
-      console.log(`Price details verified: ${price.id}, active: ${price.active}`);
-    } catch (error) {
-      console.error(`Error verifying price ID ${priceId}:`, error);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid price ID. Please check your subscription selection and try again.',
-        error: 'price_verification_failed'
-      });
-    }
-    
-    // Get the user's customer ID or create a new customer
-    const userDoc = await getDocById('users', userId);
-    
-    let customerId: string;
-    
-    if (userDoc && userDoc.stripeCustomerId) {
-      customerId = userDoc.stripeCustomerId;
-    } else {
-      // Create a new customer in Stripe
-      const email = decodedToken.email || undefined;
-      const name = decodedToken.name || undefined;
-      
+    if (!customerId) {
+      // Crear un nuevo cliente en Stripe si no existe
       const customer = await stripe.customers.create({
-        email,
-        name,
-        metadata: {
-          firebaseUserId: userId,
-        },
+        email: userData?.email || undefined,
+        name: userData?.displayName || undefined,
+        metadata: { firebaseUserId: userId }
       });
       
       customerId = customer.id;
       
-      // Update the user record with the Stripe customer ID
-      if (userDoc) {
-        await updateDocument('users', userId, {
-          stripeCustomerId: customerId,
-        });
-      } else {
-        // Create a new user record with the Stripe customer ID
-        await setDocument('users', userId, {
-          stripeCustomerId: customerId,
-          email: decodedToken.email,
-          createdAt: new Date(),
-        });
-      }
+      // Guardar el customerId en Firestore
+      await db.collection('users').doc(userId).update({
+        stripeCustomerId: customerId
+      });
     }
     
-    // Create a checkout session for the subscription
+    // Crear sesión de checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
-          quantity: 1,
-        },
+          price: PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS],
+          quantity: 1
+        }
       ],
       mode: 'subscription',
-      success_url: `${req.headers.origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/pricing`,
+      success_url: `${BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/subscription-cancelled`,
       metadata: {
         userId,
+        planId
       },
+      subscription_data: {
+        metadata: {
+          userId,
+          planId
+        }
+      }
     });
     
-    res.json({ 
-      success: true,
-      url: session.url 
-    });
-  } catch (error) {
-    console.error('Error creating subscription:', error);
-    console.error('Full error details:', error);
-    res.status(500).json({ 
+    res.json({ success: true, url: session.url });
+  } catch (error: any) {
+    console.error('Error al crear sesión de checkout:', error);
+    res.status(500).json({
       success: false,
-      message: 'Failed to create subscription',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      message: error.message || 'Error al crear sesión de checkout'
     });
   }
 });
 
 /**
- * Get the current user's subscription status
+ * Obtener el estado de la suscripción del usuario actual
  */
 router.get('/subscription-status', authenticate, async (req: Request, res: Response) => {
   try {
-    // El middleware authenticate ya valida que req.user exista
-    if (!req.user || !req.user.uid) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
     
-    const userId = req.user.uid;
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
     
-    // Get the user's customer ID
-    const userDoc = await getDocById('users', userId);
-    
-    if (!userDoc || !userDoc.stripeCustomerId) {
-      // If the user doesn't have a Stripe customer ID, they don't have a subscription
+    // Si el usuario no tiene customerId, no tiene suscripción
+    if (!userData?.stripeCustomerId) {
       return res.json({
+        id: null,
+        plan: null,
+        currentPlan: 'free',
+        status: null,
         active: false,
-        plan: 'free',
-        currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
-        priceId: null,
+        currentPeriodEnd: null,
+        priceId: null
       });
     }
     
-    const customerId = userDoc.stripeCustomerId;
-    
-    // Get the customer's subscriptions
+    // Buscar suscripciones activas
     const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
+      customer: userData.stripeCustomerId,
       status: 'active',
-      expand: ['data.default_payment_method'],
+      expand: ['data.default_payment_method']
     });
     
+    // Si no hay suscripciones activas, devolver plan gratuito
     if (subscriptions.data.length === 0) {
-      // If the user doesn't have any active subscriptions
       return res.json({
+        id: null,
+        plan: null,
+        currentPlan: 'free',
+        status: null,
         active: false,
-        plan: 'free',
-        currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
-        priceId: null,
+        currentPeriodEnd: null,
+        priceId: null
       });
     }
     
-    // Get the first active subscription
+    // Obtener la primera suscripción activa
     const subscription = subscriptions.data[0];
     const priceId = subscription.items.data[0].price.id;
-    const plan = PRICE_TO_PLAN[priceId] || 'free';
+    const plan = PRICE_ID_TO_PLAN[priceId as keyof typeof PRICE_ID_TO_PLAN] || 'free';
     
+    // Devolver información de la suscripción
     res.json({
-      active: true,
-      plan,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+      id: subscription.id,
+      plan: subscription.items.data[0].price.nickname || plan,
+      currentPlan: plan,
+      status: subscription.status,
+      active: subscription.status === 'active',
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      priceId,
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+      priceId
     });
-  } catch (error) {
-    console.error('Error getting subscription status:', error);
-    res.status(500).json({ error: 'Failed to get subscription status' });
+  } catch (error: any) {
+    console.error('Error al obtener el estado de la suscripción:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al obtener el estado de la suscripción'
+    });
   }
 });
 
 /**
- * Cancel the user's subscription
+ * Cancelar la suscripción actual
  */
 router.post('/cancel-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    // El middleware authenticate ya valida la autenticación
-    if (!req.user || !req.user.uid) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
     
-    const userId = req.user.uid;
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
     
-    // Get the user's customer ID
-    const userDoc = await getDocById('users', userId);
-    
-    if (!userDoc || !userDoc.stripeCustomerId) {
-      return res.status(404).json({ error: 'User does not have a subscription' });
+    // Si el usuario no tiene customerId, no tiene suscripción para cancelar
+    if (!userData?.stripeCustomerId) {
+      return res.status(400).json({ success: false, message: 'No hay suscripción activa' });
     }
     
-    const customerId = userDoc.stripeCustomerId;
-    
-    // Get the customer's subscriptions
+    // Buscar suscripciones activas
     const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'active',
+      customer: userData.stripeCustomerId,
+      status: 'active'
     });
     
+    // Si no hay suscripciones activas, no hay nada que cancelar
     if (subscriptions.data.length === 0) {
-      return res.status(404).json({ error: 'No active subscription found' });
+      return res.status(400).json({ success: false, message: 'No hay suscripción activa' });
     }
     
-    // Cancel the subscription at the end of the current period
+    // Obtener la primera suscripción activa
     const subscription = subscriptions.data[0];
+    
+    // Cancelar la suscripción al final del período actual
     await stripe.subscriptions.update(subscription.id, {
-      cancel_at_period_end: true,
+      cancel_at_period_end: true
     });
     
-    res.json({
-      success: true,
-      message: 'Subscription will be canceled at the end of the billing period',
+    res.json({ success: true, message: 'Suscripción cancelada correctamente' });
+  } catch (error: any) {
+    console.error('Error al cancelar la suscripción:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al cancelar la suscripción'
     });
-  } catch (error) {
-    console.error('Error canceling subscription:', error);
-    res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 });
 
 /**
- * Update the user's subscription to a new plan
+ * Actualizar la suscripción a un nuevo plan
  */
 router.post('/update-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    // El middleware authenticate ya valida la autenticación
-    if (!req.user || !req.user.uid) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const { planId } = req.body;
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
     
-    const userId = req.user.uid;
-    
-    // Validate request body
-    const result = updateSubscriptionSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: 'Invalid request body', details: result.error });
+    if (!planId || !PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS]) {
+      return res.status(400).json({ success: false, message: 'Plan inválido' });
     }
     
-    const { priceId } = result.data;
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
     
-    // Log the price ID being used to track potential issues
-    console.log(`Updating subscription with price ID: ${priceId}`);
-    
-    // Validate that the price ID is recognized in Stripe
-    try {
-      const price = await stripe.prices.retrieve(priceId);
-      console.log(`Price details verified for update: ${price.id}, active: ${price.active}`);
-    } catch (error) {
-      console.error(`Error verifying price ID ${priceId} for update:`, error);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid price ID. Please check your subscription selection and try again.',
-        error: 'price_verification_failed'
-      });
+    // Si el usuario no tiene customerId o no tiene suscripción, crear una nueva
+    if (!userData?.stripeCustomerId) {
+      // Redirigir a la ruta de crear suscripción
+      return await router.stack
+        .find(layer => layer.route?.path === '/create-subscription')
+        ?.route?.stack[0].handle(req, res);
     }
     
-    // Get the user's customer ID
-    const userDoc = await getDocById('users', userId);
-    
-    if (!userDoc || !userDoc.stripeCustomerId) {
-      return res.status(404).json({ error: 'User does not have a subscription' });
-    }
-    
-    const customerId = userDoc.stripeCustomerId;
-    
-    // Get the customer's subscriptions
+    // Buscar suscripciones activas
     const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'active',
+      customer: userData.stripeCustomerId,
+      status: 'active'
     });
     
+    // Si no hay suscripciones activas, crear una nueva
     if (subscriptions.data.length === 0) {
-      return res.status(404).json({ error: 'No active subscription found' });
+      // Redirigir a la ruta de crear suscripción
+      return await router.stack
+        .find(layer => layer.route?.path === '/create-subscription')
+        ?.route?.stack[0].handle(req, res);
     }
     
-    // Update the subscription with the new price
+    // Obtener la primera suscripción activa
     const subscription = subscriptions.data[0];
     
-    // Check if subscription is already set to be canceled
-    if (subscription.cancel_at_period_end) {
-      // If it is, resume the subscription
-      await stripe.subscriptions.update(subscription.id, {
-        cancel_at_period_end: false,
-      });
-    }
-    
-    // Update the subscription with the new price
-    await stripe.subscriptions.update(subscription.id, {
-      items: [
+    // Crear sesión para actualizar la suscripción
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: userData.stripeCustomerId,
+      payment_method_types: ['card'],
+      line_items: [
         {
-          id: subscription.items.data[0].id,
-          price: priceId,
-        },
+          price: PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS],
+          quantity: 1
+        }
       ],
-      proration_behavior: 'create_prorations',
+      subscription_data: {
+        metadata: {
+          userId,
+          planId
+        }
+      },
+      success_url: `${BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/subscription-cancelled`,
+      metadata: {
+        userId,
+        planId,
+        subscriptionId: subscription.id
+      }
     });
     
-    res.json({
-      success: true,
-      message: 'Subscription updated successfully',
+    res.json({ success: true, url: session.url });
+  } catch (error: any) {
+    console.error('Error al actualizar la suscripción:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al actualizar la suscripción'
     });
-  } catch (error) {
-    console.error('Error updating subscription:', error);
-    res.status(500).json({ error: 'Failed to update subscription' });
   }
 });
 
 /**
- * Process the webhook from Stripe
- * This is called by Stripe when a subscription event occurs (created, updated, canceled, etc.)
+ * Manejar webhook de Stripe
+ * Este endpoint recibe notificaciones de Stripe sobre eventos como
+ * pagos exitosos, suscripciones canceladas, etc.
  */
 router.post('/webhook', async (req: Request, res: Response) => {
-  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   
-  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return res.status(400).json({ error: 'Missing Stripe webhook signature' });
+  if (!webhookSecret) {
+    return res.status(500).json({ success: false, message: 'Webhook secret no configurado' });
   }
   
-  let event: Stripe.Event;
+  const signature = req.headers['stripe-signature'] as string;
+  
+  if (!signature) {
+    return res.status(400).json({ success: false, message: 'Falta la firma Stripe en la solicitud' });
+  }
+  
+  let event;
   
   try {
+    // Verificar la firma del webhook
     event = stripe.webhooks.constructEvent(
       req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      signature,
+      webhookSecret
     );
-  } catch (err) {
-    console.error('Error verifying webhook signature:', err);
-    return res.status(400).json({ error: 'Invalid signature' });
+  } catch (error: any) {
+    console.error('Error al verificar webhook de Stripe:', error);
+    return res.status(400).json({ success: false, message: error.message });
   }
   
-  // Handle specific Stripe events
-  switch (event.type) {
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-      const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionChange(subscription);
-      break;
-    case 'customer.subscription.deleted':
-      const deletedSubscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionDeletion(deletedSubscription);
-      break;
-    // Additional event handling can be added here
+  // Manejar diferentes tipos de eventos
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        // Verificar si es una sesión de suscripción
+        if (session.mode === 'subscription' && session.subscription) {
+          // Manejar una nueva suscripción
+          await handleSuccessfulSubscription(session);
+        }
+        break;
+      }
+      
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+        // Manejar actualización de suscripción
+        await handleSubscriptionUpdated(subscription);
+        break;
+      }
+      
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        // Manejar cancelación de suscripción
+        await handleSubscriptionCancelled(subscription);
+        break;
+      }
+      
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        // Manejar pago exitoso de factura
+        if (invoice.subscription) {
+          await handleSuccessfulPayment(invoice);
+        }
+        break;
+      }
+      
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        // Manejar fallo de pago
+        if (invoice.subscription) {
+          await handleFailedPayment(invoice);
+        }
+        break;
+      }
+      
+      default:
+        // Ignorar otros eventos
+        console.log(`Evento de Stripe no manejado: ${event.type}`);
+    }
+    
+    res.json({ received: true });
+  } catch (error: any) {
+    console.error(`Error al manejar evento de Stripe ${event.type}:`, error);
+    res.status(500).json({ success: false, message: error.message });
   }
-  
-  res.json({ received: true });
 });
 
 /**
- * Handle subscription changes
+ * Manejar una suscripción creada con éxito
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription) {
-  try {
-    const customerId = subscription.customer as string;
+async function handleSuccessfulSubscription(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  const planId = session.metadata?.planId;
+  
+  if (!userId || !planId) {
+    console.error('Falta userId o planId en los metadatos de la sesión');
+    return;
+  }
+  
+  // Actualizar información de la suscripción en Firestore
+  await db.collection('users').doc(userId).update({
+    subscription: {
+      id: session.subscription,
+      plan: planId,
+      status: 'active',
+      updatedAt: new Date()
+    }
+  });
+  
+  // También puedes guardar un registro de la transacción
+  await db.collection('transactions').add({
+    userId,
+    type: 'subscription_created',
+    planId,
+    sessionId: session.id,
+    subscriptionId: session.subscription,
+    amount: session.amount_total,
+    currency: session.currency,
+    timestamp: new Date()
+  });
+}
+
+/**
+ * Manejar una actualización de suscripción
+ */
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const userId = subscription.metadata?.userId;
+  const planId = subscription.metadata?.planId;
+  
+  if (!userId) {
+    // Intentar encontrar el usuario por su customerId
+    const user = await findUserByStripeCustomerId(subscription.customer as string);
     
-    // Find the user with this customer ID
-    const users = await queryDocuments('users', 'stripeCustomerId', '==', customerId);
-    
-    if (!users || users.length === 0) {
-      console.error('No user found with Stripe customer ID:', customerId);
+    if (!user) {
+      console.error('No se pudo encontrar usuario para la suscripción actualizada');
       return;
     }
     
-    const userDoc = users[0];
-    const userId = userDoc.id;
-    
-    // Update the user's subscription status
-    const priceId = subscription.items.data[0].price.id;
-    const plan = PRICE_TO_PLAN[priceId] || 'free';
-    
-    await updateDocument('users', userId, {
+    // Actualizar información de la suscripción en Firestore
+    await db.collection('users').doc(user.id).update({
       subscription: {
-        active: subscription.status === 'active',
-        plan,
-        subscriptionId: subscription.id,
-        customerId: customerId,
-        priceId,
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        id: subscription.id,
+        status: subscription.status,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      },
-      updatedAt: new Date(),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        updatedAt: new Date()
+      }
     });
-    
-    console.log(`Updated subscription for user ${userId} to plan ${plan}`);
-  } catch (error) {
-    console.error('Error handling subscription change:', error);
+  } else {
+    // Actualizar información de la suscripción en Firestore
+    await db.collection('users').doc(userId).update({
+      subscription: {
+        id: subscription.id,
+        plan: planId,
+        status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        updatedAt: new Date()
+      }
+    });
   }
 }
 
 /**
- * Handle subscription deletions
+ * Manejar una cancelación de suscripción
  */
-async function handleSubscriptionDeletion(subscription: Stripe.Subscription) {
-  try {
-    const customerId = subscription.customer as string;
+async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
+  const userId = subscription.metadata?.userId;
+  
+  if (!userId) {
+    // Intentar encontrar el usuario por su customerId
+    const user = await findUserByStripeCustomerId(subscription.customer as string);
     
-    // Find the user with this customer ID
-    const users = await queryDocuments('users', 'stripeCustomerId', '==', customerId);
-    
-    if (!users || users.length === 0) {
-      console.error('No user found with Stripe customer ID:', customerId);
+    if (!user) {
+      console.error('No se pudo encontrar usuario para la suscripción cancelada');
       return;
     }
     
-    const userDoc = users[0];
-    const userId = userDoc.id;
-    
-    // Update the user's subscription status
-    await updateDocument('users', userId, {
+    // Actualizar información de la suscripción en Firestore
+    await db.collection('users').doc(user.id).update({
       subscription: {
-        active: false,
-        plan: 'free',
-        subscriptionId: null,
-        customerId: customerId,
-        currentPeriodEnd: null,
+        id: subscription.id,
+        status: 'cancelled',
         cancelAtPeriodEnd: false,
-      },
-      updatedAt: new Date(),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        updatedAt: new Date()
+      }
+    });
+  } else {
+    // Actualizar información de la suscripción en Firestore
+    await db.collection('users').doc(userId).update({
+      subscription: {
+        id: subscription.id,
+        status: 'cancelled',
+        cancelAtPeriodEnd: false,
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        updatedAt: new Date()
+      }
+    });
+  }
+}
+
+/**
+ * Manejar un pago exitoso de factura
+ */
+async function handleSuccessfulPayment(invoice: Stripe.Invoice) {
+  if (!invoice.customer || !invoice.subscription) {
+    console.error('Falta customer o subscription en la factura');
+    return;
+  }
+  
+  // Obtener la suscripción
+  const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+  
+  const userId = subscription.metadata?.userId;
+  
+  if (!userId) {
+    // Intentar encontrar el usuario por su customerId
+    const user = await findUserByStripeCustomerId(invoice.customer as string);
+    
+    if (!user) {
+      console.error('No se pudo encontrar usuario para el pago exitoso');
+      return;
+    }
+    
+    // Guardar un registro de la transacción
+    await db.collection('transactions').add({
+      userId: user.id,
+      type: 'payment_succeeded',
+      invoiceId: invoice.id,
+      subscriptionId: invoice.subscription,
+      amount: invoice.amount_paid,
+      currency: invoice.currency,
+      timestamp: new Date()
+    });
+  } else {
+    // Guardar un registro de la transacción
+    await db.collection('transactions').add({
+      userId,
+      type: 'payment_succeeded',
+      invoiceId: invoice.id,
+      subscriptionId: invoice.subscription,
+      amount: invoice.amount_paid,
+      currency: invoice.currency,
+      timestamp: new Date()
+    });
+  }
+}
+
+/**
+ * Manejar un fallo de pago
+ */
+async function handleFailedPayment(invoice: Stripe.Invoice) {
+  if (!invoice.customer || !invoice.subscription) {
+    console.error('Falta customer o subscription en la factura');
+    return;
+  }
+  
+  // Obtener la suscripción
+  const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+  
+  const userId = subscription.metadata?.userId;
+  
+  if (!userId) {
+    // Intentar encontrar el usuario por su customerId
+    const user = await findUserByStripeCustomerId(invoice.customer as string);
+    
+    if (!user) {
+      console.error('No se pudo encontrar usuario para el pago fallido');
+      return;
+    }
+    
+    // Actualizar estado de la suscripción en Firestore
+    await db.collection('users').doc(user.id).update({
+      subscription: {
+        id: invoice.subscription,
+        status: 'past_due',
+        updatedAt: new Date()
+      }
     });
     
-    console.log(`Subscription canceled for user ${userId}`);
-  } catch (error) {
-    console.error('Error handling subscription deletion:', error);
+    // Guardar un registro de la transacción
+    await db.collection('transactions').add({
+      userId: user.id,
+      type: 'payment_failed',
+      invoiceId: invoice.id,
+      subscriptionId: invoice.subscription,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      timestamp: new Date()
+    });
+  } else {
+    // Actualizar estado de la suscripción en Firestore
+    await db.collection('users').doc(userId).update({
+      subscription: {
+        id: invoice.subscription,
+        status: 'past_due',
+        updatedAt: new Date()
+      }
+    });
+    
+    // Guardar un registro de la transacción
+    await db.collection('transactions').add({
+      userId,
+      type: 'payment_failed',
+      invoiceId: invoice.id,
+      subscriptionId: invoice.subscription,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      timestamp: new Date()
+    });
   }
 }
 

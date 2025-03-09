@@ -1,104 +1,121 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { SubscriptionInfo, SubscriptionPlan, getSubscriptionStatus, hasPlanAccess } from '@/lib/api/subscription-service';
-import { useAuth } from '@/hooks/use-auth';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  SubscriptionPlan, 
+  SubscriptionStatus, 
+  getSubscriptionStatus 
+} from '@/lib/api/subscription-service';
+import { useAuth } from './auth-context';
 
-export interface SubscriptionContextType {
-  isLoading: boolean;
-  subscription: SubscriptionInfo | null;
-  error: string | null;
-  hasAccess: (requiredPlan: SubscriptionPlan) => boolean;
-  refreshSubscription: () => Promise<void>;
-  currentPlan: SubscriptionPlan;
-  status: string;
+/**
+ * Interfaz para el usuario simplificado en el contexto de suscripción
+ */
+export interface SubscriptionUser {
+  id?: string;
+  email?: string;
+  displayName?: string;
 }
 
-const defaultSubscription: SubscriptionInfo = {
-  status: 'active',
-  currentPlan: 'free'
-};
+/**
+ * Tipo para el contexto de suscripción
+ */
+export interface SubscriptionContextType {
+  // Estado de suscripción
+  subscription: SubscriptionStatus | null;
+  isLoading: boolean;
+  isError: boolean;
+  
+  // Información del usuario
+  user: SubscriptionUser | null;
+  
+  // Acciones
+  refreshSubscription: () => void;
+}
 
+// Crear el contexto
 const SubscriptionContext = createContext<SubscriptionContextType>({
-  isLoading: true,
-  subscription: defaultSubscription,
-  error: null,
-  hasAccess: () => false,
-  refreshSubscription: async () => {},
-  currentPlan: 'free',
-  status: 'active'
+  subscription: null,
+  isLoading: false,
+  isError: false,
+  user: null,
+  refreshSubscription: () => {}
 });
 
-export const useSubscription = () => useContext(SubscriptionContext);
+/**
+ * Props para el proveedor del contexto de suscripción
+ */
+interface SubscriptionProviderProps {
+  children: ReactNode;
+}
 
-export const SubscriptionProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const { user, isLoading: authLoading } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(defaultSubscription);
-  const [error, setError] = useState<string | null>(null);
-
-  // Función para validar si el usuario tiene acceso al nivel requerido
-  const checkAccess = (requiredPlan: SubscriptionPlan): boolean => {
-    // Si no hay usuario, no hay acceso
-    if (!user) return false;
-    
-    // El usuario con email convoycubano@gmail.com siempre tiene acceso (admin)
-    if (user.email === 'convoycubano@gmail.com') return true;
-    
-    // Si no hay subscripción, solo tiene acceso a 'free'
-    if (!subscription) return requiredPlan === 'free';
-    
-    // Verifica si el plan actual del usuario cumple o supera el nivel requerido
-    return hasPlanAccess(subscription.currentPlan, requiredPlan);
-  };
-
-  // Función para refrescar la información de suscripción
-  const refreshSubscription = async () => {
-    if (!user) {
-      setSubscription(defaultSubscription);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await getSubscriptionStatus();
-      if (response.success && response.subscription) {
-        setSubscription(response.subscription);
-        setError(null);
-      } else {
-        // Si hay un error en la respuesta pero está autenticado, asignar plan free
-        setSubscription(defaultSubscription);
-        setError(response.message || 'Error retrieving subscription data');
-      }
-    } catch (err) {
-      console.error('Error fetching subscription:', err);
-      // Si hay un error en la petición pero está autenticado, asignar plan free por defecto
-      setSubscription(defaultSubscription);
-      setError('Error connecting to subscription service');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Carga inicial de datos
+/**
+ * Proveedor del contexto de suscripción
+ * Maneja la lógica de subscripción y actualización de estado
+ */
+export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
+  // Obtener información del usuario del contexto de autenticación
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  
+  // Estado para almacenar usuario adaptado para este contexto
+  const [user, setUser] = useState<SubscriptionUser | null>(null);
+  
+  // Consulta para obtener información de suscripción
+  const {
+    data: subscription,
+    isLoading: subscriptionLoading,
+    isError,
+    refetch: refreshSubscription
+  } = useQuery({
+    queryKey: ['subscription', authUser?.uid],
+    queryFn: getSubscriptionStatus,
+    enabled: !!authUser?.uid, // Solo consultar si hay un usuario autenticado
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: true,
+  });
+  
+  // Actualizar el usuario cuando cambie la autenticación
   useEffect(() => {
-    if (!authLoading) {
-      refreshSubscription();
+    if (!authLoading && authUser) {
+      setUser({
+        id: authUser.uid,
+        email: authUser.email || undefined,
+        displayName: authUser.displayName || undefined
+      });
+    } else {
+      setUser(null);
     }
-  }, [user, authLoading]);
-
+  }, [authUser, authLoading]);
+  
+  // Estado de carga combinado
+  const isLoading = authLoading || (subscriptionLoading && !!authUser);
+  
+  // Valores para el contexto
   const value: SubscriptionContextType = {
+    subscription: subscription || null,
     isLoading,
-    subscription,
-    error,
-    hasAccess: checkAccess,
-    refreshSubscription,
-    currentPlan: subscription?.currentPlan || 'free',
-    status: subscription?.status || 'inactive'
+    isError,
+    user,
+    refreshSubscription
   };
-
+  
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
     </SubscriptionContext.Provider>
   );
 };
+
+/**
+ * Hook para acceder al contexto de suscripción
+ */
+export const useSubscription = () => {
+  const context = useContext(SubscriptionContext);
+  
+  if (!context) {
+    throw new Error('useSubscription debe utilizarse dentro de un SubscriptionProvider');
+  }
+  
+  return context;
+};
+
+export default SubscriptionContext;

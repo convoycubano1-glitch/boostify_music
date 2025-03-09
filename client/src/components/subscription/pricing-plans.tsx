@@ -211,50 +211,34 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
     if (!plan) return;
 
     try {
-      // Opción 1: Usar enlaces directos de Stripe para cada plan (configurados previamente en el Dashboard de Stripe)
-      const checkoutLinks = {
-        basic: {
-          monthly: 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV', // Plan Basic mensual
-          yearly: 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV'  // Plan Basic anual (mismo link por ahora)
-        },
-        pro: {
-          monthly: 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW', // Plan Pro mensual
-          yearly: 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW'   // Plan Pro anual (mismo link por ahora)
-        },
-        premium: {
-          monthly: 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP', // Plan Premium mensual
-          yearly: 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP'    // Plan Premium anual (mismo link por ahora)
-        }
-      };
-      
-      // Opción 2: Usar la API de createCheckoutSession que generará una URL de sesión de checkout
+      // Obtener el priceId basado en si es plan anual o mensual
       const priceId = yearly ? 
         plan.priceId.yearly : 
         plan.priceId.monthly;
       
-      // Determinar qué enlace usar basado en el plan y si es anual o mensual
-      const billingCycle = yearly ? 'yearly' : 'monthly';
-      const checkoutUrl = checkoutLinks[planKey as keyof typeof checkoutLinks]?.[billingCycle];
+      // Mostrar un toast informativo mientras se crea la sesión
+      toast({
+        title: "Creando sesión de pago",
+        description: "Por favor espera mientras te redirigimos a la página de pago...",
+        variant: "default"
+      });
       
-      // MÉTODO 1: Enlaces directos preconfigurados
-      if (checkoutUrl) {
-        // Redirigir directamente al checkout de Stripe (opción más simple)
-        window.location.href = checkoutUrl;
-        return;
-      }
-      
-      // MÉTODO 2: Crear sesión de checkout dinámica con API
-      // Solo se ejecuta si no se encontró un enlace directo
+      // MÉTODO MEJORADO: Siempre usar la API para crear una sesión de checkout dinámica
       if (priceId) {
+        // Intentar crear una sesión de checkout con la API
         const response = await createCheckoutSession(priceId);
+        console.log("Respuesta de creación de sesión:", response);
+        
         if (response.success && response.url) {
+          // Redirigir al usuario a la URL de checkout generada
           window.location.href = response.url;
           return;
+        } else {
+          throw new Error(response.message || "No se pudo crear la sesión de checkout");
         }
+      } else {
+        throw new Error("ID de precio no disponible para el plan seleccionado");
       }
-      
-      // Si ninguno de los métodos funcionó
-      throw new Error("No hay enlace de checkout disponible para el plan seleccionado");
     } catch (error) {
       console.error('Error starting checkout:', error);
       toast({

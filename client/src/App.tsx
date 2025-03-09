@@ -78,6 +78,7 @@ import PricingPage from "@/pages/pricing";
 import AccountPage from "@/pages/account";
 import SubscriptionSuccessPage from "@/pages/subscription-success";
 import SubscriptionCancelledPage from "@/pages/subscription-cancelled";
+import SubscriptionExamplePage from "@/pages/subscription-example";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -234,6 +235,7 @@ const Router = () => {
   const WrappedAccountPage = withPageWrapper(AccountPage);
   const WrappedSubscriptionSuccessPage = withPageWrapper(SubscriptionSuccessPage);
   const WrappedSubscriptionCancelledPage = withPageWrapper(SubscriptionCancelledPage);
+  const WrappedSubscriptionExamplePage = withPageWrapper(SubscriptionExamplePage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -256,6 +258,7 @@ const Router = () => {
         {getRouteComponent("/account", WrappedAccountPage, 'free')}
         {getRouteComponent("/subscription/success", WrappedSubscriptionSuccessPage, 'free')}
         {getRouteComponent("/subscription/cancelled", WrappedSubscriptionCancelledPage, 'free')}
+        {getRouteComponent("/subscription/example", WrappedSubscriptionExamplePage, 'free')}
         
         {/* Rutas para suscripción BASIC ($59.99) */}
         {getRouteComponent("/artist-dashboard", WrappedArtistDashboard, 'basic')}
