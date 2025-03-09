@@ -264,28 +264,21 @@ export function EnglishVirtualTryOn({
   const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
 
-  // Handle initial image props on mount or when they change
+  // Handle initial image props only when they are first provided or component mounts
   useEffect(() => {
-    // If initial images are provided, use them
-    if (initialModelImage && modelImage !== initialModelImage) {
+    // If initial images are provided and not already set, use them
+    if (initialModelImage && initialModelImage !== '') {
       setModelImage(initialModelImage);
       console.log("Using provided model image");
     }
     
-    if (initialClothingImage && clothingImage !== initialClothingImage) {
+    if (initialClothingImage && initialClothingImage !== '') {
       setClothingImage(initialClothingImage);
       console.log("Using provided clothing image");
     }
     
-    // If both images are provided, we could optionally auto-start the process
-    // This is commented out as it might be preferable to let the user click the button
-    /*
-    if (initialModelImage && initialClothingImage && !taskId && !isLoading) {
-      console.log("Auto-starting try-on process with provided images");
-      handleStartTryOn();
-    }
-    */
-  }, [initialModelImage, initialClothingImage]);
+    // We intentionally don't auto-start to let the user review the images first
+  }, []);
 
   // Load saved results on mount
   useEffect(() => {
