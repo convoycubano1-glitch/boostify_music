@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSubscription } from '@/lib/context/subscription-context';
-import { createCheckoutSession } from '@/lib/api/stripe-service';
+import { createCheckoutSession, fetchStripePublicKey } from '@/lib/api/stripe-service';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/hooks/use-toast';
 
 // Define the pricing plans
 const pricingPlans = [
@@ -42,8 +43,8 @@ const pricingPlans = [
       yearly: 599.90  // 10 months for the price of 12
     },
     priceId: {
-      monthly: process.env.STRIPE_PRICE_BASIC || 'price_basic',
-      yearly: process.env.STRIPE_PRICE_BASIC_YEARLY || 'price_basic_yearly'
+      monthly: 'price_basic',
+      yearly: 'price_basic_yearly'
     },
     popular: true,
     features: [
@@ -65,8 +66,8 @@ const pricingPlans = [
       yearly: 999.90  // 10 months for the price of 12
     },
     priceId: {
-      monthly: process.env.STRIPE_PRICE_PRO || 'price_pro',
-      yearly: process.env.STRIPE_PRICE_PRO_YEARLY || 'price_pro_yearly'
+      monthly: 'price_pro',
+      yearly: 'price_pro_yearly'
     },
     features: [
       { name: 'Professional profile page', included: true },
@@ -87,8 +88,8 @@ const pricingPlans = [
       yearly: 1499.90  // 10 months for the price of 12
     },
     priceId: {
-      monthly: process.env.STRIPE_PRICE_PREMIUM || 'price_premium',
-      yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY || 'price_premium_yearly'
+      monthly: 'price_premium',
+      yearly: 'price_premium_yearly'
     },
     features: [
       { name: 'Custom branded profile', included: true },
@@ -126,7 +127,11 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
     
     // Si es el administrador (convoycubano@gmail.com), mostrar mensaje especial
     if (user.email === 'convoycubano@gmail.com') {
-      alert('Como administrador, ya tienes acceso completo a todas las funcionalidades sin necesidad de suscripción.');
+      toast({
+        title: "Acceso administrativo",
+        description: "Como administrador, ya tienes acceso completo a todas las funcionalidades sin necesidad de suscripción.",
+        variant: "default"
+      });
       return;
     }
 
@@ -137,17 +142,22 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
       // Get the plan's price ID based on billing cycle
       const priceId = yearly ? plan.priceId.yearly : plan.priceId.monthly;
       
-      // Get the user's auth token
-      const token = await user?.getIdToken();
+      // Use the stripe service to create a checkout session
+      const response = await createCheckoutSession(priceId);
       
-      if (!token) {
-        throw new Error("No se pudo obtener el token de autenticación");
+      if (response.success && response.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.url;
+      } else {
+        throw new Error(response.message || "Error creating checkout session");
       }
-      
-      // Start the checkout process
-      await createCheckoutSession(token, priceId);
     } catch (error) {
       console.error('Error starting checkout:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo iniciar el proceso de suscripción. Por favor, inténtalo de nuevo más tarde.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -172,11 +182,11 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
                 className="w-full" 
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleSubscribe(plan.key, yearly)}
-                disabled={isLoading || (subscription.active && subscription.plan === plan.key)}
+                disabled={isLoading || (subscription?.status === 'active' && subscription?.currentPlan === plan.key)}
               >
                 {isLoading ? (
                   <Skeleton className="h-4 w-20" />
-                ) : subscription.active && subscription.plan === plan.key ? (
+                ) : subscription?.status === 'active' && subscription?.currentPlan === plan.key ? (
                   'Current Plan'
                 ) : (
                   'Subscribe'
@@ -251,11 +261,11 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
                 className="w-full" 
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleSubscribe(plan.key, yearly)}
-                disabled={isLoading || (subscription.active && subscription.plan === plan.key)}
+                disabled={isLoading || (subscription?.status === 'active' && subscription?.currentPlan === plan.key)}
               >
                 {isLoading ? (
                   <Skeleton className="h-4 w-20" />
-                ) : subscription.active && subscription.plan === plan.key ? (
+                ) : subscription?.status === 'active' && subscription?.currentPlan === plan.key ? (
                   'Current Plan'
                 ) : (
                   'Subscribe'

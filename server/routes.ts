@@ -59,7 +59,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // Export the configured server
 export function registerRoutes(app: Express): Server {
-  // Initialize session middleware
+  // IMPORTANTE: Configurar rutas públicas antes de cualquier middleware de autenticación
+  
+  // Ruta pública para obtener la clave publicable de Stripe (fuera de cualquier middleware de autenticación)
+  app.get('/api/stripe/publishable-key', (req, res) => {
+    console.log('Accediendo a clave publicable de Stripe (ruta global)');
+    res.json({
+      key: process.env.STRIPE_PUBLISHABLE_KEY || '',
+      success: true
+    });
+  });
+  
+  // Initialize session middleware después de rutas públicas
   app.use(session({
     secret: process.env.REPL_ID!,
     resave: false,
@@ -486,57 +497,8 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Create subscription checkout session
-  app.post("/api/create-subscription", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
-      const result = subscriptionSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({
-          error: "Invalid subscription data"
-        });
-      }
-
-      const { priceId, planName } = result.data;
-
-      console.log('Creating subscription session for:', { priceId, planName });
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        mode: 'subscription',
-        success_url: `${req.protocol}://${req.get('host')}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/dashboard?canceled=true`,
-        metadata: {
-          userId: req.user!.id,
-          planName,
-        },
-      });
-
-      console.log('Created session:', session.id);
-
-      return res.json({
-        sessionId: session.id
-      });
-    } catch (error: any) {
-      console.error('Error creating subscription session:', error);
-      if (error.type === 'StripeInvalidRequestError') {
-        return res.status(400).json({
-          error: "Invalid Stripe configuration. Please try again later."
-        });
-      }
-      return res.status(500).json({
-        error: "Error creating subscription session"
-      });
-    }
-  });
+  // Eliminamos esta ruta duplicada ya que ahora usamos '/api/stripe/create-subscription' 
+  // definida en server/routes/stripe.ts
 
 
   // Create checkout session

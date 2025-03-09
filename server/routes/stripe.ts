@@ -20,9 +20,6 @@ const router = Router();
  * @param app Express application
  */
 export function setupStripeRoutes(app: Express) {
-  // Mount the Stripe routes
-  app.use('/api', router);
-  
   // Log Stripe configuration status
   if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY) {
     console.log('✅ Stripe API keys are configured and ready for use');
@@ -30,12 +27,11 @@ export function setupStripeRoutes(app: Express) {
     console.warn('⚠️ Stripe API keys are not configured properly');
   }
   
-  // Add a route to get the publishable key
-  app.get('/api/stripe-config', (req, res) => {
-    res.json({
-      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-    });
-  });
+  // ⚠️ IMPORTANTE: La ruta '/api/stripe/publishable-key' ahora se define directamente en server/routes.ts
+  // para evitar problemas con el middleware de autenticación
+  
+  // Mount all Stripe routes at '/api/stripe'
+  app.use('/api/stripe', router);
 }
 
 // Check if Stripe is properly configured
@@ -154,10 +150,17 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
       },
     });
     
-    res.json({ url: session.url });
+    res.json({ 
+      success: true,
+      url: session.url 
+    });
   } catch (error) {
     console.error('Error creating subscription:', error);
-    res.status(500).json({ error: 'Failed to create subscription' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to create subscription',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

@@ -54,11 +54,16 @@ export function setupAuth(app: Express) {
       '/api/chat/completions',    // Ruta de chat para permitir el acceso sin autenticación
       '/api/task/status',         // Ruta para verificar el estado de tareas asíncronas
       '/api/video/generate',      // Ruta para generar videos
-      '/api/video/status'         // Ruta para verificar el estado de videos
+      '/api/video/status',        // Ruta para verificar el estado de videos
+      '/api/stripe/publishable-key' // Ruta pública para obtener la clave publicable de Stripe
     ];
     
+    // Añadir soporte para coincidencia parcial de rutas públicas
     // Verificar si la ruta actual está en la lista de rutas públicas
-    if (publicRoutes.includes(req.path) || req.path.startsWith('/api/proxy/')) {
+    // o comienza con alguna de las rutas públicas parciales definidas
+    if (publicRoutes.includes(req.path) || 
+        req.path.startsWith('/api/proxy/') || 
+        req.path === '/api/stripe/publishable-key') {
       console.log('Ruta pública accedida sin autenticación:', req.path);
       return next();
     }

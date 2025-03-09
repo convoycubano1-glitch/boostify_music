@@ -114,11 +114,11 @@ export function hasPlanAccess(currentPlan: SubscriptionPlan, requiredPlan: Subsc
  */
 export async function getSubscriptionStatus(): Promise<SubscriptionResponse> {
   try {
-    const response = await apiRequest<SubscriptionResponse>({
-      url: '/api/subscription-status',
+    const response = await apiRequest({
+      url: '/api/stripe/subscription-status',
       method: 'GET'
     });
-    return response;
+    return response as SubscriptionResponse;
   } catch (error) {
     console.error('Error fetching subscription status:', error);
     return {
@@ -134,15 +134,15 @@ export async function getSubscriptionStatus(): Promise<SubscriptionResponse> {
  */
 export async function createSubscription(planId: string): Promise<{ success: boolean; url?: string; message?: string }> {
   try {
-    const response = await apiRequest<{ success: boolean; url?: string; message?: string }>({
-      url: '/api/create-subscription',
+    const response = await apiRequest({
+      url: '/api/stripe/create-subscription',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      data: { planId }
+      data: { priceId: planId }  // Cambiado de planId a priceId para que coincida con el servidor
     });
-    return response;
+    return response as { success: boolean; url?: string; message?: string };
   } catch (error) {
     console.error('Error creating subscription:', error);
     return {
@@ -157,11 +157,11 @@ export async function createSubscription(planId: string): Promise<{ success: boo
  */
 export async function cancelSubscription(): Promise<{ success: boolean; message: string }> {
   try {
-    const response = await apiRequest<{ success: boolean; message: string }>({
-      url: '/api/cancel-subscription',
+    const response = await apiRequest({
+      url: '/api/stripe/cancel-subscription',
       method: 'POST'
     });
-    return response;
+    return response as { success: boolean; message: string };
   } catch (error) {
     console.error('Error cancelling subscription:', error);
     return {
@@ -177,15 +177,15 @@ export async function cancelSubscription(): Promise<{ success: boolean; message:
  */
 export async function updateSubscription(newPlanId: string): Promise<{ success: boolean; url?: string; message?: string }> {
   try {
-    const response = await apiRequest<{ success: boolean; url?: string; message?: string }>({
-      url: '/api/update-subscription',
+    const response = await apiRequest({
+      url: '/api/stripe/update-subscription',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      data: { planId: newPlanId }
+      data: { priceId: newPlanId }  // Cambiado de planId a priceId para que coincida con el servidor
     });
-    return response;
+    return response as { success: boolean; url?: string; message?: string };
   } catch (error) {
     console.error('Error updating subscription:', error);
     return {
