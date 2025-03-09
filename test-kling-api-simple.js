@@ -8,17 +8,10 @@
 import fs from 'fs';
 import axios from 'axios';
 
-// La clave de API debe estar disponible como secreto
-// Usamos el valor proporcionado a través de Replit Secrets
-const PIAPI_API_KEY = process.env.PIAPI_API_KEY;
+// Usar directamente la clave API proporcionada por el usuario
+const PIAPI_API_KEY = "234e9e9975bf40fda7751c9c7855d87b0a4e33fb9f179943a12b08acb1bd4fde";
 
-// Verificar que la clave API existe
-if (!PIAPI_API_KEY) {
-  console.error('❌ Error: No se encontró la clave API de PiAPI (PIAPI_API_KEY) en las variables de entorno.');
-  process.exit(1);
-}
-
-console.log('✅ Clave API encontrada en variables de entorno');
+console.log('✅ Usando clave API proporcionada directamente');
 // Mostrar solo los primeros y últimos 4 caracteres por seguridad
 const keyLength = PIAPI_API_KEY.length;
 const maskedKey = PIAPI_API_KEY.substring(0, 4) + '...' + PIAPI_API_KEY.substring(keyLength - 4);
@@ -47,7 +40,7 @@ async function testKlingAPI() {
     // Enviar solicitud directamente a la API de Kling
     const response = await axios.post('https://api.piapi.ai/api/v1/task', {
       model: 'kling',
-      task_type: 'ai_try', // NOTA: Cambiado de "ai_try_on" a "ai_try" para pruebas
+      task_type: 'ai_try_on', // Valor correcto verificado mediante pruebas directas con la API
       input: {
         model_input: modelImageBase64,
         dress_input: clothingImageBase64,
@@ -63,13 +56,20 @@ async function testKlingAPI() {
     console.log('Respuesta recibida:');
     console.log(JSON.stringify(response.data, null, 2));
     
-    // Verificar que la respuesta sea exitosa
-    if (response.data.success) {
+    // Verificar que la respuesta sea exitosa (maneja ambos formatos de respuesta)
+    if (response.data.code === 200 && response.data.message === 'success' && response.data.data?.task_id) {
+      // Formato de respuesta anidado con { code, message, data }
+      console.log('✅ La prueba fue exitosa. La autenticación con la API de Kling está funcionando correctamente.');
+      console.log(`ID de tarea: ${response.data.data.task_id}`);
+      console.log(`Estado inicial: ${response.data.data.status}`);
+      console.log(`Tipo de tarea confirmado: ${response.data.data.task_type}`);
+    } else if (response.data.success && response.data.taskId) {
+      // Formato de respuesta directo { success, taskId }
       console.log('✅ La prueba fue exitosa. La autenticación con la API de Kling está funcionando correctamente.');
       console.log(`ID de tarea: ${response.data.taskId}`);
     } else {
       console.log('❌ La prueba falló. La API de Kling respondió con un error:');
-      console.log(response.data.error || 'Error desconocido');
+      console.log(response.data.error || response.data.message || 'Error desconocido');
     }
   } catch (error) {
     console.error('❌ Error al probar la API de Kling:');

@@ -45,7 +45,7 @@ export const klingService = {
     try {
       const requestBody: TryOnRequest = {
         model: "kling",
-        task_type: "ai_try", // ¡Actualizado! "ai_try" es el valor correcto según la documentación
+        task_type: "ai_try_on", // Valor correcto verificado mediante pruebas directas con la API
         input: {
           model_input: modelImage,
           dress_input: clothingImage,

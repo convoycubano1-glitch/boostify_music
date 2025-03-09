@@ -159,7 +159,7 @@ async function startTryOn(modelImageDataUrl, garmentImageDataUrl) {
     
     const requestData = {
       model: "kling",
-      task_type: "ai_try",
+      task_type: "ai_try_on",
       params: {
         model_image: modelImageDataUrl,
         clothing_image: garmentImageDataUrl

@@ -1979,7 +1979,7 @@ router.post('/proxy/kling/try-on/start', async (req: Request, res) => {
       // Llamada real a la API de PiAPI para Virtual Try-On
       const response = await axios.post('https://api.piapi.ai/api/v1/task', {
         model: "kling",
-        task_type: "ai_try", // Corregido: era "ai_try_on" pero debe ser "ai_try"
+        task_type: "ai_try_on", // Verificado mediante pruebas directas con la API
         input: inputObj
       }, {
         headers: {

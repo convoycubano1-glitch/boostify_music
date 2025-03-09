@@ -37,10 +37,10 @@ const klingService = {
   startTryOn: async (modelImage: string, clothingImage: string): Promise<TryOnResult> => {
     try {
       // Estructura siguiendo el formato esperado por el API de Kling
-      // Nota: "task_type" debe ser "ai_try" (corregido de "ai_try_on")
+      // Nota: "task_type" debe ser "ai_try_on" (verificado mediante pruebas directas)
       const response = await axios.post('/api/kling/try-on/start', {
         model: "kling",
-        task_type: "ai_try", // Parámetro corregido según documentación actualizada
+        task_type: "ai_try_on", // Parámetro verificado con pruebas directas contra la API
         input: {
           model_input: modelImage,
           dress_input: clothingImage,
