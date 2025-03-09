@@ -28,6 +28,7 @@ import translationRouter from './routes/translation';
 import managerRouter from './routes/manager';
 import artistRouter from './routes/artist';
 import artistGeneratorRouter from './routes/artist-generator'; // Added import
+import subscriptionRoutesRouter from './routes/subscription-routes'; // Nuevas rutas específicas por nivel de suscripción
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
 import klingApiRouter from './routes/kling-api'; // Importamos el router de Kling API
@@ -354,6 +355,63 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // IMPORTANTE: Registrar esta ruta pública antes de cualquier middleware de autenticación global
+  // Esta ruta proporciona información pública sobre los planes de suscripción
+  app.get('/api/subscription-plans', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Información sobre planes de suscripción',
+      plans: [
+        { 
+          name: 'Free', 
+          price: 0,
+          features: [
+            'Acceso básico a la plataforma',
+            'Visualización de tutoriales gratuitos',
+            'Comunidad de artistas',
+            'Funcionalidades limitadas'
+          ]
+        },
+        { 
+          name: 'Basic', 
+          price: 59.99,
+          features: [
+            'Cursos básicos de producción musical',
+            'Análisis básico de canciones',
+            'Generación básica de audio con IA',
+            'Hasta 10 producciones mensuales'
+          ]
+        },
+        { 
+          name: 'Pro', 
+          price: 99.99,
+          features: [
+            'Todas las funcionalidades Basic',
+            'Cursos avanzados de producción musical',
+            'Análisis detallado de canciones con IA',
+            'Generación avanzada de audio con IA',
+            'Hasta 30 producciones mensuales',
+            'Acceso a herramientas de masterización'
+          ]
+        },
+        { 
+          name: 'Premium', 
+          price: 149.99,
+          features: [
+            'Todas las funcionalidades Pro',
+            'Masterclasses exclusivas con artistas reconocidos',
+            'Análisis predictivo de tendencias musicales',
+            'Generación ilimitada de audio con IA',
+            'Herramientas avanzadas de distribución musical',
+            'Soporte personalizado 24/7',
+            'Acceso temprano a nuevas funcionalidades'
+          ]
+        }
+      ]
+    });
+  });
+  
+  // Registrar rutas protegidas por control de acceso por suscripción
   // Servicios que requieren autenticación - después de definir todas las rutas públicas
   setupAuth(app);
   setupSpotifyRoutes(app);
@@ -366,6 +424,8 @@ export function registerRoutes(app: Express): Server {
   
   // Setup subscription-protected routes
   setupSubscriptionRoutes(app);
+  
+  app.use('/api/subscription', authenticate, subscriptionRoutesRouter);
 
   // Usar Firestore para la red social
   app.use('/api/firestore-social', firestoreSocialNetworkRouter);

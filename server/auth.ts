@@ -46,24 +46,27 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   // Apply authentication middleware to all /api routes except webhook and chat completions
-  app.use('/api/*', (req, res, next) => {
+  app.use('/api', (req, res, next) => {
+    console.log('DEBUG - Middleware Auth - Path:', req.path);
     // Lista de rutas públicas que no requieren autenticación
+    // Nota: req.path no incluye '/api' porque eso está en el app.use('/api')
     const publicRoutes = [
-      '/api/stripe-webhook',
-      '/api/webhook',
-      '/api/chat/completions',    // Ruta de chat para permitir el acceso sin autenticación
-      '/api/task/status',         // Ruta para verificar el estado de tareas asíncronas
-      '/api/video/generate',      // Ruta para generar videos
-      '/api/video/status',        // Ruta para verificar el estado de videos
-      '/api/stripe/publishable-key' // Ruta pública para obtener la clave publicable de Stripe
+      '/stripe-webhook',
+      '/webhook',
+      '/chat/completions',    // Ruta de chat para permitir el acceso sin autenticación
+      '/task/status',         // Ruta para verificar el estado de tareas asíncronas
+      '/video/generate',      // Ruta para generar videos
+      '/video/status',        // Ruta para verificar el estado de videos
+      '/stripe/publishable-key', // Ruta pública para obtener la clave publicable de Stripe
+      '/subscription-plans'   // Ruta pública para obtener información sobre planes de suscripción
     ];
     
     // Añadir soporte para coincidencia parcial de rutas públicas
     // Verificar si la ruta actual está en la lista de rutas públicas
     // o comienza con alguna de las rutas públicas parciales definidas
+    console.log('DEBUG - Ruta solicitada:', req.path, 'Está en publicRoutes:', publicRoutes.includes(req.path));
     if (publicRoutes.includes(req.path) || 
-        req.path.startsWith('/api/proxy/') || 
-        req.path === '/api/stripe/publishable-key') {
+        req.path.startsWith('/proxy/')) {
       console.log('Ruta pública accedida sin autenticación:', req.path);
       return next();
     }

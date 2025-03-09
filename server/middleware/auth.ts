@@ -2,9 +2,29 @@ import { Request, Response, NextFunction } from 'express';
 import { auth } from '../firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
 
+/**
+ * Niveles de suscripción disponibles, ordenados por jerarquía
+ * - free: Acceso básico sin pago
+ * - basic: Plan básico ($59.99/mes)
+ * - pro: Plan profesional ($99.99/mes)
+ * - premium: Plan premium ($149.99/mes)
+ */
+export type SubscriptionPlan = 'free' | 'basic' | 'pro' | 'premium';
+
+/**
+ * Jerarquía de niveles de suscripción para comparaciones de acceso
+ * Un nivel mayor incluye todos los permisos de los niveles inferiores
+ */
+export const SUBSCRIPTION_LEVELS: Record<SubscriptionPlan, number> = {
+  'free': 0,
+  'basic': 1,
+  'pro': 2,
+  'premium': 3
+};
+
 // Subscription interface
 export interface Subscription {
-  plan: 'free' | 'basic' | 'pro' | 'premium';
+  plan: SubscriptionPlan;
   active: boolean;
   customerId?: string;
   subscriptionId?: string;
@@ -33,6 +53,9 @@ declare global {
 /**
  * Middleware to authenticate users using Firebase Authentication
  * Verifies the token from the Authorization header and attaches user data to the request
+ * @param req Express request
+ * @param res Express response
+ * @param next Next function
  */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
@@ -132,4 +155,55 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
+}
+
+/**
+ * Middleware para verificar que el usuario tenga al menos un nivel de suscripción específico
+ * Protege rutas para que solo sean accesibles con la suscripción adecuada o superior
+ * 
+ * @param requiredPlan Nivel mínimo de suscripción requerido ('basic', 'pro', 'premium')
+ * @returns Middleware de Express
+ */
+export function requireSubscription(requiredPlan: SubscriptionPlan) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Si no hay usuario autenticado, responder con error 401
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    // El administrador (convoycubano@gmail.com) siempre tiene acceso completo
+    if (req.user.isAdmin || req.user.email === 'convoycubano@gmail.com') {
+      return next();
+    }
+
+    // Verificar si el usuario tiene una suscripción activa
+    const userSubscription = req.user.subscription;
+    if (!userSubscription || !userSubscription.active) {
+      return res.status(403).json({
+        success: false,
+        message: 'Active subscription required',
+        requiredPlan: requiredPlan
+      });
+    }
+
+    // Obtener niveles numéricos para comparación
+    const userLevel = SUBSCRIPTION_LEVELS[userSubscription.plan];
+    const requiredLevel = SUBSCRIPTION_LEVELS[requiredPlan];
+
+    // Verificar si el nivel de suscripción del usuario es suficiente
+    if (userLevel < requiredLevel) {
+      return res.status(403).json({
+        success: false,
+        message: `Subscription level ${requiredPlan} or higher required`,
+        currentPlan: userSubscription.plan,
+        requiredPlan: requiredPlan
+      });
+    }
+
+    // Usuario tiene el nivel requerido, continuar
+    return next();
+  };
 }

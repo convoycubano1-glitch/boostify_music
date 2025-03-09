@@ -50,15 +50,22 @@ const updateSubscriptionSchema = z.object({
 });
 
 // Price IDs for different subscription tiers
-// In production, these would come from a database or environment variables
+// En producción, estos vendrían de variables de entorno o de una base de datos
 const PRICES = {
-  basic: process.env.STRIPE_PRICE_BASIC || 'price_basic',
-  pro: process.env.STRIPE_PRICE_PRO || 'price_pro',
-  premium: process.env.STRIPE_PRICE_PREMIUM || 'price_premium',
+  // Utilizamos las variables de entorno si están definidas, o los IDs por defecto
+  basic: process.env.STRIPE_PRICE_BASIC || 'price_1PdG7a2LyFplWimfJ7FjKMgQ', // $59.99/month
+  pro: process.env.STRIPE_PRICE_PRO || 'price_1PdG802LyFplWimfQ0vL4rvB',    // $99.99/month
+  premium: process.env.STRIPE_PRICE_PREMIUM || 'price_1PdG8G2LyFplWimfi8nTcmKm', // $149.99/month
 };
 
-// Map price IDs to plan names
+// Mapa de IDs de precio a nombres de planes
 const PRICE_TO_PLAN: Record<string, string> = {
+  // IDs de desarrollo (modo prueba de Stripe)
+  'price_1PdG7a2LyFplWimfJ7FjKMgQ': 'basic',    // Plan Basic $59.99
+  'price_1PdG802LyFplWimfQ0vL4rvB': 'pro',      // Plan Pro $99.99
+  'price_1PdG8G2LyFplWimfi8nTcmKm': 'premium',  // Plan Premium $149.99
+  
+  // Variables de entorno (para flexibilidad)
   [PRICES.basic]: 'basic',
   [PRICES.pro]: 'pro',
   [PRICES.premium]: 'premium',
@@ -94,6 +101,22 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
     }
     
     const { priceId } = result.data;
+    
+    // Log the price ID being used to track potential issues
+    console.log(`Creating subscription with price ID: ${priceId}`);
+    
+    // Validate that the price ID is recognized in Stripe
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      console.log(`Price details verified: ${price.id}, active: ${price.active}`);
+    } catch (error) {
+      console.error(`Error verifying price ID ${priceId}:`, error);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid price ID. Please check your subscription selection and try again.',
+        error: 'price_verification_failed'
+      });
+    }
     
     // Get the user's customer ID or create a new customer
     const userDoc = await getDocById('users', userId);
@@ -156,6 +179,7 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error creating subscription:', error);
+    console.error('Full error details:', error);
     res.status(500).json({ 
       success: false,
       message: 'Failed to create subscription',
@@ -294,6 +318,22 @@ router.post('/update-subscription', authenticate, async (req: Request, res: Resp
     }
     
     const { priceId } = result.data;
+    
+    // Log the price ID being used to track potential issues
+    console.log(`Updating subscription with price ID: ${priceId}`);
+    
+    // Validate that the price ID is recognized in Stripe
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      console.log(`Price details verified for update: ${price.id}, active: ${price.active}`);
+    } catch (error) {
+      console.error(`Error verifying price ID ${priceId} for update:`, error);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid price ID. Please check your subscription selection and try again.',
+        error: 'price_verification_failed'
+      });
+    }
     
     // Get the user's customer ID
     const userDoc = await getDocById('users', userId);

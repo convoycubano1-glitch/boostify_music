@@ -1,110 +1,108 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSubscription } from '@/lib/context/subscription-context';
-import { createCheckoutSession, fetchStripePublicKey } from '@/lib/api/stripe-service';
+import { 
+  createCheckoutSession, 
+  fetchStripePublicKey, 
+  fetchSubscriptionPlans,
+  SubscriptionPlan 
+} from '@/lib/api/stripe-service';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
-// Define the pricing plans
-const pricingPlans = [
-  {
-    name: 'Free',
-    key: 'free',
-    description: 'Basic tools for music creators',
-    price: {
-      monthly: 0,
-      yearly: 0
-    },
-    priceId: {
-      monthly: '',
-      yearly: ''
-    },
-    features: [
-      { name: 'Basic profile page', included: true },
-      { name: 'Music uploads (3 tracks)', included: true },
-      { name: 'Limited analytics', included: true },
-      { name: 'Community access', included: true },
-      { name: 'Advanced AI tools', included: false },
-      { name: 'Priority support', included: false },
-      { name: 'Unlimited uploads', included: false }
-    ]
+interface ProcessedPlan {
+  name: string;
+  key: string;
+  description: string;
+  price: {
+    monthly: number;
+    yearly: number;
+  };
+  priceId: {
+    monthly: string;
+    yearly: string;
+  };
+  popular?: boolean;
+  features: { name: string; included: boolean }[];
+}
+
+// Mapping del API a nuestro formato de planes
+const planKeyMap: Record<string, string> = {
+  'Free': 'free',
+  'Basic': 'basic',
+  'Pro': 'pro',
+  'Premium': 'premium'
+};
+
+// Mapping de precios a priceIds de Stripe
+const priceIdMap: Record<string, { monthly: string; yearly: string }> = {
+  'free': {
+    monthly: '',
+    yearly: ''
   },
-  {
-    name: 'Basic',
-    key: 'basic',
-    description: 'Complete tools for emerging artists',
-    price: {
-      monthly: 59.99,
-      yearly: 599.90  // 10 months for the price of 12
-    },
-    priceId: {
-      monthly: 'price_basic',
-      yearly: 'price_basic_yearly'
-    },
-    popular: true,
-    features: [
-      { name: 'Enhanced profile page', included: true },
-      { name: 'Music uploads (20 tracks)', included: true },
-      { name: 'Standard analytics', included: true },
-      { name: 'Community access', included: true },
-      { name: 'Basic AI tools', included: true },
-      { name: 'Email support', included: true },
-      { name: 'Custom audio watermark', included: false }
-    ]
+  'basic': {
+    monthly: 'price_1PdG7a2LyFplWimfJ7FjKMgQ', // $59.99/month
+    yearly: 'price_1PdG7a2LyFplWimfJ7FjKMgQ'   // Mismo ID para simplificar
   },
-  {
-    name: 'Pro',
-    key: 'pro',
-    description: 'Advanced tools for professional artists',
-    price: {
-      monthly: 99.99,
-      yearly: 999.90  // 10 months for the price of 12
-    },
-    priceId: {
-      monthly: 'price_pro',
-      yearly: 'price_pro_yearly'
-    },
-    features: [
-      { name: 'Professional profile page', included: true },
-      { name: 'Music uploads (50 tracks)', included: true },
-      { name: 'Advanced analytics', included: true },
-      { name: 'Priority community access', included: true },
-      { name: 'Advanced AI tools', included: true },
-      { name: 'Priority support', included: true },
-      { name: 'Custom landing page', included: true }
-    ]
+  'pro': {
+    monthly: 'price_1PdG802LyFplWimfQ0vL4rvB', // $99.99/month
+    yearly: 'price_1PdG802LyFplWimfQ0vL4rvB'   // Mismo ID para simplificar
   },
-  {
-    name: 'Premium',
-    key: 'premium',
-    description: 'Complete solution for established artists',
-    price: {
-      monthly: 149.99,
-      yearly: 1499.90  // 10 months for the price of 12
-    },
-    priceId: {
-      monthly: 'price_premium',
-      yearly: 'price_premium_yearly'
-    },
-    features: [
-      { name: 'Custom branded profile', included: true },
-      { name: 'Unlimited music uploads', included: true },
-      { name: 'Enterprise analytics', included: true },
-      { name: 'VIP community access', included: true },
-      { name: 'Premium AI tools', included: true },
-      { name: '24/7 dedicated support', included: true },
-      { name: 'Marketing promotion tools', included: true }
-    ]
+  'premium': {
+    monthly: 'price_1PdG8G2LyFplWimfi8nTcmKm', // $149.99/month
+    yearly: 'price_1PdG8G2LyFplWimfi8nTcmKm'   // Mismo ID para simplificar
   }
-];
+};
 
 interface PricingPlansProps {
   simplified?: boolean;
+}
+
+// Función para convertir planes de la API al formato que usa el componente
+function transformApiPlans(apiPlans: SubscriptionPlan[]): ProcessedPlan[] {
+  if (!apiPlans || apiPlans.length === 0) {
+    return [];
+  }
+
+  return apiPlans.map(plan => {
+    const key = planKeyMap[plan.name] || plan.name.toLowerCase();
+    
+    // Configuración predeterminada para descripciones
+    const descriptions = {
+      'free': 'Basic tools for music creators',
+      'basic': 'Complete tools for emerging artists',
+      'pro': 'Advanced tools for professional artists',
+      'premium': 'Complete solution for established artists'
+    };
+
+    // Separar características en incluidas y excluidas
+    const includedFeatures = plan.features.map(feature => ({ 
+      name: feature, 
+      included: true 
+    }));
+
+    // Precio anual es 10 meses por el precio de 12 (16% de descuento)
+    const yearlyPrice = Math.round(plan.price * 10 * 100) / 100;
+
+    return {
+      name: plan.name,
+      key,
+      description: descriptions[key as keyof typeof descriptions] || `${plan.name} subscription plan`,
+      price: {
+        monthly: plan.price,
+        yearly: yearlyPrice
+      },
+      priceId: priceIdMap[key] || { monthly: '', yearly: '' },
+      popular: key === 'basic', // El plan basic es el popular
+      features: includedFeatures
+    };
+  });
 }
 
 /**
@@ -116,7 +114,81 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
   const { user, isLoading: authLoading } = useAuth();
   const { subscription, isLoading: subscriptionLoading } = useSubscription();
   
-  const isLoading = authLoading || subscriptionLoading;
+  // Obtener planes desde la API
+  const { data: plansData, isLoading: plansLoading, error: plansError } = useQuery({
+    queryKey: ['subscription-plans'],
+    queryFn: fetchSubscriptionPlans
+  });
+  
+  const isLoading = authLoading || subscriptionLoading || plansLoading;
+
+  // Transformar planes de la API a nuestro formato
+  const processedPlans = React.useMemo(() => {
+    if (plansLoading || !plansData?.plans) {
+      return [];
+    }
+    return transformApiPlans(plansData.plans);
+  }, [plansData, plansLoading]);
+
+  // Planes de respaldo en caso de error
+  const fallbackPlans: ProcessedPlan[] = [
+    {
+      name: 'Free',
+      key: 'free',
+      description: 'Basic tools for music creators',
+      price: { monthly: 0, yearly: 0 },
+      priceId: { monthly: '', yearly: '' },
+      features: [
+        { name: 'Basic profile page', included: true },
+        { name: 'Music uploads (3 tracks)', included: true },
+        { name: 'Limited analytics', included: true },
+        { name: 'Community access', included: true }
+      ]
+    },
+    {
+      name: 'Basic',
+      key: 'basic',
+      description: 'Complete tools for emerging artists',
+      price: { monthly: 59.99, yearly: 599.90 },
+      priceId: priceIdMap['basic'],
+      popular: true,
+      features: [
+        { name: 'Enhanced profile page', included: true },
+        { name: 'Music uploads (20 tracks)', included: true },
+        { name: 'Standard analytics', included: true },
+        { name: 'Basic AI tools', included: true }
+      ]
+    },
+    {
+      name: 'Pro',
+      key: 'pro',
+      description: 'Advanced tools for professional artists',
+      price: { monthly: 99.99, yearly: 999.90 },
+      priceId: priceIdMap['pro'],
+      features: [
+        { name: 'Professional profile page', included: true },
+        { name: 'Music uploads (50 tracks)', included: true },
+        { name: 'Advanced analytics', included: true },
+        { name: 'Advanced AI tools', included: true }
+      ]
+    },
+    {
+      name: 'Premium',
+      key: 'premium',
+      description: 'Complete solution for established artists',
+      price: { monthly: 149.99, yearly: 1499.90 },
+      priceId: priceIdMap['premium'],
+      features: [
+        { name: 'Custom branded profile', included: true },
+        { name: 'Unlimited music uploads', included: true },
+        { name: 'Enterprise analytics', included: true },
+        { name: 'Premium AI tools', included: true }
+      ]
+    }
+  ];
+
+  // Elegir entre planes reales o fallback
+  const pricingPlans = processedPlans.length > 0 ? processedPlans : fallbackPlans;
 
   const handleSubscribe = async (planKey: string, yearly: boolean) => {
     if (!user) {
@@ -160,6 +232,48 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
       });
     }
   };
+
+  // Si está cargando, mostrar skeleton
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="flex flex-col">
+            <CardHeader>
+              <Skeleton className="h-8 w-24 mb-2" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="flex-1">
+              <Skeleton className="h-10 w-24 mb-6" />
+              <div className="space-y-2">
+                {[...Array(4)].map((_, j) => (
+                  <Skeleton key={j} className="h-4 w-full" />
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Skeleton className="h-10 w-full" />
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  // Manejar errores de carga de planes
+  if (plansError && !pricingPlans.length) {
+    return (
+      <div className="text-center p-8">
+        <h3 className="text-xl font-bold mb-2">Error cargando planes</h3>
+        <p className="text-muted-foreground mb-4">
+          No pudimos cargar los planes de suscripción. Por favor, intenta nuevamente más tarde.
+        </p>
+        <Button onClick={() => window.location.reload()}>
+          Reintentar
+        </Button>
+      </div>
+    );
+  }
 
   // Return simplified view for embedded contexts
   if (simplified) {

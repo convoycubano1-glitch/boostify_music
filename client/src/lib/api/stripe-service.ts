@@ -3,7 +3,7 @@
  * 
  * Este servicio proporciona funciones para interactuar con la API de Stripe,
  * incluyendo la creación de sesiones de checkout, la gestión de suscripciones,
- * y la obtención de la clave publicable de Stripe.
+ * la obtención de planes de suscripción, y la obtención de la clave publicable de Stripe.
  */
 
 import { apiRequest } from "@/lib/queryClient";
@@ -19,6 +19,20 @@ export interface StripeCheckoutResponse {
 export interface PricePlan {
   priceId: string;
   interval?: 'month' | 'year';
+}
+
+// Información sobre planes de suscripción
+export interface SubscriptionPlan {
+  name: string;
+  price: number;
+  features: string[];
+}
+
+// Respuesta de la API para obtener planes
+export interface SubscriptionPlansResponse {
+  success: boolean;
+  message: string;
+  plans: SubscriptionPlan[];
 }
 
 /**
@@ -118,5 +132,29 @@ export async function updateSubscription(priceId: string): Promise<{success: boo
       success: false,
       message: 'No se pudo actualizar la suscripción'
     };
+  }
+}
+
+/**
+ * Obtiene los planes de suscripción disponibles
+ * Esta función no requiere autenticación ya que utiliza un endpoint público
+ * 
+ * @returns Lista de planes de suscripción disponibles
+ */
+export async function fetchSubscriptionPlans(): Promise<SubscriptionPlansResponse> {
+  try {
+    // Usamos fetch directamente porque esta es una ruta pública
+    const response = await fetch('/api/subscription-plans');
+    const data = await response.json();
+    
+    if (data.success && data.plans) {
+      return data as SubscriptionPlansResponse;
+    } else {
+      console.error('Error fetching subscription plans:', data);
+      throw new Error('Failed to get subscription plans');
+    }
+  } catch (error) {
+    console.error('Error fetching subscription plans:', error);
+    throw error;
   }
 }

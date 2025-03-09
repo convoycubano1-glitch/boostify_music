@@ -49,7 +49,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     ]
   },
   basic: {
-    id: 'price_basic',
+    id: 'price_1NvZo6Kh0NZdHZoeUGCJzyrR',
     name: 'Basic',
     price: 59.99,
     description: 'Essential tools for emerging artists',
@@ -62,7 +62,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     ]
   },
   pro: {
-    id: 'price_pro',
+    id: 'price_1NvZpKKh0NZdHZoeJOd3cIfR',
     name: 'Pro',
     price: 99.99,
     description: 'Advanced tools for professional artists',
@@ -76,7 +76,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     ]
   },
   premium: {
-    id: 'price_premium',
+    id: 'price_1NvZqAKh0NZdHZoeUGbwEFlb',
     name: 'Premium',
     price: 149.99,
     description: 'Complete solution for industry leaders',
