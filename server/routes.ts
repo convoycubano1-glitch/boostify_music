@@ -37,6 +37,7 @@ import apiProxyRouter from './routes/api-proxy'; // Import the proxy router for 
 import videoStatusRouter from './routes/video-status'; // Import the dedicated router for video status
 import musicRouter from './routes/music'; // Import the music generation router
 import uploadApiRouter from './routes/upload-api'; // Import the upload API router for image processing
+import fluxApiRouter from './routes/flux-api-proxy'; // Import the Flux API router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -135,6 +136,9 @@ export function registerRoutes(app: Express): Server {
   
   // Registrar el router para generación de música (requiere autenticación parcial)
   app.use('/api/music', musicRouter);
+  
+  // Registrar el router para Flux API (generación de imágenes avanzada)
+  app.use('/api', fluxApiRouter);
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación

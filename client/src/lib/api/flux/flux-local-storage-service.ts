@@ -1,83 +1,167 @@
 /**
- * Servicio de almacenamiento local para resultados de Flux API
+ * Servicio para gestionar el almacenamiento local de las tareas de Flux
  * 
- * Este servicio facilita la persistencia de los resultados de la API de Flux en el almacenamiento local.
- * Permite guardar y recuperar imágenes generadas para mostrar un historial.
+ * Proporciona métodos para guardar, actualizar y recuperar tareas de generación
+ * de imágenes usando localStorage del navegador.
  */
 
-import { ImageResult } from '@/lib/types/model-types';
+import { FluxTaskResult } from './flux-service';
 
-// Clave para el almacenamiento local
-const FLUX_RESULTS_KEY = 'flux_generation_results';
+// Clave donde se almacenarán las tareas en localStorage
+const STORAGE_KEY = 'flux_tasks';
+
+// Máximo número de tareas a guardar en el historial
+const MAX_TASKS = 20;
 
 /**
- * Servicio para gestionar el almacenamiento local de resultados de Flux
+ * Servicio para el almacenamiento local de tareas de Flux
  */
-class FluxLocalStorageService {
+export const fluxLocalStorageService = {
   /**
-   * Guarda un resultado de generación en localStorage
-   * @param result Resultado a guardar
+   * Guarda una nueva tarea en el almacenamiento local
+   * 
+   * @param task Tarea a guardar
    */
-  saveResult(result: ImageResult): void {
+  saveTask(task: FluxTaskResult): void {
     try {
-      // Obtener resultados existentes
-      const existingResults = this.getResults();
+      // Obtener tareas actuales
+      const tasks = this.getTasks();
       
-      // Prepender el nuevo resultado al inicio del array
-      const updatedResults = [result, ...existingResults];
+      // Agregar la nueva tarea al principio
+      tasks.unshift({
+        ...task,
+        timestamp: Date.now() // Agregar timestamp para ordenamiento
+      });
       
-      // Limitar a 20 resultados para evitar ocupar demasiado espacio
-      const limitedResults = updatedResults.slice(0, 20);
+      // Limitar a MAX_TASKS
+      const limitedTasks = tasks.slice(0, MAX_TASKS);
       
       // Guardar en localStorage
-      localStorage.setItem(FLUX_RESULTS_KEY, JSON.stringify(limitedResults));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(limitedTasks));
+      
+      console.log('Tarea guardada en almacenamiento local:', task.taskId);
     } catch (error) {
-      console.error('Error al guardar resultado en localStorage:', error);
+      console.error('Error guardando tarea en localStorage:', error);
     }
-  }
+  },
   
   /**
-   * Obtiene todos los resultados guardados
-   * @returns Array de resultados
+   * Actualiza una tarea existente en el almacenamiento local
+   * 
+   * @param task Tarea actualizada
    */
-  getResults(): ImageResult[] {
+  updateTask(task: FluxTaskResult): void {
     try {
-      const storedResults = localStorage.getItem(FLUX_RESULTS_KEY);
-      if (!storedResults) return [];
+      if (!task.taskId) {
+        console.error('No se puede actualizar tarea sin ID');
+        return;
+      }
       
-      const parsedResults = JSON.parse(storedResults);
-      return Array.isArray(parsedResults) ? parsedResults : [];
+      // Obtener tareas actuales
+      const tasks = this.getTasks();
+      
+      // Buscar la tarea
+      const index = tasks.findIndex(t => t.taskId === task.taskId);
+      
+      if (index !== -1) {
+        // Actualizar manteniendo el timestamp original
+        const originalTimestamp = tasks[index].timestamp || Date.now();
+        tasks[index] = {
+          ...task,
+          timestamp: originalTimestamp
+        };
+        
+        // Guardar en localStorage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        
+        console.log('Tarea actualizada en almacenamiento local:', task.taskId);
+      } else {
+        // Si no existe, guardarla como nueva
+        this.saveTask(task);
+      }
     } catch (error) {
-      console.error('Error al obtener resultados de localStorage:', error);
+      console.error('Error actualizando tarea en localStorage:', error);
+    }
+  },
+  
+  /**
+   * Obtiene todas las tareas guardadas en orden de más reciente a más antigua
+   * 
+   * @returns Lista de tareas ordenadas por timestamp
+   */
+  getTasks(): FluxTaskResult[] {
+    try {
+      // Obtener datos de localStorage
+      const tasksJSON = localStorage.getItem(STORAGE_KEY);
+      
+      if (!tasksJSON) {
+        return [];
+      }
+      
+      // Parsear y devolver ordenado por timestamp
+      const tasks = JSON.parse(tasksJSON) as FluxTaskResult[];
+      
+      // Ordenar por timestamp (más reciente primero)
+      return tasks.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
+    } catch (error) {
+      console.error('Error recuperando tareas de localStorage:', error);
       return [];
     }
-  }
+  },
   
   /**
-   * Elimina un resultado específico
-   * @param id ID del resultado a eliminar
+   * Obtiene una tarea específica por su ID
+   * 
+   * @param taskId ID de la tarea a buscar
+   * @returns La tarea si existe, undefined en caso contrario
    */
-  deleteResult(id: string): void {
+  getTask(taskId: string): FluxTaskResult | undefined {
     try {
-      const results = this.getResults();
-      const filteredResults = results.filter(result => result.id !== id);
-      localStorage.setItem(FLUX_RESULTS_KEY, JSON.stringify(filteredResults));
+      const tasks = this.getTasks();
+      return tasks.find(task => task.taskId === taskId);
     } catch (error) {
-      console.error('Error al eliminar resultado de localStorage:', error);
+      console.error('Error buscando tarea en localStorage:', error);
+      return undefined;
     }
-  }
+  },
   
   /**
-   * Limpia todos los resultados guardados
+   * Elimina una tarea del almacenamiento local
+   * 
+   * @param taskId ID de la tarea a eliminar
    */
-  clearAllResults(): void {
+  deleteTask(taskId: string): void {
     try {
-      localStorage.removeItem(FLUX_RESULTS_KEY);
+      // Obtener tareas actuales
+      const tasks = this.getTasks();
+      
+      // Filtrar la tarea a eliminar
+      const filteredTasks = tasks.filter(task => task.taskId !== taskId);
+      
+      // Guardar la lista actualizada
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredTasks));
+      
+      console.log('Tarea eliminada del almacenamiento local:', taskId);
     } catch (error) {
-      console.error('Error al limpiar resultados de localStorage:', error);
+      console.error('Error eliminando tarea de localStorage:', error);
+    }
+  },
+  
+  /**
+   * Limpia todas las tareas del almacenamiento local
+   */
+  clearTasks(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      console.log('Todas las tareas eliminadas del almacenamiento local');
+    } catch (error) {
+      console.error('Error limpiando tareas de localStorage:', error);
     }
   }
-}
+};
 
-// Exportar una instancia singleton
-export const fluxLocalStorageService = new FluxLocalStorageService();
+export default fluxLocalStorageService;

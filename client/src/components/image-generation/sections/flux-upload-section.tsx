@@ -21,15 +21,12 @@ import {
   RefreshCw, 
   AlertCircle 
 } from 'lucide-react';
-import {
-  FluxModel,
-  FluxTaskType,
-  FluxTextToImageOptions,
-  fluxService,
-  canUseFluxDirectly
+import { 
+  fluxService, 
+  FluxGenerationParams, 
+  FluxTaskResult 
 } from '@/lib/api/flux/flux-service';
 import { ImageResult } from '@/lib/types/model-types';
-import { fluxLocalStorageService } from '@/lib/api/flux/flux-local-storage-service';
 import axios from 'axios';
 
 interface FluxUploadSectionProps {
@@ -105,47 +102,31 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
     setError(null);
     
     try {
-      // Opciones para generar la imagen
-      const options: FluxTextToImageOptions = {
+      // Parámetros para generar la imagen
+      const params: FluxGenerationParams = {
         prompt: prompt,
-        negative_prompt: negativePrompt,
+        negativePrompt: negativePrompt,
         steps: 28,
         guidance_scale: 2.5,
         width: 512,
-        height: 512
+        height: 512,
+        model: 'Qubico/flux1-dev',
+        taskType: 'txt2img'
       };
       
-      let response;
+      console.log('Iniciando generación de imagen con Flux:', params);
       
-      // Verificar si podemos usar el servicio de Flux directamente o necesitamos usar el proxy
-      if (canUseFluxDirectly()) {
-        response = await fluxService.generateTextToImage(
-          options,
-          FluxModel.FLUX1_DEV,
-          FluxTaskType.TXT2IMG
-        );
-      } else {
-        // Usar el endpoint proxy del servidor
-        response = await axios.post('/api/proxy/flux/generate-image', {
-          prompt: prompt,
-          negativePrompt: negativePrompt,
-          steps: 28,
-          guidance_scale: 2.5,
-          width: 512,
-          height: 512,
-          model: FluxModel.FLUX1_DEV,
-          taskType: FluxTaskType.TXT2IMG
-        });
-        
-        // Estructurar la respuesta para que sea compatible con la API de Flux
-        response = response.data;
-      }
+      // Usar el servicio de Flux que se comunicará con nuestro proxy
+      const response = await fluxService.generateImage(params);
       
-      // Verificar el estado de la tarea
-      if (response && response.task_id) {
-        await checkTaskStatus(response.task_id);
+      console.log('Respuesta de generación Flux:', response);
+      
+      // Verificar si la generación fue exitosa
+      if (response.success && response.taskId) {
+        // Iniciar el proceso de verificación de estado
+        await checkTaskStatus(response.taskId);
       } else {
-        throw new Error('No task ID returned from Flux API');
+        throw new Error(response.error || 'No task ID returned from Flux API');
       }
     } catch (err: any) {
       console.error('Error generating image:', err);
@@ -163,17 +144,16 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
   // Verifica el estado de la generación
   const checkTaskStatus = async (taskId: string) => {
     try {
-      // Llamar al endpoint de status a través del proxy
-      const response = await axios.get(`/api/proxy/flux/status?taskId=${taskId}`);
+      console.log('Verificando estado de tarea Flux:', taskId);
       
-      if (response.data && response.data.data && 
-          response.data.data.status === 'completed' && 
-          response.data.data.output && 
-          response.data.data.output.images && 
-          response.data.data.output.images.length > 0) {
-        
+      // Usar el servicio de Flux para verificar el estado
+      const response = await fluxService.checkTaskStatus(taskId);
+      
+      console.log('Respuesta de verificación de estado:', response);
+      
+      if (response.success && response.status === 'completed' && response.images && response.images.length > 0) {
         // Obtener la imagen generada
-        const imageUrl = response.data.data.output.images[0];
+        const imageUrl = response.images[0];
         
         // Crear el objeto de resultado
         const result: ImageResult = {
@@ -183,9 +163,6 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
           createdAt: new Date(),
           model: 'flux'
         };
-        
-        // Guardar en localStorage
-        fluxLocalStorageService.saveResult(result);
         
         // Actualizar estado
         setResult(result);
@@ -200,9 +177,9 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
         if (onImageGenerated) {
           onImageGenerated(imageUrl);
         }
-      } else if (response.data && response.data.data && response.data.data.status === 'failed') {
-        throw new Error(response.data.data.error?.message || 'Generation failed');
-      } else if (response.data && response.data.data && response.data.data.status === 'processing') {
+      } else if (response.status === 'failed') {
+        throw new Error(response.error || 'Generation failed');
+      } else if (response.status === 'pending' || response.status === 'processing') {
         // Si aún está procesando, volvemos a verificar después de un tiempo
         setTimeout(() => checkTaskStatus(taskId), 5000);
       }
