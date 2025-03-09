@@ -67,6 +67,29 @@ export async function fetchStripePublicKey(): Promise<string> {
  */
 export async function createCheckoutSession(priceId: string): Promise<StripeCheckoutResponse> {
   try {
+    // Enlaces directos de Stripe para cada plan (configurados previamente en el Dashboard de Stripe)
+    const directCheckoutLinks: {[key: string]: string} = {
+      // Plan Basic - Nuevos IDs (marzo 2025)
+      'price_1R0lay2LyFplWimfQxUL6Hn0': 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV',
+      // Plan Pro - Nuevos IDs (marzo 2025)
+      'price_1R0laz2LyFplWimfsBd5ASoa': 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW',
+      // Plan Premium - Nuevos IDs (marzo 2025)
+      'price_1R0lb12LyFplWimf7JpMynKA': 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP',
+      // Accesos directos por clave (para compatibilidad con implementación de componente)
+      'basic': 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV',
+      'pro': 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW',
+      'premium': 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP'
+    };
+    
+    // Si hay un enlace directo disponible para este priceId, usarlo directamente
+    if (directCheckoutLinks[priceId]) {
+      return {
+        success: true,
+        url: directCheckoutLinks[priceId]
+      };
+    }
+    
+    // Si no hay un enlace directo, usar el endpoint del servidor para crear una sesión
     const response = await apiRequest({
       url: '/api/stripe/create-subscription',
       method: 'POST',

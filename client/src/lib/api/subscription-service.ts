@@ -49,7 +49,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     ]
   },
   basic: {
-    id: 'price_1NvZo6Kh0NZdHZoeUGCJzyrR',
+    id: 'price_1R0lay2LyFplWimfQxUL6Hn0', // Actualizado marzo 2025
     name: 'Basic',
     price: 59.99,
     description: 'Essential tools for emerging artists',
@@ -62,7 +62,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     ]
   },
   pro: {
-    id: 'price_1NvZpKKh0NZdHZoeJOd3cIfR',
+    id: 'price_1R0laz2LyFplWimfsBd5ASoa', // Actualizado marzo 2025
     name: 'Pro',
     price: 99.99,
     description: 'Advanced tools for professional artists',
@@ -76,7 +76,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionPlanInfo> 
     ]
   },
   premium: {
-    id: 'price_1NvZqAKh0NZdHZoeUGbwEFlb',
+    id: 'price_1R0lb12LyFplWimf7JpMynKA', // Actualizado marzo 2025
     name: 'Premium',
     price: 149.99,
     description: 'Complete solution for industry leaders',

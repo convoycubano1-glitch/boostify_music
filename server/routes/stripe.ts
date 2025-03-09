@@ -10,7 +10,7 @@ import { authenticate } from '../middleware/auth';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16' as any,
+  apiVersion: '2025-01-27.acacia' as any, // Versión actualizada marzo 2025
 });
 
 const router = Router();
@@ -53,17 +53,22 @@ const updateSubscriptionSchema = z.object({
 // En producción, estos vendrían de variables de entorno o de una base de datos
 const PRICES = {
   // Utilizamos las variables de entorno si están definidas, o los IDs por defecto
-  basic: process.env.STRIPE_PRICE_BASIC || 'price_1PdG7a2LyFplWimfJ7FjKMgQ', // $59.99/month
-  pro: process.env.STRIPE_PRICE_PRO || 'price_1PdG802LyFplWimfQ0vL4rvB',    // $99.99/month
-  premium: process.env.STRIPE_PRICE_PREMIUM || 'price_1PdG8G2LyFplWimfi8nTcmKm', // $149.99/month
+  basic: process.env.STRIPE_PRICE_BASIC || 'price_1R0lay2LyFplWimfQxUL6Hn0', // $59.99/month (Actualizado 2025-03)
+  pro: process.env.STRIPE_PRICE_PRO || 'price_1R0laz2LyFplWimfsBd5ASoa',    // $99.99/month (Actualizado 2025-03)
+  premium: process.env.STRIPE_PRICE_PREMIUM || 'price_1R0lb12LyFplWimf7JpMynKA', // $149.99/month (Actualizado 2025-03)
 };
 
 // Mapa de IDs de precio a nombres de planes
 const PRICE_TO_PLAN: Record<string, string> = {
-  // IDs de desarrollo (modo prueba de Stripe)
-  'price_1PdG7a2LyFplWimfJ7FjKMgQ': 'basic',    // Plan Basic $59.99
-  'price_1PdG802LyFplWimfQ0vL4rvB': 'pro',      // Plan Pro $99.99
-  'price_1PdG8G2LyFplWimfi8nTcmKm': 'premium',  // Plan Premium $149.99
+  // IDs actualizados (marzo 2025)
+  'price_1R0lay2LyFplWimfQxUL6Hn0': 'basic',    // Plan Basic $59.99
+  'price_1R0laz2LyFplWimfsBd5ASoa': 'pro',      // Plan Pro $99.99
+  'price_1R0lb12LyFplWimf7JpMynKA': 'premium',  // Plan Premium $149.99
+  
+  // IDs anteriores (mantener por compatibilidad)
+  'price_1PdG7a2LyFplWimfJ7FjKMgQ': 'basic',    // Plan Basic anterior
+  'price_1PdG802LyFplWimfQ0vL4rvB': 'pro',      // Plan Pro anterior
+  'price_1PdG8G2LyFplWimfi8nTcmKm': 'premium',  // Plan Premium anterior
   
   // Variables de entorno (para flexibilidad)
   [PRICES.basic]: 'basic',

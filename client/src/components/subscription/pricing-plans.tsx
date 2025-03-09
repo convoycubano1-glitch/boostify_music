@@ -40,23 +40,23 @@ const planKeyMap: Record<string, string> = {
   'Premium': 'premium'
 };
 
-// Mapping de precios a priceIds de Stripe
+// Mapping de precios a priceIds de Stripe (actualizados marzo 2025)
 const priceIdMap: Record<string, { monthly: string; yearly: string }> = {
   'free': {
     monthly: '',
     yearly: ''
   },
   'basic': {
-    monthly: 'price_1PdG7a2LyFplWimfJ7FjKMgQ', // $59.99/month
-    yearly: 'price_1PdG7a2LyFplWimfJ7FjKMgQ'   // Mismo ID para simplificar
+    monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0', // $59.99/month (ID mar-2025)
+    yearly: 'price_1R0lay2LyFplWimfQxUL6Hn0'   // Mismo ID para simplificar
   },
   'pro': {
-    monthly: 'price_1PdG802LyFplWimfQ0vL4rvB', // $99.99/month
-    yearly: 'price_1PdG802LyFplWimfQ0vL4rvB'   // Mismo ID para simplificar
+    monthly: 'price_1R0laz2LyFplWimfsBd5ASoa', // $99.99/month (ID mar-2025)
+    yearly: 'price_1R0laz2LyFplWimfsBd5ASoa'   // Mismo ID para simplificar
   },
   'premium': {
-    monthly: 'price_1PdG8G2LyFplWimfi8nTcmKm', // $149.99/month
-    yearly: 'price_1PdG8G2LyFplWimfi8nTcmKm'   // Mismo ID para simplificar
+    monthly: 'price_1R0lb12LyFplWimf7JpMynKA', // $149.99/month (ID mar-2025)
+    yearly: 'price_1R0lb12LyFplWimf7JpMynKA'   // Mismo ID para simplificar
   }
 };
 
@@ -211,18 +211,50 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
     if (!plan) return;
 
     try {
-      // Get the plan's price ID based on billing cycle
-      const priceId = yearly ? plan.priceId.yearly : plan.priceId.monthly;
+      // Opción 1: Usar enlaces directos de Stripe para cada plan (configurados previamente en el Dashboard de Stripe)
+      const checkoutLinks = {
+        basic: {
+          monthly: 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV', // Plan Basic mensual
+          yearly: 'https://buy.stripe.com/test_4gw8A04ot7YY60oeUV'  // Plan Basic anual (mismo link por ahora)
+        },
+        pro: {
+          monthly: 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW', // Plan Pro mensual
+          yearly: 'https://buy.stripe.com/test_28o5tO68R0qmdo4eUW'   // Plan Pro anual (mismo link por ahora)
+        },
+        premium: {
+          monthly: 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP', // Plan Premium mensual
+          yearly: 'https://buy.stripe.com/test_5kA4pKeCn3Mm0LYcMP'    // Plan Premium anual (mismo link por ahora)
+        }
+      };
       
-      // Use the stripe service to create a checkout session
-      const response = await createCheckoutSession(priceId);
+      // Opción 2: Usar la API de createCheckoutSession que generará una URL de sesión de checkout
+      const priceId = yearly ? 
+        plan.priceId.yearly : 
+        plan.priceId.monthly;
       
-      if (response.success && response.url) {
-        // Redirect to Stripe checkout
-        window.location.href = response.url;
-      } else {
-        throw new Error(response.message || "Error creating checkout session");
+      // Determinar qué enlace usar basado en el plan y si es anual o mensual
+      const billingCycle = yearly ? 'yearly' : 'monthly';
+      const checkoutUrl = checkoutLinks[planKey as keyof typeof checkoutLinks]?.[billingCycle];
+      
+      // MÉTODO 1: Enlaces directos preconfigurados
+      if (checkoutUrl) {
+        // Redirigir directamente al checkout de Stripe (opción más simple)
+        window.location.href = checkoutUrl;
+        return;
       }
+      
+      // MÉTODO 2: Crear sesión de checkout dinámica con API
+      // Solo se ejecuta si no se encontró un enlace directo
+      if (priceId) {
+        const response = await createCheckoutSession(priceId);
+        if (response.success && response.url) {
+          window.location.href = response.url;
+          return;
+        }
+      }
+      
+      // Si ninguno de los métodos funcionó
+      throw new Error("No hay enlace de checkout disponible para el plan seleccionado");
     } catch (error) {
       console.error('Error starting checkout:', error);
       toast({
