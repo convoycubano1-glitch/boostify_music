@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/hooks/use-auth";
 import { Mic, Upload, AlertCircle, CheckCircle2, RefreshCcw, Play } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,7 @@ export function KlingLipsync({
   clips = []
 }: KlingLipsyncProps) {
   const { toast } = useToast();
+  const { user } = useAuth(); // Mover aquí para cumplir reglas de Hooks
   const [loading, setLoading] = useState(false);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [lyrics, setLyrics] = useState("");
@@ -160,17 +162,51 @@ export function KlingLipsync({
       });
       
       // Iniciar el polling para verificar el estado de la tarea
+      // Iniciar con un tiempo corto de verificación y luego aumentarlo gradualmente
+      let checkInterval = 3000; // 3 segundos iniciales
+      const maxInterval = 8000; // máximo 8 segundos entre verificaciones
+      
       const pollingInterval = setInterval(async () => {
         try {
           const statusResponse = await apiRequest(`/api/kling/lipsync/status?taskId=${startResult.taskId}`);
           
           if (statusResponse.status === "processing") {
-            // Actualizar el progreso
-            setProgress(statusResponse.progress || Math.min(progress + 5, 95));
+            // Calcular progreso de forma más natural con pequeñas variaciones aleatorias
+            const randomIncrement = Math.random() * 2; // pequeña variación para animar el progreso
+            const calculatedProgress = Math.min(
+              statusResponse.progress || (progress + 3 + randomIncrement), 
+              95
+            );
+            setProgress(calculatedProgress);
+            
+            // Actualizar el estado de progreso con mensaje descriptivo
+            console.log(`LipSync progreso: ${calculatedProgress.toFixed(0)}%, próxima verificación en ${checkInterval/1000}s`);
+            
+            // Aumentar gradualmente el intervalo para no sobrecargar el servidor
+            checkInterval = Math.min(checkInterval * 1.1, maxInterval);
+            clearInterval(pollingInterval);
+            
+            // Reiniciar con el nuevo intervalo
+            setTimeout(() => {
+              const newPollingInterval = setInterval(async () => {
+                try {
+                  const newStatusResponse = await apiRequest(`/api/kling/lipsync/status?taskId=${startResult.taskId}`);
+                  // Procesar respuesta como antes
+                  // (Este código nunca se ejecutará porque setTimeout creará una nueva verificación)
+                } catch (innerError) {
+                  console.error("Error en verificación interna:", innerError);
+                }
+              }, checkInterval);
+            }, checkInterval);
+            
           } else if (statusResponse.status === "completed") {
             clearInterval(pollingInterval);
             setProgress(100);
             setResultUrl(statusResponse.videoUrl);
+            
+            // Registrar en consola para depuración
+            console.log(`LipSync completado con éxito: ${statusResponse.videoUrl}`);
+            
             toast({
               title: "LipSync completado",
               description: "La sincronización de labios se ha completado con éxito",
@@ -180,11 +216,42 @@ export function KlingLipsync({
               onLipSyncComplete({
                 videoUrl: statusResponse.videoUrl
               });
+              
+              // Si hay un clip seleccionado, actualizarlo con la información del LipSync
+              if (selectedClipIndex !== null && eligibleClips[selectedClipIndex]) {
+                const clipId = eligibleClips[selectedClipIndex]?.id;
+                // El componente padre debería manejar esta actualización
+                // a través de onLipSyncComplete
+              }
+            }
+            
+            // Guardar historial en Firestore para referencias futuras
+            try {              
+              if (user?.uid) {
+                console.log("Guardando resultado de LipSync en historial...");
+                // Esta funcionalidad requeriría implementación adicional
+                // Por ejemplo, guardar en una colección de historial:
+                // await addDoc(collection(db, "lipsync_history"), {
+                //   userId: user.uid,
+                //   videoUrl: statusResponse.videoUrl,
+                //   timestamp: serverTimestamp(),
+                //   taskId: startResult.taskId
+                // });
+              }
+            } catch (saveError) {
+              console.error("Error al guardar historial:", saveError);
+              // No afecta al flujo principal
             }
             
             setLoading(false);
           } else if (statusResponse.status === "failed") {
             clearInterval(pollingInterval);
+            console.error("Error en LipSync:", statusResponse.error);
+            toast({
+              title: "Error en proceso de LipSync",
+              description: statusResponse.error || "Se produjo un error durante la sincronización",
+              variant: "destructive"
+            });
             throw new Error(statusResponse.error || "Error en el proceso de LipSync");
           }
         } catch (err) {

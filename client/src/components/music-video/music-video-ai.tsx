@@ -1182,15 +1182,70 @@ ${transcription}`;
   const handleClipUpdate = (clipId: number, updates: Partial<TimelineClip>) => {
     const updatedItems = timelineItems.map(item => {
       if (item.id === clipId) {
-        return {
-          ...item,
-          start_time: timelineItems[0].start_time + updates.start! * 1000,
-          duration: updates.duration! * 1000,
-        };
+        // Crear objeto de actualización base
+        const updatedItem = { ...item };
+        
+        // Si se actualizaron las propiedades de tiempo
+        if (updates.start !== undefined) {
+          updatedItem.start_time = timelineItems[0].start_time + updates.start * 1000;
+        }
+        
+        if (updates.duration !== undefined) {
+          updatedItem.duration = updates.duration * 1000;
+        }
+        
+        // Manejar propiedades específicas de LipSync
+        if (updates.lipsyncApplied !== undefined) {
+          updatedItem.lipsyncApplied = updates.lipsyncApplied;
+          
+          // Actualizar el estado de metadata para reflejar que se ha aplicado LipSync
+          if (updates.lipsyncApplied) {
+            if (!updatedItem.metadata) {
+              updatedItem.metadata = {};
+            }
+            updatedItem.metadata.lipsync = {
+              applied: true,
+              timestamp: new Date().toISOString(),
+            };
+          }
+        }
+        
+        if (updates.lipsyncVideoUrl !== undefined) {
+          updatedItem.lipsyncVideoUrl = updates.lipsyncVideoUrl;
+          
+          // Actualizar la URL del video en metadata
+          if (!updatedItem.metadata) {
+            updatedItem.metadata = {};
+          }
+          if (!updatedItem.metadata.lipsync) {
+            updatedItem.metadata.lipsync = { applied: true };
+          }
+          updatedItem.metadata.lipsync.videoUrl = updates.lipsyncVideoUrl;
+        }
+        
+        // Manejar el progreso de LipSync si está presente
+        if (updates.lipsyncProgress !== undefined) {
+          updatedItem.lipsyncProgress = updates.lipsyncProgress;
+          
+          // Actualizar el progreso en metadata
+          if (!updatedItem.metadata) {
+            updatedItem.metadata = {};
+          }
+          if (!updatedItem.metadata.lipsync) {
+            updatedItem.metadata.lipsync = { applied: false };
+          }
+          updatedItem.metadata.lipsync.progress = updates.lipsyncProgress;
+        }
+        
+        return updatedItem;
       }
       return item;
     });
+    
     setTimelineItems(updatedItems);
+    
+    // Depurar para verificar la actualización
+    console.log(`Clip ${clipId} actualizado:`, updates);
   };
 
   /**
@@ -2326,10 +2381,19 @@ ${transcription}`;
                 />
 
                 <LipSyncIntegration
-                  clips={clips}
+                  clips={timelineItems.map(item => ({
+                    id: item.id,
+                    start: item.start_time / 1000, // Convertir a segundos
+                    duration: item.duration,
+                    shotType: item.shotType || 'unknown',
+                    title: item.title || '',
+                    type: item.type || 'video'
+                  }))}
                   transcription={transcription}
                   audioBuffer={audioBuffer}
                   onUpdateClip={handleClipUpdate}
+                  videoTaskId={videoId}
+                  isPurchased={true} // Siempre true en el panel creador
                 />
 
               </div>

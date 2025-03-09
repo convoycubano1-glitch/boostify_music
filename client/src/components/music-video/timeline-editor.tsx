@@ -26,6 +26,10 @@ export interface TimelineClip {
   // Campos para URL de imagen/video
   imageUrl?: string;
   movementUrl?: string;
+  // Campos específicos para lipsync
+  lipsyncApplied?: boolean;
+  lipsyncVideoUrl?: string;
+  lipsyncProgress?: number;
   // Metadata adicional para el clip
   metadata?: {
     section?: string;    // Sección musical (coro, verso, etc.)
@@ -533,6 +537,11 @@ export function TimelineEditor({
                                 {clip.shotType || 'Sin tipo'}
                               </span>
                             </div>
+                            {clip.lipsyncApplied && (
+                              <div className="bg-blue-500/70 backdrop-blur-sm p-1 rounded flex items-center gap-1">
+                                <span className="text-[10px] font-medium text-white">LipSync</span>
+                              </div>
+                            )}
                           </div>
                           {onRegenerateImage && (
                             <Button
