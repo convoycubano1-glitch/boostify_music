@@ -1,22 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
-import { Download, Video, Loader2 } from "lucide-react";
+import { Video, Loader2, User, Music2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { TimelineClip } from "./timeline-editor";
 import { PremiumVideoPlayer } from "./premium-video-player";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArtistCustomization } from "./artist-customization";
+import { FaceSwapResult } from "@/components/face-swap/face-swap";
+import { MusicianIntegration, MusicianClip } from "./musician-integration";
 
 interface VideoGeneratorProps {
   clips: TimelineClip[];
   duration: number;
   isGenerating: boolean;
   onGenerate: () => Promise<string | null>;
+}
+
+interface VideoResult {
+  id: string;
+  url: string;
+  isPurchased?: boolean;
+  faceSwapResults?: FaceSwapResult[];
+  musicianClips?: MusicianClip[];
 }
 
 export function VideoGenerator({
@@ -32,6 +44,10 @@ export function VideoGenerator({
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [videoId, setVideoId] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
+  const [currentTab, setCurrentTab] = useState<string>("preview");
+  const [faceSwapResults, setFaceSwapResults] = useState<FaceSwapResult[]>([]);
+  const [musicianClips, setMusicianClips] = useState<MusicianClip[]>([]);
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
 
   // Verificar si el video ya fue comprado
   const { data: videoPaymentStatus } = useQuery({
@@ -100,6 +116,24 @@ export function VideoGenerator({
     toast({
       title: "¡Compra exitosa!",
       description: "Ya puedes ver el video completo sin limitaciones",
+    });
+  };
+
+  const handleFaceSwapComplete = (results: FaceSwapResult[]) => {
+    setFaceSwapResults(results);
+    
+    toast({
+      title: "Face Swap completado",
+      description: "Los cambios se han aplicado al video correctamente",
+    });
+  };
+
+  const handleMusicianIntegrationComplete = (clips: MusicianClip[]) => {
+    setMusicianClips(clips);
+    
+    toast({
+      title: "Integración de Músicos completada",
+      description: `Se han integrado ${clips.length} secciones con músicos en el video`,
     });
   };
 
@@ -184,18 +218,67 @@ export function VideoGenerator({
               <li>Formato MP4 optimizado para web</li>
               <li><strong>Vista previa gratuita de 10 segundos</strong></li>
               <li><strong>Opción para comprar el video completo por $199</strong></li>
+              <li><strong>Face Swap e Integración de Músicos incluidos con la compra</strong></li>
             </ul>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          <PremiumVideoPlayer
-            videoId={videoId}
-            videoUrl={videoUrl}
-            title="Video Musical Generado con IA"
-            isPurchased={videoPaymentStatus?.isPurchased}
-            onPurchaseComplete={handlePurchaseComplete}
-          />
+          <Tabs 
+            defaultValue="preview" 
+            value={currentTab} 
+            onValueChange={setCurrentTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="preview">
+                <Video className="mr-2 h-4 w-4" />
+                Vista Previa
+              </TabsTrigger>
+              <TabsTrigger 
+                value="face-swap"
+                disabled={!videoPaymentStatus?.isPurchased}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Face Swap
+              </TabsTrigger>
+              <TabsTrigger
+                value="musicians"
+                disabled={!videoPaymentStatus?.isPurchased}
+              >
+                <Music2 className="mr-2 h-4 w-4" />
+                Músicos
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="preview" className="space-y-4 pt-4">
+              <PremiumVideoPlayer
+                videoId={videoId}
+                videoUrl={videoUrl}
+                title="Video Musical Generado con IA"
+                isPurchased={videoPaymentStatus?.isPurchased}
+                onPurchaseComplete={handlePurchaseComplete}
+              />
+            </TabsContent>
+            
+            <TabsContent value="face-swap" className="space-y-4 pt-4">
+              <ArtistCustomization 
+                videoId={videoId}
+                onFaceSwapComplete={handleFaceSwapComplete}
+                isPurchased={videoPaymentStatus?.isPurchased}
+              />
+            </TabsContent>
+
+            <TabsContent value="musicians" className="space-y-4 pt-4">
+              <MusicianIntegration
+                clips={clips}
+                audioBuffer={audioBuffer}
+                videoId={videoId}
+                isPurchased={videoPaymentStatus?.isPurchased}
+                onMusicianIntegrationComplete={handleMusicianIntegrationComplete}
+              />
+            </TabsContent>
+          </Tabs>
           
           <Button
             variant="outline"
