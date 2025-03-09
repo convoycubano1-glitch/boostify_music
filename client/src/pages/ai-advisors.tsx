@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "wouter";
 import { 
   Phone, 
   X, 
@@ -14,7 +15,8 @@ import {
   Scale,
   Users2,
   Search,
-  Filter
+  Filter,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -45,6 +47,7 @@ export default function AIAdvisorsPage() {
   const [calling, setCalling] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [, setLocation] = useLocation();
 
   const advisors: Advisor[] = [
     {
@@ -351,29 +354,40 @@ export default function AIAdvisorsPage() {
                           <Phone className="h-4 w-4 mr-2" /> Contact Advisor
                         </Button>
                       ) : (
-                        // Other advisors require Pro plan
+                        // Other advisors require Pro plan ($99.99/month)
                         <SubscriptionFeature
                           requiredPlan="pro"
                           title="Premium AI Advisory Team"
-                          description="Access expert AI advisors for personalized guidance and professional support"
+                          description="Upgrade to Pro ($99.99/month) to access our complete team of expert AI advisors for personalized guidance and professional support"
                           adminEmails={['convoycubano@gmail.com']}
                           redirectUrl="/pricing"
+                          preview={true}
                         >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full border border-[#27272A] text-white hover:bg-[#27272A] group-hover:border-opacity-0 group-hover:bg-gradient-to-r transition-all duration-300"
-                            style={{ 
-                              backgroundImage: `linear-gradient(to right, var(--${advisor.color}))`,
-                              opacity: 0.9,
-                              backgroundSize: '0 100%',
-                              backgroundRepeat: 'no-repeat',
-                              transition: 'background-size 0.3s ease'
-                            }}
-                            onClick={() => callAdvisor(advisor)}
-                          >
-                            <Phone className="h-4 w-4 mr-2" /> Contact Advisor
-                          </Button>
+                          <div className="flex flex-col space-y-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full border border-[#27272A] text-white hover:bg-[#27272A] group-hover:border-opacity-0 group-hover:bg-gradient-to-r transition-all duration-300"
+                              style={{ 
+                                backgroundImage: `linear-gradient(to right, var(--${advisor.color}))`,
+                                opacity: 0.9,
+                                backgroundSize: '0 100%',
+                                backgroundRepeat: 'no-repeat',
+                                transition: 'background-size 0.3s ease'
+                              }}
+                              onClick={() => callAdvisor(advisor)}
+                            >
+                              <Phone className="h-4 w-4 mr-2" /> Contact Advisor
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-medium"
+                              onClick={() => setLocation("/pricing")}
+                            >
+                              Suscribirse
+                            </Button>
+                          </div>
                         </SubscriptionFeature>
                       )}
                     </div>

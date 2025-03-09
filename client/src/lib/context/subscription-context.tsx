@@ -10,7 +10,7 @@ import {
 import { useAuth } from './auth-context';
 
 /**
- * Interfaz para el usuario simplificado en el contexto de suscripción
+ * Interface for the simplified user in the subscription context
  */
 export interface SubscriptionUser {
   id?: string;
@@ -19,21 +19,21 @@ export interface SubscriptionUser {
 }
 
 /**
- * Tipo para el contexto de suscripción
+ * Type for the subscription context
  */
 export interface SubscriptionContextType {
-  // Estado de suscripción
+  // Subscription state
   subscription: SubscriptionStatus | null;
   isLoading: boolean;
   isError: boolean;
   
-  // Información del usuario
+  // User information
   user: SubscriptionUser | null;
   
-  // Acciones
+  // Actions
   refreshSubscription: () => void;
   
-  // Verificación de acceso
+  // Access verification
   hasAccess: (requiredPlan: SubscriptionPlan) => boolean;
 }
 
@@ -48,24 +48,24 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
 });
 
 /**
- * Props para el proveedor del contexto de suscripción
+ * Props for the subscription context provider
  */
 interface SubscriptionProviderProps {
   children: ReactNode;
 }
 
 /**
- * Proveedor del contexto de suscripción
- * Maneja la lógica de subscripción y actualización de estado
+ * Subscription context provider
+ * Handles subscription logic and state updates
  */
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
-  // Obtener información del usuario del contexto de autenticación
+  // Get user information from authentication context
   const { user: authUser, isLoading: authLoading } = useAuth();
   
-  // Estado para almacenar usuario adaptado para este contexto
+  // State to store user adapted for this context
   const [user, setUser] = useState<SubscriptionUser | null>(null);
   
-  // Consulta para obtener información de suscripción
+  // Query to get subscription information
   const {
     data: subscription,
     isLoading: subscriptionLoading,
@@ -74,12 +74,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   } = useQuery({
     queryKey: ['subscription', authUser?.uid],
     queryFn: getSubscriptionStatus,
-    enabled: !!authUser?.uid, // Solo consultar si hay un usuario autenticado
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    enabled: !!authUser?.uid, // Only query if there is an authenticated user
+    staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
   });
   
-  // Actualizar el usuario cuando cambie la autenticación
+  // Update user when authentication changes
   useEffect(() => {
     if (!authLoading && authUser) {
       setUser({
@@ -92,14 +92,14 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     }
   }, [authUser, authLoading]);
   
-  // Estado de carga combinado
-  // Forzamos isLoading a false después de un tiempo para evitar bloqueos indefinidos
+  // Combined loading state
+  // Force isLoading to false after a time to avoid indefinite loading
   const [forceLoaded, setForceLoaded] = useState(false);
   
   useEffect(() => {
     const timer = setTimeout(() => {
       setForceLoaded(true);
-    }, 3000); // 3 segundos máximo de espera
+    }, 3000); // 3 seconds maximum wait
     
     return () => clearTimeout(timer);
   }, []);
@@ -107,26 +107,26 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const isLoading = !forceLoaded && (authLoading || (subscriptionLoading && !!authUser));
   
   /**
-   * Verifica si el usuario tiene acceso a un plan específico
-   * @param requiredPlan Plan requerido para acceder
-   * @returns true si tiene acceso
+   * Checks if the user has access to a specific plan
+   * @param requiredPlan Plan required for access
+   * @returns true if the user has access
    */
   const hasAccess = (requiredPlan: SubscriptionPlan): boolean => {
-    // Si el usuario es el administrador, siempre tiene acceso
+    // If the user is an administrator, always grant access
     if (user?.email === 'convoycubano@gmail.com') {
       return true;
     }
     
-    // Si no hay suscripción, solo permitir acceso al plan gratuito
+    // If no subscription exists, only allow access to the free plan
     if (!subscription) {
       return requiredPlan === 'free';
     }
     
-    // Usar la utilidad canAccessFeature para verificar el acceso
+    // Use the canAccessFeature utility to verify access
     return canAccessFeature(subscription.currentPlan, requiredPlan);
   };
   
-  // Valores para el contexto
+  // Values for the context
   const value: SubscriptionContextType = {
     subscription: subscription || null,
     isLoading,
@@ -144,13 +144,13 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 };
 
 /**
- * Hook para acceder al contexto de suscripción
+ * Hook to access the subscription context
  */
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   
   if (!context) {
-    throw new Error('useSubscription debe utilizarse dentro de un SubscriptionProvider');
+    throw new Error('useSubscription must be used within a SubscriptionProvider');
   }
   
   return context;

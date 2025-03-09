@@ -90,7 +90,8 @@ export function SubscriptionFeature({
           {description && <p className="mb-4 text-white/80">{description}</p>}
           <Button
             onClick={() => navigate(redirectUrl || '/pricing')}
-            className="mt-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
+            className="mt-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-medium shadow-md"
+            style={{ padding: "0.5rem 1rem" }}
           >
             Upgrade to {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -110,7 +111,8 @@ export function SubscriptionFeature({
       {description && <p className="mb-4 text-muted-foreground">{description}</p>}
       <Button
         onClick={() => navigate(redirectUrl || '/pricing')}
-        className="mt-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
+        className="mt-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-medium shadow-md"
+        style={{ padding: "0.5rem 1rem" }}
       >
         Upgrade to {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
         <ArrowRight className="ml-2 h-4 w-4" />

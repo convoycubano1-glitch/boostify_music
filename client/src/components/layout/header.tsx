@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useUser } from '@/hooks/use-user';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useSubscription } from '@/lib/context/subscription-context';
 import { useLanguageDetection } from '@/hooks/use-language-detection';
 import { useScrollDirection } from '@/hooks/use-scroll-direction';
 import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
@@ -27,6 +28,7 @@ import {
 export function Header() {
   const { user } = useAuth();
   const { logout } = useFirebaseAuth();
+  const { subscription } = useSubscription();
   const { detectedLanguage } = useLanguageDetection();
   const { scrollDirection, scrollY } = useScrollDirection();
   const { isVisible, setIsVisible, toggle } = useNavigationVisibility();
@@ -368,8 +370,39 @@ export function Header() {
                       {user.email && (
                         <p className="text-xs text-gray-400">{user.email}</p>
                       )}
+                      
+                      {/* Subscription Status Indicator */}
+                      {subscription && (
+                        <div className="mt-1 flex items-center gap-1">
+                          {subscription.currentPlan === 'premium' ? (
+                            <span className="text-xs bg-gradient-to-r from-amber-500 to-amber-300 text-black font-semibold py-0.5 px-2 rounded-full">
+                              Premium
+                            </span>
+                          ) : subscription.currentPlan === 'pro' ? (
+                            <span className="text-xs bg-gradient-to-r from-blue-500 to-blue-400 text-white font-semibold py-0.5 px-2 rounded-full">
+                              Pro
+                            </span>
+                          ) : subscription.currentPlan === 'basic' ? (
+                            <span className="text-xs bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold py-0.5 px-2 rounded-full">
+                              Basic
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-gray-700 text-gray-300 font-semibold py-0.5 px-2 rounded-full">
+                              Free
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
+                  
+                  {/* Subscription Management */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/account" className="text-sm text-gray-200 hover:bg-[#2A2A2A]">
+                      Subscription
+                    </Link>
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="text-sm text-gray-200 hover:bg-[#2A2A2A]">Settings</Link>
                   </DropdownMenuItem>
