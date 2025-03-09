@@ -1,113 +1,99 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { SubscriptionInfo, SubscriptionPlan, getSubscriptionStatus, hasPlanAccess } from '@/lib/api/subscription-service';
 import { useAuth } from '@/hooks/use-auth';
-import { getSubscriptionStatus, SubscriptionPlan, SubscriptionStatus } from '@/lib/api/subscription-service';
-import { getAuth } from 'firebase/auth';
 
-interface SubscriptionContextType {
-  subscription: SubscriptionStatus;
+export interface SubscriptionContextType {
   isLoading: boolean;
+  subscription: SubscriptionInfo | null;
   error: string | null;
-  refreshSubscription: () => Promise<void>;
   hasAccess: (requiredPlan: SubscriptionPlan) => boolean;
+  refreshSubscription: () => Promise<void>;
+  currentPlan: SubscriptionPlan;
+  status: string;
 }
 
-// Create the context with default values
-const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
-
-// Define the plans hierarchy for access control
-const planHierarchy: Record<SubscriptionPlan, number> = {
-  'free': 0,
-  'basic': 1,
-  'pro': 2,
-  'premium': 3
+const defaultSubscription: SubscriptionInfo = {
+  status: 'active',
+  currentPlan: 'free'
 };
 
-export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user, isLoading: authLoading } = useAuth();
-  const [subscription, setSubscription] = useState<SubscriptionStatus>({
-    active: false,
-    plan: 'free',
-    currentPeriodEnd: null,
-    cancelAtPeriodEnd: false,
-    priceId: null
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const auth = getAuth();
+const SubscriptionContext = createContext<SubscriptionContextType>({
+  isLoading: true,
+  subscription: defaultSubscription,
+  error: null,
+  hasAccess: () => false,
+  refreshSubscription: async () => {},
+  currentPlan: 'free',
+  status: 'active'
+});
 
-  // Function to fetch subscription status
-  const fetchSubscription = async () => {
+export const useSubscription = () => useContext(SubscriptionContext);
+
+export const SubscriptionProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const { user, isLoading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(defaultSubscription);
+  const [error, setError] = useState<string | null>(null);
+
+  // Función para validar si el usuario tiene acceso al nivel requerido
+  const checkAccess = (requiredPlan: SubscriptionPlan): boolean => {
+    // Si no hay usuario, no hay acceso
+    if (!user) return false;
+    
+    // El usuario con email convoycubano@gmail.com siempre tiene acceso (admin)
+    if (user.email === 'convoycubano@gmail.com') return true;
+    
+    // Si no hay subscripción, solo tiene acceso a 'free'
+    if (!subscription) return requiredPlan === 'free';
+    
+    // Verifica si el plan actual del usuario cumple o supera el nivel requerido
+    return hasPlanAccess(subscription.currentPlan, requiredPlan);
+  };
+
+  // Función para refrescar la información de suscripción
+  const refreshSubscription = async () => {
     if (!user) {
-      setSubscription({
-        active: false,
-        plan: 'free',
-        currentPeriodEnd: null,
-        cancelAtPeriodEnd: false,
-        priceId: null
-      });
+      setSubscription(defaultSubscription);
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Get the current user's ID token
-      const token = await user.getIdToken();
-      
-      // Fetch subscription status from the server
-      const status = await getSubscriptionStatus(token);
-      
-      setSubscription(status);
+      const response = await getSubscriptionStatus();
+      if (response.success && response.subscription) {
+        setSubscription(response.subscription);
+        setError(null);
+      } else {
+        // Si hay un error en la respuesta pero está autenticado, asignar plan free
+        setSubscription(defaultSubscription);
+        setError(response.message || 'Error retrieving subscription data');
+      }
     } catch (err) {
       console.error('Error fetching subscription:', err);
-      setError('Failed to fetch subscription status. Please try again later.');
-      
-      // Set to free plan on error
-      setSubscription({
-        active: false,
-        plan: 'free',
-        currentPeriodEnd: null,
-        cancelAtPeriodEnd: false,
-        priceId: null
-      });
+      // Si hay un error en la petición pero está autenticado, asignar plan free por defecto
+      setSubscription(defaultSubscription);
+      setError('Error connecting to subscription service');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Function to check if user has access to a specific plan
-  const hasAccess = (requiredPlan: SubscriptionPlan): boolean => {
-    // El administrador siempre tiene acceso completo
-    if (user?.email === 'convoycubano@gmail.com') {
-      return true;
-    }
-    
-    if (!subscription.active && requiredPlan !== 'free') {
-      return false;
-    }
-    
-    const userPlanLevel = planHierarchy[subscription.plan];
-    const requiredPlanLevel = planHierarchy[requiredPlan];
-    
-    return userPlanLevel >= requiredPlanLevel;
-  };
-
-  // Fetch subscription when user changes
+  // Carga inicial de datos
   useEffect(() => {
     if (!authLoading) {
-      fetchSubscription();
+      refreshSubscription();
     }
   }, [user, authLoading]);
 
-  // Provide context value
   const value: SubscriptionContextType = {
-    subscription,
     isLoading,
+    subscription,
     error,
-    refreshSubscription: fetchSubscription,
-    hasAccess
+    hasAccess: checkAccess,
+    refreshSubscription,
+    currentPlan: subscription?.currentPlan || 'free',
+    status: subscription?.status || 'inactive'
   };
 
   return (
@@ -115,15 +101,4 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       {children}
     </SubscriptionContext.Provider>
   );
-}
-
-// Custom hook to use the subscription context
-export function useSubscription() {
-  const context = useContext(SubscriptionContext);
-  
-  if (!context) {
-    throw new Error('useSubscription must be used within a SubscriptionProvider');
-  }
-  
-  return context;
-}
+};

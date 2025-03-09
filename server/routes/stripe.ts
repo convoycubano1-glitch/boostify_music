@@ -3,12 +3,13 @@ import { z } from 'zod';
 import Stripe from 'stripe';
 import { auth } from '../firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { 
+  getDocById, setDocument, updateDocument, findUserByStripeCustomerId, queryDocuments
+} from '../utils/firestore-helpers';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2023-10-16' as any,
 });
 
 const router = Router();
@@ -98,12 +99,12 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
     const { priceId } = result.data;
     
     // Get the user's customer ID or create a new customer
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDocById('users', userId);
     
     let customerId: string;
     
-    if (userDoc.exists() && userDoc.data().stripeCustomerId) {
-      customerId = userDoc.data().stripeCustomerId;
+    if (userDoc && userDoc.stripeCustomerId) {
+      customerId = userDoc.stripeCustomerId;
     } else {
       // Create a new customer in Stripe
       const email = decodedToken.email || undefined;
@@ -120,13 +121,13 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
       customerId = customer.id;
       
       // Update the user record with the Stripe customer ID
-      if (userDoc.exists()) {
-        await updateDoc(doc(db, 'users', userId), {
+      if (userDoc) {
+        await updateDocument('users', userId, {
           stripeCustomerId: customerId,
         });
       } else {
         // Create a new user record with the Stripe customer ID
-        await setDoc(doc(db, 'users', userId), {
+        await setDocument('users', userId, {
           stripeCustomerId: customerId,
           email: decodedToken.email,
           createdAt: new Date(),
@@ -183,9 +184,9 @@ router.get('/subscription-status', async (req: Request, res: Response) => {
     const userId = decodedToken.uid;
     
     // Get the user's customer ID
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDocById('users', userId);
     
-    if (!userDoc.exists() || !userDoc.data().stripeCustomerId) {
+    if (!userDoc || !userDoc.stripeCustomerId) {
       // If the user doesn't have a Stripe customer ID, they don't have a subscription
       return res.json({
         active: false,
@@ -196,7 +197,7 @@ router.get('/subscription-status', async (req: Request, res: Response) => {
       });
     }
     
-    const customerId = userDoc.data().stripeCustomerId;
+    const customerId = userDoc.stripeCustomerId;
     
     // Get the customer's subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -258,13 +259,13 @@ router.post('/cancel-subscription', async (req: Request, res: Response) => {
     const userId = decodedToken.uid;
     
     // Get the user's customer ID
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDocById('users', userId);
     
-    if (!userDoc.exists() || !userDoc.data().stripeCustomerId) {
+    if (!userDoc || !userDoc.stripeCustomerId) {
       return res.status(404).json({ error: 'User does not have a subscription' });
     }
     
-    const customerId = userDoc.data().stripeCustomerId;
+    const customerId = userDoc.stripeCustomerId;
     
     // Get the customer's subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -324,13 +325,13 @@ router.post('/update-subscription', async (req: Request, res: Response) => {
     const { priceId } = result.data;
     
     // Get the user's customer ID
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDocById('users', userId);
     
-    if (!userDoc.exists() || !userDoc.data().stripeCustomerId) {
+    if (!userDoc || !userDoc.stripeCustomerId) {
       return res.status(404).json({ error: 'User does not have a subscription' });
     }
     
-    const customerId = userDoc.data().stripeCustomerId;
+    const customerId = userDoc.stripeCustomerId;
     
     // Get the customer's subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -423,24 +424,21 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
     
     // Find the user with this customer ID
-    const usersCollection = await db.collection('users')
-      .where('stripeCustomerId', '==', customerId)
-      .limit(1)
-      .get();
+    const users = await queryDocuments('users', 'stripeCustomerId', '==', customerId);
     
-    if (usersCollection.empty) {
+    if (!users || users.length === 0) {
       console.error('No user found with Stripe customer ID:', customerId);
       return;
     }
     
-    const userDoc = usersCollection.docs[0];
+    const userDoc = users[0];
     const userId = userDoc.id;
     
     // Update the user's subscription status
     const priceId = subscription.items.data[0].price.id;
     const plan = PRICE_TO_PLAN[priceId] || 'free';
     
-    await updateDoc(doc(db, 'users', userId), {
+    await updateDocument('users', userId, {
       subscription: {
         status: subscription.status,
         plan,
@@ -465,21 +463,18 @@ async function handleSubscriptionDeletion(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
     
     // Find the user with this customer ID
-    const usersCollection = await db.collection('users')
-      .where('stripeCustomerId', '==', customerId)
-      .limit(1)
-      .get();
+    const users = await queryDocuments('users', 'stripeCustomerId', '==', customerId);
     
-    if (usersCollection.empty) {
+    if (!users || users.length === 0) {
       console.error('No user found with Stripe customer ID:', customerId);
       return;
     }
     
-    const userDoc = usersCollection.docs[0];
+    const userDoc = users[0];
     const userId = userDoc.id;
     
     // Update the user's subscription status
-    await updateDoc(doc(db, 'users', userId), {
+    await updateDocument('users', userId, {
       subscription: {
         status: 'canceled',
         plan: 'free',

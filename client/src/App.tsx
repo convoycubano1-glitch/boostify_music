@@ -239,81 +239,89 @@ const Router = () => {
   return (
     <>
       <Switch>
-        {/* Public routes */}
-        <Route path="/" component={WrappedAuthPage} />
-        <Route path="/home" component={WrappedHomePage} />
-        <Route path="/terms" component={WrappedTermsPage} />
-        <Route path="/privacy" component={WrappedPrivacyPage} />
-        <Route path="/cookies" component={WrappedCookiesPage} />
-        <Route path="/profile/:id" component={WrappedProfilePage} />
-
-        {/* Protected routes */}
-        <ProtectedRoute path="/dashboard" component={WrappedDashboardPage} />
-        <ProtectedRoute path="/admin" component={WrappedAdminPage} />
-        <ProtectedRoute path="/artist-dashboard" component={WrappedArtistDashboard} />
-        <ProtectedRoute path="/spotify" component={WrappedSpotifyPage} />
-        <ProtectedRoute path="/contracts" component={WrappedContractsPage} />
-        <ProtectedRoute path="/boostify-international" component={WrappedBoostifyInternationalPage} />
-        <Route path="/boostify-tv" component={WrappedBoostifyTVPage} />
-        <ProtectedRoute path="/pr" component={WrappedPRPage} />
-        <ProtectedRoute path="/news" component={WrappedNewsPage} />
-        <ProtectedRoute path="/events" component={WrappedEventsPage} />
-        <ProtectedRoute path="/analytics" component={WrappedAnalyticsPage} />
-        <ProtectedRoute path="/analytics-dashboard" component={WrappedAnalyticsDashboardPage} />
-        <ProtectedRoute path="/global" component={WrappedGlobalPage} />
-        <ProtectedRoute path="/videos" component={WrappedVideosPage} />
-        <ProtectedRoute path="/blog" component={WrappedBlogPage} />
-        <ProtectedRoute path="/promotion" component={WrappedPromotionPage} />
-        <ProtectedRoute path="/youtube-views" component={WrappedYoutubeViewsPage} />
-        <ProtectedRoute path="/instagram-boost" component={WrappedInstagramBoostPage} />
-        <ProtectedRoute path="/settings" component={WrappedSettingsPage} />
-        <ProtectedRoute path="/contacts" component={WrappedContactsPage} />
-        <ProtectedRoute path="/messages" component={WrappedMessagesPage} />
-        <ProtectedRoute path="/manager-tools" component={WrappedManagerToolsPage} />
-        <ProtectedRoute path="/producer-tools" component={WrappedProducerToolsPage} />
-        <ProtectedRoute path="/music-video-creator" component={WrappedMusicVideoCreator} />
-        <ProtectedRoute path="/music-generator" component={WrappedMusicGeneratorPage} />
-        <ProtectedRoute path="/record-label-services" component={WrappedRecordLabelServices} />
-        <ProtectedRoute path="/ai-agents" component={WrappedAIAgentsPage} />
-        <ProtectedRoute path="/ai-advisors" component={WrappedAIAdvisorsPage} />
-        <ProtectedRoute path="/artist-image-advisor" component={WrappedArtistImageAdvisor} />
-        <Route path="/artist-image-advisor-improved" component={WrappedArtistImageAdvisorImproved} />
-        <ProtectedRoute path="/artist-generator" component={WrappedArtistGeneratorPage} />
-        <ProtectedRoute path="/merchandise" component={WrappedMerchandisePage} />
-        <ProtectedRoute path="/ecosystem" component={WrappedEcosystemPage} />
-        <ProtectedRoute path="/store" component={WrappedStorePage} />
-        <ProtectedRoute path="/translator" component={WrappedRealTimeTranslator} />
-        <ProtectedRoute path="/education" component={WrappedEducationPage} />
-        <ProtectedRoute path="/achievements" component={WrappedAchievementsPage} />
-        <ProtectedRoute path="/course/:id" component={WrappedCourseDetailPage} />
-        <ProtectedRoute path="/smart-cards" component={WrappedSmartCardsPage} />
-        <ProtectedRoute path="/profile" component={WrappedProfilePage} />
-        <ProtectedRoute path="/investors-dashboard" component={WrappedInvestorsDashboard} />
-        <ProtectedRoute path="/affiliates" component={WrappedAffiliatesPage} />
-        <ProtectedRoute path="/social-network" component={WrappedSocialNetworkPage} />
-        <ProtectedRoute path="/firestore-social" component={WrappedFirestoreSocialPage} />
-        <ProtectedRoute path="/image-generator" component={WrappedImageGeneratorPage} />
-        <Route path="/image-generator-simple" component={WrappedImageGeneratorSimplePage} />
-        <Route path="/face-swap" component={WrappedFaceSwapPage} />
-        <Route path="/kling-tools" component={WrappedKlingToolsPage} />
-        <Route path="/kling-store" component={WrappedKlingStorePage} />
-        <Route path="/kling-test" component={WrappedKlingTestPage} />
-        <Route path="/video-generation-test" component={WrappedVideoGenerationTestPage} />
-        <Route path="/music-mastering" component={WrappedMusicMasteringPage} />
-        <Route path="/vrl" component={WrappedVirtualRecordLabelPage} />
-        <Route path="/virtual-record-label" component={WrappedVirtualRecordLabelPage} />
-        <Route path="/test-progress" component={WrappedTestProgressPage} />
-        <Route path="/plugins" component={WrappedPluginsPage} />
-        <Route path="/try-on" component={WrappedTryOnPage} />
-        <Route path="/try-on-page" component={WrappedTryOnPage} />
+        {/* Rutas públicas - accesibles sin autenticación */}
+        {getRouteComponent("/", WrappedAuthPage, null)}
+        {getRouteComponent("/home", WrappedHomePage, null)}
+        {getRouteComponent("/terms", WrappedTermsPage, null)}
+        {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
+        {getRouteComponent("/cookies", WrappedCookiesPage, null)}
+        {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
+        {getRouteComponent("/pricing", WrappedPricingPage, null)}
         
-        {/* Subscription routes */}
-        <Route path="/pricing" component={WrappedPricingPage} />
-        <ProtectedRoute path="/account" component={WrappedAccountPage} />
-        <ProtectedRoute path="/subscription/success" component={WrappedSubscriptionSuccessPage} />
-        <ProtectedRoute path="/subscription/cancelled" component={WrappedSubscriptionCancelledPage} />
+        {/* Rutas de ejemplo básicas - requieren autenticación pero no suscripción */}
+        {getRouteComponent("/dashboard", WrappedDashboardPage, 'free')}
+        {getRouteComponent("/profile", WrappedProfilePage, 'free')}
+        {getRouteComponent("/settings", WrappedSettingsPage, 'free')}
+        {getRouteComponent("/messages", WrappedMessagesPage, 'free')}
+        {getRouteComponent("/account", WrappedAccountPage, 'free')}
+        {getRouteComponent("/subscription/success", WrappedSubscriptionSuccessPage, 'free')}
+        {getRouteComponent("/subscription/cancelled", WrappedSubscriptionCancelledPage, 'free')}
         
-        {/* Catch all not found route */}
+        {/* Rutas para suscripción BASIC ($59.99) */}
+        {getRouteComponent("/artist-dashboard", WrappedArtistDashboard, 'basic')}
+        {getRouteComponent("/spotify", WrappedSpotifyPage, 'basic')}
+        {getRouteComponent("/contracts", WrappedContractsPage, 'basic')}
+        {getRouteComponent("/pr", WrappedPRPage, 'basic')}
+        {getRouteComponent("/news", WrappedNewsPage, 'basic')}
+        {getRouteComponent("/events", WrappedEventsPage, 'basic')}
+        {getRouteComponent("/videos", WrappedVideosPage, 'basic')}
+        {getRouteComponent("/blog", WrappedBlogPage, 'basic')}
+        {getRouteComponent("/store", WrappedStorePage, 'basic')}
+        {getRouteComponent("/education", WrappedEducationPage, 'basic')}
+        {getRouteComponent("/course/:id", WrappedCourseDetailPage, 'basic')}
+        {getRouteComponent("/social-network", WrappedSocialNetworkPage, 'basic')}
+        {getRouteComponent("/firestore-social", WrappedFirestoreSocialPage, 'basic')}
+        
+        {/* Rutas para suscripción PRO ($99.99) */}
+        {getRouteComponent("/analytics", WrappedAnalyticsPage, 'pro')}
+        {getRouteComponent("/analytics-dashboard", WrappedAnalyticsDashboardPage, 'pro')}
+        {getRouteComponent("/global", WrappedGlobalPage, 'pro')}
+        {getRouteComponent("/promotion", WrappedPromotionPage, 'pro')}
+        {getRouteComponent("/youtube-views", WrappedYoutubeViewsPage, 'pro')}
+        {getRouteComponent("/instagram-boost", WrappedInstagramBoostPage, 'pro')}
+        {getRouteComponent("/contacts", WrappedContactsPage, 'pro')}
+        {getRouteComponent("/manager-tools", WrappedManagerToolsPage, 'pro')}
+        {getRouteComponent("/producer-tools", WrappedProducerToolsPage, 'pro')}
+        {getRouteComponent("/music-generator", WrappedMusicGeneratorPage, 'pro')}
+        {getRouteComponent("/artist-image-advisor", WrappedArtistImageAdvisor, 'pro')}
+        {getRouteComponent("/merchandise", WrappedMerchandisePage, 'pro')}
+        {getRouteComponent("/translator", WrappedRealTimeTranslator, 'pro')}
+        {getRouteComponent("/achievements", WrappedAchievementsPage, 'pro')}
+        {getRouteComponent("/smart-cards", WrappedSmartCardsPage, 'pro')}
+        {getRouteComponent("/image-generator", WrappedImageGeneratorPage, 'pro')}
+        
+        {/* Rutas para suscripción PREMIUM ($149.99) */}
+        {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'premium')}
+        {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
+        {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
+        {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
+        {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
+        {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
+        {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
+        {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'premium')}
+        {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
+        
+        {/* Rutas administrativas especiales */}
+        {getRouteComponent("/admin", WrappedAdminPage, 'free')} {/* Admin tiene acceso con verificación especial */}
+        
+        {/* Rutas experimentales que son públicas para todos */}
+        {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, null)}
+        {getRouteComponent("/artist-image-advisor-improved", WrappedArtistImageAdvisorImproved, null)}
+        {getRouteComponent("/image-generator-simple", WrappedImageGeneratorSimplePage, null)}
+        {getRouteComponent("/face-swap", WrappedFaceSwapPage, null)}
+        {getRouteComponent("/kling-tools", WrappedKlingToolsPage, null)}
+        {getRouteComponent("/kling-store", WrappedKlingStorePage, null)}
+        {getRouteComponent("/kling-test", WrappedKlingTestPage, null)}
+        {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, null)}
+        {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, null)}
+        {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, null)}
+        {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, null)}
+        {getRouteComponent("/test-progress", WrappedTestProgressPage, null)}
+        {getRouteComponent("/plugins", WrappedPluginsPage, null)}
+        {getRouteComponent("/try-on", WrappedTryOnPage, null)}
+        {getRouteComponent("/try-on-page", WrappedTryOnPage, null)}
+        
+        {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
       </Switch>
       <BottomNav />
