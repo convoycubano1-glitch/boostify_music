@@ -1,114 +1,83 @@
 /**
- * Flux Local Storage Service
+ * Servicio de almacenamiento local para resultados de Flux API
  * 
- * Este servicio proporciona funcionalidades de almacenamiento local para imágenes
- * generadas con PiAPI Flux. Esto evita problemas de permisos con Firestore.
+ * Este servicio facilita la persistencia de los resultados de la API de Flux en el almacenamiento local.
+ * Permite guardar y recuperar imágenes generadas para mostrar un historial.
  */
 
-import { ImageResult } from '../../types/model-types';
+import { ImageResult } from '@/lib/types/model-types';
 
-// Clave para el almacenamiento de imágenes Flux en localStorage
-const FLUX_IMAGES_STORAGE_KEY = 'flux_generated_images';
+// Clave para el almacenamiento local
+const FLUX_RESULTS_KEY = 'flux_generation_results';
 
 /**
- * Servicio de almacenamiento local para imágenes generadas por Flux
+ * Servicio para gestionar el almacenamiento local de resultados de Flux
  */
 class FluxLocalStorageService {
   /**
-   * Guarda una imagen generada en localStorage
-   * @param image Imagen a guardar
-   * @returns ID generado para la imagen guardada
+   * Guarda un resultado de generación en localStorage
+   * @param result Resultado a guardar
    */
-  saveImage(image: ImageResult): string {
+  saveResult(result: ImageResult): void {
     try {
-      // Cargar imágenes existentes
-      const existingImages = this.getImages();
+      // Obtener resultados existentes
+      const existingResults = this.getResults();
       
-      // Generar ID único para esta imagen
-      const imageId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+      // Prepender el nuevo resultado al inicio del array
+      const updatedResults = [result, ...existingResults];
       
-      // Añadir ID a la imagen
-      const imageWithId: ImageResult = {
-        ...image,
-        firestoreId: imageId // Reusamos el mismo campo aunque sea localStorage
-      };
-      
-      // Añadir al inicio del array (las más recientes primero)
-      const updatedImages = [imageWithId, ...existingImages];
+      // Limitar a 20 resultados para evitar ocupar demasiado espacio
+      const limitedResults = updatedResults.slice(0, 20);
       
       // Guardar en localStorage
-      localStorage.setItem(FLUX_IMAGES_STORAGE_KEY, JSON.stringify(updatedImages));
-      
-      console.log('Flux image saved to localStorage:', imageId);
-      return imageId;
+      localStorage.setItem(FLUX_RESULTS_KEY, JSON.stringify(limitedResults));
     } catch (error) {
-      console.error('Error saving Flux image to localStorage:', error);
-      throw error;
+      console.error('Error al guardar resultado en localStorage:', error);
     }
   }
   
   /**
-   * Obtiene todas las imágenes guardadas en localStorage
-   * @returns Array de imágenes guardadas
+   * Obtiene todos los resultados guardados
+   * @returns Array de resultados
    */
-  getImages(): ImageResult[] {
+  getResults(): ImageResult[] {
     try {
-      // Intentar obtener desde localStorage
-      const storedData = localStorage.getItem(FLUX_IMAGES_STORAGE_KEY);
+      const storedResults = localStorage.getItem(FLUX_RESULTS_KEY);
+      if (!storedResults) return [];
       
-      if (!storedData) {
-        return [];
-      }
-      
-      // Parsear los datos guardados
-      const parsedData = JSON.parse(storedData);
-      
-      // Convertir las fechas de string a Date
-      return parsedData.map((image: any) => ({
-        ...image,
-        createdAt: new Date(image.createdAt)
-      }));
+      const parsedResults = JSON.parse(storedResults);
+      return Array.isArray(parsedResults) ? parsedResults : [];
     } catch (error) {
-      console.error('Error getting Flux images from localStorage:', error);
+      console.error('Error al obtener resultados de localStorage:', error);
       return [];
     }
   }
   
   /**
-   * Busca una imagen por su URL
-   * @param url URL de la imagen a buscar
-   * @returns La imagen si se encuentra, o null si no existe
+   * Elimina un resultado específico
+   * @param id ID del resultado a eliminar
    */
-  findImageByUrl(url: string): ImageResult | null {
-    const images = this.getImages();
-    return images.find(image => image.url === url) || null;
+  deleteResult(id: string): void {
+    try {
+      const results = this.getResults();
+      const filteredResults = results.filter(result => result.id !== id);
+      localStorage.setItem(FLUX_RESULTS_KEY, JSON.stringify(filteredResults));
+    } catch (error) {
+      console.error('Error al eliminar resultado de localStorage:', error);
+    }
   }
   
   /**
-   * Busca una imagen por su taskId
-   * @param taskId ID de la tarea de Flux
-   * @returns La imagen si se encuentra, o null si no existe
+   * Limpia todos los resultados guardados
    */
-  findImageByTaskId(taskId: string): ImageResult | null {
-    const images = this.getImages();
-    return images.find(image => image.taskId === taskId) || null;
-  }
-  
-  /**
-   * Comprueba si una imagen está guardada por su URL
-   * @param url URL de la imagen a comprobar
-   * @returns true si está guardada, false si no
-   */
-  isImageSaved(url: string): boolean {
-    return this.findImageByUrl(url) !== null;
-  }
-  
-  /**
-   * Borra todas las imágenes guardadas en localStorage
-   */
-  clearAllImages(): void {
-    localStorage.removeItem(FLUX_IMAGES_STORAGE_KEY);
+  clearAllResults(): void {
+    try {
+      localStorage.removeItem(FLUX_RESULTS_KEY);
+    } catch (error) {
+      console.error('Error al limpiar resultados de localStorage:', error);
+    }
   }
 }
 
+// Exportar una instancia singleton
 export const fluxLocalStorageService = new FluxLocalStorageService();

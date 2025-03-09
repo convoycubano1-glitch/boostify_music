@@ -4,6 +4,8 @@ import { ImageStyleAdvisor } from "@/components/image-advisor/image-style-adviso
 import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
 import { ArtistVirtualTryOn } from "@/components/kling/artist-virtual-tryon";
 import { EnglishVirtualTryOn } from "@/components/kling/english-virtual-tryon";
+import { FluxUploadSection } from "@/components/image-generation/sections/flux-upload-section";
+import { FluxStyleSection } from "@/components/image-generation/sections/flux-style-section";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -204,7 +206,7 @@ export default function ArtistImageAdvisorPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <ImageStyleAdvisor />
+                  <FluxUploadSection language={language} />
                 </motion.div>
               </TabsContent>
               
@@ -214,77 +216,7 @@ export default function ArtistImageAdvisorPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <div className="space-y-6">
-                    <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold">Music Style Analysis</h2>
-                      <p className="text-muted-foreground">
-                        Analyze how your musical genre influences your visual image as an artist
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Card className="p-6 backdrop-blur-sm border-orange-500/20">
-                        <div className="space-y-4">
-                          <h3 className="text-xl font-semibold flex items-center gap-2">
-                            <Palette className="h-5 w-5 text-orange-500" /> 
-                            Recommended Color Palettes
-                          </h3>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                              <div className="h-20 rounded-md bg-gradient-to-r from-purple-500 to-blue-600"></div>
-                              <p className="text-xs text-center">Rock Alternativo</p>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="h-20 rounded-md bg-gradient-to-r from-amber-500 to-pink-600"></div>
-                              <p className="text-xs text-center">Pop Moderno</p>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="h-20 rounded-md bg-gradient-to-r from-emerald-500 to-cyan-600"></div>
-                              <p className="text-xs text-center">Electrónica</p>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="h-20 rounded-md bg-gradient-to-r from-stone-600 to-neutral-900"></div>
-                              <p className="text-xs text-center">Hip-Hop Urbano</p>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                      
-                      <Card className="p-6 backdrop-blur-sm border-orange-500/20">
-                        <div className="space-y-4">
-                          <h3 className="text-xl font-semibold flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5 text-orange-500" /> 
-                            Image Trends
-                          </h3>
-                          <ul className="space-y-2 text-sm">
-                            <li className="flex items-start gap-2">
-                              <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                                <span className="text-orange-500 text-xs">1</span>
-                              </div>
-                              <p>High-definition minimalism with powerful contrast</p>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                                <span className="text-orange-500 text-xs">2</span>
-                              </div>
-                              <p>Fusion of retro aesthetics with futuristic elements</p>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                                <span className="text-orange-500 text-xs">3</span>
-                              </div>
-                              <p>Coherent visual aesthetics across digital platforms</p>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <div className="h-5 w-5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                                <span className="text-orange-500 text-xs">4</span>
-                              </div>
-                              <p>Visual narratives that complement the musical story</p>
-                            </li>
-                          </ul>
-                        </div>
-                      </Card>
-                    </div>
-                  </div>
+                  <FluxStyleSection language={language} />
                 </motion.div>
               </TabsContent>
               
