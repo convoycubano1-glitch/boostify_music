@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CalendarIcon, CreditCard, User, Settings } from 'lucide-react';
 import { useSubscription } from '@/lib/context/subscription-context';
-import { useAuth } from '@/lib/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { cancelSubscription } from '@/lib/api/subscription-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';

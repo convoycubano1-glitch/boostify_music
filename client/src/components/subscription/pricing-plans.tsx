@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSubscription } from '@/lib/context/subscription-context';
 import { createCheckoutSession } from '@/lib/api/stripe-service';
-import { useAuth } from '@/lib/context/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Define the pricing plans
@@ -42,8 +42,8 @@ const pricingPlans = [
       yearly: 599.90  // 10 months for the price of 12
     },
     priceId: {
-      monthly: 'price_monthly_basic',
-      yearly: 'price_yearly_basic'
+      monthly: process.env.STRIPE_PRICE_BASIC || 'price_basic',
+      yearly: process.env.STRIPE_PRICE_BASIC_YEARLY || 'price_basic_yearly'
     },
     popular: true,
     features: [
@@ -65,8 +65,8 @@ const pricingPlans = [
       yearly: 999.90  // 10 months for the price of 12
     },
     priceId: {
-      monthly: 'price_monthly_pro',
-      yearly: 'price_yearly_pro'
+      monthly: process.env.STRIPE_PRICE_PRO || 'price_pro',
+      yearly: process.env.STRIPE_PRICE_PRO_YEARLY || 'price_pro_yearly'
     },
     features: [
       { name: 'Professional profile page', included: true },
@@ -87,8 +87,8 @@ const pricingPlans = [
       yearly: 1499.90  // 10 months for the price of 12
     },
     priceId: {
-      monthly: 'price_monthly_premium',
-      yearly: 'price_yearly_premium'
+      monthly: process.env.STRIPE_PRICE_PREMIUM || 'price_premium',
+      yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY || 'price_premium_yearly'
     },
     features: [
       { name: 'Custom branded profile', included: true },
