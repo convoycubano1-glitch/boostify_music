@@ -63,7 +63,7 @@ router.post('/try-on/start', async (req, res) => {
       // Reconfigurar para mantener compatibilidad con cliente anterior, usando imágenes procesadas
       const klingRequest = {
         model: "kling",
-        task_type: "ai_try_on",
+        task_type: "ai_try", // Corregido: era "ai_try_on" pero debe ser "ai_try"
         input: {
           model_input: processedModelResult.normalizedUrl,
           dress_input: processedDressResult.normalizedUrl,
@@ -112,13 +112,17 @@ router.post('/try-on/start', async (req, res) => {
     }
     
     // Validar tipo de tarea
-    if (task_type !== 'ai_try_on') {
+    if (task_type !== 'ai_try_on' && task_type !== 'ai_try') {
       console.error(`Tipo de tarea inválido: ${task_type}`);
       return res.status(400).json({
         success: false,
-        error: 'El tipo de tarea debe ser ai_try_on para este endpoint'
+        error: 'El tipo de tarea debe ser ai_try_on o ai_try para este endpoint'
       });
     }
+    
+    // Asegurarnos de usar el tipo de tarea correcto para la API de Kling
+    // Según la documentación más reciente, debe ser "ai_try"
+    const correctedTaskType = 'ai_try';
     
     console.log('Datos validados, procesando imágenes para compatibilidad con Kling API');
     
@@ -148,7 +152,7 @@ router.post('/try-on/start', async (req, res) => {
     // Configuración de la solicitud a Kling API con imágenes procesadas
     const klingRequest = {
       model,
-      task_type,
+      task_type: correctedTaskType, // Usar el tipo de tarea corregido
       input: {
         // Usar las imágenes procesadas en lugar de las originales
         model_input: processedModelResult.normalizedUrl,

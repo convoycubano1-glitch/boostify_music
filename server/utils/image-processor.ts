@@ -312,33 +312,49 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       let hasDHTMarker = false;
       let hasFF00Sequence = false;
       
-      // Buscar tablas Huffman (DHT)
+      // Buscar tablas Huffman (DHT) de manera más exhaustiva
       for (let i = 0; i < binaryData.length - 4; i++) {
         if (binaryData[i] === 0xFF && binaryData[i + 1] === 0xC4) {
-          hasDHTMarker = true;
-          break;
+          // Verificar la longitud del segmento DHT
+          if (i + 4 < binaryData.length) {
+            const dhtLength = (binaryData[i + 2] << 8) | binaryData[i + 3];
+            // Verificar que la longitud sea razonable y el segmento esté completo
+            if (dhtLength >= 2 && i + 2 + dhtLength <= binaryData.length) {
+              hasDHTMarker = true;
+              console.log('✅ Tablas Huffman (DHT) válidas encontradas en la posición', i);
+              break;
+            } else {
+              console.warn('⚠️ Tablas Huffman (DHT) incompletas o corruptas detectadas en la posición', i);
+            }
+          }
         }
       }
       
       // Buscar secuencia 0xFF00 que es requerida por algunos decodificadores JPEG
+      // Buscar más exhaustivamente en los datos de la imagen
       for (let i = 0; i < binaryData.length - 2; i++) {
         if (binaryData[i] === 0xFF && binaryData[i + 1] === 0x00) {
           hasFF00Sequence = true;
+          console.log('✅ Secuencia 0xFF00 encontrada en la posición', i);
           break;
         }
       }
       
       // Para debugging, registramos si falta alguna de las condiciones requeridas
       if (!hasDHTMarker) {
-        console.warn('⚠️ Imagen JPEG sin tablas Huffman (DHT) detectada');
+        console.warn('⚠️ Imagen JPEG sin tablas Huffman (DHT) detectada - error común "uninitialized Huffman table"');
       }
       
       if (!hasFF00Sequence) {
         console.warn('⚠️ Imagen JPEG sin secuencia 0xFF00 detectada - esto puede causar errores en Kling API');
       }
       
-      // Si no tiene tablas Huffman o secuencia FF00, insertarlas después del segmento APP0
-      if (!hasDHTMarker || !hasFF00Sequence) {
+      // IMPORTANTE: Para el error de Kling "uninitialized Huffman table", siempre forzamos la inserción de tablas DHT
+      // independientemente de si se detectaron o no (aseguramos que siempre haya tablas completas y correctas)
+      const forceDHTInsertion = true; // Siempre forzamos la inserción para máxima compatibilidad
+      
+      // Si no tiene tablas Huffman o secuencia FF00, o si forzamos la inserción, añadimos tablas estándar
+      if (!hasDHTMarker || !hasFF00Sequence || forceDHTInsertion) {
         console.log('⚠️ Corrigiendo formato JPEG para compatibilidad con Kling API');
         
         // Crear las tablas Huffman estándar

@@ -37,9 +37,10 @@ const klingService = {
   startTryOn: async (modelImage: string, clothingImage: string): Promise<TryOnResult> => {
     try {
       // Estructura siguiendo el formato esperado por el API de Kling
+      // Nota: "task_type" debe ser "ai_try" (corregido de "ai_try_on")
       const response = await axios.post('/api/kling/try-on/start', {
         model: "kling",
-        task_type: "ai_try_on",
+        task_type: "ai_try", // Parámetro corregido según documentación actualizada
         input: {
           model_input: modelImage,
           dress_input: clothingImage,
@@ -49,6 +50,15 @@ const klingService = {
       return response.data;
     } catch (error: any) {
       console.error('Error iniciando Try-On:', error);
+      
+      // Manejar específicamente el error de clave API
+      if (error.response?.data?.message === 'Invalid API key') {
+        return {
+          success: false,
+          errorMessage: 'Error de autenticación: La clave API no es válida o ha expirado. Por favor, contacte al administrador.'
+        };
+      }
+      
       return {
         success: false,
         errorMessage: error.response?.data?.error || error.message || 'Error desconocido al iniciar Try-On'
@@ -71,6 +81,15 @@ const klingService = {
     } catch (error: any) {
       console.error('Error verificando estado:', error);
       
+      // Manejar específicamente el error de clave API
+      if (error.response?.data?.message === 'Invalid API key') {
+        return {
+          success: false,
+          status: 'failed',
+          errorMessage: 'Error de autenticación: La clave API no es válida o ha expirado. Por favor, contacte al administrador.'
+        };
+      }
+      
       // Asegurarnos de que el mensaje de error es siempre un string
       let errorMessage = 'Error desconocido al verificar estado';
       
@@ -84,6 +103,7 @@ const klingService = {
       
       return {
         success: false,
+        status: 'failed',
         errorMessage: errorMessage
       };
     }

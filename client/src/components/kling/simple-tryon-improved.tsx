@@ -43,7 +43,7 @@ const klingService = {
       // Structure following the format expected by the Kling API
       const response = await axios.post('/api/kling/try-on/start', {
         model: "kling",
-        task_type: "ai_try_on",
+        task_type: "ai_try", // Actualizado al valor correcto según la documentación
         input: {
           model_input: modelImage,
           dress_input: clothingImage,
