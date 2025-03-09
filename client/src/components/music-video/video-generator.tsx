@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import { Download, Video, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { TimelineClip } from "./timeline-editor";
+import { PremiumVideoPlayer } from "./premium-video-player";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface VideoGeneratorProps {
   clips: TimelineClip[];
@@ -27,6 +30,19 @@ export function VideoGenerator({
   const [fps, setFps] = useState<number>(30);
   const [progress, setProgress] = useState<number>(0);
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [videoId, setVideoId] = useState<string>("");
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Verificar si el video ya fue comprado
+  const { data: videoPaymentStatus } = useQuery({
+    queryKey: ['videoPaymentStatus', videoId],
+    queryFn: async () => {
+      if (!videoId) return { isPurchased: false };
+      const res = await apiRequest(`/api/stripe/video-purchase-status/${videoId}`);
+      return res;
+    },
+    enabled: !!videoId && showPreview,
+  });
 
   const handleGenerate = async () => {
     try {
@@ -46,8 +62,14 @@ export function VideoGenerator({
 
       await onGenerate();
 
+      // Generar ID único para este video
+      const generatedId = `video_${Date.now()}`;
+      setVideoId(generatedId);
+
       // Esto se reemplazará con la URL real del video
-      setVideoUrl("video_url_here");
+      // Por ahora usamos un video de ejemplo para mostrar la funcionalidad
+      setVideoUrl("/assets/Standard_Mode_Generated_Video (2).mp4");
+      setShowPreview(true);
 
       toast({
         title: "Video generado",
@@ -61,6 +83,13 @@ export function VideoGenerator({
         variant: "destructive",
       });
     }
+  };
+
+  const handlePurchaseComplete = () => {
+    toast({
+      title: "¡Compra exitosa!",
+      description: "Ya puedes ver el video completo sin limitaciones",
+    });
   };
 
   return (
@@ -77,84 +106,95 @@ export function VideoGenerator({
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Calidad del Video</Label>
-          <Select value={quality} onValueChange={setQuality}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar calidad" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Baja (720p)</SelectItem>
-              <SelectItem value="medium">Media (1080p)</SelectItem>
-              <SelectItem value="high">Alta (2K)</SelectItem>
-              <SelectItem value="ultra">Ultra (4K)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Cuadros por Segundo ({fps} FPS)</Label>
-          <Slider
-            min={24}
-            max={60}
-            step={1}
-            value={[fps]}
-            onValueChange={([value]) => setFps(value)}
-          />
-        </div>
-
-        {isGenerating && (
+      {!showPreview ? (
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Progreso</Label>
-            <Progress value={progress} className="h-2" />
-            <p className="text-sm text-muted-foreground text-center">
-              {progress}% completado
-            </p>
+            <Label>Calidad del Video</Label>
+            <Select value={quality} onValueChange={setQuality}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar calidad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Baja (720p)</SelectItem>
+                <SelectItem value="medium">Media (1080p)</SelectItem>
+                <SelectItem value="high">Alta (2K)</SelectItem>
+                <SelectItem value="ultra">Ultra (4K)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            className="flex-1"
-            onClick={handleGenerate}
-            disabled={isGenerating || clips.length === 0}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generando video...
-              </>
-            ) : (
-              <>
-                <Video className="mr-2 h-4 w-4" />
-                Generar Video
-              </>
-            )}
-          </Button>
+          <div className="space-y-2">
+            <Label>Cuadros por Segundo ({fps} FPS)</Label>
+            <Slider
+              min={24}
+              max={60}
+              step={1}
+              value={[fps]}
+              onValueChange={([value]) => setFps(value)}
+            />
+          </div>
 
-          {videoUrl && (
-            <Button
-              variant="outline"
-              onClick={() => window.open(videoUrl, "_blank")}
-              className="flex-1"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Descargar Video
-            </Button>
+          {isGenerating && (
+            <div className="space-y-2">
+              <Label>Progreso</Label>
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-muted-foreground text-center">
+                {progress}% completado
+              </p>
+            </div>
           )}
-        </div>
 
-        <div className="text-xs text-muted-foreground">
-          <p>Detalles del proceso:</p>
-          <ul className="list-disc list-inside mt-1 space-y-1">
-            <li>Resolución según calidad seleccionada</li>
-            <li>Transiciones suaves entre clips</li>
-            <li>Audio sincronizado con el video</li>
-            <li>Formato MP4 optimizado para web</li>
-          </ul>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              className="flex-1"
+              onClick={handleGenerate}
+              disabled={isGenerating || clips.length === 0}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generando video...
+                </>
+              ) : (
+                <>
+                  <Video className="mr-2 h-4 w-4" />
+                  Generar Video
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            <p>Detalles del proceso:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>Resolución según calidad seleccionada</li>
+              <li>Transiciones suaves entre clips</li>
+              <li>Audio sincronizado con el video</li>
+              <li>Formato MP4 optimizado para web</li>
+              <li><strong>Vista previa gratuita de 10 segundos</strong></li>
+              <li><strong>Opción para comprar el video completo por $199</strong></li>
+            </ul>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          <PremiumVideoPlayer
+            videoId={videoId}
+            videoUrl={videoUrl}
+            title="Video Musical Generado con IA"
+            isPurchased={videoPaymentStatus?.isPurchased}
+            onPurchaseComplete={handlePurchaseComplete}
+          />
+          
+          <Button
+            variant="outline"
+            onClick={() => setShowPreview(false)}
+            className="w-full"
+          >
+            Volver a las opciones de generación
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

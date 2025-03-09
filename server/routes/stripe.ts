@@ -39,6 +39,11 @@ const PRICE_ID_TO_PLAN = {
 };
 
 /**
+ * ID del precio para la compra del video musical completo
+ */
+const MUSIC_VIDEO_PRICE_ID = 'price_1Rx28w2LyFplWimfQKxDIuZ3'; // Este ID se debe crear en Stripe
+
+/**
  * Crear una sesión de checkout para una nueva suscripción
  */
 router.post('/create-subscription', authenticate, async (req: Request, res: Response) => {
@@ -251,6 +256,146 @@ router.post('/cancel-subscription', authenticate, async (req: Request, res: Resp
 });
 
 /**
+ * Verificar si un video ha sido comprado por el usuario
+ * Esta ruta permite al frontend saber si mostrar la versión completa o la previsualización
+ */
+router.get('/video-purchase-status/:videoId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { videoId } = req.params;
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    if (!videoId) {
+      return res.status(400).json({ success: false, message: 'ID de video no especificado' });
+    }
+    
+    // Verificar si el usuario ha comprado este video
+    const purchasesRef = db.collection('purchases');
+    const purchaseQuery = await purchasesRef
+      .where('userId', '==', userId)
+      .where('videoId', '==', videoId)
+      .where('status', '==', 'completed')
+      .get();
+    
+    // Determinar si el video fue comprado
+    const isPurchased = !purchaseQuery.empty;
+    
+    res.json({
+      success: true,
+      isPurchased,
+      videoId
+    });
+  } catch (error: any) {
+    console.error('Error al verificar estado de compra del video:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al verificar estado de compra'
+    });
+  }
+});
+
+/**
+ * Crear un pago único para un video musical
+ * Esta ruta permite comprar el acceso completo a un video musical generado con IA
+ */
+router.post('/create-music-video-payment', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { videoId } = req.body;
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    if (!videoId) {
+      return res.status(400).json({ success: false, message: 'ID de video no especificado' });
+    }
+    
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
+    
+    // Verificar si el usuario ya tiene un customerID en Stripe
+    let customerId = userData?.stripeCustomerId;
+    
+    if (!customerId) {
+      // Crear un nuevo cliente en Stripe si no existe
+      const customer = await stripe.customers.create({
+        email: userData?.email || undefined,
+        name: userData?.displayName || undefined,
+        metadata: { firebaseUserId: userId }
+      });
+      
+      customerId = customer.id;
+      
+      // Guardar el customerId en Firestore
+      await db.collection('users').doc(userId).update({
+        stripeCustomerId: customerId
+      });
+    }
+    
+    // Verificar si el usuario ya ha comprado este video
+    const purchasesRef = db.collection('purchases');
+    const existingPurchase = await purchasesRef
+      .where('userId', '==', userId)
+      .where('videoId', '==', videoId)
+      .where('status', '==', 'completed')
+      .get();
+    
+    if (!existingPurchase.empty) {
+      return res.json({
+        success: true,
+        alreadyPurchased: true,
+        message: 'Este video ya ha sido comprado anteriormente'
+      });
+    }
+    
+    // Crear sesión de checkout para pago único
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: MUSIC_VIDEO_PRICE_ID,
+          quantity: 1
+        }
+      ],
+      mode: 'payment',
+      success_url: `${BASE_URL}/music-video-success?session_id={CHECKOUT_SESSION_ID}&video_id=${videoId}`,
+      cancel_url: `${BASE_URL}/music-video-cancelled?video_id=${videoId}`,
+      metadata: {
+        userId,
+        videoId,
+        type: 'music_video'
+      }
+    });
+    
+    // Crear un registro de la transacción pendiente
+    await purchasesRef.add({
+      userId,
+      videoId,
+      sessionId: session.id,
+      amount: 199.00, // Precio fijo en USD
+      currency: 'usd',
+      status: 'pending',
+      createdAt: new Date(),
+      type: 'music_video'
+    });
+    
+    res.json({ success: true, url: session.url });
+  } catch (error: any) {
+    console.error('Error al crear sesión de checkout para video:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al crear sesión de checkout'
+    });
+  }
+});
+
+/**
  * Actualizar la suscripción a un nuevo plan
  */
 router.post('/update-subscription', authenticate, async (req: Request, res: Response) => {
@@ -280,9 +425,10 @@ router.post('/update-subscription', authenticate, async (req: Request, res: Resp
     // Si el usuario no tiene customerId o no tiene suscripción, crear una nueva
     if (!userData?.stripeCustomerId) {
       // Redirigir a la ruta de crear suscripción
+      req.body = { priceId, planId };
       return await router.stack
         .find(layer => layer.route?.path === '/create-subscription')
-        ?.route?.stack[0].handle(req, res);
+        ?.route?.stack[0].handle(req, res, () => {});
     }
     
     // Buscar suscripciones activas
@@ -387,6 +533,11 @@ router.post('/webhook', async (req: Request, res: Response) => {
         if (session.mode === 'subscription' && session.subscription) {
           // Manejar una nueva suscripción
           await handleSuccessfulSubscription(session);
+        } 
+        // Verificar si es un pago de video musical
+        else if (session.mode === 'payment' && session.metadata?.type === 'music_video') {
+          // Manejar compra de video musical
+          await handleSuccessfulVideoPayment(session);
         }
         break;
       }
@@ -659,6 +810,79 @@ async function handleFailedPayment(invoice: Stripe.Invoice) {
       currency: invoice.currency,
       timestamp: new Date()
     });
+  }
+}
+
+/**
+ * Manejar un pago exitoso para un video musical
+ */
+async function handleSuccessfulVideoPayment(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  const videoId = session.metadata?.videoId;
+  
+  if (!userId || !videoId) {
+    console.error('Falta userId o videoId en los metadatos de la sesión');
+    return;
+  }
+  
+  // Actualizar el registro de la compra
+  const purchasesRef = db.collection('purchases');
+  const purchases = await purchasesRef
+    .where('userId', '==', userId)
+    .where('videoId', '==', session.metadata?.videoId || videoId)
+    .where('sessionId', '==', session.id)
+    .get();
+  
+  if (purchases.empty) {
+    // Si no existe una compra pendiente, crear una nueva
+    await purchasesRef.add({
+      userId,
+      videoId,
+      sessionId: session.id,
+      amount: session.amount_total ? session.amount_total / 100 : 199.00, // Convertir de centavos a dólares
+      currency: session.currency || 'usd',
+      status: 'completed',
+      createdAt: new Date(),
+      completedAt: new Date(),
+      type: 'music_video'
+    });
+  } else {
+    // Actualizar la compra existente
+    await purchases.docs[0].ref.update({
+      status: 'completed',
+      completedAt: new Date(),
+      amount: session.amount_total ? session.amount_total / 100 : 199.00, // Convertir de centavos a dólares
+    });
+  }
+  
+  // También registrar la transacción
+  await db.collection('transactions').add({
+    userId,
+    type: 'video_purchase',
+    videoId,
+    sessionId: session.id,
+    amount: session.amount_total ? session.amount_total / 100 : 199.00,
+    currency: session.currency || 'usd',
+    timestamp: new Date()
+  });
+  
+  // Opcional: Actualizar el video para marcarlo como comprado por el usuario
+  try {
+    const videoDoc = await db.collection('videos').doc(videoId).get();
+    
+    if (videoDoc.exists) {
+      const video = videoDoc.data();
+      const purchasedBy = video.purchasedBy || [];
+      
+      // Solo agregar el userId si no está ya en la lista
+      if (!purchasedBy.includes(userId)) {
+        await db.collection('videos').doc(videoId).update({
+          purchasedBy: [...purchasedBy, userId]
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error al actualizar el video:', error);
   }
 }
 

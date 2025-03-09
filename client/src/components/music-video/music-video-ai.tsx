@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase";
+import { useAuth } from "@/lib/context/auth-context";
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { VideoGenerator } from "./video-generator";
@@ -222,6 +223,7 @@ interface Director {
 
 export function MusicVideoAI() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
@@ -237,6 +239,9 @@ export function MusicVideoAI() {
   const [hoveredShot, setHoveredShot] = useState<TimelineItem | null>(null);
   const [selectedShot, setSelectedShot] = useState<TimelineItem | null>(null);
   const [isEditingScript, setIsEditingScript] = useState(false);
+  const [videoId, setVideoId] = useState<string>("");
+  const [songTitle, setSongTitle] = useState<string>("");
+  const [duration, setDuration] = useState<number>(0);
   const [scriptContent, setScriptContent] = useState<string>("");
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
   const [videoStyle, setVideoStyle] = useState({
@@ -927,8 +932,51 @@ ${transcription}`;
           description: `Se generaron ${successCount} de ${items.length} imágenes ${failCount > 0 ? `(${failCount} fallaron)` : ''}`,
         });
         
-        if (successCount === items.length) {
-          setCurrentStep(5); // Avanzar solo si se completaron todas
+        if (successCount >= 1) { // Mostrar vista previa incluso si solo se generó una imagen
+          // Generar ID único para este video
+          const videoId = `video_${Date.now()}`;
+          
+          // Guardar el videoId en el estado para usarlo en la generación del video
+          setVideoId(videoId);
+          
+          // Calcular duración total en segundos
+          const calculateTotalDuration = () => {
+            if (timelineItems.length === 0) return 0;
+            const lastItem = timelineItems[timelineItems.length - 1];
+            return lastItem.end_time / 1000; // Convertir a segundos
+          };
+          
+          // Extraer palabras clave del primer segmento o usar etiquetas predeterminadas
+          const extractTags = () => {
+            const firstSegment = timelineItems[0];
+            if (firstSegment && firstSegment.description) {
+              return firstSegment.description
+                .split(' ')
+                .filter(word => word.length > 5)
+                .slice(0, 5);
+            }
+            return ['música', 'video', 'artista', 'canción', 'generado'];
+          };
+          
+          // Crear un documento de video en Firestore para futuras referencias
+          try {
+            const videoRef = collection(db, 'videos');
+            await addDoc(videoRef, {
+              id: videoId,
+              userId: user?.uid,
+              title: songTitle || 'Video Musical Generado',
+              status: 'preview', // Inicialmente solo vista previa
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              duration: duration || calculateTotalDuration(),
+              thumbnailUrl: timelineItems.find(item => item.generatedImage)?.generatedImage || '',
+              tags: extractTags(),
+            });
+          } catch (error) {
+            console.error('Error guardando información del video:', error);
+          }
+          
+          setCurrentStep(5); // Avanzar al siguiente paso
         }
       } else {
         toast({

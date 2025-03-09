@@ -78,6 +78,8 @@ import PricingPage from "@/pages/pricing";
 import AccountPage from "@/pages/account";
 import SubscriptionSuccessPage from "@/pages/subscription-success";
 import SubscriptionCancelledPage from "@/pages/subscription-cancelled";
+import MusicVideoSuccess from "@/pages/music-video-success";
+import MusicVideoCancelled from "@/pages/music-video-cancelled";
 import SubscriptionExamplePage from "@/pages/subscription-example";
 
 interface ErrorBoundaryState {
@@ -236,6 +238,8 @@ const Router = () => {
   const WrappedSubscriptionSuccessPage = withPageWrapper(SubscriptionSuccessPage);
   const WrappedSubscriptionCancelledPage = withPageWrapper(SubscriptionCancelledPage);
   const WrappedSubscriptionExamplePage = withPageWrapper(SubscriptionExamplePage);
+  const WrappedMusicVideoSuccess = withPageWrapper(MusicVideoSuccess);
+  const WrappedMusicVideoCancelled = withPageWrapper(MusicVideoCancelled);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -259,6 +263,8 @@ const Router = () => {
         {getRouteComponent("/subscription/success", WrappedSubscriptionSuccessPage, 'free')}
         {getRouteComponent("/subscription/cancelled", WrappedSubscriptionCancelledPage, 'free')}
         {getRouteComponent("/subscription/example", WrappedSubscriptionExamplePage, 'free')}
+        {getRouteComponent("/music-video-success", WrappedMusicVideoSuccess, 'free')}
+        {getRouteComponent("/music-video-cancelled", WrappedMusicVideoCancelled, 'free')}
         
         {/* Rutas para suscripción BASIC ($59.99) */}
         {getRouteComponent("/artist-dashboard", WrappedArtistDashboard, 'basic')}
