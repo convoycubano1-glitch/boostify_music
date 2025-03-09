@@ -315,10 +315,12 @@ export function MusicVideoAI() {
           try {
             const transcriptionText = await transcribeAudio(file);
             setTranscription(transcriptionText);
-            setCurrentStep(2);
+            // Establecer el paso como completado para habilitar el siguiente botón
+            // pero no cambiar la vista (por eso usamos 1.5 en lugar de 2)
+            setCurrentStep(1.5);
             toast({
               title: "Éxito",
-              description: "Audio transcrito correctamente",
+              description: "Audio transcrito correctamente. Ahora puedes generar el guión musical.",
             });
           } catch (err) {
             console.error("Error transcribing audio:", err);

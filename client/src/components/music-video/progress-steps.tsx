@@ -2,16 +2,27 @@ import { motion } from "framer-motion";
 import { Music2, FileText, Video, Image as ImageIcon, Film, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { LucideIcon } from "lucide-react";
+
 interface ProgressStepsProps {
   currentStep: number;
   steps: {
     title: string;
     description: string;
     status: "completed" | "current" | "pending";
+    icon?: LucideIcon;
   }[];
 }
 
-const defaultSteps = [
+// Definimos el tipo para un paso predeterminado
+type DefaultStep = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  status?: "completed" | "current" | "pending";
+};
+
+const defaultSteps: DefaultStep[] = [
   {
     title: "Transcripción de Audio",
     description: "Analizando y transcribiendo la letra de tu canción",
@@ -39,10 +50,16 @@ const defaultSteps = [
   },
 ];
 
-export function ProgressSteps({ currentStep, steps = defaultSteps.map((step, index) => ({
-  ...step,
-  status: index + 1 < currentStep ? "completed" : index + 1 === currentStep ? "current" : "pending"
-})) }: ProgressStepsProps) {
+export function ProgressSteps({ 
+  currentStep, 
+  steps = defaultSteps.map((step, index) => ({
+    ...step,
+    // Modificado para manejar valores decimales como 1.5
+    status: index + 1 < Math.floor(currentStep) ? "completed" : 
+            index + 1 === Math.floor(currentStep) ? "current" : 
+            "pending"
+  })) as ProgressStepsProps['steps'] 
+}: ProgressStepsProps) {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
       {/* Barra de Progreso Principal */}
@@ -51,7 +68,8 @@ export function ProgressSteps({ currentStep, steps = defaultSteps.map((step, ind
           <motion.div
             className="h-full bg-orange-500 rounded-full"
             initial={{ width: "0%" }}
-            animate={{ width: `${(currentStep - 1) * 25}%` }}
+            // Manejo especial para pasos intermedios como 1.5
+            animate={{ width: `${((currentStep - 1) / 4) * 100}%` }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           />
         </div>
@@ -107,10 +125,10 @@ export function ProgressSteps({ currentStep, steps = defaultSteps.map((step, ind
         className="text-center"
       >
         <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">
-          {steps[currentStep - 1]?.title}
+          {steps[Math.floor(currentStep) - 1]?.title}
         </h3>
         <p className="text-muted-foreground mt-2">
-          {steps[currentStep - 1]?.description}
+          {steps[Math.floor(currentStep) - 1]?.description}
         </p>
       </motion.div>
     </div>
