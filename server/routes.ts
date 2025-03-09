@@ -11,6 +11,7 @@ import { setupVideosRoutes } from "./routes/videos";
 import { setupEmailRoutes } from "./routes/email";
 import { setupApifyRoutes } from "./routes/apify";
 import { setupSocialNetworkRoutes } from "./routes/social-network.setup";
+import { setupSubscriptionRoutes } from "./routes/subscription-protected-routes";
 import firestoreSocialNetworkRouter from "./routes/firestore-social-network";
 import { db } from "./db";
 import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments } from "./db/schema";
@@ -351,6 +352,9 @@ export function registerRoutes(app: Express): Server {
   setupApifyRoutes(app);
   setupSocialNetworkRoutes(app);
   setupStripeRoutes(app);
+  
+  // Setup subscription-protected routes
+  setupSubscriptionRoutes(app);
 
   // Usar Firestore para la red social
   app.use('/api/firestore-social', firestoreSocialNetworkRouter);

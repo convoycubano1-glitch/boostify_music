@@ -2,6 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import { auth } from '../firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
 
+// Subscription interface
+export interface Subscription {
+  plan: 'free' | 'basic' | 'pro' | 'premium';
+  active: boolean;
+  customerId?: string;
+  subscriptionId?: string;
+  currentPeriodEnd?: Date;
+  cancelAtPeriodEnd?: boolean;
+}
+
 // Interface for the authenticated user
 export interface AuthUser {
   uid?: string;   // Para autenticación Firebase
@@ -9,6 +19,7 @@ export interface AuthUser {
   email?: string | null;
   role?: string;
   isAdmin?: boolean;
+  subscription?: Subscription;
 }
 
 // Explicitly define the user interface to match our AuthUser
@@ -46,11 +57,49 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         const decodedToken: DecodedIdToken = await auth.verifyIdToken(token);
         console.log('Token verified successfully for UID:', decodedToken.uid);
         
+        // Check if user is the admin (convoycubano@gmail.com)
+        const isAdmin = decodedToken.email === 'convoycubano@gmail.com' || decodedToken.admin === true;
+        
+        // Get subscription info from Firestore
+        let subscriptionInfo: Subscription | undefined = undefined;
+        
+        try {
+          // Import here to avoid circular dependency
+          const { getDocById } = await import('../utils/firestore-helpers');
+          
+          // Get user document from Firestore
+          const userDoc = await getDocById('users', decodedToken.uid);
+          
+          // Extract subscription information if available
+          if (userDoc && userDoc.subscription) {
+            subscriptionInfo = {
+              plan: userDoc.subscription.plan || 'free',
+              active: userDoc.subscription.active === true,
+              customerId: userDoc.subscription.customerId,
+              subscriptionId: userDoc.subscription.subscriptionId,
+              currentPeriodEnd: userDoc.subscription.currentPeriodEnd,
+              cancelAtPeriodEnd: userDoc.subscription.cancelAtPeriodEnd
+            };
+          }
+        } catch (err) {
+          console.error('Error fetching subscription data:', err);
+          // Continue without subscription data
+        }
+        
+        // Admin gets premium subscription by default
+        if (isAdmin && !subscriptionInfo) {
+          subscriptionInfo = {
+            plan: 'premium',
+            active: true
+          };
+        }
+        
         const user: AuthUser = {
           uid: decodedToken.uid,
           email: decodedToken.email || null,
-          role: decodedToken.role || 'artist',
-          isAdmin: decodedToken.admin === true
+          role: isAdmin ? 'admin' : (decodedToken.role || 'artist'),
+          isAdmin: isAdmin,
+          subscription: subscriptionInfo
         };
         
         req.user = user;

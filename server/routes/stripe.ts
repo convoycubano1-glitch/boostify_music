@@ -6,6 +6,7 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 import { 
   getDocById, setDocument, updateDocument, findUserByStripeCustomerId, queryDocuments
 } from '../utils/firestore-helpers';
+import { authenticate } from '../middleware/auth';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -163,25 +164,14 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
 /**
  * Get the current user's subscription status
  */
-router.get('/subscription-status', async (req: Request, res: Response) => {
+router.get('/subscription-status', authenticate, async (req: Request, res: Response) => {
   try {
-    // Verify the user is authenticated
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    // El middleware authenticate ya valida que req.user exista
+    if (!req.user || !req.user.uid) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
-
-    const token = authHeader.split(' ')[1];
-    let decodedToken: DecodedIdToken;
     
-    try {
-      decodedToken = await auth.verifyIdToken(token);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    const userId = decodedToken.uid;
+    const userId = req.user.uid;
     
     // Get the user's customer ID
     const userDoc = await getDocById('users', userId);
@@ -238,25 +228,14 @@ router.get('/subscription-status', async (req: Request, res: Response) => {
 /**
  * Cancel the user's subscription
  */
-router.post('/cancel-subscription', async (req: Request, res: Response) => {
+router.post('/cancel-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    // Verify the user is authenticated
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    // El middleware authenticate ya valida la autenticación
+    if (!req.user || !req.user.uid) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
-
-    const token = authHeader.split(' ')[1];
-    let decodedToken: DecodedIdToken;
     
-    try {
-      decodedToken = await auth.verifyIdToken(token);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    const userId = decodedToken.uid;
+    const userId = req.user.uid;
     
     // Get the user's customer ID
     const userDoc = await getDocById('users', userId);
@@ -296,25 +275,14 @@ router.post('/cancel-subscription', async (req: Request, res: Response) => {
 /**
  * Update the user's subscription to a new plan
  */
-router.post('/update-subscription', async (req: Request, res: Response) => {
+router.post('/update-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    // Verify the user is authenticated
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    // El middleware authenticate ya valida la autenticación
+    if (!req.user || !req.user.uid) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
-
-    const token = authHeader.split(' ')[1];
-    let decodedToken: DecodedIdToken;
     
-    try {
-      decodedToken = await auth.verifyIdToken(token);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    const userId = decodedToken.uid;
+    const userId = req.user.uid;
     
     // Validate request body
     const result = updateSubscriptionSchema.safeParse(req.body);
@@ -440,8 +408,10 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     
     await updateDocument('users', userId, {
       subscription: {
-        status: subscription.status,
+        active: subscription.status === 'active',
         plan,
+        subscriptionId: subscription.id,
+        customerId: customerId,
         priceId,
         currentPeriodEnd: new Date(subscription.current_period_end * 1000),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
@@ -476,9 +446,10 @@ async function handleSubscriptionDeletion(subscription: Stripe.Subscription) {
     // Update the user's subscription status
     await updateDocument('users', userId, {
       subscription: {
-        status: 'canceled',
+        active: false,
         plan: 'free',
-        priceId: null,
+        subscriptionId: null,
+        customerId: customerId,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
       },
