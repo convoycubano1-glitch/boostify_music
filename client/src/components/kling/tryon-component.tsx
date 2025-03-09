@@ -1,1323 +1,494 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Camera, 
+  Upload, 
+  Sparkles, 
+  RefreshCw, 
+  Save, 
+  Download, 
+  AlertCircle,
+  Check,
+  X
+} from "lucide-react";
+import { klingService, TryOnResult } from "@/services/kling/kling-service";
+
 /**
- * Virtual Try-On Component
- * 
- * This component provides an interface for uploading model and clothing images
- * to generate a virtual try-on result using Kling's AI capabilities.
- * 
- * Image Validation & Error Handling:
- * - Accepted formats: .jpg, .jpeg, .png only (validated both at HTML input and data URL levels)
- * - Strict JPEG format validation and conversion using image-conversion utilities
- * - Data URL validation in validateImageData before submission
- * - Enhanced error handling in loadSavedResults with improved JSON parsing
- * - Robust error handling in checkTaskStatus with specific error messages
- * - User-friendly error messages for all validation failures
- * - Toast notifications for better UX feedback
+ * VirtualTryOnComponent
+ * A component that allows users to upload model and clothing images and see a virtual try-on result
  */
-
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import { Loader2, Upload, Camera, Image as ImageIcon, Shirt, Play, Pause, Download, CheckCircle2, Info, Clock, History, Sparkles } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { klingService, TryOnRequest, TryOnResult } from '../../services/kling/kling-service';
-import { processImageForKling } from '@/utils/image-conversion';
-import { motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-// Efectos de animación para componentes
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.3
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 }
-};
-
 export function VirtualTryOnComponent() {
-  const [modelImage, setModelImage] = useState<string>('');
-  const [clothingImage, setClothingImage] = useState<string>('');
-  const [modelFileInput, setModelFileInput] = useState<File | null>(null);
-  const [clothingFileInput, setClothingFileInput] = useState<File | null>(null);
+  const [modelImage, setModelImage] = useState<string>("");
+  const [clothingImage, setClothingImage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [taskStatus, setTaskStatus] = useState<TryOnRequest | null>(null);
   const [result, setResult] = useState<TryOnResult | null>(null);
   const [savedResults, setSavedResults] = useState<TryOnResult[]>([]);
   const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [progress, setProgress] = useState<number>(0);
   const { toast } = useToast();
-
-  // Advanced configuration
-  const [preserveModelDetails, setPreserveModelDetails] = useState<boolean>(true);
-  const [preserveClothingDetails, setPreserveClothingDetails] = useState<boolean>(true);
-  const [enhanceFace, setEnhanceFace] = useState<boolean>(true);
-  const [alignment, setAlignment] = useState<'auto' | 'manual'>('auto');
-  const [offsetX, setOffsetX] = useState<number>(0);
-  const [offsetY, setOffsetY] = useState<number>(0);
 
   // Load saved results on mount
   useEffect(() => {
     loadSavedResults();
   }, []);
 
-  // Clear interval on unmount
+  // Clean up interval on unmount
   useEffect(() => {
     return () => {
-      if (pollInterval) clearInterval(pollInterval);
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
   }, [pollInterval]);
-  
-  // Functions to handle video playback
-  const handlePlayVideo = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-  
-  const handleVideoEnded = () => {
-    setIsPlaying(false);
-  };
 
-  // Effect to check task status
-  useEffect(() => {
-    if (taskId && !pollInterval) {
-      const interval = setInterval(checkTaskStatus, 3000);
-      setPollInterval(interval);
-    }
-  }, [taskId]);
-
-  async function loadSavedResults() {
+  // Fetch saved results
+  const loadSavedResults = async () => {
     try {
-      const results = await klingService.getResults('try-on');
-      
-      // Enhanced validation to ensure we have valid data
-      if (Array.isArray(results)) {
-        // Validate each result to ensure it has the required properties
-        const validResults = results.filter(item => {
-          try {
-            // Validate required properties exist
-            const isValid = 
-              item && 
-              typeof item === 'object' &&
-              'resultImage' in item && 
-              'requestId' in item && 
-              'modelImage' in item && 
-              'clothingImage' in item;
-            
-            if (!isValid) {
-              console.warn('Skipping invalid result item:', item);
-            }
-            
-            return isValid;
-          } catch (validationError) {
-            console.warn('Error validating result item:', validationError);
-            return false;
-          }
-        });
-        
-        setSavedResults(validResults as TryOnResult[]);
-        
-        if (validResults.length < results.length) {
-          console.info(`Filtered out ${results.length - validResults.length} invalid results`);
-        }
-      } else {
-        console.warn('Invalid results format:', results);
-        setSavedResults([]); // Initialize with empty array on invalid data
-        
-        toast({
-          title: "Data Error",
-          description: "Could not load saved Try-On results due to invalid data format.",
-          variant: "destructive",
-        });
-      }
+      const results = await klingService.getResults();
+      setSavedResults(results);
     } catch (error) {
-      console.error('Error loading saved results:', error);
-      setSavedResults([]); // Initialize with empty array on error
-      
-      toast({
-        title: "Load Error",
-        description: "Failed to load saved Try-On results. Please try refreshing the page.",
-        variant: "destructive",
-      });
+      console.error("Error loading saved results:", error);
     }
-  }
+  };
 
-  async function checkTaskStatus() {
-    if (!taskId) return;
-
-    try {
-      console.log('Verificando estado de tarea Try-On:', taskId);
-      const status = await klingService.checkTryOnStatus(taskId);
-      
-      // Validar la respuesta
-      if (!status || typeof status !== 'object') {
-        throw new Error('Formato de respuesta inválido del servidor');
-      }
-      
-      console.log('Respuesta de estado recibida:', status);
-      setTaskStatus(status);
-
-      // Manejar diferentes estados de la tarea
-      if (status.status === 'completed') {
-        console.log('¡Tarea completada! Procesando resultados...');
-        // Tarea completada exitosamente
-        if (pollInterval) clearInterval(pollInterval);
-        setPollInterval(null);
-        
-        // Buscar la URL de la imagen en todos los posibles formatos de respuesta de PiAPI
-        let resultImageUrl = '';
-        try {
-          console.log('Analizando respuesta para encontrar URL de imagen:', status);
-          
-          // Opción 1: Array de imágenes directo
-          if ((status as any).images && Array.isArray((status as any).images) && (status as any).images.length > 0) {
-            const imageObj = (status as any).images[0];
-            resultImageUrl = typeof imageObj === 'string' ? imageObj : imageObj.url || '';
-            console.log('URL de imagen encontrada en array images:', resultImageUrl);
-          } 
-          // Opción 2: URL directa en resultUrl o url
-          else if ((status as any).resultUrl) {
-            resultImageUrl = (status as any).resultUrl;
-            console.log('URL de imagen encontrada en resultUrl:', resultImageUrl);
-          }
-          else if ((status as any).url) {
-            resultImageUrl = (status as any).url;
-            console.log('URL de imagen encontrada en url:', resultImageUrl);
-          }
-          // Opción 3: Campo resultImage (normalizado por nuestro servicio)
-          else if ((status as any).resultImage) {
-            resultImageUrl = (status as any).resultImage;
-            console.log('URL de imagen encontrada en resultImage:', resultImageUrl);
-          }
-          // Opción 4: Buscar en estructura anidada resultado/output
-          else if ((status as any).result && typeof (status as any).result === 'object') {
-            // Buscar en diferentes formatos de respuesta anidados
-            const result = (status as any).result;
-            
-            if (result.images && Array.isArray(result.images) && result.images.length > 0) {
-              const imageObj = result.images[0];
-              resultImageUrl = typeof imageObj === 'string' ? imageObj : imageObj.url || '';
-              console.log('URL de imagen encontrada en result.images:', resultImageUrl);
-            } 
-            else if (result.image_url) {
-              resultImageUrl = result.image_url;
-              console.log('URL de imagen encontrada en result.image_url:', resultImageUrl);
-            }
-            else if (result.url) {
-              resultImageUrl = result.url;
-              console.log('URL de imagen encontrada en result.url:', resultImageUrl);
-            }
-          }
-          // Opción 5: Buscar en structure output (común en la API de PiAPI)
-          else if ((status as any).output) {
-            const output = (status as any).output;
-            
-            if (typeof output === 'string') {
-              resultImageUrl = output;
-              console.log('URL de imagen encontrada en output (string):', resultImageUrl);
-            }
-            else if (output && typeof output === 'object') {
-              if (output.url) {
-                resultImageUrl = output.url;
-                console.log('URL de imagen encontrada en output.url:', resultImageUrl);
-              }
-              else if (output.images && Array.isArray(output.images) && output.images.length > 0) {
-                const imageObj = output.images[0];
-                resultImageUrl = typeof imageObj === 'string' ? imageObj : imageObj.url || '';
-                console.log('URL de imagen encontrada en output.images:', resultImageUrl);
-              }
-              else if (output.image_url) {
-                resultImageUrl = output.image_url;
-                console.log('URL de imagen encontrada en output.image_url:', resultImageUrl);
-              }
-            }
-          }
-          
-          // Si no se encontró una URL válida, mostrar advertencia
-          if (!resultImageUrl) {
-            console.error('No se encontró URL de imagen en la respuesta:', status);
-            throw new Error('No se pudo encontrar la URL de la imagen en la respuesta del servidor');
-          }
-        } catch (error: unknown) {
-          const parseError = error instanceof Error 
-            ? error
-            : new Error('Error desconocido al analizar la respuesta');
-          
-          console.error('Error al analizar datos de respuesta:', parseError);
-          throw new Error('Error al procesar la respuesta del servidor: ' + parseError.message);
-        }
-        
-        const resultData: TryOnResult = {
-          resultImage: resultImageUrl,
-          requestId: taskId,
-          modelImage: modelImage,
-          clothingImage: clothingImage
-        };
-        
-        setResult(resultData);
-        setIsLoading(false);
-        
-        toast({
-          title: "Process Completed!",
-          description: "The virtual try-on image has been successfully generated.",
-        });
-        
-        // Save the result
-        try {
-          await klingService.saveResult('try-on', resultData);
-          loadSavedResults(); // Reload results
-        } catch (saveError) {
-          console.error('Error saving try-on result:', saveError);
-          
-          toast({
-            title: "Save Warning",
-            description: "The image was generated successfully but could not be saved to history.",
-          });
-        }
-      } else if (status.status === 'failed') {
-        // Task failed
-        if (pollInterval) clearInterval(pollInterval);
-        setPollInterval(null);
-        setIsLoading(false);
-        
-        let errorMsg = "An error occurred during image generation.";
-        
-        try {
-          // Try to extract error message from different possible formats
-          if (status.error && typeof status.error === 'string') {
-            errorMsg = status.error;
-          } else if ((status as any).errorMessage && typeof (status as any).errorMessage === 'string') {
-            errorMsg = (status as any).errorMessage;
-          } else if ((status as any).message && typeof (status as any).message === 'string') {
-            errorMsg = (status as any).message;
-          } else if ((status as any).error && typeof (status as any).error === 'object') {
-            // Handle nested error objects
-            if ((status as any).error.message) {
-              errorMsg = (status as any).error.message;
-            } else if ((status as any).error.details) {
-              errorMsg = (status as any).error.details;
-            }
-          }
-          
-          // Check for specific error patterns
-          if (errorMsg.includes('format') || errorMsg.includes('unsupported')) {
-            errorMsg = "Unsupported image format. Please use only JPG or PNG images.";
-          } else if (errorMsg.includes('size')) {
-            errorMsg = "Image size too large. Please use smaller images.";
-          }
-        } catch (error: unknown) {
-          const parseError = error instanceof Error 
-            ? error
-            : new Error('Error desconocido al analizar el mensaje de error');
-          
-          console.error('Error parsing error message:', parseError);
-        }
-        
-        toast({
-          title: "Process Error",
-          description: errorMsg,
-          variant: "destructive",
-        });
-      } else {
-        // Task is still in progress, update status
-        setTaskStatus(status);
-      }
-    } catch (error: any) {
-      console.error('Error checking task status:', error);
-      
-      let errorMessage = "Could not verify process status. Please try again.";
-      
-      // Extract more specific error messages if available
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.response && error.response.data) {
-        try {
-          // Try to extract message from API error response
-          const responseData = error.response.data;
-          if (responseData.error && typeof responseData.error === 'string') {
-            errorMessage = responseData.error;
-          } else if (responseData.message) {
-            errorMessage = responseData.message;
-          }
-        } catch (error: unknown) {
-          const parseError = error instanceof Error 
-            ? error
-            : new Error('Error desconocido al analizar la respuesta de API');
-          
-          console.error('Error parsing API error response:', parseError);
-        }
-      }
-      
-      toast({
-        title: "Connection Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      if (pollInterval) clearInterval(pollInterval);
-      setPollInterval(null);
-      setIsLoading(false);
-    }
-  }
-
-  const handleModelImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Handle file upload for model or clothing
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setImage: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-    
-    // Validación inicial de formato - aceptamos jpeg, jpg, png para la interfaz
-    // pero luego convertiremos todo a JPEG que es lo que acepta la API
-    const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!supportedFormats.includes(file.type)) {
+
+    // Reset previous results
+    setResult(null);
+    setTaskId(null);
+    setProgress(0);
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      setPollInterval(null);
+    }
+
+    // Validate file is an image
+    if (!file.type.startsWith("image/")) {
       toast({
-        title: "Formato no soportado",
-        description: "Por favor, suba solo imágenes JPG o PNG. Otros formatos no son soportados.",
+        title: "Tipo de archivo inválido",
+        description: "Por favor, sube solo archivos de imagen (JPEG, PNG, etc.)",
         variant: "destructive",
       });
       return;
     }
-    
-    setModelFileInput(file);
-    
-    // Si es PNG, convertimos a JPEG para asegurar compatibilidad con la API
-    if (file.type === 'image/png') {
-      convertImageToJpeg(file, (jpegDataUrl) => {
-        if (jpegDataUrl) {
-          console.log('Imagen PNG convertida a JPEG');
-          setModelImage(jpegDataUrl);
-        } else {
-          toast({
-            title: "Error de conversión",
-            description: "No se pudo convertir la imagen PNG a JPEG. Intente con otro archivo.",
-            variant: "destructive",
-          });
-        }
-      });
-    } else {
-      // Para JPEG/JPG, también necesitamos estandarizar el formato
-      // ya que algunos navegadores pueden generar variaciones en el encabezado
-      convertImageToJpeg(file, (jpegDataUrl) => {
-        if (jpegDataUrl) {
-          console.log('Imagen JPEG estandarizada al formato requerido');
-          setModelImage(jpegDataUrl);
-        } else {
-          // Intentar leerlo directamente como respaldo
-          const reader = new FileReader();
-          reader.onload = async () => {
-            const dataUrl = reader.result as string;
-            
-            // Procesar la imagen con la función unificada
-            try {
-              const processResult = await processImageForKling(dataUrl);
-              
-              if (processResult.isValid && processResult.processedImage) {
-                console.log('Imagen procesada correctamente con método alternativo');
-                setModelImage(processResult.processedImage);
-              } else {
-                toast({
-                  title: "Formato inválido",
-                  description: processResult.errorMessage || "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
-                  variant: "destructive",
-                });
-              }
-            } catch (error) {
-              console.error('Error al procesar la imagen:', error);
-              toast({
-                title: "Error de procesamiento",
-                description: "No se pudo procesar la imagen. Intente con otra imagen.",
-                variant: "destructive",
-              });
-            }
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-  };
-  
-  // Función auxiliar para convertir PNG a JPEG con formato específico
-  /**
-   * Convierte una imagen a formato JPEG cumpliendo con los requisitos estrictos de Kling API
-   * 
-   * Esta función utiliza nuestra función unificada processImageForKling para garantizar:
-   * - Formato JPEG exacto con encabezado "data:image/jpeg;base64,"
-   * - Correcta validación de dimensiones, tamaño y estructura JPEG
-   * - Optimización de calidad para mantener detalles mientras se cumple con requisitos
-   * 
-   * @param file Archivo de imagen a convertir
-   * @param callback Función de retorno con la URL de datos JPEG o null si hay error
-   */
-  const convertImageToJpeg = (file: File, callback: (dataUrl: string | null) => void) => {
-    console.log('Iniciando conversión a JPEG optimizada de:', file.name, 'tipo:', file.type, 'tamaño:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
-    
-    // Usamos un FileReader para obtener el dataURL inicial
+
+    // Read and convert to data URL
     const reader = new FileReader();
-    
-    reader.onload = async (e) => {
-      try {
-        const sourceDataUrl = e.target?.result as string;
-        
-        if (!sourceDataUrl) {
-          console.error('Error: No se pudo obtener datos del archivo');
-          callback(null);
-          return;
-        }
-        
-        console.log('Imagen cargada, procesando para requisitos estrictos de Kling...');
-        
-        // Utilizamos la función unificada processImageForKling que realiza todas 
-        // las validaciones y conversiones necesarias en un solo paso
-        const processResult = await processImageForKling(sourceDataUrl);
-        
-        if (!processResult.isValid || !processResult.processedImage) {
-          console.error('Error en el procesamiento de imagen:', processResult.errorMessage);
-          toast({
-            title: "Error de Procesamiento",
-            description: processResult.errorMessage || "No se pudo procesar la imagen al formato requerido.",
-            variant: "destructive",
-          });
-          callback(null);
-          return;
-        }
-        
-        // Obtener información de la imagen procesada para feedback
-        const dimensions = processResult.width && processResult.height 
-          ? `${processResult.width}x${processResult.height}`
-          : 'dimensiones desconocidas';
-        
-        const size = processResult.sizeInMB 
-          ? `${processResult.sizeInMB.toFixed(2)}MB`
-          : 'tamaño desconocido';
-        
-        console.log(`Imagen procesada correctamente: ${dimensions}, ${size}`);
-        
-        // La imagen ya ha sido validada por processImageForKling, no necesitamos una validación adicional
-        console.log('Validación exitosa, imagen lista para enviar a Kling API');
-        callback(processResult.processedImage);
-      } catch (error) {
-        console.error('Error en el proceso de conversión:', error);
-        toast({
-          title: "Error Inesperado",
-          description: "Ocurrió un error inesperado al procesar la imagen. Por favor, intente con otra imagen.",
-          variant: "destructive",
-        });
-        callback(null);
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setImage(e.target.result as string);
       }
     };
-    
-    reader.onerror = () => {
-      console.error('Error al leer el archivo');
-      toast({
-        title: "Error de Archivo",
-        description: "No se pudo leer el archivo seleccionado. Por favor, verifique que es una imagen válida.",
-        variant: "destructive",
-      });
-      callback(null);
-    };
-    
-    // Iniciar la lectura del archivo
     reader.readAsDataURL(file);
   };
 
-  const handleClothingImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    // Validación inicial de formato - aceptamos jpeg, jpg, png para la interfaz
-    // pero luego convertiremos todo a JPEG que es lo que acepta la API
-    const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!supportedFormats.includes(file.type)) {
+  // Start the try-on process
+  const handleStartTryOn = async () => {
+    if (!modelImage || !clothingImage) {
       toast({
-        title: "Formato no soportado",
-        description: "Por favor, suba solo imágenes JPG o PNG. Otros formatos no son soportados.",
+        title: "Imágenes faltantes",
+        description: "Por favor, sube una imagen de modelo y de ropa para continuar",
         variant: "destructive",
       });
       return;
     }
-    
-    setClothingFileInput(file);
-    
-    // Si es PNG, convertimos a JPEG para asegurar compatibilidad con la API
-    if (file.type === 'image/png') {
-      convertImageToJpeg(file, (jpegDataUrl) => {
-        if (jpegDataUrl) {
-          console.log('Imagen PNG convertida a JPEG');
-          setClothingImage(jpegDataUrl);
-        } else {
-          toast({
-            title: "Error de conversión",
-            description: "No se pudo convertir la imagen PNG a JPEG. Intente con otro archivo.",
-            variant: "destructive",
-          });
-        }
-      });
-    } else {
-      // Para JPEG/JPG, también necesitamos estandarizar el formato
-      // ya que algunos navegadores pueden generar variaciones en el encabezado
-      convertImageToJpeg(file, (jpegDataUrl) => {
-        if (jpegDataUrl) {
-          console.log('Imagen JPEG estandarizada al formato requerido');
-          setClothingImage(jpegDataUrl);
-        } else {
-          // Intentar procesar la imagen directamente como respaldo
-          const reader = new FileReader();
-          reader.onload = async () => {
-            const dataUrl = reader.result as string;
+
+    try {
+      setIsLoading(true);
+      setResult(null);
+      setProgress(0);
+
+      // Clean up existing polling
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        setPollInterval(null);
+      }
+
+      const startResult = await klingService.startTryOn(modelImage, clothingImage);
+      
+      if (!startResult.success) {
+        throw new Error(startResult.errorMessage || "Error al iniciar el proceso de prueba virtual");
+      }
+
+      setTaskId(startResult.taskId || null);
+      setProgress(10); // Initial progress
+
+      // Start polling for status updates
+      if (startResult.taskId) {
+        const intervalId = setInterval(async () => {
+          try {
+            const statusResult = await klingService.checkTryOnStatus(startResult.taskId!);
             
-            // Procesar la imagen con la función unificada
-            try {
-              const processResult = await processImageForKling(dataUrl);
-              
-              if (processResult.isValid && processResult.processedImage) {
-                console.log('Imagen procesada correctamente con método alternativo');
-                setClothingImage(processResult.processedImage);
+            // Update progress based on status
+            if (statusResult.status === "pending") {
+              setProgress((prev) => Math.min(prev + 5, 40));
+            } else if (statusResult.status === "processing") {
+              setProgress((prev) => Math.min(prev + 10, 80));
+            }
+
+            // When process is completed or failed, stop polling
+            if (statusResult.status === "completed" || statusResult.status === "failed") {
+              clearInterval(intervalId);
+              setPollInterval(null);
+              setIsLoading(false);
+              setProgress(statusResult.status === "completed" ? 100 : 0);
+
+              if (statusResult.status === "completed") {
+                setResult(statusResult);
+                toast({
+                  title: "¡Éxito!",
+                  description: "Prueba virtual completada con éxito",
+                });
               } else {
                 toast({
-                  title: "Formato inválido",
-                  description: processResult.errorMessage || "La imagen no tiene un formato válido para la API. Intente con otra imagen JPEG.",
+                  title: "Proceso fallido",
+                  description: statusResult.errorMessage || "Error al generar el resultado de la prueba virtual",
                   variant: "destructive",
                 });
               }
-            } catch (error) {
-              console.error('Error al procesar la imagen:', error);
-              toast({
-                title: "Error de procesamiento",
-                description: "No se pudo procesar la imagen. Intente con otra imagen.",
-                variant: "destructive",
-              });
             }
-          };
-          reader.readAsDataURL(file);
-        }
+          } catch (error) {
+            console.error("Error in polling interval:", error);
+          }
+        }, 2000); // Check every 2 seconds
+
+        setPollInterval(intervalId);
+      }
+    } catch (error: any) {
+      setIsLoading(false);
+      setProgress(0);
+      
+      toast({
+        title: "Error",
+        description: error.message || "Ha ocurrido un error al iniciar el proceso",
+        variant: "destructive",
       });
     }
   };
 
-  const handleStartTryOn = async () => {
-    // Validate required inputs
-    if (!modelImage || !clothingImage) {
+  // Reset all inputs and results
+  const handleReset = () => {
+    setModelImage("");
+    setClothingImage("");
+    setResult(null);
+    setTaskId(null);
+    setProgress(0);
+    
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      setPollInterval(null);
+    }
+    
+    setIsLoading(false);
+  };
+
+  // Save a successful result
+  const handleSaveResult = async () => {
+    if (!result || !result.resultImage) {
       toast({
-        title: "Images Required",
-        description: "Please upload both a model image and a clothing item.",
+        title: "No hay resultado para guardar",
+        description: "No hay un resultado completado para guardar",
         variant: "destructive",
       });
       return;
     }
 
-    // Start loading and reset state
-    setIsLoading(true);
-    setTaskId(null);
-    setTaskStatus(null);
-    setResult(null);
-    
     try {
-      // Show initial loading toast
-      toast({
-        title: "Preparing Process",
-        description: "Validating and processing images...",
-      });
+      const saved = await klingService.saveResult(result);
       
-      // Procesar imágenes de manera asíncrona usando la nueva función unificada
-      let validatedModelImage: string;
-      let validatedClothingImage: string;
-      
-      // Procesar imagen del modelo
-      console.log("Procesando imagen del modelo con processImageForKling...");
-      const modelResult = await processImageForKling(modelImage);
-      
-      if (!modelResult.isValid || !modelResult.processedImage) {
-        throw new Error(`Error en imagen del modelo: ${modelResult.errorMessage || 'Formato no soportado'}`);
-      }
-      
-      validatedModelImage = modelResult.processedImage;
-      console.log("Imagen del modelo procesada correctamente:", 
-        `Dimensiones: ${modelResult.width}x${modelResult.height}, Tamaño: ${modelResult.sizeInMB?.toFixed(2)}MB`);
-      
-      // Notificar al usuario si la imagen fue modificada
-      if (modelResult.processedImage !== modelImage) {
+      if (saved) {
         toast({
-          title: "Imagen del modelo procesada",
-          description: "La imagen ha sido optimizada para el formato requerido por Kling API.",
+          title: "Guardado con éxito",
+          description: "El resultado se ha guardado en tu historial",
         });
+        
+        // Refresh the saved results list
+        loadSavedResults();
+      } else {
+        throw new Error("Error al guardar el resultado");
       }
-      
-      // Procesar imagen de la prenda
-      console.log("Procesando imagen de la prenda con processImageForKling...");
-      const clothingResult = await processImageForKling(clothingImage);
-      
-      if (!clothingResult.isValid || !clothingResult.processedImage) {
-        throw new Error(`Error en imagen de la prenda: ${clothingResult.errorMessage || 'Formato no soportado'}`);
-      }
-      
-      validatedClothingImage = clothingResult.processedImage;
-      console.log("Imagen de la prenda procesada correctamente:", 
-        `Dimensiones: ${clothingResult.width}x${clothingResult.height}, Tamaño: ${clothingResult.sizeInMB?.toFixed(2)}MB`);
-      
-      // Notificar al usuario si la imagen fue modificada
-      if (clothingResult.processedImage !== clothingImage) {
-        toast({
-          title: "Imagen de la prenda procesada",
-          description: "La imagen ha sido optimizada para el formato requerido por Kling API.",
-        });
-      }
-      
-      // Create settings for the request
-      const settings = {
-        preserve_model_details: preserveModelDetails,
-        preserve_clothing_details: preserveClothingDetails,
-        enhance_face: enhanceFace,
-        alignment: alignment,
-        position_offset: alignment === 'manual' ? { x: offsetX, y: offsetY } : undefined
-      };
-      
-      // Show uploading toast
-      toast({
-        title: "Uploading Images",
-        description: "Sending validated images to the server...",
-      });
-      
-      // Start try-on process with validated images
-      const newTaskId = await klingService.startTryOn(validatedModelImage, validatedClothingImage, settings);
-      
-      if (!newTaskId) {
-        throw new Error("Failed to get a valid task ID from the server");
-      }
-      
-      setTaskId(newTaskId);
-      
-      toast({
-        title: "Process Started",
-        description: "Beginning to process images. This may take a few minutes.",
-      });
     } catch (error: any) {
-      console.error('Error starting try-on process:', error);
-      setIsLoading(false);
-      
-      // Extract more specific error messages when possible
-      let errorMessage = "Could not initiate virtual try-on process. Please try again.";
-      
-      if (error.message) {
-        if (error.message.includes("format") || error.message.includes("unsupported")) {
-          errorMessage = "Unsupported image format. Please use only JPG or PNG images.";
-        } else if (error.message.includes("size")) {
-          errorMessage = "Image size is too large. Please use smaller images (under 5MB).";
-        } else if (error.message.includes("resolution")) {
-          errorMessage = "Image resolution is too high. Please use images with lower resolution.";
-        } else {
-          errorMessage = error.message;
-        }
-      } else if (error.response && error.response.data) {
-        try {
-          const responseData = error.response.data;
-          if (responseData.error) {
-            errorMessage = typeof responseData.error === 'string' 
-              ? responseData.error 
-              : responseData.error.message || errorMessage;
-          } else if (responseData.message) {
-            errorMessage = responseData.message;
-          }
-        } catch (error: unknown) {
-          const parseError = error instanceof Error 
-            ? error
-            : new Error('Error desconocido al analizar la respuesta de API');
-          
-          console.error('Error parsing API error response:', parseError);
-        }
-      }
-      
       toast({
-        title: "Process Start Error",
-        description: errorMessage,
+        title: "Error al guardar",
+        description: error.message || "No se pudo guardar el resultado. Por favor, inténtalo de nuevo.",
         variant: "destructive",
       });
     }
   };
-  
-  // Helper function to validate image data URLs
-  /**
-   * Función para validar que una URL de datos cumple con los requisitos estrictos de Kling API
-   * 
-   * Kling requiere:
-   * - Formato JPEG exacto con encabezado "data:image/jpeg;base64,"
-   * - Tamaño máximo de 50MB (validación aproximada en cliente)
-   * - Dimensiones específicas (lado corto ≥ 512px, lado largo ≤ 4096px) - verificado en servidor
-   * - Firma binaria JPEG válida (verificación preliminar)
-   * 
-   * @param dataUrl URL de datos a validar
-   * @returns true si la imagen cumple con los requisitos, false en caso contrario
-   */
-  const validateImageData = (dataUrl: string): boolean => {
-    try {
-      // Validation básica para URLs de datos
-      if (!dataUrl || typeof dataUrl !== 'string') {
-        console.warn('La imagen no es una cadena válida');
-        return false;
-      }
-      
-      if (!dataUrl.startsWith('data:image/')) {
-        console.warn('La imagen no tiene un formato de data URL válido');
-        return false;
-      }
-      
-      // Verificación estricta: DEBE ser JPEG con encabezado EXACTO
-      // Kling API rechaza cualquier variación o formato alternativo
-      const hasExactJpegFormat = dataUrl.startsWith('data:image/jpeg;base64,');
-      
-      // Según requisitos exactos de Kling, solo aceptamos JPEG con encabezado específico
-      if (!hasExactJpegFormat) {
-        console.warn('Formato de imagen no soportado. Solo se acepta JPEG con encabezado exacto: data:image/jpeg;base64,');
-        toast({
-          title: "Formato no soportado",
-          description: "La API de Kling solo acepta imágenes JPEG con encabezado específico. Se realizará una conversión automática.",
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      // Verificación estricta del formato y contenido
-      const parts = dataUrl.split(',');
-      if (parts.length !== 2 || !parts[1]) {
-        console.warn('La estructura del data URL no es válida');
-        return false;
-      }
-      
-      // Base64 data
-      const base64Data = parts[1];
-      
-      // Verificar que la primera parte contiene la codificación correcta de jpeg
-      const headerPart = parts[0].toLowerCase();
-      if (headerPart !== 'data:image/jpeg;base64') {
-        console.warn('El encabezado de la imagen debe ser exactamente data:image/jpeg;base64');
-        return false;
-      }
-      
-      // Verificar tamaño mínimo para asegurar que no es una imagen vacía
-      if (base64Data.length < 100) {
-        console.warn('La imagen es demasiado pequeña o está vacía');
-        return false;
-      }
-      
-      // Verificar tamaño máximo (Kling acepta hasta 50MB)
-      const maxSizeInBytes = 50 * 1024 * 1024; // 50MB (límite de Kling)
-      const estimatedSizeInBytes = (base64Data.length * 3) / 4; // Estimación aproximada
-      const estimatedSizeMB = estimatedSizeInBytes / (1024 * 1024);
-      
-      if (estimatedSizeInBytes > maxSizeInBytes) {
-        console.warn(`La imagen es demasiado grande (${estimatedSizeMB.toFixed(2)}MB > 50MB)`);
-        toast({
-          title: "Imagen demasiado grande",
-          description: `La imagen supera el tamaño máximo permitido por Kling (${estimatedSizeMB.toFixed(2)}MB > 50MB). Por favor, reduzca su tamaño.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      // Validación avanzada: verificar firma binaria JPEG
-      try {
-        // Decodificar los primeros bytes para verificar la firma JPEG
-        // Un archivo JPEG siempre comienza con la secuencia FF D8
-        const binaryStart = atob(base64Data.substring(0, 8));
-        const byte1 = binaryStart.charCodeAt(0);
-        const byte2 = binaryStart.charCodeAt(1);
-        
-        if (byte1 !== 0xFF || byte2 !== 0xD8) {
-          console.warn(`Firma JPEG inválida: ${byte1.toString(16)},${byte2.toString(16)} (esperado: FF,D8)`);
-          toast({
-            title: "Formato JPEG inválido",
-            description: "La imagen no tiene una estructura JPEG válida aunque el encabezado lo indique. Se intentará convertir automáticamente.",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        // Verificación avanzada: buscar el marcador de fin de imagen (FF D9)
-        // Esta es una verificación parcial, ya que no podemos leer todo el archivo en el navegador
-        // pero ayuda a detectar algunos JPEGs malformados
-        // Se omite por rendimiento, pero se puede agregar si es necesario
-      } catch (binaryError) {
-        console.warn('Error al verificar firma binaria JPEG:', binaryError);
-        // Continuamos porque esta verificación es adicional y puede fallar en algunos navegadores
-      }
-      
-      // Validación exitosa
-      console.log(`Validación de formato JPEG exitosa: ~${estimatedSizeMB.toFixed(2)}MB`);
-      return true;
-    } catch (error) {
-      console.error('Error al validar la imagen:', error);
-      return false;
-    }
-  };
 
-  const handleReset = () => {
-    setModelImage('');
-    setClothingImage('');
-    setModelFileInput(null);
-    setClothingFileInput(null);
-    setTaskId(null);
-    setTaskStatus(null);
-    setResult(null);
-    if (pollInterval) clearInterval(pollInterval);
-    setPollInterval(null);
-    setIsLoading(false);
-  };
-
-  const handleSaveResult = async () => {
-    if (!result) return;
-    
-    try {
-      await klingService.saveResult('try-on', result);
-      loadSavedResults();
-      
-      toast({
-        title: "Save Successful",
-        description: "The result has been saved successfully.",
-      });
-    } catch (error) {
-      console.error('Error saving result:', error);
-      
-      toast({
-        title: "Save Error",
-        description: "Could not save the result. Please try again.",
-        variant: "destructive",
-      });
-    }
+  // Download a try-on result image
+  const handleDownloadImage = (imageUrl: string) => {
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = `virtual-tryon-${new Date().getTime()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="space-y-6">
       <Tabs defaultValue="create" className="w-full">
         <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="create">Create Virtual Try-On</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="create">Crear prueba virtual</TabsTrigger>
+          <TabsTrigger value="history">Historial</TabsTrigger>
         </TabsList>
         
         <TabsContent value="create" className="space-y-4">
-          {/* Demonstration animation */}
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-          >
-            <Card className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10 pb-4">
-                <CardTitle className="flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
-                  <Sparkles className="h-5 w-5 text-orange-500" />
-                  Virtual Try-On Tutorial
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Learn how virtual garment try-on works and create your own combinations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="relative overflow-hidden rounded-md">
-                  {/* Boostify Music tutorial video */}
-                  <video
-                    ref={videoRef}
-                    className="w-full object-cover rounded-md shadow-inner"
-                    style={{ minHeight: "340px" }}
-                    poster="/assets/virtual-tryon/virtual-tryon-poster.svg"
-                    onClick={handlePlayVideo}
-                    onEnded={handleVideoEnded}
-                  >
-                    <source src="/assets/tv/Welcome to Boostify Music.mp4" type="video/mp4" />
-                    Your browser does not support video playback.
-                  </video>
-                  
-                  {/* Overlay with glow effects */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-orange-500/60 blur-sm animate-pulse"></div>
-                    <div className="absolute top-1/3 right-1/3 w-3 h-3 rounded-full bg-red-500/40 blur-sm animate-ping" style={{animationDuration: "4s"}}></div>
-                    <div className="absolute bottom-1/3 right-1/4 w-2 h-2 rounded-full bg-orange-500/50 blur-sm animate-pulse" style={{animationDuration: "3s"}}></div>
-                    
-                    {/* Central play button when video is paused */}
-                    {!isPlaying && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-black/50 rounded-full p-4">
-                          <Play className="h-12 w-12 text-white" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="bg-gradient-to-r from-primary/5 via-black/60 to-primary/5 backdrop-blur-sm p-4">
-                <div className="flex flex-wrap gap-2 w-full justify-between items-center">
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className="bg-primary/10 border-orange-500/20">
-                      <Sparkles className="h-3 w-3 mr-1 text-orange-500" />
-                      Video
-                    </Badge>
-                    <Badge variant="outline" className="bg-primary/10 border-orange-500/20">
-                      <Info className="h-3 w-3 mr-1 text-orange-500" />
-                      Tutorial
-                    </Badge>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="gap-1 text-xs"
-                    onClick={() => {
-                      toast({
-                        title: "Interactive Tutorial",
-                        description: "This video demonstrates the Boostify Music platform and its features.",
-                      });
-                    }}
-                  >
-                    <Info className="h-4 w-4 text-orange-500" />
-                    More Info
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          </motion.div>
-          
-          {/* Information alert */}
-          <Alert className="bg-primary/5 border-primary/20">
-            <Info className="h-4 w-4 text-primary" />
-            <AlertTitle>AI-Powered Virtual Try-On</AlertTitle>
-            <AlertDescription>
-              This tool allows you to upload a photo of a person and a clothing item to see how the garment would look when worn.
-              Perfect for trying clothes without physical fitting. For best results, use images with good lighting.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Model image upload section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Model Image</CardTitle>
-                <CardDescription>Upload a photo of the person who will wear the garment</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 h-60">
-                  {modelImage ? (
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={modelImage} 
-                        alt="Preview" 
-                        className="h-full mx-auto object-contain"
-                      />
-                      <Button 
-                        size="sm" 
-                        className="absolute top-2 right-2 bg-gradient-to-r from-red-500/90 to-red-500 hover:from-red-500 hover:to-red-500/90 border-0"
-                        onClick={() => {
-                          setModelImage('');
-                          setModelFileInput(null);
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <Camera className="h-10 w-10 mb-2" />
-                      <p>Click to upload your image</p>
-                    </div>
-                  )}
-                </div>
-                <Input 
-                  type="file" 
-                  accept="image/jpeg,image/jpg,image/png" 
-                  onChange={handleModelImageChange} 
-                  id="model-image"
-                  className="cursor-pointer"
-                />
-              </CardContent>
-            </Card>
-            
-            {/* Clothing image upload section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Clothing Image</CardTitle>
-                <CardDescription>Upload a photo of the garment you want to try on</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 h-60">
-                  {clothingImage ? (
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={clothingImage} 
-                        alt="Preview" 
-                        className="h-full mx-auto object-contain"
-                      />
-                      <Button 
-                        size="sm" 
-                        className="absolute top-2 right-2 bg-gradient-to-r from-red-500/90 to-red-500 hover:from-red-500 hover:to-red-500/90 border-0"
-                        onClick={() => {
-                          setClothingImage('');
-                          setClothingFileInput(null);
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <Shirt className="h-10 w-10 mb-2" />
-                      <p>Click to upload your image</p>
-                    </div>
-                  )}
-                </div>
-                <Input 
-                  type="file" 
-                  accept="image/jpeg,image/jpg,image/png" 
-                  onChange={handleClothingImageChange} 
-                  id="clothing-image"
-                  className="cursor-pointer"
-                />
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Advanced settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Advanced Settings</CardTitle>
-              <CardDescription>Customize how the garment will be applied</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="preserve-model-details">Preserve model details</Label>
-                    <Switch 
-                      id="preserve-model-details" 
-                      checked={preserveModelDetails}
-                      onCheckedChange={setPreserveModelDetails}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="preserve-clothing-details">Preserve clothing details</Label>
-                    <Switch 
-                      id="preserve-clothing-details" 
-                      checked={preserveClothingDetails}
-                      onCheckedChange={setPreserveClothingDetails}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="enhance-face">Enhance face</Label>
-                    <Switch 
-                      id="enhance-face" 
-                      checked={enhanceFace}
-                      onCheckedChange={setEnhanceFace}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Alignment</Label>
-                    <div className="flex space-x-4">
-                      <Button 
-                        onClick={() => setAlignment('auto')}
-                        className={`flex-1 ${alignment === 'auto' ? 
-                          'bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90' : 
-                          'bg-transparent border border-primary/30 hover:bg-primary/10'}`}
-                      >
-                        Automatic
-                      </Button>
-                      <Button 
-                        onClick={() => setAlignment('manual')}
-                        className={`flex-1 ${alignment === 'manual' ? 
-                          'bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90' : 
-                          'bg-transparent border border-primary/30 hover:bg-primary/10'}`}
-                      >
-                        Manual
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {alignment === 'manual' && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label htmlFor="offset-x">Horizontal adjustment: {offsetX}</Label>
-                        </div>
-                        <Slider 
-                          id="offset-x"
-                          min={-50}
-                          max={50}
-                          step={1}
-                          value={[offsetX]}
-                          onValueChange={(value) => setOffsetX(value[0])}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label htmlFor="offset-y">Vertical adjustment: {offsetY}</Label>
-                        </div>
-                        <Slider 
-                          id="offset-y"
-                          min={-50}
-                          max={50}
-                          step={1}
-                          value={[offsetY]}
-                          onValueChange={(value) => setOffsetY(value[0])}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Results section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Results</CardTitle>
-              <CardDescription>
-                {isLoading 
-                  ? "Processing images, this may take a few minutes..." 
-                  : "View the result of the virtual try-on"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center min-h-60">
-                {isLoading ? (
-                  <div className="flex flex-col items-center space-y-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <div className="text-center">
-                      <p>Processing your request...</p>
-                      {taskStatus && (
-                        <p className="text-sm text-muted-foreground">
-                          Status: {taskStatus.status === 'pending' ? 'Queued' : 'Processing'} - 
-                          Progress: {taskStatus.progress}%
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ) : result ? (
-                  <div className="w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Model Image Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="modelImage" className="text-sm font-medium">
+                Imagen del modelo
+              </Label>
+              
+              <div className="aspect-square relative bg-muted/40 rounded-md overflow-hidden border border-input flex items-center justify-center">
+                {modelImage ? (
+                  <>
                     <img 
-                      src={result.resultImage} 
-                      alt="Virtual try-on result" 
-                      className="max-h-96 mx-auto object-contain"
+                      src={modelImage} 
+                      alt="Modelo" 
+                      className="w-full h-full object-cover"
                     />
-                  </div>
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-8 w-8 opacity-80 hover:opacity-100"
+                      onClick={() => setModelImage("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
                 ) : (
-                  <div className="flex flex-col items-center text-gray-500">
-                    <ImageIcon className="h-10 w-10 mb-2" />
-                    <p>Results will appear here after processing</p>
+                  <div className="text-center p-4">
+                    <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">Sube la imagen del modelo</p>
                   </div>
                 )}
               </div>
-            </CardContent>
-            <CardFooter className="flex gap-2 justify-center">
-              <Button
-                onClick={handleStartTryOn}
-                disabled={isLoading || !modelImage || !clothingImage}
-                className="w-full py-6 text-md group bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90 transition-all shadow-md"
-              >
-                {isLoading ? (
+
+              <div className="flex justify-center">
+                <Label 
+                  htmlFor="modelImage" 
+                  className="cursor-pointer inline-flex items-center justify-center gap-1 text-sm text-primary py-1 px-2 rounded hover:bg-primary/10"
+                >
+                  <Upload className="h-3 w-3" />
+                  {modelImage ? "Cambiar" : "Subir"} modelo
+                </Label>
+                <Input 
+                  id="modelImage" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => handleFileChange(e, setModelImage)}
+                />
+              </div>
+            </div>
+
+            {/* Clothing Image Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="clothingImage" className="text-sm font-medium">
+                Imagen de la prenda
+              </Label>
+              
+              <div className="aspect-square relative bg-muted/40 rounded-md overflow-hidden border border-input flex items-center justify-center">
+                {clothingImage ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Processing virtual try-on...
+                    <img 
+                      src={clothingImage} 
+                      alt="Prenda" 
+                      className="w-full h-full object-cover"
+                    />
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-8 w-8 opacity-80 hover:opacity-100"
+                      onClick={() => setClothingImage("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </>
                 ) : (
-                  <>
-                    <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-                    Start Virtual Try-On
-                  </>
+                  <div className="text-center p-4">
+                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">Sube la imagen de la prenda</p>
+                  </div>
                 )}
-              </Button>
-              
-              <Button
-                onClick={handleReset}
-                className="w-full md:w-auto bg-gradient-to-r from-gray-500/40 to-gray-500/30 hover:from-gray-500/50 hover:to-gray-500/40 shadow-sm border-0"
-              >
-                <History className="mr-2 h-5 w-5" />
-                Reset
-              </Button>
-              
-              {result && (
-                <Button
-                  variant="secondary"
-                  onClick={handleSaveResult}
-                  className="w-full md:w-auto bg-gradient-to-r from-primary/30 to-primary/20 hover:from-primary/40 hover:to-primary/30 shadow-sm"
+              </div>
+
+              <div className="flex justify-center">
+                <Label 
+                  htmlFor="clothingImage" 
+                  className="cursor-pointer inline-flex items-center justify-center gap-1 text-sm text-primary py-1 px-2 rounded hover:bg-primary/10"
                 >
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Save Result
-                </Button>
+                  <Upload className="h-3 w-3" />
+                  {clothingImage ? "Cambiar" : "Subir"} prenda
+                </Label>
+                <Input 
+                  id="clothingImage" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => handleFileChange(e, setClothingImage)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 mb-6 justify-center">
+            <Button 
+              onClick={handleStartTryOn} 
+              disabled={!modelImage || !clothingImage || isLoading}
+              className="gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generar prueba virtual
+                </>
               )}
-            </CardFooter>
-          </Card>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleReset}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reiniciar
+            </Button>
+
+            {result?.resultImage && (
+              <>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleSaveResult}
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Guardar resultado
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  onClick={() => handleDownloadImage(result.resultImage!)}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Progress Indicator */}
+          {isLoading && (
+            <div className="mb-6 space-y-2">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Procesando...</span>
+                <span>{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Este proceso suele tardar entre 10 y 20 segundos
+              </p>
+            </div>
+          )}
+
+          {/* Result Display */}
+          {result?.resultImage && (
+            <div className="mt-4 pt-4 border-t border-primary/10">
+              <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-500" />
+                Resultado generado
+              </h3>
+              <div className="bg-muted/30 p-1 rounded-md border border-input">
+                <img 
+                  src={result.resultImage} 
+                  alt="Resultado de prueba virtual" 
+                  className="rounded-md w-full max-h-[500px] object-contain mx-auto"
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Error Alert */}
+          {result?.status === "failed" && result.errorMessage && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTitle className="flex items-center gap-2">
+                <X className="h-4 w-4" />
+                Proceso fallido
+              </AlertTitle>
+              <AlertDescription>
+                {result.errorMessage}
+              </AlertDescription>
+            </Alert>
+          )}
         </TabsContent>
         
         <TabsContent value="history" className="space-y-4">
-          <Card className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10">
-              <CardTitle className="flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
-                <History className="h-5 w-5 text-orange-500" />
-                Virtual Try-On History
-              </CardTitle>
-              <CardDescription>Review your previous virtual try-ons</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {savedResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No saved results yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {savedResults.map((item, index) => (
-                    <Card key={index} className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
-                      <div className="relative aspect-square group">
+          <h2 className="text-lg font-semibold mb-4">
+            {savedResults.length === 0 ? "No hay resultados guardados" : "Resultados guardados"}
+          </h2>
+          
+          {savedResults.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <AlertCircle className="h-10 w-10 mx-auto mb-4 opacity-20" />
+              <p>No hay resultados guardados aún.</p>
+              <p className="text-sm">Crea una prueba virtual y guárdala para verla aquí.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedResults.map((item) => (
+                <Card key={item.id} className="overflow-hidden border-primary/20">
+                  <CardContent className="p-0">
+                    {item.resultImage && (
+                      <div className="relative">
                         <img 
                           src={item.resultImage} 
-                          alt={`Virtual try-on ${index + 1}`} 
-                          className="object-cover w-full h-full"
+                          alt="Resultado guardado" 
+                          className="w-full aspect-square object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                          <div className="text-white">
-                            <p className="text-sm font-medium">Try-on #{index + 1}</p>
-                            <p className="text-xs opacity-80">AI-Generated</p>
-                          </div>
+                        <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/70 to-transparent flex justify-between items-center">
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            onClick={() => handleDownloadImage(item.resultImage!)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <span className="text-xs text-white/90">
+                            {new Date(item.createdAt || Date.now()).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
-                      <CardFooter className="flex justify-between p-3 bg-gradient-to-r from-primary/5 via-black/60 to-primary/5">
-                        <Badge variant="outline" className="bg-primary/10 border-orange-500/20">
-                          <Sparkles className="h-3 w-3 mr-1 text-orange-500" />
-                          {item.requestId.substring(0, 6)}...
-                        </Badge>
-                        <Button 
-                          size="sm"
-                          className="bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 flex items-center gap-1 border-0 shadow-sm"
-                        >
-                          <Info className="h-4 w-4 text-orange-500" />
-                          View details
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

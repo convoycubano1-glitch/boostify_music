@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import {
@@ -59,160 +59,7 @@ interface TryOnResult {
   id?: string;
 }
 
-/**
- * Improved Kling service with robust image validation and error handling
- */
-const klingService = {
-  // Start the Try-On process
-  startTryOn: async (modelImage: string, clothingImage: string): Promise<TryOnResult> => {
-    try {
-      // First, validate and process both images to ensure they meet Kling's requirements
-      const processedModelResult = await validateAndProcessImage(modelImage);
-      if (!processedModelResult.isValid) {
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: `Model image error: ${processedModelResult.errorMessage}`
-        };
-      }
-      
-      const processedClothingResult = await validateAndProcessImage(clothingImage);
-      if (!processedClothingResult.isValid) {
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: `Clothing image error: ${processedClothingResult.errorMessage}`
-        };
-      }
-      
-      // Structure following the format expected by the Kling API
-      const response = await axios.post('/api/kling/try-on/start', {
-        model: "kling",
-        task_type: "ai_try_on", // Using the correct task_type verified with direct API tests
-        input: {
-          model_input: processedModelResult.processedImage || modelImage,
-          dress_input: processedClothingResult.processedImage || clothingImage,
-          batch_size: 1
-        }
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error starting Try-On:', error);
-      
-      // Handle API authentication errors specifically with more detail
-      if (error.response?.status === 401 || 
-          error.response?.data?.message === 'Invalid API key' || 
-          error.response?.data?.error === 'Invalid API key') {
-        console.error('❌ Authentication error with Kling API. Details:', error.response?.data);
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: 'Authentication error: The API key is invalid or has expired. Please contact the administrator.'
-        };
-      }
-      
-      return {
-        success: false,
-        status: 'failed',
-        errorMessage: error.response?.data?.error || error.message || 'Unknown error when starting Try-On'
-      };
-    }
-  },
-  
-  // Check the status of an ongoing Try-On process
-  checkTryOnStatus: async (taskId: string): Promise<TryOnResult> => {
-    try {
-      const response = await axios.post('/api/kling/try-on/status', { taskId });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error checking Try-On status:', error);
-      return {
-        success: false,
-        status: 'failed',
-        errorMessage: error.response?.data?.error || error.message || 'Error checking status'
-      };
-    }
-  },
-  
-  // Save a completed try-on result
-  saveResult: async (result: TryOnResult): Promise<boolean> => {
-    try {
-      if (!result.resultImage || !result.taskId) {
-        throw new Error('No valid result to save');
-      }
-      
-      await axios.post('/api/kling/save-result', {
-        type: 'try-on',
-        taskId: result.taskId,
-        resultImage: result.resultImage
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error('Error saving Try-On result:', error);
-      return false;
-    }
-  },
-  
-  // Get all saved try-on results
-  getResults: async (): Promise<TryOnResult[]> => {
-    try {
-      const response = await axios.get('/api/kling/results?type=try-on');
-      return response.data.results || [];
-    } catch (error: any) {
-      console.error('Error fetching saved Try-On results:', error);
-      return [];
-    }
-  }
-};
-
-/**
- * Validate and process an image to ensure it meets Kling API requirements
- */
-interface ImageValidationResult {
-  isValid: boolean;
-  errorMessage?: string;
-  width?: number;
-  height?: number;
-  originalFormat?: string;
-  sizeInMB?: number;
-  processedImage?: string;
-}
-
-/**
- * Validate and process an image to ensure it meets Kling API requirements
- * This function handles JPEG format issues including missing Huffman tables and 0xFF00 sequences
- */
-async function validateAndProcessImage(imageDataUrl: string): Promise<ImageValidationResult> {
-  try {
-    // Use our server-side processor to handle all JPEG corrections
-    const response = await axios.post('/api/kling/process-image', { 
-      imageData: imageDataUrl 
-    });
-    
-    if (response.data.isValid) {
-      return {
-        isValid: true,
-        width: response.data.width,
-        height: response.data.height,
-        originalFormat: response.data.originalFormat,
-        sizeInMB: response.data.sizeInMB,
-        processedImage: response.data.processedImage || response.data.normalizedUrl
-      };
-    } else {
-      return {
-        isValid: false,
-        errorMessage: response.data.errorMessage || 'Unknown image validation error'
-      };
-    }
-  } catch (error: any) {
-    console.error('Error validating image:', error);
-    return {
-      isValid: false,
-      errorMessage: error.response?.data?.error || error.message || 'Failed to process image'
-    };
-  }
-}
+import { klingService } from '@/services/kling/kling-service';
 
 // Animation variants
 const containerVariants = {
@@ -490,7 +337,6 @@ export function EnglishVirtualTryOn() {
     };
     
     // If sample images are available, use them directly
-    // Otherwise, use the default paths that might be part of the public assets
     if (imageType === 'model') {
       fetch(sampleImages.model[index] || `/assets/sample-model-${index + 1}.jpg`)
         .then(response => response.blob())
@@ -529,631 +375,642 @@ export function EnglishVirtualTryOn() {
           console.error('Error loading sample image:', error);
           toast({
             title: "Error",
-            description: "Failed to load sample image. Please try uploading your own image.",
+            description: "Failed to load sample clothing image. Please try uploading your own image.",
             variant: "destructive",
           });
         });
     }
   };
 
+  // Generate a random look
+  const handleGenerateRandomLook = () => {
+    // Simulate selecting random samples
+    const randomModelIndex = Math.floor(Math.random() * 2);
+    const randomClothingIndex = Math.floor(Math.random() * 2);
+    
+    handleUseSampleImage('model', randomModelIndex);
+    handleUseSampleImage('clothing', randomClothingIndex);
+  };
+
   return (
-    <div className="container mx-auto py-4">
-      <Tabs defaultValue="create" className="w-full">
-        <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="create">Create Virtual Try-On</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+    <div className="space-y-6 px-1 py-2">
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="upload" className="flex items-center gap-1">
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Upload Images</span>
+            <span className="inline sm:hidden">Upload</span>
+          </TabsTrigger>
+          <TabsTrigger value="result" className="flex items-center gap-1">
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Results</span>
+            <span className="inline sm:hidden">Result</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-1">
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">History</span>
+            <span className="inline sm:hidden">History</span>
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="create" className="space-y-4">
-          {/* Main interface */}
-          <motion.div 
+        {/* Upload Tab */}
+        <TabsContent value="upload" className="space-y-4">
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="show"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
-            <Card className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10 pb-4">
-                <CardTitle className="flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
-                  <Sparkles className="h-5 w-5 text-orange-500" />
-                  Virtual Try-On
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Try on clothing virtually using AI to see how garments would look on you or your models
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 grid gap-6 md:grid-cols-2">
-                {/* Model Image Section */}
-                <motion.div variants={itemVariants} className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
-                      <Camera className="h-4 w-4 text-primary" />
-                      Model Image
-                    </h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleUseSampleImage('model', 0)}
-                      className="text-xs h-7 px-2"
-                    >
-                      <Dices className="h-3 w-3 mr-1" />
-                      Use Sample
-                    </Button>
-                  </div>
-                  
-                  <div className="relative aspect-[3/4] bg-black/20 rounded-lg overflow-hidden border border-primary/20 flex items-center justify-center">
+            {/* Model Image Card */}
+            <motion.div variants={itemVariants}>
+              <Card className="overflow-hidden border-primary/10">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Camera className="h-5 w-5" />
+                    Model Image
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a full-body photo to see how clothes will look on you
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="aspect-square rounded-md overflow-hidden border border-primary/20 bg-muted/30 relative">
                     {modelImage ? (
-                      <img 
-                        src={modelImage} 
-                        alt="Model" 
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img src={modelImage} alt="Model" className="w-full h-full object-cover" />
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-90"
+                          onClick={() => setModelImage('')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
                     ) : (
-                      <div className="text-center p-4">
-                        <Camera className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Upload model image</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Person wearing neutral clothes
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        <ImageIcon className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
+                        <p className="text-center text-muted-foreground text-sm">
+                          Upload a full body photo
+                        </p>
+                        <p className="text-center text-muted-foreground text-xs mt-1">
+                          Front facing, neutral pose works best
                         </p>
                       </div>
                     )}
-                    
-                    {/* Upload button overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, setModelImage, setModelFileInput)}
-                        />
-                        <Button className="gap-2">
-                          <Upload className="h-4 w-4" />
-                          Upload Model
-                        </Button>
-                      </label>
-                    </div>
                   </div>
                   
-                  {/* Model upload guidance */}
-                  <div className="text-sm space-y-2 text-muted-foreground">
-                    <p className="font-medium">Best practices for model images:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Full body, front-facing pose</li>
-                      <li>Neutral or plain background</li>
-                      <li>Wearing form-fitting clothing</li>
-                      <li>Good lighting without shadows</li>
-                      <li>JPG or PNG format recommended</li>
-                    </ul>
-                  </div>
-                </motion.div>
-                
-                {/* Clothing Image Section */}
-                <motion.div variants={itemVariants} className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
-                      <Shirt className="h-4 w-4 text-primary" />
-                      Clothing Image
-                    </h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleUseSampleImage('clothing', 0)}
-                      className="text-xs h-7 px-2"
-                    >
-                      <Dices className="h-3 w-3 mr-1" />
-                      Use Sample
-                    </Button>
-                  </div>
-                  
-                  <div className="relative aspect-[3/4] bg-black/20 rounded-lg overflow-hidden border border-primary/20 flex items-center justify-center">
-                    {clothingImage ? (
-                      <img 
-                        src={clothingImage} 
-                        alt="Clothing" 
-                        className="w-full h-full object-cover"
+                  <div className="flex justify-between items-center mt-4">
+                    <div>
+                      <Label
+                        htmlFor="modelImage"
+                        className="cursor-pointer inline-flex items-center gap-1 text-sm bg-primary text-primary-foreground px-3 py-2 rounded-md"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload Model
+                      </Label>
+                      <input
+                        id="modelImage"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, setModelImage, setModelFileInput)}
                       />
-                    ) : (
-                      <div className="text-center p-4">
-                        <Shirt className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Upload clothing image</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Dress, shirt, or complete outfit
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Upload button overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, setClothingImage, setClothingFileInput)}
-                        />
-                        <Button className="gap-2">
-                          <Upload className="h-4 w-4" />
-                          Upload Clothing
-                        </Button>
-                      </label>
-                    </div>
-                  </div>
-                  
-                  {/* Clothing upload guidance */}
-                  <div className="text-sm space-y-2 text-muted-foreground">
-                    <p className="font-medium">Best practices for clothing images:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Front-facing display of garment</li>
-                      <li>White or transparent background</li>
-                      <li>Full garment visibility</li>
-                      <li>Even lighting without reflections</li>
-                      <li>JPG or PNG format with transparency</li>
-                    </ul>
-                  </div>
-                </motion.div>
-                
-                {/* Advanced Options (toggle section) */}
-                <motion.div variants={itemVariants} className="md:col-span-2">
-                  <div 
-                    className="flex items-center justify-between cursor-pointer py-2"
-                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Advanced Options</span>
-                    </div>
-                    {showAdvancedOptions ? 
-                      <ChevronUp className="h-4 w-4" /> : 
-                      <ChevronDown className="h-4 w-4" />
-                    }
-                  </div>
-                  
-                  {showAdvancedOptions && (
-                    <div className="mt-4 space-y-4 p-4 bg-black/20 rounded-lg border border-primary/10">
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-4">
-                          <h4 className="text-sm font-medium">Detail Preservation</h4>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <Label htmlFor="preserve-model">Preserve Model Details</Label>
-                              <p className="text-xs text-muted-foreground">
-                                Keep facial features and model details accurate
-                              </p>
-                            </div>
-                            <Switch
-                              id="preserve-model"
-                              checked={preserveModelDetails}
-                              onCheckedChange={setPreserveModelDetails}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <Label htmlFor="preserve-clothing">Preserve Clothing Details</Label>
-                              <p className="text-xs text-muted-foreground">
-                                Maintain clothing patterns, textures and details
-                              </p>
-                            </div>
-                            <Switch
-                              id="preserve-clothing"
-                              checked={preserveClothingDetails}
-                              onCheckedChange={setPreserveClothingDetails}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <Label htmlFor="enhance-face">Enhance Face</Label>
-                              <p className="text-xs text-muted-foreground">
-                                Apply facial enhancement to improve quality
-                              </p>
-                            </div>
-                            <Switch
-                              id="enhance-face"
-                              checked={enhanceFace}
-                              onCheckedChange={setEnhanceFace}
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          <h4 className="text-sm font-medium">Alignment Controls</h4>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <Label htmlFor="alignment-mode">Alignment Mode</Label>
-                              <p className="text-xs text-muted-foreground">
-                                Choose between automatic or manual positioning
-                              </p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant={alignment === 'auto' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setAlignment('auto')}
-                                className="h-8 px-3"
-                              >
-                                Auto
-                              </Button>
-                              <Button
-                                variant={alignment === 'manual' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setAlignment('manual')}
-                                className="h-8 px-3"
-                              >
-                                Manual
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          {alignment === 'manual' && (
-                            <>
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <Label htmlFor="offset-x">Horizontal Offset ({offsetX}px)</Label>
-                                </div>
-                                <Slider
-                                  id="offset-x"
-                                  min={-50}
-                                  max={50}
-                                  step={1}
-                                  value={[offsetX]}
-                                  onValueChange={(value) => setOffsetX(value[0])}
-                                />
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <Label htmlFor="offset-y">Vertical Offset ({offsetY}px)</Label>
-                                </div>
-                                <Slider
-                                  id="offset-y"
-                                  min={-50}
-                                  max={50}
-                                  step={1}
-                                  value={[offsetY]}
-                                  onValueChange={(value) => setOffsetY(value[0])}
-                                />
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-                
-                {/* Result Section (conditionally shown) */}
-                {(taskStatus || result) && (
-                  <motion.div 
-                    variants={itemVariants}
-                    className="md:col-span-2 border border-primary/20 rounded-lg overflow-hidden bg-black/30"
-                  >
-                    <div className="bg-primary/10 p-3 flex justify-between items-center">
-                      <h3 className="font-medium flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        Try-On Result
-                      </h3>
-                      {taskStatus && taskStatus.status === 'processing' && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                          Processing: {taskStatus.progress ? `${Math.round(taskStatus.progress)}%` : 'Initializing...'}
-                        </div>
-                      )}
                     </div>
                     
-                    <div className="p-4">
-                      {taskStatus && ['pending', 'processing'].includes(taskStatus.status || '') && (
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                          <div className="relative w-16 h-16">
-                            <Loader2 className="w-16 h-16 animate-spin text-primary opacity-25" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-sm font-medium">
-                                {taskStatus.progress ? `${Math.round(taskStatus.progress)}%` : '...'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <h4 className="font-medium">Creating your virtual try-on</h4>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              This process may take up to 30 seconds
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {taskStatus && taskStatus.status === 'failed' && (
-                        <Alert variant="destructive" className="bg-red-950/40 border-red-900/50">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Processing Failed</AlertTitle>
-                          <AlertDescription>
-                            {taskStatus.errorMessage || 
-                             "We couldn't complete your virtual try-on. Please try again with different images."}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {result && result.status === 'completed' && result.resultImage && (
-                        <div className="space-y-4">
-                          <div className="relative aspect-[3/4] bg-black/20 rounded-lg overflow-hidden border border-primary/20">
-                            <img 
-                              src={result.resultImage} 
-                              alt="Try-On Result" 
-                              className="w-full h-full object-cover"
-                            />
-                            
-                            {/* Success indicator */}
-                            <div className="absolute top-2 right-2 bg-green-500/80 text-white rounded-full p-1">
-                              <CheckCircle2 className="h-5 w-5" />
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadImage(result.resultImage)}
-                              className="gap-1"
-                            >
-                              <Download className="h-4 w-4" />
-                              Download
-                            </Button>
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleSaveResult}
-                              className="gap-1"
-                            >
-                              <Save className="h-4 w-4" />
-                              Save to History
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleUseSampleImage('model', 0)}
+                      >
+                        Sample 1
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleUseSampleImage('model', 1)}
+                      >
+                        Sample 2
+                      </Button>
                     </div>
-                  </motion.div>
-                )}
-              </CardContent>
-              
-              <CardFooter className="flex gap-2 justify-center p-6">
-                <Button
-                  onClick={handleStartTryOn}
-                  disabled={isLoading || !modelImage || !clothingImage}
-                  className="w-full py-6 text-md group bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90 transition-all shadow-md"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing virtual try-on...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-                      Start Virtual Try-On
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  onClick={handleReset}
-                  className="w-full md:w-auto bg-gradient-to-r from-gray-500/40 to-gray-500/30 hover:from-gray-500/50 hover:to-gray-500/40 shadow-sm border-0"
-                >
-                  <History className="mr-2 h-5 w-5" />
-                  Reset
-                </Button>
-              </CardFooter>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
             
-            {/* Information card */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-xl">About Virtual Try-On</CardTitle>
-                <CardDescription>
-                  Learn how our advanced AI clothing visualization works
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p>
-                  Virtual Try-On uses state-of-the-art AI algorithms to accurately overlay clothing items
-                  onto model images, giving you a realistic preview of how garments would look without physical fitting.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      AI Technology
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Powered by Kling's advanced neural networks that analyze body pose, garment structure,
-                      and fabric properties to create natural-looking results.
-                    </p>
+            {/* Clothing Image Card */}
+            <motion.div variants={itemVariants}>
+              <Card className="overflow-hidden border-primary/10">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Shirt className="h-5 w-5" />
+                    Clothing Image
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a clothing item to try it on virtually
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="aspect-square rounded-md overflow-hidden border border-primary/20 bg-muted/30 relative">
+                    {clothingImage ? (
+                      <>
+                        <img src={clothingImage} alt="Clothing" className="w-full h-full object-cover" />
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-90"
+                          onClick={() => setClothingImage('')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        <Shirt className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
+                        <p className="text-center text-muted-foreground text-sm">
+                          Upload a clothing image
+                        </p>
+                        <p className="text-center text-muted-foreground text-xs mt-1">
+                          Clean background, front view recommended
+                        </p>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Shirt className="h-4 w-4 text-primary" />
-                      Garment Types
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Works best with dresses, tops, and full outfits. The system adapts to various styles,
-                      from casual wear to formal attire and fashion pieces.
-                    </p>
+                  <div className="flex justify-between items-center mt-4">
+                    <div>
+                      <Label
+                        htmlFor="clothingImage"
+                        className="cursor-pointer inline-flex items-center gap-1 text-sm bg-primary text-primary-foreground px-3 py-2 rounded-md"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload Clothing
+                      </Label>
+                      <input
+                        id="clothingImage"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, setClothingImage, setClothingFileInput)}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleUseSampleImage('clothing', 0)}
+                      >
+                        Sample 1
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleUseSampleImage('clothing', 1)}
+                      >
+                        Sample 2
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Camera className="h-4 w-4 text-primary" />
-                      Best Practices
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      For optimal results, use high-quality images with neutral backgrounds,
-                      clear lighting, and standard poses for both models and clothing items.
-                    </p>
-                  </div>
-                </div>
-                
-                <Separator className="my-4" />
-                
-                <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <FileWarning className="h-4 w-4 text-amber-500" />
-                    Image Processing Improvements
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Our system now includes advanced JPEG processing to fix common image issues:
-                  </p>
-                  <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Automatic correction of missing Huffman tables in JPEG images</li>
-                    <li>Repair of corrupted 0xFF00 sequences for improved compatibility</li>
-                    <li>Image format validation and optimization for the AI processing pipeline</li>
-                    <li>Dimension verification to ensure images meet API requirements</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           </motion.div>
+          
+          {/* Advanced Options */}
+          <div className="border border-primary/10 rounded-md overflow-hidden">
+            <div 
+              className="p-3 flex justify-between items-center cursor-pointer hover:bg-muted/30 transition-colors"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+            >
+              <div className="flex items-center gap-2">
+                <Sliders className="h-4 w-4 text-primary" />
+                <span className="font-medium">Advanced Options</span>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                {showAdvancedOptions ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            
+            {showAdvancedOptions && (
+              <div className="p-4 pt-0 border-t border-primary/10 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="preserveModelDetails" className="text-sm">
+                        Preserve Model Details
+                      </Label>
+                      <Switch
+                        id="preserveModelDetails"
+                        checked={preserveModelDetails}
+                        onCheckedChange={setPreserveModelDetails}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Keep facial features and body characteristics of the model
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="preserveClothingDetails" className="text-sm">
+                        Preserve Clothing Details
+                      </Label>
+                      <Switch
+                        id="preserveClothingDetails"
+                        checked={preserveClothingDetails}
+                        onCheckedChange={setPreserveClothingDetails}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Keep pattern details and texture of the clothing item
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="enhanceFace" className="text-sm">
+                        Enhance Face
+                      </Label>
+                      <Switch
+                        id="enhanceFace"
+                        checked={enhanceFace}
+                        onCheckedChange={setEnhanceFace}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Improve facial details in the final result
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="alignment" className="text-sm">
+                        Alignment Mode
+                      </Label>
+                      <Select>
+                        <option value="auto">Auto</option>
+                        <option value="manual">Manual</option>
+                      </Select>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Choose how to align the clothing on the model
+                    </p>
+                  </div>
+                </div>
+                
+                {alignment === 'manual' && (
+                  <div className="space-y-4 pt-2">
+                    <Separator />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="offsetX" className="text-sm">
+                          Horizontal Offset
+                        </Label>
+                        <span className="text-xs text-muted-foreground">{offsetX}%</span>
+                      </div>
+                      <Slider
+                        id="offsetX"
+                        min={-50}
+                        max={50}
+                        step={1}
+                        value={[offsetX]}
+                        onValueChange={(value) => setOffsetX(value[0])}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="offsetY" className="text-sm">
+                          Vertical Offset
+                        </Label>
+                        <span className="text-xs text-muted-foreground">{offsetY}%</span>
+                      </div>
+                      <Slider
+                        id="offsetY"
+                        min={-50}
+                        max={50}
+                        step={1}
+                        value={[offsetY]}
+                        onValueChange={(value) => setOffsetY(value[0])}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 justify-center pt-2">
+            <Button
+              className="gap-2"
+              onClick={handleStartTryOn}
+              disabled={!modelImage || !clothingImage || isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate Try-On
+                </>
+              )}
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleReset}
+            >
+              <Undo2 className="h-4 w-4" />
+              Reset
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="gap-2"
+              onClick={handleGenerateRandomLook}
+            >
+              <Dices className="h-4 w-4" />
+              Random Look
+            </Button>
+          </div>
+          
+          {/* Progress Status */}
+          {isLoading && taskStatus && (
+            <div className="border border-primary/10 rounded-md p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <h3 className="font-medium">Processing Your Request</h3>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Status: {taskStatus.status}</span>
+                  <span>{taskStatus.progress || 0}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-primary h-full transition-all duration-300 ease-out"
+                    style={{ width: `${taskStatus.progress || 0}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This usually takes 10-20 seconds to complete
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Error Display */}
+          {!isLoading && taskStatus?.status === 'failed' && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Process Failed</AlertTitle>
+              <AlertDescription>
+                {taskStatus.errorMessage || "An error occurred during processing. Please try again."}
+              </AlertDescription>
+            </Alert>
+          )}
         </TabsContent>
         
-        <TabsContent value="history" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Your Saved Try-On Results</CardTitle>
-              <CardDescription>
-                View and manage your previous virtual try-on creations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {savedResults.length === 0 ? (
-                <div className="text-center py-12 space-y-4">
-                  <Ghost className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium">No saved results yet</h3>
-                  <p className="text-muted-foreground">
-                    Your saved try-on results will appear here after you create and save them
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => document.querySelector('[data-value="create"]')?.click()}
-                    className="mt-2"
-                  >
-                    Create Your First Try-On
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {savedResults.map((item) => (
-                    <Card key={item.id} className="overflow-hidden border-primary/20 group">
-                      <div className="relative aspect-[3/4]">
-                        <img
-                          src={item.resultImage}
-                          alt="Saved Try-On Result"
+        {/* Result Tab */}
+        <TabsContent value="result">
+          {result && result.resultImage ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4"
+            >
+              <Card className="overflow-hidden border-primary/10">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    Generated Result
+                  </CardTitle>
+                  <CardDescription>
+                    Your virtual try-on has been successfully generated
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <div className="rounded-md overflow-hidden border border-primary/20 relative group">
+                    <img 
+                      src={result.resultImage} 
+                      alt="Try-On Result" 
+                      className="w-full h-auto"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200"></div>
+                    <Button 
+                      variant="secondary"
+                      size="icon"
+                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      onClick={() => window.open(result.resultImage, '_blank')}
+                    >
+                      <Expand className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 justify-center mt-4">
+                    <Button
+                      variant="default"
+                      className="gap-2"
+                      onClick={handleSaveResult}
+                    >
+                      <Save className="h-4 w-4" />
+                      Save Result
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() => handleDownloadImage(result.resultImage)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      className="gap-2"
+                      onClick={() => setResult(null)}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                      New Try-On
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden border-primary/10">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Tally3 className="h-5 w-5" />
+                    Comparison
+                  </CardTitle>
+                  <CardDescription>
+                    Compare the original images with the generated result
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <div className="aspect-square rounded-md overflow-hidden border border-primary/20">
+                        <img src={modelImage} alt="Model" className="w-full h-full object-cover" />
+                      </div>
+                      <p className="text-xs text-center text-muted-foreground">Model</p>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="aspect-square rounded-md overflow-hidden border border-primary/20">
+                        <img src={clothingImage} alt="Clothing" className="w-full h-full object-cover" />
+                      </div>
+                      <p className="text-xs text-center text-muted-foreground">Clothing</p>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="aspect-square rounded-md overflow-hidden border border-primary/20">
+                        <img src={result.resultImage} alt="Result" className="w-full h-full object-cover" />
+                      </div>
+                      <p className="text-xs text-center text-muted-foreground">Result</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <div className="text-center py-10 space-y-3">
+              <Ghost className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+              <h3 className="text-lg font-medium">No Result Available</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Generate a virtual try-on first using the Upload tab.
+                Upload a model image and clothing to see how they look together.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => document.querySelector('[data-value="upload"]')?.click()}
+              >
+                Go to Upload
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+        
+        {/* History Tab */}
+        <TabsContent value="history">
+          {savedResults.length > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {savedResults.map((item, index) => (
+                  <Card key={item.id || index} className="overflow-hidden border-primary/10">
+                    <CardContent className="p-0">
+                      <div className="aspect-square relative">
+                        <img 
+                          src={item.resultImage} 
+                          alt={`Saved result ${index + 1}`} 
                           className="w-full h-full object-cover"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
+                        <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                          <p className="text-sm font-medium truncate">
+                            Try-On Result {index + 1}
+                          </p>
+                          <p className="text-xs opacity-80">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Date not available'}
+                          </p>
+                        </div>
                         
-                        {/* Overlay with actions */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <div className="absolute top-2 right-2 flex gap-1">
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="secondary"
+                            className="h-8 w-8 rounded-full opacity-90"
                             onClick={() => handleDownloadImage(item.resultImage!)}
-                            className="bg-white/20 hover:bg-white/30"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
                           
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="destructive"
+                            className="h-8 w-8 rounded-full opacity-90"
                             onClick={() => handleDeleteResult(item.id!)}
-                            className="bg-red-500/70 hover:bg-red-500/90"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => window.open(item.resultImage, '_blank')}
-                            className="bg-white/20 hover:bg-white/30"
-                          >
-                            <Expand className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        {/* Date overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-2 px-3 text-xs">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Unknown date'}
                         </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Tutorial or Help Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Tips for Better Try-On Results</CardTitle>
-              <CardDescription>
-                Follow these guidelines to achieve the most realistic virtual try-ons
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Camera className="h-4 w-4 text-primary" />
-                    Model Photography
-                  </h3>
-                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Ensure even lighting without harsh shadows</li>
-                    <li>Use a neutral or plain background</li>
-                    <li>Position the camera at chest height</li>
-                    <li>Stand with a natural, front-facing pose</li>
-                    <li>Wear form-fitting clothes if possible</li>
-                  </ul>
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Shirt className="h-4 w-4 text-primary" />
-                    Clothing Photography
-                  </h3>
-                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Use flat, well-lit product images</li>
-                    <li>White or transparent backgrounds work best</li>
-                    <li>Avoid mannequins or human models</li>
-                    <li>Display the garment in a front-facing view</li>
-                    <li>High-resolution images produce better details</li>
-                  </ul>
-                </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              
-              {/* Mobile app promotion */}
-              <div className="flex items-center p-4 mt-4 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                <Sparkles className="h-10 w-10 text-blue-500 mr-4 flex-shrink-0" />
-                <div className="flex-grow">
-                  <h3 className="font-medium text-blue-700 dark:text-blue-300 mb-1">
-                    Want to use Virtual Try-On on your mobile device?
-                  </h3>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">
-                    Discover our mobile app with on-the-go virtual try-on features, available for iOS and Android.
-                    Try clothes anywhere and share your virtual outfits directly from your phone.
-                  </p>
-                </div>
-                <Button size="sm" className="ml-4 flex-shrink-0">
-                  Get App
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ) : (
+            <div className="text-center py-10 space-y-3">
+              <History className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+              <h3 className="text-lg font-medium">No Saved Results</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Your saved try-on results will appear here.
+                Generate and save results to build your history.
+              </p>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+      
+      {/* Tips Card */}
+      <Card className="bg-primary/5 border-primary/10">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <FileWarning className="h-4 w-4" />
+            Tips for Best Results
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <ul className="text-xs space-y-1 text-muted-foreground">
+            <li>• Use front-facing photos with neutral poses</li>
+            <li>• Ensure good lighting and clear visibility</li>
+            <li>• Clothing images work best with minimal background</li>
+            <li>• Full body shots provide the most accurate results</li>
+            <li>• If you encounter issues, try different images or angles</li>
+          </ul>
+        </CardContent>
+      </Card>
+      
+      {/* Help Link */}
+      <div className="text-center">
+        <a 
+          href="/help/virtual-tryon" 
+          target="_blank"
+          className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
+        >
+          <ExternalLink className="h-3 w-3" />
+          Learn more about Virtual Try-On technology
+        </a>
+      </div>
     </div>
+  );
+}
+
+// Placeholder Selection component
+function Select({ children }: { children: React.ReactNode }) {
+  return (
+    <select className="h-9 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+      {children}
+    </select>
   );
 }

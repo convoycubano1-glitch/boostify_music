@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { SimpleTryOnComponent } from '@/components/kling/simple-tryon';
+import { SimpleTryOnComponent } from '@/components/kling/simple-tryon-improved';
 
 export default function KlingTestPage() {
   return (
