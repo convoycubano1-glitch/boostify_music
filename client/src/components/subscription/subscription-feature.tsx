@@ -6,32 +6,32 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AlertTriangle, Lock, ArrowRight } from 'lucide-react';
 
-// Propiedades del componente de control de características por suscripción
+// Subscription feature access control component properties
 export interface SubscriptionFeatureProps {
-  // Plan mínimo requerido para acceder a esta característica
+  // Minimum plan required to access this feature
   requiredPlan: SubscriptionPlan;
-  // Contenido a mostrar si el usuario tiene acceso
+  // Content to display if the user has access
   children: React.ReactNode;
-  // Opcional: título de la función (para mostrar en la vista bloqueada)
+  // Optional: feature title (displayed in the blocked view)
   title?: string;
-  // Opcional: descripción de la función (para mostrar en la vista bloqueada)
+  // Optional: feature description (displayed in the blocked view)
   description?: string;
-  // Opcional: si se debe mostrar una vista previa de la característica
+  // Optional: whether to show a preview of the feature
   preview?: boolean;
-  // Opcional: si se debe mostrar silenciosamente (sin UI de actualización)
+  // Optional: whether to hide silently (no upgrade UI)
   silent?: boolean;
-  // Opcional: lista de emails de administradores que siempre tienen acceso
+  // Optional: admin email list that always have access
   adminEmails?: string[];
-  // Opcional: URL de redirección alternativa
+  // Optional: alternative redirect URL
   redirectUrl?: string;
 }
 
 /**
- * Componente para restringir características basadas en el plan de suscripción del usuario
+ * Component to restrict features based on the user's subscription plan
  * 
- * Controla el acceso a características específicas de la aplicación basado en
- * el nivel de suscripción del usuario. Si el usuario no tiene el plan requerido,
- * muestra un mensaje de bloqueo con opción de actualizar.
+ * Controls access to specific application features based on
+ * the user's subscription level. If the user doesn't have the required plan,
+ * it displays a blocking message with an upgrade option.
  */
 export function SubscriptionFeature({
   requiredPlan,
@@ -40,7 +40,7 @@ export function SubscriptionFeature({
   description,
   preview = false,
   silent = false,
-  adminEmails = ['convoycubano@gmail.com'], // El administrador siempre tiene acceso
+  adminEmails = ['convoycubano@gmail.com'], // Admin always has access
   redirectUrl
 }: SubscriptionFeatureProps) {
   const [, setLocation] = useLocation();
@@ -50,10 +50,10 @@ export function SubscriptionFeature({
     upgradeUrl
   } = useSubscriptionFeature(requiredPlan, { adminEmails });
   
-  // Función para navegar a otra ruta
+  // Function to navigate to another route
   const navigate = (to: string) => setLocation(to);
 
-  // Si está cargando, mostrar un estado de carga
+  // If loading, show a loading state
   if (isLoading) {
     return silent ? null : (
       <div className="flex items-center justify-center p-6 min-h-[100px] animate-pulse">
@@ -62,37 +62,37 @@ export function SubscriptionFeature({
     );
   }
 
-  // Si el usuario tiene acceso, mostrar el contenido normalmente
+  // If user has access, show content normally
   if (hasAccess) {
     return <>{children}</>;
   }
 
-  // Si es silencioso, no mostrar ningún UI de actualización
+  // If silent mode, don't show any upgrade UI
   if (silent) {
     return null;
   }
 
-  // Si es una vista previa, mostrar el contenido con una capa de bloqueo encima
+  // If preview mode, show content with a lock overlay
   if (preview) {
     return (
       <div className="relative overflow-hidden rounded-lg">
-        {/* Contenido borroso */}
+        {/* Blurred content */}
         <div className="filter blur-sm pointer-events-none">
           {children}
         </div>
         
-        {/* Capa de bloqueo */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-black/70 text-white">
-          <Lock className="h-12 w-12 mb-4 text-yellow-400" />
+        {/* Lock overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-black/70 to-black/85 text-white backdrop-blur-sm">
+          <Lock className="h-12 w-12 mb-4 text-amber-500" />
           <h3 className="text-xl font-bold mb-2">
-            {title || `Característica del plan ${requiredPlan.toUpperCase()}`}
+            {title || `Premium ${requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)} Feature`}
           </h3>
           {description && <p className="mb-4 text-white/80">{description}</p>}
           <Button
             onClick={() => navigate(redirectUrl || '/pricing')}
-            className="mt-2"
+            className="mt-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
           >
-            Mejorar a {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
+            Upgrade to {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -100,19 +100,19 @@ export function SubscriptionFeature({
     );
   }
 
-  // Vista bloqueada estándar (no preview, no silent)
+  // Standard blocked view (not preview, not silent)
   return (
-    <Card className="p-6 flex flex-col items-center text-center">
+    <Card className="p-6 flex flex-col items-center text-center shadow-md border-amber-500/20">
       <AlertTriangle className="h-12 w-12 mb-4 text-amber-500" />
       <h3 className="text-xl font-bold mb-2">
-        {title || `Característica disponible en el plan ${requiredPlan}`}
+        {title || `Feature available in ${requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)} plan`}
       </h3>
       {description && <p className="mb-4 text-muted-foreground">{description}</p>}
       <Button
         onClick={() => navigate(redirectUrl || '/pricing')}
-        className="mt-2"
+        className="mt-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
       >
-        Actualizar a {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
+        Upgrade to {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
         <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
     </Card>

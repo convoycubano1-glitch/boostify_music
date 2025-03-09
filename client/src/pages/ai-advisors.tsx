@@ -333,12 +333,8 @@ export default function AIAdvisorsPage() {
                       
                       <p className="text-gray-400 text-sm mb-5 line-clamp-3">{advisor.description}</p>
                       
-                      <SubscriptionFeature
-                        requiredPlan="pro"
-                        title="AI Advisory Team"
-                        description="Contacta con asesores IA expertos para obtener orientación personalizada"
-                        adminEmails={['convoycubano@gmail.com']}
-                      >
+                      {advisor.id === "publicist" ? (
+                        // Sarah Mills (Publicist) is available on the free plan
                         <Button
                           variant="ghost"
                           size="sm"
@@ -354,7 +350,32 @@ export default function AIAdvisorsPage() {
                         >
                           <Phone className="h-4 w-4 mr-2" /> Contact Advisor
                         </Button>
-                      </SubscriptionFeature>
+                      ) : (
+                        // Other advisors require Pro plan
+                        <SubscriptionFeature
+                          requiredPlan="pro"
+                          title="Premium AI Advisory Team"
+                          description="Access expert AI advisors for personalized guidance and professional support"
+                          adminEmails={['convoycubano@gmail.com']}
+                          redirectUrl="/pricing"
+                        >
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full border border-[#27272A] text-white hover:bg-[#27272A] group-hover:border-opacity-0 group-hover:bg-gradient-to-r transition-all duration-300"
+                            style={{ 
+                              backgroundImage: `linear-gradient(to right, var(--${advisor.color}))`,
+                              opacity: 0.9,
+                              backgroundSize: '0 100%',
+                              backgroundRepeat: 'no-repeat',
+                              transition: 'background-size 0.3s ease'
+                            }}
+                            onClick={() => callAdvisor(advisor)}
+                          >
+                            <Phone className="h-4 w-4 mr-2" /> Contact Advisor
+                          </Button>
+                        </SubscriptionFeature>
+                      )}
                     </div>
                   </div>
                 </motion.div>
