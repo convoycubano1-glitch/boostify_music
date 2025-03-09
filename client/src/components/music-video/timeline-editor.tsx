@@ -23,6 +23,18 @@ export interface TimelineClip {
   waveform?: number[];
   imagePrompt?: string;
   shotType?: string;
+  // Campos para URL de imagen/video
+  imageUrl?: string;
+  movementUrl?: string;
+  // Metadata adicional para el clip
+  metadata?: {
+    section?: string;    // Sección musical (coro, verso, etc.)
+    movementApplied?: boolean;
+    movementPattern?: string;
+    movementIntensity?: number;
+    faceSwapApplied?: boolean;
+    musicianIntegrated?: boolean;
+  };
 }
 
 interface TimelineEditorProps {

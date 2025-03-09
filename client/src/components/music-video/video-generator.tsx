@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
-import { Video, Loader2, User, Music2 } from "lucide-react";
+import { Video, Loader2, User, Music2, Move, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { TimelineClip } from "./timeline-editor";
 import { PremiumVideoPlayer } from "./premium-video-player";
@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArtistCustomization } from "./artist-customization";
 import { FaceSwapResult } from "@/components/face-swap/face-swap";
 import { MusicianIntegration, MusicianClip } from "./musician-integration";
+import { MovementIntegration } from "./movement-integration";
+import { KlingLipsync } from "@/components/lipsync/kling-lipsync";
 
 interface VideoGeneratorProps {
   clips: TimelineClip[];
@@ -136,6 +138,22 @@ export function VideoGenerator({
       description: `Se han integrado ${clips.length} secciones con músicos en el video`,
     });
   };
+  
+  // Función para manejar la actualización de clips con movimiento
+  const handleMovementComplete = (updatedClips: TimelineClip[]) => {
+    toast({
+      title: "Movimientos aplicados",
+      description: `Se han aplicado efectos de movimiento a ${updatedClips.length} clips`,
+    });
+  };
+  
+  // Función para manejar la finalización del proceso de LipSync
+  const handleLipSyncComplete = (result: {videoUrl: string}) => {
+    toast({
+      title: "LipSync completado",
+      description: "Se ha aplicado sincronización de labios al video correctamente",
+    });
+  };
 
   return (
     <Card className="p-6 space-y-6">
@@ -230,7 +248,7 @@ export function VideoGenerator({
             onValueChange={setCurrentTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="preview">
                 <Video className="mr-2 h-4 w-4" />
                 Vista Previa
@@ -248,6 +266,20 @@ export function VideoGenerator({
               >
                 <Music2 className="mr-2 h-4 w-4" />
                 Músicos
+              </TabsTrigger>
+              <TabsTrigger
+                value="movement"
+                disabled={!videoPaymentStatus?.isPurchased}
+              >
+                <Move className="mr-2 h-4 w-4" />
+                Movimiento
+              </TabsTrigger>
+              <TabsTrigger
+                value="lipsync"
+                disabled={!videoPaymentStatus?.isPurchased}
+              >
+                <Mic className="mr-2 h-4 w-4" />
+                LipSync
               </TabsTrigger>
             </TabsList>
             
@@ -276,6 +308,27 @@ export function VideoGenerator({
                 videoId={videoId}
                 isPurchased={videoPaymentStatus?.isPurchased}
                 onMusicianIntegrationComplete={handleMusicianIntegrationComplete}
+              />
+            </TabsContent>
+            
+            <TabsContent value="movement" className="space-y-4 pt-4">
+              <MovementIntegration
+                clips={clips}
+                videoId={videoId}
+                isPurchased={videoPaymentStatus?.isPurchased}
+                onMovementComplete={handleMovementComplete}
+              />
+            </TabsContent>
+            
+            <TabsContent value="lipsync" className="space-y-4 pt-4">
+              <KlingLipsync 
+                className="w-full"
+                videoTaskId={videoId}
+                isPurchased={videoPaymentStatus?.isPurchased}
+                onLipSyncComplete={handleLipSyncComplete}
+                clips={clips.filter(clip => 
+                  ['close-up', 'medium', 'extreme close-up'].includes(clip.shotType?.toLowerCase() || '')
+                )}
               />
             </TabsContent>
           </Tabs>

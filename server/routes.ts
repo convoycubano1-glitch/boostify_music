@@ -32,6 +32,7 @@ import subscriptionRoutesRouter from './routes/subscription-routes'; // Nuevas r
 import coursesRouter from './routes/courses';
 import achievementsRouter from './routes/achievements';
 import klingApiRouter from './routes/kling-api'; // Importamos el router de Kling API
+import klingLipsyncRouter from './routes/kling-lipsync'; // Importamos el router de LipSync
 import klingTestRouter from './routes/kling-test'; // Importamos el router de pruebas de Kling
 import videoGenerationRouter from './routes/video-generation'; // Direct router for PiAPI video generation
 import investorsRouter from './routes/investors';
@@ -141,6 +142,9 @@ export function registerRoutes(app: Express): Server {
   
   // Registrar las rutas de la API de Kling (sin autenticación para permitir proceso de imágenes)
   app.use('/api/kling', klingApiRouter);
+  
+  // Registrar las rutas específicas para LipSync con Kling
+  app.use('/api/kling', klingLipsyncRouter);
   
   // Registrar el procesador de imágenes para API de uploads
   app.use('/api', uploadApiRouter);

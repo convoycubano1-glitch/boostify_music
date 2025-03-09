@@ -15,7 +15,7 @@ import { UploadedFile } from 'express-fileupload';
 import path from 'path';
 import fs from 'fs';
 import { db } from '../firebase';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { authenticate } from '../middleware/auth';
 
 // Definir el tipo correcto para las solicitudes con archivos
@@ -2450,31 +2450,43 @@ router.get('/proxy/kling/lipsync/status', async (req, res) => {
  * Este servicio permite aplicar efectos especiales a imágenes, como "squish" o "expansion"
  * para convertirlas en videos animados.
  */
+/**
+ * Endpoint para iniciar una tarea de Kling Effects
+ * 
+ * Este servicio permite aplicar efectos especiales a imágenes, como "squish", "expansion"
+ * o "movement" para convertirlas en videos animados con movimientos controlados.
+ */
 router.post('/proxy/kling/effects/start', async (req: Request, res) => {
   try {
     console.log('Recibida solicitud para iniciar Kling Effects');
     
-    // Obtener los parámetros del body
+    // Obtener los parámetros del body - Normalizar nombres para compatibilidad
     const { 
-      image_url, // URL de la imagen a la que aplicar el efecto
-      effect = 'squish' // Efecto a aplicar (squish o expansion)
+      image_url, imageUrl, // URL de la imagen a la que aplicar el efecto
+      effect = 'squish', // Efecto a aplicar (squish, expansion o movement)
+      prompt, // Prompt opcional para guiar el movimiento
+      intensity = 50 // Intensidad del efecto (principalmente para movement)
     } = req.body;
     
+    // Usar imageUrl si está presente, sino image_url
+    const finalImageUrl = imageUrl || image_url;
+    
     // Verificar que tenemos la URL de la imagen
-    if (!image_url) {
+    if (!finalImageUrl) {
       console.error('Falta la URL de la imagen');
       return res.status(400).json({
         success: false,
-        error: 'Se requiere la URL de la imagen (image_url)'
+        error: 'Se requiere la URL de la imagen (imageUrl o image_url)'
       });
     }
 
     // Verificar que el efecto sea válido
-    if (effect !== 'squish' && effect !== 'expansion') {
+    const validEffects = ['squish', 'expansion', 'movement'];
+    if (!validEffects.includes(effect)) {
       console.error('Efecto no válido:', effect);
       return res.status(400).json({
         success: false,
-        error: 'El efecto debe ser "squish" o "expansion"'
+        error: `El efecto debe ser uno de: ${validEffects.join(', ')}`
       });
     }
 
@@ -2488,17 +2500,57 @@ router.post('/proxy/kling/effects/start', async (req: Request, res) => {
     }
     
     try {
-      console.log('Llamando a PiAPI para Kling Effects');
+      console.log(`Llamando a PiAPI para Kling Effects (${effect})`);
       
-      // Llamada a la API de PiAPI para Kling Effects
-      const response = await axios.post('https://api.piapi.ai/api/v1/task', {
-        model: "kling",
-        task_type: "effects",
-        input: {
-          image_url: image_url,
-          effect: effect
+      // Configuración base para la solicitud
+      let requestData: any = {
+        model: "kling"
+      };
+      
+      // Configurar según el tipo de efecto
+      if (effect === 'movement') {
+        // Para movement, usamos img2video con parámetros específicos
+        requestData = {
+          ...requestData,
+          task_type: "img2video",
+          image: finalImageUrl,
+          prompt: prompt || "subtle movement, smooth animation",
+          frames: Math.min(24 + Math.floor(intensity / 10), 60), // Ajustar frames según intensidad
+          music: false, // Sin música por defecto
+          fps: 24 // Velocidad de cuadros estándar
+        };
+        
+        // Si hay un prompt proporcionado, añadimos información de intensidad
+        if (prompt) {
+          requestData.prompt = `${prompt}, movement intensity: ${intensity}%`;
         }
-      }, {
+        
+        console.log('Enviando solicitud img2video con configuración:', {
+          ...requestData,
+          image: '(URL de imagen)'
+        });
+      } else {
+        // Para squish y expansion, usamos la configuración original
+        requestData = {
+          ...requestData,
+          task_type: "effects",
+          input: {
+            image_url: finalImageUrl,
+            effect: effect
+          }
+        };
+        
+        console.log('Enviando solicitud effects con configuración:', {
+          ...requestData,
+          input: {
+            ...requestData.input,
+            image_url: '(URL de imagen)'
+          }
+        });
+      }
+      
+      // Llamada a la API de PiAPI para procesar la solicitud
+      const response = await axios.post('https://api.piapi.ai/api/v1/task', requestData, {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': PIAPI_API_KEY
@@ -2509,19 +2561,29 @@ router.post('/proxy/kling/effects/start', async (req: Request, res) => {
       
       console.log('Respuesta de PiAPI para Effects:', JSON.stringify(response.data));
       
-      // Extraer el taskId de la respuesta
-      const taskId = response.data?.data?.task_id;
+      // Extraer el taskId de la respuesta (manejar diferentes estructuras)
+      let taskId = null;
+      
+      if (response.data?.data?.task_id) {
+        // Estructura anidada
+        taskId = response.data.data.task_id;
+      } else if (response.data?.task_id) {
+        // Estructura plana
+        taskId = response.data.task_id;
+      }
       
       if (!taskId) {
         console.error('No se pudo obtener task_id de la respuesta:', response.data);
         throw new Error('No se pudo obtener task_id de la respuesta de PiAPI');
       }
       
-      console.log('Kling Effects iniciado correctamente, taskId:', taskId);
+      console.log(`Kling Effects (${effect}) iniciado correctamente, taskId:`, taskId);
       return res.json({
         success: true,
         taskId: taskId,
-        status: 'processing'
+        status: 'processing',
+        effect: effect,
+        intensity: effect === 'movement' ? intensity : undefined
       });
     } catch (internalError: any) {
       console.error('Error llamando al endpoint de PiAPI para Effects:', internalError.message);
@@ -2532,7 +2594,8 @@ router.post('/proxy/kling/effects/start', async (req: Request, res) => {
       
       return res.status(500).json({
         success: false,
-        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI'
+        error: internalError.response?.data?.message || internalError.message || 'Error al llamar a PiAPI',
+        details: internalError.response?.data
       });
     }
   } catch (error: any) {
@@ -2548,9 +2611,13 @@ router.post('/proxy/kling/effects/start', async (req: Request, res) => {
 /**
  * Endpoint para verificar el estado de una tarea de Kling Effects
  */
+/**
+ * Endpoint para verificar el estado de una tarea de Kling Effects
+ * Maneja diferentes tipos de efectos: squish, expansion, movement
+ */
 router.get('/proxy/kling/effects/status', async (req, res) => {
   try {
-    const { taskId } = req.query;
+    const { taskId, effect = 'squish' } = req.query;
     
     if (!taskId) {
       console.error('Error: No se proporcionó taskId en el request');
@@ -2570,7 +2637,7 @@ router.get('/proxy/kling/effects/status', async (req, res) => {
     }
     
     try {
-      console.log('Verificando estado de tarea de Kling Effects:', taskId);
+      console.log(`Verificando estado de tarea de Kling Effects (${effect}):`, taskId);
       
       // Llamada real a la API de PiAPI para verificar estado
       const response = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
@@ -2581,52 +2648,107 @@ router.get('/proxy/kling/effects/status', async (req, res) => {
         timeout: 10000
       });
       
-      console.log('Respuesta de status de PiAPI para Effects:', JSON.stringify(response.data));
+      console.log('Respuesta de status de PiAPI:', JSON.stringify(response.data));
       
-      if (!response.data || !response.data.data) {
-        console.error('Error: Estructura de respuesta inválida:', response.data);
+      // Extraer datos anidados si existen
+      let taskData;
+      let rawStatus;
+      
+      if (response.data?.data) {
+        taskData = response.data.data;
+        rawStatus = taskData.status;
+      } else if (response.data) {
+        taskData = response.data;
+        rawStatus = taskData.status;
+      } else {
+        console.error('Error: Respuesta vacía o sin estructura reconocible');
         return res.status(500).json({
           success: false,
           status: 'failed',
-          errorMessage: 'Estructura de respuesta inválida desde PiAPI'
+          errorMessage: 'Respuesta vacía o sin estructura reconocible'
         });
       }
       
-      // Extraer el estado de la respuesta
-      const taskData = response.data.data;
-      const status = taskData.status?.toLowerCase() || 'processing';
+      // Normalizar el estado
+      const status = rawStatus?.toLowerCase() || 'processing';
       
       // Si la tarea está completada, obtenemos la URL del resultado
       if (status === 'completed') {
         console.log('Tarea completada. Obteniendo URL del resultado...');
         
         // Verificar varias posibles ubicaciones de la URL del resultado
-        let videoUrl = null;
+        // según el tipo de efecto y la estructura de respuesta
+        let resultUrl = null;
+        let urlFound = false;
         
-        if (taskData.output?.video_url) {
-          videoUrl = taskData.output.video_url;
-          console.log('Encontrada video_url:', videoUrl);
-        } else if (taskData.output?.url) {
-          videoUrl = taskData.output.url;
-          console.log('Encontrada url:', videoUrl);
+        // Verificar todas las posibles ubicaciones para la URL del resultado
+        const possiblePaths = [
+          'output.video_url',
+          'output.url',
+          'output.result',
+          'result',
+          'video_url',
+          'url'
+        ];
+        
+        // Intentar extraer la URL de cualquiera de las posibles ubicaciones
+        for (const path of possiblePaths) {
+          const segments = path.split('.');
+          let value = taskData;
+          
+          // Navegar por la ruta para obtener el valor
+          for (const segment of segments) {
+            if (value && typeof value === 'object' && segment in value) {
+              value = value[segment];
+            } else {
+              value = null;
+              break;
+            }
+          }
+          
+          // Si encontramos un valor válido, lo usamos
+          if (value && typeof value === 'string' && value.startsWith('http')) {
+            resultUrl = value;
+            urlFound = true;
+            console.log(`URL encontrada en ${path}:`, resultUrl);
+            break;
+          }
         }
         
-        if (!videoUrl) {
-          console.error('Error: No se encontró URL del video en la respuesta:', taskData);
+        // Si no encontramos una URL, intentamos buscar en la respuesta completa
+        if (!urlFound) {
+          // Convertir respuesta a string para búsqueda
+          const responseStr = JSON.stringify(response.data);
+          
+          // Buscar patrones comunes de URLs
+          const urlRegex = /(https?:\/\/[^\s"']+\.(mp4|webm|mov|avi))/g;
+          const matches = responseStr.match(urlRegex);
+          
+          if (matches && matches.length > 0) {
+            resultUrl = matches[0];
+            urlFound = true;
+            console.log('URL encontrada mediante expresión regular:', resultUrl);
+          }
+        }
+        
+        if (!resultUrl) {
+          console.error('Error: No se encontró URL del resultado en la respuesta:', taskData);
           return res.status(500).json({
             status: 'failed',
             success: false,
-            errorMessage: 'No se encontró la URL del video en la respuesta de PiAPI',
+            errorMessage: 'No se encontró la URL del resultado en la respuesta',
             rawResponse: taskData // Incluir respuesta cruda para debug
           });
         }
         
-        console.log('Tarea completada con éxito. URL del video:', videoUrl);
+        console.log(`Tarea de ${effect} completada con éxito. URL:`, resultUrl);
         return res.json({
           status: 'completed',
-          videoUrl: videoUrl,
+          url: resultUrl,
+          videoUrl: resultUrl, // Para compatibilidad con clientes existentes
           success: true,
-          taskId: taskId.toString()
+          taskId: taskId.toString(),
+          effect: effect
         });
       } 
       // Si la tarea falló, devolvemos un error
@@ -2996,17 +3118,62 @@ router.get('/proxy/piapi/video/status', async (req, res) => {
  */
 router.post('/proxy/kling/save-result', authenticate, async (req: Request, res: Response) => {
   try {
-    const { type, result } = req.body;
+    const { type, result, videoId } = req.body;
     const userId = req.user?.uid || 'anonymous';
     
     if (!type || !result) {
       return res.status(400).json({
         success: false,
-        error: 'Missing type or result data',
+        error: 'Faltan datos de tipo o resultado',
       });
     }
     
-    console.log(`Guardando resultado de tipo ${type} para usuario ${userId}`);
+    console.log(`Guardando resultado de tipo ${type} para usuario ${userId}${videoId ? ` asociado al video ${videoId}` : ''}`);
+    
+    // Verificar el estado de compra si tiene un videoId asociado y el tipo es 'movement' o 'lipsync'
+    if (videoId && (type === 'movement' || type === 'lipsync')) {
+      try {
+        // Obtener el documento del video de Firestore
+        const videoDoc = await db.collection('video_generations').doc(videoId).get();
+        
+        if (!videoDoc.exists) {
+          console.warn(`No se encontró el video con ID ${videoId}`);
+          return res.status(404).json({
+            success: false,
+            error: 'Video no encontrado'
+          });
+        }
+        
+        const videoData = videoDoc.data();
+        
+        // Verificar si el video pertenece al usuario actual
+        if (videoData?.userId !== userId) {
+          console.warn(`El video ${videoId} no pertenece al usuario ${userId}`);
+          return res.status(403).json({
+            success: false,
+            error: 'No tienes permiso para modificar este video'
+          });
+        }
+        
+        // Verificar si el video está comprado (versión completa) o tiene acceso premium
+        const isPurchased = videoData?.isPurchased === true;
+        const hasPremiumAccess = videoData?.premiumAccess === true;
+        
+        if (!isPurchased && !hasPremiumAccess) {
+          console.warn(`Intento de guardar resultado para video no comprado ${videoId}`);
+          return res.status(402).json({
+            success: false,
+            error: 'Este video requiere compra para guardar resultados completos',
+            requiresPurchase: true
+          });
+        }
+        
+        console.log(`Video ${videoId} verificado: isPurchased=${isPurchased}, hasPremiumAccess=${hasPremiumAccess}`);
+      } catch (videoError: any) {
+        console.error(`Error verificando estado de compra del video ${videoId}:`, videoError);
+        // Continuamos a pesar del error, pero lo registramos
+      }
+    }
     
     // Colección en Firestore donde guardaremos los resultados
     const collection = `kling_${type}_results`;
@@ -3016,23 +3183,41 @@ router.post('/proxy/kling/save-result', authenticate, async (req: Request, res: 
       ...result,
       userId,
       createdAt: Timestamp.now(),
-      type
+      type,
+      videoId: videoId || null // Guardar videoId si existe
     };
     
     // Guardar en Firestore
     const docRef = await db.collection(collection).add(dataToSave);
     console.log(`Resultado guardado con ID: ${docRef.id}`);
     
+    // Si hay videoId y es de tipo movement o lipsync, actualizamos también el documento del video
+    if (videoId && (type === 'movement' || type === 'lipsync')) {
+      try {
+        // Actualizar el documento del video con referencia al resultado
+        await db.collection('video_generations').doc(videoId).update({
+          [`${type}Results`]: FieldValue.arrayUnion({
+            resultId: docRef.id,
+            createdAt: Timestamp.now()
+          })
+        });
+        console.log(`Video ${videoId} actualizado con referencia al resultado ${docRef.id}`);
+      } catch (updateError: any) {
+        console.error(`Error actualizando video ${videoId} con referencia al resultado:`, updateError);
+        // Continuamos a pesar del error, pero lo registramos
+      }
+    }
+    
     return res.json({
       success: true,
       id: docRef.id,
-      message: 'Result saved successfully'
+      message: 'Resultado guardado correctamente'
     });
   } catch (error: any) {
-    console.error('Error saving Kling result to Firestore:', error);
+    console.error('Error guardando resultado de Kling en Firestore:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Error saving result'
+      error: error.message || 'Error al guardar resultado'
     });
   }
 });

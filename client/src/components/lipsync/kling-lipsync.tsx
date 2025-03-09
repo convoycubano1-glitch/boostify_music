@@ -1,530 +1,463 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Video, Mic, Music, PlayCircle } from 'lucide-react';
-import axios from 'axios';
+import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Mic, Upload, AlertCircle, CheckCircle2, RefreshCcw, Play } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { TimelineClip } from "@/components/music-video/timeline-editor";
 
-interface KlingLipsyncProps {
+export interface KlingLipsyncProps {
   className?: string;
+  videoTaskId?: string;
+  isPurchased?: boolean;
+  onLipSyncComplete?: (result: {videoUrl: string}) => void;
+  clips?: TimelineClip[];
 }
 
-// Lista de timbres de voz disponibles
-const voiceOptions = [
+// Opciones de timbre de voz disponibles para la generación
+const VOICE_TIMBRE_OPTIONS = [
   { value: "Rock", label: "Rock" },
-  { value: "Ben", label: "Ben - Masculino (EN)" },
-  { value: "Sam", label: "Sam - Masculino (EN)" },
-  { value: "Carl", label: "Carl - Masculino (EN)" },
-  { value: "Chris", label: "Chris - Masculino (EN)" },
-  { value: "Sophie", label: "Sophie - Femenino (EN)" },
-  { value: "Lily", label: "Lily - Femenino (EN)" },
-  { value: "Emma", label: "Emma - Femenino (EN)" },
+  { value: "Pop", label: "Pop" },
+  { value: "Jazz", label: "Jazz" },
+  { value: "Folk", label: "Folk" },
+  { value: "Classic", label: "Clásico" },
+  { value: "Opera", label: "Ópera" }
 ];
 
-export function KlingLipsync({ className }: KlingLipsyncProps) {
-  const [videoTaskId, setVideoTaskId] = useState<string>('');
-  const [audioMethod, setAudioMethod] = useState<'text' | 'audio'>('text');
-  const [audioText, setAudioText] = useState<string>('');
-  const [audioVoice, setAudioVoice] = useState<string>('Rock');
-  const [audioSpeed, setAudioSpeed] = useState<number>(1);
-  const [audioUrl, setAudioUrl] = useState<string>('');
-  const [resultVideo, setResultVideo] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState<string>("setup");
+export function KlingLipsync({
+  className,
+  videoTaskId,
+  isPurchased = false,
+  onLipSyncComplete,
+  clips = []
+}: KlingLipsyncProps) {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [lyrics, setLyrics] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [resultUrl, setResultUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [method, setMethod] = useState<"audio" | "lyrics">("audio");
+  const [selectedClipIndex, setSelectedClipIndex] = useState<number | null>(null);
+  const [videoDuration, setVideoDuration] = useState(10);
+  const [accuracy, setAccuracy] = useState(80);
+  const [voiceTimbre, setVoiceTimbre] = useState("Rock"); // Timbre de voz para generación con PiAPI
+  const [voiceSpeed, setVoiceSpeed] = useState(1.0); // Velocidad de la voz (1.0 = normal)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Filtrar solo los planos adecuados para LipSync
+  const eligibleClips = clips.filter(clip =>
+    ["close-up", "medium", "extreme close-up"].includes(clip.shotType?.toLowerCase() || "")
+  );
 
-  const audioInputRef = useRef<HTMLInputElement>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type.startsWith("audio/")) {
+        setAudioFile(file);
+        setError(null);
+      } else {
+        setError("Por favor, selecciona un archivo de audio válido");
+        setAudioFile(null);
+      }
+    }
+  };
 
-  // Función para manejar la subida de audio
-  const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleClipSelect = (index: number) => {
+    setSelectedClipIndex(index);
+    if (eligibleClips[index]) {
+      // Actualizar la duración del video basado en el clip seleccionado
+      setVideoDuration(eligibleClips[index].duration || 10);
+    }
+  };
 
-    // Validar que sea un audio
-    if (!file.type.startsWith('audio/')) {
+  const handleLipSyncStart = async () => {
+    if (!isPurchased) {
       toast({
-        title: "Tipo de archivo inválido",
-        description: "Por favor, sube solo archivos de audio (MP3, WAV, etc.)",
+        title: "Función Premium",
+        description: "Necesitas comprar el video completo para acceder a esta función",
         variant: "destructive",
       });
       return;
     }
 
-    // Leer el archivo como base64
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setAudioUrl(result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Función para manejar la entrada de URL externa de audio
-  const handleAudioUrlInput = (url: string) => {
-    if (!url) return;
-    
-    // Validación simple de URL
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      toast({
-        title: "URL inválida",
-        description: "Por favor, introduce una URL válida que comience con http:// o https://",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setAudioUrl(url);
-  };
-
-  // Función para iniciar el proceso de Lipsync
-  const startLipsync = async () => {
     if (!videoTaskId) {
       toast({
-        title: "ID del video requerido",
-        description: "Por favor, proporciona el ID de un video generado previamente",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (audioMethod === 'text' && !audioText) {
-      toast({
-        title: "Texto requerido",
-        description: "Por favor, introduce el texto que deseas que diga el video",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (audioMethod === 'audio' && !audioUrl) {
-      toast({
-        title: "Audio requerido",
-        description: "Por favor, sube un archivo de audio o proporciona una URL",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    setProgress(0);
-
-    try {
-      // Preparar los datos según el método seleccionado
-      const requestData: any = {
-        origin_task_id: videoTaskId
-      };
-
-      if (audioMethod === 'text') {
-        requestData.tts_text = audioText;
-        requestData.tts_timbre = audioVoice;
-        requestData.tts_speed = audioSpeed;
-      } else {
-        requestData.local_dubbing_url = audioUrl;
-      }
-
-      // Enviar la solicitud al servidor
-      const response = await axios.post('/proxy/kling/lipsync/start', requestData);
-
-      if (response.data.success && response.data.taskId) {
-        setTaskId(response.data.taskId);
-        
-        // Iniciar polling para verificar el estado
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-        }
-
-        pollingIntervalRef.current = setInterval(checkLipsyncStatus, 3000);
-        toast({
-          title: "Procesando",
-          description: "Hemos comenzado a procesar tu solicitud de Lipsync",
-        });
-      } else {
-        throw new Error(response.data.error || "Error al iniciar el Lipsync");
-      }
-    } catch (error: any) {
-      console.error("Error al iniciar Lipsync:", error);
-      toast({
         title: "Error",
-        description: error.message || "Ocurrió un error al iniciar el proceso",
+        description: "No se encontró el ID del video",
         variant: "destructive",
       });
-      setIsProcessing(false);
+      return;
     }
-  };
 
-  // Función para verificar el estado del proceso
-  const checkLipsyncStatus = async () => {
-    if (!taskId) return;
-
-    try {
-      const response = await axios.get(`/proxy/kling/lipsync/status?taskId=${taskId}`);
-      
-      if (response.data.status === 'completed' && response.data.success) {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-        
-        setResultVideo(response.data.videoUrl);
-        setIsProcessing(false);
-        setProgress(100);
-        
-        toast({
-          title: "¡Completado!",
-          description: "El proceso de Lipsync ha finalizado con éxito",
-        });
-        
-        // Cambiar a la pestaña de resultados
-        setActiveTab("result");
-      } else if (response.data.status === 'failed') {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-        
-        setIsProcessing(false);
-        
-        toast({
-          title: "Error",
-          description: response.data.errorMessage || "El proceso falló",
-          variant: "destructive",
-        });
-      } else if (response.data.status === 'processing') {
-        // Actualizar el progreso
-        setProgress(response.data.progress || 50);
-      }
-    } catch (error: any) {
-      console.error("Error al verificar estado:", error);
-      
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-      
-      setIsProcessing(false);
-      
+    if (selectedClipIndex === null && eligibleClips.length > 0) {
       toast({
-        title: "Error",
-        description: "Ocurrió un error al verificar el estado del proceso",
+        title: "Selección necesaria",
+        description: "Por favor, selecciona un clip para aplicar el LipSync",
         variant: "destructive",
       });
+      return;
     }
-  };
-
-  // Limpiar el intervalo al desmontar el componente
-  React.useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
-
-  const resetForm = () => {
-    setVideoTaskId('');
-    setAudioMethod('text');
-    setAudioText('');
-    setAudioVoice('Rock');
-    setAudioSpeed(1);
-    setAudioUrl('');
-    setResultVideo(null);
-    setTaskId(null);
-    setProgress(0);
-    setActiveTab("setup");
     
-    // Limpiar el input
-    if (audioInputRef.current) audioInputRef.current.value = "";
+    try {
+      setLoading(true);
+      setProgress(0);
+      setError(null);
+      setResultUrl("");
+
+      const selectedClip = eligibleClips[selectedClipIndex || 0];
+      const clipId = selectedClip?.id || "clip_1";
+      const shotType = selectedClip?.shotType?.toLowerCase() || "close-up";
+
+      // Crear FormData para enviar al servidor
+      const formData = new FormData();
+      formData.append("videoTaskId", videoTaskId || "");
+      formData.append("clipId", typeof clipId === 'string' ? clipId : clipId.toString());
+      formData.append("shotType", shotType);
+      formData.append("method", method);
+      formData.append("accuracy", accuracy.toString());
+      
+      // Parámetros específicos para la API de PiAPI
+      if (method === "lyrics") {
+        formData.append("voiceTimbre", voiceTimbre);
+        formData.append("voiceSpeed", voiceSpeed.toString());
+      }
+
+      if (method === "audio" && audioFile) {
+        formData.append("audioFile", audioFile);
+      } else if (method === "lyrics" && lyrics) {
+        formData.append("lyrics", lyrics);
+      } else {
+        throw new Error("Por favor proporciona un archivo de audio o texto para la sincronización");
+      }
+
+      // Iniciar la tarea de LipSync
+      const startResponse = await fetch("/api/kling/lipsync/start", {
+        method: "POST",
+        body: formData,
+      });
+      
+      const startResult = await startResponse.json();
+      
+      if (!startResponse.ok || !startResult.success) {
+        throw new Error(startResult.error || "Error al iniciar el proceso de LipSync");
+      }
+      
+      setTaskId(startResult.taskId);
+      toast({
+        title: "Proceso iniciado",
+        description: "La sincronización de labios ha comenzado, espera unos minutos",
+      });
+      
+      // Iniciar el polling para verificar el estado de la tarea
+      const pollingInterval = setInterval(async () => {
+        try {
+          const statusResponse = await apiRequest(`/api/kling/lipsync/status?taskId=${startResult.taskId}`);
+          
+          if (statusResponse.status === "processing") {
+            // Actualizar el progreso
+            setProgress(statusResponse.progress || Math.min(progress + 5, 95));
+          } else if (statusResponse.status === "completed") {
+            clearInterval(pollingInterval);
+            setProgress(100);
+            setResultUrl(statusResponse.videoUrl);
+            toast({
+              title: "LipSync completado",
+              description: "La sincronización de labios se ha completado con éxito",
+            });
+            
+            if (onLipSyncComplete) {
+              onLipSyncComplete({
+                videoUrl: statusResponse.videoUrl
+              });
+            }
+            
+            setLoading(false);
+          } else if (statusResponse.status === "failed") {
+            clearInterval(pollingInterval);
+            throw new Error(statusResponse.error || "Error en el proceso de LipSync");
+          }
+        } catch (err) {
+          clearInterval(pollingInterval);
+          setError(err instanceof Error ? err.message : "Error al verificar el estado");
+          setLoading(false);
+        }
+      }, 5000); // Verificar cada 5 segundos
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al iniciar el proceso de LipSync");
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className={`container mx-auto py-6 ${className}`}>
-      <Card className="w-full">
+  const handleRetry = () => {
+    setError(null);
+    setProgress(0);
+    setTaskId(null);
+    setResultUrl("");
+  };
+
+  if (!isPurchased) {
+    return (
+      <Card className={className}>
         <CardHeader>
-          <CardTitle>Kling Lipsync</CardTitle>
+          <CardTitle>Sincronización de Labios</CardTitle>
           <CardDescription>
-            Sincroniza los labios de un video con texto o audio usando IA
+            Aplica tecnología de sincronización labial a los planos cercanos del artista
           </CardDescription>
         </CardHeader>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="px-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="setup">Configuración</TabsTrigger>
-              <TabsTrigger value="result" disabled={!resultVideo}>
-                Resultado
-              </TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Función Premium</AlertTitle>
+            <AlertDescription>
+              Esta función está disponible después de comprar el video completo.
+              Compra el video para desbloquear todas las funciones avanzadas.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (resultUrl) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle>LipSync Completado</CardTitle>
+          <CardDescription>
+            La sincronización de labios se ha aplicado correctamente al clip seleccionado
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertTitle>Proceso finalizado</AlertTitle>
+            <AlertDescription>
+              La sincronización de labios se ha completado con éxito. Puedes ver el resultado a continuación.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="relative aspect-video overflow-hidden rounded-lg border bg-muted">
+            <video 
+              src={resultUrl} 
+              controls 
+              className="h-full w-full object-cover"
+            />
           </div>
           
-          <CardContent className="py-4">
-            <TabsContent value="setup">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Sección de ID del video */}
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="videoTaskId">ID del Video</Label>
-                    <div className="mt-2">
-                      <Input
-                        id="videoTaskId"
-                        type="text"
-                        placeholder="ID de la tarea del video generado"
-                        value={videoTaskId}
-                        onChange={(e) => setVideoTaskId(e.target.value)}
-                      />
+          <Button 
+            onClick={handleRetry} 
+            variant="outline" 
+            className="w-full"
+          >
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Realizar otra sincronización
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Sincronización de Labios</CardTitle>
+        <CardDescription>
+          Aplica tecnología de sincronización labial a los planos cercanos y medios del artista
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {eligibleClips.length === 0 ? (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No hay planos elegibles</AlertTitle>
+            <AlertDescription>
+              No se encontraron planos cercanos o medios del artista en el video.
+              La sincronización de labios solo funciona con primeros planos y planos medios.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label>Selecciona el clip para aplicar LipSync</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {eligibleClips.map((clip, index) => (
+                  <Button
+                    key={clip.id}
+                    variant={selectedClipIndex === index ? "default" : "outline"}
+                    className="h-auto py-2 justify-start"
+                    onClick={() => handleClipSelect(index)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{clip.shotType}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {clip.start.toFixed(1)}s - {(clip.start + clip.duration).toFixed(1)}s
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Introduce el ID de tarea de un video generado previamente con Kling. 
-                      Este ID se obtiene al generar un video con Kling Video Generation o Text-to-Video.
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="audioMethod">Método de Audio</Label>
-                    <div className="mt-2">
-                      <RadioGroup
-                        value={audioMethod}
-                        onValueChange={(value) => setAudioMethod(value as 'text' | 'audio')}
-                        className="space-y-3"
-                      >
-                        <div className="flex items-center space-x-2 p-2 border rounded-md hover:bg-accent">
-                          <RadioGroupItem value="text" id="text" />
-                          <Label htmlFor="text" className="flex-1 cursor-pointer">
-                            <div className="font-medium">Texto a Voz</div>
-                            <div className="text-sm text-muted-foreground">
-                              Usa texto que será convertido a voz para sincronizar con el video
-                            </div>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-2 border rounded-md hover:bg-accent">
-                          <RadioGroupItem value="audio" id="audio" />
-                          <Label htmlFor="audio" className="flex-1 cursor-pointer">
-                            <div className="font-medium">Archivo de Audio</div>
-                            <div className="text-sm text-muted-foreground">
-                              Usa un archivo de audio existente para sincronizar con el video
-                            </div>
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
-                  
-                  {audioMethod === 'audio' && (
-                    <>
-                      <div>
-                        <Label htmlFor="audioFile">Subir Archivo de Audio</Label>
-                        <div className="mt-2">
-                          <Input
-                            id="audioFile"
-                            type="file"
-                            ref={audioInputRef}
-                            accept="audio/*"
-                            onChange={handleAudioUpload}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="audioUrl">O usar URL de Audio</Label>
-                        <div className="mt-2 flex space-x-2">
-                          <Input
-                            id="audioUrl"
-                            type="text"
-                            placeholder="https://ejemplo.com/audio.mp3"
-                            onBlur={(e) => handleAudioUrlInput(e.target.value)}
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              const urlInput = document.getElementById('audioUrl') as HTMLInputElement;
-                              handleAudioUrlInput(urlInput.value);
-                            }}
-                          >
-                            <Music className="h-4 w-4 mr-2" />
-                            Cargar
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {audioUrl && audioUrl.startsWith('data:audio/') && (
-                        <div className="mt-2">
-                          <audio controls className="w-full">
-                            <source src={audioUrl} type="audio/mpeg" />
-                            Tu navegador no soporta la reproducción de audio.
-                          </audio>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-                
-                {/* Sección de configuración de texto a voz */}
-                <div className="space-y-4">
-                  {audioMethod === 'text' && (
-                    <>
-                      <div>
-                        <Label htmlFor="audioText">Texto a Hablar</Label>
-                        <div className="mt-2">
-                          <Textarea
-                            id="audioText"
-                            placeholder="Introduce el texto que deseas que diga el video"
-                            value={audioText}
-                            onChange={(e) => setAudioText(e.target.value)}
-                            rows={5}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="audioVoice">Voz</Label>
-                        <div className="mt-2">
-                          <Select value={audioVoice} onValueChange={setAudioVoice}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecciona una voz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {voiceOptions.map((voice) => (
-                                <SelectItem key={voice.value} value={voice.value}>
-                                  {voice.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="audioSpeed">Velocidad de Habla: {audioSpeed}x</Label>
-                        <div className="mt-2">
-                          <Input
-                            id="audioSpeed"
-                            type="range"
-                            min="0.8"
-                            max="2"
-                            step="0.1"
-                            value={audioSpeed}
-                            onChange={(e) => setAudioSpeed(parseFloat(e.target.value))}
-                          />
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                            <span>Lento (0.8x)</span>
-                            <span>Normal (1x)</span>
-                            <span>Rápido (2x)</span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-md mt-4">
-                    <h3 className="font-medium text-sm mb-2">Información de Lipsync</h3>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      El servicio Kling Lipsync permite sincronizar los labios de un personaje en un video con audio o texto.
-                    </p>
-                    <p className="text-xs font-medium">Recomendaciones:</p>
-                    <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1 mt-1">
-                      <li>Usa videos donde la cara del personaje sea clara y visible</li>
-                      <li>La duración del audio debe ser similar a la duración del video</li>
-                      <li>Para mejores resultados, el personaje debe tener una posición frontal</li>
-                      <li>El procesamiento puede tardar varios minutos</li>
-                    </ul>
-                  </div>
-                </div>
+                  </Button>
+                ))}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Precisión de la sincronización ({accuracy}%)</Label>
+              <Slider
+                min={50}
+                max={100}
+                step={5}
+                value={[accuracy]}
+                onValueChange={([value]) => setAccuracy(value)}
+                disabled={loading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Mayor precisión puede requerir más tiempo de procesamiento
+              </p>
+            </div>
+
+            <Tabs defaultValue="audio" value={method} onValueChange={(v) => setMethod(v as "audio" | "lyrics")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="audio" disabled={loading}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Audio
+                </TabsTrigger>
+                <TabsTrigger value="lyrics" disabled={loading}>
+                  <Mic className="mr-2 h-4 w-4" />
+                  Letra
+                </TabsTrigger>
+              </TabsList>
               
-              {isProcessing && (
-                <div className="mt-6 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Procesando...</span>
-                    <span className="text-sm font-medium">{progress}%</span>
+              <TabsContent value="audio" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="audio-file">Archivo de audio para la sincronización</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      ref={fileInputRef}
+                      id="audio-file"
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleFileChange}
+                      disabled={loading}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      disabled={loading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Seleccionar
+                    </Button>
                   </div>
-                  <Progress value={progress} className="w-full" />
+                  {audioFile && (
+                    <p className="text-sm text-muted-foreground">
+                      Archivo seleccionado: {audioFile.name}
+                    </p>
+                  )}
                 </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="result">
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Resultado del Lipsync</h3>
-                
-                {resultVideo ? (
-                  <div className="space-y-4">
-                    <div className="border rounded-md overflow-hidden">
-                      <video 
-                        src={resultVideo}
-                        controls
-                        autoPlay
-                        className="w-full h-auto max-h-[500px]"
-                      />
-                    </div>
-                    <div className="flex justify-between">
-                      <a
-                        href={resultVideo}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-sm flex items-center"
-                      >
-                        <PlayCircle className="h-4 w-4 mr-1" />
-                        Ver video en una nueva pestaña
-                      </a>
-                      <a
-                        href={resultVideo}
-                        download="kling-lipsync-video.mp4"
-                        className="text-blue-600 hover:underline text-sm flex items-center"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="7 10 12 15 17 10" />
-                          <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        Descargar video
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">No hay resultados disponibles</p>
-                  </div>
-                )}
+              </TabsContent>
+              
+              <TabsContent value="lyrics" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lyrics">Letra para la sincronización</Label>
+                  <Textarea
+                    id="lyrics"
+                    placeholder="Ingresa la letra que será sincronizada con los labios del artista..."
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    disabled={loading}
+                    rows={5}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="voiceTimbre">Timbre de voz</Label>
+                  <Select
+                    value={voiceTimbre}
+                    onValueChange={setVoiceTimbre}
+                    disabled={loading}
+                  >
+                    <SelectTrigger id="voiceTimbre" className="w-full">
+                      <SelectValue placeholder="Selecciona un timbre de voz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VOICE_TIMBRE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    El timbre de voz afecta el estilo de la voz generada
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Velocidad de voz ({(voiceSpeed * 100).toFixed(0)}%)</Label>
+                  <Slider
+                    min={0.5}
+                    max={1.5}
+                    step={0.1}
+                    value={[voiceSpeed]}
+                    onValueChange={([value]) => setVoiceSpeed(value)}
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ajusta la velocidad de la voz generada
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {loading && (
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label>Progreso</Label>
+                  <span className="text-sm">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  El proceso de LipSync puede tardar varios minutos
+                </p>
               </div>
-            </TabsContent>
-          </CardContent>
-          
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={resetForm}>
-              Reiniciar
-            </Button>
-            
+            )}
+
             <Button
-              onClick={startLipsync}
-              disabled={isProcessing || !videoTaskId || (audioMethod === 'text' && !audioText) || (audioMethod === 'audio' && !audioUrl)}
+              className="w-full"
+              onClick={handleLipSyncStart}
+              disabled={loading || (method === "audio" && !audioFile) || (method === "lyrics" && !lyrics) || selectedClipIndex === null}
             >
-              {isProcessing ? (
+              {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Procesando
+                  <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                  Procesando...
                 </>
               ) : (
                 <>
-                  <Mic className="mr-2 h-4 w-4" />
-                  Iniciar Lipsync
+                  <Play className="mr-2 h-4 w-4" />
+                  Iniciar Sincronización de Labios
                 </>
               )}
             </Button>
-          </CardFooter>
-        </Tabs>
-      </Card>
-    </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
-
-export default KlingLipsync;
