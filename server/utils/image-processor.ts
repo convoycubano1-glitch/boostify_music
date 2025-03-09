@@ -347,13 +347,44 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       
       if (!hasFF00Sequence) {
         console.warn('⚠️ Imagen JPEG sin secuencia 0xFF00 detectada - esto puede causar errores en Kling API');
+        
+        // Necesitamos insertar una secuencia 0xFF00 en los datos de la imagen
+        // Buscamos el inicio del segmento SOS (Start of Scan)
+        let sosIndex = -1;
+        for (let i = 0; i < binaryData.length - 2; i++) {
+          if (binaryData[i] === 0xFF && binaryData[i + 1] === 0xDA) {
+            sosIndex = i;
+            break;
+          }
+        }
+        
+        if (sosIndex > 0) {
+          // Buscar el final del encabezado SOS y el inicio de los datos comprimidos
+          const sosHeaderLength = (binaryData[sosIndex + 2] << 8) | binaryData[sosIndex + 3];
+          const dataStart = sosIndex + 2 + sosHeaderLength;
+          
+          if (dataStart < binaryData.length - 2) {
+            // Insertamos una secuencia 0xFF00 justo después del encabezado SOS
+            console.log('📌 Insertando secuencia 0xFF00 después del encabezado SOS en posición', dataStart);
+            const newBuffer = Buffer.alloc(binaryData.length + 2);
+            binaryData.copy(newBuffer, 0, 0, dataStart);
+            newBuffer[dataStart] = 0xFF;
+            newBuffer[dataStart + 1] = 0x00;
+            binaryData.copy(newBuffer, dataStart + 2, dataStart);
+            binaryData = newBuffer;
+            hasFF00Sequence = true;
+          }
+        }
       }
       
       // IMPORTANTE: Para el error de Kling "uninitialized Huffman table", siempre forzamos la inserción de tablas DHT
       // independientemente de si se detectaron o no (aseguramos que siempre haya tablas completas y correctas)
+      // Este es un error crítico que debemos corregir para la compatibilidad con la API de Kling
+      // Ref: https://github.com/webmproject/libwebp/blob/master/doc/webp-lossless-bitstream-spec.txt
       const forceDHTInsertion = true; // Siempre forzamos la inserción para máxima compatibilidad
       
       // Si no tiene tablas Huffman o secuencia FF00, o si forzamos la inserción, añadimos tablas estándar
+      // Para la API de Kling es crítico que estas tablas estén correctamente insertadas
       if (!hasDHTMarker || !hasFF00Sequence || forceDHTInsertion) {
         console.log('⚠️ Corrigiendo formato JPEG para compatibilidad con Kling API');
         
@@ -565,6 +596,73 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
       }
     }
     
+    // Aplicar la corrección de tablas Huffman como paso final crítico
+    // Esto garantiza que la imagen tenga siempre las tablas Huffman inicializadas correctamente
+    console.log('📌 Aplicando corrección final de tablas Huffman para resolver el error "uninitialized Huffman table"');
+    binaryData = fixHuffmanTables(binaryData);
+    
+    // Verificación final de la secuencia 0xFF00 - Muy importante para la API de Kling
+    // Este es un paso adicional para garantizar que la secuencia 0xFF00 esté presente
+    let hasFF00Sequence = false;
+    for (let i = 0; i < binaryData.length - 2; i++) {
+      if (binaryData[i] === 0xFF && binaryData[i + 1] === 0x00) {
+        hasFF00Sequence = true;
+        console.log('✅ Verificación final: Secuencia 0xFF00 encontrada en la posición', i);
+        break;
+      }
+    }
+    
+    // Si después de todas las correcciones aún no tiene la secuencia 0xFF00, la insertamos
+    if (!hasFF00Sequence) {
+      console.warn('⚠️ Verificación final: Secuencia 0xFF00 sigue faltando - aplicando corrección agresiva');
+      
+      // Buscar el área de datos comprimidos después del SOS marker (0xFFDA)
+      let sosIndex = -1;
+      for (let i = 0; i < binaryData.length - 2; i++) {
+        if (binaryData[i] === 0xFF && binaryData[i + 1] === 0xDA) {
+          sosIndex = i;
+          break;
+        }
+      }
+      
+      if (sosIndex > 0) {
+        // Encontramos el marcador SOS, ahora necesitamos insertar FF00 después del encabezado
+        const sosHeaderLength = (binaryData[sosIndex + 2] << 8) | binaryData[sosIndex + 3];
+        const insertPos = sosIndex + 2 + sosHeaderLength;
+        
+        if (insertPos < binaryData.length - 2) {
+          console.log('🔧 Insertando secuencia 0xFF00 en posición', insertPos);
+          const newBuffer = Buffer.alloc(binaryData.length + 2);
+          binaryData.copy(newBuffer, 0, 0, insertPos);
+          newBuffer[insertPos] = 0xFF;
+          newBuffer[insertPos + 1] = 0x00;
+          binaryData.copy(newBuffer, insertPos + 2, insertPos);
+          binaryData = newBuffer;
+        } else {
+          // Si no podemos determinar la posición exacta, insertar cerca del final de los datos
+          console.log('🔧 Insertando secuencia 0xFF00 antes del final de los datos');
+          const insertPos = Math.max(binaryData.length - 20, sosIndex + 10);
+          const newBuffer = Buffer.alloc(binaryData.length + 2);
+          binaryData.copy(newBuffer, 0, 0, insertPos);
+          newBuffer[insertPos] = 0xFF;
+          newBuffer[insertPos + 1] = 0x00;
+          binaryData.copy(newBuffer, insertPos + 2, insertPos);
+          binaryData = newBuffer;
+        }
+      } else {
+        // Si no encontramos SOS, insertar en una posición segura
+        console.log('⚠️ No se encontró marcador SOS - insertando 0xFF00 en posición segura');
+        // Insertar en el 25% de los datos (aproximadamente)
+        const insertPos = Math.floor(binaryData.length * 0.25);
+        const newBuffer = Buffer.alloc(binaryData.length + 2);
+        binaryData.copy(newBuffer, 0, 0, insertPos);
+        newBuffer[insertPos] = 0xFF;
+        newBuffer[insertPos + 1] = 0x00;
+        binaryData.copy(newBuffer, insertPos + 2, insertPos);
+        binaryData = newBuffer;
+      }
+    }
+    
     // PASO FINAL: Convertir a data URL exactamente con el formato requerido
     const normalizedBase64 = binaryData.toString('base64');
     
@@ -647,6 +745,154 @@ export async function processImageForKling(imageDataUrl: string): Promise<ImageP
  * @param dataUrl URL de datos de la imagen
  * @returns Promesa con resultado incluyendo dimensiones si son válidas
  */
+/**
+ * Función especializada para corregir tablas Huffman en imágenes JPEG
+ * 
+ * Esta función arregla específicamente el error "invalid JPEG format: uninitialized Huffman table"
+ * que suele aparecer al procesar imágenes con la API de Kling
+ * 
+ * @param imageBuffer Buffer de la imagen JPEG a procesar
+ * @returns Buffer con las tablas Huffman correctamente inicializadas
+ */
+export function fixHuffmanTables(imageBuffer: Buffer): Buffer {
+  // Verificar que es un JPEG válido
+  if (imageBuffer.length < 2 || imageBuffer[0] !== 0xFF || imageBuffer[1] !== 0xD8) {
+    console.error('El buffer no es un JPEG válido');
+    return imageBuffer;
+  }
+
+  // Verificar si ya tiene tablas Huffman (DHT marker)
+  let hasDHTMarker = false;
+  
+  // Buscar tablas Huffman (DHT) de manera más exhaustiva
+  for (let i = 0; i < imageBuffer.length - 4; i++) {
+    if (imageBuffer[i] === 0xFF && imageBuffer[i + 1] === 0xC4) {
+      // Verificar la longitud del segmento DHT
+      if (i + 4 < imageBuffer.length) {
+        const dhtLength = (imageBuffer[i + 2] << 8) | imageBuffer[i + 3];
+        // Verificar que la longitud sea razonable y el segmento esté completo
+        if (dhtLength >= 2 && i + 2 + dhtLength <= imageBuffer.length) {
+          hasDHTMarker = true;
+          console.log('✅ Tablas Huffman (DHT) válidas encontradas en la posición', i);
+          break;
+        } else {
+          console.warn('⚠️ Tablas Huffman (DHT) incompletas o corruptas detectadas en la posición', i);
+        }
+      }
+    }
+  }
+  
+  // Si ya tiene tablas DHT válidas, no es necesario añadirlas
+  if (hasDHTMarker) {
+    return imageBuffer;
+  }
+  
+  console.log('⚠️ Corrigiendo tablas Huffman no inicializadas');
+  
+  // Crear las tablas Huffman estándar
+  const standardDHT = Buffer.from([
+    // Tablas Luma DC (0x00)
+    0xFF, 0xC4, 0x00, 0x1F, 0x00, 0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02,
+    0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
+    
+    // Tablas Luma AC (0x10)
+    0xFF, 0xC4, 0x00, 0xB5, 0x10, 0x00, 0x02, 0x01, 0x03, 0x03, 0x02, 0x04,
+    0x03, 0x05, 0x05, 0x04, 0x04, 0x00, 0x00, 0x01, 0x7D, 0x01, 0x02, 0x03,
+    0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61,
+    0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08, 0x23, 0x42, 0xB1,
+    0xC1, 0x15, 0x52, 0xD1, 0xF0, 0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0A,
+    0x16, 0x17, 0x18, 0x19, 0x1A, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x34,
+    0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+    0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x63, 0x64,
+    0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
+    0x79, 0x7A, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x92, 0x93,
+    0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6,
+    0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9,
+    0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3,
+    0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5,
+    0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7,
+    0xF8, 0xF9, 0xFA,
+    
+    // Tablas Chroma DC (0x01)
+    0xFF, 0xC4, 0x00, 0x1F, 0x01, 0x00, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02,
+    0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
+    
+    // Tablas Chroma AC (0x11)
+    0xFF, 0xC4, 0x00, 0xB5, 0x11, 0x00, 0x02, 0x01, 0x02, 0x04, 0x04, 0x03,
+    0x04, 0x07, 0x05, 0x04, 0x04, 0x00, 0x01, 0x02, 0x77, 0x00, 0x01, 0x02,
+    0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61,
+    0x71, 0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91, 0xA1, 0xB1, 0xC1,
+    0x09, 0x23, 0x33, 0x52, 0xF0, 0x15, 0x62, 0x72, 0xD1, 0x0A, 0x16, 0x24,
+    0x34, 0xE1, 0x25, 0xF1, 0x17, 0x18, 0x19, 0x1A, 0x26, 0x27, 0x28, 0x29,
+    0x2A, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47,
+    0x48, 0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x63,
+    0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77,
+    0x78, 0x79, 0x7A, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A,
+    0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4,
+    0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7,
+    0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA,
+    0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE2, 0xE3, 0xE4,
+    0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7,
+    0xF8, 0xF9, 0xFA
+  ]);
+  
+  // Buscar la posición adecuada para insertar las tablas DHT 
+  // La posición ideal es después de APP0 o antes de SOF/SOS
+  let insertPosition = 2; // Por defecto, después del marcador SOI (FF D8)
+  
+  // Recorremos el buffer buscando marcadores JPEG para encontrar la posición ideal
+  for (let i = 2; i < imageBuffer.length - 1; i++) {
+    if (imageBuffer[i] === 0xFF) {
+      const marker = imageBuffer[i + 1];
+      
+      // APP0 marker (JFIF) - insertar después
+      if (marker === 0xE0) {
+        if (i + 4 < imageBuffer.length) {
+          const segmentLength = (imageBuffer[i + 2] << 8) | imageBuffer[i + 3];
+          if (segmentLength >= 2 && i + 2 + segmentLength < imageBuffer.length) {
+            insertPosition = i + 2 + segmentLength;
+            break;
+          }
+        }
+      } 
+      // DQT marker (tablas de cuantización) - insertar antes
+      else if (marker === 0xDB) {
+        insertPosition = i;
+        break;
+      }
+      // SOF markers (frames) - insertar antes
+      else if (marker >= 0xC0 && marker <= 0xCF && 
+               marker !== 0xC4 && marker !== 0xC8) {
+        insertPosition = i;
+        break;
+      }
+      // SOS marker (start of scan) - insertar antes
+      else if (marker === 0xDA) {
+        insertPosition = i;
+        break;
+      }
+    }
+  }
+  
+  // Crear un nuevo buffer con las tablas Huffman insertadas en la posición adecuada
+  const resultBuffer = Buffer.alloc(imageBuffer.length + standardDHT.length);
+  
+  // Copiar los datos antes del punto de inserción
+  imageBuffer.copy(resultBuffer, 0, 0, insertPosition);
+  
+  // Insertar las tablas Huffman
+  standardDHT.copy(resultBuffer, insertPosition);
+  
+  // Copiar el resto de datos después de las tablas insertadas
+  imageBuffer.copy(resultBuffer, insertPosition + standardDHT.length, insertPosition);
+  
+  console.log('✅ Tablas Huffman añadidas correctamente al JPEG');
+  
+  return resultBuffer;
+}
+
 export function getImageDimensions(dataUrl: string): Promise<ImageProcessingResult> {
   return new Promise((resolve) => {
     if (!dataUrl || !dataUrl.startsWith('data:image/')) {

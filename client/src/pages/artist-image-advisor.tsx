@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { ImageStyleAdvisor } from "@/components/image-advisor/image-style-advisor";
 import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
-import { SimpleTryOnComponent } from "@/components/kling/simple-tryon";
+import { ArtistVirtualTryOn } from "@/components/kling/artist-virtual-tryon";
+import { EnglishVirtualTryOn } from "@/components/kling/english-virtual-tryon";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const itemVariants = {
 
 export default function ArtistImageAdvisorPage() {
   const [activeTab, setActiveTab] = useState("upload");
+  const [language, setLanguage] = useState<"en" | "es">("en");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -293,12 +295,29 @@ export default function ArtistImageAdvisorPage() {
                   transition={{ duration: 0.5 }}
                 >
                   <div className="space-y-6">
-                    <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary/90 to-primary">Virtual Try-On</h2>
-                      <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Try on clothing virtually to visualize your perfect style as an artist. 
-                        Upload your photo and the clothing item you want to try for instant results.
-                      </p>
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="text-center flex-1">
+                        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary/90 to-primary">Virtual Try-On</h2>
+                        <p className="text-muted-foreground max-w-2xl mx-auto">
+                          Try on clothing virtually to visualize your perfect style as an artist. 
+                          Upload your photo and the clothing item you want to try for instant results.
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="language-selector" className="text-sm mr-2">Language:</Label>
+                        <Select
+                          value={language}
+                          onValueChange={(value) => setLanguage(value as "en" | "es")}
+                        >
+                          <SelectTrigger id="language-selector" className="w-[120px]">
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="es">Español</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     
                     {/* Video Tutorial Background */}
@@ -317,15 +336,17 @@ export default function ArtistImageAdvisorPage() {
                       </video>
                       <div className="absolute inset-0 z-20 flex items-center justify-center flex-col p-6 text-center">
                         <h3 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
-                          AI-Powered Virtual Try-On
+                          {language === "en" ? "AI-Powered Virtual Try-On" : "Prueba Virtual con IA"}
                         </h3>
                         <p className="text-sm text-white/90 max-w-3xl">
-                          Create your perfect artist look with our advanced AI technology. Simply upload your photo and clothing items to see how they look together instantly.
+                          {language === "en" 
+                            ? "Create your perfect artist look with our advanced AI technology. Simply upload your photo and clothing items to see how they look together instantly."
+                            : "Crea tu look artístico perfecto con nuestra tecnología avanzada de IA. Simplemente sube tu foto y las prendas para ver cómo se ven juntas al instante."}
                         </p>
                       </div>
                     </div>
                     
-                    <SimpleTryOnComponent />
+                    {language === "en" ? <EnglishVirtualTryOn /> : <ArtistVirtualTryOn />}
                   </div>
                 </motion.div>
               </TabsContent>

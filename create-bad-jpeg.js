@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Crea una imagen JPEG malformada eliminando deliberadamente las tablas Huffman
+ * y corrompiendo secuencias 0xFF00 necesarias para la decodificación
  * @param {Buffer} imageBuffer - Buffer de la imagen JPEG original
  * @returns {Buffer} - Imagen malformada
  */
@@ -62,8 +63,39 @@ function createBadJpeg(imageBuffer) {
     console.log(`✅ Eliminada tabla Huffman #${markers.length - idx}: ${marker.length + 2} bytes`);
   });
   
-  console.log(`✅ Imagen malformada creada: ${result.length} bytes (eliminados ${imageBuffer.length - result.length} bytes)`);
+  console.log(`✅ Imagen sin tablas Huffman: ${result.length} bytes (eliminados ${imageBuffer.length - result.length} bytes)`);
   
+  // Buscar y corromper también secuencias 0xFF00 para crear una imagen aún más defectuosa
+  // Estas secuencias son cruciales para la decodificación JPEG
+  const ff00Positions = [];
+  
+  // Buscar todas las secuencias 0xFF00
+  for (let i = 0; i < result.length - 1; i++) {
+    if (result[i] === 0xFF && result[i + 1] === 0x00) {
+      ff00Positions.push(i);
+      console.log(`🔍 Secuencia 0xFF00 encontrada en posición ${i}`);
+    }
+  }
+  
+  console.log(`🔍 Encontradas ${ff00Positions.length} secuencias 0xFF00 para corromper`);
+  
+  // Si hay secuencias 0xFF00, modificarlas para romper la estructura JPEG
+  if (ff00Positions.length > 0) {
+    // Creamos una copia para modificar
+    const resultWithoutFF00 = Buffer.from(result);
+    
+    // Modificamos las secuencias 0xFF00 cambiando el 0x00 por 0x01 (valor inválido)
+    // Esto romperá la secuencia sin cambiar el tamaño del archivo
+    ff00Positions.forEach(pos => {
+      resultWithoutFF00[pos + 1] = 0x01; // Cambiar 0x00 por 0x01
+      console.log(`✅ Modificada secuencia 0xFF00 en posición ${pos} a 0xFF01`);
+    });
+    
+    console.log(`✅ Imagen doblemente malformada creada: ${resultWithoutFF00.length} bytes (sin tablas Huffman ni secuencias FF00)`);
+    return resultWithoutFF00;
+  }
+  
+  console.log(`⚠️ No se encontraron secuencias 0xFF00 para modificar`);
   return result;
 }
 
