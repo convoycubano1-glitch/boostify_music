@@ -187,7 +187,7 @@ async function validateAndProcessImage(imageDataUrl: string): Promise<ImageValid
   try {
     // Use our server-side processor to handle all JPEG corrections
     const response = await axios.post('/api/kling/process-image', { 
-      imageDataUrl: imageDataUrl 
+      imageData: imageDataUrl 
     });
     
     if (response.data.isValid) {
@@ -234,17 +234,9 @@ const itemVariants = {
  * EnglishVirtualTryOn Component
  * A complete Virtual Try-On component with improved JPEG handling and English interface
  */
-interface EnglishVirtualTryOnProps {
-  initialModelImage?: string;
-  initialClothingImage?: string;
-}
-
-export function EnglishVirtualTryOn({ 
-  initialModelImage = '', 
-  initialClothingImage = '' 
-}: EnglishVirtualTryOnProps) {
-  const [modelImage, setModelImage] = useState<string>(initialModelImage);
-  const [clothingImage, setClothingImage] = useState<string>(initialClothingImage);
+export function EnglishVirtualTryOn() {
+  const [modelImage, setModelImage] = useState<string>('');
+  const [clothingImage, setClothingImage] = useState<string>('');
   const [modelFileInput, setModelFileInput] = useState<File | null>(null);
   const [clothingFileInput, setClothingFileInput] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -263,22 +255,6 @@ export function EnglishVirtualTryOn({
   const [alignment, setAlignment] = useState<'auto' | 'manual'>('auto');
   const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
-
-  // Handle initial image props only when they are first provided or component mounts
-  useEffect(() => {
-    // If initial images are provided and not already set, use them
-    if (initialModelImage && initialModelImage !== '') {
-      setModelImage(initialModelImage);
-      console.log("Using provided model image");
-    }
-    
-    if (initialClothingImage && initialClothingImage !== '') {
-      setClothingImage(initialClothingImage);
-      console.log("Using provided clothing image");
-    }
-    
-    // We intentionally don't auto-start to let the user review the images first
-  }, []);
 
   // Load saved results on mount
   useEffect(() => {
@@ -621,8 +597,8 @@ export function EnglishVirtualTryOn({
                       </div>
                     )}
                     
-                    {/* Upload button - Always visible */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    {/* Upload button overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
                       <label className="cursor-pointer">
                         <input
                           type="file"
@@ -686,8 +662,8 @@ export function EnglishVirtualTryOn({
                       </div>
                     )}
                     
-                    {/* Upload button - Always visible */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    {/* Upload button overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
                       <label className="cursor-pointer">
                         <input
                           type="file"

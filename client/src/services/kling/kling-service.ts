@@ -90,38 +90,5 @@ export const klingService = {
         error: 'Error desconocido al verificar el estado'
       };
     }
-  },
-
-  /**
-   * Guarda un resultado de Try-On exitoso en el servidor
-   * @param result Resultado del Try-On a guardar 
-   * @returns true si se guardó correctamente, false en caso contrario
-   */
-  saveResult: async (result: TryOnResult): Promise<boolean> => {
-    try {
-      const response = await axios.post('/api/kling/save-result', { 
-        type: 'try-on', 
-        result 
-      });
-      return response.data.success;
-    } catch (error) {
-      console.error('Error al guardar el resultado:', error);
-      return false;
-    }
-  },
-
-  /**
-   * Obtiene resultados guardados de Try-On desde el servidor
-   * @param type Tipo de resultado a obtener ('try-on', 'lipsync', 'effects', etc.)
-   * @returns Lista de resultados guardados
-   */
-  getResults: async (type: string = 'try-on'): Promise<TryOnResult[]> => {
-    try {
-      const response = await axios.get(`/api/kling/results?type=${type}`);
-      return response.data.results || [];
-    } catch (error) {
-      console.error('Error al obtener resultados guardados:', error);
-      return [];
-    }
   }
 };
