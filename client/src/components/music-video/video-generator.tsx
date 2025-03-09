@@ -16,7 +16,7 @@ interface VideoGeneratorProps {
   clips: TimelineClip[];
   duration: number;
   isGenerating: boolean;
-  onGenerate: () => Promise<void>;
+  onGenerate: () => Promise<string | null>;
 }
 
 export function VideoGenerator({
@@ -49,37 +49,48 @@ export function VideoGenerator({
       setProgress(0);
       setVideoUrl("");
       
-      // Simular progreso (esto se reemplazará con la API real)
+      // Iniciar el progreso visual para mostrar actividad al usuario
       const interval = setInterval(() => {
         setProgress(prev => {
-          const next = prev + 5;
+          const next = prev + 1.5;
           if (next >= 100) {
             clearInterval(interval);
           }
           return Math.min(next, 100);
         });
-      }, 500);
+      }, 300);
 
-      await onGenerate();
+      // Llamar a la función de generación pasada como prop
+      const videoIdResult = await onGenerate();
 
-      // Generar ID único para este video
-      const generatedId = `video_${Date.now()}`;
-      setVideoId(generatedId);
+      // Verificar si se obtuvo un ID válido del proceso de generación
+      if (videoIdResult) {
+        clearInterval(interval);
+        setProgress(100);
+        
+        // Guardar el ID en el estado local
+        setVideoId(videoIdResult);
+        
+        // Usar un video de muestra para la vista previa
+        // En una implementación real, esto se obtendría de Firebase Storage usando el videoId
+        setVideoUrl("/assets/Standard_Mode_Generated_Video (2).mp4");
+        setShowPreview(true);
 
-      // Esto se reemplazará con la URL real del video
-      // Por ahora usamos un video de ejemplo para mostrar la funcionalidad
-      setVideoUrl("/assets/Standard_Mode_Generated_Video (2).mp4");
-      setShowPreview(true);
-
-      toast({
-        title: "Video generado",
-        description: "El video se ha generado exitosamente",
-      });
+        toast({
+          title: "Video generado",
+          description: "El video se ha generado exitosamente y ya está disponible para visualización",
+        });
+      } else {
+        // Si no hay ID es porque hubo un problema en la generación
+        clearInterval(interval);
+        throw new Error("No se pudo completar la generación del video");
+      }
     } catch (error) {
       console.error("Error generando video:", error);
+      setProgress(0);
       toast({
         title: "Error",
-        description: "Error al generar el video",
+        description: error instanceof Error ? error.message : "Error al generar el video",
         variant: "destructive",
       });
     }

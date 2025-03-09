@@ -1676,31 +1676,105 @@ ${transcription}`;
     }
   };
 
-  const generateVideo = async () => {
+  const generateVideo = async (): Promise<string | null> => {
     if (!timelineItems.length || !audioBuffer) {
       toast({
         title: "Error",
         description: "No hay suficientes elementos para generar el video",
         variant: "destructive",
       });
-      return;
+      return null;
+    }
+
+    // Verificar si hay suficientes imágenes generadas
+    const itemsWithImages = timelineItems.filter(item => item.generatedImage).length;
+    if (itemsWithImages < timelineItems.length * 0.7) { // Al menos 70% de cobertura
+      toast({
+        title: "Atención",
+        description: `Solo ${itemsWithImages} de ${timelineItems.length} segmentos tienen imágenes. Considera generar más imágenes primero.`,
+        variant: "default",
+      });
     }
 
     setIsGeneratingVideo(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      toast({
+        title: "Iniciando proceso",
+        description: "Preparando elementos para la generación del video...",
+      });
+
+      // Primero guardar todas las imágenes en Firebase
+      const savePromises = timelineItems
+        .filter(item => item.generatedImage && !item.firebaseUrl)
+        .map(async (item) => {
+          try {
+            const url = await saveToFirebase(item);
+            if (url) {
+              // Actualizar el item con la URL de Firebase
+              setTimelineItems(prev => prev.map(
+                i => i.id === item.id ? { ...i, firebaseUrl: url } : i
+              ));
+            }
+            return { id: item.id, success: !!url, url };
+          } catch (error) {
+            console.error(`Error guardando imagen para segmento ${item.id}:`, error);
+            return { id: item.id, success: false };
+          }
+        });
+
+      await Promise.all(savePromises);
+
+      // Simulación del proceso de generación (en una implementación real, enviaríamos los elementos a un servicio)
+      for (let i = 1; i <= 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        // Actualizar progreso
+        toast({
+          title: "Generando video",
+          description: `Fase ${i} de 5: ${["Procesando audio", "Sincronizando elementos", "Renderizando escenas", "Aplicando efectos", "Finalizando"][i-1]}`,
+          variant: "default",
+        });
+      }
+
+      // Generar ID único para este video
+      const videoId = `video_${Date.now()}`;
+      setVideoId(videoId);
+
+      // Crear un documento en Firestore para el video
+      try {
+        const videoRef = collection(db, 'videos');
+        await addDoc(videoRef, {
+          id: videoId,
+          userId: user?.uid,
+          title: songTitle || 'Video Musical Generado',
+          status: 'preview', // Inicialmente solo vista previa
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          duration: audioBuffer.duration || 0,
+          thumbnailUrl: timelineItems.find(item => item.firebaseUrl || item.generatedImage)?.firebaseUrl || 
+                         timelineItems.find(item => item.firebaseUrl || item.generatedImage)?.generatedImage || '',
+          tags: ['música', 'video', 'artista', 'canción', 'generado'],
+        });
+      } catch (error) {
+        console.error("Error guardando información del video:", error);
+      }
+
+      // Marcar este paso como completado
+      setCurrentStep(7);
 
       toast({
-        title: "Video generado",
-        description: "El video se ha generado exitosamente",
+        title: "Video generado exitosamente",
+        description: "Ya puedes previsualizar el video y/o comprarlo para acceso completo",
       });
+
+      return videoId;
     } catch (error) {
       console.error("Error generando video:", error);
       toast({
         title: "Error",
-        description: "Error al generar el video",
+        description: error instanceof Error ? error.message : "Error al generar el video",
         variant: "destructive",
       });
+      return null;
     } finally {
       setIsGeneratingVideo(false);
     }
@@ -2216,7 +2290,7 @@ ${transcription}`;
                     clips={timelineItems}
                     duration={audioBuffer?.duration || 0}
                     isGenerating={isGeneratingVideo}
-                    onGenerate={generateVideo}
+                    onGenerate={() => generateVideo()}
                   />
                 </div>
 
