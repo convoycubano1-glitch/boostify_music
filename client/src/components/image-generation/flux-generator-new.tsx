@@ -117,7 +117,7 @@ export function FluxGenerator({
       interval = setInterval(async () => {
         try {
           // Verificar estado de la tarea en el servidor
-          const result = await axios.get(`/api/proxy/flux/task/${pendingTaskId}`);
+          const result = await axios.get(`/api/flux/status?taskId=${pendingTaskId}`);
           console.log('Flux task status update:', result.data);
           
           // Verificar si la tarea está completada
@@ -259,7 +259,7 @@ export function FluxGenerator({
       const taskType = useLoRA ? FluxTaskType.TXT2IMG_LORA : FluxTaskType.TXT2IMG;
       
       // Llamar a la API para generar una imagen real (una sola a la vez)
-      const response = await axios.post('/api/proxy/flux/generate-image', {
+      const response = await axios.post('/api/flux/generate-image', {
         prompt: prompt,
         negativePrompt: negativePrompt,
         modelType: model,

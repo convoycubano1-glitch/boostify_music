@@ -94,6 +94,7 @@ export const fluxService = {
     try {
       console.log('Enviando solicitud a Flux API:', params);
       
+      // Ruta del endpoint en el servidor - verifique que coincida con server/routes/flux-api-proxy.ts
       const response = await axios.post('/api/flux/generate-image', params);
       
       console.log('Respuesta de Flux API:', response.data);

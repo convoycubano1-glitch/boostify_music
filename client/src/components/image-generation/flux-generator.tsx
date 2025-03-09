@@ -143,13 +143,13 @@ export function FluxGenerator({
             } catch (error) {
               console.error('Error verificando estado directamente con Flux:', error);
               // Intentar con proxy como fallback
-              result = await axios.get(`/api/proxy/flux/task/${pendingTaskId}`);
+              result = await axios.get(`/api/flux/status?taskId=${pendingTaskId}`);
               console.log('Respuesta de proxy para estado de Flux:', result);
             }
           } else {
             // Usar proxy para tareas iniciadas a través del proxy
             console.log('Verificando estado de tarea vía proxy:', pendingTaskId);
-            result = await axios.get(`/api/proxy/flux/task/${pendingTaskId}`);
+            result = await axios.get(`/api/flux/status?taskId=${pendingTaskId}`);
           }
           
           console.log('Flux task status update:', result);

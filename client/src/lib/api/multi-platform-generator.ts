@@ -445,7 +445,7 @@ async function generateWithFlux(params: Omit<GenerateImageParams, 'apiProvider'>
 
     // Utilizar el proxy del servidor para la generación
     const response = await axios.post(
-      '/api/proxy/flux/generate-image',
+      '/api/flux/generate-image',
       requestParams
     );
 

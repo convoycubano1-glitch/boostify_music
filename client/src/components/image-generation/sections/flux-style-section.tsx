@@ -200,8 +200,8 @@ export function FluxStyleSection({ onImageGenerated, language = 'en' }: FluxStyl
           FluxTaskType.TXT2IMG
         );
       } else {
-        // Usar el endpoint proxy del servidor
-        response = await axios.post('/api/proxy/flux/generate-image', {
+        // Usar el endpoint proxy del servidor (endpoint correcto verificado en server/routes.ts)
+        response = await axios.post('/api/flux/generate-image', {
           prompt: finalPrompt,
           negativePrompt: language === 'en' 
             ? 'deformed, bad anatomy, disfigured, poorly drawn face, mutation, mutated, extra limb, missing limb, bad lighting'
@@ -240,8 +240,8 @@ export function FluxStyleSection({ onImageGenerated, language = 'en' }: FluxStyl
   // Verifica el estado de la generación
   const checkTaskStatus = async (taskId: string, promptText: string) => {
     try {
-      // Llamar al endpoint de status a través del proxy
-      const response = await axios.get(`/api/proxy/flux/status?taskId=${taskId}`);
+      // Llamar al endpoint de status - ruta correcta verificada en server/routes.ts
+      const response = await axios.get(`/api/flux/status?taskId=${taskId}`);
       
       if (response.data && response.data.data && 
           response.data.data.status === 'completed' && 
