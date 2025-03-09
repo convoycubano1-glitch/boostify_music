@@ -19,7 +19,7 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
 import { generateImageWithFal } from "@/lib/api/fal-ai";
-import { createCourseEnrollmentSession } from "@/lib/api/stripe-service";
+import { createCheckoutSession } from "@/lib/api/stripe-service";
 import MasterclassSection from "@/components/education/MasterclassSection";
 
 interface CourseFormData {
@@ -918,12 +918,18 @@ export default function EducationPage() {
       setIsLoading(true);
       console.log('Enrolling in course:', course);
 
-      await createCourseEnrollmentSession({
-        courseId: course.id,
-        title: course.title,
-        price: course.price,
-        thumbnail: course.thumbnail
-      });
+      // Obtener token del usuario autenticado
+      const token = await auth.currentUser?.getIdToken();
+      
+      if (!token) {
+        throw new Error("No se pudo obtener el token de autenticación");
+      }
+      
+      // Usar el ID del curso como priceId temporal para inscripción
+      // En un sistema real, esto sería un ID de producto de Stripe registrado
+      const priceId = `course_${course.id}`;
+      
+      await createCheckoutSession(token, priceId);
       toast({
         title: "Success",
         description: `Successfully enrolled in ${course.title}`

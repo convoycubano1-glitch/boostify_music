@@ -6,6 +6,7 @@ import { setupSpotifyRoutes } from "./spotify";
 import { setupOpenAIRoutes } from "./routes/openai";
 import { setupEducationRoutes } from "./routes/education";
 import { setupFilesRoutes } from "./routes/files";
+import { setupStripeRoutes } from "./routes/stripe";
 import { setupVideosRoutes } from "./routes/videos";
 import { setupEmailRoutes } from "./routes/email";
 import { setupApifyRoutes } from "./routes/apify";
@@ -349,6 +350,7 @@ export function registerRoutes(app: Express): Server {
   setupEmailRoutes(app);
   setupApifyRoutes(app);
   setupSocialNetworkRoutes(app);
+  setupStripeRoutes(app);
 
   // Usar Firestore para la red social
   app.use('/api/firestore-social', firestoreSocialNetworkRouter);

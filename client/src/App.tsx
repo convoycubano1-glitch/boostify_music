@@ -4,8 +4,11 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { ProtectedRoute } from "./lib/protected-route";
+import { SubscriptionProtectedRoute } from "./lib/subscription-protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { SubscriptionProvider } from "@/lib/context/subscription-context";
+import { SubscriptionPlan } from "@/lib/api/subscription-service";
 import NotFound from "@/pages/not-found";
 import AdminPage from "@/pages/admin";
 import AIAgentsPage from "@/pages/ai-agents";
@@ -71,6 +74,10 @@ import VirtualRecordLabelPage from "@/pages/virtual-record-label";
 import TestProgressPage from "@/pages/test-progress";
 import AuthPage from "@/pages/auth-page";
 import PluginsPage from "@/pages/plugins";
+import PricingPage from "@/pages/pricing";
+import AccountPage from "@/pages/account";
+import SubscriptionSuccessPage from "@/pages/subscription-success";
+import SubscriptionCancelledPage from "@/pages/subscription-cancelled";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -134,6 +141,22 @@ const withPageWrapper = (Component: React.ComponentType<any>) => {
       <Component {...props} />
     </PageWrapper>
   );
+};
+
+// Función para seleccionar qué componente de ruta usar según el nivel de suscripción requerido
+const getRouteComponent = (path: string, Component: React.ComponentType<any>, requiredPlan: SubscriptionPlan | null = null) => {
+  // Si no se requiere nivel de suscripción, usar ruta normal (pública)
+  if (requiredPlan === null) {
+    return <Route path={path} component={Component} />;
+  }
+  
+  // Si solo se requiere autenticación pero no suscripción, usar ProtectedRoute
+  if (requiredPlan === 'free') {
+    return <ProtectedRoute path={path} component={Component} />;
+  }
+  
+  // Si se requiere suscripción específica, usar SubscriptionProtectedRoute
+  return <SubscriptionProtectedRoute path={path} component={Component} requiredPlan={requiredPlan} />;
 };
 
 const Router = () => {
@@ -207,6 +230,10 @@ const Router = () => {
   const WrappedAuthPage = withPageWrapper(AuthPage);
   const WrappedPluginsPage = withPageWrapper(PluginsPage);
   const WrappedTryOnPage = withPageWrapper(TryOnPage);
+  const WrappedPricingPage = withPageWrapper(PricingPage);
+  const WrappedAccountPage = withPageWrapper(AccountPage);
+  const WrappedSubscriptionSuccessPage = withPageWrapper(SubscriptionSuccessPage);
+  const WrappedSubscriptionCancelledPage = withPageWrapper(SubscriptionCancelledPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -280,6 +307,12 @@ const Router = () => {
         <Route path="/try-on" component={WrappedTryOnPage} />
         <Route path="/try-on-page" component={WrappedTryOnPage} />
         
+        {/* Subscription routes */}
+        <Route path="/pricing" component={WrappedPricingPage} />
+        <ProtectedRoute path="/account" component={WrappedAccountPage} />
+        <ProtectedRoute path="/subscription/success" component={WrappedSubscriptionSuccessPage} />
+        <ProtectedRoute path="/subscription/cancelled" component={WrappedSubscriptionCancelledPage} />
+        
         {/* Catch all not found route */}
         <Route component={WrappedNotFound} />
       </Switch>
@@ -324,8 +357,10 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router />
-          <Toaster />
+          <SubscriptionProvider>
+            <Router />
+            <Toaster />
+          </SubscriptionProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

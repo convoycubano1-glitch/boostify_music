@@ -8,10 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "@/firebase";
-import { collection, addDoc, getDocs, query, orderBy, Timestamp, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, Timestamp, where, doc, updateDoc, increment } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { getRelevantImage } from "@/lib/unsplash-service";
-import { createCourseEnrollmentSession } from "@/lib/api/stripe-service";
+import { createCheckoutSession } from "@/lib/api/stripe-service";
 import { generateCourseContent } from "@/lib/api/openrouter";
 import { User, GraduationCap, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, Sparkles, Video, Music, Mic2, Zap, Flame, Headphones, Lightbulb, TrendingUp, Wand2, BookOpen } from "lucide-react";
 
@@ -297,12 +297,60 @@ export default function MasterclassSection() {
       setIsLoading(true);
       console.log('Enrolling in masterclass:', masterclass);
 
-      await createCourseEnrollmentSession({
-        courseId: masterclass.id,
-        title: masterclass.title,
-        price: masterclass.price,
-        thumbnail: masterclass.thumbnail
-      });
+      // Verificar si el usuario es administrador (convoycubano@gmail.com)
+      if (auth.currentUser?.email === 'convoycubano@gmail.com') {
+        // Proceso especial para administrador (sin pago)
+        try {
+          // Crear un registro de inscripción en Firestore
+          if (auth.currentUser?.uid) {
+            const enrollmentRef = collection(db, "masterclass_enrollments");
+            await addDoc(enrollmentRef, {
+              userId: auth.currentUser.uid,
+              masterclassId: masterclass.id,
+              masterclassTitle: masterclass.title,
+              enrollmentDate: new Date(),
+              paymentStatus: "admin_access", // Estado especial para admin
+              amount: 0, // Sin costo para el administrador
+            });
+            
+            // Actualizar el conteo de inscripciones en el documento del masterclass
+            const masterclassRef = doc(db, "masterclasses", masterclass.id);
+            await updateDoc(masterclassRef, {
+              enrollmentCount: increment(1)
+            });
+          }
+          
+          // Mostrar mensaje de éxito
+          toast({
+            title: "Admin Enrollment Successful",
+            description: `As an administrator, you've been enrolled in "${masterclass.title}" without payment.`,
+            variant: "default",
+          });
+        } catch (error) {
+          console.error("Error in admin enrollment:", error);
+          toast({
+            title: "Admin Enrollment",
+            description: `Admin access granted for "${masterclass.title}" (enrollment record creation failed, but access is granted)`,
+            variant: "default",
+          });
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+
+      // Obtener token del usuario autenticado
+      const token = await auth.currentUser?.getIdToken();
+      
+      if (!token) {
+        throw new Error("No se pudo obtener el token de autenticación");
+      }
+      
+      // Usar el ID del curso como priceId temporal para inscripción
+      // En un sistema real, esto sería un ID de producto de Stripe registrado
+      const priceId = `course_${masterclass.id}`;
+      
+      await createCheckoutSession(token, priceId);
       
       toast({
         title: "Success",
@@ -674,8 +722,17 @@ export default function MasterclassSection() {
                           className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 group"
                           onClick={() => handleEnrollMasterclass(masterclass)}
                         >
-                          <span>Enroll Now</span>
-                          <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                          {currentUser?.email === 'convoycubano@gmail.com' ? (
+                            <>
+                              <span>Admin Enrollment (Free)</span>
+                              <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                            </>
+                          ) : (
+                            <>
+                              <span>Enroll Now (${masterclass.price})</span>
+                              <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </Card>
@@ -722,7 +779,7 @@ export default function MasterclassSection() {
                             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                             onClick={() => handleEnrollMasterclass(masterclass)}
                           >
-                            Enroll
+                            {currentUser?.email === 'convoycubano@gmail.com' ? 'Admin Access' : 'Enroll'}
                           </Button>
                         </div>
                       </Card>

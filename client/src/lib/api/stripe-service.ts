@@ -1,141 +1,146 @@
-import { auth } from '@/lib/firebase';
+import { apiRequest } from '@/lib/api/api-client';
 
-// Definir función para cargar Stripe de forma lazy solo cuando sea necesario
-const getStripe = async () => {
+/**
+ * Create a new checkout session for a subscription
+ * @param token Firebase auth token
+ * @param priceId The Stripe price ID for the subscription plan
+ * @returns URL to redirect to the checkout
+ */
+export async function createCheckoutSession(
+  token: string,
+  priceId: string
+): Promise<{ url: string }> {
   try {
-    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-      throw new Error('Missing Stripe public key');
-    }
-    
-    // Importación dinámica para evitar cargar Stripe en la inicialización
-    const { loadStripe } = await import('@stripe/stripe-js');
-    return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-  } catch (error) {
-    console.error('Error loading Stripe:', error);
-    return null;
-  }
-};
-
-export async function createPaymentSession(booking: {
-  musicianId: string;
-  price: number;
-  currency: string;
-}) {
-  try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      throw new Error('Must be logged in to create a payment session');
-    }
-
-    const idToken = await currentUser.getIdToken();
-
-    console.log('Creating payment session with data:', booking);
-
-    const response = await fetch('/api/create-checkout-session', {
+    const response = await apiRequest<{ url: string }>('/create-subscription', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
-      credentials: 'include',
-      body: JSON.stringify(booking),
+      body: JSON.stringify({ priceId })
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Server error:', data);
-      throw new Error(data.error || 'Failed to create payment session');
-    }
-
-    if (!data.sessionId) {
-      console.error('Missing sessionId in response:', data);
-      throw new Error('Invalid server response - missing session ID');
-    }
-
-    console.log('Successfully created checkout session:', data.sessionId);
-
-    const stripe = await getStripe();
-    if (!stripe) {
-      throw new Error('Stripe not initialized');
-    }
-
-    const result = await stripe.redirectToCheckout({
-      sessionId: data.sessionId
-    });
-
-    if (result.error) {
-      console.error('Stripe redirect error:', result.error);
-      throw result.error;
-    }
+    
+    return response;
   } catch (error) {
-    console.error('Error creating payment session:', error);
+    console.error('Error creating checkout session:', error);
     throw error;
   }
 }
 
-export async function createCourseEnrollmentSession(course: {
-  courseId: string;
-  title: string;
-  price: number;
-  thumbnail?: string;
-}): Promise<string> {
+/**
+ * Get publishable key for Stripe
+ * @returns Stripe publishable key
+ */
+export async function getStripePublishableKey(): Promise<{ key: string }> {
   try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      throw new Error('Must be logged in to enroll in a course');
-    }
-
-    const idToken = await currentUser.getIdToken();
-
-    console.log('Creating enrollment session for course:', course);
-
-    const response = await fetch('/api/create-course-checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        courseId: course.courseId,
-        title: course.title,
-        price: course.price,
-        thumbnail: course.thumbnail
-      }),
+    const response = await apiRequest<{ key: string }>('/stripe-publishable-key', {
+      method: 'GET'
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Server error:', data);
-      throw new Error(data.error || 'Failed to create enrollment session');
-    }
-
-    if (!data.sessionId) {
-      console.error('Missing sessionId in response:', data);
-      throw new Error('Invalid server response - missing session ID');
-    }
-
-    console.log('Successfully created checkout session:', data.sessionId);
-
-    const stripe = await getStripe();
-    if (!stripe) {
-      throw new Error('Stripe not initialized');
-    }
-
-    const result = await stripe.redirectToCheckout({
-      sessionId: data.sessionId
-    });
-
-    if (result.error) {
-      console.error('Stripe redirect error:', result.error);
-      throw result.error;
-    }
-
-    return data.sessionId;
+    
+    return response;
   } catch (error) {
-    console.error('Error creating enrollment session:', error);
+    console.error('Error getting Stripe publishable key:', error);
     throw error;
   }
+}
+
+/**
+ * Get available subscription plans and pricing information
+ * @returns List of available plans with details
+ */
+export async function getSubscriptionPlans(): Promise<SubscriptionPlanDetails[]> {
+  try {
+    const response = await apiRequest<SubscriptionPlanDetails[]>('/subscription-plans', {
+      method: 'GET'
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Error getting subscription plans:', error);
+    // Return default plans if API fails
+    return getDefaultSubscriptionPlans();
+  }
+}
+
+// Types
+export interface SubscriptionPlanDetails {
+  id: string;
+  name: string;
+  priceId: string;
+  price: number;
+  interval: 'month' | 'year';
+  currency: string;
+  features: string[];
+  popular?: boolean;
+  tier: 'free' | 'basic' | 'pro' | 'premium';
+}
+
+// Default subscription plans if the API call fails
+function getDefaultSubscriptionPlans(): SubscriptionPlanDetails[] {
+  return [
+    {
+      id: 'free-tier',
+      name: 'Free',
+      priceId: 'price_free',
+      price: 0,
+      interval: 'month',
+      currency: 'USD',
+      features: [
+        'Basic music tools',
+        'Limited AI content generation',
+        'Community access',
+        'Standard support'
+      ],
+      tier: 'free'
+    },
+    {
+      id: 'basic-tier',
+      name: 'Basic',
+      priceId: 'price_basic_monthly',
+      price: 59.99,
+      interval: 'month',
+      currency: 'USD',
+      features: [
+        'All free features',
+        'Expanded AI content generation',
+        'Analytics dashboard',
+        'Priority support'
+      ],
+      tier: 'basic'
+    },
+    {
+      id: 'pro-tier',
+      name: 'Pro',
+      priceId: 'price_pro_monthly',
+      price: 99.99,
+      interval: 'month',
+      currency: 'USD',
+      features: [
+        'All basic features',
+        'Advanced analytics',
+        'Promotional tools',
+        'Premium support',
+        'AI-powered management tools'
+      ],
+      popular: true,
+      tier: 'pro'
+    },
+    {
+      id: 'premium-tier',
+      name: 'Premium',
+      priceId: 'price_premium_monthly',
+      price: 149.99,
+      interval: 'month',
+      currency: 'USD',
+      features: [
+        'All pro features',
+        'Unlimited AI generation',
+        'Custom branding',
+        'Dedicated account manager',
+        'API access',
+        'Advanced tools & features'
+      ],
+      tier: 'premium'
+    }
+  ];
 }

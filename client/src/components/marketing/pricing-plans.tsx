@@ -1,331 +1,281 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Check, Crown, Loader2, Music2, Star, Rocket, Youtube, FileText, Megaphone, ShoppingBag, Brain, Mail, Settings, LineChart } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { loadStripe } from "@stripe/stripe-js";
-import { useState, useEffect } from "react";
-import { SiSpotify, SiInstagram } from "react-icons/si";
+import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useSubscription } from '@/lib/context/subscription-context';
+import { createCheckoutSession } from '@/lib/api/stripe-service';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Check, X, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
-// Handle Stripe initialization safely
-const getStripe = async () => {
-  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-    throw new Error("Stripe public key is not configured");
-  }
-  return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-};
+interface PricingPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  interval: 'month' | 'year';
+  currency: string;
+  features: {
+    included: string[];
+    excluded: string[];
+  };
+  cta: string;
+  plan: 'free' | 'basic' | 'pro' | 'premium';
+  mostPopular?: boolean;
+}
 
-const plans = [
-  {
-    name: "Starter",
-    price: 59.99,
-    features: [
-      {
-        text: "Spotify Analytics Dashboard",
-        icon: SiSpotify
-      },
-      {
-        text: "Basic Instagram Management",
-        icon: SiInstagram
-      },
-      {
-        text: "5,000 YouTube Views Boost",
-        icon: Youtube
-      },
-      {
-        text: "Basic Contract Templates",
-        icon: FileText
-      },
-      {
-        text: "1 Merchandise Design/Month",
-        icon: ShoppingBag
-      },
-      {
-        text: "Access to 2 AI Models",
-        icon: Brain
-      },
-      {
-        text: "Email Support",
-        icon: Mail
-      },
-      {
-        text: "Basic Performance Metrics",
-        icon: LineChart
-      },
-      {
-        text: "Social Media Calendar",
-        icon: Settings
-      }
-    ],
-    description: "Perfect for emerging artists taking their first steps into professional music marketing",
-    popular: false,
-    priceId: "price_starter_monthly"
-  },
-  {
-    name: "Professional",
-    price: 99.99,
-    features: [
-      {
-        text: "Advanced Spotify Analytics",
-        icon: SiSpotify
-      },
-      {
-        text: "Instagram Growth Campaigns",
-        icon: SiInstagram
-      },
-      {
-        text: "25,000 YouTube Views Boost",
-        icon: Youtube
-      },
-      {
-        text: "Custom Contract Creation",
-        icon: FileText
-      },
-      {
-        text: "5 Merchandise Designs/Month",
-        icon: ShoppingBag
-      },
-      {
-        text: "Access to 5 AI Models",
-        icon: Brain
-      },
-      {
-        text: "Basic PR Campaign",
-        icon: Megaphone
-      },
-      {
-        text: "Marketing Automation Suite",
-        icon: Settings
-      },
-      {
-        text: "Priority Support 24/7",
-        icon: Star
-      },
-      {
-        text: "Advanced Analytics Dashboard",
-        icon: LineChart
-      },
-      {
-        text: "Content Calendar & Planner",
-        icon: Settings
-      }
-    ],
-    description: "Ideal for growing artists and small labels ready to scale their presence",
-    popular: true,
-    priceId: "price_pro_monthly"
-  },
-  {
-    name: "Enterprise",
-    price: 149.99,
-    features: [
-      {
-        text: "Complete Music Marketing Suite",
-        icon: Music2
-      },
-      {
-        text: "Premium Spotify Promotion",
-        icon: SiSpotify
-      },
-      {
-        text: "Full Instagram Management",
-        icon: SiInstagram
-      },
-      {
-        text: "100,000 YouTube Views Boost",
-        icon: Youtube
-      },
-      {
-        text: "Advanced Contract System",
-        icon: FileText
-      },
-      {
-        text: "Unlimited Merchandise Designs",
-        icon: ShoppingBag
-      },
-      {
-        text: "Full AI Models Access",
-        icon: Brain
-      },
-      {
-        text: "Complete PR Campaign",
-        icon: Megaphone
-      },
-      {
-        text: "Custom Analytics Solution",
-        icon: LineChart
-      },
-      {
-        text: "Dedicated Account Manager",
-        icon: Star
-      },
-      {
-        text: "Multi-platform Strategy",
-        icon: Settings
-      },
-      {
-        text: "Brand Development",
-        icon: Star
-      }
-    ],
-    description: "For professional artists and record labels seeking comprehensive management",
-    popular: false,
-    priceId: "price_enterprise_monthly"
-  }
-];
+interface PricingPlansProps {
+  /**
+   * Whether to show all plans (default) or just the upgrade plans
+   */
+  simplified?: boolean;
+}
 
-export function PricingPlans() {
+/**
+ * The pricing plans offered by the platform
+ */
+export function PricingPlans({ simplified = false }: PricingPlansProps) {
   const { user } = useAuth();
+  const { status, currentPlan } = useSubscription();
+  const [isLoading, setIsLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
-  const [stripeError, setStripeError] = useState<string | null>(null);
+  const [_, setLocation] = useLocation();
 
-  useEffect(() => {
-    // Verify Stripe configuration on component load
-    getStripe().catch((error) => {
-      console.error('Error initializing Stripe:', error);
-      setStripeError(error.message);
-      toast({
-        title: "Configuration Error",
-        description: "There's an issue with the payment setup. Please try again later.",
-        variant: "destructive"
-      });
-    });
-  }, []);
+  const plans: PricingPlan[] = [
+    {
+      id: 'free',
+      name: 'Free',
+      description: 'Basic features for starting musicians',
+      price: 0,
+      interval: 'month',
+      currency: 'USD',
+      features: {
+        included: [
+          'Basic music analytics',
+          'Limited song storage',
+          'Public artist profile',
+          'Educational resources'
+        ],
+        excluded: [
+          'AI music generation',
+          'Marketing tools',
+          'Advanced analytics',
+          'Distribution tools',
+          'Priority support'
+        ]
+      },
+      cta: 'Get Started',
+      plan: 'free'
+    },
+    {
+      id: 'basic',
+      name: 'Basic',
+      description: 'Essential tools for developing artists',
+      price: 59.99,
+      interval: 'month',
+      currency: 'USD',
+      features: {
+        included: [
+          'Everything in Free',
+          'Standard music analytics',
+          'Increased song storage',
+          'Basic marketing tools',
+          'Email support'
+        ],
+        excluded: [
+          'AI music generation',
+          'Advanced analytics',
+          'Distribution tools',
+          'Priority support'
+        ]
+      },
+      cta: 'Subscribe',
+      plan: 'basic',
+      mostPopular: true
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      description: 'Professional tools for serious artists',
+      price: 99.99,
+      interval: 'month',
+      currency: 'USD',
+      features: {
+        included: [
+          'Everything in Basic',
+          'Advanced analytics',
+          'AI music generation',
+          'Enhanced marketing tools',
+          'Distribution planning',
+          'Priority email support'
+        ],
+        excluded: [
+          'Unlimited song storage',
+          'Dedicated support manager'
+        ]
+      },
+      cta: 'Subscribe',
+      plan: 'pro'
+    },
+    {
+      id: 'premium',
+      name: 'Premium',
+      description: 'Complete solution for professional artists',
+      price: 149.99,
+      interval: 'month',
+      currency: 'USD',
+      features: {
+        included: [
+          'Everything in Pro',
+          'Unlimited song storage',
+          'Full access to AI tools',
+          'Complete analytics suite',
+          'Premium distribution tools',
+          'Dedicated support manager',
+          'Early access to new features'
+        ],
+        excluded: []
+      },
+      cta: 'Subscribe',
+      plan: 'premium'
+    }
+  ];
 
-  const handleSubscribe = async (plan: typeof plans[0]) => {
+  // Filter plans based on current subscription
+  const filteredPlans = simplified
+    ? plans.filter(plan => {
+        // Show plans with higher tier than current plan
+        if (currentPlan === 'free') return plan.plan !== 'free';
+        if (currentPlan === 'basic') return plan.plan !== 'free' && plan.plan !== 'basic';
+        if (currentPlan === 'pro') return plan.plan === 'premium';
+        return false; // Don't show any plans if already on premium
+      })
+    : plans;
+
+  // If using the simplified view and there are no valid upgrade plans, show a message
+  if (simplified && filteredPlans.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <h3 className="text-xl font-bold mb-2">You're on our highest plan!</h3>
+        <p className="text-muted-foreground">
+          You're already subscribed to our Premium plan with all features unlocked.
+        </p>
+      </div>
+    );
+  }
+
+  const handleSubscribe = async (planId: string) => {
     if (!user) {
       toast({
         title: "Login Required",
-        description: "Please log in to subscribe to a plan",
-        variant: "destructive"
+        description: "Please login to subscribe to a plan",
+        variant: "destructive",
       });
-      return;
-    }
-
-    if (stripeError) {
-      toast({
-        title: "Configuration Error",
-        description: "The payment system is currently unavailable. Please try again later.",
-        variant: "destructive"
-      });
+      setLocation('/');
       return;
     }
 
     try {
-      setProcessingPlanId(plan.priceId);
-
-      const stripe = await getStripe();
-
-      const response = await fetch('/api/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: plan.priceId,
-          planName: plan.name,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error creating payment session');
+      setIsLoading(planId);
+      const response = await createCheckoutSession(planId);
+      
+      if (response.url) {
+        window.location.href = response.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
-
-      const { sessionId } = await response.json();
-      console.log('Session ID received:', sessionId);
-
-      const { error } = await stripe!.redirectToCheckout({ sessionId });
-      if (error) {
-        console.error('Error in redirectToCheckout:', error);
-        throw error;
-      }
-    } catch (error: any) {
-      console.error('Error in payment process:', error);
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
       toast({
-        title: "Error",
-        description: error.message || "There was an error processing the payment",
-        variant: "destructive"
+        title: "Subscription Error",
+        description: "There was an error setting up your subscription. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setProcessingPlanId(null);
+      setIsLoading(null);
     }
   };
 
+  const formatPrice = (price: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: price % 1 === 0 ? 0 : 2,
+    }).format(price);
+  };
+
   return (
-    <div className="py-12 px-4">
-      <div className="text-center mb-12 space-y-4">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-          Amplify Your Music Career
-        </h2>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Choose the perfect plan to elevate your music career with our comprehensive marketing tools
-        </p>
-      </div>
+    <div className="container mx-auto py-10">
+      {!simplified && (
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold mb-3">Choose Your Plan</h2>
+          <p className="text-lg text-muted-foreground">
+            Select the perfect plan for your music career stage
+          </p>
+        </div>
+      )}
 
-      <div className="grid gap-8 md:grid-cols-3 max-w-7xl mx-auto">
-        {plans.map((plan) => (
-          <Card 
-            key={plan.name} 
-            className={`p-6 relative backdrop-blur-sm transition-all duration-300 hover:scale-105
-              ${plan.popular ? 'border-orange-500 shadow-lg shadow-orange-500/20' : 'border-orange-500/10 hover:border-orange-500/30'}`}
-          >
-            {plan.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                  <Crown className="w-4 h-4" />
-                  Most Popular
-                </span>
-              </div>
-            )}
-
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold">{plan.name}</h3>
-              <div className="mt-4 flex items-baseline">
-                <span className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                  ${plan.price}
-                </span>
-                <span className="text-muted-foreground ml-2">/month</span>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {plan.description}
-              </p>
-            </div>
-
-            <ul className="space-y-4 mb-8">
-              {plan.features.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <feature.icon className="h-4 w-4 text-orange-500" />
-                  </div>
-                  <span className="text-sm">{feature.text}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Button
-              className={`w-full h-12 ${
-                plan.popular 
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                  : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500'
-              }`}
-              onClick={() => handleSubscribe(plan)}
-              disabled={processingPlanId === plan.priceId || !!stripeError}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {filteredPlans.map((plan) => {
+          const isCurrentPlan = status?.plan === plan.plan;
+          
+          return (
+            <Card 
+              key={plan.id}
+              className={`flex flex-col h-full ${plan.mostPopular ? 'border-primary shadow-lg' : ''}`}
             >
-              {processingPlanId === plan.priceId ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Rocket className="mr-2 h-5 w-5" />
-                  {stripeError ? "Not Available" : "Get Started"}
-                </>
-              )}
-            </Button>
-          </Card>
-        ))}
+              <CardHeader>
+                {plan.mostPopular && (
+                  <Badge className="w-fit mb-2">Most Popular</Badge>
+                )}
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <div className="mb-6">
+                  <span className="text-3xl font-bold">{formatPrice(plan.price, plan.currency)}</span>
+                  <span className="text-muted-foreground">/{plan.interval}</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {plan.features.included.map((feature, i) => (
+                    <div key={i} className="flex items-center">
+                      <Check className="text-green-500 mr-2 h-5 w-5 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                  
+                  {plan.features.excluded.map((feature, i) => (
+                    <div key={i} className="flex items-center text-muted-foreground">
+                      <X className="text-red-400 mr-2 h-5 w-5 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full" 
+                  variant={plan.price === 0 ? "outline" : (plan.mostPopular ? "default" : "secondary")}
+                  onClick={() => plan.price > 0 ? handleSubscribe(plan.id) : setLocation('/dashboard')}
+                  disabled={isCurrentPlan || isLoading === plan.id}
+                >
+                  {isLoading === plan.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isCurrentPlan ? (
+                    'Current Plan'
+                  ) : (
+                    plan.cta
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

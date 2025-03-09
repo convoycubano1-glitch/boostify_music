@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateAudioWithFal } from "@/lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
-import { createPaymentSession } from "@/lib/api/stripe-service";
+import { createCheckoutSession } from "@/lib/api/stripe-service";
 import { auth } from "@/lib/firebase";
 
 interface BookingFormProps {
@@ -58,11 +58,35 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
         price: musician.price
       });
 
-      const response = await createPaymentSession({
-        musicianId: musician.id,
-        price: musician.price,
-        currency: 'usd',
-      });
+      // Comprobar si el usuario es administrador (convoycubano@gmail.com)
+      if (auth.currentUser.email === 'convoycubano@gmail.com') {
+        // Proceso especial para administrador (sin pago)
+        toast({
+          title: "Booking Confirmed",
+          description: "As an administrator, your booking has been confirmed without payment.",
+          variant: "default",
+        });
+        
+        // Cerrar el modal después de confirmar
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+        
+        return;
+      }
+
+      // Obtener token del usuario autenticado
+      const token = await auth.currentUser?.getIdToken();
+      
+      if (!token) {
+        throw new Error("No se pudo obtener el token de autenticación");
+      }
+      
+      // Usar el ID del músico como priceId temporal para bookings
+      // En un sistema real, esto sería un ID de Stripe registrado
+      const priceId = `musician_${musician.id}`;
+      
+      const response = await createCheckoutSession(token, priceId);
 
       // Si llegamos aquí, la redirección a Stripe debería haber ocurrido
       console.log('Booking process completed, should have redirected to Stripe');
