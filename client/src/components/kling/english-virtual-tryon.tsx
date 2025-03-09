@@ -234,9 +234,17 @@ const itemVariants = {
  * EnglishVirtualTryOn Component
  * A complete Virtual Try-On component with improved JPEG handling and English interface
  */
-export function EnglishVirtualTryOn() {
-  const [modelImage, setModelImage] = useState<string>('');
-  const [clothingImage, setClothingImage] = useState<string>('');
+interface EnglishVirtualTryOnProps {
+  initialModelImage?: string;
+  initialClothingImage?: string;
+}
+
+export function EnglishVirtualTryOn({ 
+  initialModelImage = '', 
+  initialClothingImage = '' 
+}: EnglishVirtualTryOnProps) {
+  const [modelImage, setModelImage] = useState<string>(initialModelImage);
+  const [clothingImage, setClothingImage] = useState<string>(initialClothingImage);
   const [modelFileInput, setModelFileInput] = useState<File | null>(null);
   const [clothingFileInput, setClothingFileInput] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -255,6 +263,29 @@ export function EnglishVirtualTryOn() {
   const [alignment, setAlignment] = useState<'auto' | 'manual'>('auto');
   const [offsetX, setOffsetX] = useState<number>(0);
   const [offsetY, setOffsetY] = useState<number>(0);
+
+  // Handle initial image props on mount or when they change
+  useEffect(() => {
+    // If initial images are provided, use them
+    if (initialModelImage && modelImage !== initialModelImage) {
+      setModelImage(initialModelImage);
+      console.log("Using provided model image");
+    }
+    
+    if (initialClothingImage && clothingImage !== initialClothingImage) {
+      setClothingImage(initialClothingImage);
+      console.log("Using provided clothing image");
+    }
+    
+    // If both images are provided, we could optionally auto-start the process
+    // This is commented out as it might be preferable to let the user click the button
+    /*
+    if (initialModelImage && initialClothingImage && !taskId && !isLoading) {
+      console.log("Auto-starting try-on process with provided images");
+      handleStartTryOn();
+    }
+    */
+  }, [initialModelImage, initialClothingImage]);
 
   // Load saved results on mount
   useEffect(() => {
@@ -597,8 +628,8 @@ export function EnglishVirtualTryOn() {
                       </div>
                     )}
                     
-                    {/* Upload button overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
+                    {/* Upload button - Always visible */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <label className="cursor-pointer">
                         <input
                           type="file"
@@ -662,8 +693,8 @@ export function EnglishVirtualTryOn() {
                       </div>
                     )}
                     
-                    {/* Upload button overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
+                    {/* Upload button - Always visible */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <label className="cursor-pointer">
                         <input
                           type="file"

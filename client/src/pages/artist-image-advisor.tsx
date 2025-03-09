@@ -4,6 +4,8 @@ import { ImageStyleAdvisor } from "@/components/image-advisor/image-style-adviso
 import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
 import { ArtistVirtualTryOn } from "@/components/kling/artist-virtual-tryon";
 import { EnglishVirtualTryOn } from "@/components/kling/english-virtual-tryon";
+import { EnglishVirtualTryOnWrapper } from "@/components/kling/EnglishVirtualTryOnWrapper";
+import { FixedUploadButtons } from "@/components/kling/fixed-upload-buttons";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -346,7 +348,9 @@ export default function ArtistImageAdvisorPage() {
                       </div>
                     </div>
                     
-                    {language === "en" ? <EnglishVirtualTryOn /> : <ArtistVirtualTryOn />}
+                    {language === "en" ? (
+                      <EnglishVirtualTryOnWrapper />
+                    ) : <ArtistVirtualTryOn />}
                   </div>
                 </motion.div>
               </TabsContent>
