@@ -382,10 +382,10 @@ export default function AIAdvisorsPage() {
                             <Button
                               variant="default"
                               size="sm"
-                              className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-medium"
+                              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold px-4 py-2 shadow-lg"
                               onClick={() => setLocation("/pricing")}
                             >
-                              Suscribirse
+                              Suscribirse PRO ($99.99/mes)
                             </Button>
                           </div>
                         </SubscriptionFeature>
