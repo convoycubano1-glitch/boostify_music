@@ -11,7 +11,7 @@ import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
-  Film
+  Film, CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -1907,6 +1907,18 @@ ${transcription}`;
                     <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                       <pre className="text-sm whitespace-pre-wrap">{transcription || "Sin transcripción"}</pre>
                     </ScrollArea>
+                    
+                    {/* Mostrar botón de continuar cuando la transcripción se ha completado pero no se ha avanzado al paso 2 */}
+                    {currentStep === 1.5 && (
+                      <Button
+                        onClick={() => setCurrentStep(2)}
+                        className="w-full mb-2 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Continuar al siguiente paso
+                      </Button>
+                    )}
+                    
                     <Button
                       onClick={generateScriptFromTranscription}
                       disabled={!transcription || isGeneratingScript || currentStep < 2}
