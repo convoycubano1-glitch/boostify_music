@@ -7,7 +7,7 @@ import fs from 'fs';
 import axios from 'axios';
 
 // Usar directamente la clave API proporcionada por el usuario
-const PIAPI_API_KEY = "234e9e9975bf40fda7751c9c7855d87b0a4e33fb9f179943a12b08acb1bd4fde";
+const PIAPI_API_KEY = "c49a0972b3f45d9279deb06f04e062e7eb15fbb10495bce81b3f177de6676924";
 // URL directa de la API de Kling
 const KLING_API_URL = 'https://api.piapi.ai/api/v1/task';
 

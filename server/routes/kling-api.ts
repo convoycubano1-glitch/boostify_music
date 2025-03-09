@@ -249,7 +249,26 @@ router.post('/try-on/start', async (req, res) => {
       console.error('❌ Detalles de error en respuesta:', JSON.stringify(error.response.data || {}));
     }
     
-    // Manejar errores de forma descriptiva
+    // Detect authentication errors specifically
+    if (error.response?.status === 401 || 
+        error.response?.data?.message?.includes('API key') || 
+        error.response?.data?.error?.includes('API key') ||
+        error.message?.toLowerCase().includes('authentication') ||
+        error.message?.toLowerCase().includes('api key')) {
+      
+      console.error('⛔ Authentication error detected with Kling API');
+      return res.status(401).json({
+        success: false,
+        status: 'failed',
+        error: 'Authentication error: Invalid API key or insufficient permissions',
+        details: {
+          message: 'Please verify your API key is valid and has the required permissions',
+          originalError: error.response?.data?.message || error.message
+        }
+      });
+    }
+    
+    // Handle other errors descriptively
     const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
     return res.status(500).json({
       success: false,

@@ -51,16 +51,21 @@ const klingService = {
     } catch (error: any) {
       console.error('Error iniciando Try-On:', error);
       
-      // Manejar específicamente el error de clave API
-      if (error.response?.data?.message === 'Invalid API key') {
+      // Manejar específicamente el error de clave API con más detalle
+      if (error.response?.status === 401 || 
+          error.response?.data?.message === 'Invalid API key' || 
+          error.response?.data?.error === 'Invalid API key') {
+        console.error('❌ Error de autenticación con la API de Kling. Detalles:', error.response?.data);
         return {
           success: false,
+          status: 'failed',
           errorMessage: 'Error de autenticación: La clave API no es válida o ha expirado. Por favor, contacte al administrador.'
         };
       }
       
       return {
         success: false,
+        status: 'failed',
         errorMessage: error.response?.data?.error || error.message || 'Error desconocido al iniciar Try-On'
       };
     }
@@ -81,8 +86,11 @@ const klingService = {
     } catch (error: any) {
       console.error('Error verificando estado:', error);
       
-      // Manejar específicamente el error de clave API
-      if (error.response?.data?.message === 'Invalid API key') {
+      // Manejar específicamente el error de clave API con más detalle
+      if (error.response?.status === 401 || 
+          error.response?.data?.message === 'Invalid API key' || 
+          error.response?.data?.error === 'Invalid API key') {
+        console.error('❌ Error de autenticación con la API de Kling. Detalles:', error.response?.data);
         return {
           success: false,
           status: 'failed',

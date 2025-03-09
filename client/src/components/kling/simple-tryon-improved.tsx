@@ -43,7 +43,7 @@ const klingService = {
       // Structure following the format expected by the Kling API
       const response = await axios.post('/api/kling/try-on/start', {
         model: "kling",
-        task_type: "ai_try", // Actualizado al valor correcto según la documentación
+        task_type: "ai_try_on", // Updated to the correct task_type for the newer API version
         input: {
           model_input: modelImage,
           dress_input: clothingImage,
@@ -53,8 +53,22 @@ const klingService = {
       return response.data;
     } catch (error: any) {
       console.error('Error starting Try-On:', error);
+      
+      // Handle API authentication errors specifically with more detail
+      if (error.response?.status === 401 || 
+          error.response?.data?.message === 'Invalid API key' || 
+          error.response?.data?.error === 'Invalid API key') {
+        console.error('❌ Authentication error with Kling API. Details:', error.response?.data);
+        return {
+          success: false,
+          status: 'failed',
+          errorMessage: 'Authentication error: The API key is invalid or has expired. Please contact the administrator.'
+        };
+      }
+      
       return {
         success: false,
+        status: 'failed',
         errorMessage: error.response?.data?.error || error.message || 'Unknown error when starting Try-On'
       };
     }
@@ -75,6 +89,18 @@ const klingService = {
     } catch (error: any) {
       console.error('Error checking status:', error);
       
+      // Handle API authentication errors specifically with more detail
+      if (error.response?.status === 401 || 
+          error.response?.data?.message === 'Invalid API key' || 
+          error.response?.data?.error === 'Invalid API key') {
+        console.error('❌ Authentication error with Kling API while checking status. Details:', error.response?.data);
+        return {
+          success: false,
+          status: 'failed',
+          errorMessage: 'Authentication error: The API key is invalid or has expired. Please contact the administrator.'
+        };
+      }
+      
       // Ensure that the error message is always a string
       let errorMessage = 'Unknown error when checking status';
       
@@ -88,6 +114,7 @@ const klingService = {
       
       return {
         success: false,
+        status: 'failed',
         errorMessage: errorMessage
       };
     }
@@ -102,6 +129,18 @@ const klingService = {
       return response.data;
     } catch (error: any) {
       console.error('Error validating image:', error);
+      
+      // Handle API authentication errors specifically with more detail
+      if (error.response?.status === 401 || 
+          error.response?.data?.message === 'Invalid API key' || 
+          error.response?.data?.error === 'Invalid API key') {
+        console.error('❌ Authentication error with Kling API during image validation. Details:', error.response?.data);
+        return {
+          isValid: false,
+          errorMessage: 'Authentication error: The API key is invalid or has expired. Please contact the administrator.'
+        };
+      }
+      
       return {
         isValid: false,
         errorMessage: error.response?.data?.error || error.message || 'Unknown error when validating image'
