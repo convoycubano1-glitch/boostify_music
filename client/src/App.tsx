@@ -14,6 +14,7 @@ import AnalyticsPage from "@/pages/analytics";
 import AnalyticsDashboardPage from "@/pages/analytics-dashboard";
 import ArtistDashboard from "@/pages/artist-dashboard";
 import ArtistImageAdvisor from "@/pages/artist-image-advisor";
+import ArtistImageAdvisorImproved from "@/pages/artist-image-advisor-improved";
 import ArtistGeneratorPage from "@/pages/artist-generator";
 import BlogPage from "@/pages/blog";
 import BoostifyInternationalPage from "@/pages/boostify-international";
@@ -179,6 +180,7 @@ const Router = () => {
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
   const WrappedAIAdvisorsPage = withPageWrapper(AIAdvisorsPage);
   const WrappedArtistImageAdvisor = withPageWrapper(ArtistImageAdvisor);
+  const WrappedArtistImageAdvisorImproved = withPageWrapper(ArtistImageAdvisorImproved);
   const WrappedArtistGeneratorPage = withPageWrapper(ArtistGeneratorPage);
   const WrappedMerchandisePage = withPageWrapper(MerchandisePage);
   const WrappedEcosystemPage = withPageWrapper(EcosystemPage);
@@ -248,6 +250,7 @@ const Router = () => {
         <ProtectedRoute path="/ai-agents" component={WrappedAIAgentsPage} />
         <ProtectedRoute path="/ai-advisors" component={WrappedAIAdvisorsPage} />
         <ProtectedRoute path="/artist-image-advisor" component={WrappedArtistImageAdvisor} />
+        <Route path="/artist-image-advisor-improved" component={WrappedArtistImageAdvisorImproved} />
         <ProtectedRoute path="/artist-generator" component={WrappedArtistGeneratorPage} />
         <ProtectedRoute path="/merchandise" component={WrappedMerchandisePage} />
         <ProtectedRoute path="/ecosystem" component={WrappedEcosystemPage} />

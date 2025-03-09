@@ -1,218 +1,100 @@
+/**
+ * Servicio para integración con la API de Kling
+ * 
+ * Este servicio proporciona funciones para realizar operaciones con la API de Kling,
+ * específicamente para Virtual Try-On y otras funcionalidades relacionadas con imagen.
+ */
+
 import axios from 'axios';
 
-// Interfaces para las peticiones de Try-On
-export interface TryOnRequest {
-  model: string;
-  task_type: string;
-  input: {
-    model_input: string;
-    dress_input: string;
-    batch_size: number;
-  };
-}
-
-// Interfaces para las respuestas de Try-On
+// Definición de tipos para las respuestas de la API
 export interface TryOnResult {
   success: boolean;
   taskId?: string;
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   progress?: number;
-  error?: string | {
-    message?: string;
-    error?: string;
-    code?: number | string;
-    [key: string]: any; // Para cualquier otra propiedad que pueda contener el objeto de error
-  };
-  images?: Array<{url: string} | string>;
+  resultImage?: string;
   errorMessage?: string;
-  resultImage?: string; // Para mantener compatibilidad con la interfaz del servidor
-  requestId?: string;  // Para mantener compatibilidad con la interfaz del servidor
-  createdAt?: string;
-  id?: string;
 }
 
-/**
- * Interface for image validation result
- */
-export interface ImageValidationResult {
-  isValid: boolean;
-  errorMessage?: string;
-  width?: number;
-  height?: number;
-  originalFormat?: string;
-  sizeInMB?: number;
-  processedImage?: string;
-  normalizedUrl?: string;
-}
-
-/**
- * Validate and process an image to ensure it meets Kling API requirements
- * This function handles JPEG format issues including missing Huffman tables and 0xFF00 sequences
- */
-async function validateAndProcessImage(imageDataUrl: string): Promise<ImageValidationResult> {
-  try {
-    // Use our server-side processor to handle all JPEG corrections
-    const response = await axios.post('/api/kling/process-image', { 
-      imageData: imageDataUrl 
-    });
-    
-    if (response.data.isValid) {
-      return {
-        isValid: true,
-        width: response.data.width,
-        height: response.data.height,
-        originalFormat: response.data.originalFormat,
-        sizeInMB: response.data.sizeInMB,
-        processedImage: response.data.processedImage || response.data.normalizedUrl
-      };
-    } else {
-      return {
-        isValid: false,
-        errorMessage: response.data.errorMessage || 'Unknown image validation error'
-      };
-    }
-  } catch (error: any) {
-    console.error('Error validating image:', error);
-    return {
-      isValid: false,
-      errorMessage: error.response?.data?.error || error.message || 'Failed to process image'
-    };
-  }
-}
-
-// Servicio para interactuar con la API de Kling
-export const klingService = {
+// Clase principal del servicio
+class KlingService {
   /**
-   * Inicia un proceso de Try-On 
-   * @param modelImage Imagen del modelo en formato data URL
-   * @param clothingImage Imagen de la prenda en formato data URL
-   * @returns Resultado con el ID de la tarea para seguimiento
+   * Inicia un proceso de Try-On con Kling API
+   * @param modelImage Imagen de la persona (modelo)
+   * @param clothingImage Imagen de la prenda de ropa
+   * @returns Resultado del inicio del proceso
    */
-  startTryOn: async (modelImage: string, clothingImage: string): Promise<TryOnResult> => {
+  async startTryOn(modelImage: string, clothingImage: string): Promise<TryOnResult> {
     try {
-      // First, validate and process both images to ensure they meet Kling's requirements
-      const processedModelResult = await validateAndProcessImage(modelImage);
-      if (!processedModelResult.isValid) {
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: `Model image error: ${processedModelResult.errorMessage}`
-        };
-      }
+      const response = await axios.post('/api/kling/try-on/start', {
+        modelImage,
+        clothingImage
+      });
       
-      const processedClothingResult = await validateAndProcessImage(clothingImage);
-      if (!processedClothingResult.isValid) {
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: `Clothing image error: ${processedClothingResult.errorMessage}`
-        };
-      }
-
-      const requestBody: TryOnRequest = {
-        model: "kling",
-        task_type: "ai_try_on", // Valor correcto verificado mediante pruebas directas con la API
-        input: {
-          model_input: processedModelResult.processedImage || modelImage,
-          dress_input: processedClothingResult.processedImage || clothingImage,
-          batch_size: 1
-        }
+      return {
+        success: response.data.success,
+        taskId: response.data.taskId,
+        status: response.data.status || 'pending',
+        progress: response.data.progress || 0,
+        errorMessage: response.data.errorMessage
       };
-
-      const response = await axios.post('/api/kling/try-on/start', requestBody);
-      return response.data;
     } catch (error: any) {
-      console.error('Error starting Try-On:', error);
-      
-      // Handle API authentication errors specifically with more detail
-      if (axios.isAxiosError(error) && 
-          (error.response?.status === 401 || 
-           error.response?.data?.message === 'Invalid API key' || 
-           error.response?.data?.error === 'Invalid API key')) {
-        console.error('❌ Authentication error with Kling API. Details:', error.response?.data);
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: 'Authentication error: The API key is invalid or has expired. Please contact the administrator.'
-        };
-      }
-      
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: error.response?.data?.message || error.message || 'Error al iniciar el Try-On'
-        };
-      }
+      console.error('Error iniciando try-on:', error);
       return {
         success: false,
         status: 'failed',
-        errorMessage: 'Error desconocido al iniciar el Try-On'
+        errorMessage: error.response?.data?.message || error.message || 'Error desconocido'
       };
     }
-  },
+  }
 
   /**
    * Verifica el estado de un proceso de Try-On
    * @param taskId ID de la tarea a verificar
-   * @returns Estado actual del proceso
+   * @returns Estado actualizado del proceso
    */
-  checkTryOnStatus: async (taskId: string): Promise<TryOnResult> => {
+  async checkTryOnStatus(taskId: string): Promise<TryOnResult> {
     try {
-      const response = await axios.post('/api/kling/try-on/status', { taskId });
-      return response.data;
+      const response = await axios.get(`/api/kling/try-on/status?taskId=${taskId}`);
+      
+      return {
+        success: response.data.success,
+        taskId: response.data.taskId,
+        status: response.data.status,
+        progress: response.data.progress || 0,
+        resultImage: response.data.resultImage,
+        errorMessage: response.data.errorMessage
+      };
     } catch (error: any) {
-      console.error('Error checking Try-On status:', error);
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          status: 'failed',
-          errorMessage: error.response?.data?.message || error.message || 'Error al verificar el estado'
-        };
-      }
+      console.error('Error verificando estado de try-on:', error);
       return {
         success: false,
+        taskId,
         status: 'failed',
-        errorMessage: 'Error desconocido al verificar el estado'
+        errorMessage: error.response?.data?.message || error.message || 'Error desconocido'
       };
     }
-  },
-  
+  }
+
   /**
-   * Save a completed try-on result
-   * @param result TryOnResult containing taskId and resultImage
-   * @returns boolean indicating success
+   * Procesa una imagen para asegurar compatibilidad con Kling API
+   * @param imageDataUrl URL de datos de la imagen (data URL)
+   * @returns Imagen procesada y validada
    */
-  saveResult: async (result: TryOnResult): Promise<boolean> => {
+  async processImage(imageDataUrl: string): Promise<any> {
     try {
-      if (!result.resultImage || !result.taskId) {
-        throw new Error('No valid result to save');
-      }
-      
-      await axios.post('/api/kling/save-result', {
-        type: 'try-on',
-        taskId: result.taskId,
-        resultImage: result.resultImage
+      const response = await axios.post('/api/kling/process-image', {
+        imageDataUrl
       });
       
-      return true;
+      return response.data;
     } catch (error: any) {
-      console.error('Error saving Try-On result:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Get all saved try-on results
-   * @returns Array of TryOnResult
-   */
-  getResults: async (): Promise<TryOnResult[]> => {
-    try {
-      const response = await axios.get('/api/kling/results?type=try-on');
-      return response.data.results || [];
-    } catch (error: any) {
-      console.error('Error fetching saved Try-On results:', error);
-      return [];
+      console.error('Error procesando imagen:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Error procesando imagen');
     }
   }
-};
+}
+
+// Exportamos una instancia única para usar en toda la aplicación
+export const klingService = new KlingService();
