@@ -36,22 +36,44 @@ export interface SubscriptionStatus {
  */
 export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
   try {
-    const response = await apiRequest('/api/stripe/subscription-status');
-    return response;
+    // Intentamos obtener la suscripción con un timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos de timeout
+    
+    const response = await apiRequest('/api/stripe/subscription-status', {
+      signal: controller.signal
+    }).catch(e => {
+      console.warn('Falló la solicitud de suscripción', e);
+      return null;
+    });
+    
+    clearTimeout(timeoutId);
+    
+    // Verificar si tenemos una respuesta válida, si no usar el fallback
+    if (response && response.currentPlan) {
+      return response;
+    } else {
+      console.warn('La respuesta de suscripción no es válida, usando estado predeterminado');
+      return getDefaultSubscriptionStatus();
+    }
   } catch (error) {
     console.error('Error al obtener el estado de la suscripción:', error);
-    // Devolver un estado predeterminado en caso de error
-    return {
-      id: null,
-      plan: null,
-      currentPlan: 'free',
-      status: null,
-      active: false,
-      cancelAtPeriodEnd: false,
-      currentPeriodEnd: null,
-      priceId: null
-    };
+    return getDefaultSubscriptionStatus();
   }
+}
+
+// Función separada para obtener un estado predeterminado
+function getDefaultSubscriptionStatus(): SubscriptionStatus {
+  return {
+    id: null,
+    plan: null,
+    currentPlan: 'free', // Plan gratuito por defecto
+    status: 'active', // Lo marcamos como activo
+    active: true,     // Marcarlo activo para evitar problemas de navegación
+    cancelAtPeriodEnd: false,
+    currentPeriodEnd: null,
+    priceId: null
+  };
 }
 
 /**
@@ -62,7 +84,7 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
 export async function createSubscription(planId: string): Promise<string> {
   const response = await apiRequest('/api/stripe/create-subscription', {
     method: 'POST',
-    data: { planId }
+    body: { priceId: planId }
   });
   
   if (!response.success || !response.url) {
@@ -80,7 +102,7 @@ export async function createSubscription(planId: string): Promise<string> {
 export async function updateSubscription(planId: string): Promise<string> {
   const response = await apiRequest('/api/stripe/update-subscription', {
     method: 'POST',
-    data: { planId }
+    body: { priceId: planId }
   });
   
   if (!response.success || !response.url) {

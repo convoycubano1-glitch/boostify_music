@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
-import { 
-  SubscriptionPlan, 
-  PLAN_HIERARCHY
-} from '@/lib/api/subscription-service';
+import { SubscriptionPlan } from '@/lib/api/subscription-service';
 
 /**
  * Opciones para el hook useSubscriptionFeature
@@ -13,23 +10,6 @@ export interface UseSubscriptionFeatureOptions {
    * Lista de correos electrónicos de administradores que siempre tienen acceso
    */
   adminEmails?: string[];
-}
-
-/**
- * Verifica si un plan tiene acceso a una característica
- * @param currentPlan Plan actual
- * @param requiredPlan Plan requerido
- * @returns true si tiene acceso
- */
-function canAccessFeature(
-  currentPlan: SubscriptionPlan,
-  requiredPlan: SubscriptionPlan
-): boolean {
-  if (!currentPlan || !requiredPlan) {
-    return false;
-  }
-  
-  return PLAN_HIERARCHY[currentPlan] >= PLAN_HIERARCHY[requiredPlan];
 }
 
 /**
@@ -43,7 +23,7 @@ export function useSubscriptionFeature(
   requiredPlan: SubscriptionPlan,
   options?: UseSubscriptionFeatureOptions
 ) {
-  const { subscription, isLoading, user } = useSubscription();
+  const { subscription, isLoading, user, hasAccess: checkAccess } = useSubscription();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   
@@ -58,12 +38,11 @@ export function useSubscriptionFeature(
     // Determinar si tiene acceso basado en el plan de suscripción o si es admin
     if (isAdmin) {
       setHasAccess(true);
-    } else if (subscription) {
-      setHasAccess(canAccessFeature(subscription.currentPlan, requiredPlan));
     } else {
-      setHasAccess(requiredPlan === 'free');
+      // Usar la función hasAccess del contexto de suscripción
+      setHasAccess(checkAccess(requiredPlan));
     }
-  }, [user, subscription, requiredPlan, isAdmin, options?.adminEmails]);
+  }, [user, checkAccess, requiredPlan, isAdmin, options?.adminEmails]);
 
   return {
     hasAccess,

@@ -20,41 +20,49 @@ export function BottomNav() {
       title: "Home",
       icon: Home,
       href: "/dashboard",
+      plan: "free" // Accesible para todos
     },
     {
       title: "Video",
       icon: Video,
       href: "/music-video-creator",
+      plan: "premium" // Requiere suscripción premium
     },
     {
       title: "Music",
       icon: Music2,
       href: "/producer-tools",
+      plan: "pro" // Requiere suscripción pro
     },
     {
       title: "Social",
       icon: MessageSquare,
       href: "/firestore-social",
+      plan: "basic" // Requiere suscripción básica
     },
     {
       title: "Stats",
       icon: BarChart2,
       href: "/analytics-dashboard",
+      plan: "pro" // Requiere suscripción pro
     },
     {
       title: "Artist",
       icon: Mic,
       href: "/artist-dashboard",
+      plan: "basic" // Requiere suscripción básica
     },
     {
       title: "AI",
       icon: Bot,
       href: "/ai-agents",
+      plan: "premium" // Requiere suscripción premium
     },
     {
       title: "Profile",
       icon: User,
       href: "/profile",
+      plan: "free" // Accesible para todos
     },
   ];
 
@@ -251,6 +259,20 @@ export function BottomNav() {
                         />
                         {location === item.href && (
                           <div className="absolute -inset-1 bg-orange-500/20 rounded-full blur animate-pulse" />
+                        )}
+                        
+                        {/* Indicador de nivel de suscripción requerido */}
+                        {item.plan && item.plan !== 'free' && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center">
+                            <div className={cn(
+                              "text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center",
+                              item.plan === 'basic' ? "bg-blue-600 text-white" : 
+                              item.plan === 'pro' ? "bg-purple-600 text-white" : 
+                              "bg-orange-600 text-white"
+                            )}>
+                              {item.plan === 'basic' ? 'B' : item.plan === 'pro' ? 'P' : 'P+'}
+                            </div>
+                          </div>
                         )}
                       </div>
                       <span

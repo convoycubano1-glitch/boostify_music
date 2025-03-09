@@ -43,15 +43,22 @@ const PRICE_ID_TO_PLAN = {
  */
 router.post('/create-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    const { planId } = req.body;
+    // Aceptar tanto priceId como planId para mayor compatibilidad
+    const { priceId, planId } = req.body;
     const userId = req.user?.uid;
+    
+    // Usar el ID que venga, priorizando priceId (enviado desde el cliente)
+    const selectedId = priceId || planId;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
 
-    if (!planId || !PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS]) {
-      return res.status(400).json({ success: false, message: 'Plan inválido' });
+    // Si es un plan conocido, usar su priceId, de lo contrario usar el ID directamente
+    const isKnownPlan = !!PLAN_PRICE_IDS[selectedId as keyof typeof PLAN_PRICE_IDS];
+    
+    if (!selectedId) {
+      return res.status(400).json({ success: false, message: 'Plan o precio no especificado' });
     }
 
     // Obtener información del usuario de Firestore
@@ -78,12 +85,19 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
     }
     
     // Crear sesión de checkout
+    // Determinar el precio a usar - si es un ID de precio directo o una clave de plan
+    const priceToUse = isKnownPlan 
+      ? PLAN_PRICE_IDS[selectedId as keyof typeof PLAN_PRICE_IDS] 
+      : selectedId;
+    
+    const planKey = isKnownPlan ? selectedId : PRICE_ID_TO_PLAN[selectedId as keyof typeof PRICE_ID_TO_PLAN] || 'custom';
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS],
+          price: priceToUse,
           quantity: 1
         }
       ],
@@ -92,12 +106,12 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
       cancel_url: `${BASE_URL}/subscription-cancelled`,
       metadata: {
         userId,
-        planId
+        planId: planKey
       },
       subscription_data: {
         metadata: {
           userId,
-          planId
+          planId: planKey
         }
       }
     });
@@ -241,15 +255,22 @@ router.post('/cancel-subscription', authenticate, async (req: Request, res: Resp
  */
 router.post('/update-subscription', authenticate, async (req: Request, res: Response) => {
   try {
-    const { planId } = req.body;
+    // Aceptar tanto priceId como planId para mayor compatibilidad
+    const { priceId, planId } = req.body;
     const userId = req.user?.uid;
+    
+    // Usar el ID que venga, priorizando priceId (enviado desde el cliente)
+    const selectedId = priceId || planId;
     
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
     
-    if (!planId || !PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS]) {
-      return res.status(400).json({ success: false, message: 'Plan inválido' });
+    // Si es un plan conocido, usar su priceId, de lo contrario usar el ID directamente
+    const isKnownPlan = !!PLAN_PRICE_IDS[selectedId as keyof typeof PLAN_PRICE_IDS];
+    
+    if (!selectedId) {
+      return res.status(400).json({ success: false, message: 'Plan o precio no especificado' });
     }
     
     // Obtener información del usuario de Firestore
@@ -282,27 +303,34 @@ router.post('/update-subscription', authenticate, async (req: Request, res: Resp
     const subscription = subscriptions.data[0];
     
     // Crear sesión para actualizar la suscripción
+    // Determinar el precio a usar - si es un ID de precio directo o una clave de plan
+    const priceToUse = isKnownPlan 
+      ? PLAN_PRICE_IDS[selectedId as keyof typeof PLAN_PRICE_IDS] 
+      : selectedId;
+    
+    const planKey = isKnownPlan ? selectedId : PRICE_ID_TO_PLAN[selectedId as keyof typeof PRICE_ID_TO_PLAN] || 'custom';
+    
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: userData.stripeCustomerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: PLAN_PRICE_IDS[planId as keyof typeof PLAN_PRICE_IDS],
+          price: priceToUse,
           quantity: 1
         }
       ],
       subscription_data: {
         metadata: {
           userId,
-          planId
+          planId: planKey
         }
       },
       success_url: `${BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/subscription-cancelled`,
       metadata: {
         userId,
-        planId,
+        planId: planKey,
         subscriptionId: subscription.id
       }
     });

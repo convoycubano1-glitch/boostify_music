@@ -38,7 +38,7 @@ export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
-  plan: text("plan", { enum: ["basic", "pro", "enterprise"] }).notNull(),
+  plan: text("plan", { enum: ["free", "basic", "pro", "premium"] }).notNull(),
   status: text("status", { enum: ["active", "cancelled", "expired"] }).notNull(),
   currentPeriodEnd: timestamp("current_period_end").notNull()
 });

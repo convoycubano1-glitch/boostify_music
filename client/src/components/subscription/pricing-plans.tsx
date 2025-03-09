@@ -225,16 +225,21 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
       
       // MÉTODO MEJORADO: Siempre usar la API para crear una sesión de checkout dinámica
       if (priceId) {
-        // Intentar crear una sesión de checkout con la API
-        const response = await createCheckoutSession(priceId);
-        console.log("Respuesta de creación de sesión:", response);
-        
-        if (response.success && response.url) {
+        try {
+          // Intentar crear una sesión de checkout con la API
+          const sessionUrl = await createCheckoutSession(priceId);
+          console.log("URL de sesión de checkout:", sessionUrl);
+          
           // Redirigir al usuario a la URL de checkout generada
-          window.location.href = response.url;
+          if (typeof sessionUrl === 'string') {
+            window.location.href = sessionUrl;
+          } else {
+            throw new Error("Formato de respuesta de sesión incorrecto");
+          }
           return;
-        } else {
-          throw new Error(response.message || "No se pudo crear la sesión de checkout");
+        } catch (error) {
+          console.error("Error al crear sesión de checkout:", error);
+          throw error;
         }
       } else {
         throw new Error("ID de precio no disponible para el plan seleccionado");
@@ -312,11 +317,11 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
                 className="w-full" 
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleSubscribe(plan.key, yearly)}
-                disabled={isLoading || (subscription?.status === 'active' && subscription?.currentPlan === plan.key)}
+                disabled={isLoading || (subscription?.active && subscription?.currentPlan === plan.key)}
               >
                 {isLoading ? (
                   <Skeleton className="h-4 w-20" />
-                ) : subscription?.status === 'active' && subscription?.currentPlan === plan.key ? (
+                ) : subscription?.active && subscription?.currentPlan === plan.key ? (
                   'Current Plan'
                 ) : (
                   'Subscribe'
@@ -391,11 +396,11 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
                 className="w-full" 
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleSubscribe(plan.key, yearly)}
-                disabled={isLoading || (subscription?.status === 'active' && subscription?.currentPlan === plan.key)}
+                disabled={isLoading || (subscription?.active && subscription?.currentPlan === plan.key)}
               >
                 {isLoading ? (
                   <Skeleton className="h-4 w-20" />
-                ) : subscription?.status === 'active' && subscription?.currentPlan === plan.key ? (
+                ) : subscription?.active && subscription?.currentPlan === plan.key ? (
                   'Current Plan'
                 ) : (
                   'Subscribe'

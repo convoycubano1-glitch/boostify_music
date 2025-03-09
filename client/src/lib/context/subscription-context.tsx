@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   SubscriptionPlan, 
   SubscriptionStatus, 
-  getSubscriptionStatus 
+  getSubscriptionStatus,
+  PLAN_HIERARCHY,
+  canAccessFeature
 } from '@/lib/api/subscription-service';
 import { useAuth } from './auth-context';
 
@@ -30,6 +32,9 @@ export interface SubscriptionContextType {
   
   // Acciones
   refreshSubscription: () => void;
+  
+  // Verificación de acceso
+  hasAccess: (requiredPlan: SubscriptionPlan) => boolean;
 }
 
 // Crear el contexto
@@ -38,7 +43,8 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   isLoading: false,
   isError: false,
   user: null,
-  refreshSubscription: () => {}
+  refreshSubscription: () => {},
+  hasAccess: () => false
 });
 
 /**
@@ -87,7 +93,38 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   }, [authUser, authLoading]);
   
   // Estado de carga combinado
-  const isLoading = authLoading || (subscriptionLoading && !!authUser);
+  // Forzamos isLoading a false después de un tiempo para evitar bloqueos indefinidos
+  const [forceLoaded, setForceLoaded] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setForceLoaded(true);
+    }, 3000); // 3 segundos máximo de espera
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  const isLoading = !forceLoaded && (authLoading || (subscriptionLoading && !!authUser));
+  
+  /**
+   * Verifica si el usuario tiene acceso a un plan específico
+   * @param requiredPlan Plan requerido para acceder
+   * @returns true si tiene acceso
+   */
+  const hasAccess = (requiredPlan: SubscriptionPlan): boolean => {
+    // Si el usuario es el administrador, siempre tiene acceso
+    if (user?.email === 'convoycubano@gmail.com') {
+      return true;
+    }
+    
+    // Si no hay suscripción, solo permitir acceso al plan gratuito
+    if (!subscription) {
+      return requiredPlan === 'free';
+    }
+    
+    // Usar la utilidad canAccessFeature para verificar el acceso
+    return canAccessFeature(subscription.currentPlan, requiredPlan);
+  };
   
   // Valores para el contexto
   const value: SubscriptionContextType = {
@@ -95,7 +132,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     isLoading,
     isError,
     user,
-    refreshSubscription
+    refreshSubscription,
+    hasAccess
   };
   
   return (

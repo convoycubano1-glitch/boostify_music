@@ -66,7 +66,7 @@ export async function fetchStripePublicKey(): Promise<string> {
  * @param priceId El ID del precio/plan al que se quiere suscribir el usuario
  * @returns La URL de la sesión de checkout
  */
-export async function createCheckoutSession(priceId: string): Promise<StripeCheckoutResponse> {
+export async function createCheckoutSession(priceId: string): Promise<string> {
   try {
     // Mapping de claves de plan a IDs de precio (para soporte de claves por nombre)
     const priceIdMapping: {[key: string]: string} = {
@@ -87,18 +87,19 @@ export async function createCheckoutSession(priceId: string): Promise<StripeChec
       headers: {
         'Content-Type': 'application/json'
       },
-      data: { priceId: actualPriceId }
+      body: { priceId: actualPriceId }
     });
     
     console.log('Respuesta de API de Stripe:', response);
     
-    return response as StripeCheckoutResponse;
+    if (response.success && response.url) {
+      return response.url;
+    } else {
+      throw new Error(response.message || 'No se pudo crear la sesión de checkout')
+    }
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    return {
-      success: false,
-      message: 'No se pudo crear la sesión de pago. Por favor, contacta al soporte.'
-    };
+    throw new Error('No se pudo crear la sesión de pago. Por favor, contacta al soporte.');
   }
 }
 
@@ -128,9 +129,9 @@ export async function cancelSubscription(): Promise<{success: boolean; message?:
  * Actualiza la suscripción activa del usuario a un nuevo plan
  * 
  * @param priceId El ID del nuevo precio/plan
- * @returns Resultado de la operación
+ * @returns Resultado de la operación o URL para checkout si requiere cambio de método de pago
  */
-export async function updateSubscription(priceId: string): Promise<{success: boolean; message?: string}> {
+export async function updateSubscription(priceId: string): Promise<{success: boolean; message?: string; url?: string}> {
   try {
     const response = await apiRequest({
       url: '/api/stripe/update-subscription',
@@ -138,16 +139,13 @@ export async function updateSubscription(priceId: string): Promise<{success: boo
       headers: {
         'Content-Type': 'application/json'
       },
-      data: { priceId }
+      body: { priceId }
     });
     
-    return response as {success: boolean; message?: string};
+    return response as {success: boolean; message?: string; url?: string};
   } catch (error) {
     console.error('Error updating subscription:', error);
-    return {
-      success: false,
-      message: 'No se pudo actualizar la suscripción'
-    };
+    throw new Error('No se pudo actualizar la suscripción');
   }
 }
 
