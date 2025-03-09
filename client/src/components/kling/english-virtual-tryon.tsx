@@ -187,7 +187,7 @@ async function validateAndProcessImage(imageDataUrl: string): Promise<ImageValid
   try {
     // Use our server-side processor to handle all JPEG corrections
     const response = await axios.post('/api/kling/process-image', { 
-      imageData: imageDataUrl 
+      imageDataUrl: imageDataUrl 
     });
     
     if (response.data.isValid) {
