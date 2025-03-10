@@ -27,9 +27,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
-import { ToolIconWithTooltip } from "./tool-icon-with-tooltip";
 import "./ecosystem-dashboard.css";
-import "./tooltips.css";
 
 // Tipo para las métricas del usuario
 interface UserMetrics {
