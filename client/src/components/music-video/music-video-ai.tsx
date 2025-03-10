@@ -11,7 +11,7 @@ import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
-  Film, CheckCircle, FileText, Sparkles, Music, Info, Music2 as WaveformIcon, X
+  Film, CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,6 +38,7 @@ import {
   type VideoPromptParams 
 } from "@/lib/api/openrouter";
 import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
+import { FileText } from "lucide-react";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({
@@ -1932,166 +1933,93 @@ ${transcription}`;
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
-      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-r from-orange-600/20 to-purple-600/20 blur-3xl opacity-30 -z-10"></div>
-      
+    <div className="min-h-screen bg-background">
       <ProgressSteps 
         currentStep={currentStep} 
         steps={[
           {
-            title: "Transcripción",
+            title: "Transcripción de Audio",
             description: "Analizando y transcribiendo la letra de tu canción",
             status: currentStep > 1 ? "completed" : currentStep === 1 ? "current" : "pending"
           },
           {
-            title: "Guion",
+            title: "Generación de Guion",
             description: "Creando un guion visual basado en tu música",
             status: currentStep > 2 ? "completed" : currentStep === 2 ? "current" : "pending"
           },
           {
             title: "Sincronización",
-            description: "Sincronizando el video con el ritmo",
+            description: "Sincronizando el video con el ritmo de la música",
             status: currentStep > 3 ? "completed" : currentStep === 3 ? "current" : "pending"
           },
           {
-            title: "Escenas",
+            title: "Generación de Escenas",
             description: "Creando las escenas del video musical",
             status: currentStep > 4 ? "completed" : currentStep === 4 ? "current" : "pending"
           },
           {
-            title: "Renderizado",
-            description: "Combinando todo en tu video final",
+            title: "Renderizado Final",
+            description: "Combinando todo en tu video musical",
             status: currentStep > 5 ? "completed" : currentStep === 5 ? "current" : "pending"
           }
         ]}
       />
 
-      <div className="container py-6 space-y-8 px-4 sm:px-6">
-        <Card className="p-4 sm:p-6 shadow-lg backdrop-blur-sm bg-background/90 border-orange-500/20 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-500/10 to-purple-500/10 blur-2xl rounded-full -z-0"></div>
-          
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 relative z-10">
-            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg transform transition-transform duration-500 hover:scale-105">
-              <Video className="h-7 w-7 text-white" />
+      <div className="container py-6 space-y-8">
+        <Card className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+              <Video className="h-6 w-6 text-orange-500" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">Creador de Videos Musicales AI</h2>
+              <h2 className="text-xl font-semibold">Creador de Videos Musicales AI</h2>
               <p className="text-sm text-muted-foreground">
-                Transforma tu música en experiencias visuales profesionales
+                Transforma tu música en experiencias visuales
               </p>
             </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="space-y-6 order-2 lg:order-1">
-              <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                      <span className="text-orange-500 font-bold">1</span>
-                    </div>
-                    <Label className="text-lg font-semibold">Subir Audio</Label>
-                  </div>
-                </div>
-                
-                <div className="space-y-4 relative z-10">
-                  <div 
-                    className="border-2 border-dashed border-orange-200/40 dark:border-orange-500/20 rounded-lg p-8 text-center cursor-pointer transition-colors hover:bg-orange-50/50 dark:hover:bg-orange-950/10 relative"
-                    onClick={() => document.getElementById('audio-upload')?.click()}
-                  >
-                    <input
-                      id="audio-upload"
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleFileChange}
-                      disabled={isTranscribing}
-                      className="hidden"
-                      capture="user"
-                    />
-                    <Music2 className="h-12 w-12 mx-auto mb-2 text-orange-500/70" />
-                    <p className="font-medium">
-                      {selectedFile ? 'Cambiar archivo de audio' : 'Haz clic para subir o capturar audio'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Soporta MP3, WAV, M4A (Máx. 10MB)
-                    </p>
-                  </div>
-                  
+              <div className="border rounded-lg p-4">
+                <Label className="text-lg font-semibold mb-4">1. Subir Audio</Label>
+                <div className="space-y-4">
+                  <Input
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleFileChange}
+                    disabled={isTranscribing}
+                  />
                   {selectedFile && (
-                    <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg text-sm animate-fadeIn">
-                      <Music2 className="h-5 w-5 text-orange-500" />
-                      <div className="flex-1 truncate">
-                        <span className="font-medium">{selectedFile.name}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          ({(selectedFile.size / (1024 * 1024)).toFixed(2)}MB)
-                        </span>
-                      </div>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-7 w-7"
-                        onClick={() => setSelectedFile(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Music2 className="h-4 w-4" />
+                      <span>{selectedFile.name}</span>
                     </div>
                   )}
-                  
                   {isTranscribing && (
-                    <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg text-sm animate-pulse">
-                      <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
-                      <span className="font-medium">Transcribiendo audio...</span>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Transcribiendo audio...</span>
                     </div>
                   )}
                 </div>
               </div>
 
               <div className="space-y-6">
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">2</span>
-                      </div>
-                      <Label className="text-lg font-semibold">Transcripción</Label>
-                    </div>
-                    {transcription && (
-                      <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Completada
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-4 relative z-10">
-                    <ScrollArea className="h-[200px] w-full rounded-md border border-orange-500/20 p-4 bg-black/60 backdrop-blur-sm">
-                      {transcription ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs text-orange-300 mb-2">
-                            <Music2 className="h-3 w-3 text-orange-400" />
-                            <span>Letra detectada</span>
-                          </div>
-                          <pre className="text-sm whitespace-pre-wrap font-medium text-white">{transcription}</pre>
-                        </div>
-                      ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center">
-                          <FileText className="h-12 w-12 mb-2 text-orange-500/60" />
-                          <p className="text-zinc-300">Sube un archivo de audio para transcribir la letra</p>
-                        </div>
-                      )}
+                <div className="border rounded-lg p-4">
+                  <Label className="text-lg font-semibold mb-4">2. Transcripción</Label>
+                  <div className="space-y-4">
+                    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                      <pre className="text-sm whitespace-pre-wrap">{transcription || "Sin transcripción"}</pre>
                     </ScrollArea>
                     
                     {/* Mostrar botón de continuar cuando la transcripción se ha completado pero no se ha avanzado al paso 2 */}
                     {currentStep === 1.5 && (
                       <Button
                         onClick={() => setCurrentStep(2)}
-                        className="w-full mb-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md"
+                        className="w-full mb-2 bg-green-600 hover:bg-green-700"
                       >
-                        <CheckCircle className="mr-2 h-4 w-4" />
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
                         Continuar al siguiente paso
                       </Button>
                     )}
@@ -2099,160 +2027,104 @@ ${transcription}`;
                     <Button
                       onClick={generateScriptFromTranscription}
                       disabled={!transcription || isGeneratingScript || currentStep < 2}
-                      className={`w-full relative group overflow-hidden transition-all duration-300 ${
-                        !transcription || isGeneratingScript || currentStep < 2 ? 
-                        'opacity-70' : 
-                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md'
-                      }`}
+                      className="w-full"
                     >
-                      <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
                       {isGeneratingScript ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Generando guion...</span>
+                          Generando guion...
                         </>
                       ) : (
                         <>
                           <FileText className="mr-2 h-4 w-4" />
-                          <span>Generar Guion Musical</span>
+                          Generar Guion Musical
                         </>
                       )}
                     </Button>
                   </div>
                 </div>
 
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">3</span>
-                      </div>
-                      <Label className="text-lg font-semibold">Guion Profesional</Label>
-                    </div>
+                <div className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <Label className="text-lg font-semibold">3. Guion Profesional</Label>
                     {scriptContent && (
-                      <Badge className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 animate-fade-in">
+                      <Badge variant="outline" className="bg-amber-50 text-amber-800 hover:bg-amber-100">
                         <Film className="h-3 w-3 mr-1" />
-                        Análisis completado
+                        Análisis cinematográfico
                       </Badge>
                     )}
                   </div>
                   
-                  <div className="space-y-4 relative z-10">
+                  <div className="space-y-4">
                     {!scriptContent ? (
-                      <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground bg-gradient-to-b from-slate-50/50 to-slate-100/50 dark:from-slate-900/20 dark:to-slate-800/20 rounded-md border border-dashed border-slate-200 dark:border-slate-700">
-                        <div className="w-16 h-16 rounded-full bg-orange-50 dark:bg-orange-950/20 flex items-center justify-center mb-3">
-                          <FileText className="h-8 w-8 text-orange-400" />
-                        </div>
-                        <p className="font-medium max-w-md">El guion profesional se generará basado en la transcripción de la letra</p>
-                        <p className="text-xs mt-3 max-w-md text-muted-foreground px-6">
-                          Incluirá análisis de género musical, estructura narrativa, diseño visual y segmentación por escenas con vocabulario cinematográfico
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground bg-slate-50 rounded-md">
+                        <FileText className="h-12 w-12 mb-3 text-muted-foreground/50" />
+                        <p className="max-w-md">El guion profesional se generará basado en la transcripción de la letra.</p>
+                        <p className="text-xs mt-2 max-w-md text-muted-foreground/70">
+                          Incluirá análisis de género musical, estructura narrativa, diseño visual y segmentación por escenas con vocabulario cinematográfico.
                         </p>
                       </div>
                     ) : (
-                      <div className="animate-fade-in">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs mb-4">
-                          <div className="bg-black/70 p-3 rounded-md border border-orange-500/30 transform transition-transform hover:scale-105 shadow-md">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Music2 className="h-3 w-3 text-orange-500" />
-                              <span className="font-semibold block text-white">Análisis Musical</span>
-                            </div>
-                            <span className="text-orange-300">Género y estructura rítmica</span>
+                      <>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <span className="font-semibold block">Análisis Musical</span>
+                            <span className="text-muted-foreground">Género y estructura</span>
                           </div>
-                          <div className="bg-black/70 p-3 rounded-md border border-orange-500/30 transform transition-transform hover:scale-105 shadow-md">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Film className="h-3 w-3 text-orange-500" />
-                              <span className="font-semibold block text-white">Narrativa Visual</span>
-                            </div>
-                            <span className="text-orange-300">Arco emocional y mensajes</span>
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <span className="font-semibold block">Narrativa Visual</span>
+                            <span className="text-muted-foreground">Arco emocional y mensajes</span>
                           </div>
-                          <div className="bg-black/70 p-3 rounded-md border border-orange-500/30 transform transition-transform hover:scale-105 shadow-md">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Video className="h-3 w-3 text-orange-500" />
-                              <span className="font-semibold block text-white">Dirección Técnica</span>
-                            </div>
-                            <span className="text-orange-300">Planos, transiciones, mood</span>
+                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
+                            <span className="font-semibold block">Dirección Técnica</span>
+                            <span className="text-muted-foreground">Planos, transiciones, mood</span>
                           </div>
                         </div>
                         
-                        <div className="relative">
-                          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-transparent rounded-full blur-2xl"></div>
-                          <ScrollArea className="h-[300px] w-full rounded-md p-4 bg-gradient-to-b from-zinc-950 to-zinc-900 border border-zinc-800 relative shadow-lg">
-                            <div className="flex items-center text-xs text-zinc-500 mb-3 pb-2 border-b border-zinc-800">
-                              <span className="mr-auto">GUION_CINEMATOGRÁFICO.json</span>
-                              <div className="flex gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                              </div>
-                            </div>
-                            <pre className="text-sm whitespace-pre-wrap font-mono text-zinc-300">{scriptContent}</pre>
-                          </ScrollArea>
-                        </div>
-                      </div>
+                        <ScrollArea className="h-[300px] w-full rounded-md border border-zinc-200 p-4 bg-zinc-950 text-zinc-100">
+                          <pre className="text-sm whitespace-pre-wrap font-mono">{scriptContent}</pre>
+                        </ScrollArea>
+                      </>
                     )}
                   </div>
                 </div>
 
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">4</span>
-                      </div>
-                      <Label className="text-lg font-semibold">Estilo Visual</Label>
+                <div className="border rounded-lg p-4">
+                  <Label className="text-lg font-semibold mb-4">4. Estilo Visual</Label>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label>Formato de Cámara</Label>
+                      <Select
+                        value={videoStyle.cameraFormat}
+                        onValueChange={(value) => setVideoStyle(prev => ({ ...prev, cameraFormat: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar formato de cámara" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {videoStyles.cameraFormats.map((format) => (
+                            <SelectItem key={format.name} value={format.name}>
+                              <div className="grid gap-1">
+                                <span>{format.name}</span>
+                                <span className="text-xs text-muted-foreground">{format.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    {(videoStyle.mood && videoStyle.colorPalette && videoStyle.characterStyle) && (
-                      <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">
-                        <Video className="h-3 w-3 mr-1" />
-                        Configurado
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-6 relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Video className="h-4 w-4 text-orange-500" />
-                          <Label className="font-medium text-white">Formato de Cámara</Label>
-                        </div>
-                        <Select
-                          value={videoStyle.cameraFormat}
-                          onValueChange={(value) => setVideoStyle(prev => ({ ...prev, cameraFormat: value }))}
-                        >
-                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
-                            <SelectValue placeholder="Seleccionar formato de cámara" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
-                            {videoStyles.cameraFormats.map((format) => (
-                              <SelectItem key={format.name} value={format.name}>
-                                <div className="grid gap-1">
-                                  <span>{format.name}</span>
-                                  <span className="text-xs text-orange-300">{format.description}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
 
-                      <div className="space-y-2 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Music2 className="h-4 w-4 text-orange-500" />
-                          <Label className="font-medium text-white">Mood</Label>
-                        </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Mood</Label>
                         <Select
                           value={videoStyle.mood}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
                         >
-                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
+                          <SelectTrigger>
                             <SelectValue placeholder="Seleccionar mood" />
                           </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
+                          <SelectContent>
                             {videoStyles.moods.map((mood) => (
                               <SelectItem key={mood} value={mood}>
                                 {mood}
@@ -2262,19 +2134,16 @@ ${transcription}`;
                         </Select>
                       </div>
 
-                      <div className="space-y-2 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <ImageIcon className="h-4 w-4 text-orange-500" />
-                          <Label className="font-medium text-white">Paleta de Colores</Label>
-                        </div>
+                      <div className="space-y-2">
+                        <Label>Paleta de Colores</Label>
                         <Select
                           value={videoStyle.colorPalette}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
                         >
-                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
+                          <SelectTrigger>
                             <SelectValue placeholder="Seleccionar paleta" />
                           </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
+                          <SelectContent>
                             {videoStyles.colorPalettes.map((palette) => (
                               <SelectItem key={palette} value={palette}>
                                 {palette}
@@ -2285,25 +2154,17 @@ ${transcription}`;
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                            <line x1="9" y1="9" x2="9.01" y2="9" />
-                            <line x1="15" y1="9" x2="15.01" y2="9" />
-                          </svg>
-                          <Label className="font-medium text-white">Estilo de Personajes</Label>
-                        </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Estilo de Personajes</Label>
                         <Select
                           value={videoStyle.characterStyle}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
                         >
-                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
+                          <SelectTrigger>
                             <SelectValue placeholder="Seleccionar estilo" />
                           </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
+                          <SelectContent>
                             {videoStyles.characterStyles.map((style) => (
                               <SelectItem key={style} value={style}>
                                 {style}
@@ -2311,563 +2172,236 @@ ${transcription}`;
                             ))}
                           </SelectContent>
                         </Select>
-
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm text-white">Intensidad Visual: <span className="font-semibold text-orange-400">{videoStyle.visualIntensity}%</span></Label>
-                            <div className="flex gap-1">
-                              <div className="w-3 h-3 bg-orange-900/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-800/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-700/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-600/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-500/70 rounded-full"></div>
-                            </div>
-                          </div>
-                          <Slider
-                            value={[videoStyle.visualIntensity]}
-                            onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                            max={100}
-                            step={1}
-                            className="mt-2"
-                          />
-                          <p className="text-xs text-orange-300/80 mt-1">
-                            Intensidad de elementos visuales y efectos especiales
-                          </p>
-                        </div>
                       </div>
 
-                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText className="h-4 w-4 text-orange-500" />
-                          <Label className="font-medium text-white">Narrativa</Label>
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm text-white">Intensidad Narrativa: <span className="font-semibold text-orange-400">{videoStyle.narrativeIntensity}%</span></Label>
-                            <div className="flex gap-1">
-                              <div className="w-3 h-3 bg-orange-900/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-800/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-700/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-600/70 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-500/70 rounded-full"></div>
-                            </div>
-                          </div>
-                          <Slider
-                            value={[videoStyle.narrativeIntensity]}
-                            onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, narrativeIntensity: value }))}
-                            max={100}
-                            step={1}
-                            className="mt-2"
-                          />
-                          <p className="text-xs text-orange-300/80 mt-1">
-                            Ajusta qué tan fielmente el video sigue la narrativa de la letra
-                          </p>
-                        </div>
-                        
-                        <div className="w-full bg-zinc-900 rounded-lg p-3 mt-2 border border-orange-500/20">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-white">Significado Literal</span>
-                            <span className="text-xs font-medium text-white">Interpretación Artística</span>
-                          </div>
-                          <div className="h-1 w-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full mt-1"></div>
-                          <div className="flex justify-between mt-1">
-                            <span className="text-[10px] text-orange-300/80">Historia concreta</span>
-                            <span className="text-[10px] text-orange-300/80">Metáforas visuales</span>
-                          </div>
-                        </div>
+                      <div className="space-y-2">
+                        <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
+                        <Slider
+                          value={[videoStyle.visualIntensity]}
+                          onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                          max={100}
+                          step={1}
+                        />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <ImageIcon className="h-4 w-4 text-orange-500" />
-                          <Label className="font-medium text-white">Imagen de Referencia</Label>
-                        </div>
-                        
-                        <div 
-                          className="border-2 border-dashed border-orange-500/30 rounded-lg p-6 text-center cursor-pointer transition-colors hover:bg-zinc-900 bg-zinc-900/50 relative"
-                          onClick={() => document.getElementById('reference-image-upload')?.click()}
-                        >
-                          <input
-                            id="reference-image-upload"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = async (e) => {
-                                  const base64 = e.target?.result as string;
-                                  setVideoStyle(prev => ({
-                                    ...prev,
-                                    referenceImage: base64
-                                  }));
-                                  await analyzeReferenceImage(base64);
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2 text-orange-500" />
-                          <p className="font-medium text-white">
-                            {videoStyle.referenceImage ? 'Cambiar imagen de referencia' : 'Subir imagen de referencia'}
-                          </p>
-                          <p className="text-xs text-orange-300/80 mt-1">
-                            Usaremos esta imagen como inspiración del estilo visual
-                          </p>
-                        </div>
-                        
+                    <div className="space-y-2">
+                      <Label>Intensidad Narrativa ({videoStyle.narrativeIntensity}%)</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Ajusta qué tan fielmente el video sigue la narrativa de la letra
+                      </p>
+                      <Slider
+                        value={[videoStyle.narrativeIntensity]}
+                        onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, narrativeIntensity: value }))}
+                        max={100}
+                        step={1}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Imagen de Referencia</Label>
+                      <div className="grid gap-4">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = async (e) => {
+                                const base64 = e.target?.result as string;
+                                setVideoStyle(prev => ({
+                                  ...prev,
+                                  referenceImage: base64
+                                }));
+                                await analyzeReferenceImage(base64);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
                         {videoStyle.referenceImage && (
-                          <div className="relative overflow-hidden rounded-lg border border-orange-500/30 shadow-md">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
-                            <div className="absolute bottom-2 left-2 bg-black/70 border border-orange-500/20 text-white text-xs px-2 py-1 rounded-full z-20">
-                              Referencia de estilo
-                            </div>
+                          <div className="relative aspect-video w-full rounded-lg overflow-hidden">
                             <img
                               src={videoStyle.referenceImage}
                               alt="Referencia de estilo"
-                              className="object-cover w-full aspect-video transform transition-transform duration-500 hover:scale-105"
+                              className="object-cover w-full h-full"
                             />
                           </div>
                         )}
-                        
                         {videoStyle.styleDescription && (
-                          <div className="p-3 bg-zinc-900 rounded-lg border border-orange-500/30 text-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500">
-                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                              <span className="font-medium text-white">Análisis de estilo</span>
-                            </div>
-                            <p className="text-sm text-orange-300/80">{videoStyle.styleDescription}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500">
-                            <path d="M15.6 2.4a4 4 0 0 1 0 6.4L7.2 16l-4.8 1.6L4 12.8l8.4-7.2a4 4 0 0 1 3.2-3.2Z" />
-                            <path d="M20 8v12a2 2 0 0 1-2 2H6" />
-                          </svg>
-                          <Label className="font-medium text-white">Director del Video</Label>
-                        </div>
-                        
-                        {directors.length > 0 ? (
-                          <div className="space-y-4">
-                            <Select
-                              value={videoStyle.selectedDirector?.id || ""}
-                              onValueChange={(directorId) => {
-                                const director = directors.find(d => d.id === directorId);
-                                setVideoStyle(prev => ({
-                                  ...prev,
-                                  selectedDirector: director || null
-                                }));
-                              }}
-                            >
-                              <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
-                                <SelectValue placeholder="Seleccionar director para tu video" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
-                                {directors.map((director) => (
-                                  <SelectItem key={director.id} value={director.id}>
-                                    <div className="flex items-center gap-2">
-                                      {director.imageUrl && (
-                                        <img
-                                          src={director.imageUrl}
-                                          alt={director.name}
-                                          className="w-8 h-8 rounded-full object-cover border border-orange-500/20"
-                                        />
-                                      )}
-                                      <div className="grid gap-0.5">
-                                        <span className="font-medium text-white">{director.name}</span>
-                                        <span className="text-xs text-orange-300">{director.specialty}</span>
-                                      </div>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-
-                            {videoStyle.selectedDirector && (
-                              <div className="bg-zinc-900 rounded-lg overflow-hidden shadow-md border border-orange-500/30">
-                                <div className="h-24 relative">
-                                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-500/5"></div>
-                                  <div className="h-24 w-full absolute top-0 left-0 bg-[radial-gradient(circle_at_30%_40%,rgba(251,146,60,0.15),transparent_50%)]"></div>
-                                </div>
-                                
-                                <div className="p-4 relative">
-                                  <div className="absolute -top-16 left-4">
-                                    {videoStyle.selectedDirector.imageUrl ? (
-                                      <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-zinc-900 shadow-md">
-                                        <img
-                                          src={videoStyle.selectedDirector.imageUrl}
-                                          alt={videoStyle.selectedDirector.name}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      </div>
-                                    ) : (
-                                      <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-xl font-bold border-4 border-zinc-900 shadow-md">
-                                        {videoStyle.selectedDirector.name.charAt(0)}
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="ml-28">
-                                    <h4 className="font-bold text-lg text-white">{videoStyle.selectedDirector.name}</h4>
-                                    <div className="text-sm text-orange-300 mb-1">{videoStyle.selectedDirector.specialty}</div>
-                                    <div className="flex items-center gap-1 mb-2">
-                                      <span className="text-yellow-500">★</span>
-                                      <span className="text-sm text-white">{videoStyle.selectedDirector.rating.toFixed(1)}</span>
-                                      <span className="text-xs text-orange-300/80 ml-1">{videoStyle.selectedDirector.experience}</span>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="mt-3">
-                                    <div className="text-xs font-semibold uppercase tracking-wider text-orange-400 mb-1">Estilo de dirección</div>
-                                    <p className="text-sm bg-black/50 p-2 rounded border border-orange-500/20 text-orange-200/90">
-                                      {videoStyle.selectedDirector.style}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-32 border border-dashed border-orange-500/30 rounded-md bg-zinc-900/80">
-                            <svg className="animate-spin h-6 w-6 text-orange-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <p className="text-sm text-orange-300/80">Cargando directores...</p>
+                          <div className="p-4 bg-muted rounded-lg">
+                            <p className="text-sm">{videoStyle.styleDescription}</p>
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">5</span>
-                      </div>
-                      <Label className="text-lg font-semibold">Sincronizar Beats</Label>
-                    </div>
-                    {timelineItems.length > 0 && (
-                      <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
-                        <Music className="h-3 w-3 mr-1" />
-                        {timelineItems.length} cortes detectados
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-4 relative z-10">
-                    <div className="bg-black/70 p-4 rounded-lg border border-orange-500/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Info className="h-4 w-4 text-orange-500" />
-                        <p className="text-sm font-medium text-white">Análisis musical automático</p>
-                      </div>
-                      <p className="text-sm text-orange-300/80">
-                        Este paso analiza el audio para detectar los cambios de ritmo, beats y transiciones naturales, 
-                        creando puntos de corte óptimos para tu video musical.
-                      </p>
-                    </div>
-                    
-                    <Button
-                      onClick={syncAudioWithTimeline}
-                      disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
-                      className={`w-full relative overflow-hidden group ${
-                        !audioBuffer || isGeneratingShots || currentStep < 3 ? 'opacity-70' : 
-                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md'
-                      }`}
-                    >
-                      <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
-                      {isGeneratingShots ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          <span>Analizando ritmo y beats...</span>
-                        </>
-                      ) : (
-                        <>
-                          <WaveformIcon className="mr-2 h-5 w-5" />
-                          <span>Detectar Cortes Musicales</span>
-                        </>
-                      )}
-                    </Button>
-                    
-                    {timelineItems.length > 0 && (
-                      <div className="mt-4 p-3 bg-zinc-900 rounded-lg border border-orange-500/30">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-white">Vista previa de cortes</span>
-                          <span className="text-xs text-orange-300">{timelineItems.length} segmentos</span>
-                        </div>
-                        <div className="h-6 w-full bg-black/50 rounded-md overflow-hidden relative">
-                          <div className="absolute inset-0 flex">
-                            {timelineItems.map((item, index) => (
-                              <div 
-                                key={index} 
-                                className="h-full border-r border-orange-500/30"
-                                style={{width: `${(item.end_time - item.start_time) / (audioBuffer?.duration || 1) * 100}%`}}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group my-4">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">★</span>
-                      </div>
-                      <Label className="text-lg font-semibold">Estilo de Edición</Label>
-                    </div>
-                    {selectedEditingStyle && (
-                      <Badge className="bg-purple-500/10 text-purple-600 hover:bg-purple-500/20">
-                        <Film className="h-3 w-3 mr-1" />
-                        Estilo Seleccionado
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-4 relative z-10">
-                    <RadioGroup value={selectedEditingStyle} onValueChange={setSelectedEditingStyle}>
-                      <div className="grid grid-cols-2 gap-4">
-                        {editingStyles.map((style) => (
-                          <div 
-                            key={style.id}
-                            onClick={() => setSelectedEditingStyle(style.id)}
-                            className={`
-                              p-4 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02]
-                              ${selectedEditingStyle === style.id 
-                                ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-2 border-purple-200 dark:border-purple-800 shadow-md' 
-                                : 'bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/70 dark:to-slate-800/70 border border-slate-200 dark:border-slate-700 hover:shadow-md'
-                              }
-                            `}
+                    <div className="space-y-2">
+                      <Label>Director del Video</Label>
+                      {directors.length > 0 ? (
+                        <div className="grid gap-4">
+                          <Select
+                            value={videoStyle.selectedDirector?.id || ""}
+                            onValueChange={(directorId) => {
+                              const director = directors.find(d => d.id === directorId);
+                              setVideoStyle(prev => ({
+                                ...prev,
+                                selectedDirector: director || null
+                              }));
+                            }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center justify-center">
-                                <RadioGroupItem value={style.id} id={style.id} className={`${selectedEditingStyle === style.id ? 'text-purple-600 border-purple-600' : ''}`} />
-                              </div>
-                              <div>
-                                <Label htmlFor={style.id} className={`font-medium ${selectedEditingStyle === style.id ? 'text-purple-700 dark:text-purple-400' : ''}`}>
-                                  {style.name}
-                                </Label>
-                                <p className="text-sm text-muted-foreground">
-                                  {style.description}
-                                </p>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar director" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {directors.map((director) => (
+                                <SelectItem key={director.id} value={director.id}>
+                                  <div className="flex items-center gap-2">
+                                    {director.imageUrl && (
+                                      <img
+                                        src={director.imageUrl}
+                                        alt={director.name}
+                                        className="w-8 h-8 rounded-full object-cover"
+                                      />
+                                    )}
+                                    <div className="grid gap-0.5">
+                                      <span className="font-medium">{director.name}</span>
+                                      <span className="text-xs text-muted-foreground">{director.specialty}</span>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {videoStyle.selectedDirector && (
+                            <div className="p-4 bg-muted rounded-lg">
+                              <div className="flex items-center gap-4">
+                                {videoStyle.selectedDirector.imageUrl && (
+                                  <img
+                                    src={videoStyle.selectedDirector.imageUrl}
+                                    alt={videoStyle.selectedDirector.name}
+                                    className="w-16 h-16 rounded-full object-cover"
+                                  />
+                                )}
+                                <div className="space-y-1">
+                                  <h4 className="font-semibold">{videoStyle.selectedDirector.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{videoStyle.selectedDirector.experience}</p>
+                                  <p className="text-sm">{videoStyle.selectedDirector.style}</p>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-orange-500">★</span>
+                                    <span className="text-sm">{videoStyle.selectedDirector.rating.toFixed(1)}</span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            
-                            {selectedEditingStyle === style.id && (
-                              <div className="mt-3 pt-3 border-t border-purple-100 dark:border-purple-900 flex items-center justify-center">
-                                <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full">
-                                  Seleccionado
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </RadioGroup>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-4 border rounded-lg bg-muted">
+                          <p className="text-sm text-muted-foreground">Cargando directores...</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">6</span>
-                      </div>
-                      <Label className="text-lg font-semibold">Generar Prompts</Label>
-                    </div>
-                    {!isGeneratingScript && currentStep >= 5 && (
-                      <Badge className="bg-teal-500/10 text-teal-600 hover:bg-teal-500/20">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Prompts Listos
-                      </Badge>
+                <div className="border rounded-lg p-4">
+                  <Label className="text-lg font-semibold mb-4">5. Sincronizar Beats</Label>
+                  <Button
+                    onClick={syncAudioWithTimeline}
+                    disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
+                    className="w-full"
+                  >
+                    {isGeneratingShots ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Detectando cortes...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Detectar Cortes Musicales
+                      </>
                     )}
-                  </div>
-                  
-                  <div className="space-y-4 relative z-10">
-                    <div className="bg-black/70 p-4 rounded-lg border border-orange-500/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="h-4 w-4 text-orange-500" />
-                        <p className="text-sm font-medium text-white">Creación inteligente de descripciones</p>
-                      </div>
-                      <p className="text-sm text-orange-300/80">
-                        Este paso genera descripciones detalladas para cada segmento del video, incorporando el estilo visual 
-                        seleccionado, el mood y las especificaciones técnicas elegidas.
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3 mb-4">
-                      <div className={`p-3 rounded-lg border ${!videoStyle.mood ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-orange-500/30'}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${!videoStyle.mood ? 'bg-zinc-600' : 'bg-orange-500'} flex items-center justify-center text-white text-xs`}>
-                            {!videoStyle.mood ? '!' : '✓'}
-                          </div>
-                          <span className="text-xs font-medium text-white">Mood</span>
-                        </div>
-                        <p className="text-xs mt-1 ml-6 text-orange-300/80">
-                          {videoStyle.mood || 'No seleccionado'}
-                        </p>
-                      </div>
-                      
-                      <div className={`p-3 rounded-lg border ${!videoStyle.colorPalette ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-orange-500/30'}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${!videoStyle.colorPalette ? 'bg-zinc-600' : 'bg-orange-500'} flex items-center justify-center text-white text-xs`}>
-                            {!videoStyle.colorPalette ? '!' : '✓'}
-                          </div>
-                          <span className="text-xs font-medium text-white">Paleta de Colores</span>
-                        </div>
-                        <p className="text-xs mt-1 ml-6 text-orange-300/80">
-                          {videoStyle.colorPalette || 'No seleccionada'}
-                        </p>
-                      </div>
-                      
-                      <div className={`p-3 rounded-lg border ${!videoStyle.characterStyle ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-orange-500/30'}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${!videoStyle.characterStyle ? 'bg-zinc-600' : 'bg-orange-500'} flex items-center justify-center text-white text-xs`}>
-                            {!videoStyle.characterStyle ? '!' : '✓'}
-                          </div>
-                          <span className="text-xs font-medium text-white">Estilo de Personajes</span>
-                        </div>
-                        <p className="text-xs mt-1 ml-6 text-orange-300/80">
-                          {videoStyle.characterStyle || 'No seleccionado'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <Button
-                      onClick={generatePromptsForSegments}
-                      disabled={
-                        timelineItems.length === 0 ||
-                        isGeneratingScript ||
-                        currentStep < 4 ||
-                        !videoStyle.mood ||
-                        !videoStyle.colorPalette ||
-                        !videoStyle.characterStyle
-                      }
-                      className={`w-full relative overflow-hidden group ${
-                        timelineItems.length === 0 || isGeneratingScript || currentStep < 4 || !videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle 
-                        ? 'opacity-70' : 
-                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md'
-                      }`}
-                    >
-                      <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
-                      {isGeneratingScript ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          <span>Creando descripciones detalladas...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="mr-2 h-5 w-5" />
-                          <span>Generar Prompts con Estilo</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  </Button>
                 </div>
 
-                <div className="border border-orange-500/20 rounded-lg p-4 transition-all duration-300 hover:shadow-md bg-background/80 relative overflow-hidden group mt-4">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                  
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                        <span className="text-orange-500 font-bold">7</span>
+                <div className="border rounded-lg p-4 mt-4">
+                  <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
+                  <RadioGroup
+                    value={selectedEditingStyle}
+                    onValueChange={setSelectedEditingStyle}
+                    className="grid grid-cols-2 gap-4"
+                  >
+                    {editingStyles.map((style) => (
+                      <div key={style.id} className="flex items-start space-x-3">
+                        <RadioGroupItem value={style.id} id={style.id} />
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={style.id} className="font-medium">
+                            {style.name}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {style.description}
+                          </p>
+                        </div>
                       </div>
-                      <Label className="text-lg font-semibold">Generar Imágenes</Label>
-                    </div>
-                    {currentStep >= 6 && !isGeneratingShots && (
-                      <Badge className="bg-pink-500/10 text-pink-600 hover:bg-pink-500/20">
-                        <ImageIcon className="h-3 w-3 mr-1" />
-                        {timelineItems.filter(item => item.generatedImage).length} / {timelineItems.length} Generadas
-                      </Badge>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <Label className="text-lg font-semibold mb-4">6. Generar Prompts</Label>
+                  <Button
+                    onClick={generatePromptsForSegments}
+                    disabled={
+                      timelineItems.length === 0 ||
+                      isGeneratingScript ||
+                      currentStep < 4 ||
+                      !videoStyle.mood ||
+                      !videoStyle.colorPalette ||
+                      !videoStyle.characterStyle
+                    }
+                    className="w-full mt-4"
+                  >
+                    {isGeneratingScript ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generando prompts...
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Generar Prompts con Estilo
+                      </>
                     )}
-                  </div>
-                  
-                  <div className="space-y-4 relative z-10">
-                    <div className="bg-black/70 p-4 rounded-lg border border-orange-500/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <ImageIcon className="h-4 w-4 text-orange-500" />
-                        <p className="text-sm font-medium text-white">Visualización de secuencias</p>
-                      </div>
-                      <p className="text-sm text-orange-300/80">
-                        Este paso genera imágenes de alta calidad para cada segmento según las descripciones creadas, 
-                        creando una secuencia visual coherente para tu video musical.
-                      </p>
-                    </div>
-                    
-                    {currentStep >= 5 && timelineItems.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2 mb-4 overflow-x-auto">
-                        {timelineItems.slice(0, 4).map((item, index) => (
-                          <div key={index} className="relative aspect-video rounded-md overflow-hidden bg-zinc-900 border border-orange-500/30">
-                            {item.generatedImage ? (
-                              <img src={item.generatedImage} alt={`Escena ${index + 1}`} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <ImageIcon className="h-6 w-6 text-orange-500/50" />
-                              </div>
-                            )}
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent h-8">
-                              <div className="text-[10px] text-white p-1">Escena {index + 1}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  </Button>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <Label className="text-lg font-semibold mb-4">7. Generar Imágenes</Label>
+                  <Button
+                    onClick={generateShotImages}
+                    disabled={
+                      !timelineItems.length ||
+                      isGeneratingShots ||
+                      currentStep < 5
+                    }
+                    className="w-full"
+                  >
+                    {isGeneratingShots ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generando imágenes...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Generar Imágenes
+                      </>
                     )}
-                    
-                    <Button
-                      onClick={generateShotImages}
-                      disabled={
-                        !timelineItems.length ||
-                        isGeneratingShots ||
-                        currentStep < 5
-                      }
-                      className={`w-full relative overflow-hidden group ${
-                        !timelineItems.length || isGeneratingShots || currentStep < 5 
-                        ? 'opacity-70' : 
-                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md'
-                      }`}
-                    >
-                      <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
-                      {isGeneratingShots ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          <span>Creando escenas visuales...</span>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="mr-2 h-5 w-5" />
-                          <span>Generar Imágenes para cada Escena</span>
-                        </>
-                      )}
-                    </Button>
-                    
-                    {currentStep >= 5 && timelineItems.some(item => item.generatedImage) && (
-                      <div className="text-xs text-center text-orange-300/80">
-                        Genera cada imagen individualmente o actualiza una escena específica desde el timeline
-                      </div>
-                    )}
-                  </div>
+                  </Button>
                 </div>
 
                 <div className="mt-6">

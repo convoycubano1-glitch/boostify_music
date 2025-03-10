@@ -79,30 +79,10 @@ export default {
             height: "0",
           },
         },
-        "pulse-slow": {
-          "0%, 100%": {
-            opacity: "0.4",
-          },
-          "50%": {
-            opacity: "0.8",
-          },
-        },
-        "glow-pulse": {
-          "0%, 100%": {
-            boxShadow: "0 0 5px rgba(234, 88, 12, 0.5)",
-            opacity: "0.6",
-          },
-          "50%": {
-            boxShadow: "0 0 15px rgba(234, 88, 12, 0.8)",
-            opacity: "1.0",
-          },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-slow": "pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "glow-pulse": "glow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },
   },
