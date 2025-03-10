@@ -7,7 +7,7 @@ import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
   MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
   Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
-  Zap, LucideIcon, Check, ExternalLink, CloudLightning
+  Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
@@ -136,6 +136,29 @@ const features = [
     icon: <MessageCircle className="h-6 w-6 text-orange-500" />,
     title: "Artist Community Hub",
     description: "Connect with industry professionals and fellow artists in our exclusive networking platform"
+  }
+];
+
+const educationFeatures = [
+  {
+    icon: <FileText className="h-6 w-6 text-orange-500" />,
+    title: "Music Business Courses",
+    description: "Comprehensive courses on music business, rights management, and industry navigation"
+  },
+  {
+    icon: <Play className="h-6 w-6 text-orange-500" />,
+    title: "Production Masterclasses",
+    description: "Learn advanced music production techniques from industry professionals"
+  },
+  {
+    icon: <Calendar className="h-6 w-6 text-orange-500" />,
+    title: "Scheduled Mentoring",
+    description: "One-on-one mentoring sessions with experienced music industry experts"
+  },
+  {
+    icon: <UserCircle2 className="h-6 w-6 text-orange-500" />,
+    title: "Creator Community",
+    description: "Join a community of like-minded artists learning and growing together"
   }
 ];
 
@@ -782,6 +805,230 @@ export default function HomePage() {
               No credit card required for free tier • Cancel anytime
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Nueva sección de educación musical con video de fondo */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black">
+        <div className="absolute inset-0 z-0 opacity-50">
+          <video 
+            autoPlay 
+            loop 
+            muted 
+            className="w-full h-full object-cover"
+            poster="/assets/education-poster.jpg"
+          >
+            <source src="/assets/hero-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/70" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Educación Musical <span className="text-gradient">Inteligente</span>
+            </h2>
+            <p className="text-white/70 max-w-2xl mx-auto text-lg">
+              Transforma tu aprendizaje musical con cursos interactivos, feedback en tiempo real y un enfoque
+              personalizado impulsado por IA que se adapta a tu estilo de aprendizaje.
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 hover:border-white/20 transition"
+            >
+              <div className="rounded-full bg-orange-500/20 w-12 h-12 flex items-center justify-center mb-6">
+                <Music2 className="w-6 h-6 text-orange-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Cursos Interactivos</h3>
+              <p className="text-white/70">
+                Aprende a tu propio ritmo con lecciones interactivas que combinan teoría, práctica y evaluación en tiempo real.
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 hover:border-white/20 transition"
+            >
+              <div className="rounded-full bg-blue-500/20 w-12 h-12 flex items-center justify-center mb-6">
+                <Zap className="w-6 h-6 text-blue-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">IA Adaptativa</h3>
+              <p className="text-white/70">
+                Nuestro sistema adapta las lecciones a tu nivel, identificando áreas de mejora y sugiriendo ejercicios personalizados.
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 hover:border-white/20 transition"
+            >
+              <div className="rounded-full bg-green-500/20 w-12 h-12 flex items-center justify-center mb-6">
+                <Users2 className="w-6 h-6 text-green-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Comunidad Global</h3>
+              <p className="text-white/70">
+                Conéctate con estudiantes y profesores de todo el mundo, comparte proyectos y participa en desafíos musicales.
+              </p>
+            </motion.div>
+          </div>
+          
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <Link href="/education">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-6 text-lg font-medium hover:opacity-90"
+              >
+                Explorar Cursos <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+      
+      {/* Nueva sección de creación de videos musicales con IA */}
+      <section className="py-24 relative overflow-hidden bg-zinc-950">
+        <div className="absolute inset-0 z-0 opacity-80">
+          <video 
+            autoPlay 
+            loop 
+            muted 
+            className="w-full h-full object-cover"
+          >
+            <source src="/assets/Standard_Mode_Generated_Video (5).mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="md:w-1/2"
+            >
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                Crea Videos Musicales con <span className="text-gradient">Inteligencia Artificial</span>
+              </h2>
+              <p className="text-white/70 text-lg mb-8">
+                Transforma tus canciones en videos musicales profesionales en minutos, no en semanas. 
+                Nuestra tecnología de IA genera videos que complementan perfectamente tu estilo musical y visión artística.
+              </p>
+              
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-purple-500/20 p-2 mt-1">
+                    <Check className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Generación Instantánea</h3>
+                    <p className="text-white/70">Crea videos musicales profesionales en cuestión de minutos, sin necesidad de equipos costosos.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-purple-500/20 p-2 mt-1">
+                    <Check className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Control Creativo Total</h3>
+                    <p className="text-white/70">Personaliza cada aspecto del video, desde el estilo visual hasta la narrativa y los efectos especiales.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-purple-500/20 p-2 mt-1">
+                    <Check className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Integración con tu Música</h3>
+                    <p className="text-white/70">Nuestra IA analiza tu canción para crear visuales que se sincronicen perfectamente con el ritmo y la energía.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link href="/music-video">
+                  <Button 
+                    size="lg" 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-6 text-lg font-medium hover:opacity-90"
+                  >
+                    Crear Video Musical <Video className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+                
+                <Link href="/videos">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white px-6 py-6 text-lg font-medium hover:bg-white/10"
+                  >
+                    Ver Ejemplos
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="md:w-1/2 aspect-video relative"
+            >
+              <div className="rounded-xl overflow-hidden border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20">
+                <video 
+                  autoPlay 
+                  loop 
+                  muted 
+                  className="w-full h-full object-cover"
+                  poster="/assets/video-thumbnail.jpg"
+                >
+                  <source src="/assets/Standard_Mode_Generated_Video (6).mp4" type="video/mp4" />
+                </video>
+              </div>
+              
+              {/* Controles de reproducción estilizados como decoración */}
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 bg-black/50 backdrop-blur-sm rounded-lg p-3">
+                <div className="w-2/3 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="w-1/2 h-full bg-purple-500 rounded-full"></div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
+                    <div className="w-4 h-4 text-white flex items-center justify-center">⏸️</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                    <Volume2 className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
