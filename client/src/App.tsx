@@ -331,7 +331,7 @@ const Router = () => {
         {getRouteComponent("/plugins", WrappedPluginsPage, null)}
         {getRouteComponent("/try-on", WrappedTryOnPage, null)}
         {getRouteComponent("/try-on-page", WrappedTryOnPage, null)}
-        {getRouteComponent("/ui-showcase", WrappedUIShowcasePage, null)}
+        <Route path="/ui-showcase" component={WrappedUIShowcasePage} />
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
