@@ -78,6 +78,7 @@ export interface FluxTaskResult {
   code?: number;
   data?: any;
   message?: string;
+  model?: string; // Agregamos el campo model para alojar el modelo usado
 }
 
 /**
@@ -245,6 +246,16 @@ export const fluxService = {
           } else if (taskData.output.image) {
             url = taskData.output.image;
             images = [taskData.output.image];
+          } else if (taskData.output.image_url) {
+            // Nueva estructura de respuesta en el ejemplo proporcionado
+            url = taskData.output.image_url;
+            images = [taskData.output.image_url];
+            console.log('Imagen encontrada en output.image_url (formato antiguo):', url);
+          } else if (typeof taskData.output === 'string') {
+            // Caso donde output es directamente la URL como string
+            url = taskData.output;
+            images = [taskData.output];
+            console.log('Imagen encontrada directamente en output como string:', url);
           }
         }
         
@@ -275,6 +286,16 @@ export const fluxService = {
           } else if (response.data.output.image) {
             url = response.data.output.image;
             images = [response.data.output.image];
+          } else if (response.data.output.image_url) {
+            // Nueva estructura de respuesta en el ejemplo proporcionado
+            url = response.data.output.image_url;
+            images = [response.data.output.image_url];
+            console.log('Imagen encontrada en output.image_url:', url);
+          } else if (typeof response.data.output === 'string') {
+            // Caso donde output es directamente la URL como string
+            url = response.data.output;
+            images = [response.data.output];
+            console.log('Imagen encontrada directamente en output como string:', url);
           }
         }
         

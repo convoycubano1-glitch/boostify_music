@@ -166,6 +166,15 @@ export function FluxGenerator({
             else if (result.data.data.output?.image_url) {
               imageUrl = result.data.data.output.image_url;
             }
+            // Si no está en output.image_url, intentar obtenerla de output.image (string)
+            else if (result.data.data.output?.image) {
+              imageUrl = result.data.data.output.image;
+            }
+            // Si output es directamente un string (URL)
+            else if (typeof result.data.data.output === 'string') {
+              imageUrl = result.data.data.output;
+              console.log('URL de imagen encontrada directamente en output como string:', imageUrl);
+            }
             
             // Si tenemos una URL de imagen, proceder
             if (imageUrl) {

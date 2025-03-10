@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { SubscriptionProvider } from "@/lib/context/subscription-context";
 import { SubscriptionPlan } from "@/lib/api/subscription-service";
+import { ViteHMRErrorHandler } from "@/components/improved-websocket-context";
 import NotFound from "@/pages/not-found";
 import AdminPage from "@/pages/admin";
 import AIAgentsPage from "@/pages/ai-agents";
@@ -374,6 +375,8 @@ const App = () => {
 
   return (
     <ErrorBoundary>
+      {/* Componente invisible para manejar errores de WebSocket */}
+      <ViteHMRErrorHandler />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SubscriptionProvider>

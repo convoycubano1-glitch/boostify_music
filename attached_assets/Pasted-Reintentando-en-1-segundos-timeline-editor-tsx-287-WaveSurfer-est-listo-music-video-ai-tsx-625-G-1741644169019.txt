@@ -1,0 +1,143 @@
+Reintentando en 1 segundos...
+timeline-editor.tsx:287 WaveSurfer está listo
+music-video-ai.tsx:625 Generando imagen para segmento 9, intento 2/2
+music-video-ai.tsx:626 Prompt: Escena para video musical que represente estas letras: "River,". Okay, here's a detailed cinematic p...
+music-video-ai.tsx:642 Iniciando generación con Flux API
+flux-service.ts:95 Enviando solicitud a Flux API: {prompt: 'Escena para video musical que represente estas let…alista character style, tracking shot composition', negativePrompt: 'low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark', width: 1024, height: 576, guidance_scale: 2.5, …}
+music-video-ai.tsx:625 Generando imagen para segmento 10, intento 2/2
+music-video-ai.tsx:626 Prompt: Escena para video musical que represente estas letras: "silent". Okay, here's a detailed cinematic p...
+music-video-ai.tsx:642 Iniciando generación con Flux API
+flux-service.ts:95 Enviando solicitud a Flux API: {prompt: 'Escena para video musical que represente estas let…sta character style, extreme close-up composition', negativePrompt: 'low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark', width: 1024, height: 576, guidance_scale: 2.5, …}
+flux-service.ts:100 Respuesta de Flux API: {task_id: 'simulated-error-1741643912332', status: 'processing', model: 'Qubico/flux1-dev', task_type: 'txt2img', simulated: true, …}
+flux-local-storage-service.ts:42 Tarea guardada en almacenamiento local: simulated-error-1741643912332
+music-video-ai.tsx:649 Tarea de generación iniciada con ID: simulated-error-1741643912332
+flux-service.ts:226 Verificando estado de tarea Flux: simulated-error-1741643912332
+flux-service.ts:100 Respuesta de Flux API: {task_id: 'simulated-error-1741643912527', status: 'processing', model: 'Qubico/flux1-dev', task_type: 'txt2img', simulated: true, …}
+flux-local-storage-service.ts:42 Tarea guardada en almacenamiento local: simulated-error-1741643912527
+music-video-ai.tsx:649 Tarea de generación iniciada con ID: simulated-error-1741643912527
+flux-service.ts:226 Verificando estado de tarea Flux: simulated-error-1741643912527
+flux-service.ts:228 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/flux/status?taskId=simulated-error-1741643912332 500 (Internal Server Error)
+dispatchXhrRequest @ axios.js?v=4632e8f5:1653
+xhr @ axios.js?v=4632e8f5:1533
+dispatchRequest @ axios.js?v=4632e8f5:2008
+_request @ axios.js?v=4632e8f5:2223
+request @ axios.js?v=4632e8f5:2120
+Axios.<computed> @ axios.js?v=4632e8f5:2242
+wrap @ axios.js?v=4632e8f5:8
+checkTaskStatus @ flux-service.ts:228
+checkStatus @ music-video-ai.tsx:691
+waitForFluxImageGeneration @ music-video-ai.tsx:707
+generateImageForSegment @ music-video-ai.tsx:652
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+flux-service.ts:303 Error al verificar estado de tarea Flux: AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}code: "ERR_BAD_RESPONSE"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Request failed with status code 500"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}response: {data: {…}, status: 500, statusText: 'Internal Server Error', headers: AxiosHeaders, config: {…}, …}status: 500stack: "AxiosError: Request failed with status code 500\n    at settle (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=4632e8f5:1235:12)\n    at XMLHttpRequest.onloadend (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=4632e8f5:1566:7)\n    at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=4632e8f5:2124:41)\n    at async Object.checkTaskStatus (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/lib/api/flux/flux-service.ts:148:24)\n    at async checkStatus (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/music-video/music-video-ai.tsx:586:28)\n    at async waitForFluxImageGeneration (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/music-video/music-video-ai.tsx:597:24)\n    at async generateImageForSegment (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/music-video/music-video-ai.tsx:560:26)\n    at async https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/music-video/music-video-ai.tsx:790:34\n    at async Promise.all (index 0)\n    at async generateShotImages (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/components/music-video/music-video-ai.tsx:787:27)"[[Prototype]]: Error
+checkTaskStatus @ flux-service.ts:303
+await in checkTaskStatus
+checkStatus @ music-video-ai.tsx:691
+waitForFluxImageGeneration @ music-video-ai.tsx:707
+generateImageForSegment @ music-video-ai.tsx:652
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:693 Estado de la tarea simulated-error-1741643912332: undefined
+music-video-ai.tsx:716 Error verificando estado de generación: Error: La generación de imagen falló: Request failed with status code 500
+    at checkStatus (music-video-ai.tsx:698:15)
+    at async waitForFluxImageGeneration (music-video-ai.tsx:707:24)
+    at async generateImageForSegment (music-video-ai.tsx:652:26)
+    at async music-video-ai.tsx:950:34
+    at async Promise.all (index 0)
+    at async generateShotImages (music-video-ai.tsx:947:27)
+waitForFluxImageGeneration @ music-video-ai.tsx:716
+await in waitForFluxImageGeneration
+generateImageForSegment @ music-video-ai.tsx:652
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:661 Error en intento 2 para segmento 9: Error: No se recibió URL de imagen en la respuesta
+    at generateImageForSegment (music-video-ai.tsx:658:17)
+    at async music-video-ai.tsx:950:34
+    at async Promise.all (index 0)
+    at async generateShotImages (music-video-ai.tsx:947:27)
+generateImageForSegment @ music-video-ai.tsx:661
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:675 No se pudo generar imagen para segmento 9 después de 2 intentos: Error: No se recibió URL de imagen en la respuesta
+    at generateImageForSegment (music-video-ai.tsx:658:17)
+    at async music-video-ai.tsx:950:34
+    at async Promise.all (index 0)
+    at async generateShotImages (music-video-ai.tsx:947:27)
+generateImageForSegment @ music-video-ai.tsx:675
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+flux-service.ts:228 
+            
+            
+           GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/flux/status?taskId=simulated-error-1741643912527 500 (Internal Server Error)
+dispatchXhrRequest @ axios.js?v=4632e8f5:1653
+xhr @ axios.js?v=4632e8f5:1533
+dispatchRequest @ axios.js?v=4632e8f5:2008
+_request @ axios.js?v=4632e8f5:2223
+request @ axios.js?v=4632e8f5:2120
+Axios.<computed> @ axios.js?v=4632e8f5:2242
+wrap @ axios.js?v=4632e8f5:8
+checkTaskStatus @ flux-service.ts:228
+checkStatus @ music-video-ai.tsx:691
+waitForFluxImageGeneration @ music-video-ai.tsx:707
+generateImageForSegment @ music-video-ai.tsx:652
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+flux-service.ts:303 Error al verificar estado de tarea Flux: AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}
+checkTaskStatus @ flux-service.ts:303
+await in checkTaskStatus
+checkStatus @ music-video-ai.tsx:691
+waitForFluxImageGeneration @ music-video-ai.tsx:707
+generateImageForSegment @ music-video-ai.tsx:652
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:693 Estado de la tarea simulated-error-1741643912527: undefined
+music-video-ai.tsx:716 Error verificando estado de generación: Error: La generación de imagen falló: Request failed with status code 500
+    at checkStatus (music-video-ai.tsx:698:15)
+    at async waitForFluxImageGeneration (music-video-ai.tsx:707:24)
+    at async generateImageForSegment (music-video-ai.tsx:652:26)
+    at async music-video-ai.tsx:950:34
+    at async Promise.all (index 1)
+    at async generateShotImages (music-video-ai.tsx:947:27)
+waitForFluxImageGeneration @ music-video-ai.tsx:716
+await in waitForFluxImageGeneration
+generateImageForSegment @ music-video-ai.tsx:652
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:661 Error en intento 2 para segmento 10: Error: No se recibió URL de imagen en la respuesta
+    at generateImageForSegment (music-video-ai.tsx:658:17)
+    at async music-video-ai.tsx:950:34
+    at async Promise.all (index 1)
+    at async generateShotImages (music-video-ai.tsx:947:27)
+generateImageForSegment @ music-video-ai.tsx:661
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:675 No se pudo generar imagen para segmento 10 después de 2 intentos: Error: No se recibió URL de imagen en la respuesta
+    at generateImageForSegment (music-video-ai.tsx:658:17)
+    at async music-video-ai.tsx:950:34
+    at async Promise.all (index 1)
+    at async generateShotImages (music-video-ai.tsx:947:27)
+generateImageForSegment @ music-video-ai.tsx:675
+await in generateImageForSegment
+(anonymous) @ music-video-ai.tsx:950
+generateShotImages @ music-video-ai.tsx:948Understand this errorAI
+music-video-ai.tsx:981 Fallo en segmento 9: undefined
+generateShotImages @ music-video-ai.tsx:981Understand this errorAI
+music-video-ai.tsx:981 Fallo en segmento 10: undefined
+generateShotImages @ music-video-ai.tsx:981Understand this errorAI
+timeline-editor.tsx:287 WaveSurfer está listo
+timeline-editor.tsx:287 WaveSurfer está listo
+timeline-editor.tsx:287 WaveSurfer está listo

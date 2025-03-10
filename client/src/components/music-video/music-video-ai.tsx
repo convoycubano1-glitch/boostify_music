@@ -39,6 +39,7 @@ import {
 } from "@/lib/api/openrouter";
 import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
 import { FileText } from "lucide-react";
+import fluxService, { FluxModel, FluxTaskType } from "@/lib/api/flux/flux-service";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({
@@ -201,6 +202,18 @@ interface TimelineItem {
   start: number;
   type: 'video' | 'image' | 'transition' | 'audio';
   thumbnail?: string; // Usaremos generatedImage o firebaseUrl para esto
+  // Campos para lipsync y metadata
+  lipsyncApplied?: boolean;
+  lipsyncVideoUrl?: string;
+  lipsyncProgress?: number;
+  metadata?: {
+    lyrics?: string;
+    musical_elements?: string;
+    character?: string;
+    camera_movement?: string;
+    animation_style?: string;
+    [key: string]: any;
+  };
 }
 
 const groups = [
@@ -612,22 +625,35 @@ ${transcription}`;
         console.log(`Generando imagen para segmento ${item.id}, intento ${attempt + 1}/${maxAttempts}`);
         console.log(`Prompt: ${prompt.substring(0, 100)}...`);
 
-        // Llamada a la API de FAL
-        const result = await fal.subscribe("fal-ai/flux-pro", {
-          input: {
-            prompt,
-            negative_prompt: "low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark",
-            image_size: "landscape_16_9",
-            seed: seed + item.id // Usar una semilla específica para cada segmento, pero consistente en regeneraciones
-          },
-        });
+        // Configuramos los parámetros para la API de Flux
+        const params = {
+          prompt: prompt,
+          negativePrompt: "low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark",
+          width: 1024,
+          height: 576, // Relación de aspecto 16:9
+          guidance_scale: 2.5,
+          model: FluxModel.FLUX1_DEV,
+          taskType: FluxTaskType.TXT2IMG,
+          // Usar una semilla específica para cada segmento, pero consistente en regeneraciones
+          seed: seed + item.id
+        };
 
-        // Verificar y procesar el resultado
-        const resultWithImages = result as { images?: Array<{url: string}> };
+        // Iniciar la generación de imagen con Flux API
+        console.log('Iniciando generación con Flux API');
+        const result = await fluxService.generateImage(params);
+
+        if (!result.success || !result.taskId) {
+          throw new Error(`Error iniciando la generación de imagen: ${result.error || 'Respuesta inválida'}`);
+        }
+
+        console.log(`Tarea de generación iniciada con ID: ${result.taskId}`);
         
-        if (resultWithImages?.images?.[0]?.url) {
-          console.log(`Imagen generada exitosamente para segmento ${item.id}`);
-          return resultWithImages.images[0].url;
+        // Esperar a que la imagen se genere (polling)
+        const imageUrl = await waitForFluxImageGeneration(result.taskId);
+        
+        if (imageUrl) {
+          console.log(`Imagen generada exitosamente para segmento ${item.id}: ${imageUrl}`);
+          return imageUrl;
         } else {
           throw new Error("No se recibió URL de imagen en la respuesta");
         }
@@ -647,6 +673,52 @@ ${transcription}`;
     }
 
     console.error(`No se pudo generar imagen para segmento ${item.id} después de ${maxAttempts} intentos:`, lastError);
+    return null;
+  };
+
+  /**
+   * Espera a que se complete la generación de imagen en Flux API mediante polling
+   * @param taskId ID de la tarea de generación de imagen
+   * @returns URL de la imagen generada o null si falla
+   */
+  const waitForFluxImageGeneration = async (taskId: string): Promise<string | null> => {
+    const maxAttempts = 40; // Máximo número de intentos para verificar el estado
+    const pollingInterval = 1500; // Intervalo entre verificaciones (1.5 segundos)
+    let attempts = 0;
+
+    // Función para hacer un único intento de verificación
+    const checkStatus = async (): Promise<string | null> => {
+      const statusResult = await fluxService.checkTaskStatus(taskId);
+      
+      console.log(`Estado de la tarea ${taskId}:`, statusResult.status);
+      
+      if (statusResult.success && statusResult.status === 'completed' && statusResult.images && statusResult.images.length > 0) {
+        return statusResult.images[0];
+      } else if (!statusResult.success || statusResult.status === 'failed') {
+        throw new Error(`La generación de imagen falló: ${statusResult.error || 'Error desconocido'}`);
+      }
+      
+      return null; // Todavía procesando
+    };
+
+    // Bucle de polling
+    while (attempts < maxAttempts) {
+      try {
+        const result = await checkStatus();
+        if (result) {
+          return result; // Imagen generada exitosamente
+        }
+        
+        // Esperar antes del siguiente intento
+        await new Promise(resolve => setTimeout(resolve, pollingInterval));
+        attempts++;
+      } catch (error) {
+        console.error('Error verificando estado de generación:', error);
+        return null;
+      }
+    }
+
+    console.error(`Tiempo de espera agotado después de ${attempts} intentos para la tarea ${taskId}`);
     return null;
   };
 
@@ -2406,7 +2478,25 @@ ${transcription}`;
 
                 <div className="mt-6">
                   <VideoGenerator
-                    clips={timelineItems}
+                    clips={timelineItems.map(item => ({
+                      id: item.id,
+                      start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
+                      duration: item.duration / 1000,
+                      type: 'image',
+                      thumbnail: item.generatedImage || item.firebaseUrl,
+                      title: item.shotType,
+                      description: item.description,
+                      imageUrl: item.generatedImage || item.firebaseUrl,
+                      imagePrompt: item.imagePrompt,
+                      metadata: {
+                        section: item.metadata?.section,
+                        movementApplied: item.metadata?.movementApplied,
+                        movementPattern: item.metadata?.movementPattern,
+                        movementIntensity: item.metadata?.movementIntensity,
+                        faceSwapApplied: item.metadata?.faceSwapApplied,
+                        musicianIntegrated: item.metadata?.musicianIntegrated
+                      }
+                    }))}
                     duration={audioBuffer?.duration || 0}
                     isGenerating={isGeneratingVideo}
                     onGenerate={() => generateVideo()}
@@ -2433,11 +2523,22 @@ ${transcription}`;
                 <LipSyncIntegration
                   clips={timelineItems.map(item => ({
                     id: item.id,
-                    start: item.start_time / 1000, // Convertir a segundos
-                    duration: item.duration,
-                    shotType: item.shotType || 'unknown',
-                    title: item.title || '',
-                    type: item.type || 'video'
+                    start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
+                    duration: item.duration / 1000,
+                    type: 'image',
+                    thumbnail: item.generatedImage || item.firebaseUrl,
+                    title: item.shotType || 'unknown',
+                    description: item.description,
+                    imageUrl: item.generatedImage || item.firebaseUrl,
+                    imagePrompt: item.imagePrompt,
+                    metadata: {
+                      section: item.metadata?.section,
+                      movementApplied: item.metadata?.movementApplied,
+                      movementPattern: item.metadata?.movementPattern,
+                      movementIntensity: item.metadata?.movementIntensity,
+                      faceSwapApplied: item.metadata?.faceSwapApplied,
+                      musicianIntegrated: item.metadata?.musicianIntegrated
+                    }
                   }))}
                   transcription={transcription}
                   audioBuffer={audioBuffer}

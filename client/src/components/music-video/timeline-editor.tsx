@@ -231,15 +231,34 @@ export function TimelineEditor({
       return;
     }
     
-    // Limpiar instancia anterior de WaveSurfer si existe con manejo de errores
+    // Limpiar instancia anterior de WaveSurfer si existe con manejo de errores mejorado
     if (wavesurferRef.current) {
       try {
-        // Primero eliminamos los eventos para evitar errores de "signal is aborted"
-        wavesurferRef.current.unAll();
-        wavesurferRef.current.destroy();
+        // Verificamos si la instancia actual está lista antes de intentar destruirla
+        const currentInstance = wavesurferRef.current;
+        
+        // Primero desregistramos todos los event listeners para evitar fugas de memoria
+        if (typeof currentInstance.unAll === 'function') {
+          currentInstance.unAll();
+        }
+        
+        // Usamos un pequeño timeout para asegurar que cualquier operación pendiente se complete
+        setTimeout(() => {
+          try {
+            // Verificamos de nuevo que la instancia exista antes de destruirla
+            if (currentInstance && typeof currentInstance.destroy === 'function') {
+              currentInstance.destroy();
+            }
+          } catch (destroyErr) {
+            console.warn("Error al destruir WaveSurfer:", destroyErr);
+          }
+        }, 0);
       } catch (err) {
         console.warn("Error al limpiar instancia WaveSurfer previa:", err);
       }
+      
+      // Marcamos la referencia como null inmediatamente para evitar accesos adicionales
+      wavesurferRef.current = null;
     }
     
     // Crear nueva instancia de WaveSurfer con estilo mejorado estilo CapCut
@@ -318,12 +337,30 @@ export function TimelineEditor({
     return () => {
       try {
         if (wavesurferRef.current) {
-          // Desconectar eventos primero para evitar errores "signal is aborted"
-          wavesurferRef.current.unAll();
-          wavesurferRef.current.destroy();
+          // Guardamos una referencia local para evitar problemas de ciclo de vida
+          const currentInstance = wavesurferRef.current;
+          
+          // Verificamos que los métodos estén disponibles antes de llamarlos
+          if (typeof currentInstance.unAll === 'function') {
+            currentInstance.unAll();
+          }
+          
+          // Usamos un timeout para asegurar que cualquier operación pendiente se complete
+          setTimeout(() => {
+            try {
+              if (currentInstance && typeof currentInstance.destroy === 'function') {
+                currentInstance.destroy();
+              }
+            } catch (destroyErr) {
+              console.warn("Error en cleanup de WaveSurfer:", destroyErr);
+            }
+          }, 0);
+          
+          // Marcamos la referencia como null inmediatamente
+          wavesurferRef.current = null;
         }
       } catch (err) {
-        console.warn("Limpieza segura de WaveSurfer:", err);
+        console.warn("Error en limpieza segura de WaveSurfer:", err);
       }
     };
   }, [audioBuffer, duration, onTimeUpdate]);
