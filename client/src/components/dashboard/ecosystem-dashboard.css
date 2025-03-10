@@ -39,9 +39,9 @@
 }
 
 .ecosystem-avatar {
-  position: relative;
-  width: 100px;
-  height: 100px;
+  position: absolute;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background-color: rgba(249, 115, 22, 0.1);
   border: 2px solid rgba(249, 115, 22, 0.3);
@@ -50,7 +50,19 @@
   align-items: center;
   overflow: hidden;
   z-index: 30;
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 0 30px rgba(249, 115, 22, 0.3);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ecosystem-avatar video {
+  width: 140%;
+  height: 140%;
+  object-fit: cover;
+  opacity: 0.85;
+  filter: blur(1px) saturate(1.2);
+  transform: scale(1.1);
 }
 
 /* Estilos para el nuevo sistema de órbitas */
@@ -59,32 +71,44 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
+  border-radius: 50%;
   z-index: 10;
+}
+
+.inner-orbit {
+  width: 260px;
+  height: 260px;
+  border: 1px dashed rgba(249, 115, 22, 0.1);
+}
+
+.middle-orbit {
+  width: 440px;
+  height: 440px;
+  border: 1px dashed rgba(249, 115, 22, 0.1);
+}
+
+.outer-orbit {
+  width: 620px;
+  height: 620px;
+  border: 1px dashed rgba(249, 115, 22, 0.1);
 }
 
 .orbit-item {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;  /* Anchura mínima para posicionar el punto de rotación */
-  height: 1px;  /* Altura mínima para posicionar el punto de rotación */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
 }
 
 .ecosystem-tool-icon {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: translate(-50%, -50%);
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   z-index: 20;
+  transform-origin: center;
 }
 
 .ecosystem-tool-label {
@@ -144,6 +168,35 @@
   box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
 }
 
+/* Clase para la variación de tamaño basada en posición */
+.tool-size-variation {
+  transition: transform 0.5s ease;
+}
+
+/* Estilos para asegurar que el texto siempre sea visible */
+.ecosystem-tool-label {
+  opacity: 0.9;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  transform: translateY(0);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.ecosystem-tool-icon:hover .ecosystem-tool-label {
+  opacity: 1;
+  transform: translateY(2px);
+}
+
+/* Transiciones suaves para los elementos interactivos */
+.tool-icon-wrapper {
+  transition: all 0.3s ease;
+}
+
+.orbit-item.approaching-center .tool-icon-wrapper {
+  transform: scale(1.15);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+}
+
 /* Animación para el brillo de las órbitas */
 @keyframes pulseOrbit {
   0% { border-color: rgba(249, 115, 22, 0.1); }
@@ -153,4 +206,59 @@
 
 .ecosystem-orbit {
   animation: pulseOrbit 4s infinite;
+}
+
+/* Animación de respiración para los elementos orbitales */
+@keyframes breatheSize {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Aplicar respiración a los iconos de herramientas */
+.tool-icon-wrapper {
+  animation: breatheSize 4s infinite ease-in-out;
+}
+
+/* Media queries para hacer el dashboard responsive */
+@media (max-width: 768px) {
+  .inner-orbit {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .middle-orbit {
+    width: 320px;
+    height: 320px;
+  }
+  
+  .outer-orbit {
+    width: 440px;
+    height: 440px;
+  }
+  
+  .ecosystem-tool-icon > div {
+    transform: scale(0.75);
+  }
+  
+  .ecosystem-tool-label {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .inner-orbit {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .middle-orbit {
+    width: 280px;
+    height: 280px;
+  }
+  
+  .outer-orbit {
+    width: 380px;
+    height: 380px;
+  }
 }
