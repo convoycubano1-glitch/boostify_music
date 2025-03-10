@@ -307,7 +307,8 @@ export default function EcosystemDashboard() {
 
   // Función para calcular la posición en la órbita
   const getPositionInOrbit = (orbit: string, angle: number) => {
-    const radius = orbit === 'inner' ? 130 : orbit === 'middle' ? 220 : 310;
+    // Radios ajustados para coincidir con los nuevos tamaños de órbitas
+    const radius = orbit === 'inner' ? 110 : orbit === 'middle' ? 180 : 250;
     const x = Math.cos((angle - 90) * Math.PI / 180) * radius;
     const y = Math.sin((angle - 90) * Math.PI / 180) * radius;
     return { x, y, radius };
@@ -321,6 +322,38 @@ export default function EcosystemDashboard() {
     return (normalizedAngle >= 315 || normalizedAngle <= 45);
   };
 
+  // Mensajes motivacionales para artistas
+  const motivationalMessages = [
+    "Unleash your creativity",
+    "Your sound matters",
+    "Turn passion into success",
+    "Connect with your audience",
+    "Elevate your music career",
+    "Transform your vision into reality",
+    "Reach new audiences globally",
+    "Create without limits",
+    "Your art, amplified"
+  ];
+
+  // Estado para el mensaje actual
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [messageVisible, setMessageVisible] = useState(true);
+
+  // Efecto para rotar los mensajes
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      setMessageVisible(false);
+      
+      setTimeout(() => {
+        setCurrentMessageIndex((prev) => (prev + 1) % motivationalMessages.length);
+        setMessageVisible(true);
+      }, 1000); // Tiempo para el fade out antes de cambiar mensaje
+      
+    }, 6000); // Cambia cada 6 segundos
+    
+    return () => clearInterval(messageInterval);
+  }, []);
+
   return (
     <div className="ecosystem-container">
       {/* Fondo con degradado */}
@@ -329,14 +362,45 @@ export default function EcosystemDashboard() {
       {/* Efecto de partículas o brillo */}
       <div className="ecosystem-bg-texture" style={{ backgroundImage: "url('/assets/noise.svg')" }} />
       
-      {/* Centro - Video en loop difuminado */}
+      {/* Textos motivacionales */}
+      <div className="motivational-text-container">
+        <motion.div 
+          className="boostify-brand"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5 }}
+        >
+          <span className="text-orange-500 font-bold">Boostify</span>
+        </motion.div>
+        
+        <motion.div 
+          className="motivational-text"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: messageVisible ? 1 : 0 }}
+          transition={{ duration: 1 }}
+        >
+          {motivationalMessages[currentMessageIndex]}
+        </motion.div>
+      </div>
+      
+      {/* Centro - Video en loop difuminado con resplandor mejorado */}
       <motion.div 
         className="ecosystem-avatar"
         animate={{ 
-          boxShadow: ["0 0 20px rgba(249, 115, 22, 0.2)", "0 0 30px rgba(249, 115, 22, 0.4)", "0 0 20px rgba(249, 115, 22, 0.2)"]
+          boxShadow: [
+            "0 0 25px rgba(249, 115, 22, 0.3)", 
+            "0 0 40px rgba(249, 115, 22, 0.5)", 
+            "0 0 25px rgba(249, 115, 22, 0.3)"
+          ],
+          border: [
+            "2px solid rgba(249, 115, 22, 0.4)",
+            "2px solid rgba(249, 115, 22, 0.7)",
+            "2px solid rgba(249, 115, 22, 0.4)"
+          ]
         }}
         transition={{ 
-          boxShadow: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+          boxShadow: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+          border: { duration: 4, repeat: Infinity, ease: "easeInOut" }
         }}
       >
         <video 
@@ -357,7 +421,7 @@ export default function EcosystemDashboard() {
           .map((tool, index) => {
             // Calcular la posición exacta en la órbita
             const angle = (index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length)) * (Math.PI / 180);
-            const radius = 130;
+            const radius = 110; // Radio reducido para coincidir con el nuevo tamaño de órbita
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
             
@@ -416,7 +480,7 @@ export default function EcosystemDashboard() {
           .map((tool, index) => {
             // Calcular la posición exacta en la órbita
             const angle = (index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length)) * (Math.PI / 180);
-            const radius = 220;
+            const radius = 180; // Radio reducido para coincidir con el nuevo tamaño de órbita
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
             
@@ -474,7 +538,7 @@ export default function EcosystemDashboard() {
           .map((tool, index) => {
             // Calcular la posición exacta en la órbita
             const angle = (index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length)) * (Math.PI / 180);
-            const radius = 310;
+            const radius = 250; // Radio reducido para coincidir con el nuevo tamaño de órbita
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
             
