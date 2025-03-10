@@ -260,11 +260,93 @@ const testimonials = [
 ];
 
 const stats = [
-  { label: "Active Artists", value: "10,000+", icon: Users2 },
-  { label: "Music Videos Created", value: "50,000+", icon: Video },
-  { label: "Tracks Promoted", value: "250,000+", icon: Music2 },
-  { label: "Monthly Views Generated", value: "15M+", icon: TrendingUp }
+  { label: "Active Artists", value: 10000, icon: Users2 },
+  { label: "Music Videos Created", value: 50000, icon: Video },
+  { label: "Tracks Promoted", value: 250000, icon: Music2 },
+  { label: "Monthly Views", value: 15000000, icon: TrendingUp }
 ];
+
+/* =============================
+   COMPONENTE CONTADOR ANIMADO
+============================= */
+function AnimatedCounter({ end, label, icon, duration = 2000 }: { end: number, label: string, icon: LucideIcon, duration?: number }) {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const controls = useAnimation();
+  const Icon = icon;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    if (nodeRef.current) {
+      observer.observe(nodeRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (isVisible) {
+      controls.start({ opacity: 1, y: 0 });
+      
+      const startTime = Date.now();
+      const endValue = end;
+      
+      const updateCounter = () => {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / duration, 1);
+        
+        // Función de easing para hacer la animación más natural
+        const easeOutQuad = (t: number) => t * (2 - t);
+        const easedProgress = easeOutQuad(progress);
+        
+        const currentValue = Math.floor(easedProgress * endValue);
+        setCount(currentValue);
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateCounter);
+        } else {
+          setCount(endValue);
+        }
+      };
+      
+      requestAnimationFrame(updateCounter);
+    }
+  }, [isVisible, end, duration, controls]);
+
+  const formattedCount = count >= 1000000 
+    ? `${(count / 1000000).toFixed(1)}M+` 
+    : count >= 1000 
+      ? `${(count / 1000).toFixed(0)}K+` 
+      : `${count}+`;
+
+  return (
+    <motion.div 
+      ref={nodeRef}
+      initial={{ opacity: 0, y: 20 }}
+      animate={controls}
+      transition={{ duration: 0.5 }}
+      className="bg-zinc-900/30 backdrop-blur-sm rounded-xl p-6 text-center border border-orange-500/10 hover:border-orange-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/5"
+    >
+      <div className="bg-orange-500/10 rounded-full p-3 inline-flex items-center justify-center mb-4">
+        <Icon className="h-6 w-6 text-orange-500" />
+      </div>
+      <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
+        {formattedCount}
+      </h3>
+      <p className="text-white/70 text-sm">{label}</p>
+    </motion.div>
+  );
+}
 
 /* =============================
    COMPONENTE PRINCIPAL: HOME PAGE
@@ -362,6 +444,8 @@ export default function HomePage() {
           loop
           muted
           playsInline
+          disablePictureInPicture
+          disableRemotePlayback
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover"
           src="/assets/Standard_Mode_Generated_Video (9).mp4"
@@ -492,31 +576,33 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Stats Section */}
+      {/* Stats Section - With Animated Counters */}
       <section 
         ref={statsRef}
         className="py-16 bg-gradient-to-b from-black to-zinc-950 relative overflow-hidden"
       >
+        {/* Background elements */}
+        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-orange-500/10 rounded-full filter blur-3xl opacity-30" />
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-red-500/10 rounded-full filter blur-3xl opacity-30" />
+        
         <motion.div 
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0 }}
           animate={statsControls}
           className="container mx-auto px-4"
         >
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500">
+            Platform Metrics
+          </h2>
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {stats.map((stat, index) => (
-              <motion.div
+              <AnimatedCounter
                 key={index}
-                variants={itemVariants}
-                className="bg-zinc-900/30 backdrop-blur-sm rounded-xl p-6 text-center border border-orange-500/10"
-              >
-                <div className="bg-orange-500/10 rounded-full p-3 inline-flex items-center justify-center mb-4">
-                  <stat.icon className="h-6 w-6 text-orange-500" />
-                </div>
-                <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
-                  {stat.value}
-                </h3>
-                <p className="text-white/70 text-sm">{stat.label}</p>
-              </motion.div>
+                end={stat.value}
+                label={stat.label}
+                icon={stat.icon}
+                duration={2000 + (index * 300)} // Slight delay between counters
+              />
             ))}
           </div>
         </motion.div>
@@ -815,6 +901,9 @@ export default function HomePage() {
             autoPlay 
             loop 
             muted 
+            playsInline
+            disablePictureInPicture
+            disableRemotePlayback
             className="w-full h-full object-cover"
             poster="/assets/education-poster.jpg"
           >
@@ -832,11 +921,11 @@ export default function HomePage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Educación Musical <span className="text-gradient">Inteligente</span>
+              Intelligent <span className="text-gradient">Music Education</span>
             </h2>
             <p className="text-white/70 max-w-2xl mx-auto text-lg">
-              Transforma tu aprendizaje musical con cursos interactivos, feedback en tiempo real y un enfoque
-              personalizado impulsado por IA que se adapta a tu estilo de aprendizaje.
+              Transform your musical learning with interactive courses, real-time feedback, and an 
+              AI-powered personalized approach that adapts to your learning style.
             </p>
           </motion.div>
           
@@ -851,9 +940,9 @@ export default function HomePage() {
               <div className="rounded-full bg-orange-500/20 w-12 h-12 flex items-center justify-center mb-6">
                 <Music2 className="w-6 h-6 text-orange-500" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Cursos Interactivos</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Interactive Courses</h3>
               <p className="text-white/70">
-                Aprende a tu propio ritmo con lecciones interactivas que combinan teoría, práctica y evaluación en tiempo real.
+                Learn at your own pace with interactive lessons that combine theory, practice, and real-time evaluation.
               </p>
             </motion.div>
             
@@ -867,9 +956,9 @@ export default function HomePage() {
               <div className="rounded-full bg-blue-500/20 w-12 h-12 flex items-center justify-center mb-6">
                 <Zap className="w-6 h-6 text-blue-500" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">IA Adaptativa</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Adaptive AI</h3>
               <p className="text-white/70">
-                Nuestro sistema adapta las lecciones a tu nivel, identificando áreas de mejora y sugiriendo ejercicios personalizados.
+                Our system adapts lessons to your level, identifying areas for improvement and suggesting personalized exercises.
               </p>
             </motion.div>
             
@@ -883,9 +972,9 @@ export default function HomePage() {
               <div className="rounded-full bg-green-500/20 w-12 h-12 flex items-center justify-center mb-6">
                 <Users2 className="w-6 h-6 text-green-500" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Comunidad Global</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Global Community</h3>
               <p className="text-white/70">
-                Conéctate con estudiantes y profesores de todo el mundo, comparte proyectos y participa en desafíos musicales.
+                Connect with students and teachers from around the world, share projects, and participate in musical challenges.
               </p>
             </motion.div>
           </div>
@@ -902,20 +991,23 @@ export default function HomePage() {
                 size="lg" 
                 className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-6 text-lg font-medium hover:opacity-90"
               >
-                Explorar Cursos <ArrowRight className="ml-2 w-5 h-5" />
+                Explore Courses <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
           </motion.div>
         </div>
       </section>
       
-      {/* Nueva sección de creación de videos musicales con IA */}
+      {/* New AI music video creation section */}
       <section className="py-24 relative overflow-hidden bg-zinc-950">
         <div className="absolute inset-0 z-0 opacity-80">
           <video 
             autoPlay 
             loop 
             muted 
+            playsInline
+            disablePictureInPicture
+            disableRemotePlayback
             className="w-full h-full object-cover"
           >
             <source src="/assets/Standard_Mode_Generated_Video (5).mp4" type="video/mp4" />
@@ -933,11 +1025,11 @@ export default function HomePage() {
               className="md:w-1/2"
             >
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Crea Videos Musicales con <span className="text-gradient">Inteligencia Artificial</span>
+                Create Music Videos with <span className="text-gradient">Artificial Intelligence</span>
               </h2>
               <p className="text-white/70 text-lg mb-8">
-                Transforma tus canciones en videos musicales profesionales en minutos, no en semanas. 
-                Nuestra tecnología de IA genera videos que complementan perfectamente tu estilo musical y visión artística.
+                Transform your songs into professional music videos in minutes, not weeks.
+                Our AI technology generates videos that perfectly complement your musical style and artistic vision.
               </p>
               
               <div className="space-y-6">
@@ -946,8 +1038,8 @@ export default function HomePage() {
                     <Check className="w-5 h-5 text-purple-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Generación Instantánea</h3>
-                    <p className="text-white/70">Crea videos musicales profesionales en cuestión de minutos, sin necesidad de equipos costosos.</p>
+                    <h3 className="text-xl font-bold text-white">Instant Generation</h3>
+                    <p className="text-white/70">Create professional music videos in minutes, without the need for expensive equipment.</p>
                   </div>
                 </div>
                 
@@ -956,8 +1048,8 @@ export default function HomePage() {
                     <Check className="w-5 h-5 text-purple-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Control Creativo Total</h3>
-                    <p className="text-white/70">Personaliza cada aspecto del video, desde el estilo visual hasta la narrativa y los efectos especiales.</p>
+                    <h3 className="text-xl font-bold text-white">Complete Creative Control</h3>
+                    <p className="text-white/70">Customize every aspect of the video, from visual style to narrative and special effects.</p>
                   </div>
                 </div>
                 
@@ -966,8 +1058,8 @@ export default function HomePage() {
                     <Check className="w-5 h-5 text-purple-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Integración con tu Música</h3>
-                    <p className="text-white/70">Nuestra IA analiza tu canción para crear visuales que se sincronicen perfectamente con el ritmo y la energía.</p>
+                    <h3 className="text-xl font-bold text-white">Music Integration</h3>
+                    <p className="text-white/70">Our AI analyzes your song to create visuals that perfectly synchronize with the rhythm and energy.</p>
                   </div>
                 </div>
               </div>
@@ -978,7 +1070,7 @@ export default function HomePage() {
                     size="lg" 
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-6 text-lg font-medium hover:opacity-90"
                   >
-                    Crear Video Musical <Video className="ml-2 w-5 h-5" />
+                    Create Music Video <Video className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
                 
@@ -988,7 +1080,7 @@ export default function HomePage() {
                     variant="outline" 
                     className="border-white px-6 py-6 text-lg font-medium hover:bg-white/10"
                   >
-                    Ver Ejemplos
+                    View Examples
                   </Button>
                 </Link>
               </div>
@@ -1006,6 +1098,9 @@ export default function HomePage() {
                   autoPlay 
                   loop 
                   muted 
+                  playsInline
+                  disablePictureInPicture
+                  disableRemotePlayback
                   className="w-full h-full object-cover"
                   poster="/assets/video-thumbnail.jpg"
                 >
@@ -1013,7 +1108,7 @@ export default function HomePage() {
                 </video>
               </div>
               
-              {/* Controles de reproducción estilizados como decoración */}
+              {/* Stylized playback controls as decoration */}
               <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 bg-black/50 backdrop-blur-sm rounded-lg p-3">
                 <div className="w-2/3 h-1 bg-white/20 rounded-full overflow-hidden">
                   <div className="w-1/2 h-full bg-purple-500 rounded-full"></div>
@@ -1029,6 +1124,69 @@ export default function HomePage() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Featured AI Music Video Example */}
+      <section className="py-24 relative overflow-hidden bg-zinc-900">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Featured <span className="text-gradient">AI Music Video</span>
+            </h2>
+            <p className="text-white/70 max-w-2xl mx-auto text-lg">
+              Check out this example of a professionally generated music video created with our AI technology.
+            </p>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/30"
+          >
+            <div className="aspect-video relative">
+              <iframe 
+                className="w-full h-full absolute inset-0"
+                src="https://www.youtube.com/embed/O90iHkU3cPU?si=fkUJqyJ_F0tYJUxY" 
+                title="AI Generated Music Video"
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            </div>
+            
+            <div className="bg-zinc-800 p-6">
+              <h3 className="text-xl font-bold text-white mb-2">Professional Quality Music Visualization</h3>
+              <p className="text-white/70">
+                This video demonstrates the advanced capabilities of our AI technology in creating dynamic, 
+                synchronized visuals that perfectly match the mood and rhythm of the music.
+              </p>
+              
+              <div className="mt-6 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Play className="w-5 h-5 text-purple-400" />
+                  <span className="text-white/70">AI-Generated • 4K Quality</span>
+                </div>
+                
+                <Link href="/music-video">
+                  <Button 
+                    variant="ghost" 
+                    className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                  >
+                    Create Your Own <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

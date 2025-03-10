@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "@/components/layout/header";
+import { Maximize2 } from "lucide-react";
 import { Activity, PlaySquare, Plus, Edit2, Trash2, MessageSquare, Send } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -56,7 +57,7 @@ export default function VideosPage() {
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['videos'],
     queryFn: async () => {
-      if (!user) throw new Error("Usuario no autenticado");
+      if (!user) throw new Error("User not authenticated");
 
       const videosRef = collection(db, "videos");
       const q = query(videosRef, orderBy("date", "desc"));
@@ -72,7 +73,7 @@ export default function VideosPage() {
 
   const createVideoMutation = useMutation({
     mutationFn: async (newVideo: Partial<Video>) => {
-      if (!user) throw new Error("Usuario no autenticado");
+      if (!user) throw new Error("User not authenticated");
 
       const videoData = {
         ...newVideo,
@@ -89,8 +90,8 @@ export default function VideosPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast({
-        title: "Éxito",
-        description: "Video añadido exitosamente",
+        title: "Success",
+        description: "Video added successfully",
       });
       setShowVideoDialog(false);
       setVideoForm({
@@ -104,7 +105,7 @@ export default function VideosPage() {
 
   const editVideoMutation = useMutation({
     mutationFn: async (updatedVideo: Partial<Video>) => {
-      if (!user || !editingVideo?.id) throw new Error("No se puede editar el video");
+      if (!user || !editingVideo?.id) throw new Error("Cannot edit the video");
 
       const videoRef = doc(db, "videos", editingVideo.id);
       await updateDoc(videoRef, {
@@ -115,8 +116,8 @@ export default function VideosPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast({
-        title: "Éxito",
-        description: "Video actualizado exitosamente",
+        title: "Success",
+        description: "Video updated successfully",
       });
       setShowVideoDialog(false);
       setEditingVideo(null);
@@ -125,21 +126,21 @@ export default function VideosPage() {
 
   const deleteVideoMutation = useMutation({
     mutationFn: async (videoId: string) => {
-      if (!user) throw new Error("Usuario no autenticado");
+      if (!user) throw new Error("User not authenticated");
       await deleteDoc(doc(db, "videos", videoId));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast({
-        title: "Éxito",
-        description: "Video eliminado exitosamente",
+        title: "Success",
+        description: "Video deleted successfully",
       });
     }
   });
 
   const addCommentMutation = useMutation({
     mutationFn: async ({ videoId, text }: { videoId: string, text: string }) => {
-      if (!user) throw new Error("Usuario no autenticado");
+      if (!user) throw new Error("User not authenticated");
 
       const videoRef = doc(db, "videos", videoId);
       const comment: Comment = {
@@ -157,8 +158,8 @@ export default function VideosPage() {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       setCommentText("");
       toast({
-        title: "Éxito",
-        description: "Comentario añadido exitosamente",
+        title: "Success",
+        description: "Comment added successfully",
       });
     }
   });
@@ -169,7 +170,7 @@ export default function VideosPage() {
       if (!youtubeId.match(/^[a-zA-Z0-9_-]{11}$/)) {
         toast({
           title: "Error",
-          description: "El ID de YouTube debe tener 11 caracteres y solo puede contener letras, números, guiones y guiones bajos",
+          description: "The YouTube ID must be 11 characters long and can only contain letters, numbers, hyphens, and underscores",
           variant: "destructive"
         });
         return;
@@ -180,7 +181,7 @@ export default function VideosPage() {
         setIsAwaitingApiKey(true);
         toast({
           title: "Error",
-          description: "No se encontró la clave de API de YouTube. Por favor, asegúrate de que la clave API esté configurada correctamente en las variables de entorno.",
+          description: "YouTube API key not found. Please ensure the API key is correctly configured in the environment variables.",
           variant: "destructive"
         });
         return;
@@ -210,21 +211,21 @@ export default function VideosPage() {
       } else {
         toast({
           title: "Error",
-          description: "No se encontró el video con ese ID. Verifica que el ID sea correcto.",
+          description: "Video not found with that ID. Please verify the ID is correct.",
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error('Error fetching YouTube metadata:', error);
-      let errorMessage = "Error al obtener la información del video";
+      let errorMessage = "Error retrieving video information";
 
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 400) {
-          errorMessage = "Error en la petición a YouTube API. Verifica que el ID del video sea válido.";
+          errorMessage = "Error in YouTube API request. Please verify the video ID is valid.";
         } else if (error.response?.status === 403) {
-          errorMessage = "Error de autenticación con YouTube API. Verifica la clave API.";
+          errorMessage = "Authentication error with YouTube API. Please check the API key.";
         } else if (error.response?.status === 404) {
-          errorMessage = "Video no encontrado. Verifica el ID del video.";
+          errorMessage = "Video not found. Please verify the video ID.";
         }
       }
 
@@ -254,10 +255,10 @@ export default function VideosPage() {
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-500/70">
-                  Video Content Hub
+                  AI Music Videos
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  Manage and analyze your video content across platforms
+                  Create, manage, and analyze professional music videos generated with artificial intelligence
                 </p>
               </div>
               <Dialog open={showVideoDialog} onOpenChange={(open) => {
@@ -284,8 +285,8 @@ export default function VideosPage() {
                       {editingVideo ? 'Edit Video' : 'Upload New Video'}
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                      Ingresa el ID de un video de YouTube para cargar automáticamente su información. 
-                      El ID se encuentra en la URL del video después de "v=".
+                      Enter a YouTube video ID to automatically load its information.
+                      The ID can be found in the video URL after "v=".
                     </p>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -298,7 +299,7 @@ export default function VideosPage() {
                         placeholder="e.g. dQw4w9WgXcQ"
                       />
                       <p className="text-xs text-muted-foreground">
-                        El ID debe tener 11 caracteres y lo puedes encontrar en la URL del video de YouTube
+                        The ID must be 11 characters long and can be found in the YouTube video URL
                       </p>
                     </div>
 
@@ -352,6 +353,61 @@ export default function VideosPage() {
               </Dialog>
             </div>
 
+            {/* Featured Video */}
+            <Card className="p-6 mb-10 border-2 border-orange-500/30 hover:shadow-xl transition-all duration-300 hover:border-orange-500/50">
+              <div className="flex flex-col gap-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-500/10 text-orange-500 mb-3 inline-block animate-pulse">Featured Example</span>
+                    <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">AI-Generated Music Visualization</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Experience the power of our AI-driven music visualization technology with this featured example. 
+                      This demonstrates how our system can create dynamic visuals that perfectly sync with musical elements.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="w-full transform transition-transform duration-500 hover:scale-[1.01]">
+                  <div className="relative aspect-video rounded-lg overflow-hidden border border-orange-500/20 shadow-lg shadow-orange-500/10 group">
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <iframe
+                      src="https://www.youtube.com/embed/O90iHkU3cPU?si=fkUJqyJ_F0tYJUxY"
+                      title="AI Generated Music Visualization"
+                      className="absolute inset-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Button size="sm" variant="secondary" className="bg-white/20 backdrop-blur-md">
+                        <Maximize2 className="h-4 w-4 mr-1" /> Expand
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 transition-all duration-300 hover:text-orange-500">
+                      <Activity className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm text-muted-foreground">4K Resolution</span>
+                    </div>
+                    <div className="flex items-center gap-2 transition-all duration-300 hover:text-orange-500">
+                      <MessageSquare className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm text-muted-foreground">AI-Generated Content</span>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="text-orange-500 border-orange-500 hover:bg-orange-500/10 transition-all duration-300 hover:shadow-md hover:shadow-orange-500/20"
+                  >
+                    Create Similar <PlaySquare className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+            
+            <h2 className="text-2xl font-semibold mb-6">Your Video Library</h2>
             <div className="grid gap-6">
               {videos.map((video) => (
                 <Card key={video.id} className="p-6 hover:bg-muted/50 transition-colors">
@@ -404,18 +460,18 @@ export default function VideosPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. El video será eliminado permanentemente.
+                                  This action cannot be undone. The video will be permanently deleted.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => video.id && deleteVideoMutation.mutate(video.id)}
                                   className="bg-red-500 hover:bg-red-600"
                                 >
-                                  Eliminar
+                                  Delete
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
