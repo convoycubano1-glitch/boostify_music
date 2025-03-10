@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -6,17 +6,23 @@ import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
   Music, Image as ImageIcon, Edit, RefreshCw, X, 
-  PictureInPicture, MoreHorizontal, Save, Maximize2, Minimize2
+  PictureInPicture, MoreHorizontal, Save, Maximize2, Minimize2,
+  Scissors, ArrowLeftRight, Film, Wand2, Layers, Plus, 
+  CornerUpLeft, CornerUpRight, ArrowUpDown, Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import WaveSurfer from 'wavesurfer.js';
+import interact from 'interactjs';
 
 export interface TimelineClip {
   id: number;
   start: number;
   duration: number;
-  type: 'video' | 'image' | 'transition' | 'audio';
+  type: 'video' | 'image' | 'transition' | 'audio' | 'effect';
   thumbnail?: string;
   title: string;
   description?: string;
@@ -30,6 +36,12 @@ export interface TimelineClip {
   lipsyncApplied?: boolean;
   lipsyncVideoUrl?: string;
   lipsyncProgress?: number;
+  // Campo para transiciones
+  transitionType?: 'crossfade' | 'wipe' | 'fade' | 'slide' | 'zoom';
+  transitionDuration?: number;
+  // Campo para efectos
+  effectType?: 'blur' | 'glow' | 'sepia' | 'grayscale' | 'saturation' | 'custom';
+  effectIntensity?: number;
   // Metadata adicional para el clip
   metadata?: {
     section?: string;    // Sección musical (coro, verso, etc.)
@@ -39,6 +51,11 @@ export interface TimelineClip {
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
   };
+}
+
+// WaveSurfer extended interface to handle missing methods in type definitions
+interface ExtendedWaveSurfer extends WaveSurfer {
+  loadDecodedBuffer?: (buffer: AudioBuffer) => void;
 }
 
 interface TimelineEditorProps {
@@ -52,6 +69,7 @@ interface TimelineEditorProps {
   onPause: () => void;
   isPlaying: boolean;
   onRegenerateImage?: (clipId: number) => void;
+  onSplitClip?: (clipId: number, splitTime: number) => void;
 }
 
 export function TimelineEditor({
@@ -64,7 +82,8 @@ export function TimelineEditor({
   onPlay,
   onPause,
   isPlaying,
-  onRegenerateImage
+  onRegenerateImage,
+  onSplitClip
 }: TimelineEditorProps) {
   const [zoom, setZoom] = useState(1);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -130,10 +149,112 @@ export function TimelineEditor({
     }
   }, [currentTime, isPlaying, playheadAnimation, timeToPixels]);
 
-  // Generar datos de forma de onda para visualización de audio
-  useEffect(() => {
-    if (!audioBuffer) return;
+  // Referencia para WaveSurfer
+  const wavesurferRef = useRef<ExtendedWaveSurfer | null>(null);
+  const waveformContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Función para convertir AudioBuffer a WAV
+  const audioBufferToWav = (buffer: AudioBuffer): ArrayBuffer => {
+    // Función auxiliar para escribir un string en un array (WAV format)
+    const writeString = (view: DataView, offset: number, string: string): void => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
 
+    // Calculamos el tamaño del archivo WAV
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const out = new ArrayBuffer(length);
+    const view = new DataView(out);
+
+    // Cabecera RIFF
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, length - 8, true);
+    writeString(view, 8, 'WAVE');
+
+    // Cabecera FMT
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM format
+    view.setUint16(22, numOfChan, true); // canales
+    view.setUint32(24, buffer.sampleRate, true); // sample rate
+    view.setUint32(28, buffer.sampleRate * 2 * numOfChan, true); // byte rate
+    view.setUint16(32, numOfChan * 2, true); // block align
+    view.setUint16(34, 16, true); // bits per sample
+
+    // Data chunk header
+    writeString(view, 36, 'data');
+    view.setUint32(40, length - 44, true);
+
+    // Escribir los datos de audio
+    const floatTo16BitPCM = (output: DataView, offset: number, input: Float32Array): void => {
+      for (let i = 0; i < input.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, input[i]));
+        output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+    };
+
+    // Copiar los datos de audio
+    let offset = 44;
+    for (let i = 0; i < buffer.numberOfChannels; i++) {
+      floatTo16BitPCM(view, offset, buffer.getChannelData(i));
+      offset += buffer.length * 2;
+    }
+
+    return out;
+  };
+  
+  // Generar datos de forma de onda para visualización de audio mejorada
+  useEffect(() => {
+    if (!audioBuffer || !waveformContainerRef.current) return;
+    
+    // Limpiar instancia anterior de WaveSurfer si existe
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+    }
+    
+    // Crear nueva instancia de WaveSurfer
+    wavesurferRef.current = WaveSurfer.create({
+      container: waveformContainerRef.current,
+      waveColor: 'rgba(249, 115, 22, 0.4)',
+      progressColor: 'rgba(249, 115, 22, 0.8)',
+      cursorColor: 'rgba(249, 115, 22, 1)',
+      barWidth: 2,
+      barRadius: 2,
+      barGap: 1,
+      height: 80,
+      normalize: true
+    });
+    
+    // Crear un AudioContext y cargar el buffer en WaveSurfer
+    try {
+      // Método para cargar buffer en WaveSurfer (versión 6+)
+      if (typeof wavesurferRef.current.loadDecodedBuffer === 'function') {
+        wavesurferRef.current.loadDecodedBuffer(audioBuffer);
+      } else {
+        // Método alternativo para versiones anteriores
+        const audioContext = new AudioContext();
+        wavesurferRef.current.load(URL.createObjectURL(new Blob(
+          [audioBufferToWav(audioBuffer)], 
+          { type: 'audio/wav' }
+        )));
+      }
+    } catch (error) {
+      console.error("Error al cargar audio en WaveSurfer:", error);
+    }
+    
+    // Eventos para WaveSurfer
+    wavesurferRef.current.on('ready', () => {
+      console.log('WaveSurfer está listo');
+    });
+    
+    wavesurferRef.current.on('seeking', (position: number) => {
+      const seekTime = position * duration;
+      onTimeUpdate(seekTime);
+    });
+    
+    // Generar también los datos de miniatura para los clips
     const channelData = audioBuffer.getChannelData(0);
     const samples = 2000;
     const blockSize = Math.floor(channelData.length / samples);
@@ -154,7 +275,22 @@ export function TimelineEditor({
     }
 
     setWaveformData(waveform);
-  }, [audioBuffer]);
+    
+    // Limpieza al desmontar
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
+    };
+  }, [audioBuffer, duration, onTimeUpdate]);
+  
+  // Actualizar la posición de reproducción en WaveSurfer
+  useEffect(() => {
+    if (wavesurferRef.current && duration > 0) {
+      const position = currentTime / duration;
+      wavesurferRef.current.seekTo(position);
+    }
+  }, [currentTime, duration]);
 
   // Manejar clic en la línea de tiempo para mover la posición actual
   const handleTimelineClick = (e: React.MouseEvent) => {
@@ -299,36 +435,199 @@ export function TimelineEditor({
             <span className="text-sm text-muted-foreground hidden sm:inline">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={handleZoomOut}
-              className="border-orange-500/30"
-            >
-              <ZoomOut className="h-4 w-4 text-orange-500" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={handleZoomIn}
-              className="border-orange-500/30"
-            >
-              <ZoomIn className="h-4 w-4 text-orange-500" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setExpandedPreview(!expandedPreview)}
-              className="border-orange-500/30"
-            >
-              {expandedPreview ? (
-                <Minimize2 className="h-4 w-4 text-orange-500" />
-              ) : (
-                <Maximize2 className="h-4 w-4 text-orange-500" />
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleZoomOut}
+                    className="border-orange-500/30"
+                  >
+                    <ZoomOut className="h-4 w-4 text-orange-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Alejar</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleZoomIn}
+                    className="border-orange-500/30"
+                  >
+                    <ZoomIn className="h-4 w-4 text-orange-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Acercar</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setExpandedPreview(!expandedPreview)}
+                    className="border-orange-500/30"
+                  >
+                    {expandedPreview ? (
+                      <Minimize2 className="h-4 w-4 text-orange-500" />
+                    ) : (
+                      <Maximize2 className="h-4 w-4 text-orange-500" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{expandedPreview ? 'Minimizar' : 'Maximizar'} vista previa</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
+      </div>
+      
+      {/* Barra de herramientas de edición */}
+      <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex items-center gap-1"
+                disabled={selectedClip === null}
+                onClick={() => {
+                  if (selectedClip !== null) {
+                    // Lógica para cortar el clip en la posición actual
+                    const clip = clips.find(c => c.id === selectedClip);
+                    if (clip && currentTime > clip.start && currentTime < clip.start + clip.duration) {
+                      const relativePosition = currentTime - clip.start;
+                      
+                      // Actualizar el clip actual para que termine en la posición de corte
+                      onClipUpdate(selectedClip, {
+                        duration: relativePosition
+                      });
+                      
+                      // Crear un nuevo clip con la segunda parte
+                      if (onSplitClip) {
+                        onSplitClip(selectedClip, currentTime);
+                      }
+                    }
+                  }
+                }}
+              >
+                <Scissors className="h-4 w-4" />
+                <span className="hidden sm:inline">Cortar</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Cortar clip en la posición actual</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex items-center gap-1"
+                disabled={!selectedClip}
+                onClick={() => {
+                  /* Lógica para agregar transición */
+                }}
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+                <span className="hidden sm:inline">Transición</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Agregar transición</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex items-center gap-1"
+                disabled={!selectedClip}
+                onClick={() => {
+                  /* Lógica para agregar efecto */
+                }}
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Efecto</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Agregar efecto visual</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="h-6 border-r mx-1"></div>
+        
+        <Select
+          disabled={selectedClip === null}
+          onValueChange={(value) => {
+            if (selectedClip !== null) {
+              onClipUpdate(selectedClip, {
+                transitionType: value as 'crossfade' | 'wipe' | 'fade' | 'slide' | 'zoom'
+              });
+            }
+          }}
+        >
+          <SelectTrigger className="h-8 w-[180px]">
+            <SelectValue placeholder="Transición..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="crossfade">Fundido cruzado</SelectItem>
+            <SelectItem value="wipe">Barrido</SelectItem>
+            <SelectItem value="fade">Desvanecer</SelectItem>
+            <SelectItem value="slide">Deslizar</SelectItem>
+            <SelectItem value="zoom">Zoom</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <div className="h-6 border-r mx-1"></div>
+        
+        <Select
+          disabled={selectedClip === null}
+          onValueChange={(value) => {
+            if (selectedClip !== null) {
+              onClipUpdate(selectedClip, {
+                effectType: value as 'blur' | 'glow' | 'sepia' | 'grayscale' | 'saturation' | 'custom'
+              });
+            }
+          }}
+        >
+          <SelectTrigger className="h-8 w-[180px]">
+            <SelectValue placeholder="Efecto..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="blur">Desenfoque</SelectItem>
+            <SelectItem value="glow">Resplandor</SelectItem>
+            <SelectItem value="sepia">Sepia</SelectItem>
+            <SelectItem value="grayscale">Escala de grises</SelectItem>
+            <SelectItem value="saturation">Saturación</SelectItem>
+            <SelectItem value="custom">Personalizado</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className={cn(
@@ -423,8 +722,81 @@ export function TimelineEditor({
               ))}
             </div>
 
-            {/* Forma de onda */}
-            {waveformData.length > 0 && (
+            {/* Forma de onda con WaveSurfer.js */}
+            <div
+              className="absolute left-0 right-0 h-24 mt-8"
+              onMouseEnter={() => setIsWaveformHovered(true)}
+              onMouseLeave={() => {
+                setIsWaveformHovered(false);
+                setHoveredTime(null);
+              }}
+              onMouseMove={handleWaveformMouseMove}
+              onClick={handleTimelineClick}
+            >
+              {/* Contenedor para WaveSurfer */}
+              <div 
+                ref={waveformContainerRef}
+                className="relative w-full h-20 bg-gray-50 dark:bg-gray-900 rounded-md overflow-hidden"
+              />
+                
+              {/* Marcadores de tiempo */}
+              <div className="relative w-full h-4 flex items-center justify-between mt-1">
+                {Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => (
+                  <div key={i} className="absolute text-xs text-muted-foreground" style={{ left: `${(i / duration) * 100}%` }}>
+                    {formatTime(i)}
+                  </div>
+                ))}
+              </div>
+                
+              {/* Indicador de tiempo actual */}
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-orange-500 z-20 pointer-events-none"
+                style={{ left: `${(currentTime / duration) * 100}%` }}
+              >
+                <div className="absolute -top-6 -translate-x-1/2 px-2 py-1 rounded bg-orange-500 text-white text-xs">
+                  {formatTimecode(currentTime)}
+                </div>
+              </div>
+                
+              {/* Indicador de tiempo hover */}
+              {isWaveformHovered && hoveredTime !== null && (
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-orange-500/50 z-10"
+                  style={{
+                    left: `${(hoveredTime / duration) * 100}%`,
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <div className="absolute -top-6 -translate-x-1/2 px-2 py-1 rounded bg-orange-500 text-white text-xs">
+                    {formatTimecode(hoveredTime)}
+                  </div>
+                </div>
+              )}
+              
+              {/* Regiones para visualizar clips */}
+              <div className="absolute top-0 left-0 right-0 h-20 z-10 pointer-events-none">
+                {clips.map((clip) => (
+                  <div
+                    key={`region-${clip.id}`}
+                    className={cn(
+                      "absolute h-full border-l border-r border-orange-500/50",
+                      selectedClip === clip.id ? "bg-orange-500/20" : "bg-orange-500/10"
+                    )}
+                    style={{
+                      left: `${(clip.start / duration) * 100}%`,
+                      width: `${(clip.duration / duration) * 100}%`
+                    }}
+                  >
+                    <div className="absolute top-0 left-0 w-full text-center text-xs font-medium text-orange-600 truncate px-1 bg-white/80 dark:bg-black/60">
+                      {clip.title}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Versión alternativa de forma de onda para respaldo */}
+            {waveformData.length > 0 && !audioBuffer && (
               <div
                 className="absolute left-0 right-0 h-24 mt-8"
                 onMouseEnter={() => setIsWaveformHovered(true)}

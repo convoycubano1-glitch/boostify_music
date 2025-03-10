@@ -1247,6 +1247,56 @@ ${transcription}`;
     // Depurar para verificar la actualización
     console.log(`Clip ${clipId} actualizado:`, updates);
   };
+  
+  // Función para manejar la división de clips en la línea de tiempo
+  const handleSplitClip = (clipId: number, splitTime: number) => {
+    // Encontrar el clip que se va a dividir
+    const clipToSplit = timelineItems.find(item => item.id === clipId);
+    if (!clipToSplit) return;
+    
+    // Calcular la posición absoluta del punto de división
+    const absoluteSplitTime = timelineItems[0].start_time + splitTime * 1000;
+    
+    // Crear el nuevo clip para la segunda parte
+    const newClipId = Math.max(...timelineItems.map(item => item.id)) + 1;
+    const relativeStartInClip = splitTime - ((clipToSplit.start_time - timelineItems[0].start_time) / 1000);
+    
+    // Nuevo clip (segunda parte)
+    const newClip: TimelineItem = {
+      ...clipToSplit,
+      id: newClipId,
+      start_time: absoluteSplitTime,
+      end_time: clipToSplit.end_time,
+      start: (absoluteSplitTime - timelineItems[0].start_time) / 1000,
+      duration: (clipToSplit.end_time - absoluteSplitTime) / 1000,
+      // Conservar otros campos importantes
+      title: `${clipToSplit.title} (parte 2)`,
+    };
+    
+    // Actualizar la lista de clips
+    const updatedItems = timelineItems.map(item => {
+      if (item.id === clipId) {
+        // Actualizar el clip original (primera parte)
+        return {
+          ...item,
+          duration: relativeStartInClip,
+          end_time: absoluteSplitTime
+        };
+      }
+      return item;
+    });
+    
+    // Añadir el nuevo clip
+    updatedItems.push(newClip);
+    
+    // Ordenar los clips por tiempo de inicio
+    updatedItems.sort((a, b) => a.start_time - b.start_time);
+    
+    // Actualizar el estado
+    setTimelineItems(updatedItems);
+    
+    console.log(`Clip ${clipId} dividido en: ${clipId} y ${newClipId} en tiempo ${splitTime}s`);
+  };
 
   /**
    * Detecta beats en el archivo de audio y crea segmentos para el timeline
@@ -2409,6 +2459,7 @@ ${transcription}`;
                     audioBuffer={audioBuffer}
                     onTimeUpdate={handleTimeUpdate}
                     onClipUpdate={handleClipUpdate}
+                    onSplitClip={handleSplitClip}
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     isPlaying={isPlaying}
