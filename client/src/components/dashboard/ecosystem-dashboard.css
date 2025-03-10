@@ -1,117 +1,156 @@
-/* Estilos para el Dashboard tipo Ecosistema */
+/* Estilos para el Dashboard de Ecosistema - Versión con Órbitas Animadas */
 
 .ecosystem-container {
-  width: 100%;
-  height: calc(100vh - 6rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
+  width: 100%;
+  min-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
+  background-color: var(--background);
+  padding: 2rem 0;
 }
 
 .ecosystem-bg-gradient {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.1));
-  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(249, 115, 22, 0.05) 0%, rgba(0, 0, 0, 0) 70%);
+  z-index: 1;
 }
 
 .ecosystem-bg-texture {
   position: absolute;
-  inset: 0;
-  opacity: 0.02;
+  width: 100%;
+  height: 100%;
+  opacity: 0.05;
   mix-blend-mode: overlay;
-  z-index: 0;
+  z-index: 2;
+  background-repeat: repeat;
 }
 
 .ecosystem-orbit {
   position: absolute;
+  border: 1px dashed rgba(249, 115, 22, 0.15);
   border-radius: 50%;
-  border: 1px solid rgba(249, 115, 22, 0.1);
-  z-index: 0;
+  z-index: 3;
 }
 
 .ecosystem-avatar {
-  position: absolute;
+  position: relative;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  z-index: 20;
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+  background-color: rgba(249, 115, 22, 0.1);
+  border: 2px solid rgba(249, 115, 22, 0.3);
   display: flex;
-  align-items: center;
   justify-content: center;
-  cursor: pointer;
+  align-items: center;
   overflow: hidden;
-  width: 120px;
-  height: 120px;
+  z-index: 30;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
 }
 
-.ecosystem-tool {
+/* Estilos para el nuevo sistema de órbitas */
+.orbit {
   position: absolute;
-  z-index: 10;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  z-index: 10;
+}
+
+.orbit-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;  /* Anchura mínima para posicionar el punto de rotación */
+  height: 1px;  /* Altura mínima para posicionar el punto de rotación */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .ecosystem-tool-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   cursor: pointer;
-  position: relative;
+  z-index: 20;
 }
 
-.ecosystem-tooltip {
+.ecosystem-tool-label {
   position: absolute;
-  opacity: 0;
-  top: -14px;
+  top: calc(100% + 2px);
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  width: 10rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: opacity 0.2s ease;
-  z-index: 30;
-}
-
-.ecosystem-tool-icon:hover .ecosystem-tooltip {
-  opacity: 1;
-}
-
-.ecosystem-add-button {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  border-radius: 50%;
-  background-color: #f97316;
-  padding: 1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 30;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  opacity: 0.8;
+  z-index: 21;
+  pointer-events: none;
 }
 
 .ecosystem-info-panel {
   position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  right: 2rem;
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 60px);
+  max-width: 800px;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.ecosystem-add-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgba(249, 115, 22, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
   z-index: 40;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);
+}
+
+/* Efectos visuales para las herramientas */
+.ecosystem-tool-icon > div {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ecosystem-tool-icon > div:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+}
+
+/* Animación para el brillo de las órbitas */
+@keyframes pulseOrbit {
+  0% { border-color: rgba(249, 115, 22, 0.1); }
+  50% { border-color: rgba(249, 115, 22, 0.3); }
+  100% { border-color: rgba(249, 115, 22, 0.1); }
+}
+
+.ecosystem-orbit {
+  animation: pulseOrbit 4s infinite;
 }

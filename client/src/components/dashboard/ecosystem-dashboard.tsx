@@ -59,6 +59,8 @@ interface EcosystemTool {
   color: string;
   orbit: 'inner' | 'middle' | 'outer';
   angle?: number; // Ángulo para posicionar en la órbita
+  orbitSpeed?: number; // Velocidad de la órbita
+  animationOffset?: number; // Desplazamiento de la animación
 }
 
 export default function EcosystemDashboard() {
@@ -294,7 +296,9 @@ export default function EcosystemDashboard() {
     
     return {
       ...tool,
-      angle: orbitIndex * angleStep
+      angle: orbitIndex * angleStep,
+      orbitSpeed: tool.orbit === 'inner' ? 60 : tool.orbit === 'middle' ? 120 : 180, // Velocidad de la órbita en segundos
+      animationOffset: 0 // Añadir para evitar errores
     };
   });
 
@@ -315,29 +319,13 @@ export default function EcosystemDashboard() {
       <div className="ecosystem-bg-texture" style={{ backgroundImage: "url('/assets/noise.svg')" }} />
       
       {/* Círculos que representan las órbitas */}
-      <motion.div 
-        className="ecosystem-orbit"
-        style={{ width: 260, height: 260 }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 200, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div 
-        className="ecosystem-orbit"
-        style={{ width: 440, height: 440 }}
-        animate={{ rotate: -360 }}
-        transition={{ duration: 300, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div 
-        className="ecosystem-orbit"
-        style={{ width: 620, height: 620 }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 400, repeat: Infinity, ease: "linear" }}
-      />
+      <div className="ecosystem-orbit" style={{ width: 260, height: 260 }} />
+      <div className="ecosystem-orbit" style={{ width: 440, height: 440 }} />
+      <div className="ecosystem-orbit" style={{ width: 620, height: 620 }} />
       
       {/* Centro - Logo/Avatar del artista */}
       <motion.div 
         className="ecosystem-avatar"
-        whileHover={{ scale: 1.05 }}
         animate={{ 
           boxShadow: ["0 0 20px rgba(249, 115, 22, 0.2)", "0 0 30px rgba(249, 115, 22, 0.4)", "0 0 20px rgba(249, 115, 22, 0.2)"]
         }}
@@ -354,49 +342,137 @@ export default function EcosystemDashboard() {
         )}
       </motion.div>
       
-      {/* Herramientas en órbitas */}
-      {toolsWithAngles.map((tool) => {
-        const position = getPositionInOrbit(tool.orbit, tool.angle || 0);
-        return (
-          <motion.div
-            key={tool.id}
-            className={`ecosystem-tool ${selectedTool === tool.id ? 'z-30' : ''}`}
-            style={{ 
-              left: "50%",
-              top: "50%",
-              x: position.x,
-              y: position.y
-            }}
-            whileHover={{ scale: 1.1 }}
-            animate={{ 
-              boxShadow: selectedTool === tool.id ? 
-                ["0 0 10px rgba(249, 115, 22, 0.2)", "0 0 20px rgba(249, 115, 22, 0.4)", "0 0 10px rgba(249, 115, 22, 0.2)"] : 
-                "none" 
-            }}
-            transition={{ boxShadow: { duration: 2, repeat: Infinity } }}
-          >
-            <Link href={tool.route}>
-              <motion.div 
-                className="h-16 w-16 rounded-full bg-background/80 backdrop-blur-md border border-orange-500/20 shadow-md flex flex-col items-center justify-center cursor-pointer relative group"
-                whileHover={{ scale: 1.1 }}
-                onClick={() => setSelectedTool(tool.id)}
-              >
-                <tool.icon className={`h-6 w-6 ${tool.color}`} />
-                
-                {/* Tooltip que muestra al hacer hover */}
-                <div className="ecosystem-tooltip">
-                  <div className="text-sm font-semibold">{tool.name}</div>
-                  <div className="text-xs text-muted-foreground">{tool.description}</div>
-                  <div className="mt-1 flex items-center text-xs">
-                    <span className={`font-semibold ${tool.color}`}>{tool.stats}</span>
-                    <span className="ml-1 text-muted-foreground">{tool.statsLabel}</span>
+      {/* Órbita interna */}
+      <div className="orbit inner-orbit">
+        {toolsWithAngles
+          .filter(tool => tool.orbit === 'inner')
+          .map((tool, index) => (
+            <motion.div
+              key={tool.id}
+              className="orbit-item"
+              style={{ 
+                rotate: `${tool.angle}deg`,
+                transformOrigin: 'center 130px',
+              }}
+              animate={{
+                rotate: [tool.angle, tool.angle + 360]
+              }}
+              transition={{
+                duration: 60,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              <Link href={tool.route}>
+                <motion.div 
+                  className="ecosystem-tool-icon"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedTool(tool.id);
+                  }}
+                  animate={{ rotate: 360 * -1 }}
+                  transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                >
+                  <div className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer">
+                    <tool.icon className={`h-6 w-6 ${tool.color}`} />
+                    
+                    <div className="ecosystem-tool-label">
+                      {tool.name}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            </Link>
-          </motion.div>
-        );
-      })}
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+      </div>
+      
+      {/* Órbita media */}
+      <div className="orbit middle-orbit">
+        {toolsWithAngles
+          .filter(tool => tool.orbit === 'middle')
+          .map((tool, index) => (
+            <motion.div
+              key={tool.id}
+              className="orbit-item"
+              style={{ 
+                rotate: `${tool.angle}deg`,
+                transformOrigin: 'center 220px',
+              }}
+              animate={{
+                rotate: [tool.angle, tool.angle - 360]
+              }}
+              transition={{
+                duration: 90,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              <Link href={tool.route}>
+                <motion.div 
+                  className="ecosystem-tool-icon"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedTool(tool.id);
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+                >
+                  <div className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer">
+                    <tool.icon className={`h-6 w-6 ${tool.color}`} />
+                    
+                    <div className="ecosystem-tool-label">
+                      {tool.name}
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+      </div>
+      
+      {/* Órbita externa */}
+      <div className="orbit outer-orbit">
+        {toolsWithAngles
+          .filter(tool => tool.orbit === 'outer')
+          .map((tool, index) => (
+            <motion.div
+              key={tool.id}
+              className="orbit-item"
+              style={{ 
+                rotate: `${tool.angle}deg`,
+                transformOrigin: 'center 310px',
+              }}
+              animate={{
+                rotate: [tool.angle, tool.angle + 360]
+              }}
+              transition={{
+                duration: 120,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              <Link href={tool.route}>
+                <motion.div 
+                  className="ecosystem-tool-icon"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedTool(tool.id);
+                  }}
+                  animate={{ rotate: 360 * -1 }}
+                  transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
+                >
+                  <div className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer">
+                    <tool.icon className={`h-6 w-6 ${tool.color}`} />
+                    
+                    <div className="ecosystem-tool-label">
+                      {tool.name}
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+      </div>
       
       {/* Añadir nueva herramienta - botón en la parte inferior */}
       <motion.div 
