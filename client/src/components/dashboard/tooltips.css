@@ -1,0 +1,61 @@
+/* Estilos para tooltips y etiquetas en el ecosistema */
+
+/* Estilos base para las etiquetas de herramientas */
+.ecosystem-tool-label {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background-color: rgba(30, 30, 30, 0.8);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Mostrar etiqueta al hacer hover */
+.tool-icon-wrapper:hover .ecosystem-tool-label {
+  opacity: 1;
+}
+
+/* Efecto de brillo para iconos cerca del centro (clase aplicada dinámicamente) */
+.approaching-center {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.6) !important; 
+  transform: scale(1.15);
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  z-index: 10;
+}
+
+/* Efecto de transición suave para todos los iconos */
+.tool-icon-wrapper {
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+
+.tool-icon-wrapper:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+}
+
+/* Estilos para la tarjeta de información de herramienta seleccionada */
+.tool-info-card {
+  background-color: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  padding: 12px;
+  width: 100%;
+  max-width: 250px;
+}
+
+.ecosystem-tool-info {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}

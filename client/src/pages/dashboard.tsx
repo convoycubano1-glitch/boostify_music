@@ -39,6 +39,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from 'framer-motion';
 import EcosystemDashboard from "@/components/dashboard/ecosystem-dashboard";
+import EcosystemDashboardImproved from "@/components/dashboard/ecosystem-dashboard-improved";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -280,9 +281,9 @@ export default function Dashboard() {
                 </TabsTrigger>
               </TabsList>
               
-              {/* Vista de Ecosistema */}
+              {/* Vista de Ecosistema Mejorada */}
               <TabsContent value="ecosystem" className="mt-0">
-                <EcosystemDashboard />
+                <EcosystemDashboardImproved />
               </TabsContent>
               
               {/* Vista Clásica */}

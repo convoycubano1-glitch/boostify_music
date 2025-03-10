@@ -27,7 +27,6 @@ import {
   Sparkles
 } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
-import { ToolIconWithTooltip } from "./tool-icon-with-tooltip";
 import "./ecosystem-dashboard.css";
 import "./tooltips.css";
 
@@ -65,7 +64,7 @@ interface EcosystemTool {
   animationOffset?: number; // Desplazamiento de la animación
 }
 
-export default function EcosystemDashboard() {
+export default function EcosystemDashboardImproved() {
   const { user } = useAuth();
   const { toast } = useToast();
   // Estado para las métricas del usuario
@@ -356,6 +355,13 @@ export default function EcosystemDashboard() {
     return () => clearInterval(messageInterval);
   }, []);
 
+  // Manejador para redireccionamiento a herramientas
+  const navigateToTool = (toolId: string, route: string, e: React.MouseEvent) => {
+    // Marcar la herramienta como seleccionada
+    setSelectedTool(toolId);
+    // La navegación se maneja a través del componente Link
+  };
+
   return (
     <div className="ecosystem-container">
       {/* Fondo con degradado */}
@@ -457,10 +463,13 @@ export default function EcosystemDashboard() {
                   }}
                   transition={{ duration: 40, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <Link href={tool.route}>
+                  <Link 
+                    href={tool.route}
+                    onClick={(e) => navigateToTool(tool.id, tool.route, e)}
+                  >
                     <div 
-                      className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper"
-                      onClick={() => setSelectedTool(tool.id)}
+                      className={`h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper ${isApproachingCenter(tool.id, index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length)) ? 'approaching-center' : ''}`}
+                      title={tool.name}
                     >
                       <tool.icon className={`h-6 w-6 ${tool.color}`} />
                       
@@ -501,24 +510,26 @@ export default function EcosystemDashboard() {
                           index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length) + 360]
                 }}
                 transition={{
-                  duration: 45, // Ligeramente más rápido que el interno
+                  duration: 50, // Algo más lento que la órbita interna
                   repeat: Infinity,
-                  ease: "easeInOut" // Cambio a easeInOut para un movimiento más natural
+                  ease: "easeInOut"
                 }}
               >
                 <motion.div 
                   className="ecosystem-tool-icon"
-                  // Contra-rotación para mantener el icono correctamente orientado
                   animate={{ 
                     rotate: [-index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length), 
                             -index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length) - 360]
                   }}
-                  transition={{ duration: 45, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 50, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <Link href={tool.route}>
+                  <Link 
+                    href={tool.route}
+                    onClick={(e) => navigateToTool(tool.id, tool.route, e)}
+                  >
                     <div 
-                      className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper"
-                      onClick={() => setSelectedTool(tool.id)}
+                      className={`h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper ${isApproachingCenter(tool.id, index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length)) ? 'approaching-center' : ''}`}
+                      title={tool.name}
                     >
                       <tool.icon className={`h-6 w-6 ${tool.color}`} />
                       
@@ -544,15 +555,10 @@ export default function EcosystemDashboard() {
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
             
-            // Calcular el ángulo actual para saber si está cerca del centro
-            const currentAngle = 0; // Inicializado a 0, se actualizará con onAnimationUpdate
-            const isCloseToCenterClass = isApproachingCenter(tool.id, currentAngle) ? "approaching-center" : "";
-            
             return (
               <motion.div
                 key={tool.id}
-                id={`orbit-item-${tool.id}`}
-                className={`orbit-item ${isCloseToCenterClass}`}
+                className="orbit-item"
                 style={{
                   position: 'absolute',
                   x, y,
@@ -564,24 +570,26 @@ export default function EcosystemDashboard() {
                           index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length) + 360]
                 }}
                 transition={{
-                  duration: 50, // Ligeramente más rápido que el medio
+                  duration: 60, // Más lento que las otras órbitas
                   repeat: Infinity,
-                  ease: "easeInOut" // Movimiento más natural tipo respiración
+                  ease: "easeInOut"
                 }}
               >
                 <motion.div 
                   className="ecosystem-tool-icon"
-                  // Contra-rotación para mantener el icono correctamente orientado
                   animate={{ 
                     rotate: [-index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length), 
                             -index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length) - 360]
                   }}
-                  transition={{ duration: 50, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 60, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <Link href={tool.route}>
+                  <Link 
+                    href={tool.route}
+                    onClick={(e) => navigateToTool(tool.id, tool.route, e)}
+                  >
                     <div 
-                      className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper"
-                      onClick={() => setSelectedTool(tool.id)}
+                      className={`h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper ${isApproachingCenter(tool.id, index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length)) ? 'approaching-center' : ''}`}
+                      title={tool.name}
                     >
                       <tool.icon className={`h-6 w-6 ${tool.color}`} />
                       
@@ -595,69 +603,34 @@ export default function EcosystemDashboard() {
             );
           })}
       </div>
-      
-      {/* Añadir nueva herramienta - botón en la parte inferior */}
-      <motion.div 
-        className="ecosystem-add-button"
-        whileHover={{ scale: 1.1, backgroundColor: "#f97316" }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <PlusCircle className="h-6 w-6 text-white" />
-      </motion.div>
-      
-      {/* Panel de información (aparece cuando se selecciona una herramienta) */}
+
+      {/* Visualización de información al seleccionar una herramienta */}
       <AnimatePresence>
         {selectedTool && (
-          <motion.div 
-            className="ecosystem-info-panel"
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", damping: 20 }}
+          <motion.div
+            className="ecosystem-tool-info"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
           >
-            {/* Contenido del panel basado en la herramienta seleccionada */}
-            {(() => {
-              const tool = toolsWithAngles.find(t => t.id === selectedTool);
-              if (!tool) return null;
-              
-              return (
-                <div className="flex items-start gap-4">
-                  <div className={`h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0`}>
-                    <tool.icon className={`h-6 w-6 ${tool.color}`} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{tool.name}</h3>
-                    <p className="text-sm text-muted-foreground">{tool.description}</p>
-                    <div className="mt-2 flex items-baseline">
-                      <span className={`text-2xl font-bold ${tool.color}`}>
-                        {typeof tool.stats === 'number' ? tool.stats.toLocaleString() : '0'}
-                      </span>
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {tool.statsLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <Link href={tool.route}>
-                    <motion.button 
-                      className="px-4 py-2 bg-orange-500 text-white rounded-md flex items-center gap-2"
-                      whileHover={{ scale: 1.05, backgroundColor: "#f97316" }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Zap className="h-4 w-4" />
-                      <span>Launch</span>
-                    </motion.button>
-                  </Link>
-                  <motion.button 
-                    className="ml-2 p-2 rounded-full border border-orange-500/20"
-                    whileHover={{ scale: 1.05, borderColor: "rgba(249, 115, 22, 0.5)" }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedTool(null)}
-                  >
-                    <Sparkles className="h-4 w-4 text-orange-500" />
-                  </motion.button>
+            {toolsData.filter(tool => tool.id === selectedTool).map(tool => (
+              <div key={tool.id} className="tool-info-card">
+                <div className="flex items-center mb-2">
+                  <tool.icon className={`h-5 w-5 mr-2 ${tool.color}`} />
+                  <h3 className="text-lg font-semibold">{tool.name}</h3>
                 </div>
-              );
-            })()}
+                <p className="text-sm text-muted-foreground mb-2">{tool.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">
+                    <span className="font-semibold text-orange-500">{tool.stats}</span> {tool.statsLabel}
+                  </span>
+                  <Link href={tool.route} className="text-xs text-orange-500 hover:text-orange-600">
+                    Open Tool
+                  </Link>
+                </div>
+              </div>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
