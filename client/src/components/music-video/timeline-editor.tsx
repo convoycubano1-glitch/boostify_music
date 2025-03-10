@@ -8,7 +8,8 @@ import {
   Music, Image as ImageIcon, Edit, RefreshCw, X, 
   PictureInPicture, MoreHorizontal, Save, Maximize2, Minimize2,
   Scissors, ArrowLeftRight, Film, Wand2, Layers, Plus, 
-  CornerUpLeft, CornerUpRight, ArrowUpDown, Sparkles
+  CornerUpLeft, CornerUpRight, ArrowUpDown, Sparkles,
+  ArrowRight, Sunset, MoveHorizontal, ArrowRight as ArrowRightIcon
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -122,30 +123,47 @@ export function TimelineEditor({
     setZoom(prev => Math.max(prev / 1.5, 0.1));
   };
 
-  // Efecto para la animación del cursor de reproducción
+  // Efecto para la animación del cursor de reproducción (mejorado para fluidez al estilo CapCut)
   useEffect(() => {
+    const playheadPosition = timeToPixels(currentTime);
+    
     if (isPlaying) {
+      // Animación suave del playhead con transición mejorada
       playheadAnimation.start({
-        x: timeToPixels(currentTime),
+        x: playheadPosition,
         transition: {
-          duration: 0.1,
-          ease: "linear"
+          duration: 0.08, // Duración levemente mayor para un movimiento tipo CapCut
+          ease: "cubicBezier(0.2, 0.0, 0.2, 1.0)", // Curva de aceleración profesional
+          type: "tween" // Asegura una animación fluida
         }
       });
       
-      // Auto-scroll para seguir la cabeza de reproducción
+      // Auto-scroll mejorado para seguir la cabeza de reproducción
       if (scrollAreaRef.current) {
-        const playheadPosition = timeToPixels(currentTime);
         const scrollLeft = scrollAreaRef.current.scrollLeft;
         const clientWidth = scrollAreaRef.current.clientWidth;
+        const threshold = clientWidth * 0.2; // 20% del ancho como umbral
         
-        // Solo auto-scroll si la cabeza de reproducción está fuera del área visible
-        if (playheadPosition < scrollLeft || playheadPosition > scrollLeft + clientWidth) {
-          scrollAreaRef.current.scrollLeft = playheadPosition - clientWidth / 2;
+        // Scroll suave cuando el playhead se acerca al borde (estilo CapCut)
+        if (playheadPosition > scrollLeft + clientWidth - threshold) {
+          // Si se acerca al borde derecho
+          const targetScroll = playheadPosition - (clientWidth * 0.7); // Posicionar al 70% de la vista
+          scrollAreaRef.current.scrollTo({
+            left: targetScroll,
+            behavior: 'smooth'
+          });
+        } else if (playheadPosition < scrollLeft + threshold) {
+          // Si se acerca al borde izquierdo
+          const targetScroll = playheadPosition - (clientWidth * 0.3); // Posicionar al 30% de la vista
+          scrollAreaRef.current.scrollTo({
+            left: targetScroll,
+            behavior: 'smooth'
+          });
         }
       }
     } else {
-      playheadAnimation.set({ x: timeToPixels(currentTime) });
+      // Posicionamiento instantáneo cuando no está reproduciendo
+      playheadAnimation.set({ x: playheadPosition });
     }
   }, [currentTime, isPlaying, playheadAnimation, timeToPixels]);
 
@@ -207,25 +225,45 @@ export function TimelineEditor({
   
   // Generar datos de forma de onda para visualización de audio mejorada
   useEffect(() => {
-    if (!audioBuffer || !waveformContainerRef.current) return;
-    
-    // Limpiar instancia anterior de WaveSurfer si existe
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
+    // Verificación robusta de requisitos previos
+    if (!audioBuffer || !waveformContainerRef.current || audioBuffer.length === 0) {
+      console.log("Requisitos previos de WaveSurfer no disponibles");
+      return;
     }
     
-    // Crear nueva instancia de WaveSurfer
-    wavesurferRef.current = WaveSurfer.create({
-      container: waveformContainerRef.current,
-      waveColor: 'rgba(249, 115, 22, 0.4)',
-      progressColor: 'rgba(249, 115, 22, 0.8)',
-      cursorColor: 'rgba(249, 115, 22, 1)',
-      barWidth: 2,
-      barRadius: 2,
-      barGap: 1,
-      height: 80,
-      normalize: true
-    });
+    // Limpiar instancia anterior de WaveSurfer si existe con manejo de errores
+    if (wavesurferRef.current) {
+      try {
+        // Primero eliminamos los eventos para evitar errores de "signal is aborted"
+        wavesurferRef.current.unAll();
+        wavesurferRef.current.destroy();
+      } catch (err) {
+        console.warn("Error al limpiar instancia WaveSurfer previa:", err);
+      }
+    }
+    
+    // Crear nueva instancia de WaveSurfer con estilo mejorado estilo CapCut
+    try {
+      wavesurferRef.current = WaveSurfer.create({
+        container: waveformContainerRef.current,
+        waveColor: 'rgba(249, 115, 22, 0.4)',
+        progressColor: 'rgba(249, 115, 22, 0.8)',
+        cursorColor: 'transparent', // Ocultamos el cursor nativo ya que tenemos el nuestro
+        barWidth: 2,
+        barRadius: 3,
+        barGap: 2,
+        height: 80,
+        normalize: true,
+        barHeight: 0.8, // Altura variable para efecto profesional
+        backend: 'WebAudio',
+        fillParent: true,
+        hideScrollbar: true,
+        // La propiedad responsive se aplicará mediante CSS
+      });
+    } catch (err) {
+      console.error("Error al crear WaveSurfer:", err);
+      return;
+    }
     
     // Crear un AudioContext y cargar el buffer en WaveSurfer
     try {
@@ -276,10 +314,16 @@ export function TimelineEditor({
 
     setWaveformData(waveform);
     
-    // Limpieza al desmontar
+    // Limpieza al desmontar con manejo de errores seguro
     return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
+      try {
+        if (wavesurferRef.current) {
+          // Desconectar eventos primero para evitar errores "signal is aborted"
+          wavesurferRef.current.unAll();
+          wavesurferRef.current.destroy();
+        }
+      } catch (err) {
+        console.warn("Limpieza segura de WaveSurfer:", err);
       }
     };
   }, [audioBuffer, duration, onTimeUpdate]);
@@ -761,7 +805,7 @@ export function TimelineEditor({
               {/* Indicador de tiempo hover */}
               {isWaveformHovered && hoveredTime !== null && (
                 <div
-                  className="absolute top-0 bottom-0 w-px bg-orange-500/50 z-10"
+                  className="absolute top-0 bottom-0 w-[2px] bg-gradient-to-r from-orange-400/60 to-orange-500/60 z-10 rounded-full backdrop-blur-sm"
                   style={{
                     left: `${(hoveredTime / duration) * 100}%`,
                     pointerEvents: 'none'
@@ -779,17 +823,60 @@ export function TimelineEditor({
                   <div
                     key={`region-${clip.id}`}
                     className={cn(
-                      "absolute h-full border-l border-r border-orange-500/50",
-                      selectedClip === clip.id ? "bg-orange-500/20" : "bg-orange-500/10"
+                      "absolute h-full border-l-2 border-r-2 border-orange-500/60 rounded",
+                      selectedClip === clip.id ? 
+                        "bg-gradient-to-br from-orange-500/30 to-orange-600/20 shadow-md shadow-orange-500/10" : 
+                        "bg-gradient-to-br from-orange-400/15 to-orange-500/10"
                     )}
                     style={{
                       left: `${(clip.start / duration) * 100}%`,
-                      width: `${(clip.duration / duration) * 100}%`
+                      width: `${(clip.duration / duration) * 100}%`,
+                      transition: "background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease",
+                      transform: selectedClip === clip.id ? 'translateY(-1px)' : 'none'
                     }}
                   >
-                    <div className="absolute top-0 left-0 w-full text-center text-xs font-medium text-orange-600 truncate px-1 bg-white/80 dark:bg-black/60">
-                      {clip.title}
+                    {/* Barra superior con título y tipo de clip */}
+                    <div 
+                      className={cn(
+                        "absolute top-0 left-0 w-full text-center text-xs font-medium truncate px-1.5 py-0.5 rounded-t",
+                        selectedClip === clip.id ? 
+                          "bg-orange-500 text-white" : 
+                          "bg-white/80 dark:bg-black/60 text-orange-600"
+                      )}
+                    >
+                      {clip.title || `Clip ${clip.id}`}
                     </div>
+                    
+                    {/* Miniatura de forma de onda si está disponible */}
+                    {waveformData.length > 0 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-10 px-1 flex items-center">
+                        <div className="w-full h-8 flex items-center">
+                          {clip.effectType && (
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] text-orange-700/50 whitespace-nowrap font-medium">
+                              {clip.effectType === 'blur' && 'Desenfoque'}
+                              {clip.effectType === 'glow' && 'Resplandor'}
+                              {clip.effectType === 'sepia' && 'Sepia'}
+                              {clip.effectType === 'grayscale' && 'Gris'}
+                              {clip.effectType === 'saturation' && 'Saturación'}
+                              {clip.effectType === 'custom' && 'Efecto'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Indicador de transición */}
+                    {clip.transitionType && (
+                      <div className="absolute bottom-1 right-1 bg-orange-500/80 rounded-full p-0.5 shadow-sm">
+                        <div className="w-3 h-3 flex items-center justify-center">
+                          {clip.transitionType === 'crossfade' && <Layers className="w-2 h-2 text-white" />}
+                          {clip.transitionType === 'wipe' && <ArrowRightIcon className="w-2 h-2 text-white" />}
+                          {clip.transitionType === 'fade' && <Film className="w-2 h-2 text-white" />}
+                          {clip.transitionType === 'slide' && <ArrowLeftRight className="w-2 h-2 text-white" />}
+                          {clip.transitionType === 'zoom' && <ZoomIn className="w-2 h-2 text-white" />}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -842,7 +929,7 @@ export function TimelineEditor({
 
                   {isWaveformHovered && hoveredTime !== null && (
                     <div
-                      className="absolute top-0 bottom-0 w-px bg-orange-500/50"
+                      className="absolute top-0 bottom-0 w-[2px] bg-gradient-to-r from-orange-400/60 to-orange-500/60 z-10 rounded-full backdrop-blur-sm"
                       style={{
                         left: `${timeToPixels(hoveredTime)}px`,
                         pointerEvents: 'none'
@@ -957,12 +1044,28 @@ export function TimelineEditor({
               </AnimatePresence>
             </div>
 
-            {/* Cabeza de reproducción */}
+            {/* Cabeza de reproducción estilo CapCut profesional */}
             <motion.div
               animate={playheadAnimation}
-              className="absolute top-0 bottom-0 w-px bg-orange-500 z-50"
+              className="absolute top-0 bottom-0 w-[3px] bg-gradient-to-r from-orange-600 to-orange-400 shadow-lg shadow-orange-500/30 z-50 rounded-full backdrop-blur-[1px]"
               initial={{ x: 0 }}
+              transition={{ 
+                type: "spring", 
+                damping: 20, 
+                stiffness: 100, 
+                mass: 0.5 
+              }}
             >
+              {/* Marcador superior con efecto de pulso y glow mejorado */}
+              <div className="absolute -top-1 -left-[5px] w-4 h-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full shadow-lg shadow-orange-500/50 border-2 border-orange-600/80 animate-pulse"></div>
+              <div className="absolute -top-[5px] -left-[8px] w-5 h-5 bg-orange-400/20 rounded-full blur-[2px] animate-ping"></div>
+              
+              {/* Línea de tiempo actual con formato profesional */}
+              <div className="absolute -top-10 -translate-x-1/2 px-2 py-1 rounded bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs font-medium min-w-[70px] text-center shadow-md">
+                {formatTimecode(currentTime)}
+              </div>
+              
+              {/* Punteros de inicio y fin */}
               <div className="absolute -top-1 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full" />
               <div className="absolute bottom-0 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full" />
             </motion.div>
