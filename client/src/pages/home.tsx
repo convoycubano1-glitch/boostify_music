@@ -267,73 +267,23 @@ const stats = [
 ];
 
 /* =============================
-   COMPONENTE CONTADOR ANIMADO
+   COMPONENTE CONTADOR ANIMADO SIMPLIFICADO
 ============================= */
-function AnimatedCounter({ end, label, icon, duration = 2000 }: { end: number, label: string, icon: LucideIcon, duration?: number }) {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const nodeRef = useRef<HTMLDivElement>(null);
-  const controls = useAnimation();
+function AnimatedCounter({ end, label, icon }: { end: number, label: string, icon: LucideIcon }) {
+  // Simplificando para usar un formato estático en lugar de animación
   const Icon = icon;
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (nodeRef.current) {
-      observer.observe(nodeRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (isVisible) {
-      controls.start({ opacity: 1, y: 0 });
-      
-      const startTime = Date.now();
-      const endValue = end;
-      
-      const updateCounter = () => {
-        const elapsedTime = Date.now() - startTime;
-        const progress = Math.min(elapsedTime / duration, 1);
-        
-        // Función de easing para hacer la animación más natural
-        const easeOutQuad = (t: number) => t * (2 - t);
-        const easedProgress = easeOutQuad(progress);
-        
-        const currentValue = Math.floor(easedProgress * endValue);
-        setCount(currentValue);
-        
-        if (progress < 1) {
-          requestAnimationFrame(updateCounter);
-        } else {
-          setCount(endValue);
-        }
-      };
-      
-      requestAnimationFrame(updateCounter);
-    }
-  }, [isVisible, end, duration, controls]);
-
-  const formattedCount = count >= 1000000 
-    ? `${(count / 1000000).toFixed(1)}M+` 
-    : count >= 1000 
-      ? `${(count / 1000).toFixed(0)}K+` 
-      : `${count}+`;
+  
+  const formattedValue = end >= 1000000 
+    ? `${(end / 1000000).toFixed(1)}M+` 
+    : end >= 1000 
+      ? `${(end / 1000).toFixed(0)}K+` 
+      : `${end}+`;
 
   return (
     <motion.div 
-      ref={nodeRef}
       initial={{ opacity: 0, y: 20 }}
-      animate={controls}
+      whileInView={{ opacity: 1, y: 0 }} 
+      viewport={{ once: true }}
       transition={{ duration: 0.5 }}
       className="bg-zinc-900/30 backdrop-blur-sm rounded-xl p-6 text-center border border-orange-500/10 hover:border-orange-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/5"
     >
@@ -341,7 +291,7 @@ function AnimatedCounter({ end, label, icon, duration = 2000 }: { end: number, l
         <Icon className="h-6 w-6 text-orange-500" />
       </div>
       <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-400">
-        {formattedCount}
+        {formattedValue}
       </h3>
       <p className="text-white/70 text-sm">{label}</p>
     </motion.div>
@@ -601,7 +551,6 @@ export default function HomePage() {
                 end={stat.value}
                 label={stat.label}
                 icon={stat.icon}
-                duration={2000 + (index * 300)} // Slight delay between counters
               />
             ))}
           </div>

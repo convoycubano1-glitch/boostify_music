@@ -353,60 +353,7 @@ export default function VideosPage() {
               </Dialog>
             </div>
 
-            {/* Featured Video */}
-            <Card className="p-6 mb-10 border-2 border-orange-500/30 hover:shadow-xl transition-all duration-300 hover:border-orange-500/50">
-              <div className="flex flex-col gap-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-500/10 text-orange-500 mb-3 inline-block animate-pulse">Featured Example</span>
-                    <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">AI-Generated Music Visualization</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Experience the power of our AI-driven music visualization technology with this featured example. 
-                      This demonstrates how our system can create dynamic visuals that perfectly sync with musical elements.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="w-full transform transition-transform duration-500 hover:scale-[1.01]">
-                  <div className="relative aspect-video rounded-lg overflow-hidden border border-orange-500/20 shadow-lg shadow-orange-500/10 group">
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <iframe
-                      src="https://www.youtube.com/embed/O90iHkU3cPU?si=fkUJqyJ_F0tYJUxY"
-                      title="AI Generated Music Visualization"
-                      className="absolute inset-0 w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                    <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button size="sm" variant="secondary" className="bg-white/20 backdrop-blur-md">
-                        <Maximize2 className="h-4 w-4 mr-1" /> Expand
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 transition-all duration-300 hover:text-orange-500">
-                      <Activity className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-muted-foreground">4K Resolution</span>
-                    </div>
-                    <div className="flex items-center gap-2 transition-all duration-300 hover:text-orange-500">
-                      <MessageSquare className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-muted-foreground">AI-Generated Content</span>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="text-orange-500 border-orange-500 hover:bg-orange-500/10 transition-all duration-300 hover:shadow-md hover:shadow-orange-500/20"
-                  >
-                    Create Similar <PlaySquare className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-            
+            {/* Espacio para contenido principal */}
             <h2 className="text-2xl font-semibold mb-6">Your Video Library</h2>
             <div className="grid gap-6">
               {videos.map((video) => (
