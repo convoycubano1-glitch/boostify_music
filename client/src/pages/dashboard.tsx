@@ -40,7 +40,6 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from 'framer-motion';
 import EcosystemDashboard from "@/components/dashboard/ecosystem-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SubscriptionLink } from "@/components/dashboard/subscription-link";
 
 
 export default function Dashboard() {
@@ -295,18 +294,7 @@ export default function Dashboard() {
                       <h2 className="text-xl font-semibold mb-4">Featured Services</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {services.filter(s => s.highlight).map((service) => (
-                          <SubscriptionLink 
-                            key={service.name} 
-                            href={service.route}
-                            // Condiciones basadas en el tipo de servicio
-                            requiredPlan={
-                              service.name === "AI Agents" ? "premium" :
-                              service.name === "Music Generator" ? "pro" : 
-                              service.name === "Artist Image" ? "pro" :
-                              service.name === "Music Videos" ? "premium" : 
-                              "basic"
-                            }
-                          >
+                          <Link key={service.name} href={service.route}>
                             <div>
                               <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
                                 <div className="flex items-center gap-4">
@@ -330,7 +318,7 @@ export default function Dashboard() {
                                 </div>
                               </Card>
                             </div>
-                          </SubscriptionLink>
+                          </Link>
                         ))}
                       </div>
                     </div>
@@ -340,18 +328,7 @@ export default function Dashboard() {
                       <h2 className="text-xl font-semibold mb-4">Other Services</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {services.filter(s => !s.highlight).map((service) => (
-                          <SubscriptionLink 
-                            key={service.name} 
-                            href={service.route}
-                            // Condiciones basadas en el tipo de servicio
-                            requiredPlan={
-                              service.name === "AI Agents" ? "premium" :
-                              service.name === "Music Generator" ? "pro" : 
-                              service.name === "Artist Image" ? "pro" :
-                              service.name === "Music Videos" ? "premium" : 
-                              "basic"
-                            }
-                          >
+                          <Link key={service.name} href={service.route}>
                             <div>
                               <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
                                 <div className="flex items-center gap-3">
@@ -375,7 +352,7 @@ export default function Dashboard() {
                                 </div>
                               </Card>
                             </div>
-                          </SubscriptionLink>
+                          </Link>
                         ))}
                       </div>
                     </div>
@@ -385,21 +362,17 @@ export default function Dashboard() {
                       <h2 className="text-xl font-semibold mb-4">Key Services</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                          { title: "Education", description: "Learn music skills", link: "/education", icon: GraduationCap, statsValue: metrics.coursesEnrolled, statsLabel: "Courses", color: "text-blue-500", requiredPlan: "basic" },
-                          { title: "Store", description: "Sell merchandise", link: "/store", icon: ShoppingBag, statsValue: metrics.merchandiseSold, statsLabel: "Products", color: "text-green-500", requiredPlan: "basic" },
-                          { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: Tv, statsValue: 24, statsLabel: "Videos", color: "text-red-500", requiredPlan: "basic" },
-                          { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: Video, statsValue: metrics.youtubeViews, statsLabel: "Views", color: "text-rose-500", requiredPlan: "pro" },
-                          { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: Music, statsValue: metrics.spotifyFollowers, statsLabel: "Followers", color: "text-emerald-500", requiredPlan: "basic" },
-                          { title: "Plugins", description: "Content extensions", link: "/plugins", icon: Puzzle, statsValue: 8, statsLabel: "Plugins", color: "text-cyan-500", requiredPlan: "basic" },
-                          { title: "Contracts", description: "Legal documents", link: "/contracts", icon: FileText, statsValue: metrics.contractsCreated, statsLabel: "Documents", color: "text-indigo-500", requiredPlan: "basic" },
-                          { title: "Profile", description: "Artist profile", link: "/profile", icon: User, statsValue: 1, statsLabel: "Profile", color: "text-purple-500", requiredPlan: null },
-                          { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards", color: "text-amber-500", requiredPlan: "basic" }
+                          { title: "Education", description: "Learn music skills", link: "/education", icon: GraduationCap, statsValue: metrics.coursesEnrolled, statsLabel: "Courses", color: "text-blue-500" },
+                          { title: "Store", description: "Sell merchandise", link: "/store", icon: ShoppingBag, statsValue: metrics.merchandiseSold, statsLabel: "Products", color: "text-green-500" },
+                          { title: "Boostify TV", description: "Watch content", link: "/boostify-tv", icon: Tv, statsValue: 24, statsLabel: "Videos", color: "text-red-500" },
+                          { title: "YouTube Boost", description: "Grow your channel", link: "/youtube-views", icon: Video, statsValue: metrics.youtubeViews, statsLabel: "Views", color: "text-rose-500" },
+                          { title: "Spotify Boost", description: "Increase streams", link: "/spotify", icon: Music, statsValue: metrics.spotifyFollowers, statsLabel: "Followers", color: "text-emerald-500" },
+                          { title: "Plugins", description: "Content extensions", link: "/plugins", icon: Puzzle, statsValue: 8, statsLabel: "Plugins", color: "text-cyan-500" },
+                          { title: "Contracts", description: "Legal documents", link: "/contracts", icon: FileText, statsValue: metrics.contractsCreated, statsLabel: "Documents", color: "text-indigo-500" },
+                          { title: "Profile", description: "Artist profile", link: "/profile", icon: User, statsValue: 1, statsLabel: "Profile", color: "text-purple-500" },
+                          { title: "Smart Cards", description: "Digital cards", link: "/smart-cards", icon: CreditCard, statsValue: 3, statsLabel: "Cards", color: "text-amber-500" }
                         ].map((service) => (
-                          <SubscriptionLink 
-                            key={service.title} 
-                            href={service.link}
-                            requiredPlan={service.requiredPlan}
-                          >
+                          <Link key={service.title} href={service.link}>
                             <div>
                               <Card className="p-6 cursor-pointer bg-gradient-to-br from-background to-orange-500/5 hover:from-orange-500/10 hover:to-background border-orange-500/20 hover:border-orange-500/40 transition-all">
                                 <div className="flex items-center gap-4">
@@ -423,7 +396,7 @@ export default function Dashboard() {
                                 </div>
                               </Card>
                             </div>
-                          </SubscriptionLink>
+                          </Link>
                         ))}
                       </div>
                     </div>

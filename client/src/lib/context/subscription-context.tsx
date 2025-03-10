@@ -34,7 +34,7 @@ export interface SubscriptionContextType {
   refreshSubscription: () => void;
   
   // Access verification
-  hasAccess: (requiredPlan?: SubscriptionPlan) => boolean;
+  hasAccess: (requiredPlan: SubscriptionPlan) => boolean;
 }
 
 // Crear el contexto
@@ -111,12 +111,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
    * @param requiredPlan Plan required for access
    * @returns true if the user has access
    */
-  const hasAccess = (requiredPlan?: SubscriptionPlan): boolean => {
-    // Si no se especifica un plan requerido, permitir acceso
-    if (!requiredPlan) {
-      return true;
-    }
-    
+  const hasAccess = (requiredPlan: SubscriptionPlan): boolean => {
     // If the user is an administrator, always grant access
     if (user?.email === 'convoycubano@gmail.com') {
       return true;
