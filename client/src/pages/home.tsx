@@ -7,7 +7,7 @@ import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
   MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
   Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
-  Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause
+  Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
@@ -267,26 +267,20 @@ const stats = [
 ];
 
 /* =============================
-   COMPONENTE CONTADOR ANIMADO SIMPLIFICADO
+   COMPONENTE ESTADÍSTICA SIMPLE
 ============================= */
-function AnimatedCounter({ end, label, icon }: { end: number, label: string, icon: LucideIcon }) {
-  // Simplificando para usar un formato estático en lugar de animación
+function StatCard({ value, label, icon }: { value: number, label: string, icon: LucideIcon }) {
   const Icon = icon;
   
-  const formattedValue = end >= 1000000 
-    ? `${(end / 1000000).toFixed(1)}M+` 
-    : end >= 1000 
-      ? `${(end / 1000).toFixed(0)}K+` 
-      : `${end}+`;
+  // Formato simple para los números grandes
+  const formattedValue = value >= 1000000 
+    ? `${(value / 1000000).toFixed(1)}M+` 
+    : value >= 1000 
+      ? `${(value / 1000).toFixed(0)}K+` 
+      : `${value}+`;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }} 
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      className="bg-zinc-900/30 backdrop-blur-sm rounded-xl p-6 text-center border border-orange-500/10 hover:border-orange-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/5"
-    >
+    <div className="bg-zinc-900/30 backdrop-blur-sm rounded-xl p-6 text-center border border-orange-500/10 hover:border-orange-500/20 transition-all duration-300">
       <div className="bg-orange-500/10 rounded-full p-3 inline-flex items-center justify-center mb-4">
         <Icon className="h-6 w-6 text-orange-500" />
       </div>
@@ -294,7 +288,7 @@ function AnimatedCounter({ end, label, icon }: { end: number, label: string, ico
         {formattedValue}
       </h3>
       <p className="text-white/70 text-sm">{label}</p>
-    </motion.div>
+    </div>
   );
 }
 
@@ -546,9 +540,9 @@ export default function HomePage() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {stats.map((stat, index) => (
-              <AnimatedCounter
+              <StatCard
                 key={index}
-                end={stat.value}
+                value={stat.value}
                 label={stat.label}
                 icon={stat.icon}
               />
@@ -843,6 +837,210 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* YouTube Growth Section with Animated Chart */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-900 to-black">
+        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl opacity-30" />
+        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-purple-500/10 rounded-full filter blur-3xl opacity-30" />
+        
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="max-w-xl"
+            >
+              <Badge 
+                className="mb-4 bg-blue-500/20 text-blue-400 border-blue-500/30 px-4 py-1 text-sm"
+                variant="outline"
+              >
+                YouTube Promotion
+              </Badge>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Boost Your Video Presence</h2>
+              <p className="text-white/70 text-lg mb-8">
+                Our advanced YouTube promotion strategies help you reach wider audiences and increase 
+                engagement on your videos. Get real views, likes, and subscribers through our targeted 
+                promotion campaigns.
+              </p>
+
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <div className="text-center">
+                  <h3 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-1">500K+</h3>
+                  <p className="text-white/70 text-sm">Monthly Views</p>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-1">50K+</h3>
+                  <p className="text-white/70 text-sm">New Subscribers</p>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-1">90%</h3>
+                  <p className="text-white/70 text-sm">Engagement Rate</p>
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold mb-4">Growth Analytics</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm text-white/70">Views Growth</span>
+                    <span className="text-sm font-bold">80%</span>
+                  </div>
+                  <div className="bg-white/10 rounded-full h-2.5 overflow-hidden">
+                    <motion.div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full" 
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "80%" }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5, delay: 0.2 }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm text-white/70">Engagement Rate</span>
+                    <span className="text-sm font-bold">90%</span>
+                  </div>
+                  <div className="bg-white/10 rounded-full h-2.5 overflow-hidden">
+                    <motion.div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full" 
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "90%" }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5, delay: 0.4 }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm text-white/70">Subscriber Growth</span>
+                    <span className="text-sm font-bold">75%</span>
+                  </div>
+                  <div className="bg-white/10 rounded-full h-2.5 overflow-hidden">
+                    <motion.div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full" 
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "75%" }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5, delay: 0.6 }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8">
+                <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                  Promote Your Channel
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, x: 50 }}
+              whileInView={{ opacity: 1, scale: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-black/40 backdrop-blur-sm rounded-2xl overflow-hidden shadow-2xl border border-white/10 p-6"
+            >
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-4">Channel Growth</h3>
+                <div className="relative h-64">
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10"></div>
+                  <div className="absolute left-0 h-full w-1 bg-white/10"></div>
+                  
+                  {/* Chart Animation */}
+                  <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* Line graph */}
+                    <motion.path
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 2, ease: "easeInOut" }}
+                      d="M 0,180 C 40,160 80,140 120,100 S 160,40 200,30 S 280,20 320,50 S 360,90 400,20"
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                    
+                    {/* Area under the line */}
+                    <motion.path
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 2, delay: 1 }}
+                      d="M 0,180 C 40,160 80,140 120,100 S 160,40 200,30 S 280,20 320,50 S 360,90 400,20 L 400,200 L 0,200 Z"
+                      fill="url(#chartGradient)"
+                    />
+                    
+                    {/* Dots for data points */}
+                    {[
+                      { x: 0, y: 180 },
+                      { x: 80, y: 140 },
+                      { x: 160, y: 40 },
+                      { x: 240, y: 20 },
+                      { x: 320, y: 50 },
+                      { x: 400, y: 20 }
+                    ].map((point, i) => (
+                      <motion.circle
+                        key={i}
+                        cx={point.x}
+                        cy={point.y}
+                        r="5"
+                        fill="#3b82f6"
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.5 + (i * 0.2) }}
+                      />
+                    ))}
+                  </svg>
+                  
+                  {/* Month labels */}
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-between px-2 text-xs text-white/50">
+                    <span>Jan</span>
+                    <span>Feb</span>
+                    <span>Mar</span>
+                    <span>Apr</span>
+                    <span>May</span>
+                    <span>Jun</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-bold mb-4">Views by Content Type</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="rounded-lg bg-blue-500/10 p-3 text-center">
+                    <PlaySquare className="h-5 w-5 text-blue-400 mx-auto mb-2" />
+                    <span className="text-sm text-white/70">Music Videos</span>
+                    <p className="text-lg font-bold">45%</p>
+                  </div>
+                  <div className="rounded-lg bg-purple-500/10 p-3 text-center">
+                    <Music2 className="h-5 w-5 text-purple-400 mx-auto mb-2" />
+                    <span className="text-sm text-white/70">Live Performances</span>
+                    <p className="text-lg font-bold">30%</p>
+                  </div>
+                  <div className="rounded-lg bg-pink-500/10 p-3 text-center">
+                    <Users2 className="h-5 w-5 text-pink-400 mx-auto mb-2" />
+                    <span className="text-sm text-white/70">Behind the Scenes</span>
+                    <p className="text-lg font-bold">25%</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+      
       {/* Nueva sección de educación musical con video de fondo */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black">
         <div className="absolute inset-0 z-0 opacity-50">
