@@ -1,227 +1,108 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
+import React, { forwardRef } from 'react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-export interface AnimatedCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  description?: string;
-  icon?: LucideIcon;
-  footer?: React.ReactNode;
-  variant?: "default" | "premium" | "gradient" | "outlined";
-  size?: "sm" | "md" | "lg";
-  hoverEffect?: "lift" | "glow" | "scale" | "tilt" | "none";
-  imageUrl?: string;
-  className?: string;
-  children?: React.ReactNode;
+// Definimos las variantes para las diferentes apariencias de la tarjeta
+const animatedCardVariants = cva(
+  "overflow-hidden transition-all",
+  {
+    variants: {
+      variant: {
+        default: "bg-zinc-900 text-white border border-zinc-800",
+        premium: "bg-gradient-to-br from-zinc-900 to-black border border-orange-800/20 shadow-lg shadow-orange-900/5",
+        glow: "bg-zinc-900 border border-orange-500/10 shadow-lg shadow-orange-500/5",
+        glass: "bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/50",
+        subtle: "bg-black/40 border border-zinc-800/50",
+      },
+      hover: {
+        none: "",
+        glow: "hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/30",
+        scale: "hover:scale-[1.02] hover:shadow-lg hover:border-zinc-700",
+        raise: "hover:translate-y-[-5px] hover:shadow-lg hover:border-zinc-700",
+        subtle: "hover:bg-black/60 hover:border-zinc-700/80",
+      },
+      padding: {
+        none: "p-0",
+        sm: "p-3",
+        md: "p-4",
+        lg: "p-6",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      hover: "none",
+      padding: "md",
+    },
+  }
+);
+
+export interface AnimatedCardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof animatedCardVariants> {
 }
 
-export function AnimatedCard({
-  title,
-  description,
-  icon: Icon,
-  footer,
-  variant = "default",
-  size = "md",
-  hoverEffect = "lift",
-  imageUrl,
-  className,
-  children,
-  ...props
-}: AnimatedCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  // Configuraciones de tamaño
-  const sizeClasses = {
-    sm: "max-w-xs",
-    md: "max-w-sm",
-    lg: "max-w-md",
-  };
-
-  // Configuraciones de animación basadas en el efecto de hover
-  const hoverAnimations = {
-    lift: {
-      rest: { y: 0 },
-      hover: { y: -8 },
-    },
-    glow: {
-      rest: { boxShadow: "0 0 0 rgba(249, 115, 22, 0)" },
-      hover: { boxShadow: "0 0 30px rgba(249, 115, 22, 0.4)" },
-    },
-    scale: {
-      rest: { scale: 1 },
-      hover: { scale: 1.05 },
-    },
-    tilt: {
-      rest: { rotateX: 0, rotateY: 0 },
-      hover: { rotateX: 5, rotateY: 5 },
-    },
-    none: {
-      rest: {},
-      hover: {},
-    },
-  };
-
-  // Definir estilos de variante
-  const getVariantClasses = () => {
-    switch (variant) {
-      case "premium":
-        return "bg-gradient-to-br from-card/90 via-card to-card/90 border-orange-500/20 shadow-lg";
-      case "gradient":
-        return "bg-gradient-to-br from-orange-950 via-background to-black border-orange-800/30";
-      case "outlined":
-        return "bg-black/40 backdrop-blur-sm border-orange-500/30";
-      default:
-        return "bg-card border-border";
-    }
-  };
-
-  // Animaciones para partículas (solo para variante premium)
-  const particlesAnimation = variant === "premium" && (
-    <>
+const AnimatedCard = forwardRef<HTMLDivElement, AnimatedCardProps>(
+  ({ className, variant, hover, padding, children, ...props }, ref) => {
+    // Para efectos de hover más sofisticados
+    const getHoverAnimation = () => {
+      if (hover === 'glow') {
+        return { 
+          boxShadow: '0 0 20px rgba(249, 115, 22, 0.15)',
+          borderColor: 'rgba(249, 115, 22, 0.3)',
+          transition: { duration: 0.3 }
+        };
+      }
+      if (hover === 'scale') {
+        return { 
+          scale: 1.02,
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+          transition: { duration: 0.3 }
+        };
+      }
+      if (hover === 'raise') {
+        return { 
+          y: -5,
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+          transition: { duration: 0.3 }
+        };
+      }
+      if (hover === 'subtle') {
+        return { 
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          borderColor: 'rgba(82, 82, 91, 0.8)',
+          transition: { duration: 0.3 }
+        };
+      }
+      return {};
+    };
+    
+    // Estilos básicos para la tarjeta basados en las variantes
+    const cardClass = cn(
+      animatedCardVariants({ variant, hover, padding }),
+      className
+    );
+    
+    return (
       <motion.div
-        className="absolute top-0 right-0 h-2 w-2 rounded-full bg-orange-500/40"
-        initial={{ opacity: 0, x: 0, y: 0 }}
-        animate={{
-          opacity: [0, 0.8, 0],
-          x: [-20, -40],
-          y: [0, -50],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          repeatType: "loop",
-          delay: Math.random() * 2,
-        }}
-      />
-      <motion.div
-        className="absolute bottom-0 left-10 h-1 w-1 rounded-full bg-orange-500/30"
-        initial={{ opacity: 0, x: 0, y: 0 }}
-        animate={{
-          opacity: [0, 0.6, 0],
-          x: [0, 30],
-          y: [0, -40],
-        }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          repeatType: "loop",
-          delay: Math.random() * 2 + 1,
-        }}
-      />
-      <motion.div
-        className="absolute top-10 left-5 h-1.5 w-1.5 rounded-full bg-orange-500/20"
-        initial={{ opacity: 0, x: 0, y: 0 }}
-        animate={{
-          opacity: [0, 0.4, 0],
-          x: [0, 20],
-          y: [0, -20],
-        }}
-        transition={{
-          duration: 3.2,
-          repeat: Infinity,
-          repeatType: "loop",
-          delay: Math.random() * 2 + 0.5,
-        }}
-      />
-    </>
-  );
-
-  return (
-    <motion.div
-      className={cn("relative overflow-hidden", sizeClasses[size], className)}
-      initial="rest"
-      animate={isHovered ? "hover" : "rest"}
-      variants={hoverAnimations[hoverEffect]}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      {...props}
-    >
-      <Card
-        className={cn(
-          "overflow-hidden transition-all duration-300",
-          getVariantClasses()
-        )}
+        ref={ref}
+        className={cardClass}
+        whileHover={hover !== 'none' ? getHoverAnimation() : {}}
+        transition={{ duration: 0.2 }}
+        {...props}
       >
-        {/* Partículas animadas para la variante premium */}
-        {particlesAnimation}
-
-        {/* Efecto de brillo en hover para variantes premium y gradient */}
-        {(variant === "premium" || variant === "gradient") && (
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-tr from-orange-600/0 via-orange-500/0 to-amber-500/0 opacity-0 mix-blend-overlay"
-            animate={{
-              opacity: isHovered ? 0.2 : 0,
-            }}
-            transition={{ duration: 0.3 }}
-          />
+        {/* Efecto de brillo para la variante premium */}
+        {variant === 'premium' && (
+          <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-orange-600/5 blur-3xl -z-10"></div>
         )}
+        
+        {children}
+      </motion.div>
+    );
+  }
+);
 
-        {/* Imagen de fondo si se proporciona */}
-        {imageUrl && (
-          <div className="absolute inset-0 overflow-hidden">
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/30 z-10"
-              animate={{
-                opacity: isHovered ? 0.75 : 0.85,
-              }}
-              transition={{ duration: 0.5 }}
-            />
-            <motion.img
-              src={imageUrl}
-              alt={title}
-              className="absolute inset-0 h-full w-full object-cover"
-              animate={{
-                scale: isHovered ? 1.1 : 1,
-              }}
-              transition={{ duration: 0.7 }}
-            />
-          </div>
-        )}
+AnimatedCard.displayName = 'AnimatedCard';
 
-        <div className="relative z-20">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              {Icon && (
-                <motion.div
-                  animate={{
-                    rotate: isHovered ? [0, 5, 0, -5, 0] : 0,
-                    scale: isHovered ? [1, 1.2, 1] : 1,
-                  }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <Icon className="h-5 w-5 text-orange-500" />
-                </motion.div>
-              )}
-              <CardTitle
-                className={cn(
-                  "text-lg",
-                  variant === "premium" || variant === "gradient"
-                    ? "bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600"
-                    : ""
-                )}
-              >
-                {title}
-              </CardTitle>
-            </div>
-            {description && (
-              <CardDescription className="text-muted-foreground">
-                {description}
-              </CardDescription>
-            )}
-          </CardHeader>
-
-          <CardContent>{children}</CardContent>
-
-          {footer && (
-            <CardFooter className="flex justify-between">
-              {footer}
-            </CardFooter>
-          )}
-        </div>
-      </Card>
-    </motion.div>
-  );
-}
+export { AnimatedCard, animatedCardVariants };

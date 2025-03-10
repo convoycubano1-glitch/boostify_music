@@ -2068,19 +2068,19 @@ ${transcription}`;
                   </div>
                   
                   <div className="space-y-4 relative z-10">
-                    <ScrollArea className="h-[200px] w-full rounded-md border border-orange-500/10 p-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                    <ScrollArea className="h-[200px] w-full rounded-md border border-orange-500/20 p-4 bg-black/60 backdrop-blur-sm">
                       {transcription ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                            <Music2 className="h-3 w-3" />
+                          <div className="flex items-center gap-2 text-xs text-orange-300 mb-2">
+                            <Music2 className="h-3 w-3 text-orange-400" />
                             <span>Letra detectada</span>
                           </div>
-                          <pre className="text-sm whitespace-pre-wrap font-medium">{transcription}</pre>
+                          <pre className="text-sm whitespace-pre-wrap font-medium text-white">{transcription}</pre>
                         </div>
                       ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground">
-                          <FileText className="h-12 w-12 mb-2 text-muted-foreground/50" />
-                          <p>Sube un archivo de audio para transcribir la letra</p>
+                        <div className="h-full flex flex-col items-center justify-center text-center">
+                          <FileText className="h-12 w-12 mb-2 text-orange-500/60" />
+                          <p className="text-zinc-300">Sube un archivo de audio para transcribir la letra</p>
                         </div>
                       )}
                     </ScrollArea>
@@ -2153,26 +2153,26 @@ ${transcription}`;
                     ) : (
                       <div className="animate-fade-in">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs mb-4">
-                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-3 rounded-md border border-amber-200/50 dark:border-amber-800/50 transform transition-transform hover:scale-105 shadow-sm">
+                          <div className="bg-black/70 p-3 rounded-md border border-orange-500/30 transform transition-transform hover:scale-105 shadow-md">
                             <div className="flex items-center gap-2 mb-1">
-                              <Music2 className="h-3 w-3 text-amber-600" />
-                              <span className="font-semibold block">Análisis Musical</span>
+                              <Music2 className="h-3 w-3 text-orange-500" />
+                              <span className="font-semibold block text-white">Análisis Musical</span>
                             </div>
-                            <span className="text-muted-foreground">Género y estructura rítmica</span>
+                            <span className="text-orange-300">Género y estructura rítmica</span>
                           </div>
-                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-3 rounded-md border border-amber-200/50 dark:border-amber-800/50 transform transition-transform hover:scale-105 shadow-sm">
+                          <div className="bg-black/70 p-3 rounded-md border border-orange-500/30 transform transition-transform hover:scale-105 shadow-md">
                             <div className="flex items-center gap-2 mb-1">
-                              <Film className="h-3 w-3 text-amber-600" />
-                              <span className="font-semibold block">Narrativa Visual</span>
+                              <Film className="h-3 w-3 text-orange-500" />
+                              <span className="font-semibold block text-white">Narrativa Visual</span>
                             </div>
-                            <span className="text-muted-foreground">Arco emocional y mensajes</span>
+                            <span className="text-orange-300">Arco emocional y mensajes</span>
                           </div>
-                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-3 rounded-md border border-amber-200/50 dark:border-amber-800/50 transform transition-transform hover:scale-105 shadow-sm">
+                          <div className="bg-black/70 p-3 rounded-md border border-orange-500/30 transform transition-transform hover:scale-105 shadow-md">
                             <div className="flex items-center gap-2 mb-1">
-                              <Video className="h-3 w-3 text-amber-600" />
-                              <span className="font-semibold block">Dirección Técnica</span>
+                              <Video className="h-3 w-3 text-orange-500" />
+                              <span className="font-semibold block text-white">Dirección Técnica</span>
                             </div>
-                            <span className="text-muted-foreground">Planos, transiciones, mood</span>
+                            <span className="text-orange-300">Planos, transiciones, mood</span>
                           </div>
                         </div>
                         
@@ -2215,24 +2215,24 @@ ${transcription}`;
                   
                   <div className="space-y-6 relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-2 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <Video className="h-4 w-4 text-blue-600" />
-                          <Label className="font-medium">Formato de Cámara</Label>
+                          <Video className="h-4 w-4 text-orange-500" />
+                          <Label className="font-medium text-white">Formato de Cámara</Label>
                         </div>
                         <Select
                           value={videoStyle.cameraFormat}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, cameraFormat: value }))}
                         >
-                          <SelectTrigger className="border-blue-200 dark:border-blue-900 bg-white/90 dark:bg-slate-800/90">
+                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
                             <SelectValue placeholder="Seleccionar formato de cámara" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
                             {videoStyles.cameraFormats.map((format) => (
                               <SelectItem key={format.name} value={format.name}>
                                 <div className="grid gap-1">
                                   <span>{format.name}</span>
-                                  <span className="text-xs text-muted-foreground">{format.description}</span>
+                                  <span className="text-xs text-orange-300">{format.description}</span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -2240,19 +2240,19 @@ ${transcription}`;
                         </Select>
                       </div>
 
-                      <div className="space-y-2 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-2 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <Music2 className="h-4 w-4 text-purple-600" />
-                          <Label className="font-medium">Mood</Label>
+                          <Music2 className="h-4 w-4 text-orange-500" />
+                          <Label className="font-medium text-white">Mood</Label>
                         </div>
                         <Select
                           value={videoStyle.mood}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
                         >
-                          <SelectTrigger className="border-purple-200 dark:border-purple-900 bg-white/90 dark:bg-slate-800/90">
+                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
                             <SelectValue placeholder="Seleccionar mood" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
                             {videoStyles.moods.map((mood) => (
                               <SelectItem key={mood} value={mood}>
                                 {mood}
@@ -2262,19 +2262,19 @@ ${transcription}`;
                         </Select>
                       </div>
 
-                      <div className="space-y-2 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-2 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <ImageIcon className="h-4 w-4 text-green-600" />
-                          <Label className="font-medium">Paleta de Colores</Label>
+                          <ImageIcon className="h-4 w-4 text-orange-500" />
+                          <Label className="font-medium text-white">Paleta de Colores</Label>
                         </div>
                         <Select
                           value={videoStyle.colorPalette}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
                         >
-                          <SelectTrigger className="border-green-200 dark:border-green-900 bg-white/90 dark:bg-slate-800/90">
+                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
                             <SelectValue placeholder="Seleccionar paleta" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
                             {videoStyles.colorPalettes.map((palette) => (
                               <SelectItem key={palette} value={palette}>
                                 {palette}
@@ -2286,24 +2286,24 @@ ${transcription}`;
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-amber-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M8 14s1.5 2 4 2 4-2 4-2" />
                             <line x1="9" y1="9" x2="9.01" y2="9" />
                             <line x1="15" y1="9" x2="15.01" y2="9" />
                           </svg>
-                          <Label className="font-medium">Estilo de Personajes</Label>
+                          <Label className="font-medium text-white">Estilo de Personajes</Label>
                         </div>
                         <Select
                           value={videoStyle.characterStyle}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
                         >
-                          <SelectTrigger className="border-amber-200 dark:border-amber-900 bg-white/90 dark:bg-slate-800/90">
+                          <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
                             <SelectValue placeholder="Seleccionar estilo" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
                             {videoStyles.characterStyles.map((style) => (
                               <SelectItem key={style} value={style}>
                                 {style}
@@ -2314,13 +2314,13 @@ ${transcription}`;
 
                         <div>
                           <div className="flex items-center justify-between">
-                            <Label className="text-sm">Intensidad Visual: <span className="font-semibold text-orange-600">{videoStyle.visualIntensity}%</span></Label>
+                            <Label className="text-sm text-white">Intensidad Visual: <span className="font-semibold text-orange-400">{videoStyle.visualIntensity}%</span></Label>
                             <div className="flex gap-1">
-                              <div className="w-3 h-3 bg-orange-100 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-200 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-300 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
-                              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-900/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-800/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-700/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-600/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-500/70 rounded-full"></div>
                             </div>
                           </div>
                           <Slider
@@ -2330,27 +2330,27 @@ ${transcription}`;
                             step={1}
                             className="mt-2"
                           />
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-orange-300/80 mt-1">
                             Intensidad de elementos visuales y efectos especiales
                           </p>
                         </div>
                       </div>
 
-                      <div className="space-y-4 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <FileText className="h-4 w-4 text-indigo-600" />
-                          <Label className="font-medium">Narrativa</Label>
+                          <FileText className="h-4 w-4 text-orange-500" />
+                          <Label className="font-medium text-white">Narrativa</Label>
                         </div>
                         
                         <div>
                           <div className="flex items-center justify-between">
-                            <Label className="text-sm">Intensidad Narrativa: <span className="font-semibold text-indigo-600">{videoStyle.narrativeIntensity}%</span></Label>
+                            <Label className="text-sm text-white">Intensidad Narrativa: <span className="font-semibold text-orange-400">{videoStyle.narrativeIntensity}%</span></Label>
                             <div className="flex gap-1">
-                              <div className="w-3 h-3 bg-indigo-100 rounded-full"></div>
-                              <div className="w-3 h-3 bg-indigo-200 rounded-full"></div>
-                              <div className="w-3 h-3 bg-indigo-300 rounded-full"></div>
-                              <div className="w-3 h-3 bg-indigo-400 rounded-full"></div>
-                              <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-900/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-800/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-700/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-600/70 rounded-full"></div>
+                              <div className="w-3 h-3 bg-orange-500/70 rounded-full"></div>
                             </div>
                           </div>
                           <Slider
@@ -2360,34 +2360,34 @@ ${transcription}`;
                             step={1}
                             className="mt-2"
                           />
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-orange-300/80 mt-1">
                             Ajusta qué tan fielmente el video sigue la narrativa de la letra
                           </p>
                         </div>
                         
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-lg p-3 mt-2">
+                        <div className="w-full bg-zinc-900 rounded-lg p-3 mt-2 border border-orange-500/20">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium">Significado Literal</span>
-                            <span className="text-xs font-medium">Interpretación Artística</span>
+                            <span className="text-xs font-medium text-white">Significado Literal</span>
+                            <span className="text-xs font-medium text-white">Interpretación Artística</span>
                           </div>
-                          <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mt-1"></div>
+                          <div className="h-1 w-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full mt-1"></div>
                           <div className="flex justify-between mt-1">
-                            <span className="text-[10px] text-muted-foreground">Historia concreta</span>
-                            <span className="text-[10px] text-muted-foreground">Metáforas visuales</span>
+                            <span className="text-[10px] text-orange-300/80">Historia concreta</span>
+                            <span className="text-[10px] text-orange-300/80">Metáforas visuales</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <ImageIcon className="h-4 w-4 text-rose-600" />
-                          <Label className="font-medium">Imagen de Referencia</Label>
+                          <ImageIcon className="h-4 w-4 text-orange-500" />
+                          <Label className="font-medium text-white">Imagen de Referencia</Label>
                         </div>
                         
                         <div 
-                          className="border-2 border-dashed border-rose-200/40 dark:border-rose-500/20 rounded-lg p-6 text-center cursor-pointer transition-colors hover:bg-rose-50/50 dark:hover:bg-rose-950/10 relative"
+                          className="border-2 border-dashed border-orange-500/30 rounded-lg p-6 text-center cursor-pointer transition-colors hover:bg-zinc-900 bg-zinc-900/50 relative"
                           onClick={() => document.getElementById('reference-image-upload')?.click()}
                         >
                           <input
@@ -2411,19 +2411,19 @@ ${transcription}`;
                               }
                             }}
                           />
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2 text-rose-500/70" />
-                          <p className="font-medium">
+                          <ImageIcon className="h-12 w-12 mx-auto mb-2 text-orange-500" />
+                          <p className="font-medium text-white">
                             {videoStyle.referenceImage ? 'Cambiar imagen de referencia' : 'Subir imagen de referencia'}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-orange-300/80 mt-1">
                             Usaremos esta imagen como inspiración del estilo visual
                           </p>
                         </div>
                         
                         {videoStyle.referenceImage && (
-                          <div className="relative overflow-hidden rounded-lg border border-rose-200 dark:border-rose-800 shadow-md">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10"></div>
-                            <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-20">
+                          <div className="relative overflow-hidden rounded-lg border border-orange-500/30 shadow-md">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
+                            <div className="absolute bottom-2 left-2 bg-black/70 border border-orange-500/20 text-white text-xs px-2 py-1 rounded-full z-20">
                               Referencia de estilo
                             </div>
                             <img
@@ -2435,26 +2435,26 @@ ${transcription}`;
                         )}
                         
                         {videoStyle.styleDescription && (
-                          <div className="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-100 dark:border-rose-900/50 text-sm">
+                          <div className="p-3 bg-zinc-900 rounded-lg border border-orange-500/30 text-sm">
                             <div className="flex items-center gap-2 mb-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-rose-600">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                                 <circle cx="12" cy="12" r="3" />
                               </svg>
-                              <span className="font-medium">Análisis de estilo</span>
+                              <span className="font-medium text-white">Análisis de estilo</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">{videoStyle.styleDescription}</p>
+                            <p className="text-sm text-orange-300/80">{videoStyle.styleDescription}</p>
                           </div>
                         )}
                       </div>
 
-                      <div className="space-y-4 bg-gradient-to-br from-slate-50/70 to-white/70 dark:from-slate-900/70 dark:to-slate-800/70 p-4 rounded-lg border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md transition-shadow">
+                      <div className="space-y-4 bg-black/70 p-4 rounded-lg border border-orange-500/30 hover:shadow-orange-500/10 hover:border-orange-500/50 transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-violet-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-orange-500">
                             <path d="M15.6 2.4a4 4 0 0 1 0 6.4L7.2 16l-4.8 1.6L4 12.8l8.4-7.2a4 4 0 0 1 3.2-3.2Z" />
                             <path d="M20 8v12a2 2 0 0 1-2 2H6" />
                           </svg>
-                          <Label className="font-medium">Director del Video</Label>
+                          <Label className="font-medium text-white">Director del Video</Label>
                         </div>
                         
                         {directors.length > 0 ? (
@@ -2469,10 +2469,10 @@ ${transcription}`;
                                 }));
                               }}
                             >
-                              <SelectTrigger className="border-violet-200 dark:border-violet-900 bg-white/90 dark:bg-slate-800/90">
+                              <SelectTrigger className="border-orange-500/20 bg-zinc-900 text-white">
                                 <SelectValue placeholder="Seleccionar director para tu video" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-zinc-900 border-orange-500/20 text-white">
                                 {directors.map((director) => (
                                   <SelectItem key={director.id} value={director.id}>
                                     <div className="flex items-center gap-2">
@@ -2480,12 +2480,12 @@ ${transcription}`;
                                         <img
                                           src={director.imageUrl}
                                           alt={director.name}
-                                          className="w-8 h-8 rounded-full object-cover"
+                                          className="w-8 h-8 rounded-full object-cover border border-orange-500/20"
                                         />
                                       )}
                                       <div className="grid gap-0.5">
-                                        <span className="font-medium">{director.name}</span>
-                                        <span className="text-xs text-muted-foreground">{director.specialty}</span>
+                                        <span className="font-medium text-white">{director.name}</span>
+                                        <span className="text-xs text-orange-300">{director.specialty}</span>
                                       </div>
                                     </div>
                                   </SelectItem>
@@ -2494,16 +2494,16 @@ ${transcription}`;
                             </Select>
 
                             {videoStyle.selectedDirector && (
-                              <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-lg overflow-hidden shadow-sm border border-violet-100 dark:border-violet-900/50">
+                              <div className="bg-zinc-900 rounded-lg overflow-hidden shadow-md border border-orange-500/30">
                                 <div className="h-24 relative">
-                                  <div className="absolute inset-0 bg-gradient-to-br from-violet-400 to-purple-500 opacity-10"></div>
-                                  <div className="h-24 w-full absolute top-0 left-0 bg-[radial-gradient(circle_at_30%_40%,rgba(139,92,246,0.3),transparent_50%)]"></div>
+                                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-orange-500/5"></div>
+                                  <div className="h-24 w-full absolute top-0 left-0 bg-[radial-gradient(circle_at_30%_40%,rgba(251,146,60,0.15),transparent_50%)]"></div>
                                 </div>
                                 
                                 <div className="p-4 relative">
                                   <div className="absolute -top-16 left-4">
                                     {videoStyle.selectedDirector.imageUrl ? (
-                                      <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-md">
+                                      <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-zinc-900 shadow-md">
                                         <img
                                           src={videoStyle.selectedDirector.imageUrl}
                                           alt={videoStyle.selectedDirector.name}
@@ -2511,25 +2511,25 @@ ${transcription}`;
                                         />
                                       </div>
                                     ) : (
-                                      <div className="h-20 w-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold border-4 border-white dark:border-slate-800 shadow-md">
+                                      <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-xl font-bold border-4 border-zinc-900 shadow-md">
                                         {videoStyle.selectedDirector.name.charAt(0)}
                                       </div>
                                     )}
                                   </div>
                                   
                                   <div className="ml-28">
-                                    <h4 className="font-bold text-lg">{videoStyle.selectedDirector.name}</h4>
-                                    <div className="text-sm text-muted-foreground mb-1">{videoStyle.selectedDirector.specialty}</div>
+                                    <h4 className="font-bold text-lg text-white">{videoStyle.selectedDirector.name}</h4>
+                                    <div className="text-sm text-orange-300 mb-1">{videoStyle.selectedDirector.specialty}</div>
                                     <div className="flex items-center gap-1 mb-2">
                                       <span className="text-yellow-500">★</span>
-                                      <span className="text-sm">{videoStyle.selectedDirector.rating.toFixed(1)}</span>
-                                      <span className="text-xs text-muted-foreground ml-1">{videoStyle.selectedDirector.experience}</span>
+                                      <span className="text-sm text-white">{videoStyle.selectedDirector.rating.toFixed(1)}</span>
+                                      <span className="text-xs text-orange-300/80 ml-1">{videoStyle.selectedDirector.experience}</span>
                                     </div>
                                   </div>
                                   
                                   <div className="mt-3">
-                                    <div className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-400 mb-1">Estilo de dirección</div>
-                                    <p className="text-sm bg-white/80 dark:bg-slate-800/80 p-2 rounded border border-violet-100 dark:border-violet-800/50">
+                                    <div className="text-xs font-semibold uppercase tracking-wider text-orange-400 mb-1">Estilo de dirección</div>
+                                    <p className="text-sm bg-black/50 p-2 rounded border border-orange-500/20 text-orange-200/90">
                                       {videoStyle.selectedDirector.style}
                                     </p>
                                   </div>
@@ -2538,12 +2538,12 @@ ${transcription}`;
                             )}
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-32 border border-dashed border-violet-200 rounded-md bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-800/30">
-                            <svg className="animate-spin h-6 w-6 text-violet-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <div className="flex flex-col items-center justify-center h-32 border border-dashed border-orange-500/30 rounded-md bg-zinc-900/80">
+                            <svg className="animate-spin h-6 w-6 text-orange-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <p className="text-sm text-muted-foreground">Cargando directores...</p>
+                            <p className="text-sm text-orange-300/80">Cargando directores...</p>
                           </div>
                         )}
                       </div>
@@ -2570,12 +2570,12 @@ ${transcription}`;
                   </div>
                   
                   <div className="space-y-4 relative z-10">
-                    <div className="bg-blue-50/60 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                    <div className="bg-black/70 p-4 rounded-lg border border-orange-500/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <Info className="h-4 w-4 text-blue-600" />
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-400">Análisis musical automático</p>
+                        <Info className="h-4 w-4 text-orange-500" />
+                        <p className="text-sm font-medium text-white">Análisis musical automático</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-orange-300/80">
                         Este paso analiza el audio para detectar los cambios de ritmo, beats y transiciones naturales, 
                         creando puntos de corte óptimos para tu video musical.
                       </p>
@@ -2586,7 +2586,7 @@ ${transcription}`;
                       disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
                       className={`w-full relative overflow-hidden group ${
                         !audioBuffer || isGeneratingShots || currentStep < 3 ? 'opacity-70' : 
-                        'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md'
+                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md'
                       }`}
                     >
                       <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
@@ -2604,17 +2604,17 @@ ${transcription}`;
                     </Button>
                     
                     {timelineItems.length > 0 && (
-                      <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
+                      <div className="mt-4 p-3 bg-zinc-900 rounded-lg border border-orange-500/30">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium">Vista previa de cortes</span>
-                          <span className="text-xs">{timelineItems.length} segmentos</span>
+                          <span className="text-xs font-medium text-white">Vista previa de cortes</span>
+                          <span className="text-xs text-orange-300">{timelineItems.length} segmentos</span>
                         </div>
-                        <div className="h-6 w-full bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-950/30 dark:to-blue-900/30 rounded-md overflow-hidden relative">
+                        <div className="h-6 w-full bg-black/50 rounded-md overflow-hidden relative">
                           <div className="absolute inset-0 flex">
                             {timelineItems.map((item, index) => (
                               <div 
                                 key={index} 
-                                className="h-full border-r border-blue-300 dark:border-blue-700"
+                                className="h-full border-r border-orange-500/30"
                                 style={{width: `${(item.end_time - item.start_time) / (audioBuffer?.duration || 1) * 100}%`}}
                               />
                             ))}
@@ -2705,50 +2705,50 @@ ${transcription}`;
                   </div>
                   
                   <div className="space-y-4 relative z-10">
-                    <div className="bg-teal-50/60 dark:bg-teal-950/20 p-4 rounded-lg border border-teal-100 dark:border-teal-900/50">
+                    <div className="bg-black/70 p-4 rounded-lg border border-orange-500/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="h-4 w-4 text-teal-600" />
-                        <p className="text-sm font-medium text-teal-900 dark:text-teal-400">Creación inteligente de descripciones</p>
+                        <Sparkles className="h-4 w-4 text-orange-500" />
+                        <p className="text-sm font-medium text-white">Creación inteligente de descripciones</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-orange-300/80">
                         Este paso genera descripciones detalladas para cada segmento del video, incorporando el estilo visual 
                         seleccionado, el mood y las especificaciones técnicas elegidas.
                       </p>
                     </div>
                     
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-3 mb-4">
-                      <div className={`p-3 rounded-lg border ${!videoStyle.mood ? 'bg-slate-100 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700/50' : 'bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800/50'}`}>
+                      <div className={`p-3 rounded-lg border ${!videoStyle.mood ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-orange-500/30'}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${!videoStyle.mood ? 'bg-slate-300 dark:bg-slate-600' : 'bg-teal-500'} flex items-center justify-center text-white text-xs`}>
+                          <div className={`w-4 h-4 rounded-full ${!videoStyle.mood ? 'bg-zinc-600' : 'bg-orange-500'} flex items-center justify-center text-white text-xs`}>
                             {!videoStyle.mood ? '!' : '✓'}
                           </div>
-                          <span className="text-xs font-medium">Mood</span>
+                          <span className="text-xs font-medium text-white">Mood</span>
                         </div>
-                        <p className="text-xs mt-1 ml-6 text-muted-foreground">
+                        <p className="text-xs mt-1 ml-6 text-orange-300/80">
                           {videoStyle.mood || 'No seleccionado'}
                         </p>
                       </div>
                       
-                      <div className={`p-3 rounded-lg border ${!videoStyle.colorPalette ? 'bg-slate-100 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700/50' : 'bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800/50'}`}>
+                      <div className={`p-3 rounded-lg border ${!videoStyle.colorPalette ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-orange-500/30'}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${!videoStyle.colorPalette ? 'bg-slate-300 dark:bg-slate-600' : 'bg-teal-500'} flex items-center justify-center text-white text-xs`}>
+                          <div className={`w-4 h-4 rounded-full ${!videoStyle.colorPalette ? 'bg-zinc-600' : 'bg-orange-500'} flex items-center justify-center text-white text-xs`}>
                             {!videoStyle.colorPalette ? '!' : '✓'}
                           </div>
-                          <span className="text-xs font-medium">Paleta de Colores</span>
+                          <span className="text-xs font-medium text-white">Paleta de Colores</span>
                         </div>
-                        <p className="text-xs mt-1 ml-6 text-muted-foreground">
+                        <p className="text-xs mt-1 ml-6 text-orange-300/80">
                           {videoStyle.colorPalette || 'No seleccionada'}
                         </p>
                       </div>
                       
-                      <div className={`p-3 rounded-lg border ${!videoStyle.characterStyle ? 'bg-slate-100 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700/50' : 'bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800/50'}`}>
+                      <div className={`p-3 rounded-lg border ${!videoStyle.characterStyle ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-900 border-orange-500/30'}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${!videoStyle.characterStyle ? 'bg-slate-300 dark:bg-slate-600' : 'bg-teal-500'} flex items-center justify-center text-white text-xs`}>
+                          <div className={`w-4 h-4 rounded-full ${!videoStyle.characterStyle ? 'bg-zinc-600' : 'bg-orange-500'} flex items-center justify-center text-white text-xs`}>
                             {!videoStyle.characterStyle ? '!' : '✓'}
                           </div>
-                          <span className="text-xs font-medium">Estilo de Personajes</span>
+                          <span className="text-xs font-medium text-white">Estilo de Personajes</span>
                         </div>
-                        <p className="text-xs mt-1 ml-6 text-muted-foreground">
+                        <p className="text-xs mt-1 ml-6 text-orange-300/80">
                           {videoStyle.characterStyle || 'No seleccionado'}
                         </p>
                       </div>
@@ -2767,7 +2767,7 @@ ${transcription}`;
                       className={`w-full relative overflow-hidden group ${
                         timelineItems.length === 0 || isGeneratingScript || currentStep < 4 || !videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle 
                         ? 'opacity-70' : 
-                        'bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white shadow-md'
+                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md'
                       }`}
                     >
                       <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
@@ -2805,12 +2805,12 @@ ${transcription}`;
                   </div>
                   
                   <div className="space-y-4 relative z-10">
-                    <div className="bg-pink-50/60 dark:bg-pink-950/20 p-4 rounded-lg border border-pink-100 dark:border-pink-900/50">
+                    <div className="bg-black/70 p-4 rounded-lg border border-orange-500/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <ImageIcon className="h-4 w-4 text-pink-600" />
-                        <p className="text-sm font-medium text-pink-900 dark:text-pink-400">Visualización de secuencias</p>
+                        <ImageIcon className="h-4 w-4 text-orange-500" />
+                        <p className="text-sm font-medium text-white">Visualización de secuencias</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-orange-300/80">
                         Este paso genera imágenes de alta calidad para cada segmento según las descripciones creadas, 
                         creando una secuencia visual coherente para tu video musical.
                       </p>
@@ -2819,12 +2819,12 @@ ${transcription}`;
                     {currentStep >= 5 && timelineItems.length > 0 && (
                       <div className="grid grid-cols-4 gap-2 mb-4 overflow-x-auto">
                         {timelineItems.slice(0, 4).map((item, index) => (
-                          <div key={index} className="relative aspect-video rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <div key={index} className="relative aspect-video rounded-md overflow-hidden bg-zinc-900 border border-orange-500/30">
                             {item.generatedImage ? (
                               <img src={item.generatedImage} alt={`Escena ${index + 1}`} className="w-full h-full object-cover" />
                             ) : (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <ImageIcon className="h-6 w-6 text-slate-400" />
+                                <ImageIcon className="h-6 w-6 text-orange-500/50" />
                               </div>
                             )}
                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent h-8">
@@ -2845,7 +2845,7 @@ ${transcription}`;
                       className={`w-full relative overflow-hidden group ${
                         !timelineItems.length || isGeneratingShots || currentStep < 5 
                         ? 'opacity-70' : 
-                        'bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white shadow-md'
+                        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md'
                       }`}
                     >
                       <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
@@ -2863,7 +2863,7 @@ ${transcription}`;
                     </Button>
                     
                     {currentStep >= 5 && timelineItems.some(item => item.generatedImage) && (
-                      <div className="text-xs text-center text-muted-foreground">
+                      <div className="text-xs text-center text-orange-300/80">
                         Genera cada imagen individualmente o actualiza una escena específica desde el timeline
                       </div>
                     )}

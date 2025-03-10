@@ -471,7 +471,7 @@ export function TimelineEditor({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-black/5 px-3 py-1.5 rounded-md font-mono text-sm border">
+          <div className="bg-zinc-900/90 border border-orange-800/30 px-3 py-1.5 rounded-md font-mono text-sm text-orange-400">
             {formatTimecode(currentTime)}
           </div>
 
@@ -737,7 +737,7 @@ export function TimelineEditor({
 
       <ScrollArea 
         ref={scrollAreaRef as any}
-        className="h-[300px] sm:h-[400px] border rounded-lg"
+        className="h-[300px] sm:h-[400px] border border-orange-800/30 rounded-lg bg-zinc-900/90"
         onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
       >
         {clips.length === 0 ? (
@@ -754,11 +754,11 @@ export function TimelineEditor({
             onClick={handleTimelineClick}
           >
             {/* Escala de tiempo */}
-            <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
+            <div className="absolute top-0 left-0 right-0 h-6 border-b border-orange-800/30 flex bg-zinc-900/80">
               {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
                 <div
                   key={i}
-                  className="border-l h-full flex items-center justify-center text-xs text-muted-foreground"
+                  className="border-l border-orange-800/30 h-full flex items-center justify-center text-xs text-orange-400/80"
                   style={{ width: `${timeToPixels(1)}px` }}
                 >
                   {formatTimecode(i)}
@@ -780,13 +780,13 @@ export function TimelineEditor({
               {/* Contenedor para WaveSurfer */}
               <div 
                 ref={waveformContainerRef}
-                className="relative w-full h-20 bg-gray-50 dark:bg-gray-900 rounded-md overflow-hidden"
+                className="relative w-full h-20 bg-zinc-900/90 border border-orange-800/30 rounded-md overflow-hidden shadow-inner"
               />
                 
               {/* Marcadores de tiempo */}
               <div className="relative w-full h-4 flex items-center justify-between mt-1">
                 {Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => (
-                  <div key={i} className="absolute text-xs text-muted-foreground" style={{ left: `${(i / duration) * 100}%` }}>
+                  <div key={i} className="absolute text-xs text-orange-400/80 font-medium bg-zinc-900/80 px-1 rounded" style={{ left: `${(i / duration) * 100}%` }}>
                     {formatTime(i)}
                   </div>
                 ))}
@@ -823,16 +823,16 @@ export function TimelineEditor({
                   <div
                     key={`region-${clip.id}`}
                     className={cn(
-                      "absolute h-full border-l-2 border-r-2 border-orange-500/60 rounded",
+                      "absolute h-full border-l-2 border-r-2 border-orange-500/70 rounded overflow-hidden backdrop-blur-[1px]",
                       selectedClip === clip.id ? 
-                        "bg-gradient-to-br from-orange-500/30 to-orange-600/20 shadow-md shadow-orange-500/10" : 
+                        "bg-gradient-to-br from-orange-500/30 to-orange-600/20 shadow-md shadow-orange-500/20" : 
                         "bg-gradient-to-br from-orange-400/15 to-orange-500/10"
                     )}
                     style={{
                       left: `${(clip.start / duration) * 100}%`,
                       width: `${(clip.duration / duration) * 100}%`,
-                      transition: "background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease",
-                      transform: selectedClip === clip.id ? 'translateY(-1px)' : 'none'
+                      transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                      transform: selectedClip === clip.id ? 'translateY(-1px) scale(1.01)' : 'none'
                     }}
                   >
                     {/* Barra superior con título y tipo de clip */}
@@ -841,7 +841,7 @@ export function TimelineEditor({
                         "absolute top-0 left-0 w-full text-center text-xs font-medium truncate px-1.5 py-0.5 rounded-t",
                         selectedClip === clip.id ? 
                           "bg-orange-500 text-white" : 
-                          "bg-white/80 dark:bg-black/60 text-orange-600"
+                          "bg-zinc-900/90 border border-orange-800/30 text-orange-400"
                       )}
                     >
                       {clip.title || `Clip ${clip.id}`}
@@ -852,7 +852,7 @@ export function TimelineEditor({
                       <div className="absolute bottom-0 left-0 right-0 h-10 px-1 flex items-center">
                         <div className="w-full h-8 flex items-center">
                           {clip.effectType && (
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] text-orange-700/50 whitespace-nowrap font-medium">
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] text-orange-400 bg-zinc-900/90 px-2 py-0.5 rounded whitespace-nowrap font-medium">
                               {clip.effectType === 'blur' && 'Desenfoque'}
                               {clip.effectType === 'glow' && 'Resplandor'}
                               {clip.effectType === 'sepia' && 'Sepia'}
@@ -944,7 +944,7 @@ export function TimelineEditor({
               </div>
             )}
 
-            {/* Clips de la línea de tiempo */}
+            {/* Clips de la línea de tiempo - Estilo Premium Futurista */}
             <div className="mt-36">
               <AnimatePresence>
                 {clips.map((clip) => (
@@ -955,24 +955,56 @@ export function TimelineEditor({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     className={cn(
-                      "absolute h-32 rounded-md overflow-hidden border cursor-move",
-                      selectedClip === clip.id ? "ring-2 ring-orange-500" : "",
-                      isDragging && selectedClip === clip.id ? "opacity-70" : ""
+                      "absolute h-32 rounded-md overflow-hidden border border-orange-800/50 bg-black/90 cursor-move backdrop-blur-md",
+                      selectedClip === clip.id ? 
+                        "ring-2 ring-orange-500 shadow-lg shadow-orange-500/40" : 
+                        "shadow-md shadow-black/40 hover:border-orange-700/60",
+                      isDragging && selectedClip === clip.id ? "opacity-80" : ""
                     )}
                     style={{
                       left: `${timeToPixels(clip.start)}px`,
                       width: `${timeToPixels(clip.duration)}px`,
-                      top: '8px'
+                      top: '8px',
+                      transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                      background: selectedClip === clip.id 
+                        ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(56, 27, 0, 0.8))' 
+                        : 'linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.85))'
                     }}
                     onMouseDown={(e) => handleClipDragStart(clip.id, e)}
                     onDoubleClick={() => handleClipDoubleClick(clip)}
+                    whileHover={{ 
+                      y: -3,
+                      boxShadow: "0 15px 25px -5px rgba(234, 88, 12, 0.3), 0 10px 10px -6px rgba(234, 88, 12, 0.2)" 
+                    }}
                   >
+                    {/* Efectos decorativos premium */}
+                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-orange-500/60 to-transparent"></div>
+                    <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-orange-500/60 via-transparent to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-orange-600/30 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-[1px] h-full bg-gradient-to-t from-orange-600/30 via-transparent to-transparent"></div>
+                    
+                    {/* Esquinas decorativas tipo tecnológicas */}
+                    <div className="absolute top-0 left-0 w-4 h-[1px] bg-orange-500/90"></div>
+                    <div className="absolute top-0 left-0 w-[1px] h-4 bg-orange-500/90"></div>
+                    <div className="absolute top-0 right-0 w-4 h-[1px] bg-orange-500/90"></div>
+                    <div className="absolute top-0 right-0 w-[1px] h-4 bg-orange-500/90"></div>
+                    <div className="absolute bottom-0 left-0 w-4 h-[1px] bg-orange-500/90"></div>
+                    <div className="absolute bottom-0 left-0 w-[1px] h-4 bg-orange-500/90"></div>
+                    <div className="absolute bottom-0 right-0 w-4 h-[1px] bg-orange-500/90"></div>
+                    <div className="absolute bottom-0 right-0 w-[1px] h-4 bg-orange-500/90"></div>
+                    
+                    {/* Efecto de glow para clips seleccionados */}
+                    {selectedClip === clip.id && (
+                      <div className="absolute inset-0 bg-orange-500/5 animate-pulse-slow pointer-events-none"></div>
+                    )}
+                    
+                    {/* Asas para redimensionar */}
                     <div
-                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-orange-500/20 z-10"
+                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-orange-500/30 z-10 transition-colors"
                       onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
                     />
                     <div
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-orange-500/20 z-10"
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-orange-500/30 z-10 transition-colors"
                       onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
                     />
 
@@ -1044,10 +1076,10 @@ export function TimelineEditor({
               </AnimatePresence>
             </div>
 
-            {/* Cabeza de reproducción estilo CapCut profesional */}
+            {/* Cabeza de reproducción estilo Premium con efectos mejorados */}
             <motion.div
               animate={playheadAnimation}
-              className="absolute top-0 bottom-0 w-[3px] bg-gradient-to-r from-orange-600 to-orange-400 shadow-lg shadow-orange-500/30 z-50 rounded-full backdrop-blur-[1px]"
+              className="absolute top-0 bottom-0 w-[3px] bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 shadow-lg shadow-orange-500/40 z-50 rounded-full backdrop-blur-[1px]"
               initial={{ x: 0 }}
               transition={{ 
                 type: "spring", 
@@ -1056,61 +1088,118 @@ export function TimelineEditor({
                 mass: 0.5 
               }}
             >
-              {/* Marcador superior con efecto de pulso y glow mejorado */}
-              <div className="absolute -top-1 -left-[5px] w-4 h-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full shadow-lg shadow-orange-500/50 border-2 border-orange-600/80 animate-pulse"></div>
-              <div className="absolute -top-[5px] -left-[8px] w-5 h-5 bg-orange-400/20 rounded-full blur-[2px] animate-ping"></div>
+              {/* Efectos luminosos avanzados para mayor visibilidad */}
+              <div className="absolute inset-0 w-full h-full bg-orange-500/20 blur-md rounded-full animate-glow-pulse"></div>
+              <div className="absolute inset-0 w-full h-full bg-orange-500/10 blur-lg rounded-full animate-pulse"></div>
               
-              {/* Línea de tiempo actual con formato profesional */}
-              <div className="absolute -top-10 -translate-x-1/2 px-2 py-1 rounded bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs font-medium min-w-[70px] text-center shadow-md">
+              {/* Rastro vertical luminoso */}
+              <div className="absolute inset-0 w-[1px] h-full bg-orange-400/80 left-1"></div>
+              <div className="absolute inset-0 w-full h-full bg-orange-400/10 blur-lg"></div>
+              
+              {/* Marcador superior con efectos avanzados */}
+              <div className="absolute -top-1 -left-[5px] w-4 h-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full shadow-lg shadow-orange-500/60 border-2 border-orange-600/80 animate-glow-pulse"></div>
+              <div className="absolute -top-[5px] -left-[8px] w-5 h-5 bg-orange-400/30 rounded-full blur-[2px] animate-ping"></div>
+              
+              {/* Línea de tiempo actual con formato profesional y efectos mejorados */}
+              <div className="absolute -top-10 -translate-x-1/2 px-2 py-1 rounded bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs font-medium min-w-[70px] text-center shadow-[0_4px_12px_rgba(234,88,12,0.5)] backdrop-blur-sm border border-orange-400/30">
+                {/* Efectos decorativos en la esquina */}
+                <div className="absolute top-0 left-0 w-2 h-[1px] bg-white/60"></div>
+                <div className="absolute top-0 left-0 w-[1px] h-2 bg-white/60"></div>
+                <div className="absolute top-0 right-0 w-2 h-[1px] bg-white/60"></div>
+                <div className="absolute top-0 right-0 w-[1px] h-2 bg-white/60"></div>
+                <div className="absolute bottom-0 left-0 w-2 h-[1px] bg-white/60"></div>
+                <div className="absolute bottom-0 left-0 w-[1px] h-2 bg-white/60"></div>
+                <div className="absolute bottom-0 right-0 w-2 h-[1px] bg-white/60"></div>
+                <div className="absolute bottom-0 right-0 w-[1px] h-2 bg-white/60"></div>
+                
                 {formatTimecode(currentTime)}
               </div>
               
-              {/* Punteros de inicio y fin */}
-              <div className="absolute -top-1 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full" />
-              <div className="absolute bottom-0 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full" />
+              {/* Punteros de inicio y fin mejorados */}
+              <div className="absolute -top-1 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(234,88,12,0.9)] animate-pulse-slow" />
+              <div className="absolute bottom-0 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(234,88,12,0.9)] animate-pulse-slow" />
             </motion.div>
           </div>
         )}
       </ScrollArea>
 
-      {/* Diálogo de vista previa de imagen */}
+      {/* Diálogo de vista previa de imagen - Estilo Premium Futurista */}
       <Dialog open={selectedImagePreview !== null} onOpenChange={() => setSelectedImagePreview(null)}>
-        <DialogContent className="sm:max-w-[90vw] sm:h-[90vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-[90vw] sm:h-[90vh] flex flex-col p-0 border-orange-800/40 bg-black/95 backdrop-blur-sm shadow-xl shadow-orange-900/30 overflow-hidden">
           <DialogTitle className="sr-only">Vista previa de imagen</DialogTitle>
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full overflow-hidden">
+            {/* Efectos de glow decorativos - Bordes animados */}
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-orange-500/60 to-transparent"></div>
+            <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-orange-500/60 via-transparent to-transparent"></div>
+            <div className="absolute bottom-0 right-0 w-full h-[1px] bg-gradient-to-r from-transparent via-orange-600/30 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 w-[1px] h-full bg-gradient-to-b from-transparent via-transparent to-orange-600/30"></div>
+            
+            {/* Efecto de esquina tipo "tecnológico" */}
+            <div className="absolute top-0 left-0 w-6 h-[1px] bg-orange-500"></div>
+            <div className="absolute top-0 left-0 w-[1px] h-6 bg-orange-500"></div>
+            <div className="absolute top-0 right-0 w-6 h-[1px] bg-orange-500"></div>
+            <div className="absolute top-0 right-0 w-[1px] h-6 bg-orange-500"></div>
+            <div className="absolute bottom-0 left-0 w-6 h-[1px] bg-orange-500"></div>
+            <div className="absolute bottom-0 left-0 w-[1px] h-6 bg-orange-500"></div>
+            <div className="absolute bottom-0 right-0 w-6 h-[1px] bg-orange-500"></div>
+            <div className="absolute bottom-0 right-0 w-[1px] h-6 bg-orange-500"></div>
+            
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 z-10"
+              className="absolute top-3 right-3 z-10 rounded-full bg-black/80 border border-orange-800/30 hover:bg-zinc-900/90 hover:border-orange-600/50 transition-all shadow-md shadow-orange-800/10"
               onClick={() => setSelectedImagePreview(null)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 text-orange-500" />
             </Button>
 
-            <div className="relative w-full h-full flex items-center justify-center bg-black/50 p-4">
+            <div className="relative w-full h-full flex items-center justify-center bg-black/90 p-4">
               {selectedImagePreview?.thumbnail ? (
-                <img
-                  src={selectedImagePreview.thumbnail}
-                  alt={selectedImagePreview.title}
-                  className="max-w-full max-h-full object-contain rounded-lg"
-                />
+                <div className="relative group">
+                  {/* Efectos de glow mejorados para la imagen */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-600/20 via-orange-400/10 to-orange-600/20 rounded-lg blur-lg group-hover:opacity-100 transition duration-1000 animate-pulse-slow"></div>
+                  <div className="absolute -inset-0.5 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-lg"></div>
+                  
+                  <img
+                    src={selectedImagePreview.thumbnail}
+                    alt={selectedImagePreview.title}
+                    className="relative max-w-full max-h-[calc(90vh-150px)] object-contain rounded-lg border border-orange-900/40 shadow-xl shadow-orange-900/20"
+                  />
+                  
+                  {/* Ornamentos futuristas alrededor de la imagen */}
+                  <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-orange-500/60"></div>
+                  <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-orange-500/60"></div>
+                  <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-orange-500/60"></div>
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-orange-500/60"></div>
+                </div>
               ) : (
-                <div className="flex flex-col items-center justify-center text-muted-foreground">
-                  <ImageIcon className="h-12 w-12" />
-                  <p className="mt-2">No hay imagen disponible</p>
+                <div className="flex flex-col items-center justify-center bg-zinc-950/80 p-8 rounded-lg border border-orange-800/30 shadow-lg shadow-orange-900/10">
+                  <div className="relative">
+                    <div className="absolute inset-0 blur-md bg-orange-500/10 rounded-full animate-pulse-slow"></div>
+                    <ImageIcon className="h-20 w-20 text-orange-500/70 relative" />
+                  </div>
+                  <p className="mt-4 text-orange-300/90 font-medium">No hay imagen disponible</p>
                 </div>
               )}
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-4">
+            {/* Panel inferior mejorado con efecto glassmorphism y esquinas personalizadas */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/90 backdrop-blur-md p-4 border-t border-orange-800/40">
+              {/* Esquinas decorativas */}
+              <div className="absolute top-0 left-4 w-3 h-[1px] bg-orange-500/80 -translate-y-[1px]"></div>
+              <div className="absolute top-0 right-4 w-3 h-[1px] bg-orange-500/80 -translate-y-[1px]"></div>
+              
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="space-y-1">
-                  <h3 className="font-semibold">{selectedImagePreview?.shotType}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedImagePreview?.imagePrompt || selectedImagePreview?.description}
+                <div className="space-y-2 max-w-2xl">
+                  <h3 className="font-semibold text-orange-400 flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 bg-orange-500 rounded-full"></span>
+                    {selectedImagePreview?.shotType || 'Escena'}
+                  </h3>
+                  <p className="text-sm text-orange-100/90 line-clamp-2 pl-4 border-l border-orange-900/60">
+                    {selectedImagePreview?.imagePrompt || selectedImagePreview?.description || 'Sin descripción'}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   {onRegenerateImage && selectedImagePreview && (
                     <Button
                       variant="default"
@@ -1118,7 +1207,7 @@ export function TimelineEditor({
                         onRegenerateImage(selectedImagePreview.id);
                         setSelectedImagePreview(null);
                       }}
-                      className="shrink-0 bg-orange-500 hover:bg-orange-600"
+                      className="shrink-0 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600 border-0 shadow-lg shadow-orange-600/30 hover:shadow-orange-600/40 transition-all"
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Regenerar Imagen
@@ -1136,7 +1225,7 @@ export function TimelineEditor({
                         document.body.removeChild(link);
                       }
                     }}
-                    className="shrink-0"
+                    className="shrink-0 border-orange-800/50 hover:border-orange-600/70 text-orange-400 hover:text-orange-300 hover:bg-orange-950/30 transition-all"
                     disabled={!selectedImagePreview?.thumbnail}
                   >
                     <Save className="h-4 w-4 mr-2" />
