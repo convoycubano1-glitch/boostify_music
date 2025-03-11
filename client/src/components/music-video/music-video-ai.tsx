@@ -200,6 +200,11 @@ interface TimelineItem {
   // Campos para análisis de audio
   energy?: number;
   averageEnergy?: number;
+  // Información de sincronización y timecodes
+  timecode?: string;
+  endTimecode?: string;
+  normalizedEnergy?: number;
+  isDownbeat?: boolean;
   // Campos adicionales para compatibilidad con TimelineClip
   start: number;
   type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
@@ -290,6 +295,9 @@ export function MusicVideoAI() {
   const [songTitle, setSongTitle] = useState<string>("");
   const [duration, setDuration] = useState<number>(0);
   const [scriptContent, setScriptContent] = useState<string>("");
+  const [beatsJsonData, setBeatsJsonData] = useState<string>("");
+  const [showBeatDetails, setShowBeatDetails] = useState<boolean>(false);
+  const [selectedBeatIndex, setSelectedBeatIndex] = useState<number | null>(null);
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
   const [videoStyle, setVideoStyle] = useState({
     mood: "",
@@ -466,6 +474,8 @@ export function MusicVideoAI() {
       setIsGeneratingShots(false);
     }
   };
+  
+
 
   const generateVideoScriptFromAudio = async () => {
     if (!transcription || timelineItems.length === 0) return;
@@ -1470,6 +1480,137 @@ ${transcription}`;
    * Implementa un algoritmo de detección de beats basado en energía acústica
    * @returns Array de TimelineItem con los segmentos detectados
    */
+  // Interfaz para los datos de beat detectados
+  interface BeatData {
+    time: number;      // Tiempo en segundos
+    timecode: string;  // Timecode formateado
+    energy: number;    // Nivel de energía
+    intensity: number; // Intensidad normalizada (0-1)
+    type: string;      // Tipo de beat (downbeat, beat, accent)
+    isDownbeat: boolean; // Si es un beat principal o secundario
+  }
+
+  // Función para convertir segundos a timecode formateado (HH:MM:SS:FF)
+  const secondsToTimecode = (seconds: number, fps: number = 30): string => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const f = Math.floor((seconds - Math.floor(seconds)) * fps);
+    
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}:${f.toString().padStart(2, '0')}`;
+  };
+
+  // Función para generar archivo JSON con datos de beats
+  const generateBeatsJSON = (beats: BeatData[], songMetadata: any): void => {
+    // Calcular patrones rítmicos y estadísticas adicionales
+    const totalBeats = beats.length;
+    const downbeats = beats.filter(beat => beat.type === 'downbeat').length;
+    const accents = beats.filter(beat => beat.type === 'accent').length;
+    const regularBeats = beats.filter(beat => beat.type === 'beat').length;
+    
+    // Calcular tiempos entre beats para análisis de patrones
+    const beatIntervals: number[] = [];
+    let averageInterval = 0;
+    
+    if (beats.length > 1) {
+      for (let i = 1; i < beats.length; i++) {
+        const interval = beats[i].time - beats[i-1].time;
+        beatIntervals.push(interval);
+      }
+      
+      // Calcular intervalo promedio (para aproximar BPM)
+      averageInterval = beatIntervals.reduce((sum, val) => sum + val, 0) / beatIntervals.length;
+      
+      // Estimar BPM basado en intervalo promedio
+      const estimatedBPM = Math.round(60 / averageInterval);
+      songMetadata.bpm = estimatedBPM;
+    }
+    
+    const beatMapData = {
+      metadata: {
+        songTitle: songMetadata?.title || "Unknown Track",
+        artist: songMetadata?.artist || "Unknown Artist",
+        duration: songMetadata?.duration || 0,
+        bpm: songMetadata?.bpm || 0,
+        key: songMetadata?.key || "",
+        generatedAt: new Date().toISOString(),
+        // Información adicional sobre el análisis
+        beatAnalysis: {
+          totalBeats,
+          beatTypes: {
+            downbeats,
+            accents,
+            regularBeats
+          },
+          averageInterval,
+          patternComplexity: calculatePatternComplexity(beatIntervals)
+        }
+      },
+      beats: beats
+    };
+    
+    // Convertir a JSON y almacenar en el estado
+    const jsonData = JSON.stringify(beatMapData, null, 2);
+    setBeatsJsonData(jsonData);
+    
+    console.log("Mapa de beats generado:", beatMapData);
+  };
+  
+  // Función auxiliar para calcular la complejidad del patrón rítmico
+  const calculatePatternComplexity = (intervals: number[]): string => {
+    if (intervals.length === 0) return "N/A";
+    
+    // Calcular la desviación estándar de los intervalos
+    const avg = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+    const squareDiffs = intervals.map(val => Math.pow(val - avg, 2));
+    const avgSquareDiff = squareDiffs.reduce((sum, val) => sum + val, 0) / squareDiffs.length;
+    const stdDev = Math.sqrt(avgSquareDiff);
+    
+    // Normalizar la desviación estándar como porcentaje del promedio
+    const variabilityFactor = (stdDev / avg) * 100;
+    
+    // Clasificar la complejidad basada en la variabilidad
+    if (variabilityFactor < 10) return "Simple";
+    if (variabilityFactor < 25) return "Moderado";
+    if (variabilityFactor < 40) return "Complejo";
+    return "Muy complejo";
+  };
+  
+  // Función para descargar el mapa de beats como archivo JSON
+  const downloadBeatsJSON = (): void => {
+    if (!beatsJsonData) {
+      toast({
+        title: "Error",
+        description: "No hay datos de beats disponibles para descargar",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const blob = new Blob([beatsJsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beats_${selectedFile?.name || 'track'}_timecodes.json`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Éxito",
+        description: "Archivo de timecodes descargado correctamente",
+      });
+    } catch (error) {
+      console.error("Error al descargar el archivo JSON:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el archivo JSON",
+        variant: "destructive",
+      });
+    }
+  };
+
   const detectBeatsAndCreateSegments = async (): Promise<TimelineItem[]> => {
     if (!audioBuffer) return [];
 
@@ -1496,6 +1637,9 @@ ${transcription}`;
       let energyHistory: number[] = [];
       const historySize = 43; // Ventana para comparar la energía
       const segments: TimelineItem[] = [];
+      
+      // Colección para almacenar todos los beats detectados
+      const detectedBeats: BeatData[] = [];
 
       // Definimos tipos de planos disponibles con sus descripciones y prompts base
       const shotTypes = [
@@ -1558,7 +1702,37 @@ ${transcription}`;
         return items[0]; // Fallback
       };
 
-      // Análisis de energía por ventanas para detectar beats
+      // Análisis de energía por ventanas para detectar beats de forma más precisa
+      // Variable para almacenar la máxima energía para normalización
+      let maxEnergy = 0;
+      let allEnergyValues: number[] = [];
+      
+      // Primer pase: recopilar información de energía para normalización y estadísticas
+      for (let i = 0; i < channelData.length; i += windowSize) {
+        let sum = 0;
+        for (let j = 0; j < windowSize; j++) {
+          if (i + j < channelData.length) {
+            sum += Math.abs(channelData[i + j]);
+          }
+        }
+        const energy = sum / windowSize;
+        allEnergyValues.push(energy);
+        maxEnergy = Math.max(maxEnergy, energy);
+      }
+      
+      // Calcular estadísticas de energía
+      allEnergyValues.sort((a, b) => a - b);
+      const medianEnergy = allEnergyValues[Math.floor(allEnergyValues.length / 2)];
+      const p75Energy = allEnergyValues[Math.floor(allEnergyValues.length * 0.75)];
+      
+      // Ajustar threshold basado en estadísticas de energía si es necesario
+      const adjustedThreshold = selectedEditingStyle === "dynamic" 
+        ? threshold 
+        : Math.max(threshold, medianEnergy * 1.5);
+      
+      console.log(`Estadísticas de energía: max=${maxEnergy.toFixed(4)}, mediana=${medianEnergy.toFixed(4)}, p75=${p75Energy.toFixed(4)}, threshold=${adjustedThreshold.toFixed(4)}`);
+      
+      // Segundo pase: detección de beats y construcción de segmentos
       for (let i = 0; i < channelData.length; i += windowSize) {
         let sum = 0;
         for (let j = 0; j < windowSize; j++) {
@@ -1574,11 +1748,35 @@ ${transcription}`;
 
           const averageEnergy = energyHistory.reduce((a, b) => a + b) / energyHistory.length;
           const currentTime = i / sampleRate;
+          
+          // Normalizamos la energía para tener valores entre 0-1
+          const normalizedEnergy = maxEnergy > 0 ? energy / maxEnergy : 0;
 
-          // Detección de beat basada en umbral dinámico
-          if (energy > averageEnergy * threshold &&
+          // Detección de beat con umbral dinámico mejorado
+          if (energy > averageEnergy * adjustedThreshold &&
               currentTime - lastBeatTime >= minSegmentDuration &&
               currentTime - lastBeatTime <= maxSegmentDuration) {
+              
+            // Determinar si es un downbeat (beat principal) basado en la energía relativa
+            const isDownbeat = normalizedEnergy > 0.6 || energy > p75Energy * 1.2;
+
+            // Determinar el tipo de beat basado en su intensidad y energía
+            let beatType = "beat";
+            if (isDownbeat) {
+              beatType = "downbeat"; // Beat principal (más fuerte)
+            } else if (normalizedEnergy > 0.4) {
+              beatType = "accent"; // Beat con acento (medio)
+            }
+            
+            // Almacenar datos del beat detectado con formato de timecode
+            detectedBeats.push({
+              time: currentTime,
+              timecode: secondsToTimecode(currentTime),
+              energy: energy,
+              intensity: normalizedEnergy,
+              type: beatType,
+              isDownbeat: isDownbeat
+            });
 
             // Seleccionar tipo de plano y transición con ponderación
             const shotType = weightedSelection(shotTypes);
@@ -1625,7 +1823,12 @@ ${transcription}`;
               mood: mood,
               // Datos para análisis
               energy: energy,
-              averageEnergy: averageEnergy
+              averageEnergy: averageEnergy,
+              // Información de timecode para sincronización
+              timecode: secondsToTimecode(lastBeatTime),
+              endTimecode: secondsToTimecode(lastBeatTime + segmentDuration),
+              normalizedEnergy: normalizedEnergy,
+              isDownbeat: isDownbeat
             });
 
             lastBeatTime = currentTime;
@@ -1657,7 +1860,20 @@ ${transcription}`;
         }
       }
 
-      console.log(`Generados ${segments.length} segmentos para una duración de ${totalDuration.toFixed(2)} segundos`);
+      // Generar el mapa de beats con los datos de timecodes para exportación JSON
+      const songMetadata = {
+        title: selectedFile?.name || "Unknown Track",
+        artist: "Artist",
+        duration: totalDuration,
+        bpm: 0, // Esto se podría calcular con los datos de beats
+        key: "",
+        generatedAt: new Date().toISOString()
+      };
+      
+      // Generar el JSON con los beats detectados
+      generateBeatsJSON(detectedBeats, songMetadata);
+      
+      console.log(`Generados ${segments.length} segmentos y ${detectedBeats.length} beats detectados para una duración de ${totalDuration.toFixed(2)} segundos`);
       return segments;
     } catch (error) {
       console.error("Error en detectBeatsAndCreateSegments:", error);
@@ -2553,7 +2769,7 @@ ${transcription}`;
                   <Button
                     onClick={syncAudioWithTimeline}
                     disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
-                    className="w-full"
+                    className="w-full mb-2"
                   >
                     {isGeneratingShots ? (
                       <>
@@ -2567,6 +2783,146 @@ ${transcription}`;
                       </>
                     )}
                   </Button>
+                  
+                  {/* Botón para descargar el archivo JSON de timecodes */}
+                  {beatsJsonData && (
+                    <Button
+                      onClick={downloadBeatsJSON}
+                      variant="outline"
+                      className="w-full mt-2"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Descargar Timecodes JSON
+                    </Button>
+                  )}
+                  
+                  {/* Visualización de los beats detectados */}
+                  {beatsJsonData && (
+                    <div className="mt-4 border rounded-lg p-3 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium">Beats Detectados</h4>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setShowBeatDetails(prev => !prev)}
+                        >
+                          {showBeatDetails ? "Ocultar detalles" : "Ver detalles"}
+                        </Button>
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground mb-2">
+                        Clasificación por tipo de intensidad:
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
+                          <span className="text-xs">Downbeat</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
+                          <span className="text-xs">Accent</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
+                          <span className="text-xs">Beat</span>
+                        </div>
+                      </div>
+                      
+                      {/* Visualización gráfica de beats */}
+                      <div className="h-12 border rounded flex items-end p-1 overflow-x-auto relative">
+                        {JSON.parse(beatsJsonData).beats.map((beat: any, idx: number) => {
+                          // Determinar color según tipo de beat
+                          const beatColor = beat.type === 'downbeat' 
+                            ? 'bg-red-500' 
+                            : beat.type === 'accent'
+                              ? 'bg-yellow-500'
+                              : 'bg-blue-500';
+                          
+                          // Altura basada en intensidad (0-1)
+                          const height = `${Math.max(15, Math.min(100, beat.intensity * 90))}%`;
+                          
+                          return (
+                            <div 
+                              key={idx} 
+                              className={`${beatColor} w-1 mx-[1px] rounded-t hover:w-2 hover:mx-0 transition-all cursor-pointer`} 
+                              style={{ height }}
+                              title={`${beat.timecode} - ${beat.type} (${beat.intensity.toFixed(2)})`}
+                              onClick={() => setSelectedBeatIndex(idx)}
+                            />
+                          );
+                        })}
+                        
+                        {/* Indicador de beat seleccionado */}
+                        {selectedBeatIndex !== null && (
+                          <div className="absolute bottom-0 border-l-2 border-dashed border-primary h-full" 
+                            style={{ 
+                              left: `${selectedBeatIndex * 3 + 4}px`, 
+                              transition: 'left 0.2s ease-out' 
+                            }} 
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Panel de detalles de beats */}
+                      {showBeatDetails && (
+                        <div className="mt-3 pt-3 border-t text-xs">
+                          <div className="flex justify-between mb-2">
+                            <div>
+                              <span className="font-medium">Análisis del Ritmo:</span>{" "}
+                              {JSON.parse(beatsJsonData).metadata.beatAnalysis.patternComplexity}
+                            </div>
+                            <div>
+                              <span className="font-medium">BPM Estimado:</span>{" "}
+                              {JSON.parse(beatsJsonData).metadata.bpm}
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-2 mb-2">
+                            <div className="flex flex-col items-center border rounded p-1">
+                              <span className="text-red-500 font-medium">
+                                {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.downbeats}
+                              </span>
+                              <span className="text-[10px]">Downbeats</span>
+                            </div>
+                            <div className="flex flex-col items-center border rounded p-1">
+                              <span className="text-yellow-500 font-medium">
+                                {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.accents}
+                              </span>
+                              <span className="text-[10px]">Accents</span>
+                            </div>
+                            <div className="flex flex-col items-center border rounded p-1">
+                              <span className="text-blue-500 font-medium">
+                                {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.regularBeats}
+                              </span>
+                              <span className="text-[10px]">Beats</span>
+                            </div>
+                          </div>
+                          
+                          {/* Detalles del beat seleccionado, si hay alguno */}
+                          {selectedBeatIndex !== null && (
+                            <div className="bg-muted/50 p-2 rounded">
+                              <h5 className="font-medium mb-1">Beat #{selectedBeatIndex + 1}</h5>
+                              <div className="grid grid-cols-2 gap-1">
+                                <div>Tipo: <span className={
+                                  JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'downbeat'
+                                    ? 'text-red-500 font-medium'
+                                    : JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'accent'
+                                      ? 'text-yellow-500 font-medium'
+                                      : 'text-blue-500 font-medium'
+                                }>
+                                  {JSON.parse(beatsJsonData).beats[selectedBeatIndex].type}
+                                </span></div>
+                                <div>Tiempo: {JSON.parse(beatsJsonData).beats[selectedBeatIndex].timecode}</div>
+                                <div>Intensidad: {(JSON.parse(beatsJsonData).beats[selectedBeatIndex].intensity * 100).toFixed(0)}%</div>
+                                <div>Energía: {JSON.parse(beatsJsonData).beats[selectedBeatIndex].energy.toFixed(4)}</div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="border rounded-lg p-4 mt-4">
