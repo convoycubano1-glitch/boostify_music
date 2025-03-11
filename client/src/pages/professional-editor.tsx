@@ -28,9 +28,12 @@ import {
   Save,
   Share2,
   Activity,
-  // Solo usar iconos que existen en lucide-react
-  // Waveform,
-  // Settings
+  Wand2,
+  Camera,
+  Clock,
+  Volume2,
+  Layers,
+  Image
 } from 'lucide-react';
 
 // Importar componentes del editor
@@ -40,6 +43,8 @@ import VideoPreviewPanel from '@/components/professional-editor/video-preview-pa
 import ProfessionalTimeline from '@/components/professional-editor/professional-timeline';
 import TranscriptionPanel from '@/components/professional-editor/transcription-panel';
 import AudioTrackEditor from '@/components/professional-editor/audio-track-editor';
+import Toolbar from '@/components/professional-editor/toolbar';
+import TrackListPanel, { Track } from '@/components/professional-editor/track-list-panel';
 
 // Importar tipos desde professional-editor-types
 import { 
@@ -75,6 +80,27 @@ const ProfessionalEditor: React.FC = () => {
   const [projectName, setProjectName] = useState<string>('Nuevo Proyecto');
   const [projectModified, setProjectModified] = useState<boolean>(false);
   const [bpm, setBpm] = useState<number>(120);
+  // Estado para el panel de pistas
+  const [tracks, setTracks] = useState<Track[]>([
+    {
+      id: 'video-main',
+      name: 'Video principal',
+      type: 'video',
+      visible: true,
+      locked: false,
+      muted: false
+    },
+    {
+      id: 'audio-main',
+      name: 'Audio principal',
+      type: 'audio',
+      visible: true,
+      locked: false,
+      muted: false
+    }
+  ]);
+  // Estado para la herramienta activa
+  const [activeTool, setActiveTool] = useState<string>('cut');
 
   // Manejar reproducción
   const handlePlay = () => {
@@ -447,6 +473,39 @@ const ProfessionalEditor: React.FC = () => {
       currentTime < effect.startTime + effect.duration
     );
   };
+  
+  // Manejar pistas
+  const handleAddTrack = (type: string) => {
+    const newTrack: Track = {
+      id: `track-${Date.now()}`,
+      name: type === 'video' ? `Video ${tracks.length}` : `Audio ${tracks.length}`,
+      type: type as 'video' | 'audio' | 'text' | 'effects',
+      visible: true,
+      locked: false,
+      muted: false
+    };
+    setTracks([...tracks, newTrack]);
+    markProjectAsModified();
+  };
+  
+  const handleUpdateTrack = (trackId: string, updates: Partial<Track>) => {
+    const updatedTracks = tracks.map(track => 
+      track.id === trackId ? { ...track, ...updates } : track
+    );
+    setTracks(updatedTracks);
+    markProjectAsModified();
+  };
+  
+  const handleDeleteTrack = (trackId: string) => {
+    const filteredTracks = tracks.filter(track => track.id !== trackId);
+    setTracks(filteredTracks);
+    markProjectAsModified();
+  };
+  
+  // Manejar selección de herramienta
+  const handleToolChange = (tool: string) => {
+    setActiveTool(tool);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
@@ -539,6 +598,12 @@ const ProfessionalEditor: React.FC = () => {
               <h2 className="text-lg font-medium mb-2 md:hidden text-white">Vista previa</h2>
             </div>
             
+            {/* Barra de herramientas del editor de video */}
+            <Toolbar 
+              activeTool={activeTool}
+              onToolChange={handleToolChange}
+            />
+            
             <VideoPreviewPanel
               videoSrc={videoSrc}
               currentTime={currentTime}
@@ -564,6 +629,28 @@ const ProfessionalEditor: React.FC = () => {
                 </h2>
               </div>
               
+              {/* Panel de pistas */}
+              <div className="mb-4 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800">
+                <TrackListPanel 
+                  tracks={tracks}
+                  onAddTrack={handleAddTrack}
+                  onDeleteTrack={handleDeleteTrack}
+                  onToggleTrackVisibility={(trackId) => handleUpdateTrack(trackId, { visible: !tracks.find(t => t.id === trackId)?.visible })}
+                  onToggleTrackLock={(trackId) => handleUpdateTrack(trackId, { locked: !tracks.find(t => t.id === trackId)?.locked })}
+                  onToggleTrackMute={(trackId) => handleUpdateTrack(trackId, { muted: !tracks.find(t => t.id === trackId)?.muted })}
+                  onRecordAudio={() => alert('Funcionalidad de grabación en desarrollo')}
+                  onReorderTracks={(startIndex, endIndex) => {
+                    const result = Array.from(tracks);
+                    const [removed] = result.splice(startIndex, 1);
+                    result.splice(endIndex, 0, removed);
+                    setTracks(result);
+                    markProjectAsModified();
+                  }}
+                  language="es"
+                />
+              </div>
+              
+              {/* Línea de tiempo */}
               <div className="rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800">
                 <ProfessionalTimeline
                   clips={clips}
