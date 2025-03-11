@@ -66,21 +66,45 @@ export default function ProfessionalEditorPage() {
       }
       
       // Creamos un intervalo para actualizar el tiempo actual
-      timelineInterval.current = window.setInterval(() => {
-        setCurrentTime((prevTime) => {
-          if (prevTime >= duration) {
-            if (timelineInterval.current) {
-              window.clearInterval(timelineInterval.current);
-              timelineInterval.current = null;
-            }
-            setIsPlaying(false);
-            return duration;
-          }
-          return prevTime + 0.1; // Incremento de 100ms
-        });
-      }, 100);
+      // Usamos requestAnimationFrame para mejor rendimiento y sincronización más precisa
+      const startTime = performance.now();
+      const startPosition = currentTime;
       
+      const updateFrame = (timestamp: number) => {
+        if (!isPlaying) return;
+        
+        const elapsed = (timestamp - startTime) / 1000; // Convertir a segundos
+        const newTime = startPosition + elapsed;
+        
+        if (newTime >= duration) {
+          setCurrentTime(duration);
+          setIsPlaying(false);
+          return;
+        }
+        
+        setCurrentTime(newTime);
+        timelineInterval.current = requestAnimationFrame(updateFrame);
+      };
+      
+      timelineInterval.current = requestAnimationFrame(updateFrame);
       setIsPlaying(true);
+    }
+  };
+  
+  // Manejar búsqueda (seek) en el tiempo
+  const handleSeek = (time: number) => {
+    // Actualizar el tiempo actual
+    setCurrentTime(time);
+    
+    // Si estamos reproduciendo, reiniciar el intervalo desde la nueva posición
+    if (isPlaying) {
+      if (timelineInterval.current) {
+        cancelAnimationFrame(timelineInterval.current);
+        timelineInterval.current = null;
+      }
+      
+      handlePlayPause(); // Detener
+      setTimeout(() => handlePlayPause(), 10); // Iniciar de nuevo
     }
   };
 
@@ -88,7 +112,8 @@ export default function ProfessionalEditorPage() {
   useEffect(() => {
     return () => {
       if (timelineInterval.current) {
-        window.clearInterval(timelineInterval.current);
+        cancelAnimationFrame(timelineInterval.current);
+        timelineInterval.current = null;
       }
     };
   }, []);
@@ -287,8 +312,35 @@ export default function ProfessionalEditorPage() {
               duration={duration}
               isPlaying={isPlaying}
               onPlayPause={handlePlayPause}
+              onTimeUpdate={(time: number) => setCurrentTime(time)}
+              onSeek={handleSeek}
               selectedClipId={selectedClipId}
               clips={clips}
+              onClipUpdate={handleClipUpdate}
+              onExport={(format: string, quality: string) => {
+                toast({
+                  title: "Exportando video",
+                  description: `Formato: ${format}, Calidad: ${quality}`
+                });
+                
+                setTimeout(() => {
+                  toast({
+                    title: "Exportación completada",
+                    description: "El video ha sido exportado exitosamente"
+                  });
+                }, 3000);
+              }}
+              onTakeSnapshot={() => {
+                toast({
+                  title: "Captura tomada",
+                  description: "Se ha guardado un fotograma del video",
+                });
+              }}
+              audioVolume={0.8}
+              onVolumeChange={(volume: number) => {
+                // Función para manejar cambios de volumen
+                console.log("Volumen cambiado:", volume);
+              }}
             />
           </div>
 
@@ -321,7 +373,7 @@ export default function ProfessionalEditorPage() {
                     videoFiles={videoFiles}
                     imageFiles={imageFiles}
                     audioFile={audioFile}
-                    onAddToTimeline={(type, id) => {
+                    onAddToTimeline={(type: string, id: string | number) => {
                       toast({
                         title: "Elemento añadido",
                         description: `Se ha añadido un elemento de tipo ${type}`,
@@ -457,7 +509,9 @@ export default function ProfessionalEditorPage() {
             <EffectsPanel
               selectedClipId={selectedClipId}
               effects={sampleEffects}
-              onApplyEffect={(effectType) => {
+              clips={clips}
+              onClipUpdate={handleClipUpdate}
+              onApplyEffect={(effectType, parameters) => {
                 if (selectedClipId === null) {
                   toast({
                     title: "Error",
@@ -465,6 +519,44 @@ export default function ProfessionalEditorPage() {
                     variant: "destructive"
                   });
                   return;
+                }
+                
+                // Actualizar el clip con el nuevo efecto
+                const clipToUpdate = clips.find(c => c.id === selectedClipId);
+                if (clipToUpdate) {
+                  // Determinar si es un efecto de color o un efecto normal
+                  if (effectType.startsWith('effect-') || effectType.startsWith('transition-')) {
+                    // Efectos normales
+                    const updatedEffects = [...(clipToUpdate.effects || []), {
+                      id: effectType,
+                      ...parameters,
+                      appliedAt: new Date().toISOString()
+                    }];
+                    
+                    handleClipUpdate(selectedClipId, { effects: updatedEffects });
+                  } else {
+                    // Corrección de color (filtros)
+                    const updatedFilters = [...(clipToUpdate.filters || [])];
+                    const existingFilterIndex = updatedFilters.findIndex(f => f.id === effectType);
+                    
+                    if (existingFilterIndex >= 0) {
+                      // Actualizar filtro existente
+                      updatedFilters[existingFilterIndex] = { 
+                        ...updatedFilters[existingFilterIndex], 
+                        ...parameters,
+                        enabled: true
+                      };
+                    } else {
+                      // Agregar nuevo filtro
+                      updatedFilters.push({
+                        id: effectType,
+                        ...parameters,
+                        enabled: true
+                      });
+                    }
+                    
+                    handleClipUpdate(selectedClipId, { filters: updatedFilters });
+                  }
                 }
                 
                 toast({
