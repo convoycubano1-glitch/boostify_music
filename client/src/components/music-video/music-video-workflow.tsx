@@ -208,9 +208,8 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   const transcribeAudio = useCallback(async (audioFile: File): Promise<string> => {
     return new Promise((resolve) => {
       // En una implementación real, se invocaría un servicio de reconocimiento de voz
-      setTimeout(() => {
-        resolve("Esta es una transcripción simulada de la letra de la canción, donde se identifican momentos clave como el estribillo y versos.");
-      }, 2000);
+      // Nota: Para evitar bloqueos, devuelve inmediatamente una transcripción simulada
+      resolve("Esta es una transcripción simulada de la letra de la canción, donde se identifican momentos clave como el estribillo y versos. Se utiliza para generar un guion visual que se sincronizará con el ritmo y la narrativa musical.");
     });
   }, []);
 
@@ -728,7 +727,96 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             </div>
             
             {isAnalyzing && (
-              <Progress value={generationProgress} className="h-2" />
+              <div className="space-y-3">
+                <Progress value={generationProgress} className="h-2" />
+                
+                {/* Botón para avanzar manualmente siempre visible durante el análisis */}
+                <div className="flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Forzar una transcripción si no existe
+                      setTranscription("Transcripción generada manualmente para continuar el proceso.");
+                      
+                      // Guardar la transcripción en el contexto del editor
+                      editorContext.addTranscription({
+                        audioId: 'main-audio',
+                        text: "Transcripción generada manualmente para continuar el proceso.",
+                        startTime: 0,
+                        endTime: audioFile?.size ? (audioFile.size > 1000000 ? 180 : 120) : 120,
+                        confidence: 0.8
+                      });
+                      
+                      // Marcar pasos como completados y avanzar
+                      if (currentWorkflowStep === 'transcription') {
+                        markStepComplete('transcription', 'script');
+                      } else if (currentWorkflowStep === 'script') {
+                        markStepComplete('script', 'sync');
+                      } else if (currentWorkflowStep === 'sync') {
+                        markStepComplete('sync', 'scenes');
+                      } else if (currentWorkflowStep === 'scenes') {
+                        markStepComplete('scenes', 'customization');
+                      } else if (currentWorkflowStep === 'customization') {
+                        markStepComplete('customization', 'movement');
+                      } else {
+                        // Forzar avance al siguiente paso
+                        let progress = 100;
+                        setGenerationProgress(progress);
+                        
+                        // Una vez completado el análisis, generar la línea de tiempo
+                        generateEditingTimeline().then(clips => {
+                          setTimelineData(clips);
+                          setAnalysisComplete(true);
+                          setIsAnalyzing(false);
+                          setActiveStep('timeline');
+                          
+                          // Sincronizar con el contexto del editor - agregar pistas de audio y clips
+                          const audioClip = clips.find(clip => clip.type === 'audio');
+                          if (audioClip && audioClip.audioUrl) {
+                            // Agregar pista de audio al contexto
+                            editorContext.addAudioTrack({
+                              name: audioFile?.name || 'Audio Principal',
+                              url: audioClip.audioUrl,
+                              duration: duration,
+                              startTime: 0,
+                              waveformData: []
+                            });
+                          }
+                          
+                          // Agregar clips de video e imágenes al contexto
+                          clips
+                            .filter(clip => clip.type !== 'audio')
+                            .forEach(clip => {
+                              editorContext.addClip({
+                                type: clip.type as 'video' | 'image',
+                                url: clip.videoUrl || clip.imageUrl || '',
+                                name: clip.title,
+                                startTime: clip.start,
+                                duration: clip.duration,
+                                layer: clip.layer,
+                                properties: {
+                                  section: clip.metadata?.section || '',
+                                  sourceIndex: clip.metadata?.sourceIndex || 0
+                                }
+                              });
+                            });
+                          
+                          // Marcar los primeros 5 pasos como completados
+                          markStepComplete('customization', 'movement');
+                          
+                          toast({
+                            title: "Análisis completado manualmente",
+                            description: "La línea de tiempo ha sido generada con éxito",
+                          });
+                        });
+                      }
+                    }}
+                  >
+                    Continuar manualmente
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         )}
