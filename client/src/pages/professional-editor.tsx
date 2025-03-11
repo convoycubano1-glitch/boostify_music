@@ -9,7 +9,8 @@ import {
   Save, Play, Pause, Scissors, ChevronRight, 
   Plus, RefreshCw, Clock, BarChart4, Sliders, 
   Layers, AudioLines, FileVideo, Grid, Maximize,
-  MinusCircle, PlusCircle, ArrowLeftRight, Book
+  MinusCircle, PlusCircle, ArrowLeftRight, Book,
+  Sparkles
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,6 +23,7 @@ import { AudioTrackEditor } from '@/components/professional-editor/audio-track-e
 import { BeatAnalyzer } from '@/components/professional-editor/beat-analyzer';
 import { TranscriptionPanel } from '@/components/professional-editor/transcription-panel';
 import { FileUploader } from '@/components/professional-editor/file-uploader';
+import { MusicVideoWorkflow } from '@/components/music-video/music-video-workflow';
 
 // Datos de muestra para el editor
 import { 
@@ -295,7 +297,7 @@ export default function ProfessionalEditorPage() {
           {/* Panel de herramientas (derecha) */}
           <div className="col-span-1">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4">
+              <TabsList className="grid grid-cols-5">
                 <TabsTrigger value="media">
                   <FileVideo className="h-4 w-4 mr-1.5" /> Media
                 </TabsTrigger>
@@ -307,6 +309,9 @@ export default function ProfessionalEditorPage() {
                 </TabsTrigger>
                 <TabsTrigger value="lyrics">
                   <Book className="h-4 w-4 mr-1.5" /> Letras
+                </TabsTrigger>
+                <TabsTrigger value="aiCreator">
+                  <Sparkles className="h-4 w-4 mr-1.5" /> AI Creator
                 </TabsTrigger>
               </TabsList>
               
@@ -356,6 +361,23 @@ export default function ProfessionalEditorPage() {
                   <TranscriptionPanel
                     transcription={transcription}
                     currentTime={currentTime}
+                  />
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="aiCreator" className="h-[500px] overflow-auto">
+                <Card className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">Creador de Videos Musicales AI</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Transforma tu música en experiencias visuales
+                  </p>
+                  <MusicVideoWorkflow
+                    onComplete={(result) => {
+                      toast({
+                        title: "Video musical completado",
+                        description: `Se ha generado un video de ${Math.floor((result.duration || 0) / 60)}:${((result.duration || 0) % 60).toString().padStart(2, '0')} minutos`,
+                      });
+                    }}
                   />
                 </Card>
               </TabsContent>

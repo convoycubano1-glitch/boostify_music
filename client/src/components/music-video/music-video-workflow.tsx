@@ -225,7 +225,8 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
 
   // Componente para mostrar el estado de guardado
   const SaveStatusIndicator = () => {
-    const { saveStatus, lastSaved, persistenceMode } = editorContext;
+    // Versión simplificada para mejor estabilidad
+    const { saveStatus } = editorContext;
     
     const getStatusIcon = () => {
       switch (saveStatus) {
@@ -245,9 +246,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         case 'saving':
           return 'Guardando...';
         case 'saved':
-          return lastSaved 
-            ? `Guardado ${lastSaved.toLocaleTimeString()}` 
-            : 'Guardado';
+          return 'Guardado';
         case 'error':
           return 'Guardado local';
         default:
@@ -255,37 +254,11 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       }
     };
     
-    const getModeLabel = () => {
-      switch (persistenceMode) {
-        case 'firestore':
-          return 'en la nube';
-        case 'hybrid':
-          return 'en nube y local';
-        case 'local':
-        default:
-          return 'localmente';
-      }
-    };
-    
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {getStatusIcon()}
-              <span>{getStatusText()}</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Tu proyecto se guarda {getModeLabel()}</p>
-            {saveStatus === 'error' && (
-              <p className="text-amber-500 mt-1">
-                No se pudo guardar en la nube. Tus cambios están guardados localmente.
-              </p>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {getStatusIcon()}
+        <span>{getStatusText()}</span>
+      </div>
     );
   };
   
