@@ -157,7 +157,7 @@ export interface TimelineClip {
   start: number;
   duration: number;
   url: string;
-  trackId: number;
+  trackId: string;
   selected?: boolean;
   color?: string;
   end?: number;

@@ -133,7 +133,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [scrollPosition, setScrollPosition] = useState<number>(0);
   const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
-  const [visibleTracks, setVisibleTracks] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
+  const [visibleTracks, setVisibleTracks] = useState<Set<string>>(new Set(['0', '1', '2', '3', '4']));
   const [showAddClipDialog, setShowAddClipDialog] = useState<boolean>(false);
   const [isAddingClip, setIsAddingClip] = useState<boolean>(false);
   const [clipBeingEdited, setClipBeingEdited] = useState<TimelineClip | null>(null);
@@ -153,7 +153,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     start: currentTime,
     duration: 5,
     url: '',
-    trackId: 0,
+    trackId: '0',
     selected: false
   });
   
@@ -206,13 +206,13 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     
     // Asegurar que siempre haya al menos 5 pistas (0-4)
     for (let i = 0; i < 5; i++) {
-      trackIds.add(i);
+      trackIds.add(i.toString());
     }
     
     // Filtrar por pistas visibles
     return Array.from(trackIds)
       .filter(trackId => visibleTracks.has(trackId))
-      .sort((a, b) => a - b);
+      .sort((a, b) => parseInt(a.toString()) - parseInt(b.toString()));
   };
   
   // Obtener altura total de la línea de tiempo
@@ -292,7 +292,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
       start: newClipData.start || currentTime,
       duration: newClipData.duration || 5,
       url: newClipData.url || '',
-      trackId: newClipData.trackId || 0,
+      trackId: newClipData.trackId || '0',
       selected: false,
       end: (newClipData.start || currentTime) + (newClipData.duration || 5)
     };
@@ -343,7 +343,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
       start: currentTime,
       duration: 5,
       url: '',
-      trackId: 0,
+      trackId: '0',
       selected: false
     });
   };
@@ -373,7 +373,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   // Obtener el número total de pistas
   const getTotalTracks = () => {
     const maxTrackId = clips.reduce((max, clip) => 
-      Math.max(max, clip.trackId), 0);
+      Math.max(max, parseInt(clip.trackId)), 0);
     return Math.max(5, maxTrackId + 1); // Al menos 5 pistas
   };
   
@@ -414,7 +414,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
         style={{ height: `${trackHeight}px` }}
       >
         <div className="absolute inset-y-0 left-0 w-12 bg-gray-100 dark:bg-gray-900 flex items-center justify-center border-r">
-          <span className="text-xs text-gray-500">{trackId + 1}</span>
+          <span className="text-xs text-gray-500">{parseInt(trackId) + 1}</span>
         </div>
         
         <div className="ml-12 h-full relative">
@@ -930,7 +930,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                 <Select
                   value={newClipData.trackId?.toString()}
                   onValueChange={(value) => 
-                    setNewClipData({ ...newClipData, trackId: parseInt(value) })
+                    setNewClipData({ ...newClipData, trackId: value })
                   }
                 >
                   <SelectTrigger id="clip-track">

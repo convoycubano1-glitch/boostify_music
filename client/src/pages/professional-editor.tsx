@@ -502,6 +502,44 @@ const ProfessionalEditor: React.FC = () => {
     markProjectAsModified();
   };
   
+  // Manejar reordenación de pistas
+  const handleReorderTracks = (startIndex: number, endIndex: number) => {
+    if (startIndex === endIndex) return;
+    
+    const tracksCopy = [...tracks];
+    const [removed] = tracksCopy.splice(startIndex, 1);
+    tracksCopy.splice(endIndex, 0, removed);
+    
+    setTracks(tracksCopy);
+    markProjectAsModified();
+  };
+  
+  // Función para convertir clips de timeline a pistas
+  const convertClipsToTracks = (timelineClips: TimelineClip[]): Track[] => {
+    // Obtener IDs únicos de pistas de los clips
+    const uniqueTrackIds = Array.from(new Set(
+      timelineClips.map(clip => clip.trackId)
+    ));
+    
+    // Crear una pista para cada ID único
+    return uniqueTrackIds.map(trackId => {
+      // Obtener el primer clip de esta pista para determinar su tipo
+      const clipOfTrack = timelineClips.find(clip => clip.trackId === trackId);
+      const trackType = clipOfTrack?.type || 'video';
+      
+      return {
+        id: trackId,
+        name: `Pista de ${trackType === 'video' ? 'video' : 
+          trackType === 'audio' ? 'audio' : 
+          trackType === 'image' ? 'imagen' : 'texto'} ${trackId.slice(-2)}`,
+        type: trackType,
+        visible: true,
+        locked: false,
+        muted: false
+      };
+    });
+  };
+  
   // Manejar selección de herramienta
   const handleToolChange = (tool: string) => {
     setActiveTool(tool);
