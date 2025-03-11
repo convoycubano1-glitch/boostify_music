@@ -45,6 +45,7 @@ import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { VideoGenerator, VideoGenerationSettings } from './video-generator';
+import { VideoGeneratorWithCamera } from './video-generator-with-camera';
 import { TimelineClip } from './timeline-editor';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -438,13 +439,25 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       const transcript = await transcribeAudio(audioFile);
       setTranscription(transcript);
       
+      // Calcular duración aproximada del audio
+      const audioDuration = audioFile.size > 1000000 ? 180 : 120; // Aproximación según tamaño
+      
       // Guardar la transcripción en el contexto del editor
       editorContext.addTranscription({
         audioId: 'main-audio',
         text: transcript,
         startTime: 0,
-        endTime: audioFile.size > 1000000 ? 180 : 120,
+        endTime: audioDuration,
         confidence: 0.85
+      });
+      
+      // Actualizar datos del workflow en el contexto
+      editorContext.updateWorkflowData({
+        audioFile: URL.createObjectURL(audioFile),
+        transcription: transcript,
+        transcriptionSegments: [
+          { start: 0, end: audioDuration, text: transcript }
+        ]
       });
       
       markStepComplete('transcription', 'script');
@@ -549,12 +562,88 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         // Avanzar por los pasos finales según el progreso
         if (prev < 20 && newProgress >= 20) {
           markStepComplete('movement', 'lipsync');
+          
+          // Actualizar datos del workflow para movimiento
+          editorContext.updateWorkflowData({
+            cameraMovements: [
+              { 
+                id: `movement-${Date.now()}-1`,
+                name: 'Zoom In', 
+                type: 'zoom',
+                start: 10, 
+                end: 15,
+                startTime: 10, 
+                duration: 5,
+                parameters: {
+                  direction: 'in',
+                  intensity: 50
+                }
+              },
+              { 
+                id: `movement-${Date.now()}-2`,
+                name: 'Pan Right', 
+                type: 'pan',
+                start: 30, 
+                end: 38,
+                startTime: 30, 
+                duration: 8,
+                parameters: {
+                  direction: 'right',
+                  intensity: 60
+                }
+              },
+              { 
+                id: `movement-${Date.now()}-3`,
+                name: 'Tilt Up', 
+                type: 'tilt',
+                start: 50, 
+                end: 56,
+                startTime: 50, 
+                duration: 6,
+                parameters: {
+                  direction: 'up',
+                  intensity: 45
+                }
+              }
+            ]
+          });
         } else if (prev < 40 && newProgress >= 40) {
           markStepComplete('lipsync', 'generation');
+          
+          // Actualizar datos del workflow para sincronización labial
+          editorContext.updateWorkflowData({
+            lipsyncData: {
+              enabled: true,
+              confidence: 0.85,
+              segments: [
+                { start: 5, end: 10, words: "Primera frase sincronizada" },
+                { start: 20, end: 30, words: "Segunda frase con sincronización labial" }
+              ]
+            }
+          });
         } else if (prev < 70 && newProgress >= 70) {
           markStepComplete('generation', 'rendering');
+          
+          // Actualizar datos del workflow para generación de video
+          editorContext.updateWorkflowData({
+            generatedSegments: timelineData.filter(clip => clip.type !== 'audio').map((clip, index) => ({
+              id: `segment-${index}`,
+              startTime: clip.start,
+              duration: clip.duration,
+              prompt: `Escena musical ${clip.metadata?.section || ''} con ${clip.title}`,
+              style: settings.style || 'cinematográfico',
+              status: 'completed'
+            }))
+          });
         } else if (prev < 90 && newProgress >= 90) {
           markStepComplete('rendering');
+          
+          // Actualizar datos del workflow para renderizado final
+          editorContext.updateWorkflowData({
+            renderStatus: 'completed',
+            renderingProgress: 100,
+            finalVideoUrl: '/assets/Standard_Mode_Generated_Video (2).mp4'
+          });
         }
         
         if (newProgress >= 100) {
@@ -563,7 +652,8 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
           // Simular URL del video generado
           setTimeout(() => {
             // En un caso real, esta URL vendría del servidor
-            setGeneratedVideoUrl('/assets/Standard_Mode_Generated_Video (2).mp4');
+            const videoUrl = '/assets/Standard_Mode_Generated_Video (2).mp4';
+            setGeneratedVideoUrl(videoUrl);
             setIsGenerating(false);
             setActiveStep('preview');
             
@@ -576,6 +666,20 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               editorContext.markStepAsCompleted(index);
             });
             
+            // Actualizar el estado final del workflow en el contexto
+            editorContext.updateWorkflowData({
+              completed: true,
+              finalVideoUrl: videoUrl,
+              processingTime: Math.floor(Math.random() * 80) + 120,
+              videoMetadata: {
+                width: 1920,
+                height: 1080,
+                framerate: 30,
+                duration: duration,
+                format: 'mp4'
+              }
+            });
+            
             toast({
               title: "Video generado",
               description: "Tu video musical ha sido creado con éxito",
@@ -584,7 +688,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             // Notificar al componente padre si existe callback
             if (onComplete) {
               onComplete({
-                videoUrl: '/assets/Standard_Mode_Generated_Video (2).mp4',
+                videoUrl,
                 clips: timelineData,
                 duration: duration
               });
@@ -899,12 +1003,12 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
           <div className="space-y-4">
             <Card>
               <CardContent className="pt-6">
-                <VideoGenerator 
+                <VideoGeneratorWithCamera 
                   onGenerateVideo={handleGenerateVideo}
                   isLoading={isGenerating}
                   scenesCount={timelineData.filter(clip => clip.type !== 'audio').length}
-                  duration={duration}
-                  clips={timelineData}
+                  audioDuration={duration}
+                  cameraMovementsEnabled={true}
                 />
                 
                 {isGenerating && (

@@ -76,16 +76,39 @@ const cameraMovements = [
   'Movimiento Orbital'
 ];
 
-export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0 }: VideoGeneratorProps) {
+export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, clips = [], duration = 15 }: VideoGeneratorProps) {
+  // Inicializar con valores predeterminados, pero con consideración de clips y datos existentes
   const [settings, setSettings] = useState<VideoGenerationSettings>({
     model: 't2v-01',
     quality: 'standard',
-    duration: 15,
+    duration: duration > 0 ? Math.min(duration, 60) : 15, // Usar duración del proyecto o default
     includeMusic: true,
-    prompt: '',
+    prompt: generatePromptFromClips(clips), // Generar prompt basado en clips existentes
     style: 'cinematic',
     cameraMovement: 'Sin movimiento'
   });
+
+  // Función para generar un prompt inicial basado en los clips existentes
+  function generatePromptFromClips(clips: VideoGeneratorProps['clips']) {
+    if (!clips || clips.length === 0) return '';
+    
+    // Extraer información de los clips para construir un prompt coherente
+    const videoClips = clips.filter(clip => clip.type === 'video' || clip.type === 'image');
+    if (videoClips.length === 0) return '';
+    
+    // Obtener secciones únicas
+    const sections = Array.from(new Set(
+      videoClips
+        .map(clip => clip.metadata?.section)
+        .filter(Boolean)
+    ));
+    
+    // Extraer nombres/títulos de clips
+    const clipTitles = videoClips.map(clip => clip.title).filter(Boolean);
+    
+    // Construir prompt básico
+    return `Video musical ${sections.join(', ')} con ${clipTitles.join(', ')}. Estilo cinematográfico, alta calidad.`;
+  }
 
   const handleGenerate = async () => {
     if (!settings.prompt && settings.model === 't2v-01') {
@@ -95,6 +118,13 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0 }: 
         variant: "destructive"
       });
       return;
+    }
+    
+    // Guardar la configuración en localStorage para futuras referencias
+    try {
+      localStorage.setItem('last-video-generation-settings', JSON.stringify(settings));
+    } catch (e) {
+      console.log('Error guardando configuración de video:', e);
     }
     
     await onGenerateVideo(settings);

@@ -92,6 +92,120 @@ export interface Prompt {
 }
 
 // Interfaz del proyecto de video musical
+export interface WorkflowStepData {
+  // Upload audio/video
+  audioFile?: string; // URL del audio subido
+  imageFiles?: { url: string; name: string; }[]; // URLs de imágenes subidas
+  bRollFiles?: { url: string; name: string; duration?: number; }[]; // URLs de video B-roll
+
+  // Transcription
+  transcription?: string; // Texto transcrito de la canción
+  transcriptionSegments?: {
+    start: number;
+    end: number;
+    text: string;
+  }[];
+  
+  // Script generation
+  script?: string; // Guion generado
+  scriptSegments?: {
+    start: number;
+    end: number;
+    text: string;
+    shotType?: string;
+  }[];
+  
+  // Visual style
+  visualStyle?: {
+    cameraFormat?: 'landscape' | 'portrait' | 'square';
+    mood?: string;
+    colorPalette?: string;
+    characterStyle?: string;
+    visualIntensity?: number;
+    narrativeIntensity?: number;
+    referenceImageUrl?: string;
+    director?: string;
+  };
+  
+  // Beat sync
+  beatSync?: {
+    editingStyle?: 'dynamic' | 'steady' | 'minimal' | 'cinematic';
+    detectedBeats?: number[];
+  };
+  
+  // Prompt generation
+  generatedPrompts?: Prompt[];
+  
+  // Image generation
+  generatedImages?: string[]; // URLs de las imágenes generadas
+  generatedImagesDetails?: {
+    url: string;
+    prompt: string;
+    timestamp: number;
+  }[];
+  
+  // Camera movements
+  cameraMovements?: {
+    name?: string; // Nombre descriptivo del movimiento
+    type: 'pan' | 'zoom' | 'tilt' | 'dolly' | 'track';
+    startTime?: number; // Alias de start para compatibilidad
+    start: number;
+    end: number;
+    duration?: number; // Para compatibilidad con la interfaz de MusicVideoWorkflow
+    parameters?: Record<string, any>;
+  }[];
+  
+  // Video generation settings
+  videoSettings?: {
+    style?: string;
+    quality?: string;
+    resolution?: string;
+    includeVoiceover?: boolean;
+    includeCameraMovements?: boolean;
+    includeSubtitles?: boolean;
+  };
+  
+  // Lipsync data
+  lipsyncData?: {
+    enabled: boolean;
+    confidence: number;
+    segments: {
+      start: number;
+      end: number;
+      words: string;
+    }[];
+  };
+  
+  // Generated segments (for video parts)
+  generatedSegments?: {
+    id: string;
+    startTime: number;
+    duration: number;
+    prompt: string;
+    style: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+  }[];
+  
+  // Final rendering
+  videoGenerationModel?: 't2v-01' | 't2v-01-director' | 'i2v-01' | 's2v-01';
+  videoGenerationTaskId?: string;
+  generatedVideo?: string; // URL del video final
+  finalVideoUrl?: string; // Alias para generatedVideo con nombre más descriptivo
+  renderingStatus?: 'idle' | 'generating' | 'completed' | 'failed';
+  renderStatus?: 'idle' | 'generating' | 'completed' | 'failed'; // Alias para renderingStatus
+  renderingProgress?: number;
+  renderingError?: string;
+  processingTime?: number;
+  videoMetadata?: {
+    width: number;
+    height: number;
+    framerate: number;
+    duration: number;
+    format: string;
+  };
+  completed?: boolean;
+}
+
 export interface MusicVideoProject {
   id: string;
   name: string;
@@ -105,6 +219,9 @@ export interface MusicVideoProject {
   transcriptions: Transcription[];
   currentStep: number;
   completedSteps: number[];
+  workflowData: WorkflowStepData; // Datos específicos de cada paso del flujo de trabajo
+  lastModified: Date; // Fecha de última modificación
+  createdAt: Date; // Fecha de creación
 }
 
 // Estado del contexto del editor
@@ -129,6 +246,7 @@ interface EditorContextActions {
   // Gestión de proyecto
   updateProjectName: (name: string) => void;
   updateProjectDuration: (duration: number) => void;
+  updateWorkflowData: (updates: Partial<WorkflowStepData>) => void;
   
   // Gestión de elementos
   addAudioTrack: (track: Omit<AudioTrack, 'id'>) => void;
@@ -211,6 +329,9 @@ const defaultProject: MusicVideoProject = {
   transcriptions: [],
   currentStep: 0,
   completedSteps: [],
+  workflowData: {}, // Datos específicos del flujo de trabajo de AI Video Creation
+  lastModified: new Date(),
+  createdAt: new Date(),
 };
 
 // Creación del contexto
@@ -357,35 +478,83 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         }
         
         // Buscar el proyecto más reciente del usuario
-        const projectsQuery = query(
-          collection(db, 'musicVideoProjects'),
-          where('userId', '==', user.uid),
-          orderBy('updatedAt', 'desc'),
-          limit(1)
-        );
-        
-        const querySnapshot = await getDocs(projectsQuery);
-        
-        if (!querySnapshot.empty) {
-          const projectData = querySnapshot.docs[0].data();
-          console.log('Cargando el proyecto más reciente desde Firestore:', projectData.id);
+        // Nota: Este query requiere un índice compuesto en Firestore
+        // Si el error persiste, crear el índice manualmente en la consola de Firebase
+        try {
+          const projectsQuery = query(
+            collection(db, 'musicVideoProjects'),
+            where('userId', '==', user.uid),
+            orderBy('updatedAt', 'desc'),
+            limit(1)
+          );
           
-          // Transformar datos de Firestore a formato local
-          const processedProject = {
-            ...projectData,
-            prompts: projectData.prompts?.map((prompt: any) => ({
-              ...prompt,
-              timestamp: prompt.timestamp?.toDate() || new Date()
-            })) || []
-          };
+          const indexQuerySnapshot = await getDocs(projectsQuery);
           
-          setState(prev => ({
-            ...prev,
-            project: processedProject as MusicVideoProject
-          }));
+          if (!indexQuerySnapshot.empty) {
+            const projectData = indexQuerySnapshot.docs[0].data();
+            console.log('Cargando el proyecto más reciente desde Firestore:', projectData.id);
+            
+            // Transformar datos de Firestore a formato local
+            const processedProject = {
+              ...projectData,
+              prompts: projectData.prompts?.map((prompt: any) => ({
+                ...prompt,
+                timestamp: prompt.timestamp?.toDate() || new Date()
+              })) || []
+            };
+            
+            setState(prev => ({
+              ...prev,
+              project: processedProject as MusicVideoProject
+            }));
+            
+            // Guardar también en localStorage para tener copia local
+            localStorage.setItem('music-video-project', JSON.stringify(processedProject));
+          }
+        } catch (indexError) {
+          // Si hay un error con el índice, usar una consulta más simple
+          console.log('Error con la consulta indexada, intentando alternativa:', indexError);
           
-          // Guardar también en localStorage para tener copia local
-          localStorage.setItem('music-video-project', JSON.stringify(processedProject));
+          const simpleQuery = query(
+            collection(db, 'musicVideoProjects'),
+            where('userId', '==', user.uid),
+            limit(10)
+          );
+          
+          const simpleQuerySnapshot = await getDocs(simpleQuery);
+          
+          if (!simpleQuerySnapshot.empty) {
+            // Ordenar manualmente por updatedAt
+            const projects = simpleQuerySnapshot.docs
+              .map(doc => doc.data())
+              .sort((a, b) => {
+                const dateA = a.updatedAt?.toDate?.() || new Date(0);
+                const dateB = b.updatedAt?.toDate?.() || new Date(0);
+                return dateB.getTime() - dateA.getTime();
+              });
+            
+            if (projects.length > 0) {
+              const projectData = projects[0];
+              console.log('Cargando proyecto alternativo desde Firestore:', projectData.id);
+              
+              // Transformar datos de Firestore a formato local
+              const processedProject = {
+                ...projectData,
+                prompts: projectData.prompts?.map((prompt: any) => ({
+                  ...prompt,
+                  timestamp: prompt.timestamp?.toDate() || new Date()
+                })) || []
+              };
+              
+              setState(prev => ({
+                ...prev,
+                project: processedProject as MusicVideoProject
+              }));
+              
+              // Guardar también en localStorage para tener copia local
+              localStorage.setItem('music-video-project', JSON.stringify(processedProject));
+            }
+          }
         }
       } catch (error) {
         console.error('Error cargando proyectos desde Firestore:', error);
@@ -419,6 +588,22 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({
       ...prev,
       project: { ...prev.project, duration }
+    }));
+  };
+  
+  // Función para actualizar datos específicos del workflow de AI Video Creation
+  const updateWorkflowData = (updates: Partial<WorkflowStepData>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        workflowData: {
+          ...prev.project.workflowData,
+          ...updates
+        },
+        lastModified: new Date()
+      },
+      saveStatus: 'idle' // Marcar como pendiente de guardar
     }));
   };
 
@@ -808,6 +993,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     setView,
     updateProjectName,
     updateProjectDuration,
+    updateWorkflowData,
     addAudioTrack,
     updateAudioTrack,
     removeAudioTrack,
