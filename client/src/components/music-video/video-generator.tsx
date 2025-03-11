@@ -1,347 +1,280 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
-import { Video, Loader2, User, Music2, Move, Mic } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import type { TimelineClip } from "./timeline-editor";
-import { PremiumVideoPlayer } from "./premium-video-player";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArtistCustomization } from "./artist-customization";
-import { FaceSwapResult } from "@/components/face-swap/face-swap";
-import { MusicianIntegration, MusicianClip } from "./musician-integration";
-import { MovementIntegration } from "./movement-integration";
-import { KlingLipsync } from "@/components/lipsync/kling-lipsync";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
+import { Loader2, Video, Wand2, Info, Check, Film, Clock3 } from 'lucide-react';
 
-interface VideoGeneratorProps {
-  clips: TimelineClip[];
+export interface VideoGeneratorProps {
+  onGenerateVideo: (settings: VideoGenerationSettings) => Promise<void>;
+  isLoading: boolean;
+  scenesCount: number;
+}
+
+export interface VideoGenerationSettings {
+  model: string;
+  quality: 'standard' | 'premium';
   duration: number;
-  isGenerating: boolean;
-  onGenerate: () => Promise<string | null>;
+  includeMusic: boolean;
+  prompt: string;
+  style: string;
+  cameraMovement?: string;
 }
 
-interface VideoResult {
-  id: string;
-  url: string;
-  isPurchased?: boolean;
-  faceSwapResults?: FaceSwapResult[];
-  musicianClips?: MusicianClip[];
-}
+const videoModels = [
+  { id: 't2v-01', name: 'Estándar', description: 'Genera videos desde texto' },
+  { id: 'i2v-01', name: 'Imagen a Video', description: 'Anima tus imágenes existentes' },
+  { id: 's2v-01', name: 'Estilo a Video', description: 'Transfiere estilos visuales' }
+];
 
-export function VideoGenerator({
-  clips,
-  duration,
-  isGenerating,
-  onGenerate
-}: VideoGeneratorProps) {
-  const { toast } = useToast();
-  const [quality, setQuality] = useState<string>("high");
-  const [fps, setFps] = useState<number>(30);
-  const [progress, setProgress] = useState<number>(0);
-  const [videoUrl, setVideoUrl] = useState<string>("");
-  const [videoId, setVideoId] = useState<string>("");
-  const [showPreview, setShowPreview] = useState(false);
-  const [currentTab, setCurrentTab] = useState<string>("preview");
-  const [faceSwapResults, setFaceSwapResults] = useState<FaceSwapResult[]>([]);
-  const [musicianClips, setMusicianClips] = useState<MusicianClip[]>([]);
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+const cameraMovements = [
+  'Sin movimiento',
+  'Zoom In Lento',
+  'Zoom Out Suave',
+  'Paneo Horizontal',
+  'Paneo Vertical',
+  'Dolly In',
+  'Dolly Out',
+  'Seguimiento Sutil',
+  'Movimiento Orbital'
+];
 
-  // Verificar si el video ya fue comprado
-  const { data: videoPaymentStatus } = useQuery({
-    queryKey: ['videoPaymentStatus', videoId],
-    queryFn: async () => {
-      if (!videoId) return { isPurchased: false };
-      const res = await apiRequest(`/api/stripe/video-purchase-status/${videoId}`);
-      return res;
-    },
-    enabled: !!videoId && showPreview,
+export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0 }: VideoGeneratorProps) {
+  const [settings, setSettings] = useState<VideoGenerationSettings>({
+    model: 't2v-01',
+    quality: 'standard',
+    duration: 15,
+    includeMusic: true,
+    prompt: '',
+    style: 'cinematic',
+    cameraMovement: 'Sin movimiento'
   });
 
   const handleGenerate = async () => {
-    try {
-      setProgress(0);
-      setVideoUrl("");
-      
-      // Iniciar el progreso visual para mostrar actividad al usuario
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          const next = prev + 1.5;
-          if (next >= 100) {
-            clearInterval(interval);
-          }
-          return Math.min(next, 100);
-        });
-      }, 300);
-
-      // Llamar a la función de generación pasada como prop
-      const videoIdResult = await onGenerate();
-
-      // Verificar si se obtuvo un ID válido del proceso de generación
-      if (videoIdResult) {
-        clearInterval(interval);
-        setProgress(100);
-        
-        // Guardar el ID en el estado local
-        setVideoId(videoIdResult);
-        
-        // Usar un video de muestra para la vista previa
-        // En una implementación real, esto se obtendría de Firebase Storage usando el videoId
-        setVideoUrl("/assets/Standard_Mode_Generated_Video (2).mp4");
-        setShowPreview(true);
-
-        toast({
-          title: "Video generado",
-          description: "El video se ha generado exitosamente y ya está disponible para visualización",
-        });
-      } else {
-        // Si no hay ID es porque hubo un problema en la generación
-        clearInterval(interval);
-        throw new Error("No se pudo completar la generación del video");
-      }
-    } catch (error) {
-      console.error("Error generando video:", error);
-      setProgress(0);
+    if (!settings.prompt && settings.model === 't2v-01') {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al generar el video",
-        variant: "destructive",
+        title: "Prompt requerido",
+        description: "Por favor, ingresa una descripción para tu video",
+        variant: "destructive"
       });
+      return;
     }
-  };
-
-  const handlePurchaseComplete = () => {
-    toast({
-      title: "¡Compra exitosa!",
-      description: "Ya puedes ver el video completo sin limitaciones",
-    });
-  };
-
-  const handleFaceSwapComplete = (results: FaceSwapResult[]) => {
-    setFaceSwapResults(results);
     
-    toast({
-      title: "Face Swap completado",
-      description: "Los cambios se han aplicado al video correctamente",
-    });
+    await onGenerateVideo(settings);
   };
 
-  const handleMusicianIntegrationComplete = (clips: MusicianClip[]) => {
-    setMusicianClips(clips);
+  // Tiempo estimado basado en los ajustes actuales
+  const estimatedTime = () => {
+    let baseTime = 120; // Tiempo base en segundos
     
-    toast({
-      title: "Integración de Músicos completada",
-      description: `Se han integrado ${clips.length} secciones con músicos en el video`,
-    });
+    // Factores que afectan el tiempo
+    if (settings.quality === 'premium') baseTime *= 1.5;
+    if (settings.duration > 20) baseTime *= 1.3;
+    
+    // Convertir a minutos
+    const minutes = Math.floor(baseTime / 60);
+    const seconds = baseTime % 60;
+    
+    return `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
   };
   
-  // Función para manejar la actualización de clips con movimiento
-  const handleMovementComplete = (updatedClips: TimelineClip[]) => {
-    toast({
-      title: "Movimientos aplicados",
-      description: `Se han aplicado efectos de movimiento a ${updatedClips.length} clips`,
-    });
-  };
-  
-  // Función para manejar la finalización del proceso de LipSync
-  const handleLipSyncComplete = (result: {videoUrl: string}) => {
-    toast({
-      title: "LipSync completado",
-      description: "Se ha aplicado sincronización de labios al video correctamente",
-    });
+  // Estimación de costo basada en los ajustes actuales
+  const estimatedCost = () => {
+    let baseCost = 0.20; // Costo base en USD
+    
+    // Factores que afectan el costo
+    if (settings.quality === 'premium') baseCost *= 2;
+    if (settings.duration > 15) baseCost += (settings.duration - 15) * 0.05;
+    
+    return baseCost.toFixed(2);
   };
 
   return (
-    <Card className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-          <Video className="h-6 w-6 text-orange-500" />
+    <Card className="border border-blue-200 bg-blue-50/50">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold flex items-center">
+          <Video className="h-5 w-5 mr-2 text-blue-600" />
+          Generación de Video con IA
+        </CardTitle>
+        <CardDescription>
+          Transforma tus escenas en videos fluidos y de alta calidad
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="model-select">Modelo de Video</Label>
+          <RadioGroup 
+            value={settings.model} 
+            onValueChange={(value) => setSettings({...settings, model: value})}
+            className="grid grid-cols-1 md:grid-cols-3 gap-3"
+          >
+            {videoModels.map((model) => (
+              <div key={model.id}>
+                <RadioGroupItem
+                  value={model.id}
+                  id={`model-${model.id}`}
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor={`model-${model.id}`}
+                  className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
+                >
+                  <span className="font-medium">{model.name}</span>
+                  <span className="text-xs text-muted-foreground">{model.description}</span>
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
         </div>
-        <div>
-          <h2 className="text-xl font-semibold">Generación de Video</h2>
-          <p className="text-sm text-muted-foreground">
-            {clips.length} clips · {duration.toFixed(2)} segundos
-          </p>
-        </div>
-      </div>
-
-      {!showPreview ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Calidad del Video</Label>
-            <Select value={quality} onValueChange={setQuality}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar calidad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Baja (720p)</SelectItem>
-                <SelectItem value="medium">Media (1080p)</SelectItem>
-                <SelectItem value="high">Alta (2K)</SelectItem>
-                <SelectItem value="ultra">Ultra (4K)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Cuadros por Segundo ({fps} FPS)</Label>
-            <Slider
-              min={24}
-              max={60}
-              step={1}
-              value={[fps]}
-              onValueChange={([value]) => setFps(value)}
-            />
-          </div>
-
-          {isGenerating && (
-            <div className="space-y-2">
-              <Label>Progreso</Label>
-              <Progress value={progress} className="h-2" />
-              <p className="text-sm text-muted-foreground text-center">
-                {progress}% completado
-              </p>
+        
+        <div className="space-y-2">
+          <Label htmlFor="quality">Calidad de Video</Label>
+          <RadioGroup 
+            value={settings.quality} 
+            onValueChange={(value: 'standard' | 'premium') => setSettings({...settings, quality: value})}
+            className="flex flex-col sm:flex-row gap-3"
+          >
+            <div>
+              <RadioGroupItem
+                value="standard"
+                id="quality-standard"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="quality-standard"
+                className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
+              >
+                <span className="font-medium">Estándar</span>
+                <span className="text-xs text-muted-foreground">Calidad media (720p)</span>
+              </Label>
             </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              className="flex-1"
-              onClick={handleGenerate}
-              disabled={isGenerating || clips.length === 0}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando video...
-                </>
-              ) : (
-                <>
-                  <Video className="mr-2 h-4 w-4" />
-                  Generar Video
-                </>
-              )}
-            </Button>
+            <div>
+              <RadioGroupItem
+                value="premium"
+                id="quality-premium"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="quality-premium"
+                className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
+              >
+                <span className="font-medium">Premium</span>
+                <span className="text-xs text-muted-foreground">Alta calidad (1080p)</span>
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Label htmlFor="duration">Duración (segundos)</Label>
+            <span className="text-sm text-muted-foreground">{settings.duration}s</span>
           </div>
-
-          <div className="text-xs text-muted-foreground">
-            <p>Detalles del proceso:</p>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Resolución según calidad seleccionada</li>
-              <li>Transiciones suaves entre clips</li>
-              <li>Audio sincronizado con el video</li>
-              <li>Formato MP4 optimizado para web</li>
-              <li><strong>Vista previa gratuita de 10 segundos</strong></li>
-              <li><strong>Opción para comprar el video completo por $199</strong></li>
-              <li><strong>Face Swap e Integración de Músicos incluidos con la compra</strong></li>
-            </ul>
+          <Slider 
+            id="duration"
+            min={5} 
+            max={30} 
+            step={5}
+            value={[settings.duration]} 
+            onValueChange={(values) => setSettings({...settings, duration: values[0]})}
+          />
+          <div className="grid grid-cols-3 text-xs text-muted-foreground">
+            <span>5s</span>
+            <span className="text-center">15s</span>
+            <span className="text-right">30s</span>
           </div>
         </div>
-      ) : (
-        <div className="space-y-4">
-          <Tabs 
-            defaultValue="preview" 
-            value={currentTab} 
-            onValueChange={setCurrentTab}
-            className="w-full"
+        
+        {settings.model === 't2v-01' && (
+          <div className="space-y-2 mt-2">
+            <Label htmlFor="prompt">Descripción del Video</Label>
+            <Textarea 
+              id="prompt" 
+              placeholder="Describe detalladamente lo que deseas ver en el video..."
+              value={settings.prompt}
+              onChange={(e) => setSettings({...settings, prompt: e.target.value})}
+              className="min-h-[80px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Incluye detalles sobre la atmósfera, colores, acciones y elementos visuales deseados.
+            </p>
+          </div>
+        )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="camera-movement">Movimiento de Cámara</Label>
+          <Select 
+            value={settings.cameraMovement} 
+            onValueChange={(value) => setSettings({...settings, cameraMovement: value})}
           >
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="preview">
-                <Video className="mr-2 h-4 w-4" />
-                Vista Previa
-              </TabsTrigger>
-              <TabsTrigger 
-                value="face-swap"
-                disabled={!videoPaymentStatus?.isPurchased}
-              >
-                <User className="mr-2 h-4 w-4" />
-                Face Swap
-              </TabsTrigger>
-              <TabsTrigger
-                value="musicians"
-                disabled={!videoPaymentStatus?.isPurchased}
-              >
-                <Music2 className="mr-2 h-4 w-4" />
-                Músicos
-              </TabsTrigger>
-              <TabsTrigger
-                value="movement"
-                disabled={!videoPaymentStatus?.isPurchased}
-              >
-                <Move className="mr-2 h-4 w-4" />
-                Movimiento
-              </TabsTrigger>
-              <TabsTrigger
-                value="lipsync"
-                disabled={!videoPaymentStatus?.isPurchased}
-              >
-                <Mic className="mr-2 h-4 w-4" />
-                LipSync
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="preview" className="space-y-4 pt-4">
-              <PremiumVideoPlayer
-                videoId={videoId}
-                videoUrl={videoUrl}
-                title="Video Musical Generado con IA"
-                isPurchased={videoPaymentStatus?.isPurchased}
-                onPurchaseComplete={handlePurchaseComplete}
-              />
-            </TabsContent>
-            
-            <TabsContent value="face-swap" className="space-y-4 pt-4">
-              <ArtistCustomization 
-                videoId={videoId}
-                onFaceSwapComplete={handleFaceSwapComplete}
-                isPurchased={videoPaymentStatus?.isPurchased}
-              />
-            </TabsContent>
-
-            <TabsContent value="musicians" className="space-y-4 pt-4">
-              <MusicianIntegration
-                clips={clips}
-                audioBuffer={audioBuffer}
-                videoId={videoId}
-                isPurchased={videoPaymentStatus?.isPurchased}
-                onMusicianIntegrationComplete={handleMusicianIntegrationComplete}
-              />
-            </TabsContent>
-            
-            <TabsContent value="movement" className="space-y-4 pt-4">
-              <MovementIntegration
-                clips={clips}
-                videoId={videoId}
-                isPurchased={videoPaymentStatus?.isPurchased}
-                onMovementComplete={handleMovementComplete}
-              />
-            </TabsContent>
-            
-            <TabsContent value="lipsync" className="space-y-4 pt-4">
-              <KlingLipsync 
-                className="w-full"
-                videoTaskId={videoId}
-                isPurchased={videoPaymentStatus?.isPurchased}
-                onLipSyncComplete={handleLipSyncComplete}
-                clips={clips.filter(clip => 
-                  ['close-up', 'medium', 'extreme close-up'].includes(clip.shotType?.toLowerCase() || '')
-                )}
-              />
-            </TabsContent>
-          </Tabs>
-          
-          <Button
-            variant="outline"
-            onClick={() => setShowPreview(false)}
-            className="w-full"
+            <SelectTrigger id="camera-movement">
+              <SelectValue placeholder="Seleccionar movimiento" />
+            </SelectTrigger>
+            <SelectContent>
+              {cameraMovements.map((movement) => (
+                <SelectItem key={movement} value={movement}>{movement}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="pt-2">
+          <Button 
+            onClick={handleGenerate} 
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
           >
-            Volver a las opciones de generación
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generando Video...
+              </>
+            ) : (
+              <>
+                <Wand2 className="mr-2 h-4 w-4" />
+                Generar Video
+              </>
+            )}
           </Button>
         </div>
-      )}
+        
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+          <div className="border rounded-md p-3 bg-blue-100/50">
+            <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+              <Film className="h-4 w-4" />
+              <span>Escenas</span>
+            </div>
+            <p className="text-muted-foreground"><span className="font-medium">{scenesCount}</span> escenas procesadas</p>
+          </div>
+          
+          <div className="border rounded-md p-3 bg-blue-100/50">
+            <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+              <Clock3 className="h-4 w-4" />
+              <span>Tiempo Estimado</span>
+            </div>
+            <p className="text-muted-foreground">~{estimatedTime()} minutos</p>
+          </div>
+          
+          <div className="border rounded-md p-3 bg-blue-100/50">
+            <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+              <Info className="h-4 w-4" />
+              <span>API</span>
+            </div>
+            <p className="text-muted-foreground">PiAPI/Hailuo</p>
+          </div>
+        </div>
+        
+        <div className="bg-blue-100 p-3 rounded-md text-sm">
+          <p className="flex items-start gap-2">
+            <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <span>La generación del video puede tardar varios minutos dependiendo de la duración y calidad seleccionadas. Se te notificará cuando esté listo.</span>
+          </p>
+        </div>
+      </CardContent>
     </Card>
   );
 }

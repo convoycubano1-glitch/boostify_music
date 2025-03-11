@@ -35,6 +35,7 @@ import klingApiRouter from './routes/kling-api'; // Importamos el router de Klin
 import klingLipsyncRouter from './routes/kling-lipsync'; // Importamos el router de LipSync
 import klingTestRouter from './routes/kling-test'; // Importamos el router de pruebas de Kling
 import videoGenerationRouter from './routes/video-generation'; // Direct router for PiAPI video generation
+import videoUpscaleRouter from './routes/video-upscale'; // Router for video upscaling with Qubico/video-toolkit
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
 import apiProxyRouter from './routes/api-proxy'; // Import the proxy router for external APIs
@@ -119,6 +120,9 @@ export function registerRoutes(app: Express): Server {
 
   // Register video generation router (direct implementation)
   app.use('/api/video-generation', videoGenerationRouter);
+  
+  // Register video upscale router for final rendering with Qubico/video-toolkit
+  app.use('/api/proxy/piapi/video-upscale', videoUpscaleRouter);
 
   app.use('/api/manager', managerRouter);
   app.use('/api/artist', artistRouter);

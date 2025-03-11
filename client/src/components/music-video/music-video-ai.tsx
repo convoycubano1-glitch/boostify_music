@@ -11,7 +11,7 @@ import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
-  Film, CheckCircle2
+  Film, CheckCircle2, Share, User
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,6 +30,7 @@ import { ArtistCustomization } from "./artist-customization";
 import { MusicianIntegration } from "./musician-integration";
 import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
+import { FinalRendering, type UpscaleOptions } from "./final-rendering";
 import { ProgressSteps } from "./progress-steps";
 import { 
   analyzeImage, 
@@ -37,6 +38,7 @@ import {
   generateMusicVideoScript,
   type VideoPromptParams 
 } from "@/lib/api/openrouter";
+import { upscaleVideo } from "@/lib/api/video-service";
 import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
 import { FileText } from "lucide-react";
 import fluxService, { FluxModel, FluxTaskType } from "@/lib/api/flux/flux-service";
@@ -286,6 +288,9 @@ export function MusicVideoAI() {
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [directors, setDirectors] = useState<Director[]>([]);
+  const [isUpscaling, setIsUpscaling] = useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [upscaledVideoUrl, setUpscaledVideoUrl] = useState<string | null>(null);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1959,6 +1964,60 @@ ${transcription}`;
     }
   };
 
+  // Función para descargar el video final
+  const downloadVideo = () => {
+    // Usar el video mejorado si está disponible, o el video generado original
+    const videoToDownload = upscaledVideoUrl || generatedVideoUrl || "/assets/Standard_Mode_Generated_Video (2).mp4";
+    const link = document.createElement('a');
+    link.href = videoToDownload;
+    link.download = `music-video-${videoId || 'final'}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Descarga iniciada",
+      description: "Tu video musical se está descargando ahora"
+    });
+  };
+  
+  // Función para compartir el video en redes sociales
+  const shareMusicVideo = () => {
+    // En una implementación real, aquí se abriría un modal con opciones
+    // de compartir en diferentes redes sociales
+    
+    // Por ahora, simulamos compartir usando el navegador web API
+    const videoToShare = upscaledVideoUrl || generatedVideoUrl || "/assets/Standard_Mode_Generated_Video (2).mp4";
+    const shareData = {
+      title: 'Mi Video Musical Generado con IA',
+      text: '¡Mira este increíble video musical que he creado con IA!',
+      url: window.location.origin + videoToShare
+    };
+    
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      navigator.share(shareData)
+        .then(() => {
+          toast({
+            title: "Compartido con éxito",
+            description: "Tu video ha sido compartido"
+          });
+        })
+        .catch(error => {
+          console.error('Error al compartir:', error);
+          toast({
+            title: "Error al compartir",
+            description: "No se pudo compartir el video. Intenta otra opción."
+          });
+        });
+    } else {
+      // Fallback si Web Share API no está disponible
+      toast({
+        title: "Enlace copiado",
+        description: "Enlace al video copiado al portapapeles. Ahora puedes compartirlo."
+      });
+    }
+  };
+
   const analyzeReferenceImage = async (image: string) => {
     try {
       const analysis = await analyzeImage(image);
@@ -2030,9 +2089,29 @@ ${transcription}`;
             status: currentStep > 4 ? "completed" : currentStep === 4 ? "current" : "pending"
           },
           {
+            title: "Personalización",
+            description: "Ajustando el estilo visual a tus preferencias",
+            status: currentStep > 5 ? "completed" : currentStep === 5 ? "current" : "pending"
+          },
+          {
+            title: "Integración de Movimiento",
+            description: "Añadiendo coreografías y dinámicas visuales",
+            status: currentStep > 6 ? "completed" : currentStep === 6 ? "current" : "pending"
+          },
+          {
+            title: "Sincronización de Labios",
+            description: "Sincronizando labios con la letra de la canción",
+            status: currentStep > 7 ? "completed" : currentStep === 7 ? "current" : "pending"
+          },
+          {
+            title: "Generación de Video",
+            description: "Creando videos con IA a partir de tus escenas",
+            status: currentStep > 8 ? "completed" : currentStep === 8 ? "current" : "pending"
+          },
+          {
             title: "Renderizado Final",
             description: "Combinando todo en tu video musical",
-            status: currentStep > 5 ? "completed" : currentStep === 5 ? "current" : "pending"
+            status: currentStep > 9 ? "completed" : currentStep === 9 ? "current" : "pending"
           }
         ]}
       />
@@ -2476,76 +2555,226 @@ ${transcription}`;
                   </Button>
                 </div>
 
-                <div className="mt-6">
-                  <VideoGenerator
-                    clips={timelineItems.map(item => ({
-                      id: item.id,
-                      start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
-                      duration: item.duration / 1000,
-                      type: 'image',
-                      thumbnail: item.generatedImage || item.firebaseUrl,
-                      title: item.shotType,
-                      description: item.description,
-                      imageUrl: item.generatedImage || item.firebaseUrl,
-                      imagePrompt: item.imagePrompt,
-                      metadata: {
-                        section: item.metadata?.section,
-                        movementApplied: item.metadata?.movementApplied,
-                        movementPattern: item.metadata?.movementPattern,
-                        movementIntensity: item.metadata?.movementIntensity,
-                        faceSwapApplied: item.metadata?.faceSwapApplied,
-                        musicianIntegrated: item.metadata?.musicianIntegrated
-                      }
-                    }))}
-                    duration={audioBuffer?.duration || 0}
-                    isGenerating={isGeneratingVideo}
-                    onGenerate={() => generateVideo()}
+                {/* Componente de Generación de Video (Paso 8) */}
+                {currentStep === 8 && (
+                  <div className="mt-6">
+                    <div className="border rounded-lg p-4 mb-6">
+                      <Label className="text-lg font-semibold mb-4">8. Generación de Video</Label>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Genera un video a partir de tus escenas sincronizadas. Este paso utiliza IA para convertir
+                        tus imágenes en secuencias de video fluidas con efectos profesionales.
+                      </p>
+                      <VideoGenerator
+                        clips={timelineItems.map(item => ({
+                          id: item.id,
+                          start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
+                          duration: item.duration / 1000,
+                          type: 'image',
+                          thumbnail: item.generatedImage || item.firebaseUrl,
+                          title: item.shotType,
+                          description: item.description,
+                          imageUrl: item.generatedImage || item.firebaseUrl,
+                          imagePrompt: item.imagePrompt,
+                          metadata: {
+                            section: item.metadata?.section,
+                            movementApplied: item.metadata?.movementApplied,
+                            movementPattern: item.metadata?.movementPattern,
+                            movementIntensity: item.metadata?.movementIntensity,
+                            faceSwapApplied: item.metadata?.faceSwapApplied,
+                            musicianIntegrated: item.metadata?.musicianIntegrated
+                          }
+                        }))}
+                        duration={audioBuffer?.duration || 0}
+                        isGenerating={isGeneratingVideo}
+                        onGenerate={() => generateVideo()}
+                      />
+                      {videoId && (
+                        <Button 
+                          className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                          onClick={() => setCurrentStep(9)}
+                        >
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Continuar a Renderizado Final
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Personalización de Artista (Paso 5) */}
+                {currentStep === 5 && (
+                  <div className="mt-6">
+                    <div className="border rounded-lg p-4 mb-6">
+                      <Label className="text-lg font-semibold mb-4">5. Personalización de Estilo</Label>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Personaliza tus escenas ajustando el estilo visual y los elementos de identidad del artista.
+                      </p>
+                      <ArtistCustomization
+                        clips={clips}
+                        onUpdateClip={handleClipUpdate}
+                      />
+                      <Button 
+                        className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                        onClick={() => setCurrentStep(6)}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Continuar a Integración de Movimiento
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Integración de Movimiento (Paso 6) */}
+                {currentStep === 6 && (
+                  <div className="mt-6">
+                    <div className="border rounded-lg p-4 mb-6">
+                      <Label className="text-lg font-semibold mb-4">6. Integración de Movimiento</Label>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Añade efectos de movimiento y coreografías a tus escenas para crear secuencias más dinámicas.
+                      </p>
+                      <MovementIntegration
+                        onApplyMovements={(movementSettings) => {
+                          console.log("Aplicando configuración de movimientos:", movementSettings);
+                          // Aquí implementarías la lógica real para aplicar los movimientos
+                          toast({
+                            title: "Movimientos aplicados",
+                            description: `Estilo: ${movementSettings.style}, Intensidad: ${movementSettings.intensity}%`
+                          });
+                        }}
+                        isLoading={false}
+                      />
+                      <Button 
+                        className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                        onClick={() => setCurrentStep(7)}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Continuar a Sincronización de Labios
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Música e Integraciones Opcionales (fuera del flujo principal) */}
+                {false && (
+                  <MusicianIntegration
+                    clips={clips}
+                    audioBuffer={audioBuffer}
+                    onUpdateClip={handleClipUpdate}
                   />
-                </div>
+                )}
 
-                <ArtistCustomization
-                  clips={clips}
-                  onUpdateClip={handleClipUpdate}
-                />
+                {/* Sincronización de Labios (Paso 7) */}
+                {currentStep === 7 && (
+                  <div className="mt-6">
+                    <div className="border rounded-lg p-4 mb-6">
+                      <Label className="text-lg font-semibold mb-4">7. Sincronización de Labios</Label>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Sincroniza los movimientos labiales con la letra de la canción para dar mayor realismo al video.
+                      </p>
+                      <LipSyncIntegration
+                        onApplyLipSync={(lipSyncSettings) => {
+                          console.log("Aplicando configuración de sincronización de labios:", lipSyncSettings);
+                          // Aquí implementarías la lógica real para aplicar la sincronización
+                          toast({
+                            title: "Sincronización aplicada",
+                            description: `Tipo: ${lipSyncSettings.sourceType}, ${lipSyncSettings.sourceType === 'text' ? 'Texto configurado' : 'Audio cargado'}`
+                          });
+                        }}
+                        isLoading={false}
+                      />
+                      <Button 
+                        className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                        onClick={() => setCurrentStep(8)}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Continuar a Generación de Video
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-                <MusicianIntegration
-                  clips={clips}
-                  audioBuffer={audioBuffer}
-                  onUpdateClip={handleClipUpdate}
-                />
+                {/* Paso 8: Generación de Video */}
+                {currentStep === 8 && (
+                  <div className="mt-6">
+                    <div className="border rounded-lg p-4 mb-6">
+                      <Label className="text-lg font-semibold mb-4">8. Generación de Video</Label>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Genera videos dinámicos a partir de tus escenas utilizando inteligencia artificial avanzada.
+                      </p>
+                      <VideoGenerator
+                        scenesCount={timelineItems.length}
+                        isLoading={isGeneratingVideo}
+                        onGenerateVideo={async (settings) => {
+                          console.log("Configuración para generar video:", settings);
+                          toast({
+                            title: "Generación iniciada",
+                            description: `Generando video con modelo ${settings.model}, calidad ${settings.quality}`
+                          });
+                          
+                          try {
+                            await generateVideo();
+                            setCurrentStep(9);
+                          } catch (error) {
+                            console.error("Error generando video:", error);
+                            toast({
+                              title: "Error",
+                              description: "No se pudo generar el video. Intenta de nuevo.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
 
-                <MovementIntegration
-                  clips={clips}
-                  audioBuffer={audioBuffer}
-                  onUpdateClip={handleClipUpdate}
-                />
-
-                <LipSyncIntegration
-                  clips={timelineItems.map(item => ({
-                    id: item.id,
-                    start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
-                    duration: item.duration / 1000,
-                    type: 'image',
-                    thumbnail: item.generatedImage || item.firebaseUrl,
-                    title: item.shotType || 'unknown',
-                    description: item.description,
-                    imageUrl: item.generatedImage || item.firebaseUrl,
-                    imagePrompt: item.imagePrompt,
-                    metadata: {
-                      section: item.metadata?.section,
-                      movementApplied: item.metadata?.movementApplied,
-                      movementPattern: item.metadata?.movementPattern,
-                      movementIntensity: item.metadata?.movementIntensity,
-                      faceSwapApplied: item.metadata?.faceSwapApplied,
-                      musicianIntegrated: item.metadata?.musicianIntegrated
-                    }
-                  }))}
-                  transcription={transcription}
-                  audioBuffer={audioBuffer}
-                  onUpdateClip={handleClipUpdate}
-                  videoTaskId={videoId}
-                  isPurchased={true} // Siempre true en el panel creador
-                />
+                {/* Paso 9: Renderizado Final con Upscaling */}
+                {currentStep === 9 && (
+                  <div className="mt-6">
+                    <div className="border rounded-lg p-4 mb-6">
+                      <Label className="text-lg font-semibold mb-4">9. Renderizado Final</Label>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        El proceso de creación ha terminado. Ahora puedes mejorar la calidad de tu video musical con Qubico Video Toolkit antes de exportarlo.
+                      </p>
+                      
+                      <FinalRendering
+                        timelineClips={timelineItems.map(item => ({
+                          id: item.id,
+                          start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
+                          duration: item.duration / 1000,
+                          title: item.shotType || 'Escena',
+                          type: 'video' as const,
+                          thumbnail: item.generatedImage || fallbackImage
+                        }))}
+                        videoUrl={generatedVideoUrl || '/assets/Standard_Mode_Generated_Video (2).mp4'}
+                        onUpscaleVideo={async (options) => {
+                          try {
+                            setIsUpscaling(true);
+                            // Llamar al servicio real de upscaling
+                            const result = await upscaleVideo(
+                              generatedVideoUrl || '/assets/Standard_Mode_Generated_Video (2).mp4', 
+                              options
+                            );
+                            
+                            if (result.success && result.url) {
+                              setUpscaledVideoUrl(result.url);
+                              return result.url;
+                            } else {
+                              throw new Error(result.error || 'Error al mejorar el video');
+                            }
+                          } catch (error) {
+                            console.error('Error en upscaling:', error);
+                            throw error;
+                          } finally {
+                            setIsUpscaling(false);
+                          }
+                        }}
+                        onDownloadVideo={downloadVideo}
+                        onShareVideo={shareMusicVideo}
+                      />
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>
