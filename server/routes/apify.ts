@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/auth';
 import { db } from '@db';
 import { z } from 'zod';
 import { auth, db as firebaseDb } from '../firebase';
-import { collection, query as firestoreQuery, where, doc, setDoc, getDoc, updateDoc, getDocs, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Define validation schema for request body
 const contactExtractionSchema = z.object({
@@ -367,7 +367,7 @@ export function setupApifyRoutes(app: Express) {
           await firebaseDb.collection('contacts').add({
             ...validatedContact,
             extractedAt: new Date(),  // Convert Date to Firestore Timestamp
-            createdAt: serverTimestamp()
+            createdAt: Timestamp.now() // Using Firebase Admin SDK Timestamp
           });
           
           // Add to response array
