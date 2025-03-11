@@ -15,7 +15,6 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { ProfessionalTimeline } from '@/components/professional-editor/professional-timeline';
 import { VideoPreviewPanel } from '@/components/professional-editor/video-preview-panel';
 import { MediaLibrary } from '@/components/professional-editor/media-library';
@@ -366,214 +365,20 @@ export default function ProfessionalEditorPage() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="aiCreator" className="h-[600px] overflow-auto">
+              <TabsContent value="aiCreator" className="h-[500px] overflow-auto">
                 <Card className="p-4">
                   <h3 className="text-lg font-semibold mb-2">Creador de Videos Musicales AI</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Transforma tu música en experiencias visuales
                   </p>
-                  
-                  {/* Flujo de trabajo del Creador de Videos Musicales AI */}
-                  <div className="grid gap-6">
-                    {/* 1. Subir Audio */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="text-md font-medium mb-2">1. Subir Audio</h4>
-                      <div className="grid gap-2">
-                        <div className="flex items-center border rounded-md p-2 bg-muted/20">
-                          <Music className="h-5 w-5 mr-2 text-orange-500" />
-                          <span className="text-sm">geminis_REDWINE_combined_KITS.mp3</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 2. Transcripción */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="text-md font-medium mb-2">2. Transcripción</h4>
-                      <div className="bg-muted/20 rounded-md p-3 max-h-40 overflow-y-auto text-sm">
-                        Ooh, ooh, come with me This is Red Wine Hall, yeah I walk in like a storm, lightning in my veins One moment I'm fire, the next I'm rain I swear devotion, then vanishing smoke You think you own me, but I'm gone before you spoke Entro como trueno, con furia en la piel Hoy soy tu paraíso, mañana tu infiel Juro que te amo, pero solo un show Cuando menos lo esperas, ya me fui sin adiós You try to hold me, but I slip away Promise you forever, then laughing straight Intentas atarme, pero me voy sin pensar Prometo el infinito, pero nunca me verás quedar Heavy knees, oh Lord, love me if you dare I'll turn your world with just a stare One day I'm your king, the next I'm the ghost With a charming smile, I'll leave you lost Heavy knees, ay Dios, si me amas sufrirás Te levo al cielo, luego te dejo atrás Hoy soy tu dueño, mañana un adiós Con solo una risa, te pierdo en mi voz I love the thrill, more than the prize Truth is just a game, wrapped in my lies You think you know me, but I've already gone Left you a story, but no name to hold on Me encanta la casa, más que la presa La verdad es un juego dentro de mi promesa Que es que me quieres, pero ya no
-                      </div>
-                      <div className="mt-2">
-                        <Button variant="outline" size="sm" className="mt-2">
-                          <Sparkles className="h-4 w-4 mr-1.5" /> Generar Guion Musical
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* 3. Guion Profesional */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="text-md font-medium mb-2">3. Guion Profesional</h4>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        El guion profesional se generará basado en la transcripción de la letra.
-                      </p>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Incluirá análisis de género musical, estructura narrativa, diseño visual y segmentación por escenas con vocabulario cinematográfico.
-                      </p>
-                    </div>
-
-                    {/* 4. Estilo Visual */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="text-md font-medium mb-2">4. Estilo Visual</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <Label htmlFor="camera-format" className="text-sm mb-1 block">Formato de Cámara</Label>
-                          <Select>
-                            <SelectTrigger id="camera-format">
-                              <SelectValue placeholder="Seleccionar formato de cámara" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="16:9">16:9 Estándar</SelectItem>
-                              <SelectItem value="9:16">9:16 Vertical</SelectItem>
-                              <SelectItem value="1:1">1:1 Cuadrado</SelectItem>
-                              <SelectItem value="21:9">21:9 Cinemático</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="mood" className="text-sm mb-1 block">Mood</Label>
-                          <Select>
-                            <SelectTrigger id="mood">
-                              <SelectValue placeholder="Seleccionar mood" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="dramatic">Dramático</SelectItem>
-                              <SelectItem value="energetic">Energético</SelectItem>
-                              <SelectItem value="melancholic">Melancólico</SelectItem>
-                              <SelectItem value="romantic">Romántico</SelectItem>
-                              <SelectItem value="mysterious">Misterioso</SelectItem>
-                              <SelectItem value="happy">Feliz</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="color-palette" className="text-sm mb-1 block">Paleta de Colores</Label>
-                          <Select>
-                            <SelectTrigger id="color-palette">
-                              <SelectValue placeholder="Seleccionar paleta" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="warm">Cálida</SelectItem>
-                              <SelectItem value="cool">Fría</SelectItem>
-                              <SelectItem value="vibrant">Vibrante</SelectItem>
-                              <SelectItem value="pastel">Pastel</SelectItem>
-                              <SelectItem value="monochrome">Monocromática</SelectItem>
-                              <SelectItem value="neon">Neón</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="character-style" className="text-sm mb-1 block">Estilo de Personajes</Label>
-                          <Select>
-                            <SelectTrigger id="character-style">
-                              <SelectValue placeholder="Seleccionar estilo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="realistic">Realista</SelectItem>
-                              <SelectItem value="anime">Anime</SelectItem>
-                              <SelectItem value="stylized">Estilizado</SelectItem>
-                              <SelectItem value="3d">3D</SelectItem>
-                              <SelectItem value="abstract">Abstracto</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 gap-4 mb-4">
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <Label htmlFor="visual-intensity" className="text-sm">Intensidad Visual (50%)</Label>
-                          </div>
-                          <Slider id="visual-intensity" defaultValue={[50]} max={100} step={1} />
-                        </div>
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <Label htmlFor="narrative-intensity" className="text-sm">Intensidad Narrativa (50%)</Label>
-                          </div>
-                          <Slider id="narrative-intensity" defaultValue={[50]} max={100} step={1} />
-                          <p className="text-xs text-muted-foreground mt-1">Ajusta qué tan fielmente el video sigue la narrativa de la letra</p>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-4">
-                        <Label htmlFor="reference-image" className="text-sm mb-1 block">Imagen de Referencia</Label>
-                        <div className="border border-dashed rounded-md p-4 text-center">
-                          <p className="text-sm text-muted-foreground">Ningún archivo seleccionado</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="director" className="text-sm mb-1 block">Director del Video</Label>
-                        <Select>
-                          <SelectTrigger id="director">
-                            <SelectValue placeholder="Seleccionar director" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="spielberg">Estilo Spielberg</SelectItem>
-                            <SelectItem value="tarantino">Estilo Tarantino</SelectItem>
-                            <SelectItem value="nolan">Estilo Nolan</SelectItem>
-                            <SelectItem value="wes-anderson">Estilo Wes Anderson</SelectItem>
-                            <SelectItem value="fincher">Estilo Fincher</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    {/* 5. Sincronizar Beats */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="text-md font-medium mb-2">5. Sincronizar Beats</h4>
-                      <Button variant="outline" size="sm" className="mb-4">
-                        <BarChart4 className="h-4 w-4 mr-1.5" /> Detectar Cortes Musicales
-                      </Button>
-                      
-                      <fieldset className="border rounded-md p-3">
-                        <legend className="text-sm font-medium px-2">Estilo de Edición</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4">
-                          {[
-                            { id: "phrases", label: "Edición por Frases", desc: "Cortes sincronizados con las frases musicales" },
-                            { id: "random", label: "Compases Aleatorios", desc: "Cortes variados siguiendo el ritmo" },
-                            { id: "dynamic", label: "Dinámico", desc: "Cortes rápidos en momentos intensos, más lentos en partes suaves" },
-                            { id: "slow", label: "Lento", desc: "Cortes largos y suaves transiciones" },
-                            { id: "cinematic", label: "Cinematográfico", desc: "Estilo de película con variedad de duraciones" },
-                            { id: "mtv", label: "Video Musical", desc: "Estilo MTV con cortes rápidos y dinámicos" },
-                            { id: "narrative", label: "Narrativo", desc: "Cortes que siguen la historia de la letra" },
-                            { id: "experimental", label: "Experimental", desc: "Patrones de corte no convencionales" },
-                            { id: "rhythmic", label: "Rítmico", desc: "Cortes precisos en cada beat" },
-                            { id: "minimalist", label: "Minimalista", desc: "Pocos cortes, transiciones suaves" }
-                          ].map(item => (
-                            <div key={item.id} className="flex items-start space-x-2">
-                              <input type="radio" id={item.id} name="edit-style" className="mt-1" />
-                              <div>
-                                <Label htmlFor={item.id} className="text-sm font-medium">{item.label}</Label>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </fieldset>
-                    </div>
-                    
-                    {/* 6-7. Generar Prompts e Imágenes */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="text-md font-medium mb-2">6. Generar Prompts</h4>
-                      <Button variant="outline" size="sm" className="mr-2 mb-4">
-                        <Sparkles className="h-4 w-4 mr-1.5" /> Generar Prompts con Estilo
-                      </Button>
-                      
-                      <h4 className="text-md font-medium mb-2">7. Generar Imágenes</h4>
-                      <Button variant="default" size="sm" className="bg-orange-500 hover:bg-orange-600">
-                        <ImageIcon className="h-4 w-4 mr-1.5" /> Generar Imágenes
-                      </Button>
-                    </div>
-                    
-                    {/* Resto del flujo de trabajo */}
-                    <MusicVideoWorkflow
-                      onComplete={(result) => {
-                        toast({
-                          title: "Video musical completado",
-                          description: `Se ha generado un video de ${Math.floor((result.duration || 0) / 60)}:${((result.duration || 0) % 60).toString().padStart(2, '0')} minutos`,
-                        });
-                      }}
-                    />
-                  </div>
+                  <MusicVideoWorkflow
+                    onComplete={(result) => {
+                      toast({
+                        title: "Video musical completado",
+                        description: `Se ha generado un video de ${Math.floor((result.duration || 0) / 60)}:${((result.duration || 0) % 60).toString().padStart(2, '0')} minutos`,
+                      });
+                    }}
+                  />
                 </Card>
               </TabsContent>
             </Tabs>
