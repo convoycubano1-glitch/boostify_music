@@ -1,758 +1,958 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import { 
-  Sparkles, 
-  Wand2, 
-  ArrowLeftRight,
-  Paintbrush,
-  SlidersHorizontal,
-  Zap,
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Button
+} from '@/components/ui/button';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs';
+import {
+  Slider
+} from '@/components/ui/slider';
+import {
+  Input
+} from '@/components/ui/input';
+import {
+  Label
+} from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  Wand2 as MagicWand, // Usando Wand2 como reemplazo de MagicWand
+  Plus,
+  Trash,
+  Edit,
+  Play,
   Layers,
-  History
+  Filter,
+  LayoutGrid,
+  List,
+  Sparkles,
+  BarChart,
+  Loader2
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { VisualEffect } from '@/lib/professional-editor-types';
+import { v4 as uuidv4 } from 'uuid';
+import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface EffectsPanelProps {
-  selectedClipId: number | null;
-  effects: Array<{
-    id: string;
-    name: string;
-    icon: string;
-    category?: string;
-    min?: number;
-    max?: number;
-    default?: number;
-    lutOptions?: Array<{id: string, name: string}>;
-  }>;
-  onApplyEffect: (effectType: string, parameters?: Record<string, any>) => void;
-  // Clips actuales para poder modificar el seleccionado
-  clips: Array<any>;
-  // Función para actualizar un clip
-  onClipUpdate?: (clipId: number, updates: any) => void;
+  effects: VisualEffect[];
+  currentTime: number;
+  duration: number;
+  onAddEffect?: (effect: Omit<VisualEffect, 'id'>) => void;
+  onUpdateEffect?: (id: string, updates: Partial<VisualEffect>) => void;
+  onDeleteEffect?: (id: string) => void;
+  onSeek?: (time: number) => void;
+  projectId?: string;
 }
 
-export function EffectsPanel({
-  selectedClipId,
-  effects,
-  onApplyEffect,
-  clips,
-  onClipUpdate
-}: EffectsPanelProps) {
-  const [activeTab, setActiveTab] = useState('transitions');
-  const [selectedEffect, setSelectedEffect] = useState<string | null>(null);
-  const [effectIntensity, setEffectIntensity] = useState(50);
-  const [effectDuration, setEffectDuration] = useState(1.0);
-  const [colorParams, setColorParams] = useState({
-    brightness: 0,
-    contrast: 0,
-    saturation: 1,
-    hue: 0,
-    temperature: 0
-  });
-  const [editHistory, setEditHistory] = useState<Array<{ timestamp: number, action: string }>>([]);
-  const [selectedLut, setSelectedLut] = useState<string | null>(null);
-  
-  // Obtener el clip seleccionado, si existe
-  const selectedClip = selectedClipId !== null 
-    ? clips.find(clip => clip.id === selectedClipId) 
-    : null;
+// Tipos de efectos disponibles
+const effectTypes = [
+  { 
+    value: 'filter', 
+    label: 'Filtro', 
+    icon: <Filter className="h-4 w-4 mr-2" />,
+    description: 'Aplica filtros visuales como sepia, blanco y negro, etc.'
+  },
+  { 
+    value: 'overlay', 
+    label: 'Superposición', 
+    icon: <Layers className="h-4 w-4 mr-2" />,
+    description: 'Superpone elementos como viñetas, marcas de agua, etc.'
+  },
+  { 
+    value: 'transition', 
+    label: 'Transición', 
+    icon: <LayoutGrid className="h-4 w-4 mr-2" />,
+    description: 'Aplica transiciones entre clips como fundidos, disoluciones, etc.'
+  },
+  { 
+    value: 'zoom', 
+    label: 'Zoom', 
+    icon: <MagicWand className="h-4 w-4 mr-2" />,
+    description: 'Aplica efectos de acercamiento o alejamiento'
+  },
+  { 
+    value: 'crop', 
+    label: 'Recorte', 
+    icon: <Sparkles className="h-4 w-4 mr-2" />,
+    description: 'Recorta o reencuadra el contenido visual'
+  },
+  { 
+    value: 'blur', 
+    label: 'Desenfoque', 
+    icon: <BarChart className="h-4 w-4 mr-2" />,
+    description: 'Aplica efectos de desenfoque o nitidez'
+  },
+  { 
+    value: 'custom', 
+    label: 'Personalizado', 
+    icon: <MagicWand className="h-4 w-4 mr-2" />,
+    description: 'Efecto personalizado definido por el usuario'
+  }
+];
 
-  // Función para actualizar el historial de ediciones
-  const addToHistory = (action: string) => {
-    const newEntry = { timestamp: Date.now(), action };
-    setEditHistory([newEntry, ...editHistory.slice(0, 19)]); // Limitar a 20 entradas
+// Colores para cada tipo de efecto
+const effectColors: Record<string, string> = {
+  filter: '#f43f5e',       // rose-500
+  overlay: '#f59e0b',      // amber-500
+  transition: '#3b82f6',   // blue-500
+  zoom: '#8b5cf6',         // violet-500
+  crop: '#10b981',         // emerald-500
+  blur: '#6366f1',         // indigo-500
+  custom: '#64748b'        // slate-500
+};
+
+const EffectsPanel: React.FC<EffectsPanelProps> = ({
+  effects = [],
+  currentTime,
+  duration,
+  onAddEffect,
+  onUpdateEffect,
+  onDeleteEffect,
+  onSeek,
+  projectId
+}) => {
+  // Estados
+  const [activeTab, setActiveTab] = useState<string>('effects');
+  const [showAddDialog, setShowAddDialog] = useState<boolean>(false);
+  const [selectedEffectId, setSelectedEffectId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Nuevo efecto
+  const [newEffect, setNewEffect] = useState<Omit<VisualEffect, 'id'>>({
+    name: '',
+    type: 'filter',
+    startTime: currentTime,
+    duration: 5,
+    intensity: 0.5,
+    parameters: {},
+  });
+  
+  // Formatear tiempo (mm:ss)
+  const formatTime = (timeInSeconds: number): string => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
   
-  // Función para aplicar un efecto con parámetros
-  const handleApplyEffect = (effectId: string, params?: Record<string, any>) => {
-    if (!selectedClipId) return;
+  // Calcular posición en línea de tiempo
+  const timeToPosition = (time: number): number => {
+    return (time / duration) * 100;
+  };
+  
+  // Encontrar efectos activos en el tiempo actual
+  const getActiveEffects = (): VisualEffect[] => {
+    return effects.filter(
+      effect => currentTime >= effect.startTime && currentTime < (effect.startTime + effect.duration)
+    );
+  };
+  
+  // Manejar añadir efecto
+  const handleAddEffect = async () => {
+    if (!onAddEffect) return;
     
-    // Crear un objeto de parámetros si no se proporcionó
-    const parameters = params || { 
-      intensity: effectIntensity / 100,
-      duration: effectDuration
-    };
+    setIsSaving(true);
     
-    onApplyEffect(effectId, parameters);
-    setSelectedEffect(effectId);
-    addToHistory(`Aplicado efecto "${effects.find(e => e.id === effectId)?.name || effectId}"`);
+    // Añadir al estado local
+    onAddEffect(newEffect);
     
-    // Si tenemos onClipUpdate, actualizamos los efectos del clip
-    if (onClipUpdate && selectedClip) {
-      // Determinar la categoría del efecto
-      const effectInfo = effects.find(e => e.id === effectId);
-      const category = effectInfo?.category || 'visual';
-      
-      let clipEffects = selectedClip.effects || [];
-      
-      // Si es un efecto de color, lo agregamos a filters en lugar de effects
-      if (category === 'color') {
-        const clipFilters = selectedClip.filters || [];
-        // Verificar si el filtro ya existe
-        const existingFilterIndex = clipFilters.findIndex((f: any) => f.id === effectId);
-        
-        if (existingFilterIndex >= 0) {
-          // Actualizar filtro existente
-          const updatedFilters = [...clipFilters];
-          updatedFilters[existingFilterIndex] = { 
-            ...updatedFilters[existingFilterIndex], 
-            ...parameters,
-            enabled: true
-          };
-          onClipUpdate(selectedClipId, { filters: updatedFilters });
-        } else {
-          // Agregar nuevo filtro
-          onClipUpdate(selectedClipId, { 
-            filters: [...clipFilters, { id: effectId, ...parameters, enabled: true }] 
-          });
-        }
-      } else {
-        // Para efectos normales
-        const newEffect = { 
-          id: effectId, 
-          ...parameters,
-          appliedAt: new Date().toISOString()
-        };
-        
-        onClipUpdate(selectedClipId, { effects: [...clipEffects, newEffect] });
+    // Guardar en Firestore si hay projectId
+    if (projectId) {
+      try {
+        const effectId = uuidv4();
+        const effectRef = doc(db, `projects/${projectId}/effects/${effectId}`);
+        await setDoc(effectRef, {
+          ...newEffect,
+          createdAt: new Date()
+        });
+      } catch (error) {
+        console.error("Error al guardar efecto:", error);
       }
     }
+    
+    // Resetear formulario
+    setNewEffect({
+      name: '',
+      type: 'filter',
+      startTime: currentTime,
+      duration: 5,
+      intensity: 0.5,
+      parameters: {}
+    });
+    
+    setShowAddDialog(false);
+    setIsSaving(false);
   };
   
-  // Función para deshacer la última edición
-  const handleUndo = () => {
-    if (editHistory.length === 0 || !selectedClipId || !onClipUpdate || !selectedClip) return;
+  // Manejar actualización de efecto
+  const handleUpdateEffect = async (id: string, updates: Partial<VisualEffect>) => {
+    if (!onUpdateEffect) return;
     
-    // Para simplificar, simplemente quitamos el último efecto aplicado
-    if (selectedClip.effects && selectedClip.effects.length > 0) {
-      const updatedEffects = [...selectedClip.effects];
-      updatedEffects.pop(); // Eliminar el último efecto
-      
-      onClipUpdate(selectedClipId, { effects: updatedEffects });
-      
-      // Actualizar historial
-      const newHistory = [...editHistory];
-      newHistory.shift(); // Eliminar la entrada más reciente
-      setEditHistory(newHistory);
-      
-      addToHistory('Deshacer última acción');
+    setIsSaving(true);
+    
+    // Actualizar en estado local
+    onUpdateEffect(id, updates);
+    
+    // Actualizar en Firestore si hay projectId
+    if (projectId) {
+      try {
+        const effectRef = doc(db, `projects/${projectId}/effects/${id}`);
+        await updateDoc(effectRef, {
+          ...updates,
+          updatedAt: new Date()
+        });
+      } catch (error) {
+        console.error("Error al actualizar efecto:", error);
+      }
     }
+    
+    setIsSaving(false);
   };
   
-  // Función para aplicar corrección de color
-  const handleColorCorrection = (type: keyof typeof colorParams, value: number) => {
-    if (!selectedClipId || !onClipUpdate) return;
+  // Manejar eliminación de efecto
+  const handleDeleteEffect = async (id: string) => {
+    if (!onDeleteEffect) return;
     
-    // Actualizar estado local
-    setColorParams(prev => ({ ...prev, [type]: value }));
+    setIsSaving(true);
     
-    // Obtener los valores mínimo y máximo para este parámetro
-    const effectInfo = effects.find(e => e.id === type);
-    const min = effectInfo?.min || -1;
-    const max = effectInfo?.max || 1;
+    // Eliminar del estado local
+    onDeleteEffect(id);
     
-    // Normalizar el valor entre 0 y 1 para la intensidad del efecto
-    const normalizedValue = (value - min) / (max - min);
-    
-    // Aplicar corrección de color
-    handleApplyEffect(type, { value, normalizedValue });
-  };
-  
-  // Función para renderizar un icono basado en su tipo
-  const renderEffectIcon = (iconType: string) => {
-    switch (iconType) {
-      // Transiciones
-      case 'fade':
-        return <div className="h-6 w-12 bg-gradient-to-r from-transparent to-gray-800 rounded" />;
-      case 'dissolve':
-        return <div className="h-6 w-12 bg-gray-400 opacity-50 rounded" />;
-      case 'wipe':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gray-800"></div>
-          <div className="absolute inset-0 bg-gray-400" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}></div>
-        </div>;
-      case 'zoom':
-        return <div className="h-6 w-12 bg-gray-800 flex items-center justify-center">
-          <div className="h-4 w-8 bg-gray-400 rounded-sm"></div>
-        </div>;
-      case 'slide':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gray-800"></div>
-          <div className="absolute inset-0 top-0 bottom-0 w-1/2 bg-gray-400" 
-               style={{ left: '25%' }}></div>
-        </div>;
-      case 'push':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gray-800"></div>
-          <div className="absolute left-0 top-0 bottom-0 w-1/3 bg-gray-400"></div>
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-blue-400"></div>
-        </div>;
-      case 'flip':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gray-800 transform rotate-180"></div>
-          <div className="absolute inset-0 bg-gray-400" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}></div>
-        </div>;
-      case 'rotate':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gray-400 transform rotate-45"></div>
-        </div>;
-        
-      // Efectos visuales
-      case 'blur':
-        return <div className="h-6 w-12 bg-gray-400 filter blur-[2px] rounded"></div>;
-      case 'b&w':
-        return <div className="h-6 w-12 bg-gray-500 rounded"></div>;
-      case 'sepia':
-        return <div className="h-6 w-12 bg-yellow-700/50 rounded"></div>;
-      case 'vignette':
-        return <div className="h-6 w-12 bg-gradient-to-r from-gray-800 via-gray-400 to-gray-800 rounded"></div>;
-      case 'grainy':
-        return <div className="h-6 w-12 bg-gray-400 rounded" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.4\'/%3E%3C/svg%3E")' }}></div>;
-      case 'mirror':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="absolute inset-0 bg-gray-400"></div>
-          <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gray-400 transform scale-x-[-1]"></div>
-        </div>;
-      case 'pixelate':
-        return <div className="h-6 w-12 relative overflow-hidden rounded">
-          <div className="grid grid-cols-6 grid-rows-3 h-full w-full">
-            {Array(18).fill(0).map((_, i) => (
-              <div key={i} className="bg-gray-400 border border-gray-500"></div>
-            ))}
-          </div>
-        </div>;
-        
-      // Corrección de color
-      case 'brightness':
-        return <div className="h-6 w-12 bg-white rounded"></div>;
-      case 'contrast':
-        return <div className="h-6 w-12 bg-gradient-to-r from-gray-500 to-white rounded"></div>;
-      case 'saturation':
-        return <div className="h-6 w-12 bg-gradient-to-r from-gray-400 to-blue-500 rounded"></div>;
-      case 'hue':
-        return <div className="h-6 w-12 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 rounded"></div>;
-      case 'temperature':
-        return <div className="h-6 w-12 bg-gradient-to-r from-blue-500 to-yellow-500 rounded"></div>;
-      
-      // Mejoras
-      case 'stabilize':
-        return <div className="h-6 w-12 bg-blue-100 rounded flex items-center justify-center">
-          <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
-        </div>;
-      case 'denoise':
-        return <div className="h-6 w-12 bg-gradient-to-r from-gray-300 to-gray-100 rounded"></div>;
-      case 'sharpen':
-        return <div className="h-6 w-12 bg-white border-2 border-gray-800 rounded"></div>;
-      
-      default:
-        return <Sparkles className="h-6 w-6 text-gray-500" />;
+    // Eliminar de Firestore si hay projectId
+    if (projectId) {
+      try {
+        const effectRef = doc(db, `projects/${projectId}/effects/${id}`);
+        await deleteDoc(effectRef);
+      } catch (error) {
+        console.error("Error al eliminar efecto:", error);
+      }
     }
+    
+    // Si era el efecto seleccionado, deseleccionar
+    if (id === selectedEffectId) {
+      setSelectedEffectId(null);
+    }
+    
+    setIsSaving(false);
   };
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5">
-          <TabsTrigger value="transitions">
-            <ArrowLeftRight className="h-4 w-4 mr-1.5" /> Transiciones
-          </TabsTrigger>
-          <TabsTrigger value="visual">
-            <Wand2 className="h-4 w-4 mr-1.5" /> Efectos
-          </TabsTrigger>
-          <TabsTrigger value="color">
-            <Paintbrush className="h-4 w-4 mr-1.5" /> Color
-          </TabsTrigger>
-          <TabsTrigger value="enhance">
-            <Zap className="h-4 w-4 mr-1.5" /> Mejoras
-          </TabsTrigger>
-          <TabsTrigger value="history">
-            <History className="h-4 w-4 mr-1.5" /> Historial
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Panel de Transiciones */}
-        <TabsContent value="transitions" className="min-h-[200px]">
-          <Card className="p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center">
-                <ArrowLeftRight className="h-4 w-4 mr-1.5 text-blue-500" />
-                <h3 className="text-sm font-semibold">Transiciones Dinámicas</h3>
+  
+  // Renderizar efectos en modo cuadrícula
+  const renderEffectsGrid = () => {
+    if (effects.length === 0) {
+      return (
+        <div className="py-10 text-center text-gray-500">
+          <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-20" />
+          <p>No hay efectos visuales</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddDialog(true)}
+            className="mt-4"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Añadir efecto
+          </Button>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+        {effects.map(effect => (
+          <div
+            key={effect.id}
+            className={cn(
+              "border rounded-md p-3 cursor-pointer transition-all hover:border-gray-400",
+              selectedEffectId === effect.id && "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
+              currentTime >= effect.startTime && 
+              currentTime < (effect.startTime + effect.duration) && 
+              "bg-orange-50 dark:bg-orange-900/20"
+            )}
+            onClick={() => setSelectedEffectId(effect.id)}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div 
+                className="w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: effectColors[effect.type] }}
+              >
+                {effectTypes.find(t => t.value === effect.type)?.icon}
               </div>
               
-              <Select 
-                value={selectedEffect || ''}
-                onValueChange={(value) => setSelectedEffect(value === '' ? null : value)}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSeek) onSeek(effect.startTime);
+                }}
+                className="h-6 w-6 p-0"
               >
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue placeholder="Tipo de transición" />
-                </SelectTrigger>
-                <SelectContent>
-                  {effects
-                    .filter(effect => effect.category === 'transition')
-                    .map(effect => (
-                      <SelectItem key={effect.id} value={effect.id}>
-                        {effect.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+                <Play className="h-3 w-3" />
+              </Button>
             </div>
             
-            <ScrollArea className="h-[150px] mb-3">
-              <div className="grid grid-cols-3 gap-2">
-                {effects
-                  .filter(effect => effect.category === 'transition')
-                  .map(effect => (
-                    <Button 
-                      key={`transition-${effect.id}`}
-                      variant={selectedEffect === effect.id ? "default" : "outline"}
-                      className="h-auto py-2 justify-start"
-                      disabled={selectedClipId === null}
-                      onClick={() => {
-                        setSelectedEffect(effect.id);
-                        handleApplyEffect(`transition-${effect.id}`);
-                      }}
-                    >
-                      <div className="mr-2">
-                        {renderEffectIcon(effect.icon)}
-                      </div>
-                      <span className="text-xs">{effect.name}</span>
-                    </Button>
-                  ))}
-              </div>
-            </ScrollArea>
+            <div className="text-sm font-medium truncate">
+              {effect.name || effectTypes.find(t => t.value === effect.type)?.label}
+            </div>
             
-            {selectedEffect && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Intensidad
-                  </label>
-                  <Slider
-                    value={[effectIntensity]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(values) => setEffectIntensity(values[0])}
-                    onValueCommit={() => {
-                      if (selectedEffect) {
-                        handleApplyEffect(`transition-${selectedEffect}`, {
-                          intensity: effectIntensity / 100,
-                          duration: effectDuration
-                        });
-                      }
+            <div className="text-xs text-gray-500 mt-1">
+              {formatTime(effect.startTime)} - {formatTime(effect.startTime + effect.duration)}
+            </div>
+            
+            <div className="flex space-x-1 mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewEffect({
+                    ...effect,
+                    name: effect.name || ''
+                  });
+                  setShowAddDialog(true);
+                }}
+                className="h-7 p-0 text-xs flex-1"
+              >
+                <Edit className="h-3 w-3 mr-1" /> Editar
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteEffect(effect.id);
+                }}
+                className="h-7 p-0 text-xs flex-1 text-red-500 hover:text-red-600"
+              >
+                <Trash className="h-3 w-3 mr-1" /> Eliminar
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  
+  // Renderizar efectos en modo lista
+  const renderEffectsList = () => {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Tipo</TableHead>
+            <TableHead>Nombre</TableHead>
+            <TableHead className="w-[120px]">Tiempo</TableHead>
+            <TableHead className="w-[120px]">Duración</TableHead>
+            <TableHead className="w-[100px]">Intensidad</TableHead>
+            <TableHead className="w-[100px]">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {effects.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-10 text-gray-500">
+                <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>No hay efectos visuales</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddDialog(true)}
+                  className="mt-4"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Añadir efecto
+                </Button>
+              </TableCell>
+            </TableRow>
+          ) : (
+            effects.map(effect => (
+              <TableRow
+                key={effect.id}
+                className={cn(
+                  "cursor-pointer",
+                  selectedEffectId === effect.id && "bg-blue-50 dark:bg-blue-900/20",
+                  currentTime >= effect.startTime && 
+                  currentTime < (effect.startTime + effect.duration) && 
+                  "bg-orange-50 dark:bg-orange-900/20"
+                )}
+                onClick={() => setSelectedEffectId(effect.id)}
+              >
+                <TableCell>
+                  <div className="flex items-center">
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center mr-2"
+                      style={{ backgroundColor: effectColors[effect.type] }}
+                    >
+                      {effectTypes.find(t => t.value === effect.type)?.icon}
+                    </div>
+                    <span className="capitalize">
+                      {effectTypes.find(t => t.value === effect.type)?.label}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {effect.name || '-'}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSeek) onSeek(effect.startTime);
                     }}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Duración (segundos)
-                  </label>
-                  <Slider
-                    value={[effectDuration * 10]}
-                    min={1}
-                    max={50}
-                    step={1}
-                    onValueChange={(values) => setEffectDuration(values[0] / 10)}
-                    onValueCommit={() => {
-                      if (selectedEffect) {
-                        handleApplyEffect(`transition-${selectedEffect}`, {
-                          intensity: effectIntensity / 100,
-                          duration: effectDuration
+                    className="h-6 p-0 text-xs"
+                  >
+                    {formatTime(effect.startTime)}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  {effect.duration}s
+                </TableCell>
+                <TableCell>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full"
+                      style={{ 
+                        width: `${effect.intensity * 100}%`,
+                        backgroundColor: effectColors[effect.type]
+                      }}
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNewEffect({
+                          ...effect,
+                          name: effect.name || ''
                         });
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-right mt-1">{effectDuration.toFixed(1)}s</p>
-                </div>
+                        setShowAddDialog(true);
+                      }}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteEffect(effect.id);
+                      }}
+                      className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    );
+  };
+  
+  // Renderizar línea de tiempo
+  const renderTimeline = () => {
+    return (
+      <div className="relative h-[200px] border rounded-md overflow-hidden mt-4">
+        {/* Escala de tiempo */}
+        <div className="absolute top-0 left-0 right-0 h-6 border-b flex px-4">
+          {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1].map(percent => (
+            <div
+              key={`time-${percent}`}
+              className="absolute text-xs text-gray-500"
+              style={{ left: `${percent * 100}%` }}
+            >
+              <div className="h-2 border-l border-gray-300 dark:border-gray-700"></div>
+              <div className="mt-1">{formatTime(percent * duration)}</div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Efectos en la línea de tiempo */}
+        <div className="absolute top-8 left-0 right-0 bottom-0 px-4">
+          {effects.map((effect, index) => (
+            <div
+              key={effect.id}
+              className={cn(
+                "absolute h-8 rounded-md flex items-center px-2 cursor-pointer border-2 transition-all",
+                selectedEffectId === effect.id && "ring-2 ring-blue-500"
+              )}
+              style={{
+                left: `${timeToPosition(effect.startTime)}%`,
+                width: `${timeToPosition(effect.startTime + effect.duration) - timeToPosition(effect.startTime)}%`,
+                top: `${index % 5 * 40}px`,
+                backgroundColor: `${effectColors[effect.type]}80`,
+                borderColor: effectColors[effect.type]
+              }}
+              onClick={() => setSelectedEffectId(effect.id)}
+            >
+              <div className="flex items-center text-sm text-white truncate">
+                {effectTypes.find(t => t.value === effect.type)?.icon}
+                <span className="ml-1">{effect.name || effect.type}</span>
+              </div>
+            </div>
+          ))}
+          
+          {/* Marcador de tiempo actual */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-orange-500 z-10 pointer-events-none"
+            style={{ left: `${timeToPosition(currentTime)}%` }}
+          >
+            <div className="w-3 h-3 bg-orange-500 rounded-full -ml-1.5"></div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  return (
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl flex items-center">
+            <MagicWand className="h-5 w-5 mr-2 text-orange-500" />
+            Efectos Visuales
+          </CardTitle>
+          
+          <div className="flex items-center space-x-2">
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  "h-8 rounded-none border-0",
+                  viewMode === 'grid' ? "bg-orange-500 hover:bg-orange-600" : ""
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "h-8 rounded-none border-0 border-l",
+                  viewMode === 'list' ? "bg-orange-500 hover:bg-orange-600" : ""
+                )}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddDialog(true)}
+              className="h-8"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Añadir efecto
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start p-0 rounded-none border-b">
+            <TabsTrigger value="effects" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Efectos
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Línea de Tiempo
+            </TabsTrigger>
+            <TabsTrigger value="active" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Activos
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Pestaña de Efectos */}
+          <TabsContent value="effects">
+            {viewMode === 'grid' ? renderEffectsGrid() : renderEffectsList()}
+          </TabsContent>
+          
+          {/* Pestaña de Línea de Tiempo */}
+          <TabsContent value="timeline" className="p-4">
+            {renderTimeline()}
+            
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddDialog(true)}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Añadir efecto en {formatTime(currentTime)}
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Pestaña de Efectos Activos */}
+          <TabsContent value="active" className="p-4">
+            <div className="text-sm font-medium mb-2">
+              Efectos activos en {formatTime(currentTime)}
+            </div>
+            
+            {getActiveEffects().length === 0 ? (
+              <div className="py-8 text-center text-gray-500 border rounded-md">
+                <p>No hay efectos activos en el tiempo actual</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {getActiveEffects().map(effect => (
+                  <div
+                    key={effect.id}
+                    className="border rounded-md p-3 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
+                    onClick={() => setSelectedEffectId(effect.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div 
+                          className="w-6 h-6 rounded-full flex items-center justify-center mr-2"
+                          style={{ backgroundColor: effectColors[effect.type] }}
+                        >
+                          {effectTypes.find(t => t.value === effect.type)?.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">
+                            {effect.name || effectTypes.find(t => t.value === effect.type)?.label}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatTime(effect.startTime)} - {formatTime(effect.startTime + effect.duration)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNewEffect({
+                              ...effect,
+                              name: effect.name || ''
+                            });
+                            setShowAddDialog(true);
+                          }}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteEffect(effect.id);
+                          }}
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                        >
+                          <Trash className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2">
+                      <div className="text-xs text-gray-500 mb-1">Intensidad: {Math.round(effect.intensity * 100)}%</div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full"
+                          style={{ 
+                            width: `${effect.intensity * 100}%`,
+                            backgroundColor: effectColors[effect.type]
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-          </Card>
-        </TabsContent>
-        
-        {/* Panel de Efectos Visuales */}
-        <TabsContent value="visual" className="min-h-[200px]">
-          <Card className="p-3">
-            <div className="flex items-center mb-3">
-              <Wand2 className="h-4 w-4 mr-1.5 text-purple-500" />
-              <h3 className="text-sm font-semibold">Efectos Visuales</h3>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      
+      <CardFooter className="pt-2 text-xs text-gray-500">
+        <div className="flex justify-between w-full">
+          <div>
+            {effects.length} efectos • {getActiveEffects().length} activos
+          </div>
+          <div>
+            {isSaving && "Guardando..."}
+          </div>
+        </div>
+      </CardFooter>
+      
+      {/* Dialog para añadir/editar efecto */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {newEffect.name ? 'Editar efecto' : 'Añadir nuevo efecto'}
+            </DialogTitle>
+            <DialogDescription>
+              Define los parámetros para este efecto visual
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="effect-name">Nombre (opcional)</Label>
+                <Input
+                  id="effect-name"
+                  value={newEffect.name}
+                  onChange={(e) => setNewEffect({ ...newEffect, name: e.target.value })}
+                  placeholder="Ej: Filtro Sepia"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="effect-type">Tipo de efecto</Label>
+                <Select
+                  value={newEffect.type}
+                  onValueChange={(value: 'filter' | 'overlay' | 'transition' | 'zoom' | 'crop' | 'blur' | 'custom') => 
+                    setNewEffect({ ...newEffect, type: value })
+                  }
+                >
+                  <SelectTrigger id="effect-type">
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {effectTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center">
+                          {type.icon}
+                          {type.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {effectTypes.find(t => t.value === newEffect.type)?.description}
+                </p>
+              </div>
             </div>
             
-            <ScrollArea className="h-[150px] mb-3">
-              <div className="grid grid-cols-3 gap-2">
-                {effects
-                  .filter(effect => effect.category === 'visual')
-                  .map(effect => (
-                    <Button 
-                      key={`effect-${effect.id}`}
-                      variant={selectedEffect === effect.id ? "default" : "outline"}
-                      className="h-auto py-2 justify-start"
-                      disabled={selectedClipId === null}
-                      onClick={() => {
-                        setSelectedEffect(effect.id);
-                        handleApplyEffect(`effect-${effect.id}`);
-                      }}
-                    >
-                      <div className="mr-2">
-                        {renderEffectIcon(effect.icon)}
-                      </div>
-                      <span className="text-xs">{effect.name}</span>
-                    </Button>
-                  ))}
-              </div>
-            </ScrollArea>
-            
-            {selectedEffect && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Intensidad
-                  </label>
-                  <Slider
-                    value={[effectIntensity]}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="effect-startTime">Tiempo de inicio (s)</Label>
+                <div className="flex items-center">
+                  <Input
+                    id="effect-startTime"
+                    type="number"
+                    value={newEffect.startTime}
+                    onChange={(e) => setNewEffect({
+                      ...newEffect,
+                      startTime: Math.max(0, Math.min(duration - newEffect.duration, parseFloat(e.target.value) || 0))
+                    })}
                     min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(values) => setEffectIntensity(values[0])}
-                    onValueCommit={() => {
-                      if (selectedEffect) {
-                        handleApplyEffect(`effect-${selectedEffect}`, {
-                          intensity: effectIntensity / 100,
-                          duration: effectDuration
-                        });
-                      }
-                    }}
+                    max={duration - newEffect.duration}
+                    step={0.1}
                   />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewEffect({
+                      ...newEffect,
+                      startTime: currentTime
+                    })}
+                    className="ml-2"
+                  >
+                    Actual
+                  </Button>
                 </div>
-                <div>
-                  <div className="flex items-center space-x-2 mt-4">
-                    <Switch id="effect-enable" defaultChecked={true} />
-                    <Label htmlFor="effect-enable">Efecto activo</Label>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="effect-duration">Duración (s)</Label>
+                <Input
+                  id="effect-duration"
+                  type="number"
+                  value={newEffect.duration}
+                  onChange={(e) => setNewEffect({
+                    ...newEffect,
+                    duration: Math.max(0.1, Math.min(duration - newEffect.startTime, parseFloat(e.target.value) || 0))
+                  })}
+                  min={0.1}
+                  max={duration - newEffect.startTime}
+                  step={0.1}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="effect-intensity">Intensidad: {Math.round(newEffect.intensity * 100)}%</Label>
+              <Slider
+                id="effect-intensity"
+                value={[newEffect.intensity * 100]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={([value]) => setNewEffect({
+                  ...newEffect,
+                  intensity: value / 100
+                })}
+              />
+            </div>
+            
+            {/* Parámetros específicos para cada tipo de efecto */}
+            {newEffect.type === 'filter' && (
+              <div className="space-y-2">
+                <Label>Parámetros de filtro</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Contraste</Label>
+                    <Slider
+                      value={[newEffect.parameters?.contrast || 50]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, contrast: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Saturación</Label>
+                    <Slider
+                      value={[newEffect.parameters?.saturation || 50]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, saturation: value }
+                      })}
+                      className="mt-1"
+                    />
                   </div>
                 </div>
               </div>
             )}
-          </Card>
-        </TabsContent>
-        
-        {/* Panel de Corrección de Color */}
-        <TabsContent value="color" className="min-h-[200px]">
-          <Card className="p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center">
-                <Paintbrush className="h-4 w-4 mr-1.5 text-orange-500" />
-                <h3 className="text-sm font-semibold">Corrección de Color</h3>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  if (!selectedClipId || !onClipUpdate) return;
-                  // Restablecer todos los valores de color
-                  setColorParams({
-                    brightness: 0,
-                    contrast: 0,
-                    saturation: 1,
-                    hue: 0,
-                    temperature: 0
-                  });
-                  
-                  // Actualizar clip para eliminar todos los filtros
-                  onClipUpdate(selectedClipId, { filters: [] });
-                }}
-              >
-                Restablecer
-              </Button>
-            </div>
             
-            <div className="space-y-4">
-              {/* Brillo */}
-              <div>
-                <div className="flex justify-between">
-                  <label className="text-xs font-medium">Brillo</label>
-                  <span className="text-xs">{colorParams.brightness.toFixed(2)}</span>
-                </div>
-                <Slider
-                  value={[colorParams.brightness * 100]}
-                  min={-100}
-                  max={100}
-                  step={1}
-                  onValueChange={(values) => handleColorCorrection('brightness', values[0] / 100)}
-                />
-              </div>
-              
-              {/* Contraste */}
-              <div>
-                <div className="flex justify-between">
-                  <label className="text-xs font-medium">Contraste</label>
-                  <span className="text-xs">{colorParams.contrast.toFixed(2)}</span>
-                </div>
-                <Slider
-                  value={[colorParams.contrast * 100]}
-                  min={-100}
-                  max={100}
-                  step={1}
-                  onValueChange={(values) => handleColorCorrection('contrast', values[0] / 100)}
-                />
-              </div>
-              
-              {/* Saturación */}
-              <div>
-                <div className="flex justify-between">
-                  <label className="text-xs font-medium">Saturación</label>
-                  <span className="text-xs">{colorParams.saturation.toFixed(2)}</span>
-                </div>
-                <Slider
-                  value={[colorParams.saturation * 50]}
-                  min={0}
-                  max={100}
-                  step={1}
-                  onValueChange={(values) => handleColorCorrection('saturation', values[0] / 50)}
-                />
-              </div>
-              
-              {/* Tono */}
-              <div>
-                <div className="flex justify-between">
-                  <label className="text-xs font-medium">Tono</label>
-                  <span className="text-xs">{Math.round(colorParams.hue)}°</span>
-                </div>
-                <Slider
-                  value={[colorParams.hue]}
-                  min={0}
-                  max={360}
-                  step={1}
-                  onValueChange={(values) => handleColorCorrection('hue', values[0])}
-                />
-              </div>
-              
-              {/* Temperatura */}
-              <div>
-                <div className="flex justify-between">
-                  <label className="text-xs font-medium">Temperatura</label>
-                  <span className="text-xs">{colorParams.temperature > 0 ? '+' : ''}{colorParams.temperature.toFixed(2)}</span>
-                </div>
-                <Slider
-                  value={[colorParams.temperature * 100]}
-                  min={-100}
-                  max={100}
-                  step={1}
-                  onValueChange={(values) => handleColorCorrection('temperature', values[0] / 100)}
-                />
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-        
-        {/* Panel de Mejoras */}
-        <TabsContent value="enhance" className="min-h-[200px]">
-          <Card className="p-3">
-            <div className="flex items-center mb-3">
-              <Zap className="h-4 w-4 mr-1.5 text-yellow-500" />
-              <h3 className="text-sm font-semibold">Mejoras con IA</h3>
-            </div>
-            
-            <ScrollArea className="h-[150px] mb-3">
-              <div className="grid grid-cols-2 gap-2">
-                {effects
-                  .filter(effect => effect.category === 'enhance')
-                  .map(effect => (
-                    <Button 
-                      key={`enhance-${effect.id}`}
-                      variant={selectedEffect === effect.id ? "default" : "outline"}
-                      className="h-auto py-2 justify-start"
-                      disabled={selectedClipId === null}
-                      onClick={() => {
-                        if (effect.id === 'lut') {
-                          // Para LUTs, mostramos las opciones
-                          setSelectedEffect(effect.id);
-                        } else {
-                          // Para otros efectos de mejora, aplicarlos directamente
-                          setSelectedEffect(effect.id);
-                          handleApplyEffect(`enhance-${effect.id}`);
-                        }
-                      }}
-                    >
-                      <div className="mr-2">
-                        {renderEffectIcon(effect.icon)}
-                      </div>
-                      <span className="text-xs">{effect.name}</span>
-                    </Button>
-                  ))}
-              </div>
-            </ScrollArea>
-            
-            {selectedEffect === 'lut' && (
-              <div className="mt-3">
-                <label className="text-xs text-muted-foreground block mb-2">
-                  Seleccionar LUT (Look-Up Table)
-                </label>
-                <Select 
-                  value={selectedLut || ''}
-                  onValueChange={(value) => {
-                    setSelectedLut(value);
-                    if (value) {
-                      handleApplyEffect('enhance-lut', { lutType: value });
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar estilo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {effects
-                      .find(e => e.id === 'lut')?.lutOptions?.map(option => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                
-                <div className="mt-3">
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Intensidad del LUT
-                  </label>
-                  <Slider
-                    value={[effectIntensity]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(values) => setEffectIntensity(values[0])}
-                    onValueCommit={() => {
-                      if (selectedLut) {
-                        handleApplyEffect('enhance-lut', {
-                          lutType: selectedLut,
-                          intensity: effectIntensity / 100
-                        });
-                      }
-                    }}
-                  />
+            {newEffect.type === 'zoom' && (
+              <div className="space-y-2">
+                <Label>Parámetros de zoom</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Factor</Label>
+                    <Slider
+                      value={[newEffect.parameters?.factor || 150]}
+                      min={100}
+                      max={300}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, factor: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Velocidad</Label>
+                    <Slider
+                      value={[newEffect.parameters?.speed || 50]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, speed: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
             )}
-            
-            {selectedEffect === 'stabilize' && (
-              <div className="mt-3">
-                <p className="text-sm">La estabilización de video analiza y corrige automáticamente las vibraciones y movimientos no deseados.</p>
-                <div className="mt-3">
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Nivel de estabilización
-                  </label>
-                  <Slider
-                    value={[effectIntensity]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(values) => setEffectIntensity(values[0])}
-                    onValueCommit={() => {
-                      handleApplyEffect('enhance-stabilize', {
-                        intensity: effectIntensity / 100
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </Card>
-        </TabsContent>
-        
-        {/* Panel de Historial */}
-        <TabsContent value="history" className="min-h-[200px]">
-          <Card className="p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center">
-                <History className="h-4 w-4 mr-1.5 text-gray-500" />
-                <h3 className="text-sm font-semibold">Historial de Ediciones</h3>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleUndo}
-                disabled={editHistory.length === 0 || !selectedClipId}
-              >
-                Deshacer
-              </Button>
-            </div>
-            
-            <ScrollArea className="h-[180px]">
-              {editHistory.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">
-                  No hay acciones en el historial
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {editHistory.map((entry, index) => (
-                    <li key={index} className="text-xs border-b pb-2">
-                      <span className="font-medium">{new Date(entry.timestamp).toLocaleTimeString()}</span>
-                      {' - '}
-                      {entry.action}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </ScrollArea>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Acciones para el clip seleccionado */}
-      <Card className="p-3">
-        <h3 className="text-sm font-semibold mb-2">Clip Actual</h3>
-        
-        {selectedClipId === null ? (
-          <p className="text-sm text-muted-foreground">
-            Selecciona un clip para ver y editar sus efectos
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">{selectedClip?.title}</span>
-              <span className="text-xs text-muted-foreground">
-                {selectedClip?.effects?.length || 0} efectos · {selectedClip?.filters?.length || 0} filtros
-              </span>
-            </div>
-            
-            <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="flex-1"
-                onClick={() => {
-                  if (!onClipUpdate || !selectedClipId) return;
-                  // Resetear efectos
-                  onClipUpdate(selectedClipId, { effects: [] });
-                  addToHistory('Reiniciado efectos del clip');
-                }}
-              >
-                Reiniciar efectos
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm"
-                className="flex-1"
-                onClick={() => {
-                  if (!selectedEffect) return;
-                  handleApplyEffect(selectedEffect, {
-                    intensity: effectIntensity / 100,
-                    duration: effectDuration
-                  });
-                }}
-              >
-                Aplicar seleccionado
-              </Button>
-            </div>
           </div>
-        )}
-      </Card>
-    </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddDialog(false);
+                setNewEffect({
+                  name: '',
+                  type: 'filter',
+                  startTime: currentTime,
+                  duration: 5,
+                  intensity: 0.5,
+                  parameters: {}
+                });
+              }}
+            >
+              Cancelar
+            </Button>
+            
+            <Button
+              onClick={handleAddEffect}
+              disabled={isSaving}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                newEffect.name ? 'Actualizar' : 'Añadir'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
-}
+};
+
+export default EffectsPanel;

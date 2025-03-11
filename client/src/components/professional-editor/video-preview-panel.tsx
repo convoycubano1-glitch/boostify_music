@@ -1,808 +1,678 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Button
+} from '@/components/ui/button';
+import {
+  Slider
+} from '@/components/ui/slider';
+import {
+  PlayCircle,
+  PauseCircle,
+  SkipBack,
   SkipForward,
   Volume2,
   VolumeX,
-  Maximize2,
-  Crop,
-  RotateCw,
-  ZoomIn,
-  Camera,
-  Layers,
-  SlidersHorizontal,
-  ListVideo,
-  MessageSquare,
-  Share2,
-  Download,
-  Scissors,
+  Maximize,
+  Minimize,
   Settings,
-  ArrowLeftRight
+  DownloadCloud,
+  Share2,
+  ScreenShare,
+  Info,
+  FileVideo,
+  ZoomIn,
+  ZoomOut,
+  Loader2
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Interfaces para los datos
+interface VisualEffect {
+  id: string;
+  name: string;
+  type: string;
+  subtype?: string;
+  startTime: number;
+  duration: number;
+  enabled: boolean;
+  parameters: Record<string, any>;
+}
 
 interface VideoPreviewPanelProps {
+  videoSrc: string;
   currentTime: number;
   duration: number;
   isPlaying: boolean;
-  onPlayPause: () => void;
-  onTimeUpdate?: (time: number) => void;
-  selectedClipId: number | null;
-  clips: Array<any>;
+  activeEffects: VisualEffect[];
+  onPlay?: () => void;
+  onPause?: () => void;
   onSeek?: (time: number) => void;
-  onClipUpdate?: (clipId: number, updates: any) => void;
-  onExport?: (format: string, quality: string) => void;
-  onTakeSnapshot?: () => void;
-  audioVolume?: number;
-  onVolumeChange?: (volume: number) => void;
+  onToggleEffect?: (effectId: string, enabled: boolean) => void;
 }
 
-export function VideoPreviewPanel({
+const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
+  videoSrc,
   currentTime,
   duration,
   isPlaying,
-  onPlayPause,
-  onTimeUpdate,
-  selectedClipId,
-  clips,
+  activeEffects = [],
+  onPlay,
+  onPause,
   onSeek,
-  onClipUpdate,
-  onExport,
-  onTakeSnapshot,
-  audioVolume = 1,
-  onVolumeChange
-}: VideoPreviewPanelProps) {
+  onToggleEffect
+}) => {
+  // Estados
+  const [volume, setVolume] = useState<number>(1);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [showControls, setShowControls] = useState<boolean>(true);
+  const [showEffectsOverlay, setShowEffectsOverlay] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [videoQuality, setVideoQuality] = useState<'auto' | '720p' | '1080p'>('auto');
+  
+  // Referencias
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'normal' | 'sideBySide' | 'beforeAfter'>('normal');
-  const [showVolume, setShowVolume] = useState(false);
-  const [volume, setVolume] = useState(audioVolume * 100);
-  const [isMuted, setIsMuted] = useState(false);
-  const [exportFormat, setExportFormat] = useState('mp4');
-  const [exportQuality, setExportQuality] = useState('high');
-  const [filterPreview, setFilterPreview] = useState(true);
-  const [previewScale, setPreviewScale] = useState(1);
-  const [annotations, setAnnotations] = useState<Array<{x: number, y: number, text: string}>>([]);
-  const [showAnnotations, setShowAnnotations] = useState(true);
-  const [editingClipInfo, setEditingClipInfo] = useState<{
-    speed: number;
-    rotation: number;
-    crop: { x: number, y: number, width: number, height: number } | null;
-  }>({
-    speed: 1.0,
-    rotation: 0,
-    crop: null
-  });
-
-  // Actualizar el volumen cuando cambia la prop 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const controlsTimeoutRef = useRef<number | null>(null);
+  
+  // Formatear tiempo (mm:ss)
+  const formatTime = (timeInSeconds: number): string => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+  
+  // Actualizar video según los cambios en currentTime
   useEffect(() => {
-    setVolume(audioVolume * 100);
-  }, [audioVolume]);
+    if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 0.5) {
+      videoRef.current.currentTime = currentTime;
+    }
+  }, [currentTime]);
   
-  // Encontrar el clip activo para la vista previa
-  const getActiveClip = () => {
-    if (selectedClipId !== null) {
-      return clips.find(clip => clip.id === selectedClipId);
+  // Manejar reproducción/pausa según isPlaying
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.play().catch(error => {
+          console.error('Error al reproducir video:', error);
+          if (onPause) {
+            onPause();
+          }
+        });
+      } else {
+        videoRef.current.pause();
+      }
     }
-    
-    // Si no hay clip seleccionado, encontrar el clip que contiene el tiempo actual
-    return clips.find(clip => 
-      clip.start <= currentTime && clip.start + clip.duration >= currentTime
-    );
-  };
+  }, [isPlaying, onPause]);
   
-  const activeClip = getActiveClip();
+  // Manejar volumen y mute
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
   
-  // Obtener la imagen o video para mostrar en la vista previa
-  const getPreviewContent = () => {
-    if (!activeClip) return null;
-    
-    if (activeClip.type === 'video') {
-      return {
-        type: 'video',
-        url: activeClip.videoUrl || `/assets/sample-videos/${activeClip.id % 5 + 1}.mp4`,
-        thumbnail: activeClip.thumbnail || null
-      };
-    }
-    
-    if (activeClip.type === 'image') {
-      return {
-        type: 'image',
-        url: activeClip.imageUrl || activeClip.thumbnail || `/assets/sample-images/${activeClip.id % 3 + 1}.jpg`
-      };
-    }
-    
-    if (activeClip.type === 'text') {
-      // Para elementos de texto, renderizamos un fondo con el texto
-      return {
-        type: 'text',
-        content: activeClip.content || 'Texto del título',
-        style: activeClip.textStyle || {
-          fontFamily: 'Arial',
-          fontSize: 48,
-          color: '#FFFFFF'
-        }
-      };
-    }
-    
-    // Si es un efecto o transición, mostrar un indicador visual
-    return {
-      type: 'effect',
-      effectType: activeClip.effectType || 'transition'
+  // Manejar pantalla completa
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
     };
-  };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
   
-  const previewContent = getPreviewContent();
+  // Ocultar controles después de un tiempo
+  useEffect(() => {
+    if (isPlaying) {
+      if (controlsTimeoutRef.current !== null) {
+        window.clearTimeout(controlsTimeoutRef.current);
+      }
+      
+      controlsTimeoutRef.current = window.setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+    
+    return () => {
+      if (controlsTimeoutRef.current !== null) {
+        window.clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, [isPlaying, showControls]);
   
-  // Formatear tiempo actual
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-  
-  // Calcular el porcentaje de progreso para el slider
-  const progressPercentage = (currentTime / duration) * 100;
-
-  // Función para cambiar la posición del tiempo actual
-  const handleSeek = (value: number) => {
-    const newTime = (value / 100) * duration;
-    if (onSeek) {
-      onSeek(newTime);
-    } else if (onTimeUpdate) {
-      onTimeUpdate(newTime);
+  // Manejar clic en reproducir/pausar
+  const handlePlayPause = () => {
+    if (isPlaying && onPause) {
+      onPause();
+    } else if (!isPlaying && onPlay) {
+      onPlay();
     }
   };
   
-  // Función para saltar al clip anterior/siguiente
-  const jumpToPrevClip = () => {
-    const currentClips = [...clips].sort((a, b) => a.start - b.start);
-    const currentIndex = currentClips.findIndex(clip => clip.start > currentTime) - 1;
+  // Manejar clic en la barra de progreso
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onSeek) return;
     
-    if (currentIndex >= 0) {
-      const prevClip = currentClips[currentIndex];
-      if (onSeek) {
-        onSeek(prevClip.start);
+    const progressBar = e.currentTarget;
+    const rect = progressBar.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const percentage = offsetX / rect.width;
+    
+    onSeek(percentage * duration);
+  };
+  
+  // Manejar alternar pantalla completa
+  const handleToggleFullscreen = () => {
+    if (!containerRef.current) return;
+    
+    if (!isFullscreen) {
+      if (containerRef.current.requestFullscreen) {
+        containerRef.current.requestFullscreen();
       }
     } else {
-      // Si estamos antes de todos los clips, vamos al inicio
-      if (onSeek) {
-        onSeek(0);
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
       }
     }
   };
   
-  const jumpToNextClip = () => {
-    const currentClips = [...clips].sort((a, b) => a.start - b.start);
-    const currentIndex = currentClips.findIndex(clip => clip.start > currentTime);
+  // Manejar alternar efectos
+  const handleToggleEffect = (effectId: string, enabled: boolean) => {
+    if (onToggleEffect) {
+      onToggleEffect(effectId, enabled);
+    }
+  };
+  
+  // Aplicar efectos al video
+  const applyVisualEffects = () => {
+    if (!activeEffects || activeEffects.length === 0) return {};
     
-    if (currentIndex >= 0 && currentIndex < currentClips.length) {
-      const nextClip = currentClips[currentIndex];
-      if (onSeek) {
-        onSeek(nextClip.start);
-      }
-    } else {
-      // Si estamos después de todos los clips, vamos al final
-      if (onSeek) {
-        onSeek(duration);
-      }
-    }
-  };
-  
-  // Manejar cambios de volumen
-  const handleVolumeChange = (value: number) => {
-    setVolume(value);
-    if (onVolumeChange) {
-      onVolumeChange(value / 100);
-    }
+    // Solo aplicar efectos habilitados
+    const enabledEffects = activeEffects.filter(effect => effect.enabled);
+    if (enabledEffects.length === 0) return {};
     
-    // Si cambiamos de volumen cero a mayor, desmutear
-    if (value > 0 && isMuted) {
-      setIsMuted(false);
-    }
-  };
-  
-  // Función para tomar un snapshot
-  const takeSnapshot = () => {
-    if (canvasRef.current && videoRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      const context = canvas.getContext('2d');
-      
-      if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+    // Construir estilos CSS basados en los efectos
+    const styles: React.CSSProperties = {};
+    
+    enabledEffects.forEach(effect => {
+      switch (effect.type) {
+        case 'filter':
+          if (effect.subtype === 'blur') {
+            styles.filter = `${styles.filter || ''} blur(${effect.parameters.intensity * 10}px)`;
+          } else if (effect.subtype === 'brightness') {
+            styles.filter = `${styles.filter || ''} brightness(${effect.parameters.level * 2})`;
+          } else if (effect.subtype === 'contrast') {
+            styles.filter = `${styles.filter || ''} contrast(${effect.parameters.level * 2})`;
+          } else if (effect.subtype === 'grayscale') {
+            styles.filter = `${styles.filter || ''} grayscale(${effect.parameters.level})`;
+          } else if (effect.subtype === 'sepia') {
+            styles.filter = `${styles.filter || ''} sepia(${effect.parameters.level})`;
+          } else if (effect.subtype === 'hue-rotate') {
+            styles.filter = `${styles.filter || ''} hue-rotate(${effect.parameters.degrees}deg)`;
+          } else if (effect.subtype === 'saturate') {
+            styles.filter = `${styles.filter || ''} saturate(${effect.parameters.level})`;
+          }
+          break;
         
-        // Dibujar el frame actual del video en el canvas
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        case 'transform':
+          if (effect.subtype === 'rotate') {
+            styles.transform = `${styles.transform || ''} rotate(${effect.parameters.degree}deg)`;
+          } else if (effect.subtype === 'scale') {
+            styles.transform = `${styles.transform || ''} scale(${effect.parameters.scale})`;
+          }
+          break;
         
-        // Convertir el canvas a una imagen
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        
-        // Aquí puedes guardar la imagen o enviarla a algún servicio
-        if (onTakeSnapshot) {
-          onTakeSnapshot();
-        } else {
-          // Fallback: descargar la imagen
-          const link = document.createElement('a');
-          link.href = dataUrl;
-          link.download = `snapshot-${new Date().toISOString()}.jpg`;
-          link.click();
-        }
-      }
-    }
-  };
-  
-  // Actualizar las propiedades del clip seleccionado
-  const updateSelectedClip = (updates: any) => {
-    if (selectedClipId && onClipUpdate) {
-      onClipUpdate(selectedClipId, updates);
-    }
-  };
-  
-  // Función para exportar el video con la calidad y formato seleccionados
-  const handleExport = () => {
-    if (onExport) {
-      onExport(exportFormat, exportQuality);
-    }
-  };
-  
-  // Renderizar filtros visuales para la vista previa
-  const getFilterStyle = () => {
-    if (!filterPreview || !activeClip || !activeClip.filters || activeClip.filters.length === 0) {
-      return {};
-    }
-    
-    let filterString = '';
-    let transformString = '';
-    
-    // Aplicar filtros CSS basados en los filtros del clip
-    activeClip.filters.forEach((filter: any) => {
-      if (!filter.enabled) return;
-      
-      switch (filter.id) {
-        case 'brightness':
-          filterString += `brightness(${filter.value + 1}) `;
-          break;
-        case 'contrast':
-          filterString += `contrast(${filter.value + 1}) `;
-          break;
-        case 'saturation':
-          filterString += `saturate(${filter.value}) `;
-          break;
-        case 'hue':
-          filterString += `hue-rotate(${filter.value}deg) `;
-          break;
-        case 'blur':
-          filterString += `blur(${filter.value * 5}px) `;
-          break;
-        case 'sepia':
-          filterString += `sepia(${filter.value}) `;
-          break;
-        case 'grayscale':
-        case 'b&w':
-          filterString += `grayscale(1) `;
-          break;
-        default:
-          break;
+        // Otros tipos de efectos podrían implementarse aquí
       }
     });
     
-    // Aplicar transformaciones
-    if (editingClipInfo.rotation !== 0) {
-      transformString += `rotate(${editingClipInfo.rotation}deg) `;
-    }
-    
-    if (editingClipInfo.speed !== 1.0 && videoRef.current) {
-      videoRef.current.playbackRate = editingClipInfo.speed;
-    }
-    
-    return {
-      filter: filterString,
-      transform: transformString
-    };
+    return styles;
   };
   
-  const filterStyle = getFilterStyle();
-  
-  // Función para renderizar las anotaciones sobre el video
-  const renderAnnotations = () => {
-    if (!showAnnotations || annotations.length === 0) return null;
+  // Renderizar overlay de texto
+  const renderTextOverlays = () => {
+    if (!showEffectsOverlay || !activeEffects || activeEffects.length === 0) return null;
     
-    return annotations.map((annotation, index) => (
-      <div 
-        key={`annotation-${index}`}
-        className="absolute flex items-center justify-center"
-        style={{
-          left: `${annotation.x * 100}%`,
-          top: `${annotation.y * 100}%`,
-          transform: 'translate(-50%, -50%)'
-        }}
-      >
-        <div className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs z-20">
-          {index + 1}
-        </div>
-        <div className="absolute top-7 bg-black/70 text-white p-1 rounded text-xs min-w-[100px] text-center">
-          {annotation.text}
-        </div>
-      </div>
-    ));
-  };
-
-  return (
-    <Card className="p-4 flex flex-col">
-      <div className="relative aspect-video bg-black rounded-md overflow-hidden mb-4">
-        {previewContent?.type === 'video' && (
-          <video 
-            ref={videoRef}
-            src={previewContent.url}
-            className="w-full h-full object-contain"
-            style={{ 
-              filter: filterStyle.filter || 'none',
-              transform: filterStyle.transform || 'none',
-              transformOrigin: 'center center',
-              scale: `${previewScale}`
-            }}
-            autoPlay={isPlaying}
-            loop
-            muted={isMuted}
-            playsInline
-          />
-        )}
-        
-        {previewContent?.type === 'image' && (
-          <img 
-            src={previewContent.url} 
-            alt="Vista previa"
-            className="w-full h-full object-contain"
-            style={{ 
-              filter: filterStyle.filter || 'none',
-              transform: filterStyle.transform || 'none',
-              transformOrigin: 'center center',
-              scale: `${previewScale}`
-            }}
-          />
-        )}
-        
-        {previewContent?.type === 'text' && (
-          <div 
-            className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700"
-            style={{ filter: filterStyle.filter || 'none' }}
-          >
-            <p
+    const textEffects = activeEffects.filter(
+      effect => effect.enabled && effect.type === 'text'
+    );
+    
+    if (textEffects.length === 0) return null;
+    
+    return (
+      <>
+        {textEffects.map(effect => {
+          const { parameters } = effect;
+          const position = parameters.position || 'center';
+          
+          let positionStyle: React.CSSProperties = {};
+          
+          switch (position) {
+            case 'top':
+              positionStyle = { top: '10%', left: '50%', transform: 'translateX(-50%)' };
+              break;
+            case 'bottom':
+              positionStyle = { bottom: '10%', left: '50%', transform: 'translateX(-50%)' };
+              break;
+            case 'left':
+              positionStyle = { left: '10%', top: '50%', transform: 'translateY(-50%)' };
+              break;
+            case 'right':
+              positionStyle = { right: '10%', top: '50%', transform: 'translateY(-50%)' };
+              break;
+            case 'top-left':
+              positionStyle = { top: '10%', left: '10%' };
+              break;
+            case 'top-right':
+              positionStyle = { top: '10%', right: '10%' };
+              break;
+            case 'bottom-left':
+              positionStyle = { bottom: '10%', left: '10%' };
+              break;
+            case 'bottom-right':
+              positionStyle = { bottom: '10%', right: '10%' };
+              break;
+            default: // center
+              positionStyle = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+          }
+          
+          return (
+            <div
+              key={effect.id}
+              className="absolute z-20 text-center"
               style={{
-                fontFamily: previewContent.style.fontFamily,
-                fontSize: `${previewContent.style.fontSize}px`,
-                color: previewContent.style.color,
-                fontWeight: previewContent.style.fontWeight || 'normal',
-                textShadow: previewContent.style.shadow ? '2px 2px 4px rgba(0,0,0,0.5)' : 'none',
-                textAlign: previewContent.style.alignment || 'center',
-                transform: filterStyle.transform || 'none',
-                transformOrigin: 'center center',
-                scale: `${previewScale}`
+                ...positionStyle,
+                color: parameters.color || '#ffffff',
+                fontSize: `${parameters.fontSize || 36}px`,
+                fontWeight: parameters.fontWeight || 'normal',
+                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
               }}
             >
-              {previewContent.content}
-            </p>
-          </div>
-        )}
-        
-        {previewContent?.type === 'effect' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900 to-purple-700">
-            <div className="text-white text-center">
-              <p className="font-semibold text-lg mb-1">
-                {previewContent.effectType === 'transition' ? 'Transición' : 'Efecto'}
-              </p>
-              <p className="text-sm opacity-80">
-                {activeClip?.title || 'Efectos visuales'}
-              </p>
+              {parameters.text || ''}
             </div>
-          </div>
-        )}
-        
-        {!previewContent && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-800">
-            <div className="text-center">
-              <p className="mb-2">Vista previa no disponible</p>
-              <p className="text-sm text-gray-500">Selecciona un clip o sube contenido</p>
-            </div>
-          </div>
-        )}
-        
-        {/* Canvas para tomar snapshots (oculto) */}
-        <canvas ref={canvasRef} className="hidden" />
-        
-        {/* Anotaciones sobre el video */}
-        {renderAnnotations()}
-        
-        {/* Barra de progreso sobre el video */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30 z-10">
-          <div 
-            className="h-full bg-orange-500"
-            style={{ width: `${progressPercentage}%` }}  
-          />
-        </div>
-        
-        {/* Capa para mostrar el modo antes/después */}
-        {previewMode === 'beforeAfter' && (
-          <div className="absolute inset-0 overflow-hidden z-10">
-            <div 
-              className="absolute top-0 bottom-0 bg-black/40 h-full flex items-center justify-center overflow-hidden"
-              style={{ left: 0, width: '50%', borderRight: '2px solid white' }}
-            >
-              <span className="text-white font-medium bg-black/50 px-2 py-1 rounded">Original</span>
-            </div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full z-10 flex items-center justify-center">
-              <ArrowLeftRight className="h-4 w-4" />
-            </div>
-          </div>
-        )}
-        
-        {/* Controles flotantes */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-black/50 rounded-full px-3 py-1.5 z-10">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white hover:bg-white/20"
-            onClick={jumpToPrevClip}
-          >
-            <SkipBack className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 text-white hover:bg-white/20"
-            onClick={onPlayPause}
-          >
-            {isPlaying ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Play className="h-5 w-5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white hover:bg-white/20"
-            onClick={jumpToNextClip}
-          >
-            <SkipForward className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        {/* Botones flotantes esquina superior */}
-        <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-          <div className="relative">
+          );
+        })}
+      </>
+    );
+  };
+  
+  // Renderizar overlays de color o gradiente
+  const renderColorOverlays = () => {
+    if (!showEffectsOverlay || !activeEffects || activeEffects.length === 0) return null;
+    
+    const overlayEffects = activeEffects.filter(
+      effect => effect.enabled && effect.type === 'overlay'
+    );
+    
+    if (overlayEffects.length === 0) return null;
+    
+    return (
+      <>
+        {overlayEffects.map(effect => {
+          const { parameters } = effect;
+          
+          if (effect.subtype === 'color') {
+            return (
+              <div
+                key={effect.id}
+                className="absolute inset-0 z-10 pointer-events-none"
+                style={{
+                  backgroundColor: parameters.color || 'rgba(0, 0, 0, 0.5)',
+                  opacity: parameters.opacity || 0.5
+                }}
+              />
+            );
+          } else if (effect.subtype === 'gradient') {
+            return (
+              <div
+                key={effect.id}
+                className="absolute inset-0 z-10 pointer-events-none"
+                style={{
+                  background: `linear-gradient(${parameters.direction || 'to right'}, ${parameters.startColor || '#000000'}, ${parameters.endColor || '#ffffff'})`,
+                  opacity: parameters.opacity || 0.5
+                }}
+              />
+            );
+          } else if (effect.subtype === 'image' && parameters.url) {
+            return (
+              <div
+                key={effect.id}
+                className="absolute inset-0 z-10 pointer-events-none bg-cover bg-center"
+                style={{
+                  backgroundImage: `url(${parameters.url})`,
+                  opacity: parameters.opacity || 0.7
+                }}
+              />
+            );
+          }
+          
+          return null;
+        })}
+      </>
+    );
+  };
+  
+  return (
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl flex items-center">
+            <FileVideo className="h-5 w-5 mr-2 text-orange-500" />
+            Vista Previa
+          </CardTitle>
+          
+          <div className="flex items-center space-x-2">
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white bg-black/30 hover:bg-black/50"
-              onClick={() => setShowVolume(!showVolume)}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEffectsOverlay(!showEffectsOverlay)}
+              className={cn(
+                "h-8",
+                showEffectsOverlay && "bg-gray-100 dark:bg-gray-800"
               )}
+            >
+              <Info className="h-4 w-4 mr-1" /> Mostrar efectos
             </Button>
             
-            {showVolume && (
-              <div className="absolute right-0 top-full mt-1 bg-black/70 p-2 rounded-md w-36">
-                <Slider
-                  value={[volume]}
-                  min={0}
-                  max={100}
-                  step={1}
-                  className="mb-2"
-                  onValueChange={(values) => handleVolumeChange(values[0])}
-                />
-                <div className="flex items-center justify-between">
-                  <label className="text-white text-xs flex items-center gap-1">
-                    <input 
-                      type="checkbox" 
-                      className="h-3 w-3" 
-                      checked={isMuted}
-                      onChange={() => setIsMuted(!isMuted)}
-                    />
-                    Silencio
-                  </label>
-                  <span className="text-white text-xs">{Math.round(volume)}%</span>
-                </div>
-              </div>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSettings(!showSettings)}
+              className="h-8"
+            >
+              <Settings className="h-4 w-4 mr-1" /> Ajustes
+            </Button>
           </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-0">
+        <div
+          ref={containerRef}
+          className="relative bg-black aspect-video"
+          onMouseEnter={() => setShowControls(true)}
+          onMouseLeave={() => isPlaying && setShowControls(false)}
+          onMouseMove={() => {
+            setShowControls(true);
+            if (isPlaying) {
+              if (controlsTimeoutRef.current !== null) {
+                window.clearTimeout(controlsTimeoutRef.current);
+              }
+              
+              controlsTimeoutRef.current = window.setTimeout(() => {
+                setShowControls(false);
+              }, 3000);
+            }
+          }}
+        >
+          {/* Video */}
+          {videoSrc ? (
+            <video
+              ref={videoRef}
+              className="w-full h-full object-contain"
+              style={applyVisualEffects()}
+              poster="/placeholder-video.jpg"
+              onClick={handlePlayPause}
+              onWaiting={() => setIsLoading(true)}
+              onPlaying={() => setIsLoading(false)}
+            >
+              <source src={videoSrc} type="video/mp4" />
+              Tu navegador no soporta el tag de video.
+            </video>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <FileVideo className="h-16 w-16 mx-auto text-gray-400" />
+                <p className="mt-2 text-gray-500">No hay video cargado</p>
+                <p className="text-sm text-gray-400">Carga un video para previsualizarlo</p>
+              </div>
+            </div>
+          )}
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white bg-black/30 hover:bg-black/50"
-            onClick={() => setPreviewScale(prev => prev === 1 ? 1.5 : 1)}
-            title="Alternar zoom"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
+          {/* Color overlays y efectos */}
+          {renderColorOverlays()}
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white bg-black/30 hover:bg-black/50"
-            onClick={takeSnapshot}
-            title="Capturar fotograma"
-          >
-            <Camera className="h-4 w-4" />
-          </Button>
+          {/* Text overlays */}
+          {renderTextOverlays()}
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white bg-black/30 hover:bg-black/50"
-            onClick={() => setShowSettings(!showSettings)}
-            title="Configuración"
+          {/* Indicador de carga */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 z-30">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            </div>
+          )}
+          
+          {/* Controles de reproducción */}
+          <div
+            className={cn(
+              "absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent transition-opacity",
+              showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
           >
-            <Settings className="h-4 w-4" />
-          </Button>
+            {/* Barra de progreso */}
+            <div
+              className="w-full h-2 bg-gray-700 rounded-full mb-3 cursor-pointer"
+              onClick={handleProgressClick}
+            >
+              <div
+                className="h-full bg-orange-500 rounded-full relative"
+                style={{ width: `${(currentTime / duration) * 100}%` }}
+              >
+                <div className="w-3 h-3 bg-white rounded-full absolute -right-1.5 -top-0.5"></div>
+              </div>
+            </div>
+            
+            {/* Controles principales */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePlayPause}
+                  className="h-9 w-9 p-0 text-white hover:bg-white/20"
+                >
+                  {isPlaying ? (
+                    <PauseCircle className="h-6 w-6" />
+                  ) : (
+                    <PlayCircle className="h-6 w-6" />
+                  )}
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (onSeek) {
+                      onSeek(Math.max(0, currentTime - 5));
+                    }
+                  }}
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                >
+                  <SkipBack className="h-4 w-4" />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (onSeek) {
+                      onSeek(Math.min(duration, currentTime + 5));
+                    }
+                  }}
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                >
+                  <SkipForward className="h-4 w-4" />
+                </Button>
+                
+                <span className="text-white text-sm">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 relative group">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-4 w-4" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  
+                  <div className="hidden group-hover:block absolute bottom-full left-0 p-2 bg-gray-900 rounded-md -ml-8">
+                    <Slider
+                      value={[isMuted ? 0 : volume]}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onValueChange={([newVolume]) => {
+                        setVolume(newVolume);
+                        if (newVolume > 0 && isMuted) {
+                          setIsMuted(false);
+                        }
+                      }}
+                      className="w-24 h-[6px]"
+                    />
+                  </div>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggleFullscreen}
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                >
+                  {isFullscreen ? (
+                    <Minimize className="h-4 w-4" />
+                  ) : (
+                    <Maximize className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Panel de configuración */}
-        {showSettings && (
-          <div className="absolute top-12 right-2 bg-black/80 p-3 rounded-md z-20 w-64">
-            <h4 className="text-white text-sm font-medium mb-2">Configuración de vista previa</h4>
+        {/* Panel de efectos activos */}
+        {activeEffects.length > 0 && showEffectsOverlay && (
+          <div className="p-3 bg-gray-100 dark:bg-gray-900 border-t">
+            <h3 className="text-sm font-medium mb-2">Efectos activos ({activeEffects.length})</h3>
             
-            <div className="space-y-3">
-              <div>
-                <label className="text-white text-xs block mb-1">Modo de visualización</label>
-                <Select 
-                  value={previewMode}
-                  onValueChange={(value: any) => setPreviewMode(value)}
+            <div className="flex flex-wrap gap-2">
+              {activeEffects.map(effect => (
+                <div
+                  key={effect.id}
+                  className={cn(
+                    "flex items-center space-x-1 p-1.5 rounded-md border text-xs",
+                    effect.enabled 
+                      ? "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800" 
+                      : "bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 opacity-50"
+                  )}
                 >
-                  <SelectTrigger className="bg-black/50 text-white border-gray-700 h-8">
-                    <SelectValue placeholder="Modo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="sideBySide">Lado a lado</SelectItem>
-                    <SelectItem value="beforeAfter">Antes/Después</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <label className="text-white text-xs">Mostrar filtros</label>
-                <Switch 
-                  checked={filterPreview} 
-                  onCheckedChange={setFilterPreview} 
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <label className="text-white text-xs">Mostrar anotaciones</label>
-                <Switch 
-                  checked={showAnnotations} 
-                  onCheckedChange={setShowAnnotations} 
-                />
-              </div>
-              
-              <div>
-                <label className="text-white text-xs block mb-1">Formato de exportación</label>
-                <Select 
-                  value={exportFormat}
-                  onValueChange={setExportFormat}
-                >
-                  <SelectTrigger className="bg-black/50 text-white border-gray-700 h-8">
-                    <SelectValue placeholder="Formato" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mp4">MP4 - H.264</SelectItem>
-                    <SelectItem value="webm">WebM - VP9</SelectItem>
-                    <SelectItem value="gif">GIF Animado</SelectItem>
-                    <SelectItem value="mov">QuickTime MOV</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-white text-xs block mb-1">Calidad de exportación</label>
-                <Select 
-                  value={exportQuality}
-                  onValueChange={setExportQuality}
-                >
-                  <SelectTrigger className="bg-black/50 text-white border-gray-700 h-8">
-                    <SelectValue placeholder="Calidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Baja (720p)</SelectItem>
-                    <SelectItem value="medium">Media (1080p)</SelectItem>
-                    <SelectItem value="high">Alta (2K)</SelectItem>
-                    <SelectItem value="ultra">Ultra (4K)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={handleExport}
-              >
-                <Download className="h-4 w-4 mr-1.5" /> Exportar video
-              </Button>
+                  <input
+                    type="checkbox"
+                    checked={effect.enabled}
+                    onChange={(e) => handleToggleEffect(effect.id, e.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-gray-300"
+                  />
+                  <span className="capitalize">
+                    {effect.name}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
-      </div>
-      
-      {/* Información y controles bajo el video */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate max-w-[300px]">
-              {activeClip 
-                ? activeClip.title 
-                : "Vista previa del proyecto"}
-            </p>
-            {activeClip?.resolution && (
-              <span className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
-                {activeClip.resolution}
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground font-mono">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </p>
-        </div>
         
-        <div className="flex gap-2 items-center">
-          <Slider
-            value={[progressPercentage]}
-            max={100}
-            step={0.1}
-            className="flex-grow cursor-pointer"
-            onValueChange={(values) => handleSeek(values[0])}
-          />
-        </div>
-        
-        {/* Controles adicionales para editar el clip seleccionado */}
-        {selectedClipId && (
-          <Tabs defaultValue="playback" className="mt-2">
-            <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="playback">
-                <ListVideo className="h-3.5 w-3.5 mr-1.5" /> Reproducción
-              </TabsTrigger>
-              <TabsTrigger value="transform">
-                <Crop className="h-3.5 w-3.5 mr-1.5" /> Transformación
-              </TabsTrigger>
-              <TabsTrigger value="effects">
-                <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" /> Efectos
-              </TabsTrigger>
-            </TabsList>
+        {/* Panel de ajustes */}
+        {showSettings && (
+          <div className="p-3 bg-gray-100 dark:bg-gray-900 border-t">
+            <h3 className="text-sm font-medium mb-2">Ajustes de video</h3>
             
-            <TabsContent value="playback" className="mt-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Velocidad
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Slider
-                      value={[editingClipInfo.speed * 100]}
-                      min={25}
-                      max={200}
-                      step={5}
-                      className="flex-grow"
-                      onValueChange={(values) => {
-                        const newSpeed = values[0] / 100;
-                        setEditingClipInfo({...editingClipInfo, speed: newSpeed});
-                      }}
-                      onValueCommit={() => {
-                        updateSelectedClip({speed: editingClipInfo.speed});
-                      }}
-                    />
-                    <span className="text-xs w-12 text-right">{editingClipInfo.speed.toFixed(2)}x</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Volumen
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Slider
-                      value={[volume]}
-                      min={0}
-                      max={100}
-                      step={1}
-                      className="flex-grow"
-                      onValueChange={(values) => handleVolumeChange(values[0])}
-                    />
-                    <span className="text-xs w-8 text-right">{Math.round(volume)}%</span>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="transform" className="mt-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Rotación
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Slider
-                      value={[editingClipInfo.rotation + 180]}
-                      min={0}
-                      max={360}
-                      step={1}
-                      className="flex-grow"
-                      onValueChange={(values) => {
-                        const newRotation = values[0] - 180;
-                        setEditingClipInfo({...editingClipInfo, rotation: newRotation});
-                      }}
-                      onValueCommit={() => {
-                        updateSelectedClip({rotation: editingClipInfo.rotation});
-                      }}
-                    />
-                    <span className="text-xs w-8 text-right">{editingClipInfo.rotation}°</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Escala
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Slider
-                      value={[previewScale * 100]}
-                      min={50}
-                      max={200}
-                      step={5}
-                      className="flex-grow"
-                      onValueChange={(values) => {
-                        setPreviewScale(values[0] / 100);
-                      }}
-                      onValueCommit={() => {
-                        updateSelectedClip({scale: previewScale});
-                      }}
-                    />
-                    <span className="text-xs w-8 text-right">{Math.round(previewScale * 100)}%</span>
-                  </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-xs text-gray-500 mb-1">Calidad</h4>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={videoQuality === 'auto' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setVideoQuality('auto')}
+                    className="h-7 text-xs"
+                  >
+                    Auto
+                  </Button>
+                  <Button
+                    variant={videoQuality === '720p' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setVideoQuality('720p')}
+                    className="h-7 text-xs"
+                  >
+                    720p
+                  </Button>
+                  <Button
+                    variant={videoQuality === '1080p' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setVideoQuality('1080p')}
+                    className="h-7 text-xs"
+                  >
+                    1080p
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex justify-end mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setEditingClipInfo({
-                      ...editingClipInfo,
-                      rotation: 0
-                    });
-                    updateSelectedClip({rotation: 0});
-                  }}
-                >
-                  <RotateCw className="h-3.5 w-3.5 mr-1.5" />
-                  Restablecer
-                </Button>
+              <div>
+                <h4 className="text-xs text-gray-500 mb-1">Acciones</h4>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                  >
+                    <DownloadCloud className="h-3 w-3 mr-1" /> Descargar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                  >
+                    <Share2 className="h-3 w-3 mr-1" /> Compartir
+                  </Button>
+                </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="effects" className="mt-2">
-              <div className="text-sm text-center py-3 text-muted-foreground">
-                Para editar los efectos, utiliza el panel de efectos en la sección correspondiente.
-              </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         )}
-      </div>
+      </CardContent>
+      
+      <CardFooter className="pt-2 text-xs text-gray-500">
+        <div className="flex justify-between w-full">
+          <div>
+            Tiempo actual: {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+          <div>
+            Efectos activos: {activeEffects.filter(e => e.enabled).length}/{activeEffects.length}
+          </div>
+        </div>
+      </CardFooter>
     </Card>
   );
-}
+};
+
+export default VideoPreviewPanel;
