@@ -13,6 +13,39 @@ export interface VideoGeneratorProps {
   onGenerateVideo: (settings: VideoGenerationSettings) => Promise<void>;
   isLoading: boolean;
   scenesCount: number;
+  // Soporte completo para clips de línea de tiempo con múltiples capas
+  clips?: Array<{
+    id: number;
+    start: number;
+    duration: number;
+    // Tipo de clip con soporte para múltiples formatos de media
+    type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
+    // Layer al que pertenece: 0=audio, 1=video/imagen, 2=texto, 3=efectos
+    layer: number;
+    // Propiedades visuales
+    thumbnail?: string;
+    title: string;
+    description?: string;
+    imagePrompt?: string;
+    // URLs de recursos
+    imageUrl?: string;
+    videoUrl?: string;
+    audioUrl?: string;
+    // Metadatos para información adicional y propiedades especiales
+    metadata?: {
+      section?: string;
+      movementApplied?: boolean;
+      movementPattern?: string;
+      movementIntensity?: number;
+      faceSwapApplied?: boolean;
+      musicianIntegrated?: boolean;
+      sourceIndex?: number;
+    };
+  }>;
+  // Propiedades adicionales para edición y generación
+  duration?: number; 
+  isGenerating?: boolean;
+  onGenerate?: () => Promise<void>;
 }
 
 export interface VideoGenerationSettings {

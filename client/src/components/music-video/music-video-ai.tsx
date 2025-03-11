@@ -202,18 +202,49 @@ interface TimelineItem {
   averageEnergy?: number;
   // Campos adicionales para compatibilidad con TimelineClip
   start: number;
-  type: 'video' | 'image' | 'transition' | 'audio';
+  type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
+  // Layer por defecto (0=audio, 1=imagen, 2=texto, 3=efectos)
+  layer?: number;
+  // Propiedades de visualización
   thumbnail?: string; // Usaremos generatedImage o firebaseUrl para esto
+  visible?: boolean;
+  locked?: boolean;
+  // URLs de recursos
+  imageUrl?: string;
+  videoUrl?: string;
+  audioUrl?: string;
   // Campos para lipsync y metadata
   lipsyncApplied?: boolean;
   lipsyncVideoUrl?: string;
   lipsyncProgress?: number;
+  // Campos para movimiento
+  movementApplied?: boolean;
+  movementPattern?: string;
+  movementIntensity?: number;
+  movementUrl?: string;
+  // Campos para face swap
+  faceSwapApplied?: boolean;
+  faceSwapImageUrl?: string;
+  // Estructura para metadatos
   metadata?: {
+    section?: string;
+    movementApplied?: boolean;
+    movementPattern?: string;
+    movementIntensity?: number;
+    faceSwapApplied?: boolean;
+    musicianIntegrated?: boolean;
     lyrics?: string;
     musical_elements?: string;
     character?: string;
     camera_movement?: string;
     animation_style?: string;
+    textContent?: string;
+    lipsync?: {
+      applied: boolean;
+      timestamp?: string;
+      videoUrl?: string;
+      progress?: number;
+    }
     [key: string]: any;
   };
 }
@@ -1238,15 +1269,32 @@ ${transcription}`;
     </div>
   ), [currentTime, selectedShot]);
 
+  // Mapa de clips organizados por capas para el editor profesional multicanal
   const clips: TimelineClip[] = timelineItems.map(item => ({
     id: item.id,
     start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
     duration: item.duration / 1000,
     type: 'image',
+    // Layer por defecto para imágenes = 1 (segunda capa)
+    layer: 1,
     thumbnail: item.generatedImage || item.firebaseUrl,
     title: item.shotType,
     description: item.description,
-    imagePrompt: item.imagePrompt
+    imagePrompt: item.imagePrompt,
+    // Añadir URL de imagen para mostrar de forma correcta
+    imageUrl: item.generatedImage || item.firebaseUrl,
+    // Metadata para preservar el orden exacto del guion
+    metadata: {
+      sourceIndex: item.id,
+      section: item.section || 'default',
+      movementApplied: !!item.movementApplied,
+      movementPattern: item.movementPattern || undefined,
+      movementIntensity: item.movementIntensity || undefined,
+      faceSwapApplied: !!item.faceSwapApplied
+    },
+    // Visibilidad y estado de bloqueo
+    visible: true,
+    locked: false
   }));
 
   const totalDuration = clips.reduce((acc, clip) => Math.max(acc, clip.start + clip.duration), 0);
@@ -2570,6 +2618,7 @@ ${transcription}`;
                           start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
                           duration: item.duration / 1000,
                           type: 'image',
+                          layer: 1, // Añadimos layer=1 para video/imagen
                           thumbnail: item.generatedImage || item.firebaseUrl,
                           title: item.shotType,
                           description: item.description,
@@ -2744,6 +2793,7 @@ ${transcription}`;
                           duration: item.duration / 1000,
                           title: item.shotType || 'Escena',
                           type: 'video' as const,
+                          layer: 1, // Añadimos layer=1 para video/imagen
                           thumbnail: item.generatedImage || fallbackImage
                         }))}
                         videoUrl={generatedVideoUrl || '/assets/Standard_Mode_Generated_Video (2).mp4'}

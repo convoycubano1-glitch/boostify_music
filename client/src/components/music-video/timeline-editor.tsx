@@ -1,15 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
-  Music, Image as ImageIcon, Edit, RefreshCw, X, 
+  Music, Image as ImageIcon, Video, Edit, RefreshCw, X, 
   PictureInPicture, MoreHorizontal, Save, Maximize2, Minimize2,
   Scissors, ArrowLeftRight, Film, Wand2, Layers, Plus, 
   CornerUpLeft, CornerUpRight, ArrowUpDown, Sparkles,
-  ArrowRight, Sunset, MoveHorizontal, ArrowRight as ArrowRightIcon
+  ArrowRight, Sunset, MoveHorizontal, ArrowRight as ArrowRightIcon,
+  Text, Type, BringToFront, SendToBack, Lock, AudioLines
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,31 +20,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import WaveSurfer from 'wavesurfer.js';
 import interact from 'interactjs';
 
+/**
+ * Interfaz para clips de línea de tiempo con soporte para múltiples capas
+ * Estructura profesional inspirada en editores como CapCut y Premiere
+ */
 export interface TimelineClip {
   id: number;
   start: number;
   duration: number;
-  type: 'video' | 'image' | 'transition' | 'audio' | 'effect';
+  // Tipo de clip con soporte para múltiples formatos
+  type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
+  // Layer al que pertenece: 0=audio, 1=video/imagen, 2=texto, 3=efectos
+  layer: number;
+  // Propiedades visuales
   thumbnail?: string;
   title: string;
   description?: string;
   waveform?: number[];
   imagePrompt?: string;
   shotType?: string;
-  // Campos para URL de imagen/video
+  // Propiedades de visibilidad y bloqueo
+  visible?: boolean;
+  locked?: boolean;
+  // URLs de recursos
   imageUrl?: string;
+  videoUrl?: string;
   movementUrl?: string;
-  // Campos específicos para lipsync
+  audioUrl?: string;
+  // Propiedades de sincronización de labios
   lipsyncApplied?: boolean;
   lipsyncVideoUrl?: string;
   lipsyncProgress?: number;
-  // Campo para transiciones
+  // Propiedades de transición
   transitionType?: 'crossfade' | 'wipe' | 'fade' | 'slide' | 'zoom';
   transitionDuration?: number;
-  // Campo para efectos
+  // Propiedades de efecto
   effectType?: 'blur' | 'glow' | 'sepia' | 'grayscale' | 'saturation' | 'custom';
   effectIntensity?: number;
-  // Metadata adicional para el clip
+  // Propiedades de texto
+  textContent?: string;
+  textStyle?: 'normal' | 'bold' | 'italic' | 'title' | 'subtitle' | 'caption';
+  textColor?: string;
+  // Metadatos adicionales
   metadata?: {
     section?: string;    // Sección musical (coro, verso, etc.)
     movementApplied?: boolean;
@@ -51,6 +69,7 @@ export interface TimelineClip {
     movementIntensity?: number;
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
+    sourceIndex?: number; // Índice en el guion original
   };
 }
 
@@ -932,43 +951,211 @@ export function TimelineEditor({
             style={{ width: `${timelineWidth}px`, minHeight: "300px" }}
             onClick={handleTimelineClick}
           >
-            {/* Escala de tiempo */}
-            <div className="absolute top-0 left-0 right-0 h-6 border-b flex">
-              {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
-                <div
-                  key={i}
-                  className="border-l h-full flex items-center justify-center text-xs text-muted-foreground"
-                  style={{ width: `${timeToPixels(1)}px` }}
-                >
-                  {formatTimecode(i)}
+            {/* Sistema de capas para editor profesional multitrack */}
+            <div className="flex flex-col">
+              {/* Cabeceras de capas */}
+              <div className="flex h-6 border-b items-center bg-background/95 sticky top-0 z-30 backdrop-blur-sm">
+                <div className="flex-shrink-0 w-40 pl-3 border-r h-full flex items-center">
+                  <span className="text-xs font-medium">Capas</span>
                 </div>
-              ))}
-            </div>
-
-            {/* Forma de onda con WaveSurfer.js */}
-            <div
-              className="absolute left-0 right-0 h-24 mt-8"
-              onMouseEnter={() => setIsWaveformHovered(true)}
-              onMouseLeave={() => {
-                setIsWaveformHovered(false);
-                setHoveredTime(null);
-              }}
-              onMouseMove={handleWaveformMouseMove}
-              onClick={handleTimelineClick}
-            >
-              {/* Contenedor para WaveSurfer */}
-              <div 
-                ref={waveformContainerRef}
-                className="relative w-full h-20 bg-gray-50 dark:bg-gray-900 rounded-md overflow-hidden"
-              />
+                {/* Escala de tiempo */}
+                <div className="flex-1 flex">
+                  {Array.from({ length: Math.ceil(duration) }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="border-l h-full flex items-center justify-center text-xs text-muted-foreground"
+                      style={{ width: `${timeToPixels(1)}px` }}
+                    >
+                      {formatTimecode(i)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Capa de Audio */}
+              <div className="flex border-b">
+                <div className="flex-shrink-0 w-40 pl-3 py-1 border-r h-24 flex items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center h-6 w-6 rounded bg-orange-100 dark:bg-orange-950/60">
+                      <AudioLines className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-medium">Audio Principal</span>
+                  </div>
+                </div>
                 
-              {/* Marcadores de tiempo */}
-              <div className="relative w-full h-4 flex items-center justify-between mt-1">
+                {/* Área de la forma de onda para audio */}
+                <div
+                  className="flex-1 relative h-24"
+                  onMouseEnter={() => setIsWaveformHovered(true)}
+                  onMouseLeave={() => {
+                    setIsWaveformHovered(false);
+                    setHoveredTime(null);
+                  }}
+                  onMouseMove={handleWaveformMouseMove}
+                  onClick={handleTimelineClick}
+                >
+                  {/* Fondo de capa con patrón sutil */}
+                  <div className="absolute inset-0 bg-orange-50/50 dark:bg-orange-950/10 bg-[radial-gradient(#f97316_0.5px,transparent_0.5px)] [background-size:10px_10px]"></div>
+                  
+                  {/* Contenedor para WaveSurfer */}
+                  <div 
+                    ref={waveformContainerRef}
+                    className="relative w-full h-20 bg-transparent rounded-md overflow-hidden mt-2"
+                  />
+                    
+                  {/* Clips de audio en esta capa */}
+                  <div className="absolute inset-0">
+                    {clips
+                      .filter(clip => clip.layer === 0) // Mostrar solo clips de la capa de audio
+                      .map((clip) => (
+                        <div
+                          key={`audio-clip-${clip.id}`}
+                          className={cn(
+                            "absolute h-16 top-4 border rounded-sm overflow-hidden",
+                            selectedClip === clip.id ? "ring-2 ring-orange-500 border-orange-400" : "border-orange-300 dark:border-orange-700",
+                            "bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20",
+                            "cursor-move"
+                          )}
+                          style={{
+                            left: `${timeToPixels(clip.start)}px`,
+                            width: `${timeToPixels(clip.duration)}px`,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedClip(clip.id);
+                          }}
+                          onMouseDown={(e) => handleClipDragStart(clip.id, e)}
+                        >
+                          <div className="p-1 text-[10px] flex items-center justify-between">
+                            <span className="font-medium truncate">{clip.title}</span>
+                            <span className="text-muted-foreground">{formatTimecode(clip.duration)}</span>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Capa de Imágenes */}
+              <div className="flex border-b">
+                <div className="flex-shrink-0 w-40 pl-3 py-1 border-r h-24 flex items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center h-6 w-6 rounded bg-blue-100 dark:bg-blue-950/60">
+                      <ImageIcon className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="text-xs font-medium">Imágenes</span>
+                  </div>
+                </div>
+                
+                {/* Área de clips de imágenes */}
+                <div className="flex-1 relative h-24">
+                  {/* Fondo de capa con patrón sutil */}
+                  <div className="absolute inset-0 bg-blue-50/50 dark:bg-blue-950/10 bg-[radial-gradient(#3b82f6_0.5px,transparent_0.5px)] [background-size:10px_10px]"></div>
+                  
+                  {/* Clips de imágenes en esta capa */}
+                  <div className="absolute inset-0">
+                    {clips
+                      .filter(clip => clip.layer === 1) // Mostrar solo clips de la capa de imágenes
+                      .map((clip) => (
+                        <div
+                          key={`image-clip-${clip.id}`}
+                          className={cn(
+                            "absolute h-20 top-2 border rounded-sm overflow-hidden",
+                            selectedClip === clip.id ? "ring-2 ring-blue-500 border-blue-400" : "border-blue-300 dark:border-blue-700",
+                            "bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20",
+                            "cursor-move"
+                          )}
+                          style={{
+                            left: `${timeToPixels(clip.start)}px`,
+                            width: `${timeToPixels(clip.duration)}px`,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedClip(clip.id);
+                          }}
+                          onMouseDown={(e) => handleClipDragStart(clip.id, e)}
+                        >
+                          <div 
+                            className="absolute inset-0"
+                            style={{
+                              backgroundImage: clip.thumbnail ? `url(${clip.thumbnail})` : undefined,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              opacity: 0.7
+                            }}
+                          />
+                          <div className="absolute top-0 left-0 right-0 p-1 text-[10px] bg-black/50 text-white flex items-center justify-between">
+                            <span className="font-medium truncate">{clip.title}</span>
+                            <span>{formatTimecode(clip.duration)}</span>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Capa de Texto */}
+              <div className="flex border-b">
+                <div className="flex-shrink-0 w-40 pl-3 py-1 border-r h-16 flex items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center h-6 w-6 rounded bg-violet-100 dark:bg-violet-950/60">
+                      <Type className="h-4 w-4 text-violet-600" />
+                    </div>
+                    <span className="text-xs font-medium">Texto</span>
+                  </div>
+                </div>
+                
+                {/* Área de clips de texto */}
+                <div className="flex-1 relative h-16">
+                  {/* Fondo de capa con patrón sutil */}
+                  <div className="absolute inset-0 bg-violet-50/50 dark:bg-violet-950/10 bg-[radial-gradient(#8b5cf6_0.5px,transparent_0.5px)] [background-size:10px_10px]"></div>
+                  
+                  {/* Clips de texto en esta capa */}
+                  <div className="absolute inset-0">
+                    {clips
+                      .filter(clip => clip.layer === 2) // Mostrar solo clips de la capa de texto
+                      .map((clip) => (
+                        <div
+                          key={`text-clip-${clip.id}`}
+                          className={cn(
+                            "absolute h-12 top-2 border rounded-sm overflow-hidden",
+                            selectedClip === clip.id ? "ring-2 ring-violet-500 border-violet-400" : "border-violet-300 dark:border-violet-700",
+                            "bg-gradient-to-r from-violet-100 to-violet-50 dark:from-violet-900/30 dark:to-violet-800/20",
+                            "cursor-move"
+                          )}
+                          style={{
+                            left: `${timeToPixels(clip.start)}px`,
+                            width: `${timeToPixels(clip.duration)}px`,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedClip(clip.id);
+                          }}
+                          onMouseDown={(e) => handleClipDragStart(clip.id, e)}
+                        >
+                          <div className="p-1 text-[10px] flex items-center justify-between">
+                            <span className="font-medium truncate">{clip.textContent || "Sin texto"}</span>
+                            <span className="text-muted-foreground">{formatTimecode(clip.duration)}</span>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Marcadores de tiempo para móvil */}
+              <div className="sm:hidden relative w-full h-4 flex items-center justify-between mt-1 px-4">
                 {Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => (
                   <div key={i} className="absolute text-xs text-muted-foreground" style={{ left: `${(i / duration) * 100}%` }}>
                     {formatTime(i)}
                   </div>
                 ))}
+              </div>
+              
+              {/* Indicador de capa de audio con ícono */}
+              <div className="absolute left-0 top-0 transform -translate-y-8 flex items-center bg-orange-100 dark:bg-orange-950/30 px-2 py-1 rounded-t-md">
+                <AudioLines className="h-4 w-4 mr-1 text-orange-500" />
+                <span className="text-xs font-medium text-orange-600 dark:text-orange-400">Audio</span>
               </div>
                 
               {/* Indicador de tiempo actual */}
