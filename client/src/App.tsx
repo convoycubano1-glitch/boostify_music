@@ -56,6 +56,7 @@ import TermsPage from "@/pages/terms";
 import TryOnPage from "@/pages/try-on-page";
 import VideosPage from "@/pages/videos";
 import VideoGenerationTestPage from "@/pages/video-generation-test";
+import CameraMovementsTestPage from "@/pages/camera-movements-test";
 import YoutubeViewsPage from "@/pages/youtube-views";
 import RealTimeTranslator from "@/pages/real-time-translator";
 import EducationPage from "@/pages/education";
@@ -228,6 +229,7 @@ const Router = () => {
   const WrappedKlingStorePage = withPageWrapper(KlingStorePage);
   const WrappedKlingTestPage = withPageWrapper(KlingTestPage);
   const WrappedVideoGenerationTestPage = withPageWrapper(VideoGenerationTestPage);
+  const WrappedCameraMovementsTestPage = withPageWrapper(CameraMovementsTestPage);
   const WrappedMusicMasteringPage = withPageWrapper(MusicMasteringPage);
   const WrappedVirtualRecordLabelPage = withPageWrapper(VirtualRecordLabelPage);
   const WrappedTestProgressPage = withPageWrapper(TestProgressPage);
@@ -323,6 +325,7 @@ const Router = () => {
         {getRouteComponent("/kling-store", WrappedKlingStorePage, null)}
         {getRouteComponent("/kling-test", WrappedKlingTestPage, null)}
         {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, null)}
+        {getRouteComponent("/camera-movements-test", WrappedCameraMovementsTestPage, null)}
         {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, null)}
         {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, null)}
         {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, null)}

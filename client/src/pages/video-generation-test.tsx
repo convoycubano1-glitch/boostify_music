@@ -1,19 +1,11 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Video } from 'lucide-react';
-import VideoGenerationTest from '../components/video-generation-test';
-
 /**
  * Página de prueba para la generación de videos con PiAPI
- * 
- * Esta página permite probar la generación de videos con el servicio PiAPI
- * a través de una interfaz de usuario intuitiva con:
- * - Formulario para prompt de texto
- * - Selección de modelo (estándar o director)
- * - Configuración de movimientos de cámara
- * - Seguimiento del progreso de generación
- * - Reproducción y descarga del video generado
  */
+
+import { Video } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import VideoGenerator from '@/components/video-generation-test';
+
 export default function VideoGenerationTestPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -39,7 +31,7 @@ export default function VideoGenerationTestPage() {
           </p>
           
           {/* Componente principal de generación de video */}
-          <VideoGenerationTest />
+          <VideoGenerator />
         </CardContent>
       </Card>
     </div>

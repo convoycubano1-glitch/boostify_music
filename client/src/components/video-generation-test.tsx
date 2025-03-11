@@ -1,482 +1,470 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { 
-  Card, 
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+/**
+ * Componente para manejar la generación de videos usando PiAPI/Hailuo
+ */
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Sparkles, FilmIcon, Camera, CheckCircle, Download, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { generateVideo, checkVideoStatus, VideoStatusResponse, VideoGenerationOptions } from '@/lib/api/video-service';
+import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Info } from 'lucide-react';
 
-// Define los esquemas de validación para el formulario
-const videoGenerationFormSchema = z.object({
-  prompt: z.string().min(5, 'El prompt debe tener al menos 5 caracteres').max(500, 'El prompt no debe exceder 500 caracteres'),
-  model: z.enum(['t2v-01', 't2v-01-director']),
-  cameraMovements: z.array(z.string()).optional(),
-  includePromptInMovements: z.boolean().default(true),
-});
-
-type VideoGenerationFormValues = z.infer<typeof videoGenerationFormSchema>;
-
-// Lista de movimientos de cámara disponibles
-const availableCameraMovements = [
-  'Zoom In', 'Zoom Out', 'Pan Left', 'Pan Right', 
-  'Tilt Up', 'Tilt Down', 'Tracking Shot', 'Dolly Zoom',
-  'Orbital', 'Crane Shot', 'Handheld', 'Steady Cam'
-];
-
-/**
- * Componente para probar la generación de videos usando PiAPI
- * 
- * Proporciona una interfaz para:
- * - Ingresar un prompt descriptivo
- * - Seleccionar modelo de generación
- * - Configurar movimientos de cámara (para el modelo director)
- * - Ver el progreso de generación
- * - Reproducir y descargar el video generado
- */
-export default function VideoGenerationTest() {
-  // Estado del componente
-  const [generating, setGenerating] = useState(false);
+export default function VideoGenerator() {
+  const [prompt, setPrompt] = useState('');
+  const [duration, setDuration] = useState(5);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [model, setModel] = useState<VideoGenerationOptions['model']>('t2v-01-director');
+  const [imageUrl, setImageUrl] = useState('');
+  const [cameraMovement, setCameraMovement] = useState('');
+  const [expandPrompt, setExpandPrompt] = useState(true);
   const { toast } = useToast();
 
-  // Configurar el formulario con react-hook-form
-  const form = useForm<VideoGenerationFormValues>({
-    resolver: zodResolver(videoGenerationFormSchema),
-    defaultValues: {
-      prompt: '',
-      model: 't2v-01-director',
-      cameraMovements: [],
-      includePromptInMovements: true,
-    },
-  });
+  // Estado de polling para verificar el estado del video
+  const [isPolling, setIsPolling] = useState(false);
 
-  // Función para manejar el envío del formulario
-  const onSubmit = async (values: VideoGenerationFormValues) => {
-    try {
-      // Reiniciar estados
-      setGenerating(true);
-      setProgress(0);
-      setVideoUrl(null);
-      setError(null);
-      
-      // Mostrar notificación de inicio de generación
+  // Validar si se requiere imagen para el modelo seleccionado
+  const modelRequiresImage = (model: string | undefined): boolean => {
+    if (!model) return false;
+    return ['i2v-01', 'i2v-01-live', 's2v-01'].includes(model);
+  };
+
+  // Validar si se requiere movimiento de cámara para el modelo seleccionado
+  const modelSupportsCameraMovement = (model: string | undefined): boolean => {
+    if (!model) return false;
+    return model === 't2v-01-director';
+  };
+
+  const startVideoGeneration = async () => {
+    if (!prompt) {
       toast({
-        title: 'Iniciando generación de video',
-        description: 'Esto puede tardar varios minutos',
+        title: "Error",
+        description: "Por favor ingresa una descripción para el video",
+        variant: "destructive"
       });
+      return;
+    }
 
-      // Preparar parámetros según el modelo seleccionado
-      const requestData: any = {
-        prompt: values.prompt,
-        model: values.model,
+    // Validar que se proporcionó una imagen URL si el modelo lo requiere
+    if (modelRequiresImage(model) && !imageUrl) {
+      toast({
+        title: "Error",
+        description: "Este modelo requiere una URL de imagen",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setGeneratedVideoUrl(null);
+      setProgress(0);
+
+      // Crear opciones para la generación
+      const options: VideoGenerationOptions = {
+        prompt,
+        duration,
+        model,
+        style: 'cinematic',
+        expand_prompt: expandPrompt
       };
 
-      // Si el modelo es director, incluir movimientos de cámara
-      if (values.model === 't2v-01-director' && values.cameraMovements && values.cameraMovements.length > 0) {
-        // Formatear movimientos de cámara según la API
-        // La API espera un formato: [Movimiento1,Movimiento2]prompt
-        if (values.includePromptInMovements) {
-          // Los movimientos se insertan antes del prompt
-          requestData.prompt = `[${values.cameraMovements.join(',')}]${values.prompt}`;
-        } else {
-          // Los movimientos se envían por separado
-          requestData.cameraMovements = values.cameraMovements;
-        }
+      // Añadir URL de imagen si el modelo lo requiere
+      if (modelRequiresImage(model) && imageUrl) {
+        options.image_url = imageUrl;
       }
 
-      // Enviar solicitud para iniciar la generación
-      const response = await axios.post('/api/video-generation/generate', requestData);
-      
-      if (response.data.success && response.data.taskId) {
-        // Guardar ID de tarea para verificar el estado
-        setTaskId(response.data.taskId);
-        
-        // Iniciar polling para verificar el estado
-        startPolling(response.data.taskId);
-      } else {
-        throw new Error(response.data.error || 'Error desconocido al iniciar la generación');
+      // Añadir movimientos de cámara si el modelo lo soporta
+      if (modelSupportsCameraMovement(model) && cameraMovement) {
+        options.camera_movement = cameraMovement;
       }
-    } catch (err: any) {
-      console.error('Error al generar video:', err);
-      setError(err.message || 'Error al generar video');
-      setGenerating(false);
-      
-      toast({
-        title: 'Error al generar video',
-        description: err.message || 'Hubo un problema al iniciar la generación',
-        variant: 'destructive',
-      });
-    }
-  };
 
-  // Función para iniciar el polling de estado
-  const startPolling = (taskId: string) => {
-    // Limpiar intervalo anterior si existe
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
-    
-    // Iniciar nuevo intervalo
-    const interval = setInterval(async () => {
-      try {
-        // Verificar estado de la tarea
-        const response = await axios.get(`/api/video-generation/status?taskId=${taskId}`);
-        
-        if (response.data.success) {
-          // Actualizar progreso
-          const status = response.data.status;
-          
-          if (status === 'completed' && response.data.url) {
-            // La generación ha terminado con éxito
-            clearInterval(interval);
-            setPollingInterval(null);
-            setVideoUrl(response.data.url);
-            setProgress(100);
-            setGenerating(false);
-            
-            toast({
-              title: '¡Video generado con éxito!',
-              description: 'Ahora puedes reproducir y descargar el video',
-            });
-          } else if (status === 'failed') {
-            // La generación ha fallado
-            clearInterval(interval);
-            setPollingInterval(null);
-            setError(response.data.error || 'La generación del video ha fallado');
-            setGenerating(false);
-            
-            toast({
-              title: 'Error en la generación',
-              description: response.data.error || 'La generación del video ha fallado',
-              variant: 'destructive',
-            });
-          } else if (status === 'processing') {
-            // La generación está en progreso
-            // Incrementar progreso gradualmente hasta 95% (reservamos 5% para la finalización)
-            setProgress(Math.min(95, progress + 5));
-          }
-        } else {
-          throw new Error(response.data.error || 'Error al verificar el estado de la generación');
-        }
-      } catch (err: any) {
-        console.error('Error al verificar estado:', err);
-        clearInterval(interval);
-        setPollingInterval(null);
-        setError(err.message || 'Error al verificar el estado de la generación');
-        setGenerating(false);
+      const response = await generateVideo(options);
+
+      if (response.success && response.result?.task_id) {
+        setCurrentTaskId(response.result.task_id);
+        startPolling(response.result.task_id);
         
         toast({
-          title: 'Error al verificar el estado',
-          description: err.message || 'Hubo un problema al verificar el estado de la generación',
-          variant: 'destructive',
+          title: "Video en proceso",
+          description: "La generación del video ha comenzado"
         });
+      } else {
+        throw new Error('No se pudo iniciar la generación del video');
       }
-    }, 5000); // Verificar cada 5 segundos
-    
-    setPollingInterval(interval);
-  };
-
-  // Limpiar intervalo al desmontar el componente
-  useEffect(() => {
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    };
-  }, [pollingInterval]);
-
-  // Función para descargar el video generado
-  const handleDownload = () => {
-    if (videoUrl) {
-      const link = document.createElement('a');
-      link.href = videoUrl;
-      link.download = `generated_video_${Date.now()}.mp4`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
+    } catch (error: any) {
+      console.error('Error al generar video:', error);
       toast({
-        title: 'Descarga iniciada',
-        description: 'Tu video comenzará a descargarse',
+        title: "Error",
+        description: error.message || "Error al generar el video",
+        variant: "destructive"
       });
+      setIsGenerating(false);
     }
   };
 
-  // Función para reiniciar el formulario
-  const handleReset = () => {
-    form.reset();
-    setVideoUrl(null);
-    setError(null);
-    setProgress(0);
-    setTaskId(null);
+  const startPolling = async (taskId: string) => {
+    if (isPolling) return;
+    setIsPolling(true);
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const status = await checkVideoStatus(taskId);
+        
+        if (status.progress) {
+          setProgress(status.progress);
+        }
+
+        if (status.status === 'completed' && status.result?.url) {
+          clearInterval(pollInterval);
+          setIsPolling(false);
+          setIsGenerating(false);
+          setGeneratedVideoUrl(status.result.url);
+          setProgress(100);
+          
+          toast({
+            title: "¡Video generado!",
+            description: "Tu video está listo para reproducir"
+          });
+        } else if (status.status === 'failed') {
+          clearInterval(pollInterval);
+          setIsPolling(false);
+          setIsGenerating(false);
+          
+          toast({
+            title: "Error",
+            description: status.error || "Error al generar el video",
+            variant: "destructive"
+          });
+        }
+      } catch (error: any) {
+        console.error('Error al verificar estado:', error);
+        clearInterval(pollInterval);
+        setIsPolling(false);
+        setIsGenerating(false);
+        
+        toast({
+          title: "Error",
+          description: "Error al verificar el estado del video",
+          variant: "destructive"
+        });
+      }
+    }, 3000); // Verificar cada 3 segundos
+
+    // Limpiar el intervalo si el componente se desmonta
+    return () => clearInterval(pollInterval);
   };
 
-  // Renderizar componente
+  // Función para obtener la descripción del modelo seleccionado
+  const getModelDescription = (modelType: string | undefined): string => {
+    if (!modelType) return '';
+    
+    switch(modelType) {
+      case 't2v-01':
+        return 'Genera videos a partir de descripciones de texto. Ideal para escenas simples.';
+      case 't2v-01-director':
+        return 'Modelo avanzado con soporte para movimientos de cámara específicos como zoom, paneo y rotación.';
+      case 'i2v-01':
+        return 'Convierte una imagen estática en un video corto. Requiere URL de una imagen.';
+      case 'i2v-01-live':
+        return 'Añade efectos de movimiento sutil a imágenes estáticas. Requiere URL de una imagen.';
+      case 's2v-01':
+        return 'Genera videos manteniendo la identidad del sujeto en la imagen de referencia. Ideal para rostros.';
+      default:
+        return '';
+    }
+  };
+
+  // Componente informativo sobre modelos
+  const ModelInfoCard = () => {
+    return (
+      <Card className="p-4">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-500" />
+            <h3 className="text-lg font-medium">Guía de modelos de generación</h3>
+          </div>
+          
+          <Tabs defaultValue="t2v">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="t2v">Texto a Video</TabsTrigger>
+              <TabsTrigger value="i2v">Imagen a Video</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="t2v" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">t2v-01 (Estándar)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Modelo básico que genera videos a partir de descripciones textuales. Ideal para escenas sencillas
+                  y pruebas rápidas. Es el modelo más rápido pero con menos control.
+                </p>
+                <ul className="text-sm list-disc pl-5 text-muted-foreground">
+                  <li>Duración recomendada: 3-10 segundos</li>
+                  <li>Escenas: paisajes, objetos, situaciones simples</li>
+                  <li>No requiere imágenes de referencia</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">t2v-01-director (Avanzado)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Versión mejorada que permite especificar movimientos de cámara concretos. Ofrece mayor control
+                  sobre la composición y narrativa visual de la escena.
+                </p>
+                <ul className="text-sm list-disc pl-5 text-muted-foreground">
+                  <li>Movimientos disponibles: zoom, paneo, rotación, dolly</li>
+                  <li>Mayor calidad visual y consistencia temporal</li>
+                  <li>Ideal para: videos musicales, escenas cinematográficas</li>
+                </ul>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="i2v" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">i2v-01 (Imagen a Video)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Convierte una imagen estática en una secuencia de video con movimiento natural.
+                  Útil para animar fotografías o imágenes generadas.
+                </p>
+                <ul className="text-sm list-disc pl-5 text-muted-foreground">
+                  <li>Requiere URL de imagen de referencia</li>
+                  <li>Mejor con imágenes de alta calidad (min. 512px)</li>
+                  <li>Añade movimiento manteniendo la estética original</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">i2v-01-live (Efecto Live)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Versión especializada que añade efectos de cinemagrafía a imágenes. Crea movimientos
+                  sutiles que dan vida a la imagen manteniendo la mayor parte estática.
+                </p>
+                <ul className="text-sm list-disc pl-5 text-muted-foreground">
+                  <li>Ideal para retratos y paisajes</li>
+                  <li>Efecto similar a "Live Photos" de Apple</li>
+                  <li>Movimientos más sutiles y realistas</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">s2v-01 (Sujeto a Video)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Diseñado específicamente para generar videos manteniendo la identidad del sujeto de la imagen.
+                  Excelente para rostros y personajes reconocibles.
+                </p>
+                <ul className="text-sm list-disc pl-5 text-muted-foreground">
+                  <li>Optimizado para rostros humanos</li>
+                  <li>Conserva la identidad del sujeto</li>
+                  <li>Combina imagen de referencia con descripción textual</li>
+                </ul>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </Card>
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Formulario de generación de video */}
-      <Tabs defaultValue="form" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="form" disabled={generating}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            Generar Video
-          </TabsTrigger>
-          <TabsTrigger value="preview" disabled={!videoUrl && !generating}>
-            <FilmIcon className="h-4 w-4 mr-2" />
-            Ver Resultado
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Pestaña de formulario */}
-        <TabsContent value="form" className="space-y-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Campo de prompt */}
-              <FormField
-                control={form.control}
-                name="prompt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción del video</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe lo que quieres ver en el video..."
-                        className="resize-none min-h-[100px]"
-                        disabled={generating}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Describe con detalle la escena que quieres que se genere.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="space-y-6 p-4">
+      <ModelInfoCard />
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="model">Modelo de generación</Label>
+          <Select
+            value={model}
+            onValueChange={(value) => setModel(value as VideoGenerationOptions['model'])}
+            disabled={isGenerating}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Selecciona un modelo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="t2v-01">Texto a Video (Estándar)</SelectItem>
+              <SelectItem value="t2v-01-director">Texto a Video con Movimientos de Cámara</SelectItem>
+              <SelectItem value="i2v-01">Imagen a Video (Estándar)</SelectItem>
+              <SelectItem value="i2v-01-live">Imagen a Video (Efecto Live)</SelectItem>
+              <SelectItem value="s2v-01">Sujeto a Video (Rostros)</SelectItem>
+            </SelectContent>
+          </Select>
+          {model && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {getModelDescription(model)}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="prompt">Descripción del video</Label>
+          <Input
+            id="prompt"
+            placeholder="Describe el video que deseas generar..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            disabled={isGenerating}
+          />
+          <p className="text-xs text-muted-foreground">
+            {model === 't2v-01-director' ? 
+              'Sé específico con la escena, estilo visual y movimientos deseados.' : 
+              'Describe el video con detalles sobre el ambiente, objetos, personas, estilo visual y acción.'}
+          </p>
+        </div>
+
+        {/* Campo de URL de imagen para modelos que la requieren */}
+        {modelRequiresImage(model) && (
+          <div className="space-y-2">
+            <Label htmlFor="imageUrl">URL de la imagen <span className="text-red-500">*</span></Label>
+            <Input
+              id="imageUrl"
+              placeholder="https://ejemplo.com/imagen.jpg"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              disabled={isGenerating}
+            />
+            <p className="text-xs text-muted-foreground">
+              {model === 's2v-01' 
+                ? 'Proporciona una imagen clara del rostro o sujeto que deseas mantener en el video.'
+                : 'Proporciona una imagen de alta calidad como base para la animación del video.'}
+            </p>
+          </div>
+        )}
+
+        {/* Campo de movimiento de cámara para t2v-01-director */}
+        {modelSupportsCameraMovement(model) && (
+          <div className="space-y-2">
+            <Label htmlFor="cameraMovement">Movimiento de cámara</Label>
+            <Select
+              value={cameraMovement}
+              onValueChange={setCameraMovement}
+              disabled={isGenerating}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona un movimiento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Sin movimiento específico</SelectItem>
+                <SelectItem value="zoom in">Acercamiento</SelectItem>
+                <SelectItem value="zoom out">Alejamiento</SelectItem>
+                <SelectItem value="pan left">Paneo a la izquierda</SelectItem>
+                <SelectItem value="pan right">Paneo a la derecha</SelectItem>
+                <SelectItem value="rotate">Rotación</SelectItem>
+                <SelectItem value="dolly">Dolly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>Duración (segundos): {duration}</Label>
+          <Slider
+            value={[duration]}
+            onValueChange={(values) => setDuration(values[0])}
+            min={3}
+            max={30}
+            step={1}
+            disabled={isGenerating}
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="expandPrompt"
+            checked={expandPrompt}
+            onChange={(e) => setExpandPrompt(e.target.checked)}
+            disabled={isGenerating}
+            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <Label htmlFor="expandPrompt" className="text-sm">
+            Expandir prompt (recomendado)
+          </Label>
+        </div>
+
+        <Button
+          onClick={startVideoGeneration}
+          disabled={isGenerating || !prompt || (modelRequiresImage(model) && !imageUrl)}
+          className="w-full"
+        >
+          {isGenerating ? 'Generando...' : 'Generar Video'}
+        </Button>
+
+        {isGenerating && (
+          <Card className="p-4 space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <Label>Progreso: {progress}%</Label>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  ID: {currentTaskId}
+                </span>
+              </div>
+              <Progress value={progress} className="w-full" />
               
-              {/* Selector de modelo */}
-              <FormField
-                control={form.control}
-                name="model"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Modelo</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={generating}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un modelo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="t2v-01">Estándar (t2v-01)</SelectItem>
-                        <SelectItem value="t2v-01-director">Director con movimientos de cámara (t2v-01-director)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      El modelo Director permite añadir movimientos de cámara.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Configuración de movimientos de cámara (solo visible si el modelo es director) */}
-              {form.watch('model') === 't2v-01-director' && (
-                <div className="space-y-4 border p-4 rounded-md">
-                  <FormField
-                    control={form.control}
-                    name="cameraMovements"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Movimientos de cámara</FormLabel>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                          {availableCameraMovements.map((movement) => (
-                            <Button
-                              key={movement}
-                              type="button"
-                              variant={field.value?.includes(movement) ? "default" : "outline"}
-                              size="sm"
-                              disabled={
-                                generating || 
-                                (field.value?.length === 3 && !field.value?.includes(movement))
-                              }
-                              onClick={() => {
-                                const current = field.value || [];
-                                const updated = current.includes(movement)
-                                  ? current.filter(m => m !== movement)
-                                  : [...current, movement];
-                                field.onChange(updated);
-                              }}
-                              className="flex items-center justify-center h-10"
-                            >
-                              <Camera className="h-4 w-4 mr-2" />
-                              {movement}
-                            </Button>
-                          ))}
-                        </div>
-                        <FormDescription>
-                          Selecciona hasta 3 movimientos de cámara para el video.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Opción para incluir el prompt en los movimientos */}
-                  <FormField
-                    control={form.control}
-                    name="includePromptInMovements"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={field.value}
-                            onChange={field.onChange}
-                            disabled={generating}
-                            className="h-4 w-4 mt-1"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>Formato preferido para movimientos</FormLabel>
-                          <FormDescription>
-                            Activado: [Movimiento1,Movimiento2]prompt (recomendado) <br />
-                            Desactivado: Enviar movimientos por separado
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Estado:</div>
+                <div className="flex space-x-1 items-center">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-sm">
+                    {progress < 25 ? 'Inicializando modelo...' : 
+                     progress < 50 ? 'Procesando prompt...' :
+                     progress < 75 ? 'Generando frames...' :
+                     progress < 95 ? 'Finalizando video...' :
+                     'Optimizando resultado...'}
+                  </span>
                 </div>
-              )}
+              </div>
               
-              {/* Botones de acción */}
-              <div className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  disabled={generating}
+              <div className="text-xs text-muted-foreground">
+                <p>La generación puede tomar entre 10 y 60 segundos dependiendo del modelo y la complejidad.</p>
+                <p>Modelo utilizado: <span className="font-medium">{model}</span></p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {generatedVideoUrl && (
+          <Card className="p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <Label>Video Generado:</Label>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                Completado
+              </span>
+            </div>
+            <video
+              src={generatedVideoUrl}
+              controls
+              className="w-full rounded-lg"
+              style={{ maxHeight: '400px' }}
+              autoPlay
+              loop
+            />
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">Modelo:</span> {model} 
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">ID de tarea:</span> {currentTaskId}
+              </p>
+              <div className="flex justify-end mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(generatedVideoUrl, '_blank')}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Reiniciar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={generating}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generar Video
+                  Abrir en nueva pestaña
                 </Button>
               </div>
-            </form>
-          </Form>
-        </TabsContent>
-        
-        {/* Pestaña de previsualización */}
-        <TabsContent value="preview" className="space-y-4">
-          {/* Mostrar progreso durante la generación */}
-          {generating && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Generando video...</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Progress value={progress} className="h-2 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Esta operación puede tardar varios minutos. Por favor, espera...
-                </p>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Mostrar error si existe */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          {/* Mostrar video generado */}
-          {videoUrl && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center text-lg">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-                  Video Generado
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative aspect-video rounded-md overflow-hidden border">
-                  <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    controls
-                    className="w-full h-full object-contain bg-black"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (videoRef.current) {
-                      videoRef.current.currentTime = 0;
-                      videoRef.current.play();
-                    }
-                  }}
-                >
-                  <FilmIcon className="h-4 w-4 mr-2" />
-                  Reproducir
-                </Button>
-                <Button onClick={handleDownload}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar Video
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

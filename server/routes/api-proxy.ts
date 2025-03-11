@@ -19,9 +19,11 @@ import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { authenticate } from '../middleware/auth';
 
 // Definir el tipo correcto para las solicitudes con archivos
-import { FileArray } from 'express-fileupload';
+import { FileArray, UploadedFile } from 'express-fileupload';
 interface RequestWithFiles extends Request {
-  files?: FileArray;
+  files?: {
+    [fieldname: string]: UploadedFile | UploadedFile[];
+  };
 }
 
 dotenv.config();
@@ -2816,7 +2818,15 @@ router.get('/proxy/kling/effects/status', async (req, res) => {
  */
 router.post('/proxy/piapi/video/start', async (req: Request, res) => {
   try {
-    console.log('Recibida solicitud para iniciar generación de video con PiAPI (Hailuo)');
+    console.log('Recibida solicitud para iniciar generación de video con Hailuo (PiAPI)');
+    
+    // Verificar que tenemos la clave API
+    if (!PIAPI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'PIAPI_API_KEY no está configurada'
+      });
+    }
     
     // Obtener los parámetros del body
     const { 
@@ -2825,7 +2835,7 @@ router.post('/proxy/piapi/video/start', async (req: Request, res) => {
       image_url = null,
       expand_prompt = true,
       service_mode = 'public',
-      camera_movement = null,  // Nuevo parámetro para movimientos de cámara
+      camera_movement = null,  // Para movimientos de cámara en t2v-01-director
       webhook_config = null    // Configuración para webhook opcional
     } = req.body;
     
@@ -3001,7 +3011,7 @@ router.post('/proxy/piapi/video/start', async (req: Request, res) => {
  * 
  * Este endpoint permite verificar el estado de un proceso de generación de video
  */
-router.get('/proxy/piapi/video/status', async (req, res) => {
+router.get('/proxy/piapi/video/status', async (req: Request, res: Response) => {
   try {
     // Obtener el task_id de los query parameters
     const taskId = req.query.taskId as string;
@@ -3096,10 +3106,14 @@ router.get('/proxy/piapi/video/status', async (req, res) => {
       }
     } catch (internalError: any) {
       console.error('Error llamando al endpoint de PiAPI para status de generación de video:', internalError.message);
+      if (internalError.response) {
+        console.error('Estado de respuesta:', internalError.response.status);
+        console.error('Datos de respuesta:', internalError.response.data);
+      }
       
       return res.status(500).json({
         success: false,
-        error: internalError.message || 'Error al verificar el estado de la tarea'
+        error: internalError.response?.data?.message || internalError.message || 'Error al verificar el estado de la tarea'
       });
     }
   } catch (error: any) {

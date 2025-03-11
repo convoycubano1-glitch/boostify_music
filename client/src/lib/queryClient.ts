@@ -28,6 +28,7 @@ interface ApiRequestOptions {
   method: string;
   data?: unknown;
   headers?: HeadersInit;
+  params?: Record<string, string>; // Parámetros de consulta (query parameters)
 }
 
 export async function apiRequest(
@@ -40,10 +41,22 @@ export async function apiRequest(
   // Handle both the new object-based API and the old string-based API
   if (typeof options === 'object') {
     // New API: options is an object with configuration
-    const { url, method, data: requestData, headers: customHeaders } = options;
+    const { url: baseUrl, method, data: requestData, headers: customHeaders, params } = options;
     const requestHeaders = { ...headers, ...customHeaders };
     
-    const res = await fetch(url, {
+    // Procesar parámetros de consulta si existen
+    let finalUrl = baseUrl;
+    if (params && Object.keys(params).length > 0) {
+      const queryParams = new URLSearchParams();
+      for (const key in params) {
+        if (params[key] !== undefined && params[key] !== null) {
+          queryParams.append(key, params[key]);
+        }
+      }
+      finalUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
+    }
+    
+    const res = await fetch(finalUrl, {
       method,
       headers: requestHeaders,
       body: requestData ? JSON.stringify(requestData) : undefined,
