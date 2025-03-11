@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
@@ -10,7 +11,8 @@ import {
   Scissors, ArrowLeftRight, Film, Wand2, Layers, Plus, 
   CornerUpLeft, CornerUpRight, ArrowUpDown, Sparkles,
   ArrowRight, Sunset, MoveHorizontal, ArrowRight as ArrowRightIcon,
-  Text, Type, BringToFront, SendToBack, Lock, AudioLines
+  Text, Type, BringToFront, SendToBack, Lock, AudioLines,
+  LineChart, BarChart4
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -81,6 +83,44 @@ export interface TimelineClip {
   };
 }
 
+// Interfaz para los datos de beat detectados
+export interface BeatData {
+  time: number;      // Tiempo en segundos
+  timecode: string;  // Timecode formateado
+  energy: number;    // Nivel de energía
+  intensity: number; // Intensidad normalizada (0-1)
+  type: string;      // Tipo de beat (downbeat, accent, beat)
+  isDownbeat: boolean; // Si es un beat principal o secundario
+}
+
+// Interfaz para metadata de beatMap
+export interface BeatMapMetadata {
+  songTitle?: string;
+  artist?: string;
+  duration?: number;
+  bpm?: number;
+  key?: string;
+  timeSignature?: string;
+  complexity?: string;
+  generatedAt?: string;
+  beatAnalysis?: {
+    totalBeats?: number;
+    beatTypes?: {
+      downbeats?: number;
+      accents?: number;
+      regularBeats?: number;
+    };
+    averageInterval?: number;
+    patternComplexity?: string;
+  };
+}
+
+// Interfaz para el mapa completo de beats
+export interface BeatMap {
+  metadata: BeatMapMetadata;
+  beats: BeatData[];
+}
+
 // WaveSurfer extended interface to handle missing methods in type definitions
 interface ExtendedWaveSurfer extends WaveSurfer {
   loadDecodedBuffer?: (buffer: AudioBuffer) => void;
@@ -98,6 +138,7 @@ interface TimelineEditorProps {
   isPlaying: boolean;
   onRegenerateImage?: (clipId: number) => void;
   onSplitClip?: (clipId: number, splitTime: number) => void;
+  beatsData?: BeatMap; // Datos de beats para visualización avanzada
 }
 
 export function TimelineEditor({
@@ -111,7 +152,8 @@ export function TimelineEditor({
   onPause,
   isPlaying,
   onRegenerateImage,
-  onSplitClip
+  onSplitClip,
+  beatsData
 }: TimelineEditorProps) {
   const [zoom, setZoom] = useState(1);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -716,6 +758,101 @@ export function TimelineEditor({
 
   return (
     <Card className="p-4 flex flex-col gap-4">
+      {/* Panel de Análisis de Patrones Rítmicos - Versión Simplificada */}
+      {beatsData && beatsData.beats && beatsData.beats.length > 0 && (
+        <div className="bg-background/80 backdrop-blur-sm rounded-lg border p-3 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold flex items-center">
+              <BarChart4 className="h-4 w-4 mr-1.5 text-orange-500" />
+              Análisis de Patrones Rítmicos
+            </h3>
+            <div className="px-2 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded text-xs font-medium">
+              {beatsData.metadata?.bpm || "--"} BPM
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+            <div className="bg-muted/50 p-2 rounded">
+              <div className="text-xs text-muted-foreground mb-1">Distribución de Beats</div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="text-xs">Downbeat</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span className="text-xs">Accent</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="text-xs">Beat</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-muted/50 p-2 rounded">
+              <div className="text-xs text-muted-foreground mb-1">Complejidad</div>
+              <div className="flex items-center justify-between">
+                <div className={cn(
+                  "px-2 py-0.5 rounded text-xs", 
+                  (beatsData.metadata?.beatAnalysis?.patternComplexity === "Alta" || 
+                   beatsData.metadata?.complexity === "Alta") 
+                    ? "bg-red-50 text-red-700" :
+                  (beatsData.metadata?.beatAnalysis?.patternComplexity === "Media" || 
+                   beatsData.metadata?.complexity === "Media")
+                    ? "bg-yellow-50 text-yellow-700" :
+                    "bg-blue-50 text-blue-700"
+                )}>
+                  {beatsData.metadata?.beatAnalysis?.patternComplexity || 
+                   beatsData.metadata?.complexity || "Normal"}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {beatsData.beats.length} beats detectados
+                </span>
+              </div>
+            </div>
+            
+            <div className="bg-muted/50 p-2 rounded">
+              <div className="text-xs text-muted-foreground mb-1">Compás y Timing</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium">
+                  {beatsData.metadata?.timeSignature || "4/4"}
+                </div>
+                <div className="text-xs">
+                  {beatsData.metadata?.beatAnalysis?.averageInterval 
+                    ? `Intervalo: ${beatsData.metadata.beatAnalysis.averageInterval.toFixed(2)}s` 
+                    : "Intervalo: --"}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Gráfico simplificado de intensidad de beats - mostrando solo una muestra limitada para mejor rendimiento */}
+          <div className="h-8 w-full bg-muted/30 rounded-md overflow-hidden relative">
+            <div className="absolute inset-0 flex items-end">
+              {beatsData.beats.slice(0, 100).map((beat, idx) => {
+                const intensity = beat.energy || beat.intensity || 0.5;
+                const height = `${Math.max(20, Math.min(100, intensity * 100))}%`;
+                const beatColor = beat.type === 'downbeat' 
+                  ? 'bg-red-500' 
+                  : beat.type === 'accent'
+                    ? 'bg-yellow-500'
+                    : 'bg-blue-500';
+                
+                return (
+                  <div 
+                    key={`graph-beat-${idx}`}
+                    className={`${beatColor} w-1 mx-[1px] opacity-80`}
+                    style={{ height }}
+                  />
+                );
+              })}
+            </div>
+            <div className="absolute inset-0 border-t border-dashed border-muted-foreground/20 top-1/2"></div>
+          </div>
+        </div>
+      )}
+      
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Button
@@ -1082,7 +1219,63 @@ export function TimelineEditor({
                     ref={waveformContainerRef}
                     className="relative w-full h-20 bg-transparent rounded-md overflow-hidden mt-2"
                   />
-                    
+                  
+                  {/* Visualización de Beats mejorada */}
+                  {beatsData && beatsData.beats && beatsData.beats.length > 0 && (
+                    <>
+                      {/* Beat visualization in timeline */}
+                      <div className="absolute top-0 left-0 w-full h-8 pointer-events-none">
+                        {beatsData.beats.map((beat, index) => {
+                          // Determinar colores según tipo de beat
+                          const beatColor = beat.type === 'downbeat' 
+                            ? 'bg-red-500' 
+                            : beat.type === 'accent'
+                              ? 'bg-yellow-500'
+                              : 'bg-blue-500';
+                          
+                          // Altura basada en intensidad (0-1)
+                          const height = `${Math.max(15, Math.min(95, beat.intensity * 90))}%`;
+                          
+                          return (
+                            <div 
+                              key={`beat-${index}`} 
+                              className={`absolute bottom-0 ${beatColor} w-1 opacity-80 hover:opacity-100 rounded-t transition-all duration-75 hover:w-1.5`}
+                              style={{
+                                height,
+                                left: `${timeToPixels(beat.time)}px`,
+                                transform: 'translateX(-50%)'
+                              }}
+                              title={`${beat.type} - ${beat.timecode} - Energía: ${beat.energy.toFixed(2)}`}
+                            />
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Leyenda de tipos de beat */}
+                      <div className="absolute top-1 right-3 bg-background/80 backdrop-blur-sm rounded-sm px-2 py-1 z-10 border shadow-sm">
+                        <div className="flex items-center gap-3 text-xs">
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+                            <span className="text-xs">Downbeat</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
+                            <span className="text-xs">Accent</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
+                            <span className="text-xs">Beat</span>
+                          </div>
+                          {beatsData.metadata?.bpm && (
+                            <div className="flex items-center">
+                              <span className="font-medium text-xs">{beatsData.metadata.bpm} BPM</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
                   {/* Clips de audio en esta capa */}
                   <div className="absolute inset-0">
                     {clips
