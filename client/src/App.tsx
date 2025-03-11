@@ -42,6 +42,7 @@ import ManagerToolsPage from "@/pages/manager-tools";
 import MerchandisePage from "@/pages/merchandise";
 import MessagesPage from "@/pages/messages";
 import MusicVideoCreator from "@/pages/music-video-creator";
+import MusicVideoWorkflowPage from "@/pages/music-video-workflow-page";
 import MusicGeneratorPage from "@/pages/music-generator";
 import NewsPage from "@/pages/news";
 import PRPage from "@/pages/pr";
@@ -83,6 +84,7 @@ import SubscriptionCancelledPage from "@/pages/subscription-cancelled";
 import MusicVideoSuccess from "@/pages/music-video-success";
 import MusicVideoCancelled from "@/pages/music-video-cancelled";
 import SubscriptionExamplePage from "@/pages/subscription-example";
+import ProfessionalEditorPage from "@/pages/professional-editor";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -203,6 +205,7 @@ const Router = () => {
   const WrappedManagerToolsPage = withPageWrapper(ManagerToolsPage);
   const WrappedProducerToolsPage = withPageWrapper(ProducerToolsPage);
   const WrappedMusicVideoCreator = withPageWrapper(MusicVideoCreator);
+  const WrappedMusicVideoWorkflowPage = withPageWrapper(MusicVideoWorkflowPage);
   const WrappedMusicGeneratorPage = withPageWrapper(MusicGeneratorPage);
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
@@ -243,6 +246,7 @@ const Router = () => {
   const WrappedSubscriptionExamplePage = withPageWrapper(SubscriptionExamplePage);
   const WrappedMusicVideoSuccess = withPageWrapper(MusicVideoSuccess);
   const WrappedMusicVideoCancelled = withPageWrapper(MusicVideoCancelled);
+  const WrappedProfessionalEditorPage = withPageWrapper(ProfessionalEditorPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -304,6 +308,7 @@ const Router = () => {
         
         {/* Rutas para suscripción PREMIUM ($149.99) */}
         {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, null)}
+        {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, null)}
         {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
         {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
         {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
@@ -333,6 +338,7 @@ const Router = () => {
         {getRouteComponent("/plugins", WrappedPluginsPage, null)}
         {getRouteComponent("/try-on", WrappedTryOnPage, null)}
         {getRouteComponent("/try-on-page", WrappedTryOnPage, null)}
+        {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
