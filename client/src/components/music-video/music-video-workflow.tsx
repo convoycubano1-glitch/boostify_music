@@ -204,33 +204,15 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     });
   };
 
-  // Función para transcribir el audio usando OpenAI Whisper (transcripción real)
+  // Función simulada para transcribir el audio
   const transcribeAudio = useCallback(async (audioFile: File): Promise<string> => {
-    try {
-      // Importar el servicio de transcripción
-      const { TranscriptionService } = await import('../../lib/services/transcription-service');
-      
-      console.log("Iniciando transcripción real de audio:", audioFile.name);
-      
-      // Llamar al servicio de transcripción real
-      const transcription = await TranscriptionService.transcribeAudio(audioFile);
-      
-      console.log("Transcripción completada con éxito");
-      return transcription;
-    } catch (error) {
-      // En caso de error, mostrar el error y devolver una transcripción de respaldo
-      console.error("Error en transcripción:", error);
-      
-      // Notificar al usuario del error
-      toast({
-        title: "Error en transcripción",
-        description: "Ocurrió un error al transcribir el audio. Se utilizará una versión simplificada.",
-        variant: "destructive"
-      });
-      
-      return "Error al transcribir. Esta transcripción permite continuar con el flujo de trabajo. Incluye estribillo y versos para generar el video musical.";
-    }
-  }, [toast]);
+    return new Promise((resolve) => {
+      // En una implementación real, se invocaría un servicio de reconocimiento de voz
+      setTimeout(() => {
+        resolve("Esta es una transcripción simulada de la letra de la canción, donde se identifican momentos clave como el estribillo y versos.");
+      }, 2000);
+    });
+  }, []);
 
   // Función para extraer una etiqueta del nombre de archivo
   const extractLabel = (fileName: string): string => {
@@ -243,8 +225,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
 
   // Componente para mostrar el estado de guardado
   const SaveStatusIndicator = () => {
-    // Versión simplificada para mejor estabilidad
-    const { saveStatus } = editorContext;
+    const { saveStatus, lastSaved, persistenceMode } = editorContext;
     
     const getStatusIcon = () => {
       switch (saveStatus) {
@@ -264,7 +245,9 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         case 'saving':
           return 'Guardando...';
         case 'saved':
-          return 'Guardado';
+          return lastSaved 
+            ? `Guardado ${lastSaved.toLocaleTimeString()}` 
+            : 'Guardado';
         case 'error':
           return 'Guardado local';
         default:
@@ -272,11 +255,37 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       }
     };
     
+    const getModeLabel = () => {
+      switch (persistenceMode) {
+        case 'firestore':
+          return 'en la nube';
+        case 'hybrid':
+          return 'en nube y local';
+        case 'local':
+        default:
+          return 'localmente';
+      }
+    };
+    
     return (
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        {getStatusIcon()}
-        <span>{getStatusText()}</span>
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {getStatusIcon()}
+              <span>{getStatusText()}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Tu proyecto se guarda {getModeLabel()}</p>
+            {saveStatus === 'error' && (
+              <p className="text-amber-500 mt-1">
+                No se pudo guardar en la nube. Tus cambios están guardados localmente.
+              </p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
   
@@ -412,10 +421,10 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   
   // Iniciar análisis y generación de la línea de tiempo
   const handleStartAnalysis = async () => {
-    if (!audioFile) {
+    if (!audioFile || (imageFiles.length === 0 && videoFiles.length === 0)) {
       toast({
-        title: "Archivo de audio requerido",
-        description: "Por favor, sube un archivo de audio para continuar",
+        title: "Archivos insuficientes",
+        description: "Por favor, sube al menos un audio y una imagen o video",
         variant: "destructive"
       });
       return;
@@ -439,43 +448,6 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       });
       
       markStepComplete('transcription', 'script');
-      
-      // Paso 2: Generar imágenes automáticamente basadas en la transcripción
-      toast({
-        title: "Generando contenido visual",
-        description: "Creando imágenes basadas en la transcripción del audio...",
-      });
-      
-      try {
-        // Importar el servicio de generación automática de imágenes
-        const { AutoImageGeneratorService } = await import('../../lib/services/auto-image-generator');
-        
-        // Generar imágenes basadas en la transcripción
-        const generatedImages = await AutoImageGeneratorService.generateImagesFromTranscript({
-          transcript: transcript,
-          numImages: 5,
-          style: 'cinematic',
-          audioFileName: audioFile.name
-        });
-        
-        // Convertir las imágenes generadas a archivos y actualizarlas en el estado
-        if (generatedImages.length > 0) {
-          const imageFiles = generatedImages.filter(img => img.file).map(img => img.file!);
-          setImageFiles(imageFiles);
-          
-          toast({
-            title: "Contenido visual generado",
-            description: `Se generaron ${imageFiles.length} imágenes basadas en tu audio.`,
-          });
-        }
-      } catch (error) {
-        console.error("Error generando imágenes:", error);
-        toast({
-          title: "Error generando contenido visual",
-          description: "Ocurrió un problema al generar las imágenes. Se usarán imágenes predefinidas.",
-          variant: "destructive"
-        });
-      }
       
       // Simular progreso del análisis
       let progress = 0;
@@ -697,7 +669,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               </div>
               
               <div>
-                <Label className="mb-2 block">Clips Principales (Opcional - Generados automáticamente)</Label>
+                <Label className="mb-2 block">Clips Principales (Imágenes/Videos)</Label>
                 <div className="border border-dashed rounded-md p-4">
                   <div className="flex gap-2 mb-2">
                     <div className="flex-1">
@@ -708,7 +680,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
                         onChange={(e) => e.target.files && handleImagesUpload(e.target.files)}
                         className="text-sm"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Opcional: Puedes subir imágenes o se generarán automáticamente</p>
+                      <p className="text-xs text-muted-foreground mt-1">Ejemplos de nombre: closeup, plano medio, aerial</p>
                     </div>
                     <div className="flex-1">
                       <Input
@@ -718,7 +690,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
                         onChange={(e) => e.target.files && handleVideoUpload(e.target.files)}
                         className="text-sm"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Opcional: Videos personalizados</p>
+                      <p className="text-xs text-muted-foreground mt-1">Clips de video existentes</p>
                     </div>
                   </div>
                   
@@ -766,7 +738,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               <Button 
                 variant="default" 
                 onClick={handleStartAnalysis}
-                disabled={!audioFile || isAnalyzing}
+                disabled={!audioFile || (imageFiles.length === 0 && videoFiles.length === 0) || isAnalyzing}
               >
                 {isAnalyzing ? (
                   <>
@@ -783,96 +755,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             </div>
             
             {isAnalyzing && (
-              <div className="space-y-3">
-                <Progress value={generationProgress} className="h-2" />
-                
-                {/* Botón para avanzar manualmente siempre visible durante el análisis */}
-                <div className="flex justify-end">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      // Forzar una transcripción si no existe
-                      setTranscription("Transcripción generada manualmente para continuar el proceso.");
-                      
-                      // Guardar la transcripción en el contexto del editor
-                      editorContext.addTranscription({
-                        audioId: 'main-audio',
-                        text: "Transcripción generada manualmente para continuar el proceso.",
-                        startTime: 0,
-                        endTime: audioFile?.size ? (audioFile.size > 1000000 ? 180 : 120) : 120,
-                        confidence: 0.8
-                      });
-                      
-                      // Marcar pasos como completados y avanzar
-                      if (currentWorkflowStep === 'transcription') {
-                        markStepComplete('transcription', 'script');
-                      } else if (currentWorkflowStep === 'script') {
-                        markStepComplete('script', 'sync');
-                      } else if (currentWorkflowStep === 'sync') {
-                        markStepComplete('sync', 'scenes');
-                      } else if (currentWorkflowStep === 'scenes') {
-                        markStepComplete('scenes', 'customization');
-                      } else if (currentWorkflowStep === 'customization') {
-                        markStepComplete('customization', 'movement');
-                      } else {
-                        // Forzar avance al siguiente paso
-                        let progress = 100;
-                        setGenerationProgress(progress);
-                        
-                        // Una vez completado el análisis, generar la línea de tiempo
-                        generateEditingTimeline().then(clips => {
-                          setTimelineData(clips);
-                          setAnalysisComplete(true);
-                          setIsAnalyzing(false);
-                          setActiveStep('timeline');
-                          
-                          // Sincronizar con el contexto del editor - agregar pistas de audio y clips
-                          const audioClip = clips.find(clip => clip.type === 'audio');
-                          if (audioClip && audioClip.audioUrl) {
-                            // Agregar pista de audio al contexto
-                            editorContext.addAudioTrack({
-                              name: audioFile?.name || 'Audio Principal',
-                              url: audioClip.audioUrl,
-                              duration: duration,
-                              startTime: 0,
-                              waveformData: []
-                            });
-                          }
-                          
-                          // Agregar clips de video e imágenes al contexto
-                          clips
-                            .filter(clip => clip.type !== 'audio')
-                            .forEach(clip => {
-                              editorContext.addClip({
-                                type: clip.type as 'video' | 'image',
-                                url: clip.videoUrl || clip.imageUrl || '',
-                                name: clip.title,
-                                startTime: clip.start,
-                                duration: clip.duration,
-                                layer: clip.layer,
-                                properties: {
-                                  section: clip.metadata?.section || '',
-                                  sourceIndex: clip.metadata?.sourceIndex || 0
-                                }
-                              });
-                            });
-                          
-                          // Marcar los primeros 5 pasos como completados
-                          markStepComplete('customization', 'movement');
-                          
-                          toast({
-                            title: "Análisis completado manualmente",
-                            description: "La línea de tiempo ha sido generada con éxito",
-                          });
-                        });
-                      }
-                    }}
-                  >
-                    Continuar manualmente
-                  </Button>
-                </div>
-              </div>
+              <Progress value={generationProgress} className="h-2" />
             )}
           </div>
         )}

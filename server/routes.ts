@@ -43,7 +43,6 @@ import videoStatusRouter from './routes/video-status'; // Import the dedicated r
 import musicRouter from './routes/music'; // Import the music generation router
 import uploadApiRouter from './routes/upload-api'; // Import the upload API router for image processing
 import fluxApiRouter from './routes/flux-api-proxy'; // Import the Flux API router
-import transcriptionRouter from './routes/transcription'; // Import the transcription router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -118,9 +117,6 @@ export function registerRoutes(app: Express): Server {
 
   // Register translation routes
   app.use('/api', translationRouter);
-  
-  // Register transcription router for audio processing
-  app.use('/api', transcriptionRouter);
 
   // Register video generation router (direct implementation)
   app.use('/api/video-generation', videoGenerationRouter);
