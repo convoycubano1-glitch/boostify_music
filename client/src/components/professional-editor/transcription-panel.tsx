@@ -92,7 +92,8 @@ import {
   Loader2,
   Wand,
   FileUp,
-  AlignJustify
+  AlignJustify,
+  Copy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Transcription } from '@/lib/professional-editor-types';

@@ -23,7 +23,11 @@ import {
   Upload,
   Download,
   Save,
-  Share2
+  Share2,
+  Activity,
+  // Solo usar iconos que existen en lucide-react
+  // Waveform,
+  // Settings
 } from 'lucide-react';
 
 // Importar componentes del editor
@@ -34,65 +38,17 @@ import ProfessionalTimeline from '@/components/professional-editor/professional-
 import TranscriptionPanel from '@/components/professional-editor/transcription-panel';
 import AudioTrackEditor from '@/components/professional-editor/audio-track-editor';
 
-// Definir interfaces para los datos
-interface VisualEffect {
-  id: string;
-  name: string;
-  type: string;
-  subtype?: string;
-  startTime: number;
-  duration: number;
-  enabled: boolean;
-  parameters: Record<string, any>;
-}
-
-interface AudioTrack {
-  id: string;
-  name: string;
-  source: string;
-  volume: number;
-  muted: boolean;
-  loop: boolean;
-  startTime: number;
-  duration: number;
-  type: 'music' | 'vocal' | 'sfx' | 'ambience';
-}
-
-interface Beat {
-  id: string;
-  time: number;
-  type: 'beat' | 'bar' | 'section';
-  intensity: number;
-  label?: string;
-  bpm?: number;
-}
-
-interface Section {
-  id: string;
-  name: string;
-  startTime: number;
-  endTime: number;
-  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'breakdown' | 'custom';
-  color: string;
-}
-
-interface Clip {
-  id: string;
-  type: 'video' | 'image';
-  source: string;
-  startTime: number;
-  endTime: number;
-  trackId: number;
-  selected: boolean;
-}
-
-interface Transcription {
-  id: string;
-  text: string;
-  startTime: number;
-  endTime: number;
-  speaker?: string;
-}
+// Importar tipos desde professional-editor-types
+import { 
+  VisualEffect, 
+  AudioTrack, 
+  Beat, 
+  Section, 
+  Clip, 
+  Transcription, 
+  TimelineClip, 
+  EditorStateUtils 
+} from '@/lib/professional-editor-types';
 
 const ProfessionalEditor: React.FC = () => {
   // Estado del reproductor de video
@@ -227,6 +183,7 @@ const ProfessionalEditor: React.FC = () => {
       // Determinar tipo de beat
       let type: Beat['type'] = 'beat';
       let intensity = 0.5 + (Math.random() * 0.5 * config.beatEmphasis);
+      let isSection = false;
       
       if (i % 4 === 0) {
         type = 'bar';
@@ -234,7 +191,9 @@ const ProfessionalEditor: React.FC = () => {
       }
       
       if (i % 16 === 0) {
-        type = 'section';
+        // En lugar de usar 'section' como tipo, que no está definido en Beat['type']
+        // Lo marcamos como un beat especial con mayor intensidad
+        isSection = true;
         intensity = Math.min(1, intensity + 0.3);
       }
       
@@ -243,7 +202,7 @@ const ProfessionalEditor: React.FC = () => {
         time,
         type,
         intensity,
-        label: type === 'section' ? `Sección ${Math.floor(i/16) + 1}` : undefined,
+        label: isSection ? `Sección ${Math.floor(i/16) + 1}` : undefined,
         bpm: simulatedBpm
       });
     }
@@ -281,7 +240,8 @@ const ProfessionalEditor: React.FC = () => {
   // Obtener efectos activos para el tiempo actual
   const getActiveEffects = () => {
     return visualEffects.filter(effect => 
-      effect.enabled && 
+      // En la definición original de VisualEffect no existe 'enabled'
+      // Consideramos un efecto activo sólo si está dentro del rango de tiempo actual
       currentTime >= effect.startTime && 
       currentTime < effect.startTime + effect.duration
     );
@@ -387,9 +347,12 @@ const ProfessionalEditor: React.FC = () => {
               onPlay={handlePlay}
               onPause={handlePause}
               onSeek={handleSeek}
-              onToggleEffect={(effectId, enabled) => 
-                handleUpdateEffect(effectId, { enabled })
-              }
+              onToggleEffect={(effectId, enabled) => {
+                // En la definición original no existe 'enabled', así que usaremos
+                // 'intensity' como una forma de activar/desactivar un efecto
+                // Si enabled es false, ponemos intensity a 0, de lo contrario a 1
+                handleUpdateEffect(effectId, { intensity: enabled ? 1 : 0 });
+              }}
             />
             
             <div className="mt-4" id="timeline-section">

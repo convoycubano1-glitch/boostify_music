@@ -32,18 +32,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Interfaces para los datos
-interface VisualEffect {
-  id: string;
-  name: string;
-  type: string;
-  subtype?: string;
-  startTime: number;
-  duration: number;
-  enabled: boolean;
-  parameters: Record<string, any>;
-}
+import { VisualEffect } from '@/lib/professional-editor-types';
 
 interface VideoPreviewPanelProps {
   videoSrc: string;
@@ -199,38 +188,39 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
   const applyVisualEffects = () => {
     if (!activeEffects || activeEffects.length === 0) return {};
     
-    // Solo aplicar efectos habilitados
-    const enabledEffects = activeEffects.filter(effect => effect.enabled);
-    if (enabledEffects.length === 0) return {};
-    
+    // Todos los efectos están habilitados por defecto según la interfaz del tipo
     // Construir estilos CSS basados en los efectos
     const styles: React.CSSProperties = {};
     
-    enabledEffects.forEach(effect => {
+    activeEffects.forEach(effect => {
+      // Usar parameters para determinar el subtipo de efecto
+      const effectSubtype = effect.parameters?.subtype as string;
+      
       switch (effect.type) {
         case 'filter':
-          if (effect.subtype === 'blur') {
-            styles.filter = `${styles.filter || ''} blur(${effect.parameters.intensity * 10}px)`;
-          } else if (effect.subtype === 'brightness') {
-            styles.filter = `${styles.filter || ''} brightness(${effect.parameters.level * 2})`;
-          } else if (effect.subtype === 'contrast') {
-            styles.filter = `${styles.filter || ''} contrast(${effect.parameters.level * 2})`;
-          } else if (effect.subtype === 'grayscale') {
-            styles.filter = `${styles.filter || ''} grayscale(${effect.parameters.level})`;
-          } else if (effect.subtype === 'sepia') {
-            styles.filter = `${styles.filter || ''} sepia(${effect.parameters.level})`;
-          } else if (effect.subtype === 'hue-rotate') {
-            styles.filter = `${styles.filter || ''} hue-rotate(${effect.parameters.degrees}deg)`;
-          } else if (effect.subtype === 'saturate') {
-            styles.filter = `${styles.filter || ''} saturate(${effect.parameters.level})`;
+          if (effectSubtype === 'blur') {
+            styles.filter = `${styles.filter || ''} blur(${effect.intensity * 10}px)`;
+          } else if (effectSubtype === 'brightness') {
+            styles.filter = `${styles.filter || ''} brightness(${effect.parameters?.level || 1 * 2})`;
+          } else if (effectSubtype === 'contrast') {
+            styles.filter = `${styles.filter || ''} contrast(${effect.parameters?.level || 1 * 2})`;
+          } else if (effectSubtype === 'grayscale') {
+            styles.filter = `${styles.filter || ''} grayscale(${effect.parameters?.level || 1})`;
+          } else if (effectSubtype === 'sepia') {
+            styles.filter = `${styles.filter || ''} sepia(${effect.parameters?.level || 1})`;
+          } else if (effectSubtype === 'hue-rotate') {
+            styles.filter = `${styles.filter || ''} hue-rotate(${effect.parameters?.degrees || 0}deg)`;
+          } else if (effectSubtype === 'saturate') {
+            styles.filter = `${styles.filter || ''} saturate(${effect.parameters?.level || 1})`;
           }
           break;
         
-        case 'transform':
-          if (effect.subtype === 'rotate') {
-            styles.transform = `${styles.transform || ''} rotate(${effect.parameters.degree}deg)`;
-          } else if (effect.subtype === 'scale') {
-            styles.transform = `${styles.transform || ''} scale(${effect.parameters.scale})`;
+        case 'custom':
+          // Cambiado de 'transform' a 'custom' para cumplir con la interfaz VisualEffect
+          if (effectSubtype === 'rotate') {
+            styles.transform = `${styles.transform || ''} rotate(${effect.parameters?.degree || 0}deg)`;
+          } else if (effectSubtype === 'scale') {
+            styles.transform = `${styles.transform || ''} scale(${effect.parameters?.scale || 1})`;
           }
           break;
         
@@ -245,8 +235,9 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
   const renderTextOverlays = () => {
     if (!showEffectsOverlay || !activeEffects || activeEffects.length === 0) return null;
     
+    // Filtrar efectos de tipo texto usando custom como tipo y texto como subtype
     const textEffects = activeEffects.filter(
-      effect => effect.enabled && effect.type === 'text'
+      effect => (effect.type === 'custom' && effect.parameters?.subtype === 'text')
     );
     
     if (textEffects.length === 0) return null;
@@ -254,8 +245,9 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
     return (
       <>
         {textEffects.map(effect => {
-          const { parameters } = effect;
-          const position = parameters.position || 'center';
+          if (!effect.parameters) return null;
+          
+          const position = effect.parameters.position || 'center';
           
           let positionStyle: React.CSSProperties = {};
           
@@ -294,13 +286,13 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
               className="absolute z-20 text-center"
               style={{
                 ...positionStyle,
-                color: parameters.color || '#ffffff',
-                fontSize: `${parameters.fontSize || 36}px`,
-                fontWeight: parameters.fontWeight || 'normal',
+                color: effect.parameters.color || '#ffffff',
+                fontSize: `${effect.parameters.fontSize || 36}px`,
+                fontWeight: effect.parameters.fontWeight || 'normal',
                 textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)'
               }}
             >
-              {parameters.text || ''}
+              {effect.parameters.text || ''}
             </div>
           );
         })}
@@ -312,8 +304,9 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
   const renderColorOverlays = () => {
     if (!showEffectsOverlay || !activeEffects || activeEffects.length === 0) return null;
     
+    // Filtrar efectos de tipo overlay
     const overlayEffects = activeEffects.filter(
-      effect => effect.enabled && effect.type === 'overlay'
+      effect => effect.type === 'overlay'
     );
     
     if (overlayEffects.length === 0) return null;
@@ -321,38 +314,41 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
     return (
       <>
         {overlayEffects.map(effect => {
-          const { parameters } = effect;
+          if (!effect.parameters) return null;
           
-          if (effect.subtype === 'color') {
+          // Usar parameters.subtype para determinar el tipo de overlay
+          const overlayType = effect.parameters.subtype as string;
+          
+          if (overlayType === 'color') {
             return (
               <div
                 key={effect.id}
                 className="absolute inset-0 z-10 pointer-events-none"
                 style={{
-                  backgroundColor: parameters.color || 'rgba(0, 0, 0, 0.5)',
-                  opacity: parameters.opacity || 0.5
+                  backgroundColor: effect.parameters.color || 'rgba(0, 0, 0, 0.5)',
+                  opacity: effect.parameters.opacity || 0.5
                 }}
               />
             );
-          } else if (effect.subtype === 'gradient') {
+          } else if (overlayType === 'gradient') {
             return (
               <div
                 key={effect.id}
                 className="absolute inset-0 z-10 pointer-events-none"
                 style={{
-                  background: `linear-gradient(${parameters.direction || 'to right'}, ${parameters.startColor || '#000000'}, ${parameters.endColor || '#ffffff'})`,
-                  opacity: parameters.opacity || 0.5
+                  background: `linear-gradient(${effect.parameters.direction || 'to right'}, ${effect.parameters.startColor || '#000000'}, ${effect.parameters.endColor || '#ffffff'})`,
+                  opacity: effect.parameters.opacity || 0.5
                 }}
               />
             );
-          } else if (effect.subtype === 'image' && parameters.url) {
+          } else if (overlayType === 'image' && effect.parameters.url) {
             return (
               <div
                 key={effect.id}
                 className="absolute inset-0 z-10 pointer-events-none bg-cover bg-center"
                 style={{
-                  backgroundImage: `url(${parameters.url})`,
-                  opacity: parameters.opacity || 0.7
+                  backgroundImage: `url(${effect.parameters.url})`,
+                  opacity: effect.parameters.opacity || 0.7
                 }}
               />
             );
@@ -581,14 +577,12 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
                   key={effect.id}
                   className={cn(
                     "flex items-center space-x-1 p-1.5 rounded-md border text-xs",
-                    effect.enabled 
-                      ? "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800" 
-                      : "bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 opacity-50"
+                    "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800"
                   )}
                 >
                   <input
                     type="checkbox"
-                    checked={effect.enabled}
+                    checked={true} // Por defecto, todos los efectos están activos según la definición de tipo
                     onChange={(e) => handleToggleEffect(effect.id, e.target.checked)}
                     className="h-3.5 w-3.5 rounded border-gray-300"
                   />
@@ -667,7 +661,7 @@ const VideoPreviewPanel: React.FC<VideoPreviewPanelProps> = ({
             Tiempo actual: {formatTime(currentTime)} / {formatTime(duration)}
           </div>
           <div>
-            Efectos activos: {activeEffects.filter(e => e.enabled).length}/{activeEffects.length}
+            Efectos activos: {activeEffects.length}/{activeEffects.length}
           </div>
         </div>
       </CardFooter>
