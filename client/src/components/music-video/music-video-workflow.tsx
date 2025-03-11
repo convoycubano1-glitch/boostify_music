@@ -204,14 +204,33 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     });
   };
 
-  // Función simulada para transcribir el audio
+  // Función para transcribir el audio usando OpenAI Whisper (transcripción real)
   const transcribeAudio = useCallback(async (audioFile: File): Promise<string> => {
-    return new Promise((resolve) => {
-      // En una implementación real, se invocaría un servicio de reconocimiento de voz
-      // Nota: Para evitar bloqueos, devuelve inmediatamente una transcripción simulada
-      resolve("Esta es una transcripción simulada de la letra de la canción, donde se identifican momentos clave como el estribillo y versos. Se utiliza para generar un guion visual que se sincronizará con el ritmo y la narrativa musical.");
-    });
-  }, []);
+    try {
+      // Importar el servicio de transcripción
+      const { TranscriptionService } = await import('../../lib/services/transcription-service');
+      
+      console.log("Iniciando transcripción real de audio:", audioFile.name);
+      
+      // Llamar al servicio de transcripción real
+      const transcription = await TranscriptionService.transcribeAudio(audioFile);
+      
+      console.log("Transcripción completada con éxito");
+      return transcription;
+    } catch (error) {
+      // En caso de error, mostrar el error y devolver una transcripción de respaldo
+      console.error("Error en transcripción:", error);
+      
+      // Notificar al usuario del error
+      toast({
+        title: "Error en transcripción",
+        description: "Ocurrió un error al transcribir el audio. Se utilizará una versión simplificada.",
+        variant: "destructive"
+      });
+      
+      return "Error al transcribir. Esta transcripción permite continuar con el flujo de trabajo. Incluye estribillo y versos para generar el video musical.";
+    }
+  }, [toast]);
 
   // Función para extraer una etiqueta del nombre de archivo
   const extractLabel = (fileName: string): string => {
@@ -393,10 +412,10 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   
   // Iniciar análisis y generación de la línea de tiempo
   const handleStartAnalysis = async () => {
-    if (!audioFile || (imageFiles.length === 0 && videoFiles.length === 0)) {
+    if (!audioFile) {
       toast({
-        title: "Archivos insuficientes",
-        description: "Por favor, sube al menos un audio y una imagen o video",
+        title: "Archivo de audio requerido",
+        description: "Por favor, sube un archivo de audio para continuar",
         variant: "destructive"
       });
       return;
@@ -420,6 +439,43 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       });
       
       markStepComplete('transcription', 'script');
+      
+      // Paso 2: Generar imágenes automáticamente basadas en la transcripción
+      toast({
+        title: "Generando contenido visual",
+        description: "Creando imágenes basadas en la transcripción del audio...",
+      });
+      
+      try {
+        // Importar el servicio de generación automática de imágenes
+        const { AutoImageGeneratorService } = await import('../../lib/services/auto-image-generator');
+        
+        // Generar imágenes basadas en la transcripción
+        const generatedImages = await AutoImageGeneratorService.generateImagesFromTranscript({
+          transcript: transcript,
+          numImages: 5,
+          style: 'cinematic',
+          audioFileName: audioFile.name
+        });
+        
+        // Convertir las imágenes generadas a archivos y actualizarlas en el estado
+        if (generatedImages.length > 0) {
+          const imageFiles = generatedImages.filter(img => img.file).map(img => img.file!);
+          setImageFiles(imageFiles);
+          
+          toast({
+            title: "Contenido visual generado",
+            description: `Se generaron ${imageFiles.length} imágenes basadas en tu audio.`,
+          });
+        }
+      } catch (error) {
+        console.error("Error generando imágenes:", error);
+        toast({
+          title: "Error generando contenido visual",
+          description: "Ocurrió un problema al generar las imágenes. Se usarán imágenes predefinidas.",
+          variant: "destructive"
+        });
+      }
       
       // Simular progreso del análisis
       let progress = 0;
@@ -641,7 +697,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               </div>
               
               <div>
-                <Label className="mb-2 block">Clips Principales (Imágenes/Videos)</Label>
+                <Label className="mb-2 block">Clips Principales (Opcional - Generados automáticamente)</Label>
                 <div className="border border-dashed rounded-md p-4">
                   <div className="flex gap-2 mb-2">
                     <div className="flex-1">
@@ -652,7 +708,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
                         onChange={(e) => e.target.files && handleImagesUpload(e.target.files)}
                         className="text-sm"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Ejemplos de nombre: closeup, plano medio, aerial</p>
+                      <p className="text-xs text-muted-foreground mt-1">Opcional: Puedes subir imágenes o se generarán automáticamente</p>
                     </div>
                     <div className="flex-1">
                       <Input
@@ -662,7 +718,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
                         onChange={(e) => e.target.files && handleVideoUpload(e.target.files)}
                         className="text-sm"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Clips de video existentes</p>
+                      <p className="text-xs text-muted-foreground mt-1">Opcional: Videos personalizados</p>
                     </div>
                   </div>
                   
@@ -710,7 +766,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               <Button 
                 variant="default" 
                 onClick={handleStartAnalysis}
-                disabled={!audioFile || (imageFiles.length === 0 && videoFiles.length === 0) || isAnalyzing}
+                disabled={!audioFile || isAnalyzing}
               >
                 {isAnalyzing ? (
                   <>
