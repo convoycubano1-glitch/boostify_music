@@ -54,6 +54,7 @@ import {
   Play,
   Pause,
   Plus,
+  PlusCircle,
   Scissors,
   Copy,
   Trash,
@@ -69,7 +70,9 @@ import {
   ChevronDown,
   MoreHorizontal,
   Save,
-  Clock
+  Clock,
+  Mic,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TimelineClip } from '@/lib/professional-editor-types';
@@ -113,6 +116,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(new Set());
   const [visibleTracks, setVisibleTracks] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
   const [showAddClipDialog, setShowAddClipDialog] = useState<boolean>(false);
+  const [isAddingClip, setIsAddingClip] = useState<boolean>(false);
   const [clipBeingEdited, setClipBeingEdited] = useState<TimelineClip | null>(null);
   const [clipDialogMode, setClipDialogMode] = useState<'add' | 'edit'>('add');
   const [timelineHeight, setTimelineHeight] = useState<number>(200);
@@ -476,11 +480,11 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-2">
+    <Card className="w-full bg-black border-0 rounded-xl overflow-hidden shadow-xl">
+      <CardHeader className="pb-2 bg-zinc-900 border-b border-zinc-800">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl flex items-center">
-            <Layers className="h-5 w-5 mr-2 text-orange-500" />
+          <CardTitle className="text-xl flex items-center text-white">
+            <Layers className="h-5 w-5 mr-2 text-orange-400" />
             Línea de tiempo
           </CardTitle>
           
@@ -582,12 +586,12 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className="p-0 overflow-hidden">
+      <CardContent className="p-0 overflow-hidden bg-zinc-950">
         <div className="relative min-h-[200px]" ref={containerRef}>
           {/* Línea de tiempo scrollable */}
           <div
             ref={scrollContainerRef}
-            className="overflow-x-auto"
+            className="overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-950"
             style={{ height: `${getTimelineHeight() + 30}px` }}
           >
             <div 
@@ -609,41 +613,44 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                 {renderTimeMarkers()}
               </div>
               
-              {/* Marcador de tiempo actual */}
+              {/* Marcador de tiempo actual - Estilo CapCut móvil */}
               <div 
-                className="absolute top-0 h-full w-0.5 bg-orange-500 z-10 pointer-events-none"
+                className="absolute top-0 h-full w-1 bg-orange-500 z-10 pointer-events-none shadow-[0_0_8px_rgba(249,115,22,0.7)]"
                 style={{ left: `${timeToPosition(currentTime)}%` }}
               >
-                <div className="w-3 h-3 bg-orange-500 rounded-full -ml-1.5 -mt-1.5"></div>
+                <div className="w-4 h-4 bg-orange-500 rounded-full -ml-1.5 -mt-1.5 shadow-md"></div>
               </div>
             </div>
           </div>
           
-          {/* Controles de reproducción */}
-          <div className="flex items-center justify-center space-x-2 py-2 border-t">
+          {/* Controles de reproducción - Estilo CapCut */}
+          <div className="flex items-center justify-center space-x-3 py-3 border-t border-zinc-800 bg-zinc-900">
             {isPlaying ? (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={onPause}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 rounded-full bg-zinc-800 hover:bg-zinc-700"
               >
-                <Pause className="h-4 w-4" />
+                <Pause className="h-4 w-4 text-white" />
               </Button>
             ) : (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={onPlay}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 rounded-full bg-orange-600 hover:bg-orange-700"
               >
-                <Play className="h-4 w-4" />
+                <Play className="h-4 w-4 text-white" />
               </Button>
             )}
             
-            <span className="text-sm">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-white font-medium">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -795,13 +802,55 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
         </DialogContent>
       </Dialog>
       
-      <CardFooter className="pt-2 text-xs text-gray-500">
+      {/* Barra de acciones estilo CapCut móvil */}
+      <div className="px-2 py-3 bg-zinc-950 border-t border-zinc-800 flex justify-between items-center">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-9 rounded-full bg-zinc-800 text-white px-4 flex items-center gap-2"
+          onClick={() => prepareAddClip()}
+        >
+          <PlusCircle className="h-4 w-4 text-orange-400" />
+          <span className="text-xs">Añadir pista</span>
+        </Button>
+        
+        <div className="flex space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-9 rounded-full bg-zinc-800 text-white px-4 flex items-center gap-2"
+          >
+            <Mic className="h-4 w-4 text-orange-400" />
+            <span className="text-xs hidden md:inline">Grabar</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-9 w-9 rounded-full bg-zinc-800 text-white flex items-center justify-center"
+          >
+            <Settings className="h-4 w-4 text-gray-300" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Footer con info de timeline */}
+      <CardFooter className="pt-2 text-xs text-gray-400 bg-zinc-950 border-t border-zinc-800">
         <div className="flex justify-between w-full">
-          <div>
-            Clips: {clips.length} | Seleccionados: {selectedClipIds.size}
+          <div className="flex items-center space-x-2">
+            <div className="bg-zinc-800 px-2 py-1 rounded-md flex items-center">
+              <FileVideo className="h-3 w-3 mr-1.5 text-orange-400" />
+              <span>Clips: {clips.length}</span>
+            </div>
+            {selectedClipIds.size > 0 && (
+              <div className="bg-zinc-800 px-2 py-1 rounded-md">
+                Seleccionados: {selectedClipIds.size}
+              </div>
+            )}
           </div>
-          <div>
-            Duración total: {formatTime(duration)}
+          <div className="bg-zinc-800 px-2 py-1 rounded-md flex items-center">
+            <Clock className="h-3 w-3 mr-1.5 text-orange-400" />
+            <span>Duración: {formatTime(duration)}</span>
           </div>
         </div>
       </CardFooter>

@@ -157,6 +157,10 @@ export interface TimelineClip {
   start: number;
   duration: number;
   url: string;
+  trackId: number;
+  selected?: boolean;
+  color?: string;
+  end?: number;
   metadata?: Record<string, any>;
 }
 
