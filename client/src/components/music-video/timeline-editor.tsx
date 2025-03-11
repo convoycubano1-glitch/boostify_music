@@ -123,49 +123,56 @@ export function TimelineEditor({
     setZoom(prev => Math.max(prev / 1.5, 0.1));
   };
 
-  // Efecto para la animación del cursor de reproducción (mejorado para fluidez al estilo CapCut)
+  // Efecto para la animación del cursor de reproducción (mejorado para fluidez profesional)
   useEffect(() => {
     const playheadPosition = timeToPixels(currentTime);
     
-    if (isPlaying) {
-      // Animación suave del playhead con transición mejorada
-      playheadAnimation.start({
-        x: playheadPosition,
-        transition: {
-          duration: 0.08, // Duración levemente mayor para un movimiento tipo CapCut
-          ease: "cubicBezier(0.2, 0.0, 0.2, 1.0)", // Curva de aceleración profesional
-          type: "tween" // Asegura una animación fluida
-        }
-      });
-      
-      // Auto-scroll mejorado para seguir la cabeza de reproducción
-      if (scrollAreaRef.current) {
-        const scrollLeft = scrollAreaRef.current.scrollLeft;
-        const clientWidth = scrollAreaRef.current.clientWidth;
-        const threshold = clientWidth * 0.2; // 20% del ancho como umbral
+    // Usar requestAnimationFrame para animaciones más suaves y eficientes
+    const animatePlayhead = () => {
+      if (isPlaying) {
+        // Usar animación de framer-motion con valores optimizados
+        playheadAnimation.start({
+          x: playheadPosition,
+          transition: {
+            duration: 0.05, // Reducido para mayor precisión
+            ease: "linear", // Movimiento constante para reproducción fluida
+            type: "tween"
+          }
+        });
         
-        // Scroll suave cuando el playhead se acerca al borde (estilo CapCut)
-        if (playheadPosition > scrollLeft + clientWidth - threshold) {
-          // Si se acerca al borde derecho
-          const targetScroll = playheadPosition - (clientWidth * 0.7); // Posicionar al 70% de la vista
-          scrollAreaRef.current.scrollTo({
-            left: targetScroll,
-            behavior: 'smooth'
-          });
-        } else if (playheadPosition < scrollLeft + threshold) {
-          // Si se acerca al borde izquierdo
-          const targetScroll = playheadPosition - (clientWidth * 0.3); // Posicionar al 30% de la vista
-          scrollAreaRef.current.scrollTo({
-            left: targetScroll,
-            behavior: 'smooth'
-          });
+        // Auto-scroll optimizado con debounce implícito
+        if (scrollAreaRef.current) {
+          const scrollLeft = scrollAreaRef.current.scrollLeft;
+          const clientWidth = scrollAreaRef.current.clientWidth;
+          const threshold = clientWidth * 0.25; // Umbral ampliado para anticipar mejor
+          
+          // Scroll profesional estilo CapCut/Premiere
+          if (playheadPosition > scrollLeft + clientWidth - threshold) {
+            // Borde derecho - scroll anticipado
+            const targetScroll = playheadPosition - (clientWidth * 0.6);
+            scrollAreaRef.current.scrollTo({
+              left: targetScroll,
+              behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
+          } else if (playheadPosition < scrollLeft + threshold && scrollLeft > 0) {
+            // Borde izquierdo - scroll anticipado
+            const targetScroll = Math.max(0, playheadPosition - (clientWidth * 0.4));
+            scrollAreaRef.current.scrollTo({
+              left: targetScroll,
+              behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
+          }
         }
+      } else {
+        // Posicionamiento instantáneo cuando no está reproduciendo
+        playheadAnimation.set({ x: playheadPosition });
       }
-    } else {
-      // Posicionamiento instantáneo cuando no está reproduciendo
-      playheadAnimation.set({ x: playheadPosition });
-    }
-  }, [currentTime, isPlaying, playheadAnimation, timeToPixels]);
+    };
+    
+    // Ejecutar la animación
+    animatePlayhead();
+    
+  }, [currentTime, isPlaying, playheadAnimation, timeToPixels, scrollPosition]);
 
   // Referencia para WaveSurfer
   const wavesurferRef = useRef<ExtendedWaveSurfer | null>(null);
@@ -390,19 +397,154 @@ export function TimelineEditor({
     setHoveredTime(pixelsToTime(x));
   };
 
-  // Funciones para manejar arrastrar y soltar clips
+  // Configuración de interactjs para arrastrar y soltar clips
+  useEffect(() => {
+    // Verificamos que el DOM esté listo
+    if (!timelineRef.current) return;
+
+    // Función para configurar las interacciones
+    const setupInteractions = () => {
+      // Verificar que interactjs esté disponible
+      if (typeof interact === 'undefined') {
+        console.warn('Interact.js no está disponible');
+        return;
+      }
+
+      try {
+        // Primero limpiamos cualquier configuración previa
+        interact('.timeline-clip').unset();
+      } catch (error) {
+        console.warn('Error al limpiar interacciones anteriores:', error);
+      }
+
+      try {
+        // Configurar interactjs para arrastrar clips
+        interact('.timeline-clip')
+          .draggable({
+            inertia: false,
+            modifiers: [
+              interact.modifiers.restrictRect({
+                restriction: 'parent',
+                endOnly: true
+              })
+            ],
+            listeners: {
+              start: (event) => {
+                const clipId = Number(event.target.getAttribute('data-clip-id'));
+                const clip = clips.find((c) => c.id === clipId);
+                if (clip) {
+                  setIsDragging(true);
+                  setSelectedClip(clipId);
+                  setClipStartTime(clip.start);
+                  event.target.classList.add('dragging');
+                }
+              },
+              move: (event) => {
+                if (!isDragging || selectedClip === null) return;
+                
+                const deltaPixels = event.dx;
+                const deltaTime = pixelsToTime(deltaPixels);
+                const newStartTime = Math.max(0, clipStartTime + deltaTime);
+                
+                onClipUpdate(selectedClip, {
+                  start: newStartTime
+                });
+              },
+              end: (event) => {
+                event.target.classList.remove('dragging');
+                setIsDragging(false);
+                setClipStartTime(0);
+              }
+            }
+          })
+          .resizable({
+            edges: { left: true, right: true, bottom: false, top: false },
+            inertia: false,
+            modifiers: [
+              interact.modifiers.restrictSize({
+                min: { width: 10, height: 0 }
+              })
+            ],
+            listeners: {
+              start: (event) => {
+                const clipId = Number(event.target.getAttribute('data-clip-id'));
+                const clip = clips.find((c) => c.id === clipId);
+                if (clip) {
+                  setSelectedClip(clipId);
+                  const resizeEdge = event.edges.left ? 'start' : 'end';
+                  setResizingSide(resizeEdge);
+                  setClipStartTime(clip.start);
+                  event.target.classList.add('resizing');
+                }
+              },
+              move: (event) => {
+                if (selectedClip === null || !resizingSide) return;
+                
+                const clip = clips.find((c) => c.id === selectedClip);
+                if (!clip) return;
+                
+                if (resizingSide === 'start') {
+                  // Redimensionar desde el inicio
+                  const deltaWidth = event.deltaRect.left;
+                  const deltaTime = pixelsToTime(deltaWidth);
+                  const newStart = Math.max(0, clip.start - deltaTime);
+                  const newDuration = clip.duration + (clip.start - newStart);
+                  
+                  onClipUpdate(selectedClip, {
+                    start: newStart,
+                    duration: Math.max(0.5, newDuration)
+                  });
+                } else {
+                  // Redimensionar desde el final
+                  const deltaWidth = event.deltaRect.right;
+                  const deltaTime = pixelsToTime(deltaWidth);
+                  
+                  onClipUpdate(selectedClip, {
+                    duration: Math.max(0.5, clip.duration + deltaTime)
+                  });
+                }
+              },
+              end: (event) => {
+                event.target.classList.remove('resizing');
+                setResizingSide(null);
+              }
+            }
+          });
+      } catch (error) {
+        console.error('Error al configurar interacciones con interact.js:', error);
+      }
+    };
+
+    // Configurar las interacciones
+    setupInteractions();
+    
+    // Limpiar al desmontar
+    return () => {
+      if (typeof interact !== 'undefined') {
+        try {
+          interact('.timeline-clip').unset();
+        } catch (error) {
+          console.warn('Error al limpiar interacciones:', error);
+        }
+      }
+    };
+  }, [clips, zoom, pixelsToTime, clipStartTime, onClipUpdate]);
+  
+  // Mantener funciones de fallback por compatibilidad
   const handleClipDragStart = (clipId: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    const clip = clips.find(c => c.id === clipId);
-    if (clip) {
-      setIsDragging(true);
-      setSelectedClip(clipId);
-      setDragStartX(e.clientX);
-      setClipStartTime(clip.start);
-      
-      // Agregar listeners al documento
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+    // Esta función ahora es solo un fallback, principalmente gestionada por interactjs
+    if (!interact.isSet('.timeline-clip')) {
+      e.preventDefault();
+      const clip = clips.find(c => c.id === clipId);
+      if (clip) {
+        setIsDragging(true);
+        setSelectedClip(clipId);
+        setDragStartX(e.clientX);
+        setClipStartTime(clip.start);
+        
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+      }
     }
   };
   
@@ -992,7 +1134,7 @@ export function TimelineEditor({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     className={cn(
-                      "absolute h-32 rounded-md overflow-hidden border cursor-move",
+                      "timeline-clip absolute h-32 rounded-md overflow-hidden border cursor-move",
                       selectedClip === clip.id ? "ring-2 ring-orange-500" : "",
                       isDragging && selectedClip === clip.id ? "opacity-70" : ""
                     )}
@@ -1001,6 +1143,7 @@ export function TimelineEditor({
                       width: `${timeToPixels(clip.duration)}px`,
                       top: '8px'
                     }}
+                    data-clip-id={clip.id}
                     onMouseDown={(e) => handleClipDragStart(clip.id, e)}
                     onDoubleClick={() => handleClipDoubleClick(clip)}
                   >
