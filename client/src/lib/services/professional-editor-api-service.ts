@@ -143,6 +143,72 @@ export async function fetchPublicProjects(limit: number = 10): Promise<any[]> {
 }
 
 /**
+ * Exporta un proyecto a un formato JSON descargable
+ * @param projectId ID del proyecto a exportar
+ * @returns Objeto con el proyecto para exportar
+ */
+export async function exportProject(projectId: string): Promise<any> {
+  try {
+    // Primero, obtener el proyecto completo
+    const project = await fetchProject(projectId);
+    
+    if (!project) {
+      throw new Error('Proyecto no encontrado');
+    }
+    
+    // Preparar los datos para exportación
+    const exportData = {
+      version: '1.0.0',
+      exportDate: new Date().toISOString(),
+      project: {
+        name: project.name,
+        timeline: typeof project.timeline === 'string' ? JSON.parse(project.timeline) : project.timeline,
+        effects: typeof project.effects === 'string' ? JSON.parse(project.effects) : project.effects,
+        settings: typeof project.settings === 'string' ? JSON.parse(project.settings) : project.settings,
+        // No incluimos datos sensibles como userId o IDs internos
+      }
+    };
+    
+    return exportData;
+  } catch (error) {
+    console.error('Error exporting project:', error);
+    throw new Error('Error al exportar el proyecto');
+  }
+}
+
+/**
+ * Importa un proyecto desde un archivo JSON
+ * @param importData Datos del proyecto a importar
+ * @returns Proyecto creado/importado
+ */
+export async function importProject(importData: any): Promise<any> {
+  try {
+    if (!importData || !importData.project) {
+      throw new Error('Formato de importación inválido');
+    }
+    
+    // Validar versión para compatibilidad
+    const version = importData.version || '1.0.0';
+    console.log(`Importando proyecto versión ${version}`);
+    
+    // Preparar datos para guardar
+    const projectData = {
+      id: `project-${Date.now()}`, // Generar nuevo ID
+      name: importData.project.name || 'Proyecto importado',
+      timeline: JSON.stringify(importData.project.timeline || []),
+      effects: JSON.stringify(importData.project.effects || []),
+      settings: JSON.stringify(importData.project.settings || {}),
+    };
+    
+    // Guardar como nuevo proyecto
+    return await saveProjectToServer(projectData);
+  } catch (error) {
+    console.error('Error importing project:', error);
+    throw new Error('Error al importar el proyecto');
+  }
+}
+
+/**
  * Sube un archivo multimedia (audio, video, imagen) para un proyecto
  * @param projectId ID del proyecto
  * @param file Archivo a subir

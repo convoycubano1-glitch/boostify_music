@@ -64,7 +64,8 @@ const ProfessionalEditor: React.FC = () => {
   const [duration, setDuration] = useState<number>(120); // 2 minutos por defecto
 
   // Estado de los datos del proyecto
-  const [videoSrc, setVideoSrc] = useState<string>('');
+  // Usar un video de ejemplo para que el reproductor funcione correctamente
+  const [videoSrc, setVideoSrc] = useState<string>('/assets/Standard_Mode_Generated_Video (2).mp4');
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [visualEffects, setVisualEffects] = useState<VisualEffect[]>([]);
   const [beats, setBeats] = useState<Beat[]>([]);
@@ -153,15 +154,160 @@ const ProfessionalEditor: React.FC = () => {
     markProjectAsModified();
   };
 
-  // Importar/exportar proyecto
+  // Importar proyecto desde archivo JSON
   const handleImportProject = () => {
-    // Implementación pendiente
-    alert('Funcionalidad de importación pendiente');
+    try {
+      // Crear un input tipo file oculto
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.json';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+      
+      // Manejar la selección del archivo
+      fileInput.onchange = async (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const files = target.files;
+        
+        if (!files || files.length === 0) {
+          return;
+        }
+        
+        const file = files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async (event) => {
+          try {
+            const fileContent = event.target?.result as string;
+            const importData = JSON.parse(fileContent);
+            
+            // Mostrar toast informativo
+            toast({
+              title: "Importando proyecto",
+              description: "Espere un momento mientras procesamos su proyecto..."
+            });
+            
+            // Llamar al servicio de API para importar
+            const importedProject = await editorApiService.importProject(importData);
+            
+            if (importedProject) {
+              // Actualizar estado local con datos del proyecto importado
+              setProjectName(importedProject.name);
+              setClips(typeof importedProject.timeline === 'string' 
+                ? JSON.parse(importedProject.timeline) 
+                : importedProject.timeline);
+              setVisualEffects(typeof importedProject.effects === 'string' 
+                ? JSON.parse(importedProject.effects) 
+                : importedProject.effects);
+              
+              if (importedProject.settings) {
+                const settings = typeof importedProject.settings === 'string' 
+                  ? JSON.parse(importedProject.settings) 
+                  : importedProject.settings;
+                
+                if (settings.bpm) setBpm(settings.bpm);
+                if (settings.duration) setDuration(settings.duration);
+              }
+              
+              toast({
+                title: "Proyecto importado",
+                description: "El proyecto se ha importado correctamente"
+              });
+              
+              setProjectModified(false);
+            }
+          } catch (error) {
+            console.error('Error al procesar archivo importado:', error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "El archivo seleccionado no es un proyecto válido."
+            });
+          }
+        };
+        
+        reader.readAsText(file);
+        
+        // Limpiar el input del DOM después de usarlo
+        document.body.removeChild(fileInput);
+      };
+      
+      // Simular click para abrir el diálogo de selección de archivo
+      fileInput.click();
+    } catch (error) {
+      console.error('Error al importar proyecto:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo importar el proyecto"
+      });
+    }
   };
 
-  const handleExportProject = () => {
-    // Implementación pendiente
-    alert('Funcionalidad de exportación pendiente');
+  // Exportar proyecto a archivo JSON
+  const handleExportProject = async () => {
+    try {
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Debe iniciar sesión para exportar proyectos"
+        });
+        return;
+      }
+      
+      // Primero guardar el proyecto actual para tener los datos actualizados
+      if (projectModified) {
+        toast({
+          title: "Guardando cambios",
+          description: "Guardando proyecto antes de exportar..."
+        });
+        
+        await handleSaveProject();
+      }
+      
+      // Preparar un ID de proyecto, ya sea existente o nuevo
+      const projectId = localStorage.getItem('currentProjectId') || `project-${Date.now()}`;
+      
+      // Mostrar toast informativo
+      toast({
+        title: "Exportando proyecto",
+        description: "Preparando datos para exportación..."
+      });
+      
+      // Llamar al servicio de API para exportar
+      const exportData = await editorApiService.exportProject(projectId);
+      
+      // Convertir a string JSON con formato legible
+      const jsonString = JSON.stringify(exportData, null, 2);
+      
+      // Crear blob y url para descargar
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Crear enlace de descarga y simular click
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `${projectName.replace(/\s+/g, '_')}_export.json`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      
+      // Limpiar
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Proyecto exportado",
+        description: "El proyecto se ha exportado correctamente"
+      });
+    } catch (error) {
+      console.error('Error al exportar proyecto:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo exportar el proyecto"
+      });
+    }
   };
 
   const { toast } = useToast();

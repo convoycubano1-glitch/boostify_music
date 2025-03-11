@@ -888,5 +888,154 @@ router.get('/audio', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Endpoint para importar un proyecto
+ * Este endpoint requiere autenticación
+ */
+router.post('/projects/import', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { importData } = req.body;
+    const userId = req.user?.uid;
+
+    if (!importData || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requieren datos de importación y autenticación'
+      });
+    }
+
+    if (!importData.project) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de importación inválido'
+      });
+    }
+
+    // Validar versión para compatibilidad
+    const version = importData.version || '1.0.0';
+    console.log(`Importando proyecto versión ${version}`);
+
+    // Generar nuevo ID para el proyecto importado
+    const projectId = `project-${Date.now()}`;
+    const projectRef = db.collection('editorProjects').doc(projectId);
+
+    // Preparar datos para guardar
+    const projectToSave = {
+      id: projectId,
+      name: importData.project.name || 'Proyecto importado',
+      timeline: typeof importData.project.timeline === 'string' 
+        ? importData.project.timeline 
+        : JSON.stringify(importData.project.timeline || []),
+      effects: typeof importData.project.effects === 'string' 
+        ? importData.project.effects 
+        : JSON.stringify(importData.project.effects || []),
+      settings: typeof importData.project.settings === 'string' 
+        ? importData.project.settings 
+        : JSON.stringify(importData.project.settings || {}),
+      userId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastSavedAt: FieldValue.serverTimestamp(),
+      isPublic: false,
+      isImported: true,
+      importedAt: FieldValue.serverTimestamp(),
+      importSource: importData.source || 'manual',
+      importVersion: version,
+    };
+
+    // Guardar en Firestore
+    await projectRef.set(projectToSave);
+
+    res.status(200).json({
+      success: true,
+      projectId,
+      project: {
+        ...projectToSave,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSavedAt: new Date(),
+        importedAt: new Date(),
+      },
+      message: 'Proyecto importado correctamente'
+    });
+  } catch (error: any) {
+    console.error('Error importando proyecto:', error);
+    res.status(500).json({
+      success: false,
+      message: `Error al importar el proyecto: ${error.message}`
+    });
+  }
+});
+
+/**
+ * Endpoint para exportar un proyecto
+ * Este endpoint requiere autenticación
+ */
+router.get('/projects/:projectId/export', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = req.user?.uid;
+
+    if (!projectId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere un ID de proyecto y autenticación'
+      });
+    }
+
+    // Obtener el proyecto
+    const projectRef = db.collection('editorProjects').doc(projectId);
+    const projectSnap = await projectRef.get();
+
+    // Verificar que el proyecto exista
+    if (!projectSnap.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proyecto no encontrado'
+      });
+    }
+
+    // Verificar que el usuario sea propietario del proyecto
+    const projectData = projectSnap.data();
+    if (projectData && projectData.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para exportar este proyecto'
+      });
+    }
+
+    // Preparar los datos para exportación
+    const exportData = {
+      version: '1.0.0',
+      exportDate: new Date().toISOString(),
+      project: {
+        name: projectData?.name || 'Proyecto sin nombre',
+        timeline: typeof projectData?.timeline === 'string' 
+          ? JSON.parse(projectData.timeline) 
+          : projectData?.timeline || [],
+        effects: typeof projectData?.effects === 'string' 
+          ? JSON.parse(projectData.effects) 
+          : projectData?.effects || [],
+        settings: typeof projectData?.settings === 'string' 
+          ? JSON.parse(projectData.settings) 
+          : projectData?.settings || {},
+        // No incluimos datos sensibles como userId o IDs internos
+      }
+    };
+
+    res.status(200).json({
+      success: true,
+      exportData,
+      message: 'Proyecto exportado correctamente'
+    });
+  } catch (error: any) {
+    console.error('Error exportando proyecto:', error);
+    res.status(500).json({
+      success: false,
+      message: `Error al exportar el proyecto: ${error.message}`
+    });
+  }
+});
+
 // Exportar el router
 export default router;

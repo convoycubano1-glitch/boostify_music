@@ -423,6 +423,169 @@ router.get('/projects/public/list', async (req: Request, res: Response) => {
 });
 
 /**
+ * Exportar un proyecto a formato JSON
+ * Este endpoint requiere autenticación
+ */
+router.get('/projects/:projectId/export', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+
+    // Obtener el proyecto
+    const projectRef = db.collection('video_editor_projects').doc(projectId);
+    const projectDoc = await projectRef.get();
+    
+    if (!projectDoc.exists) {
+      return res.status(404).json({ success: false, message: 'Proyecto no encontrado' });
+    }
+    
+    const projectData = projectDoc.data();
+    
+    // Verificar si el usuario tiene acceso al proyecto
+    if (projectData?.userId !== userId && !projectData?.isPublic) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'No tienes permiso para exportar este proyecto' 
+      });
+    }
+    
+    // Preparar los datos para exportación
+    const exportData = {
+      version: '1.0.0',
+      exportDate: new Date().toISOString(),
+      project: {
+        name: projectData?.name || 'Proyecto sin nombre',
+        timeline: JSON.parse(projectData?.timeline || '[]'),
+        effects: JSON.parse(projectData?.effects || '[]'),
+        settings: JSON.parse(projectData?.settings || '{}'),
+        // No incluimos datos sensibles como userId o IDs internos
+      }
+    };
+    
+    // Registrar actividad de exportación
+    try {
+      await db.collection('editor_activities').add({
+        userId,
+        projectId,
+        action: 'export',
+        timestamp: Timestamp.now(),
+        details: {
+          exportVersion: exportData.version
+        }
+      });
+    } catch (activityError) {
+      console.error('Error al registrar actividad de exportación:', activityError);
+      // No detenemos el flujo por errores en registro de actividad
+    }
+    
+    return res.status(200).json({
+      success: true,
+      exportData
+    });
+  } catch (error) {
+    console.error('Error al exportar proyecto:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al exportar el proyecto',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Importar un proyecto desde formato JSON
+ * Este endpoint requiere autenticación
+ */
+router.post('/projects/import', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { importData } = req.body;
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    // Validar datos de importación
+    if (!importData || !importData.project) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Datos de importación inválidos o incompletos' 
+      });
+    }
+    
+    // Validar versión para compatibilidad
+    const version = importData.version || '1.0.0';
+    
+    // Generar ID único para el proyecto importado
+    const projectId = `imported_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    
+    // Crear fecha actual
+    const now = Timestamp.now();
+    
+    // Preparar datos del proyecto
+    const projectData = {
+      name: importData.project.name || 'Proyecto importado',
+      timeline: JSON.stringify(importData.project.timeline || []),
+      effects: JSON.stringify(importData.project.effects || []),
+      settings: JSON.stringify(importData.project.settings || {}),
+      thumbnailUrl: '',
+      userId,
+      createdAt: now,
+      updatedAt: now,
+      isPublic: false,
+      importedFrom: {
+        version,
+        date: importData.exportDate || new Date().toISOString()
+      }
+    };
+    
+    // Guardar el proyecto importado
+    const projectRef = db.collection('video_editor_projects').doc(projectId);
+    await projectRef.set(projectData);
+    
+    // Registrar actividad de importación
+    try {
+      await db.collection('editor_activities').add({
+        userId,
+        projectId,
+        action: 'import',
+        timestamp: now,
+        details: {
+          importVersion: version
+        }
+      });
+    } catch (activityError) {
+      console.error('Error al registrar actividad de importación:', activityError);
+      // No detenemos el flujo por errores en registro de actividad
+    }
+    
+    // Devolver el proyecto importado
+    return res.status(201).json({
+      success: true,
+      message: 'Proyecto importado exitosamente',
+      project: {
+        id: projectId,
+        ...projectData,
+        timeline: importData.project.timeline || [],
+        effects: importData.project.effects || [],
+        settings: importData.project.settings || {}
+      }
+    });
+  } catch (error) {
+    console.error('Error al importar proyecto:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al importar el proyecto',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
  * Subir un clip de audio/video al proyecto
  * Este endpoint requiere autenticación
  */
