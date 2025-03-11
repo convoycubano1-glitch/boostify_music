@@ -9,10 +9,12 @@
  * - Muestra los 9 pasos del flujo de trabajo con diseño responsivo
  * - Marca pasos como activos o completados con iconos y colores distintivos
  * - Adapta su visualización a diferentes tamaños de pantalla
+ * - Se integra con EditorContext para acceder al estado global del proyecto
  */
 import React from 'react';
 import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEditor } from '@/lib/context/editor-context';
 
 export interface Step {
   id: string;
@@ -22,21 +24,51 @@ export interface Step {
 
 export interface ProgressStepsProps {
   steps: Step[];
-  currentStep: string;
-  completedSteps: string[];
+  currentStep?: string;
+  completedSteps?: string[];
+  onChange?: (stepId: string) => void;
+  onComplete?: (stepId: string) => void;
 }
 
 export function ProgressSteps({
   steps,
-  currentStep,
-  completedSteps
+  currentStep: propCurrentStep,
+  completedSteps: propCompletedSteps,
+  onChange,
+  onComplete
 }: ProgressStepsProps) {
+  // Integración con el contexto del editor
+  const { project, setCurrentStep, markStepAsCompleted } = useEditor();
+  
+  // Utilizamos los valores del contexto o los props, priorizando los props para compatibilidad
+  const currentStep = propCurrentStep || 
+    (project.currentStep !== undefined ? steps[project.currentStep]?.id : steps[0].id);
+  
+  // Construimos un array de IDs de pasos completados a partir de los índices almacenados
+  const completedSteps = propCompletedSteps || 
+    project.completedSteps.map(index => steps[index]?.id).filter(Boolean);
+  
+  // Manejador de clic en un paso
+  const handleStepClick = (stepId: string) => {
+    // Encontramos el índice del paso
+    const stepIndex = steps.findIndex(step => step.id === stepId);
+    if (stepIndex !== -1) {
+      // Actualizamos el estado a través del contexto
+      setCurrentStep(stepIndex);
+      
+      // Llamamos al callback si existe
+      if (onChange) {
+        onChange(stepId);
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="space-y-4 md:space-y-0 md:flex md:items-start md:gap-2">
         {steps.map((step, index) => {
           const isActive = step.id === currentStep;
-          const isCompleted = completedSteps.includes(step.id);
+          const isCompleted = completedSteps?.includes?.(step.id) || false;
           
           return (
             <React.Fragment key={step.id}>
@@ -48,11 +80,12 @@ export function ProgressSteps({
               
               <div 
                 className={cn(
-                  "relative flex items-start group",
+                  "relative flex items-start group cursor-pointer",
                   "md:flex-col md:items-center md:flex-1",
                   isActive && "text-primary",
                   !isActive && !isCompleted && "text-muted-foreground"
                 )}
+                onClick={() => handleStepClick(step.id)}
               >
                 <div 
                   className={cn(

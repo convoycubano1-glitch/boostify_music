@@ -16,6 +16,12 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   Music, 
   Video, 
@@ -43,6 +49,7 @@ import { TimelineClip } from './timeline-editor';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ProgressSteps, Step } from './progress-steps';
+import { useEditor } from '@/lib/context/editor-context';
 
 // Definición local de los pasos para evitar problemas con HMR
 const workflowSteps: Step[] = [
@@ -137,8 +144,15 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   const [transcription, setTranscription] = useState<string>('');
   const [duration, setDuration] = useState<number>(0);
   
+  // Integración con el contexto del editor
+  const editorContext = useEditor();
+  
   // Estado de procesamiento y UI
   const [activeStep, setActiveStep] = useState<string>('upload');
+  
+  // Usamos el estado local o el del contexto, dependiendo de si queremos forzar sincronización
+  // En este caso usamos variables locales para mantener compatibilidad con el código existente
+  // pero sincronizamos con el contexto en momentos clave
   const [currentWorkflowStep, setCurrentWorkflowStep] = useState<string>('transcription');
   const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<string[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
@@ -209,6 +223,72 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     return 'Plano General';
   };
 
+  // Componente para mostrar el estado de guardado
+  const SaveStatusIndicator = () => {
+    const { saveStatus, lastSaved, persistenceMode } = editorContext;
+    
+    const getStatusIcon = () => {
+      switch (saveStatus) {
+        case 'saving':
+          return <Loader2 className="h-4 w-4 animate-spin" />;
+        case 'saved':
+          return <Save className="h-4 w-4 text-green-500" />;
+        case 'error':
+          return <Save className="h-4 w-4 text-amber-500" />;
+        default:
+          return <Save className="h-4 w-4 text-slate-400" />;
+      }
+    };
+    
+    const getStatusText = () => {
+      switch (saveStatus) {
+        case 'saving':
+          return 'Guardando...';
+        case 'saved':
+          return lastSaved 
+            ? `Guardado ${lastSaved.toLocaleTimeString()}` 
+            : 'Guardado';
+        case 'error':
+          return 'Guardado local';
+        default:
+          return 'Proyecto nuevo';
+      }
+    };
+    
+    const getModeLabel = () => {
+      switch (persistenceMode) {
+        case 'firestore':
+          return 'en la nube';
+        case 'hybrid':
+          return 'en nube y local';
+        case 'local':
+        default:
+          return 'localmente';
+      }
+    };
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {getStatusIcon()}
+              <span>{getStatusText()}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Tu proyecto se guarda {getModeLabel()}</p>
+            {saveStatus === 'error' && (
+              <p className="text-amber-500 mt-1">
+                No se pudo guardar en la nube. Tus cambios están guardados localmente.
+              </p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+  
   // Función para generar clips de línea de tiempo a partir de los archivos
   const generateEditingTimeline = useCallback(async () => {
     if (!audioFile) return [];
@@ -311,17 +391,33 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
 
   // Marcador de progreso de flujo de trabajo
   const markStepComplete = useCallback((stepId: string, nextStepId?: string) => {
+    // Actualizar estado local para mantener compatibilidad con componente actual
     setCompletedWorkflowSteps(prev => {
       if (!prev.includes(stepId)) {
-        return [...prev, stepId];
+        const newCompletedSteps = [...prev, stepId];
+        
+        // Sincronizar con el contexto del editor
+        // Buscamos el índice del paso en el arreglo de steps
+        const stepIndex = workflowSteps.findIndex(step => step.id === stepId);
+        if (stepIndex !== -1) {
+          editorContext.markStepAsCompleted(stepIndex);
+        }
+        
+        return newCompletedSteps;
       }
       return prev;
     });
     
     if (nextStepId) {
       setCurrentWorkflowStep(nextStepId);
+      
+      // Sincronizar con el contexto del editor
+      const nextStepIndex = workflowSteps.findIndex(step => step.id === nextStepId);
+      if (nextStepIndex !== -1) {
+        editorContext.setCurrentStep(nextStepIndex);
+      }
     }
-  }, []);
+  }, [editorContext, workflowSteps]);
   
   // Iniciar análisis y generación de la línea de tiempo
   const handleStartAnalysis = async () => {
@@ -341,6 +437,16 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       // Paso 1: Generar transcripción
       const transcript = await transcribeAudio(audioFile);
       setTranscription(transcript);
+      
+      // Guardar la transcripción en el contexto del editor
+      editorContext.addTranscription({
+        audioId: 'main-audio',
+        text: transcript,
+        startTime: 0,
+        endTime: audioFile.size > 1000000 ? 180 : 120,
+        confidence: 0.85
+      });
+      
       markStepComplete('transcription', 'script');
       
       // Simular progreso del análisis
@@ -368,6 +474,37 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             setAnalysisComplete(true);
             setIsAnalyzing(false);
             setActiveStep('timeline');
+            
+            // Sincronizar con el contexto del editor - agregar pistas de audio y clips
+            const audioClip = clips.find(clip => clip.type === 'audio');
+            if (audioClip && audioClip.audioUrl) {
+              // Agregar pista de audio al contexto
+              editorContext.addAudioTrack({
+                name: audioFile?.name || 'Audio Principal',
+                url: audioClip.audioUrl,
+                duration: duration,
+                startTime: 0,
+                waveformData: []
+              });
+            }
+            
+            // Agregar clips de video e imágenes al contexto
+            clips
+              .filter(clip => clip.type !== 'audio')
+              .forEach(clip => {
+                editorContext.addClip({
+                  type: clip.type as 'video' | 'image',
+                  url: clip.videoUrl || clip.imageUrl || '',
+                  name: clip.title,
+                  startTime: clip.start,
+                  duration: clip.duration,
+                  layer: clip.layer,
+                  properties: {
+                    section: clip.metadata?.section || '',
+                    sourceIndex: clip.metadata?.sourceIndex || 0
+                  }
+                });
+              });
             
             // Marcar los primeros 5 pasos como completados
             markStepComplete('customization', 'movement');
@@ -434,6 +571,11 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             const allStepIds = workflowSteps.map(step => step.id);
             setCompletedWorkflowSteps(allStepIds);
             
+            // Sincronizar con el contexto del editor - marcar todos los pasos como completados
+            workflowSteps.forEach((_, index) => {
+              editorContext.markStepAsCompleted(index);
+            });
+            
             toast({
               title: "Video generado",
               description: "Tu video musical ha sido creado con éxito",
@@ -464,7 +606,10 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl">Flujo de Trabajo para Video Musical</CardTitle>
-              <CardDescription>Crea videos musicales sincronizados con ritmo y letra</CardDescription>
+              <CardDescription className="flex items-center gap-2">
+                <span>Crea videos musicales sincronizados con ritmo y letra</span>
+                <SaveStatusIndicator />
+              </CardDescription>
             </div>
             
             {/* Indicador de progreso básico */}

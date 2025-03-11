@@ -256,6 +256,20 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.uploadedBy == request.auth.uid;
     }
     
+    // Music Video Projects collection
+    match /musicVideoProjects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        !resource.data.userId || 
+        resource.data.userId == request.auth.uid
+      );
+      allow delete: if isAuthenticated() && (
+        !resource.data.userId || 
+        resource.data.userId == request.auth.uid
+      );
+    }
+    
     // Production Collaborators collection
     match /production_collaborators/{collaboratorId} {
       allow read: if isAuthenticated();

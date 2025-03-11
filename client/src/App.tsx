@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SubscriptionProvider } from "@/lib/context/subscription-context";
 import { SubscriptionPlan } from "@/lib/api/subscription-service";
 import { ViteHMRErrorHandler } from "@/components/improved-websocket-context";
+import { EditorProvider } from "@/lib/context/editor-context";
 import NotFound from "@/pages/not-found";
 import AdminPage from "@/pages/admin";
 import AIAgentsPage from "@/pages/ai-agents";
@@ -389,8 +390,10 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SubscriptionProvider>
-            <Router />
-            <Toaster />
+            <EditorProvider>
+              <Router />
+              <Toaster />
+            </EditorProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </QueryClientProvider>
