@@ -1,83 +1,139 @@
+/**
+ * Componente ProgressSteps
+ * 
+ * Este componente muestra un indicador visual de progreso para el flujo de trabajo de 9 pasos
+ * utilizado en la creación de videos musicales profesionales. Permite visualizar
+ * el estado actual de progreso, los pasos completados y los pendientes.
+ * 
+ * Características:
+ * - Muestra los 9 pasos del flujo de trabajo con diseño responsivo
+ * - Marca pasos como activos o completados con iconos y colores distintivos
+ * - Adapta su visualización a diferentes tamaños de pantalla
+ */
 import React from 'react';
+import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle, ArrowRight } from 'lucide-react';
-
-export type StepStatus = 'pending' | 'current' | 'completed';
 
 export interface Step {
+  id: string;
   title: string;
   description: string;
-  status: StepStatus;
 }
 
-interface ProgressStepsProps {
+export interface ProgressStepsProps {
   steps: Step[];
-  currentStep: number;
+  currentStep: string;
+  completedSteps: string[];
 }
 
-export function ProgressSteps({ steps, currentStep }: ProgressStepsProps) {
+export function ProgressSteps({
+  steps,
+  currentStep,
+  completedSteps
+}: ProgressStepsProps) {
   return (
-    <div className="bg-gradient-to-r from-orange-600 to-pink-600 p-4 text-white">
-      <div className="container">
-        <div className="flex flex-col space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">Creador de Videos Musicales</h2>
-            <div className="text-sm py-1 px-3 bg-white/20 rounded-full">
-              Paso {currentStep} de {steps.length}
-            </div>
-          </div>
+    <div className="w-full">
+      <div className="space-y-4 md:space-y-0 md:flex md:items-start md:gap-2">
+        {steps.map((step, index) => {
+          const isActive = step.id === currentStep;
+          const isCompleted = completedSteps.includes(step.id);
           
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-x-2 gap-y-4">
-            {steps.map((step, index) => (
+          return (
+            <React.Fragment key={step.id}>
+              {index > 0 && (
+                <div className="hidden md:flex md:items-center md:self-stretch">
+                  <ArrowRight className="mx-2 h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+              
               <div 
-                key={index} 
                 className={cn(
-                  "flex items-start relative group",
-                  index < steps.length - 1 && "md:after:content-[''] md:after:absolute md:after:top-3.5 md:after:left-[calc(100%_-_10px)] md:after:h-0.5 md:after:w-[calc(100%_-_15px)] md:after:bg-white/30",
-                  step.status === 'completed' && "md:after:bg-white"
+                  "relative flex items-start group",
+                  "md:flex-col md:items-center md:flex-1",
+                  isActive && "text-primary",
+                  !isActive && !isCompleted && "text-muted-foreground"
                 )}
               >
-                <div className="flex flex-col items-start flex-grow">
-                  <div className="flex items-center">
-                    <div className={cn(
-                      "flex items-center justify-center w-7 h-7 rounded-full mr-3 flex-shrink-0 transition-colors",
-                      step.status === 'pending' && "border border-white/40 text-white/40",
-                      step.status === 'current' && "bg-white text-orange-600",
-                      step.status === 'completed' && "bg-white text-green-600"
-                    )}>
-                      {step.status === 'completed' ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : step.status === 'current' ? (
-                        <ArrowRight className="w-4 h-4" />
-                      ) : (
-                        <Circle className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div>
-                      <p className={cn(
-                        "font-medium text-sm transition-colors",
-                        step.status === 'pending' && "text-white/70",
-                        step.status === 'current' && "text-white font-semibold",
-                        step.status === 'completed' && "text-white"
-                      )}>
-                        {step.title}
-                      </p>
-                      <p className={cn(
-                        "text-xs transition-colors hidden md:block",
-                        step.status === 'pending' && "text-white/50",
-                        step.status === 'current' && "text-white/90",
-                        step.status === 'completed' && "text-white/80"
-                      )}>
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
+                <div 
+                  className={cn(
+                    "flex h-8 w-8 mr-3 flex-shrink-0 items-center justify-center rounded-full border-2",
+                    "md:mb-2 md:mr-0",
+                    isActive && "border-primary bg-primary/10",
+                    isCompleted && "border-primary bg-primary text-primary-foreground",
+                    !isActive && !isCompleted && "border-muted-foreground"
+                  )}
+                >
+                  {isCompleted ? (
+                    <CheckCircle className="h-5 w-5" />
+                  ) : (
+                    <Circle className="h-5 w-5" />
+                  )}
+                </div>
+                
+                <div className="md:text-center">
+                  <div className="text-sm font-semibold">{step.title}</div>
+                  <p className="text-xs md:hidden">{step.description}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+      
+      <div className="hidden md:block mt-1 text-center text-xs text-muted-foreground">
+        {steps.find(step => step.id === currentStep)?.description || ''}
       </div>
     </div>
   );
 }
+
+// Definición de los pasos del flujo de trabajo para creación de videos musicales
+// Nota: Definido como constante (no export) para evitar problemas de Fast Refresh de React
+// Re-exportamos para uso en MusicVideoWorkflow
+export const musicVideoWorkflowSteps: Step[] = [
+  {
+    id: 'transcription',
+    title: 'Transcripción de Audio',
+    description: 'Analizando y transcribiendo la letra de tu canción'
+  },
+  {
+    id: 'script',
+    title: 'Generación de Guion',
+    description: 'Creando un guion visual basado en tu música'
+  },
+  {
+    id: 'sync',
+    title: 'Sincronización',
+    description: 'Sincronizando el video con el ritmo de la música'
+  },
+  {
+    id: 'scenes',
+    title: 'Generación de Escenas',
+    description: 'Creando las escenas del video musical'
+  },
+  {
+    id: 'customization',
+    title: 'Personalización',
+    description: 'Ajustando el estilo visual a tus preferencias'
+  },
+  {
+    id: 'movement',
+    title: 'Integración de Movimiento',
+    description: 'Añadiendo coreografías y dinámicas visuales'
+  },
+  {
+    id: 'lipsync',
+    title: 'Sincronización de Labios',
+    description: 'Sincronizando labios con la letra de la canción'
+  },
+  {
+    id: 'generation',
+    title: 'Generación de Video',
+    description: 'Creando videos con IA a partir de tus escenas'
+  },
+  {
+    id: 'rendering',
+    title: 'Renderizado Final',
+    description: 'Combinando todo en tu video musical'
+  }
+];

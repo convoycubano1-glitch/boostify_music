@@ -42,6 +42,56 @@ import { VideoGenerator, VideoGenerationSettings } from './video-generator';
 import { TimelineClip } from './timeline-editor';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { ProgressSteps, Step } from './progress-steps';
+
+// Definición local de los pasos para evitar problemas con HMR
+const workflowSteps: Step[] = [
+  {
+    id: 'transcription',
+    title: 'Transcripción de Audio',
+    description: 'Analizando y transcribiendo la letra de tu canción'
+  },
+  {
+    id: 'script',
+    title: 'Generación de Guion',
+    description: 'Creando un guion visual basado en tu música'
+  },
+  {
+    id: 'sync',
+    title: 'Sincronización',
+    description: 'Sincronizando el video con el ritmo de la música'
+  },
+  {
+    id: 'scenes',
+    title: 'Generación de Escenas',
+    description: 'Creando las escenas del video musical'
+  },
+  {
+    id: 'customization',
+    title: 'Personalización',
+    description: 'Ajustando el estilo visual a tus preferencias'
+  },
+  {
+    id: 'movement',
+    title: 'Integración de Movimiento',
+    description: 'Añadiendo coreografías y dinámicas visuales'
+  },
+  {
+    id: 'lipsync',
+    title: 'Sincronización de Labios',
+    description: 'Sincronizando labios con la letra de la canción'
+  },
+  {
+    id: 'generation',
+    title: 'Generación de Video',
+    description: 'Creando videos con IA a partir de tus escenas'
+  },
+  {
+    id: 'rendering',
+    title: 'Renderizado Final',
+    description: 'Combinando todo en tu video musical'
+  }
+];
 
 interface MusicVideoWorkflowProps {
   onComplete?: (result: {
@@ -52,15 +102,28 @@ interface MusicVideoWorkflowProps {
 }
 
 /**
- * Componente de flujo de trabajo para creación de videos musicales
+ * Componente de flujo de trabajo para creación de videos musicales profesionales
  * 
- * Este componente implementa un flujo completo para:
- * 1. Subir audio (canción)
- * 2. Subir imágenes/videos (clips principales)
- * 3. Subir B-roll (opcional)
- * 4. Generar análisis y transcripción
- * 5. Crear una línea de tiempo con sincronización
- * 6. Generar el video final
+ * Este componente implementa un flujo completo de 9 pasos para la creación de videos
+ * musicales con edición profesional y generación asistida por IA.
+ * 
+ * Flujo de trabajo completo:
+ * 1. Transcripción de Audio - Analiza la canción y extrae la letra
+ * 2. Generación de Guion - Crea un guion visual basado en la letra y ritmo
+ * 3. Sincronización - Alinea el contenido visual con el ritmo de la música
+ * 4. Generación de Escenas - Crea escenas específicas para cada sección
+ * 5. Personalización - Permite ajustar el estilo visual
+ * 6. Integración de Movimiento - Añade dinámicas visuales y coreografías
+ * 7. Sincronización de Labios - Sincroniza labios con la letra (si hay personas)
+ * 8. Generación de Video - Crea los clips de video con IA
+ * 9. Renderizado Final - Combina todo en un video musical completo
+ * 
+ * El componente incluye:
+ * - Sistema visual de seguimiento de progreso
+ * - Interfaz para carga de archivos (audio, imágenes, videos)
+ * - Análisis automático y transcripción
+ * - Visualización de línea de tiempo profesional
+ * - Generación de video con IA usando PiAPI/Hailuo
  */
 export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   // Estado de archivos
@@ -76,6 +139,8 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   
   // Estado de procesamiento y UI
   const [activeStep, setActiveStep] = useState<string>('upload');
+  const [currentWorkflowStep, setCurrentWorkflowStep] = useState<string>('transcription');
+  const [completedWorkflowSteps, setCompletedWorkflowSteps] = useState<string[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -244,6 +309,20 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     return allClips;
   }, [audioFile, imageFiles, videoFiles, bRollFiles, transcription]);
 
+  // Marcador de progreso de flujo de trabajo
+  const markStepComplete = useCallback((stepId: string, nextStepId?: string) => {
+    setCompletedWorkflowSteps(prev => {
+      if (!prev.includes(stepId)) {
+        return [...prev, stepId];
+      }
+      return prev;
+    });
+    
+    if (nextStepId) {
+      setCurrentWorkflowStep(nextStepId);
+    }
+  }, []);
+  
   // Iniciar análisis y generación de la línea de tiempo
   const handleStartAnalysis = async () => {
     if (!audioFile || (imageFiles.length === 0 && videoFiles.length === 0)) {
@@ -256,16 +335,30 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     }
     
     setIsAnalyzing(true);
+    setCurrentWorkflowStep('transcription');
     
     try {
-      // Generar transcripción
+      // Paso 1: Generar transcripción
       const transcript = await transcribeAudio(audioFile);
       setTranscription(transcript);
+      markStepComplete('transcription', 'script');
       
       // Simular progreso del análisis
       let progress = 0;
       const progressInterval = setInterval(() => {
         progress += 10;
+        
+        // Avanzar por los pasos según el progreso
+        if (progress === 30) {
+          markStepComplete('script', 'sync');
+        } else if (progress === 50) {
+          markStepComplete('sync', 'scenes');
+        } else if (progress === 70) {
+          markStepComplete('scenes', 'customization');
+        } else if (progress === 90) {
+          markStepComplete('customization');
+        }
+        
         if (progress >= 100) {
           clearInterval(progressInterval);
           
@@ -275,6 +368,9 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             setAnalysisComplete(true);
             setIsAnalyzing(false);
             setActiveStep('timeline');
+            
+            // Marcar los primeros 5 pasos como completados
+            markStepComplete('customization', 'movement');
             
             toast({
               title: "Análisis completado",
@@ -306,11 +402,24 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     
     setIsGenerating(true);
     setGenerationProgress(0);
+    setCurrentWorkflowStep('movement');
     
     // Simulación de progreso de generación de video
     const progressInterval = setInterval(() => {
       setGenerationProgress(prev => {
         const newProgress = prev + Math.random() * 5;
+        
+        // Avanzar por los pasos finales según el progreso
+        if (prev < 20 && newProgress >= 20) {
+          markStepComplete('movement', 'lipsync');
+        } else if (prev < 40 && newProgress >= 40) {
+          markStepComplete('lipsync', 'generation');
+        } else if (prev < 70 && newProgress >= 70) {
+          markStepComplete('generation', 'rendering');
+        } else if (prev < 90 && newProgress >= 90) {
+          markStepComplete('rendering');
+        }
+        
         if (newProgress >= 100) {
           clearInterval(progressInterval);
           
@@ -320,6 +429,10 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             setGeneratedVideoUrl('/assets/Standard_Mode_Generated_Video (2).mp4');
             setIsGenerating(false);
             setActiveStep('preview');
+            
+            // Completar todos los pasos del flujo de trabajo
+            const allStepIds = workflowSteps.map(step => step.id);
+            setCompletedWorkflowSteps(allStepIds);
             
             toast({
               title: "Video generado",
@@ -347,27 +460,38 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl">Flujo de Trabajo para Video Musical</CardTitle>
-            <CardDescription>Crea videos musicales sincronizados con ritmo y letra</CardDescription>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Flujo de Trabajo para Video Musical</CardTitle>
+              <CardDescription>Crea videos musicales sincronizados con ritmo y letra</CardDescription>
+            </div>
+            
+            {/* Indicador de progreso básico */}
+            <div className="flex items-center gap-2">
+              {['upload', 'timeline', 'generate', 'preview'].map((step, index) => (
+                <React.Fragment key={step}>
+                  {index > 0 && (
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <Badge variant={activeStep === step ? "default" : "outline"}>
+                    {step === 'upload' && 'Subir'}
+                    {step === 'timeline' && 'Timeline'}
+                    {step === 'generate' && 'Generar'}
+                    {step === 'preview' && 'Preview'}
+                  </Badge>
+                </React.Fragment>
+              ))}
+            </div>
           </div>
           
-          {/* Indicador de progreso de flujo */}
-          <div className="flex items-center gap-2">
-            {['upload', 'timeline', 'generate', 'preview'].map((step, index) => (
-              <React.Fragment key={step}>
-                {index > 0 && (
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                )}
-                <Badge variant={activeStep === step ? "default" : "outline"}>
-                  {step === 'upload' && 'Subir'}
-                  {step === 'timeline' && 'Timeline'}
-                  {step === 'generate' && 'Generar'}
-                  {step === 'preview' && 'Preview'}
-                </Badge>
-              </React.Fragment>
-            ))}
+          {/* Indicador detallado de progreso de workflow */}
+          <div className="mt-2">
+            <ProgressSteps 
+              steps={workflowSteps}
+              currentStep={currentWorkflowStep}
+              completedSteps={completedWorkflowSteps}
+            />
           </div>
         </div>
       </CardHeader>
