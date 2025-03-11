@@ -44,7 +44,11 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-  ContextMenuTrigger
+  ContextMenuTrigger,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuGroup
 } from '@/components/ui/context-menu';
 import {
   FileVideo,
@@ -72,7 +76,22 @@ import {
   Save,
   Clock,
   Mic,
-  Settings
+  Settings,
+  Split,
+  SplitSquareVertical,
+  SplitSquareHorizontal,
+  Crop,
+  RotateCw,
+  Sparkles,
+  MessageSquarePlus,
+  Keyboard,
+  Maximize,
+  Minimize,
+  MoveHorizontal,
+  Filter,
+  Palette,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TimelineClip } from '@/lib/professional-editor-types';
@@ -449,7 +468,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                   </div>
                 </ContextMenuTrigger>
                 
-                <ContextMenuContent>
+                <ContextMenuContent className="w-56">
                   <ContextMenuItem onClick={() => prepareEditClip(clip)}>
                     <Move className="h-4 w-4 mr-2" /> Editar
                   </ContextMenuItem>
@@ -457,15 +476,76 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                     if (onUpdateClip) onUpdateClip(clip.id, { selected: true });
                     setSelectedClipIds(new Set([clip.id]));
                   }}>
-                    <Move className="h-4 w-4 mr-2" /> Seleccionar
+                    <Maximize className="h-4 w-4 mr-2" /> Seleccionar
                   </ContextMenuItem>
+                  
                   <ContextMenuSeparator />
+                  
+                  <ContextMenuSub>
+                    <ContextMenuSubTrigger>
+                      <Scissors className="h-4 w-4 mr-2" /> Recortar
+                    </ContextMenuSubTrigger>
+                    <ContextMenuSubContent className="w-48">
+                      <ContextMenuItem onClick={() => prepareEditClip(clip)}>
+                        <SplitSquareVertical className="h-4 w-4 mr-2" /> Dividir en punto actual
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => prepareEditClip(clip)}>
+                        <Crop className="h-4 w-4 mr-2" /> Recortar inicio
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => prepareEditClip(clip)}>
+                        <Crop className="h-4 w-4 mr-2" /> Recortar final
+                      </ContextMenuItem>
+                    </ContextMenuSubContent>
+                  </ContextMenuSub>
+                  
+                  <ContextMenuSub>
+                    <ContextMenuSubTrigger>
+                      <Filter className="h-4 w-4 mr-2" /> Efectos
+                    </ContextMenuSubTrigger>
+                    <ContextMenuSubContent className="w-48">
+                      <ContextMenuItem>
+                        <Sparkles className="h-4 w-4 mr-2" /> Añadir filtro
+                      </ContextMenuItem>
+                      <ContextMenuItem>
+                        <Palette className="h-4 w-4 mr-2" /> Ajustar color
+                      </ContextMenuItem>
+                      <ContextMenuItem>
+                        <RotateCw className="h-4 w-4 mr-2" /> Rotar/Ajustar
+                      </ContextMenuItem>
+                    </ContextMenuSubContent>
+                  </ContextMenuSub>
+                  
+                  <ContextMenuSub>
+                    <ContextMenuSubTrigger>
+                      <Volume2 className="h-4 w-4 mr-2" /> Audio
+                    </ContextMenuSubTrigger>
+                    <ContextMenuSubContent className="w-48">
+                      <ContextMenuItem>
+                        <Volume2 className="h-4 w-4 mr-2" /> Ajustar volumen
+                      </ContextMenuItem>
+                      <ContextMenuItem>
+                        <VolumeX className="h-4 w-4 mr-2" /> Silenciar
+                      </ContextMenuItem>
+                      <ContextMenuItem>
+                        <MessageSquarePlus className="h-4 w-4 mr-2" /> Añadir narración
+                      </ContextMenuItem>
+                    </ContextMenuSubContent>
+                  </ContextMenuSub>
+                  
+                  <ContextMenuSeparator />
+                  
                   <ContextMenuItem onClick={() => {
                     if (onSeek) onSeek(clip.start);
                   }}>
                     <Play className="h-4 w-4 mr-2" /> Reproducir desde aquí
                   </ContextMenuItem>
+                  
+                  <ContextMenuItem>
+                    <Copy className="h-4 w-4 mr-2" /> Duplicar
+                  </ContextMenuItem>
+                  
                   <ContextMenuSeparator />
+                  
                   <ContextMenuItem onClick={() => {
                     if (onDeleteClip) onDeleteClip(clip.id);
                   }} className="text-red-500">
@@ -532,6 +612,109 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (selectedClipIds.size > 0 && onDeleteClip) {
+                        handleDeleteSelectedClips();
+                      }
+                    }}
+                    disabled={selectedClipIds.size === 0}
+                    className="h-8"
+                  >
+                    <Scissors className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Cortar selección</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                >
+                  <Filter className="h-4 w-4 mr-1" /> Efectos
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56">
+                <div className="grid gap-2">
+                  <h4 className="font-medium text-sm">Aplicar efecto</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" /> Añadir filtro
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Palette className="h-4 w-4 mr-2" /> Ajustar color
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <RotateCw className="h-4 w-4 mr-2" /> Transformar
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                >
+                  <SplitSquareVertical className="h-4 w-4 mr-1" /> Transiciones
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56">
+                <div className="grid gap-2">
+                  <h4 className="font-medium text-sm">Añadir transición</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Split className="h-4 w-4 mr-2" /> Fundido
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <MoveHorizontal className="h-4 w-4 mr-2" /> Deslizar
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Minimize className="h-4 w-4 mr-2" /> Zoom
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
             
             <Popover>
               <PopoverTrigger asChild>
