@@ -3,13 +3,14 @@ import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Video, Users, Star, Wand2, Bot, CloudCog } from "lucide-react";
+import { Video, Users, Star, Wand2, Bot, CloudCog, Edit } from "lucide-react";
 import { DirectorsList } from "@/components/music-video/directors-list";
 import { MusicVideoAI } from "@/components/music-video/music-video-ai";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 export default function MusicVideoCreator() {
-  const [activeTab, setActiveTab] = useState<'directors' | 'ai'>('directors');
+  const [activeTab, setActiveTab] = useState<'directors' | 'ai' | 'editor'>('directors');
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -98,8 +99,8 @@ const featuresData = [
 ];
 
 interface ContentSectionProps {
-  activeTab: 'directors' | 'ai';
-  setActiveTab: (tab: 'directors' | 'ai') => void;
+  activeTab: 'directors' | 'ai' | 'editor';
+  setActiveTab: (tab: 'directors' | 'ai' | 'editor') => void;
 }
 
 const ContentSection = ({ activeTab, setActiveTab }: ContentSectionProps) => (
@@ -129,10 +130,20 @@ const ContentSection = ({ activeTab, setActiveTab }: ContentSectionProps) => (
           <Bot className="h-4 w-4 mr-1 sm:mr-2" />
           <span className="whitespace-nowrap">AI Video Creation</span>
         </Button>
+        <Link href="/professional-editor">
+          <Button
+            variant={activeTab === 'editor' ? 'default' : 'outline'}
+            className="w-full sm:w-auto min-h-[40px] sm:min-h-[44px] text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4"
+            size="default"
+          >
+            <Edit className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="whitespace-nowrap">Professional Editor</span>
+          </Button>
+        </Link>
       </div>
     </div>
     <div className="grid grid-cols-1 gap-4 sm:gap-6 max-w-[1200px] mx-auto">
-      {/* Main content area - Director application removed as requested */}
+      {/* Main content area - Only showing content for active tab */}
       <div className="w-full">
         {activeTab === 'directors' ? <DirectorsList /> : <MusicVideoAI />}
       </div>
