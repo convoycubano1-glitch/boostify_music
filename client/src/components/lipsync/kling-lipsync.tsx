@@ -19,7 +19,18 @@ export interface KlingLipsyncProps {
   className?: string;
   videoTaskId?: string;
   isPurchased?: boolean;
-  onLipSyncComplete?: (result: {videoUrl: string}) => void;
+  // Actualizado para incluir la estructura de metadata.lipsync
+  onLipSyncComplete?: (result: {
+    videoUrl: string;
+    metadata?: {
+      lipsync?: {
+        applied: boolean;
+        videoUrl?: string;
+        progress?: number;
+        timestamp?: string;
+      }
+    }
+  }) => void;
   clips?: TimelineClip[];
 }
 
@@ -213,16 +224,23 @@ export function KlingLipsync({
             });
             
             if (onLipSyncComplete) {
+              // Actualizar utilizando el nuevo patrón metadata.lipsync
               onLipSyncComplete({
-                videoUrl: statusResponse.videoUrl
+                videoUrl: statusResponse.videoUrl,
+                // Añadir metadatos específicos para permitir actualización en el padre
+                metadata: {
+                  lipsync: {
+                    applied: true,
+                    videoUrl: statusResponse.videoUrl,
+                    progress: 100,
+                    timestamp: new Date().toISOString()
+                  }
+                }
               });
               
-              // Si hay un clip seleccionado, actualizarlo con la información del LipSync
-              if (selectedClipIndex !== null && eligibleClips[selectedClipIndex]) {
-                const clipId = eligibleClips[selectedClipIndex]?.id;
-                // El componente padre debería manejar esta actualización
-                // a través de onLipSyncComplete
-              }
+              // Si hay un clip seleccionado, su actualización será manejada por
+              // el componente padre a través de onLipSyncComplete con los metadatos
+              // que proporcionamos arriba
             }
             
             // Guardar historial en Firestore para referencias futuras

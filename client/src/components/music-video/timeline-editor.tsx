@@ -473,6 +473,28 @@ export function TimelineEditor({
                 const deltaTime = pixelsToTime(deltaPixels);
                 const newStartTime = Math.max(0, clipStartTime + deltaTime);
                 
+                // Asegurar que los clips no se superpongan inadecuadamente
+                const selectedClipObj = clips.find(c => c.id === selectedClip);
+                if (selectedClipObj) {
+                  // Buscar el clip anterior y asegurar que no haya solapamiento
+                  const previousClips = clips
+                    .filter(c => c.id !== selectedClip)
+                    .filter(c => c.start < newStartTime)
+                    .sort((a, b) => b.start - a.start);
+                  
+                  const previousClip = previousClips[0];
+                  if (previousClip) {
+                    const minStartTime = previousClip.start + previousClip.duration;
+                    if (newStartTime < minStartTime) {
+                      // Snap to previous clip end
+                      onClipUpdate(selectedClip, {
+                        start: minStartTime
+                      });
+                      return;
+                    }
+                  }
+                }
+                
                 onClipUpdate(selectedClip, {
                   start: newStartTime
                 });
@@ -510,24 +532,48 @@ export function TimelineEditor({
                 const clip = clips.find((c) => c.id === selectedClip);
                 if (!clip) return;
                 
+                // Máxima duración permitida para un clip (5 segundos)
+                const MAX_CLIP_DURATION = 5.0;
+                
                 if (resizingSide === 'start') {
                   // Redimensionar desde el inicio
                   const deltaWidth = event.deltaRect.left;
                   const deltaTime = pixelsToTime(deltaWidth);
                   const newStart = Math.max(0, clip.start - deltaTime);
-                  const newDuration = clip.duration + (clip.start - newStart);
                   
-                  onClipUpdate(selectedClip, {
-                    start: newStart,
-                    duration: Math.max(0.5, newDuration)
-                  });
+                  // Calcular nueva duración
+                  let newDuration = clip.duration + (clip.start - newStart);
+                  
+                  // Si excede el límite, ajustar el tiempo de inicio para mantener la duración máxima
+                  if (newDuration > MAX_CLIP_DURATION) {
+                    // Calcular nuevo tiempo de inicio para respetar el límite
+                    const adjustedStart = (clip.start + clip.duration) - MAX_CLIP_DURATION;
+                    newDuration = MAX_CLIP_DURATION;
+                    
+                    onClipUpdate(selectedClip, {
+                      start: Math.max(0, adjustedStart),
+                      duration: newDuration
+                    });
+                  } else {
+                    // Actualizar normalmente si no excede el límite
+                    onClipUpdate(selectedClip, {
+                      start: newStart,
+                      duration: Math.max(0.5, newDuration)
+                    });
+                  }
                 } else {
                   // Redimensionar desde el final
                   const deltaWidth = event.deltaRect.right;
                   const deltaTime = pixelsToTime(deltaWidth);
                   
+                  // Calcular nueva duración respetando el límite máximo
+                  const newDuration = Math.min(
+                    MAX_CLIP_DURATION,
+                    Math.max(0.5, clip.duration + deltaTime)
+                  );
+                  
                   onClipUpdate(selectedClip, {
-                    duration: Math.max(0.5, clip.duration + deltaTime)
+                    duration: newDuration
                   });
                 }
               },
@@ -622,18 +668,41 @@ export function TimelineEditor({
     const clip = clips.find(c => c.id === selectedClip);
     if (!clip) return;
 
+    // Máxima duración permitida para un clip (5 segundos)
+    const MAX_CLIP_DURATION = 5.0;
+    
     const deltaX = e.clientX - dragStartX;
     const deltaTime = pixelsToTime(deltaX);
 
     if (resizingSide === 'start') {
       const newStart = Math.max(0, clipStartTime + deltaTime);
-      const newDuration = Math.max(0.5, (clip.start + clip.duration) - newStart);
-      onClipUpdate(selectedClip, {
-        start: newStart,
-        duration: newDuration
-      });
+      
+      // Calcular nueva duración
+      let newDuration = (clip.start + clip.duration) - newStart;
+      
+      // Si excede el límite, ajustar el tiempo de inicio para mantener la duración máxima
+      if (newDuration > MAX_CLIP_DURATION) {
+        // Calcular nuevo tiempo de inicio para respetar el límite
+        const adjustedStart = (clip.start + clip.duration) - MAX_CLIP_DURATION;
+        
+        onClipUpdate(selectedClip, {
+          start: Math.max(0, adjustedStart),
+          duration: MAX_CLIP_DURATION
+        });
+      } else {
+        // Actualizar normalmente si no excede el límite
+        onClipUpdate(selectedClip, {
+          start: newStart,
+          duration: Math.max(0.5, newDuration)
+        });
+      }
     } else {
-      const newDuration = Math.max(0.5, clip.duration + deltaTime);
+      // Calcular nueva duración respetando el límite máximo
+      const newDuration = Math.min(
+        MAX_CLIP_DURATION,
+        Math.max(0.5, clip.duration + deltaTime)
+      );
+      
       onClipUpdate(selectedClip, {
         duration: newDuration
       });

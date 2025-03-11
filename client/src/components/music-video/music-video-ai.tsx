@@ -1271,32 +1271,71 @@ ${transcription}`;
   ), [currentTime, selectedShot]);
 
   // Mapa de clips organizados por capas para el editor profesional multicanal
-  const clips: TimelineClip[] = timelineItems.map(item => ({
-    id: item.id,
-    start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
-    duration: item.duration / 1000,
-    type: 'image',
-    // Layer por defecto para imágenes = 1 (segunda capa)
-    layer: 1,
-    thumbnail: item.generatedImage || item.firebaseUrl,
-    title: item.shotType,
-    description: item.description,
-    imagePrompt: item.imagePrompt,
-    // Añadir URL de imagen para mostrar de forma correcta
-    imageUrl: item.generatedImage || item.firebaseUrl,
-    // Metadata para preservar el orden exacto del guion
-    metadata: {
-      sourceIndex: item.id,
-      section: item.metadata?.section || 'default',
-      movementApplied: !!item.metadata?.movementApplied,
-      movementPattern: item.metadata?.movementPattern || undefined,
-      movementIntensity: item.metadata?.movementIntensity || undefined,
-      faceSwapApplied: !!item.metadata?.faceSwapApplied
-    },
-    // Visibilidad y estado de bloqueo
-    visible: true,
-    locked: false
-  }));
+  const clips: TimelineClip[] = timelineItems.map(item => {
+    // Determinar el tipo de clip basado en sus propiedades
+    let clipType: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text' = 'image';
+    let clipLayer = 1; // Por defecto, capa de imagen (1)
+    
+    // Si tiene audioUrl, es un clip de audio
+    if (item.audioUrl) {
+      clipType = 'audio';
+      clipLayer = 0; // Capa de audio (0)
+    } 
+    // Si tiene textContent, es un clip de texto
+    else if (item.metadata?.textContent) {
+      clipType = 'text';
+      clipLayer = 2; // Capa de texto (2)
+    }
+    // Si tiene movementApplied, es un clip con efecto
+    else if (item.metadata?.movementApplied) {
+      clipType = 'effect';
+      clipLayer = 3; // Capa de efectos (3)
+    }
+    // Si tiene videoUrl o lipsyncVideoUrl, es un clip de video
+    else if (item.videoUrl || item.metadata?.lipsync?.videoUrl || item.lipsyncVideoUrl) {
+      clipType = 'video';
+      clipLayer = 1; // Capa de video/imagen (1)
+    }
+    
+    return {
+      id: item.id,
+      start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
+      duration: item.duration / 1000,
+      // Usar tipo determinado (video, imagen, audio, texto, efecto)
+      type: clipType,
+      // Usar capa determinada (0=audio, 1=video/imagen, 2=texto, 3=efectos)
+      layer: clipLayer,
+      thumbnail: item.generatedImage || item.firebaseUrl,
+      title: item.shotType,
+      description: item.description,
+      imagePrompt: item.imagePrompt,
+      // Añadir URL de imagen/video para mostrar de forma correcta
+      imageUrl: item.generatedImage || item.firebaseUrl,
+      videoUrl: item.videoUrl || item.metadata?.lipsync?.videoUrl || item.lipsyncVideoUrl,
+      audioUrl: item.audioUrl,
+      textContent: item.metadata?.textContent,
+      // Metadata para preservar el orden exacto del guion
+      metadata: {
+        sourceIndex: item.id,
+        section: item.metadata?.section || 'default',
+        movementApplied: !!item.metadata?.movementApplied,
+        movementPattern: item.metadata?.movementPattern || undefined,
+        movementIntensity: item.metadata?.movementIntensity || undefined,
+        faceSwapApplied: !!item.metadata?.faceSwapApplied,
+        // Preservar metadata de lipsync si existe
+        lipsync: item.metadata?.lipsync
+      },
+      // Propiedades de transición
+      transitionType: item.transition === 'crossfade' ? 'crossfade' : 
+                      item.transition === 'fade' ? 'fade' : 
+                      item.transition === 'wipe' ? 'wipe' : 
+                      item.transition === 'slide' ? 'slide' : 
+                      item.transition === 'zoom' ? 'zoom' : undefined,
+      // Visibilidad y estado de bloqueo
+      visible: true,
+      locked: false
+    };
+  });
 
   const totalDuration = clips.reduce((acc, clip) => Math.max(acc, clip.start + clip.duration), 0);
 
