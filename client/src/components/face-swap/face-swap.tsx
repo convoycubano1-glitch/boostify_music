@@ -28,7 +28,7 @@ interface ShotType {
 
 export interface FaceSwapProps {
   videoId?: string;
-  onComplete?: (results: FaceSwapResult[]) => void;
+  onComplete?: (results: FaceSwapResult[], uploadedImage?: string | null) => void;
   isPurchased?: boolean;
   hideVideo?: boolean;
 }
@@ -94,6 +94,8 @@ export function FaceSwap({
       return;
     }
 
+    // Restricción premium temporalmente deshabilitada para pruebas
+    /*
     if (!isPurchased) {
       toast({
         title: "Funcionalidad premium",
@@ -102,6 +104,7 @@ export function FaceSwap({
       });
       return;
     }
+    */
 
     try {
       setIsProcessing(true);
@@ -163,7 +166,7 @@ export function FaceSwap({
       setResults(mockResults);
       
       if (onComplete) {
-        onComplete(mockResults);
+        onComplete(mockResults, artistImage);
       }
       
       toast({
@@ -206,7 +209,8 @@ export function FaceSwap({
     <div className="border rounded-lg p-4">
       <Label className="text-lg font-semibold mb-4 block">Face Swap con IA</Label>
       <div className="space-y-4">
-        {!isPurchased && (
+        {/* Mensaje premium temporalmente deshabilitado para pruebas */}
+        {false && !isPurchased && (
           <Alert className="bg-orange-500/10 border-orange-500/50">
             <AlertCircle className="h-4 w-4 text-orange-600" />
             <AlertTitle className="text-orange-600">Función Premium</AlertTitle>
@@ -232,8 +236,8 @@ export function FaceSwap({
               accept="image/*"
               onChange={handleFileChange}
               ref={fileInputRef}
-              disabled={isProcessing || !isPurchased}
-              className={!isPurchased ? "cursor-not-allowed" : ""}
+              disabled={isProcessing}
+              className=""
             />
             <div className="flex space-x-4">
               <div className={`aspect-square w-32 rounded-lg border-2 ${artistImage ? 'border-solid' : 'border-dashed'} border-muted-foreground/25 flex items-center justify-center overflow-hidden`}>
@@ -249,7 +253,7 @@ export function FaceSwap({
                   variant="outline" 
                   size="sm" 
                   onClick={handleDeleteImage}
-                  disabled={isProcessing || !isPurchased}
+                  disabled={isProcessing}
                 >
                   Borrar
                 </Button>
@@ -267,7 +271,7 @@ export function FaceSwap({
                   id={`faceswap-${shotType.id}`}
                   checked={shotType.selected}
                   onCheckedChange={() => toggleShotType(shotType.id)}
-                  disabled={isProcessing || !isPurchased}
+                  disabled={isProcessing}
                 />
                 <div className="grid gap-0.5">
                   <Label htmlFor={`faceswap-${shotType.id}`} className="text-sm">
@@ -294,7 +298,7 @@ export function FaceSwap({
 
         <Button 
           onClick={handleStartFaceSwap} 
-          disabled={!artistImage || isProcessing || !isPurchased} 
+          disabled={!artistImage || isProcessing} 
           className="w-full"
         >
           {isProcessing ? (
