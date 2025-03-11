@@ -45,7 +45,7 @@ export interface VideoGeneratorProps {
   // Propiedades adicionales para edición y generación
   duration?: number; 
   isGenerating?: boolean;
-  onGenerate?: () => Promise<void>;
+  onGenerate?: () => Promise<void | string | null>;
 }
 
 export interface VideoGenerationSettings {

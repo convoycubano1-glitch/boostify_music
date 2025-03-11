@@ -47,8 +47,9 @@ export interface TimelineClip {
   videoUrl?: string;
   movementUrl?: string;
   audioUrl?: string;
-  // Propiedades de sincronización de labios
-  lipsyncApplied?: boolean;
+  // DEPRECADO: Estas propiedades están siendo migradas a metadata.lipsync
+  // Mantener por retrocompatibilidad, pero usar metadata.lipsync en su lugar
+  lipsyncApplied?: boolean; 
   lipsyncVideoUrl?: string;
   lipsyncProgress?: number;
   // Propiedades de transición
@@ -70,6 +71,13 @@ export interface TimelineClip {
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
     sourceIndex?: number; // Índice en el guion original
+    // Propiedades de sincronización de labios en metadata
+    lipsync?: {
+      applied: boolean;
+      videoUrl?: string;
+      progress?: number;
+      timestamp?: string;
+    };
   };
 }
 
@@ -552,7 +560,8 @@ export function TimelineEditor({
   // Mantener funciones de fallback por compatibilidad
   const handleClipDragStart = (clipId: number, e: React.MouseEvent) => {
     // Esta función ahora es solo un fallback, principalmente gestionada por interactjs
-    if (!interact.isSet('.timeline-clip')) {
+    try {
+      // Eliminamos la verificación problemática de interact.isSet
       e.preventDefault();
       const clip = clips.find(c => c.id === clipId);
       if (clip) {
@@ -564,6 +573,8 @@ export function TimelineEditor({
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
       }
+    } catch (error) {
+      console.error("Error al iniciar arrastre del clip:", error);
     }
   };
   
@@ -1363,7 +1374,7 @@ export function TimelineEditor({
                                 {clip.shotType || 'Sin tipo'}
                               </span>
                             </div>
-                            {clip.lipsyncApplied && (
+                            {(clip.metadata?.lipsync?.applied || clip.lipsyncApplied) && (
                               <div className="bg-blue-500/70 backdrop-blur-sm p-1 rounded flex items-center gap-1">
                                 <span className="text-[10px] font-medium text-white">LipSync</span>
                               </div>

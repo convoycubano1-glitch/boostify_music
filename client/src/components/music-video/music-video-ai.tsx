@@ -213,7 +213,8 @@ interface TimelineItem {
   imageUrl?: string;
   videoUrl?: string;
   audioUrl?: string;
-  // Campos para lipsync y metadata
+  // DEPRECADO: Estas propiedades están siendo migradas a metadata.lipsync
+  // Mantener por retrocompatibilidad, pero no usar directamente
   lipsyncApplied?: boolean;
   lipsyncVideoUrl?: string;
   lipsyncProgress?: number;
@@ -1286,11 +1287,11 @@ ${transcription}`;
     // Metadata para preservar el orden exacto del guion
     metadata: {
       sourceIndex: item.id,
-      section: item.section || 'default',
-      movementApplied: !!item.movementApplied,
-      movementPattern: item.movementPattern || undefined,
-      movementIntensity: item.movementIntensity || undefined,
-      faceSwapApplied: !!item.faceSwapApplied
+      section: item.metadata?.section || 'default',
+      movementApplied: !!item.metadata?.movementApplied,
+      movementPattern: item.metadata?.movementPattern || undefined,
+      movementIntensity: item.metadata?.movementIntensity || undefined,
+      faceSwapApplied: !!item.metadata?.faceSwapApplied
     },
     // Visibilidad y estado de bloqueo
     visible: true,
@@ -1321,45 +1322,47 @@ ${transcription}`;
         
         // Manejar propiedades específicas de LipSync
         if (updates.lipsyncApplied !== undefined) {
-          updatedItem.lipsyncApplied = updates.lipsyncApplied;
-          
-          // Actualizar el estado de metadata para reflejar que se ha aplicado LipSync
-          if (updates.lipsyncApplied) {
-            if (!updatedItem.metadata) {
-              updatedItem.metadata = {};
-            }
-            updatedItem.metadata.lipsync = {
-              applied: true,
-              timestamp: new Date().toISOString(),
-            };
-          }
-        }
-        
-        if (updates.lipsyncVideoUrl !== undefined) {
-          updatedItem.lipsyncVideoUrl = updates.lipsyncVideoUrl;
-          
-          // Actualizar la URL del video en metadata
+          // Asegurarse de que el objeto metadata existe
           if (!updatedItem.metadata) {
             updatedItem.metadata = {};
           }
-          if (!updatedItem.metadata.lipsync) {
-            updatedItem.metadata.lipsync = { applied: true };
+          
+          // Actualizar el estado de lipsync en metadata
+          updatedItem.metadata.lipsync = {
+            ...(updatedItem.metadata.lipsync || {}),
+            applied: updates.lipsyncApplied !== undefined ? updates.lipsyncApplied : false,
+            timestamp: new Date().toISOString(),
+          };
+        }
+        
+        if (updates.lipsyncVideoUrl !== undefined) {
+          // Asegurarse de que el objeto metadata existe
+          if (!updatedItem.metadata) {
+            updatedItem.metadata = {};
           }
-          updatedItem.metadata.lipsync.videoUrl = updates.lipsyncVideoUrl;
+          
+          // Actualizar la URL del video en metadata
+          updatedItem.metadata.lipsync = {
+            ...(updatedItem.metadata.lipsync || {}),
+            applied: true, // Cuando hay URL de video, siempre aplicamos lipsync
+            videoUrl: updates.lipsyncVideoUrl,
+            timestamp: new Date().toISOString(), // Añadir timestamp para seguimiento
+          };
         }
         
         // Manejar el progreso de LipSync si está presente
         if (updates.lipsyncProgress !== undefined) {
-          updatedItem.lipsyncProgress = updates.lipsyncProgress;
-          
-          // Actualizar el progreso en metadata
+          // Asegurarse de que el objeto metadata existe
           if (!updatedItem.metadata) {
             updatedItem.metadata = {};
           }
-          if (!updatedItem.metadata.lipsync) {
-            updatedItem.metadata.lipsync = { applied: false };
-          }
-          updatedItem.metadata.lipsync.progress = updates.lipsyncProgress;
+          
+          // Actualizar el progreso en metadata
+          updatedItem.metadata.lipsync = {
+            ...(updatedItem.metadata.lipsync || {}),
+            progress: updates.lipsyncProgress,
+            applied: (updatedItem.metadata.lipsync?.applied === undefined) ? false : updatedItem.metadata.lipsync.applied,
+          };
         }
         
         return updatedItem;
@@ -2613,19 +2616,29 @@ ${transcription}`;
                         tus imágenes en secuencias de video fluidas con efectos profesionales.
                       </p>
                       <VideoGenerator
+                        onGenerateVideo={async (settings) => {
+                          console.log("Configuración para generar video:", settings);
+                          toast({
+                            title: "Generación iniciada",
+                            description: `Generando video con modelo ${settings.model}, calidad ${settings.quality}`
+                          });
+                          await generateVideo();
+                        }}
+                        isLoading={isGeneratingVideo}
+                        scenesCount={timelineItems.length}
                         clips={timelineItems.map(item => ({
                           id: item.id,
                           start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
                           duration: item.duration / 1000,
-                          type: 'image',
+                          type: 'image' as const,
                           layer: 1, // Añadimos layer=1 para video/imagen
                           thumbnail: item.generatedImage || item.firebaseUrl,
-                          title: item.shotType,
-                          description: item.description,
+                          title: item.shotType || 'Escena',
+                          description: item.description || '',
                           imageUrl: item.generatedImage || item.firebaseUrl,
                           imagePrompt: item.imagePrompt,
                           metadata: {
-                            section: item.metadata?.section,
+                            section: item.metadata?.section || 'default',
                             movementApplied: item.metadata?.movementApplied,
                             movementPattern: item.metadata?.movementPattern,
                             movementIntensity: item.metadata?.movementIntensity,
@@ -2635,7 +2648,7 @@ ${transcription}`;
                         }))}
                         duration={audioBuffer?.duration || 0}
                         isGenerating={isGeneratingVideo}
-                        onGenerate={() => generateVideo()}
+                        onGenerate={async () => { await generateVideo(); return; }}
                       />
                       {videoId && (
                         <Button 

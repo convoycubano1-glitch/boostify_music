@@ -303,7 +303,7 @@ const Router = () => {
         {getRouteComponent("/image-generator", WrappedImageGeneratorPage, 'pro')}
         
         {/* Rutas para suscripción PREMIUM ($149.99) */}
-        {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'premium')}
+        {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, null)}
         {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
         {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
         {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
