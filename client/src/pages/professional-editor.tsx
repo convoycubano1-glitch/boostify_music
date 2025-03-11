@@ -12,6 +12,9 @@ import {
   AccordionTrigger
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Film,
   Music,
@@ -47,8 +50,12 @@ import {
   Clip, 
   Transcription, 
   TimelineClip, 
+  EditorState,
   EditorStateUtils 
 } from '@/lib/professional-editor-types';
+
+// Importar servicios para comunicación con el servidor
+import * as editorApiService from '@/lib/services/professional-editor-api-service';
 
 const ProfessionalEditor: React.FC = () => {
   // Estado del reproductor de video
@@ -157,10 +164,58 @@ const ProfessionalEditor: React.FC = () => {
     alert('Funcionalidad de exportación pendiente');
   };
 
-  const handleSaveProject = () => {
-    // Implementación pendiente
-    alert('Proyecto guardado correctamente');
-    setProjectModified(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Guardar proyecto usando la nueva API
+  const handleSaveProject = async () => {
+    try {
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Debe iniciar sesión para guardar proyectos"
+        });
+        return;
+      }
+      
+      // Preparar datos del proyecto para guardar
+      const projectData = {
+        id: `project-${Date.now()}`, // Si es un proyecto nuevo
+        name: projectName,
+        userId: user.uid,
+        timeline: JSON.stringify(clips),
+        effects: JSON.stringify(visualEffects),
+        settings: JSON.stringify({
+          bpm: bpm,
+          duration: duration
+        }),
+        // No enviamos thumbnailUrl por ahora
+      };
+      
+      toast({
+        title: "Guardando proyecto",
+        description: "Espere un momento..."
+      });
+      
+      // Guardar proyecto a través de la API
+      const response = await editorApiService.saveProjectToServer(projectData);
+      
+      if (response) {
+        toast({
+          title: "Proyecto guardado",
+          description: "El proyecto se guardó correctamente"
+        });
+        setProjectModified(false);
+      }
+    } catch (error) {
+      console.error('Error al guardar proyecto:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo guardar el proyecto. Intente nuevamente más tarde."
+      });
+    }
   };
 
   // Analizar beats (simulación)

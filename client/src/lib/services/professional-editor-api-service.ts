@@ -1,0 +1,211 @@
+/**
+ * Servicio para comunicación con API RESTful del Editor Profesional
+ * 
+ * Este servicio consume las APIs basadas en Firebase Admin SDK implementadas
+ * en el servidor para operaciones CRUD de proyectos de edición profesional
+ */
+
+import { apiRequest } from '@/lib/queryClient';
+import { EditorState } from '@/lib/professional-editor-types';
+
+// Interfaz para compatibilidad con la API del servidor
+interface ProjectResponse {
+  success: boolean;
+  project?: any;
+  projects?: any[];
+  message?: string;
+}
+
+const API_BASE_URL = '/api/editor';
+
+/**
+ * Obtiene todos los proyectos del usuario actual
+ * @returns Lista de proyectos
+ */
+export async function fetchUserProjects(): Promise<any[]> {
+  try {
+    const response = await apiRequest(`${API_BASE_URL}/projects`);
+    return response.projects || [];
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    // Intentar obtener desde el cliente Firebase como fallback
+    console.log('Attempting to fetch projects from Firestore client as fallback');
+    const { getUserProjects } = await import('./professional-editor-service');
+    // @ts-ignore - Ignoramos error de tipo porque sabemos que el usuario está autenticado
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return await getUserProjects(user.uid);
+  }
+}
+
+/**
+ * Obtiene un proyecto específico por su ID
+ * @param projectId ID del proyecto
+ * @returns Proyecto específico
+ */
+export async function fetchProject(projectId: string): Promise<any | null> {
+  try {
+    const response = await apiRequest(`${API_BASE_URL}/projects/${projectId}`);
+    return response.project || null;
+  } catch (error) {
+    console.error('Error fetching project:', error);
+    // Intentar obtener desde el cliente Firebase como fallback
+    console.log('Attempting to fetch project from Firestore client as fallback');
+    const { getProject } = await import('./professional-editor-service');
+    return await getProject(projectId);
+  }
+}
+
+/**
+ * Guarda un proyecto en el servidor
+ * @param project Proyecto a guardar
+ * @returns Proyecto guardado
+ */
+export async function saveProjectToServer(project: any): Promise<any> {
+  try {
+    // Para proyectos nuevos, usamos POST; para existentes, PUT
+    const method = project.id.startsWith('project-') ? 'POST' : 'PUT';
+    const endpoint = method === 'PUT' ? `${API_BASE_URL}/projects/${project.id}` : `${API_BASE_URL}/projects`;
+    
+    console.log(`Saving project with ${method} to ${endpoint}`);
+    
+    const response = await apiRequest(endpoint, method, {
+      data: project
+    });
+    
+    return response.project || project;
+  } catch (error) {
+    console.error('Error saving project to server:', error);
+    // Intentar guardar mediante cliente Firebase como fallback
+    console.log('Attempting to save project using Firestore client as fallback');
+    const { saveProject } = await import('./professional-editor-service');
+    const savedId = await saveProject(project);
+    return { ...project, id: savedId };
+  }
+}
+
+/**
+ * Elimina un proyecto del servidor
+ * @param projectId ID del proyecto a eliminar
+ * @returns Resultado de la operación
+ */
+export async function deleteProjectFromServer(projectId: string): Promise<boolean> {
+  try {
+    await apiRequest(`${API_BASE_URL}/projects/${projectId}`, 'DELETE');
+    return true;
+  } catch (error) {
+    console.error('Error deleting project from server:', error);
+    // Intentar eliminar mediante cliente Firebase como fallback
+    console.log('Attempting to delete project using Firestore client as fallback');
+    const { deleteProject } = await import('./professional-editor-service');
+    await deleteProject(projectId);
+    return true;
+  }
+}
+
+/**
+ * Comparte un proyecto (cambia su estado público)
+ * @param projectId ID del proyecto
+ * @param isPublic Estado público del proyecto
+ * @returns Resultado de la operación
+ */
+export async function shareProjectApi(projectId: string, isPublic: boolean): Promise<boolean> {
+  try {
+    await apiRequest(`${API_BASE_URL}/projects/${projectId}/share`, 'PUT', {
+      data: { isPublic }
+    });
+    return true;
+  } catch (error) {
+    console.error('Error sharing project:', error);
+    // Intentar mediante cliente Firebase como fallback
+    console.log('Attempting to share project using Firestore client as fallback');
+    const { shareProject } = await import('./professional-editor-service');
+    await shareProject(projectId, isPublic);
+    return true;
+  }
+}
+
+/**
+ * Obtiene proyectos públicos
+ * @param limit Límite de proyectos a obtener
+ * @returns Lista de proyectos públicos
+ */
+export async function fetchPublicProjects(limit: number = 10): Promise<any[]> {
+  try {
+    const response = await apiRequest(`${API_BASE_URL}/projects/public/list?limit=${limit}`);
+    return response.projects || [];
+  } catch (error) {
+    console.error('Error fetching public projects:', error);
+    // Intentar mediante cliente Firebase como fallback
+    console.log('Attempting to fetch public projects using Firestore client as fallback');
+    const { getPublicProjects } = await import('./professional-editor-service');
+    return await getPublicProjects(limit);
+  }
+}
+
+/**
+ * Sube un archivo multimedia (audio, video, imagen) para un proyecto
+ * @param projectId ID del proyecto
+ * @param file Archivo a subir
+ * @param type Tipo de archivo (audio, video, image)
+ * @returns URL del archivo subido
+ */
+export async function uploadMediaFile(
+  projectId: string,
+  file: File,
+  type: 'audio' | 'video' | 'image'
+): Promise<string> {
+  try {
+    // Crear un FormData para subir el archivo
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('projectId', projectId);
+    formData.append('type', type);
+    
+    // Realizar la solicitud a la API
+    const response = await fetch(`${API_BASE_URL}/media/upload`, {
+      method: 'POST',
+      body: formData,
+      // No incluir 'Content-Type' para que el navegador establezca el boundary correcto
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
+    console.error('Error uploading media file:', error);
+    throw new Error('Error al subir el archivo multimedia');
+  }
+}
+
+/**
+ * Actualiza la miniatura de un proyecto
+ * @param projectId ID del proyecto
+ * @param thumbnailDataUrl Data URL de la miniatura
+ * @returns URL de la miniatura actualizada
+ */
+export async function updateProjectThumbnail(
+  projectId: string,
+  thumbnailDataUrl: string
+): Promise<string> {
+  try {
+    // Convertir data URL a Blob
+    const response = await fetch(thumbnailDataUrl);
+    const blob = await response.blob();
+    
+    // Crear un objeto File a partir del Blob
+    const file = new File([blob], `thumbnail-${projectId}.jpg`, { type: 'image/jpeg' });
+    
+    // Usar la función uploadMediaFile para subir la miniatura
+    return await uploadMediaFile(projectId, file, 'image');
+  } catch (error) {
+    console.error('Error updating project thumbnail:', error);
+    
+    // Intentar mediante cliente Firebase como fallback
+    console.log('Attempting to update thumbnail using Firestore client as fallback');
+    const { uploadProjectThumbnail } = await import('./professional-editor-service');
+    return await uploadProjectThumbnail(projectId, thumbnailDataUrl);
+  }
+}

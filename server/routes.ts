@@ -38,7 +38,7 @@ import videoGenerationRouter from './routes/video-generation'; // Direct router 
 import videoUpscaleRouter from './routes/video-upscale'; // Router for video upscaling with Qubico/video-toolkit
 import investorsRouter from './routes/investors';
 import generatedArtistsRouter from './routes/generated-artists';
-import professionalEditorRouter from './routes/professional-editor'; // Router for Professional Editor routes
+import professionalEditorRouter from './routes/admin-routes/professional-editor'; // Router para Editor Profesional con Firebase Admin SDK
 import apiProxyRouter from './routes/api-proxy'; // Import the proxy router for external APIs
 import videoStatusRouter from './routes/video-status'; // Import the dedicated router for video status
 import musicRouter from './routes/music'; // Import the music generation router
