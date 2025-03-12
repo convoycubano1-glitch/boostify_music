@@ -4,17 +4,17 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../components/ui/tabs';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+} from '../components/ui/accordion';
+import { Button } from '../components/ui/button';
+import { useToast } from '../hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '../hooks/use-auth';
 import {
   Film,
   Music,
@@ -37,17 +37,17 @@ import {
 } from 'lucide-react';
 
 // Importar componentes del editor
-import BeatAnalyzer from '@/components/professional-editor/beat-analyzer';
-import EffectsPanel from '@/components/professional-editor/effects-panel';
-import VideoPreviewPanel from '@/components/professional-editor/video-preview-panel';
-import ProfessionalTimeline from '@/components/professional-editor/fixed-timeline';
-import TranscriptionPanel from '@/components/professional-editor/transcription-panel';
-import AudioTrackEditor from '@/components/professional-editor/audio-track-editor';
-import { Toolbar } from '@/components/professional-editor/toolbar';
-import { TrackListPanel } from '@/components/professional-editor/track-list-panel';
-import { Track } from '@/lib/professional-editor-types';
-import CutPanel from '@/components/professional-editor/cut-panel';
-import TransitionsPanel from '@/components/professional-editor/transitions-panel';
+import BeatAnalyzer from '../components/professional-editor/beat-analyzer';
+import EffectsPanel from '../components/professional-editor/effects-panel';
+import VideoPreviewPanel from '../components/professional-editor/video-preview-panel';
+import ProfessionalTimeline from '../components/professional-editor/fixed-timeline';
+import TranscriptionPanel from '../components/professional-editor/transcription-panel';
+import AudioTrackEditor from '../components/professional-editor/audio-track-editor';
+import { Toolbar } from '../components/professional-editor/toolbar';
+import { TrackListPanel } from '../components/professional-editor/track-list-panel';
+import { Track } from '../lib/professional-editor-types';
+import CutPanel from '../components/professional-editor/cut-panel';
+import TransitionsPanel from '../components/professional-editor/transitions-panel';
 
 // Importar tipos desde professional-editor-types
 import { 
@@ -60,10 +60,10 @@ import {
   TimelineClip, 
   EditorState,
   EditorStateUtils 
-} from '@/lib/professional-editor-types';
+} from '../lib/professional-editor-types';
 
 // Importar servicios para comunicación con el servidor
-import * as editorApiService from '@/lib/services/professional-editor-api-service';
+import * as editorApiService from '../lib/services/professional-editor-api-service';
 
 const ProfessionalEditor: React.FC = () => {
   // Estado del reproductor de video

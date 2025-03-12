@@ -5,16 +5,16 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../../components/ui/tabs';
 import {
   FileIcon,
   FilmIcon,
@@ -41,15 +41,15 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
+} from '../../components/ui/table';
 
 import {
   Separator
-} from '@/components/ui/separator';
+} from '../../components/ui/separator';
 
 import {
   Progress
-} from '@/components/ui/progress';
+} from '../../components/ui/progress';
 
 interface MediaFile {
   id: string;

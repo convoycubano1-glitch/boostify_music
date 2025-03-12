@@ -5,32 +5,32 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Slider
-} from '@/components/ui/slider';
+} from '../../components/ui/slider';
 import {
   Input
-} from '@/components/ui/input';
+} from '../../components/ui/input';
 import {
   Label
-} from '@/components/ui/label';
+} from '../../components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../../components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../../components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -39,10 +39,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../../components/ui/dialog';
 import {
   Switch
-} from '@/components/ui/switch';
+} from '../../components/ui/switch';
 import {
   Music,
   Volume2,
@@ -67,10 +67,10 @@ import {
   Headphones,
   Settings
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { AudioTrack } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { AudioTrack } from '../../lib/professional-editor-types';
 import { v4 as uuidv4 } from 'uuid';
-import { db, storage } from '@/lib/firebase';
+import { db, storage } from '../../lib/firebase';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { doc, setDoc, collection, updateDoc, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
 

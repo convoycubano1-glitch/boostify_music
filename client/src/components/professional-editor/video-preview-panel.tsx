@@ -5,13 +5,13 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Slider
-} from '@/components/ui/slider';
+} from '../../components/ui/slider';
 import {
   PlayCircle,
   PauseCircle,
@@ -31,8 +31,8 @@ import {
   ZoomOut,
   Loader2
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { VisualEffect } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { VisualEffect } from '../../lib/professional-editor-types';
 
 interface VideoPreviewPanelProps {
   videoSrc: string;

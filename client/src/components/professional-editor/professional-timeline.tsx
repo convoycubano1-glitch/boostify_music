@@ -5,26 +5,26 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Input
-} from '@/components/ui/input';
+} from '../../components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../../components/ui/select';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@/components/ui/tooltip';
+} from '../../components/ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -33,12 +33,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../../components/ui/dialog';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from '@/components/ui/popover';
+} from '../../components/ui/popover';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -49,7 +49,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuGroup
-} from '@/components/ui/context-menu';
+} from '../../components/ui/context-menu';
 import {
   Eye,
   FileVideo,
@@ -94,8 +94,8 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { TimelineClip } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { TimelineClip } from '../../lib/professional-editor-types';
 
 interface ProfessionalTimelineProps {
   clips: TimelineClip[];

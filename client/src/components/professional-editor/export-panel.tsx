@@ -6,42 +6,42 @@ import {
   CardTitle,
   CardFooter,
   CardDescription
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Input
-} from '@/components/ui/input';
+} from '../../components/ui/input';
 import {
   Label
-} from '@/components/ui/label';
+} from '../../components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../../components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../../components/ui/tabs';
 import {
   Progress
-} from '@/components/ui/progress';
+} from '../../components/ui/progress';
 import {
   RadioGroup,
   RadioGroupItem
-} from '@/components/ui/radio-group';
+} from '../../components/ui/radio-group';
 import {
   Switch
-} from '@/components/ui/switch';
+} from '../../components/ui/switch';
 import {
   Slider
-} from '@/components/ui/slider';
+} from '../../components/ui/slider';
 import {
   Dialog,
   DialogContent,
@@ -50,19 +50,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../../components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@/components/ui/tooltip';
+} from '../../components/ui/tooltip';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
-} from '@/components/ui/accordion';
+} from '../../components/ui/accordion';
 import {
   Drawer,
   DrawerClose,
@@ -72,7 +72,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger
-} from '@/components/ui/drawer';
+} from '../../components/ui/drawer';
 import {
   FileVideo,
   Download,

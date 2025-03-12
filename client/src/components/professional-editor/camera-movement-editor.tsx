@@ -5,32 +5,32 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Input
-} from '@/components/ui/input';
+} from '../../components/ui/input';
 import {
   Label
-} from '@/components/ui/label';
+} from '../../components/ui/label';
 import {
   Slider
-} from '@/components/ui/slider';
+} from '../../components/ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../../components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../../components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -39,16 +39,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../../components/ui/dialog';
 import {
   Switch
-} from '@/components/ui/switch';
+} from '../../components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@/components/ui/tooltip';
+} from '../../components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -57,13 +57,13 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
+} from '../../components/ui/table';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
-} from '@/components/ui/accordion';
+} from '../../components/ui/accordion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,7 +74,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger
-} from '@/components/ui/alert-dialog';
+} from '../../components/ui/alert-dialog';
 import {
   Camera,
   Plus,
@@ -106,11 +106,11 @@ import {
   RotateCw,
   Settings
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { CameraMovement } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { CameraMovement } from '../../lib/professional-editor-types';
 import { v4 as uuidv4 } from 'uuid';
 import { doc, collection, addDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '../../lib/firebase';
 
 interface CameraMovementEditorProps {
   cameraMovements: CameraMovement[];
