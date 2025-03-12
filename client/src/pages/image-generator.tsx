@@ -35,7 +35,7 @@ import { Progress } from '../components/ui/progress';
 import type { 
   ImageResult, 
   VideoResult 
-} from '@/lib/api/generation-types';
+} from "../lib/api/generation-types";
 import { 
   saveGeneratedImage, 
   getGeneratedImages, 

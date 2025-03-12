@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { TextModel, ImageModel, AIModelsConfig } from '@/types/ai-models';
+import type { TextModel, ImageModel, AIModelsConfig } from "../types/ai-models";
 
 interface AIModelsStore extends AIModelsConfig {
   updateTextModel: (model: TextModel) => void;

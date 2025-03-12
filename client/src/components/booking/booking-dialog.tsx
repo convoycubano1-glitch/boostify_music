@@ -8,7 +8,7 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { MusicianBookingForm } from "./musician-booking-form";
-import type { MusicianService } from "@/pages/producer-tools";
+import type { MusicianService } from "../pages/producer-tools";
 
 interface BookingDialogProps {
   musician: MusicianService;

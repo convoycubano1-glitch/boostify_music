@@ -42,7 +42,7 @@ import {
 } from "../../lib/firebase-storage";
 
 // Importamos los tipos desde nuestro archivo centralizado
-import type { VoiceConversionRecord, VoiceConversion as VoiceConversionType } from "@/lib/types/audio-types";
+import type { VoiceConversionRecord, VoiceConversion as VoiceConversionType } from "../lib/types/audio-types";
 
 interface PaginationMeta {
   currentPage: number;

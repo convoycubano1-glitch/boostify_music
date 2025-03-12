@@ -9,7 +9,7 @@ import { generateImageWithFal } from "../../lib/api/fal-ai";
 import { Loader2, Image as ImageIcon } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import type { MusicianService } from "@/pages/producer-tools";
+import type { MusicianService } from "../pages/producer-tools";
 
 interface AddMusicianFormProps {
   onClose: () => void;

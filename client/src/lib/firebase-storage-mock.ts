@@ -28,4 +28,4 @@ export {
   VoiceConversion, 
   ConversionStatus,
   MockVoiceData
-} from '@/lib/types/audio-types';
+} from "../lib/types/audio-types";

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Slider } from "../ui/slider";
 import { useAIModelsStore } from "../../store/ai-models-store";
 import { Brain, Image as ImageIcon } from "lucide-react";
-import type { TextModel, ImageModel } from "@/types/ai-models";
+import type { TextModel, ImageModel } from "../types/ai-models";
 import { useIsMobile } from "../../hooks/use-mobile";
 
 export function AIModelsManager() {

@@ -13,7 +13,7 @@ import { Mic, Upload, AlertCircle, CheckCircle2, RefreshCcw, Play } from "lucide
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useToast } from "../../hooks/use-toast";
 import { apiRequest } from "../../lib/queryClient";
-import type { TimelineClip } from "@/components/music-video/timeline-editor";
+import type { TimelineClip } from "../components/music-video/timeline-edito"r";
 
 export interface KlingLipsyncProps {
   className?: string;
