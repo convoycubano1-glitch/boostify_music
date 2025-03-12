@@ -43,8 +43,9 @@ import VideoPreviewPanel from '@/components/professional-editor/video-preview-pa
 import ProfessionalTimeline from '@/components/professional-editor/fixed-timeline';
 import TranscriptionPanel from '@/components/professional-editor/transcription-panel';
 import AudioTrackEditor from '@/components/professional-editor/audio-track-editor';
-import Toolbar from '@/components/professional-editor/toolbar';
-import TrackListPanel, { Track } from '@/components/professional-editor/track-list-panel';
+import { Toolbar } from '@/components/professional-editor/toolbar';
+import { TrackListPanel } from '@/components/professional-editor/track-list-panel';
+import { Track } from '@/lib/professional-editor-types';
 import CutPanel from '@/components/professional-editor/cut-panel';
 import TransitionsPanel from '@/components/professional-editor/transitions-panel';
 
@@ -88,17 +89,25 @@ const ProfessionalEditor: React.FC = () => {
       id: 'video-main',
       name: 'Video principal',
       type: 'video',
+      position: 0,
       visible: true,
       locked: false,
-      muted: false
+      muted: false,
+      solo: false,
+      color: '#FF5733',
+      createdAt: new Date()
     },
     {
       id: 'audio-main',
       name: 'Audio principal',
       type: 'audio',
+      position: 1,
       visible: true,
       locked: false,
-      muted: false
+      muted: false,
+      solo: false,
+      color: '#3498DB',
+      createdAt: new Date()
     }
   ]);
   // Estado para la herramienta activa
@@ -488,10 +497,14 @@ const ProfessionalEditor: React.FC = () => {
     const newTrack: Track = {
       id: `track-${Date.now()}`,
       name: type === 'video' ? `Video ${tracks.length}` : `Audio ${tracks.length}`,
-      type: type as 'video' | 'audio' | 'text' | 'effects',
+      type: type as 'video' | 'audio' | 'text',
+      position: tracks.length,
       visible: true,
       locked: false,
-      muted: false
+      muted: false,
+      solo: false,
+      color: type === 'video' ? '#FF5733' : type === 'audio' ? '#3498DB' : '#2ECC71',
+      createdAt: new Date()
     };
     setTracks([...tracks, newTrack]);
     markProjectAsModified();
@@ -524,7 +537,7 @@ const ProfessionalEditor: React.FC = () => {
   };
   
   // Función para convertir clips de timeline a pistas
-  const convertClipsToTracks = (timelineClips: TimelineClip[]): Track[] => {
+  const convertClipsToTracks = (timelineClips: any[]): Track[] => {
     // Obtener IDs únicos de pistas de los clips
     const uniqueTrackIds = Array.from(new Set(
       timelineClips.map(clip => clip.trackId)
@@ -541,10 +554,14 @@ const ProfessionalEditor: React.FC = () => {
         name: `Pista de ${trackType === 'video' ? 'video' : 
           trackType === 'audio' ? 'audio' : 
           trackType === 'image' ? 'imagen' : 'texto'} ${trackId.slice(-2)}`,
-        type: trackType,
+        type: trackType as TrackType,
+        position: 0,
         visible: true,
         locked: false,
-        muted: false
+        muted: false,
+        solo: false,
+        color: trackType === 'video' ? '#FF5733' : trackType === 'audio' ? '#3498DB' : '#2ECC71',
+        createdAt: new Date()
       };
     });
   };

@@ -1,12 +1,10 @@
-
-#!/usr/bin/env node
-
 /**
  * Script for starting both the server and client
  * Includes improved error handling and process management
  */
 
 import { spawn } from 'child_process';
+import process from 'node:process';
 
 // Colors for console output
 const colors = {
@@ -24,7 +22,7 @@ function startProcess(command, args, prefix, color) {
   console.log(`${color}Starting ${prefix}...${colors.reset}`);
   
   // Use shell:true to ensure proper environment variable loading
-  const process = spawn(command, args, {
+  const childProcess = spawn(command, args, {
     stdio: ['inherit', 'pipe', 'pipe'],
     shell: true,
     env: { ...process.env, FORCE_COLOR: "true" }
@@ -32,7 +30,7 @@ function startProcess(command, args, prefix, color) {
   
   let hasStarted = false;
   
-  process.stdout.on('data', (data) => {
+  childProcess.stdout.on('data', (data) => {
     const lines = data.toString().trim().split('\n');
     lines.forEach(line => {
       if (line.trim()) {
@@ -47,7 +45,7 @@ function startProcess(command, args, prefix, color) {
     });
   });
   
-  process.stderr.on('data', (data) => {
+  childProcess.stderr.on('data', (data) => {
     const lines = data.toString().trim().split('\n');
     lines.forEach(line => {
       if (line.trim()) {
@@ -62,12 +60,12 @@ function startProcess(command, args, prefix, color) {
   
   // Set a timeout to check if process has started
   setTimeout(() => {
-    if (!hasStarted && !process.killed) {
+    if (!hasStarted && !childProcess.killed) {
       console.log(`${colors.yellow}[${prefix}] Process is taking longer than expected to start. Still waiting...${colors.reset}`);
     }
   }, 10000);
   
-  process.on('exit', (code) => {
+  childProcess.on('exit', (code) => {
     if (code !== 0 && code !== null) {
       console.log(`${colors.red}[${prefix}] Process terminated with code ${code}${colors.reset}`);
       
@@ -85,7 +83,7 @@ function startProcess(command, args, prefix, color) {
     }
   });
   
-  return process;
+  return childProcess;
 }
 
 // Try to start the server first, then start the client
