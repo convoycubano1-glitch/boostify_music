@@ -94,8 +94,8 @@ const server = startProcess('npx', ['tsx', 'server/index.ts'], 'SERVER', colors.
 
 // Wait a bit for server to initialize before starting client
 setTimeout(() => {
-  // Start client using vite with explicit host
-  const client = startProcess('cd', ['client', '&&', 'npx', 'vite', '--host', '0.0.0.0'], 'CLIENT', colors.green);
+  // Start client using vite
+  const client = startProcess('cd', ['client', '&&', 'npx', 'vite'], 'CLIENT', colors.green);
   
   // Handle clean termination
   process.on('SIGINT', () => {
