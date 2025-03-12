@@ -112,6 +112,8 @@ const DialogDescription = React.forwardRef<
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
+const DialogClose = DialogPrimitive.Close
+
 export {
   Dialog,
   DialogTrigger,
@@ -120,4 +122,5 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 }

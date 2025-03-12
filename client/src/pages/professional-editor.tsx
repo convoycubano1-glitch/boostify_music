@@ -54,10 +54,11 @@ import EffectsPanel from '../components/professional-editor/effects-panel';
 import VideoPreviewPanel from '../components/professional-editor/video-preview-panel';
 import ResizeHandleControl from '../components/professional-editor/resize-handle-control';
 import MobileAdapter from '../components/professional-editor/mobile-adapter';
-import MobileEditorLayout from '../components/professional-editor/mobile-editor-layout';
+import { MobileEditorLayout } from '../components/professional-editor/mobile-editor-layout';
 import ProfessionalTimeline from '../components/professional-editor/fixed-timeline';
 import TranscriptionPanel from '../components/professional-editor/transcription-panel';
 import AudioTrackEditor from '../components/professional-editor/audio-track-editor';
+import { SimpleModuleDialog } from '../components/professional-editor/simple-module-dialog';
 import { Toolbar } from '../components/professional-editor/toolbar';
 import { TrackListPanel } from '../components/professional-editor/track-list-panel';
 import { MobileToolbar } from '../components/professional-editor/mobile-toolbar';
@@ -1076,6 +1077,21 @@ const ProfessionalEditor: React.FC = () => {
       
       {/* Margen inferior en móvil para evitar que la barra oculte contenido */}
       <div className="h-16 sm:h-0 w-full bg-black"></div>
+      
+      {/* Diálogo de configuración de módulos */}
+      <SimpleModuleDialog
+        isOpen={moduleConfigOpen}
+        onClose={() => setModuleConfigOpen(false)}
+        modules={modules}
+        onModulesChange={(updatedModules) => {
+          setModules(updatedModules);
+          localStorage.setItem('editor-modules', JSON.stringify(updatedModules));
+          toast({
+            title: "Configuración guardada",
+            description: "La configuración de módulos se ha actualizado correctamente"
+          });
+        }}
+      />
     </div>
   );
 };
