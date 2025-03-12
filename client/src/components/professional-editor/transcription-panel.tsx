@@ -5,32 +5,32 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../../components/ui/button';
 import {
   Input
-} from '@/components/ui/input';
+} from '../../components/ui/input';
 import {
   Label
-} from '@/components/ui/label';
+} from '../../components/ui/label';
 import {
   Textarea
-} from '@/components/ui/textarea';
+} from '../../components/ui/textarea';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../../components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../../components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -39,10 +39,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../../components/ui/dialog';
 import {
   Switch
-} from '@/components/ui/switch';
+} from '../../components/ui/switch';
 import {
   Table,
   TableBody,
@@ -50,26 +50,26 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
+} from '../../components/ui/table';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from '@/components/ui/popover';
+} from '../../components/ui/popover';
 import {
   Slider
-} from '@/components/ui/slider';
+} from '../../components/ui/slider';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger
-} from '@/components/ui/hover-card';
+} from '../../components/ui/hover-card';
 import {
   Badge
-} from '@/components/ui/badge';
+} from '../../components/ui/badge';
 import {
   ScrollArea
-} from '@/components/ui/scroll-area';
+} from '../../components/ui/scroll-area';
 import {
   FileText,
   Plus,
@@ -95,11 +95,11 @@ import {
   AlignJustify,
   Copy
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Transcription } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { Transcription } from '../../lib/professional-editor-types';
 import { v4 as uuidv4 } from 'uuid';
 import { doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '../../lib/firebase';
 
 interface TranscriptionPanelProps {
   transcriptions: Transcription[];

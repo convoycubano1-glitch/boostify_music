@@ -1,7 +1,7 @@
-import { WaitlistModal } from "@/components/marketing/waitlist-modal";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { WaitlistModal } from "../components/marketing/waitlist-modal";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
@@ -11,14 +11,15 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { Footer } from "@/components/layout/footer";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
+import { Footer } from "../components/layout/footer";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect, useRef } from "react";
-import { SuperAgent } from "@/components/agents/super-agent";
-import { PricingPlans } from "@/components/subscription/pricing-plans";
+// Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
+// import { SuperAgent } from "../components/agents/super-agent";
+// import { PricingPlans } from "../components/subscription/pricing-plans";
 
 /* =============================
    VARIANTES PARA ANIMACIONES
@@ -709,7 +710,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <PricingPlans simplified withAnimation />
+            {/* <PricingPlans simplified withAnimation /> */}
           </motion.div>
 
           <motion.div

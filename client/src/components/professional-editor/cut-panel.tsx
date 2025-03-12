@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { Button } from '../../components/ui/button';
+import { Slider } from '../../components/ui/slider';
 import { Scissors, Plus, RotateCcw, RotateCw, Trash2, Split } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Input } from '../../components/ui/input';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '../../components/ui/tooltip';
 
 export interface CutPanelProps {
   currentTime: number;

@@ -105,11 +105,11 @@ import {
   Trophy,
   Link
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { EditorState } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { EditorState } from '../../lib/professional-editor-types';
 import { doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db, storage } from '../../lib/firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ExportPanelProps {

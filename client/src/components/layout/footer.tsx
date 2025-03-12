@@ -1,212 +1,149 @@
+import React from "react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { 
-  Youtube, 
-  Music2, 
-  TrendingUp, 
-  MessageCircle, 
-  Globe, 
+import {
+  Github,
+  Twitter,
   Instagram,
-  ChevronRight,
-  Box, 
-  CircleDollarSign, 
-  Brain,
-  Gamepad2,
-  Settings,
-  Sparkles,
-  Disc,
-  Building2
+  Youtube,
+  ExternalLink,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 
 export function Footer() {
-  const { user } = useAuth();
-  const isAdmin = user?.email === "convoycubano@gmail.com";
-  
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="relative border-t bg-gradient-to-b from-background to-background/80 backdrop-blur-xl">
-      <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.5))] dark:bg-grid-black/10" />
-      <div className="container mx-auto px-4 py-12 relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <footer className="bg-black border-t border-zinc-800 pt-16 pb-12 text-white/80">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          {/* Logo y descripción */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Platform Features</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center space-x-2">
+              <img
+                src="/assets/freepik__boostify_music_organe_abstract_icon.png"
+                alt="Boostify Music"
+                className="h-8 w-8"
+              />
+              <h2 className="text-xl font-bold text-white">Boostify Music</h2>
+            </div>
+            <p className="text-sm md:pr-8">
+              La plataforma de IA que está revolucionando cómo los artistas crean, promocionan y crecen en la industria musical.
+            </p>
+            <div className="flex space-x-4 pt-2">
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/50 hover:text-orange-500 transition-colors"
+              >
+                <Twitter size={18} />
+                <span className="sr-only">Twitter</span>
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/50 hover:text-orange-500 transition-colors"
+              >
+                <Instagram size={18} />
+                <span className="sr-only">Instagram</span>
+              </a>
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/50 hover:text-orange-500 transition-colors"
+              >
+                <Youtube size={18} />
+                <span className="sr-only">YouTube</span>
+              </a>
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/50 hover:text-orange-500 transition-colors"
+              >
+                <Github size={18} />
+                <span className="sr-only">GitHub</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Navegación rápida */}
+          <div className="space-y-4">
+            <h3 className="text-white font-semibold mb-3">Plataforma</h3>
+            <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/ai-agents">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                    AI-Powered Marketing
-                  </Button>
+                <Link href="/features">
+                  <a className="hover:text-orange-500 transition-colors">Características</a>
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                    Content Management
-                  </Button>
+                <Link href="/pricing">
+                  <a className="hover:text-orange-500 transition-colors">Precios</a>
                 </Link>
               </li>
               <li>
-                <Link href="/analytics">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                    Analytics Dashboard
-                  </Button>
+                <Link href="/blog">
+                  <a className="hover:text-orange-500 transition-colors">Blog</a>
                 </Link>
               </li>
               <li>
-                <Link href="/pr">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <ChevronRight className="h-4 w-4 mr-2 text-orange-500" />
-                    Audience Growth
-                  </Button>
+                <Link href="/about">
+                  <a className="hover:text-orange-500 transition-colors">Sobre nosotros</a>
                 </Link>
               </li>
             </ul>
           </div>
 
+          {/* Legales */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Services</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h3 className="text-white font-semibold mb-3">Legal</h3>
+            <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/virtual-record-label">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Disc className="h-4 w-4 mr-2 text-orange-500" />
-                    Virtual Record Label
-                  </Button>
+                <Link href="/terms">
+                  <a className="hover:text-orange-500 transition-colors">Términos de servicio</a>
                 </Link>
               </li>
               <li>
-                <Link href="/record-label-services">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Building2 className="h-4 w-4 mr-2 text-orange-500" />
-                    Record Label Services
-                  </Button>
+                <Link href="/privacy">
+                  <a className="hover:text-orange-500 transition-colors">Política de privacidad</a>
                 </Link>
               </li>
               <li>
-                <Link href="/youtube-views">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Youtube className="h-4 w-4 mr-2 text-orange-500" />
-                    YouTube Views
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href="/instagram">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Instagram className="h-4 w-4 mr-2 text-orange-500" />
-                    Instagram Growth
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link href="/promotion">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Music2 className="h-4 w-4 mr-2 text-orange-500" />
-                    Music Promotion
-                  </Button>
+                <Link href="/cookies">
+                  <a className="hover:text-orange-500 transition-colors">Política de cookies</a>
                 </Link>
               </li>
             </ul>
           </div>
 
+          {/* Contacto */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Metafeed & Boostify</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  <Box className="h-4 w-4 mr-2" />
-                  Metafeed Metaverse
-                </Button>
+            <h3 className="text-white font-semibold mb-3">Contacto</h3>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-1">
+                <span>hello@boostifymusic.com</span>
+                <ExternalLink size={14} className="text-white/50" />
               </li>
-              <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  <CircleDollarSign className="h-4 w-4 mr-2" />
-                  Metafeed Token
-                </Button>
-              </li>
-              <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  <Music2 className="h-4 w-4 mr-2" />
-                  One Artist One Token
-                </Button>
-              </li>
-              <li>
-                <Link href="/ecosystem">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Globe className="h-4 w-4 mr-2" />
-                    View Ecosystem
-                  </Button>
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Avat Pro & Boostify</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  <Brain className="h-4 w-4 mr-2" />
-                  Hyper Realistic Avatars
-                </Button>
-              </li>
-              <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  <Gamepad2 className="h-4 w-4 mr-2" />
-                  Unreal Engine
-                </Button>
-              </li>
-              <li>
-                <Button variant="link" className="p-0 h-auto font-normal">
-                  <Brain className="h-4 w-4 mr-2" />
-                  Motion Capture
-                </Button>
-              </li>
-              <li>
-                <Link href="/ecosystem">
-                  <Button variant="link" className="p-0 h-auto font-normal">
-                    <Globe className="h-4 w-4 mr-2" />
-                    View Partnership
-                  </Button>
-                </Link>
-              </li>
+              <li>Barcelona, España</li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Boostify Music. All rights reserved.
-            </p>
-            <div className="flex gap-4">
-              <Link href="/terms">
-                <Button variant="ghost" size="sm">
-                  Terms
-                </Button>
-              </Link>
-              <Link href="/privacy">
-                <Button variant="ghost" size="sm">
-                  Privacy
-                </Button>
-              </Link>
-              <Link href="/cookies">
-                <Button variant="ghost" size="sm">
-                  Cookies
-                </Button>
-              </Link>
-              {isAdmin && (
-                <Link href="/artist-generator">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-orange-500">
-                    <Sparkles className="h-4 w-4" />
-                    Artist Generator
-                  </Button>
-                </Link>
-              )}
-            </div>
+        <div className="border-t border-zinc-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-xs text-white/60">
+            &copy; {currentYear} Boostify Music. Todos los derechos reservados.
+          </p>
+          <div className="flex gap-6 text-xs text-white/60 mt-4 md:mt-0">
+            <Link href="/terms">
+              <a className="hover:text-white transition-colors">Términos</a>
+            </Link>
+            <Link href="/privacy">
+              <a className="hover:text-white transition-colors">Privacidad</a>
+            </Link>
+            <Link href="/cookies">
+              <a className="hover:text-white transition-colors">Cookies</a>
+            </Link>
           </div>
         </div>
       </div>

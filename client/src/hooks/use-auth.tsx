@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { User } from "firebase/auth";
 import { auth } from "../firebase";
-import { useToast } from "@/hooks/use-toast";
-import { authService } from "@/services/auth-service";
+import { useToast } from "../hooks/use-toast";
+import { authService } from "../services/auth-service";
 import { useLocation } from "wouter";
 
 type AuthContextType = {

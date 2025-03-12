@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { Button } from '../../components/ui/button';
+import { Slider } from '../../components/ui/slider';
 import {
   Layers,
   Play,
@@ -8,13 +8,13 @@ import {
   Search,
   Wand2
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Input } from '../../components/ui/input';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '../../components/ui/tooltip';
 import {
   Card,
   CardContent,
@@ -22,14 +22,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../../components/ui/select';
 
 export interface Transition {
   id: string;
