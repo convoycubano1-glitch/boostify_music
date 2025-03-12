@@ -1,376 +1,380 @@
 /**
- * Tipos para el Editor Profesional de Video
+ * Tipos para el Editor Profesional
  * 
- * Este archivo contiene todas las definiciones de tipos esenciales
- * para el editor de video profesional, incluyendo clips, efectos,
- * marcadores, y estado general.
+ * Este archivo define los tipos y interfaces utilizados en los componentes
+ * del editor profesional.
  */
 
-// Clip básico que se puede colocar en la línea de tiempo
-export interface TimelineClip {
-  id: string;
-  type: 'video' | 'audio' | 'image' | 'text';
-  title: string;
-  url?: string;
-  startTime: number;
-  duration: number;
-  trackId?: string;
-  content?: string;  // Para clips de texto
-  effects?: Effect[];
-  color?: string;     // Para identificar clips visualmente
-  thumbnailUrl?: string; // URL de miniatura para clips de video
-  locked?: boolean;  // Indica si el clip está bloqueado para edición
-}
-
-// Efectos que se pueden aplicar a clips
-export interface Effect {
-  id: string;
-  type: 'filter' | 'text' | 'transform' | 'transition' | 'overlay' | 'color';
-  name: string;
-  startTime: number;
-  duration: number;
-  parameters: Record<string, any>;
-  properties?: Record<string, any>; // Propiedades adicionales para configuración
-  endTime?: number;      // Tiempo de finalización calculado
-  clipId?: string;       // ID del clip al que pertenece
-}
-
-// Marcadores de tiempo para análisis de ritmo
-export interface BeatMarker {
-  id: string;
-  time: number;
-  label: string;
-  type: 'beat' | 'bar' | 'section' | 'downbeat';
-  intensity: number;  // De 0 a 1
-}
-
-// Marcador para secciones musicales
-export interface SectionMarker {
-  id: string;
-  startTime: number;
-  endTime: number;
-  name: string;
-  type: 'verse' | 'chorus' | 'bridge' | 'intro' | 'outro' | 'custom';
-  color: string;
-  label?: string; // Etiqueta adicional para visualización
-}
-
-// Pista de audio específica
-export interface AudioTrack {
-  id: string;
-  type: 'audio';
-  name: string;
-  url: string;
-  waveform: number[];
-  startTime: number;
-  duration: number;
-  volume: number;
-  source?: 'music' | 'vocal' | 'sfx' | 'ambience';
-  muted?: boolean;
-  loop?: boolean;
-}
-
-// Configuración de subtítulos o textos
-export interface TextStyle {
-  color: string;
-  fontSize: number;
-  fontWeight: string;
-  fontFamily?: string;
-  textAlign?: 'left' | 'center' | 'right';
-  position: 'top' | 'middle' | 'bottom' | 'center';
-}
-
-// Valores por defecto para estilos de texto
-export const defaultTextStyle: TextStyle = {
-  color: '#ffffff',
-  fontSize: 18,
-  fontWeight: 'normal',
-  fontFamily: 'Arial, sans-serif',
-  textAlign: 'center',
-  position: 'bottom'
-};
-
-// Transcripción para subtítulos
-export interface Transcription {
-  id: string;
-  startTime: number;
-  endTime: number;
-  text: string;
-  type: 'subtitle' | 'caption' | 'verse' | 'chorus' | 'bridge' | 'intro' | 'outro' | 'custom';
-  style?: TextStyle;
-  language?: string; // Idioma de la transcripción
-  audioId?: string; // ID del audio relacionado
-  confidence?: number; // Nivel de confianza en la transcripción automática
-}
-
-// Movimientos de cámara para efectos
-export interface CameraMovement {
-  id: string;
-  type: 'pan' | 'zoom' | 'tilt' | 'track' | 'dolly';
-  startTime: number;
-  duration: number;
-  startPosition: { x: number; y: number; z: number };
-  endPosition: { x: number; y: number; z: number };
-  easing: string;
-  name?: string;
-  parameters?: Record<string, any>;
-  // Propiedades adicionales para animaciones
-  start?: { x: number; y: number; z: number; rotation?: number };
-  end?: { x: number; y: number; z: number; rotation?: number };
-}
-
-// Configuración general del proyecto
-export interface EditorSettings {
-  resolution: { width: number; height: number };
-  frameRate: number;
-  audioSampleRate: number;
-  outputFormat: 'mp4' | 'webm' | 'gif';
-  quality: 'draft' | 'medium' | 'high';
-}
-
-// Entrada en el historial para deshacer/rehacer
-export interface HistoryEntry {
-  state: Partial<EditorState>;
-  timestamp: Date;
-  description: string;
-}
-
-// Estado completo del editor
+/**
+ * Estado general del editor
+ */
 export interface EditorState {
-  // Metadatos del proyecto
-  projectName: string;
+  // Información del proyecto
   projectId: string;
-  settings: EditorSettings;
+  projectName: string;
+  projectDescription?: string;
+  userId: string;
   
-  // Estado de reproducción
+  // Contenido multimedia
+  clips: Clip[];
+  audioTracks: AudioTrack[];
+  transcriptions: Transcription[];
+  cameraMovements: CameraMovement[];
+  visualEffects: VisualEffect[];
+  
+  // Análisis musical
+  beats: Beat[];
+  sections: Section[];
+  
+  // Estado reproducción
   currentTime: number;
   duration: number;
   isPlaying: boolean;
   
-  // Selección actual
-  selectedClipId?: string;
-  selectedTrackId?: string;
-  selectedEffectId?: string;
+  // Configuración
+  settings: EditorSettings;
   
-  // Zoom y vista
-  zoom: number;
-  timelineScroll: number;
-  
-  // Contenido
-  timelineClips: TimelineClip[];
-  audioTracks: AudioTrack[];
-  transcriptions: Transcription[];
-  beatMarkers: BeatMarker[];
-  sectionMarkers: SectionMarker[];
-  cameraMovements: CameraMovement[];
-  
-  // Historial de cambios
-  history: HistoryEntry[];
-  historyIndex: number;
-  
-  // Modo de persistencia
-  persistenceMode: 'local' | 'cloud' | 'none';
-  lastSaved?: Date;
-  saveStatus?: 'saved' | 'unsaved' | 'saving';
+  // Metadata
+  createdAt: Date;
+  updatedAt: Date;
+  lastSavedAt?: Date;
 }
 
-// Utilidades para gestionar el estado del editor
-export const EditorStateUtils = {
-  /**
-   * Crea un estado vacío del editor para un nuevo proyecto
-   */
-  createEmptyState(): EditorState {
-    return {
-      projectName: 'Proyecto sin título',
-      projectId: crypto.randomUUID(),
-      settings: {
-        resolution: { width: 1920, height: 1080 },
-        frameRate: 30,
-        audioSampleRate: 44100,
-        outputFormat: 'mp4',
-        quality: 'medium'
-      },
-      currentTime: 0,
-      duration: 60, // 60 segundos por defecto
-      isPlaying: false,
-      zoom: 1,
-      timelineScroll: 0,
-      timelineClips: [],
-      audioTracks: [],
-      transcriptions: [],
-      beatMarkers: [],
-      sectionMarkers: [],
-      cameraMovements: [],
-      history: [],
-      historyIndex: -1,
-      persistenceMode: 'local'
-    };
-  },
-  
-  /**
-   * Crea un nuevo proyecto con configuraciones personalizadas
-   */
-  createNewProject(params?: {
-    name?: string;
-    duration?: number;
-    resolution?: { width: number; height: number };
-    frameRate?: number;
-  }): EditorState {
-    const emptyState = this.createEmptyState();
-    
-    return {
-      ...emptyState,
-      projectName: params?.name || 'Proyecto sin título',
-      duration: params?.duration || 60,
-      settings: {
-        ...emptyState.settings,
-        resolution: params?.resolution || emptyState.settings.resolution,
-        frameRate: params?.frameRate || emptyState.settings.frameRate
-      }
-    };
-  },
-  
-  /**
-   * Añade una entrada al historial para deshacer/rehacer
-   */
-  addHistoryEntry(
-    state: EditorState,
-    partialState: Partial<EditorState>,
-    description: string
-  ): EditorState {
-    // Crear una copia del estado actual
-    const newState = { ...state, ...partialState };
-    
-    // Si estamos en medio del historial, eliminar entradas posteriores
-    const newHistory = newState.historyIndex < newState.history.length - 1
-      ? newState.history.slice(0, newState.historyIndex + 1)
-      : [...newState.history];
-      
-    // Añadir la nueva entrada al historial
-    newHistory.push({
-      state: partialState,
-      timestamp: new Date(),
-      description
-    });
-    
-    // Actualizar el estado con el nuevo historial
-    return {
-      ...newState,
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
-      saveStatus: 'unsaved'
-    };
-  },
-  
-  /**
-   * Retrocede en el historial
-   */
-  undo(state: EditorState): EditorState {
-    if (state.historyIndex < 0) {
-      return state; // No hay nada que deshacer
-    }
-    
-    // Obtener la entrada actual del historial
-    const currentEntry = state.history[state.historyIndex];
-    
-    // Revertir los cambios
-    const prevState = { ...state };
-    
-    // Recorrer todas las propiedades de la entrada y restaurar sus valores previos
-    Object.keys(currentEntry.state).forEach(key => {
-      if (state.historyIndex > 0) {
-        // Buscar la propiedad en entradas anteriores
-        for (let i = state.historyIndex - 1; i >= 0; i--) {
-          if (key in state.history[i].state) {
-            // @ts-ignore - Accedemos dinámicamente a las propiedades
-            prevState[key] = state.history[i].state[key];
-            break;
-          }
-        }
-      } else {
-        // Si es la primera entrada, volver al estado vacío
-        const emptyState = this.createEmptyState();
-        // @ts-ignore - Accedemos dinámicamente a las propiedades
-        prevState[key] = emptyState[key];
-      }
-    });
-    
-    // Actualizar el índice de historial
-    return {
-      ...prevState,
-      historyIndex: state.historyIndex - 1,
-      saveStatus: 'unsaved'
-    };
-  },
-  
-  /**
-   * Avanza en el historial
-   */
-  redo(state: EditorState): EditorState {
-    if (state.historyIndex >= state.history.length - 1) {
-      return state; // No hay nada que rehacer
-    }
-    
-    // Obtener la entrada siguiente del historial
-    const nextEntry = state.history[state.historyIndex + 1];
-    
-    // Aplicar los cambios
-    return {
-      ...state,
-      ...nextEntry.state,
-      historyIndex: state.historyIndex + 1,
-      saveStatus: 'unsaved'
-    };
-  },
-  
-  /**
-   * Busca clips que estén en un rango de tiempo específico
-   */
-  findClipsInTimeRange(state: EditorState, startTime: number, endTime: number): TimelineClip[] {
-    return state.timelineClips.filter(clip => {
-      const clipEnd = clip.startTime + clip.duration;
-      return (clip.startTime <= endTime && clipEnd >= startTime);
-    });
-  },
-  
-  /**
-   * Busca clips que pertenezcan a una pista específica
-   */
-  findClipsInTrack(state: EditorState, trackId: string): TimelineClip[] {
-    return state.timelineClips.filter(clip => clip.trackId === trackId);
-  },
-  
-  /**
-   * Encuentra efectos activos en un momento específico
-   */
-  findActiveEffectsAtTime(state: EditorState, time: number): Effect[] {
-    const allEffects: Effect[] = [];
-    
-    // Recopilar todos los efectos de todos los clips
-    state.timelineClips.forEach(clip => {
-      if (clip.effects && Array.isArray(clip.effects)) {
-        clip.effects.forEach(effect => {
-          const effectEndTime = effect.startTime + effect.duration;
-          if (effect.startTime <= time && effectEndTime >= time) {
-            allEffects.push(effect);
-          }
-        });
-      }
-    });
-    
-    return allEffects;
-  }
-};
+/**
+ * Clip multimedia (video o imagen)
+ */
+export interface Clip {
+  id: string;
+  name: string;
+  type: 'video' | 'image';
+  source: string;
+  startTime: number;
+  endTime: number;
+  duration?: number;
+  thumbnail?: string;
+  effects?: VisualEffect[];
+  metadata?: Record<string, any>;
+}
 
-// Tipo visual para efectos (usado en previsualizaciones)
+/**
+ * Pista de audio
+ */
+export interface AudioTrack {
+  id: string;
+  name: string;
+  source: string;
+  type: 'music' | 'vocal' | 'sfx' | 'ambience';
+  startTime: number;
+  duration: number;
+  volume: number;
+  muted: boolean;
+  loop: boolean;
+  waveform: number[];
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Transcripción o subtítulo
+ */
+export interface Transcription {
+  id: string;
+  text: string;
+  startTime: number;
+  endTime: number;
+  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'custom';
+  language?: string;
+  style?: {
+    color: string;
+    fontSize: number;
+    fontWeight: string;
+    position: 'top' | 'center' | 'bottom';
+  };
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Movimiento de cámara
+ */
+export interface CameraMovement {
+  id: string;
+  name: string;
+  type: 'track' | 'zoom' | 'pan' | 'tilt' | 'dolly';
+  startTime: number;
+  duration: number;
+  start: number;
+  end: number;
+  parameters?: Record<string, number>;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Efecto visual
+ */
 export interface VisualEffect {
   id: string;
-  type: string;
   name: string;
-  description: string;
-  thumbnail?: string;
-  category: string;
-  previewUrl?: string;
+  type: 'filter' | 'overlay' | 'transition' | 'zoom' | 'crop' | 'blur' | 'custom';
+  startTime: number;
+  duration: number;
+  intensity: number;
   parameters?: Record<string, any>;
-  intensity?: number;
+  metadata?: Record<string, any>;
 }
+
+/**
+ * Beat o pulso en la música
+ */
+export interface Beat {
+  id: string;
+  time: number;
+  type: 'beat' | 'bar';
+  intensity: number;
+  label?: string;
+  bpm?: number;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Sección musical
+ */
+export interface Section {
+  id: string;
+  name: string;
+  startTime: number;
+  endTime: number;
+  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'breakdown' | 'custom';
+  color: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Timeline clip para representar cualquier elemento en la línea de tiempo
+ */
+export interface TimelineClip {
+  id: string;
+  title: string;
+  type: 'video' | 'image' | 'audio' | 'text';
+  start: number;
+  duration: number;
+  url: string;
+  trackId: string;
+  selected?: boolean;
+  color?: string;
+  end?: number;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Configuración del editor
+ */
+export interface EditorSettings {
+  language: 'es' | 'en';
+  theme: 'light' | 'dark' | 'system';
+  autoSave: boolean;
+  autoSaveInterval: number;
+  videoQuality: 'draft' | 'standard' | 'high';
+  frameRate: number;
+  backgroundColor: string;
+  showTimecode: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+  defaultTransitionDuration: number;
+}
+
+/**
+ * Historia del proyecto
+ */
+export interface ProjectHistory {
+  id: string;
+  projectId: string;
+  userId: string;
+  action: 'create' | 'update' | 'delete' | 'export';
+  timestamp: Date;
+  details?: Record<string, any>;
+}
+
+/**
+ * Objeto de exportación
+ */
+export interface ExportResult {
+  id: string;
+  projectId: string;
+  userId: string;
+  format: 'mp4' | 'webm' | 'gif';
+  quality: 'draft' | 'standard' | 'high';
+  resolution: '480p' | '720p' | '1080p' | '4k';
+  url: string;
+  duration: number;
+  size: number;
+  createdAt: Date;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Métodos auxiliares para manipular objetos EditorState
+ */
+export const EditorStateUtils = {
+  /**
+   * Calcula la duración total del proyecto
+   */
+  calculateDuration(state: Partial<EditorState>): number {
+    let maxEnd = 0;
+    
+    // Revisar clips
+    if (state.clips) {
+      state.clips.forEach(clip => {
+        const clipEnd = clip.endTime;
+        if (clipEnd > maxEnd) maxEnd = clipEnd;
+      });
+    }
+    
+    // Revisar pistas de audio
+    if (state.audioTracks) {
+      state.audioTracks.forEach(track => {
+        const trackEnd = track.startTime + track.duration;
+        if (trackEnd > maxEnd) maxEnd = trackEnd;
+      });
+    }
+    
+    // Revisar transcripciones
+    if (state.transcriptions) {
+      state.transcriptions.forEach(transcription => {
+        if (transcription.endTime > maxEnd) maxEnd = transcription.endTime;
+      });
+    }
+    
+    return maxEnd;
+  },
+  
+  /**
+   * Encuentra elementos activos en un tiempo determinado
+   */
+  findActiveElementsAtTime(state: Partial<EditorState>, time: number): {
+    clips: Clip[];
+    audioTracks: AudioTrack[];
+    transcriptions: Transcription[];
+    cameraMovements: CameraMovement[];
+    visualEffects: VisualEffect[];
+    beats: Beat[];
+    sections: Section[];
+  } {
+    const result = {
+      clips: [] as Clip[],
+      audioTracks: [] as AudioTrack[],
+      transcriptions: [] as Transcription[],
+      cameraMovements: [] as CameraMovement[],
+      visualEffects: [] as VisualEffect[],
+      beats: [] as Beat[],
+      sections: [] as Section[]
+    };
+    
+    // Clips activos
+    if (state.clips) {
+      result.clips = state.clips.filter(
+        clip => time >= clip.startTime && time < clip.endTime
+      );
+    }
+    
+    // Pistas de audio activas
+    if (state.audioTracks) {
+      result.audioTracks = state.audioTracks.filter(
+        track => time >= track.startTime && time < (track.startTime + track.duration)
+      );
+    }
+    
+    // Transcripciones activas
+    if (state.transcriptions) {
+      result.transcriptions = state.transcriptions.filter(
+        transcription => time >= transcription.startTime && time <= transcription.endTime
+      );
+    }
+    
+    // Movimientos de cámara activos
+    if (state.cameraMovements) {
+      result.cameraMovements = state.cameraMovements.filter(
+        movement => time >= movement.startTime && time < (movement.startTime + movement.duration)
+      );
+    }
+    
+    // Efectos visuales activos
+    if (state.visualEffects) {
+      result.visualEffects = state.visualEffects.filter(
+        effect => time >= effect.startTime && time < (effect.startTime + effect.duration)
+      );
+    }
+    
+    // Beats activos (el beat más cercano)
+    if (state.beats) {
+      // Encontrar el beat más cercano al tiempo actual
+      let closestBeat: Beat | null = null;
+      let minDistance = Infinity;
+      
+      for (const beat of state.beats) {
+        const distance = Math.abs(beat.time - time);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestBeat = beat;
+        }
+      }
+      
+      // Solo considerar un beat como activo si está a menos de 0.2 segundos
+      if (closestBeat && minDistance <= 0.2) {
+        result.beats = [closestBeat];
+      }
+    }
+    
+    // Secciones activas
+    if (state.sections) {
+      result.sections = state.sections.filter(
+        section => time >= section.startTime && time < section.endTime
+      );
+    }
+    
+    return result;
+  },
+  
+  /**
+   * Crea un nuevo estado de editor vacío
+   */
+  createEmptyState(userId: string): EditorState {
+    const now = new Date();
+    return {
+      projectId: `project-${Date.now()}`,
+      projectName: 'Nuevo proyecto',
+      projectDescription: '',
+      userId,
+      clips: [],
+      audioTracks: [],
+      transcriptions: [],
+      cameraMovements: [],
+      visualEffects: [],
+      beats: [],
+      sections: [],
+      currentTime: 0,
+      duration: 0,
+      isPlaying: false,
+      settings: {
+        language: 'es',
+        theme: 'system',
+        autoSave: true,
+        autoSaveInterval: 30,
+        videoQuality: 'standard',
+        frameRate: 30,
+        backgroundColor: '#000000',
+        showTimecode: true,
+        snapToGrid: true,
+        gridSize: 1,
+        defaultTransitionDuration: 1
+      },
+      createdAt: now,
+      updatedAt: now
+    };
+  },
+  
+  /**
+   * Clona un estado de editor
+   */
+  cloneState(state: EditorState): EditorState {
+    return JSON.parse(JSON.stringify(state));
+  }
+};

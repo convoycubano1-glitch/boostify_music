@@ -1,929 +1,1312 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Button
+} from '@/components/ui/button';
+import {
+  Input
+} from '@/components/ui/input';
+import {
+  Label
+} from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  Slider,
-  Button,
-  Switch,
-  Label,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  Slider
+} from '@/components/ui/slider';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-  Input
-} from '@/components/ui';
+  TooltipTrigger
+} from '@/components/ui/tooltip';
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  Music,
   Play,
   Pause,
-  SaveAll,
-  Music,
-  Music2,
-  Waveform,
+  Upload,
+  Download,
+  Wand,
+  Clock,
+  BarChart4,
+  FileAudio,
+  RefreshCw,
   PlusCircle,
   Edit,
-  XCircle,
-  Volume2,
-  Layers,
+  Trash,
+  MoreVertical,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles,
+  Share,
+  Loader2,
+  Music2 as Metronome // Usando Music2 como reemplazo de Metronome
 } from 'lucide-react';
-import { BeatMarker, SectionMarker } from '@/lib/professional-editor-types';
+import { cn } from '@/lib/utils';
+import { Beat, Section } from '@/lib/professional-editor-types';
+import { v4 as uuidv4 } from 'uuid';
+import { collection, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface BeatAnalyzerProps {
-  /** Archivo de audio a analizar */
-  audioUrl?: string;
-  
-  /** Duración del audio en segundos */
-  duration: number;
-  
-  /** Tiempo actual de reproducción */
   currentTime: number;
-  
-  /** Función que se dispara al cambiar el tiempo actual */
-  onTimeUpdate?: (time: number) => void;
-  
-  /** Función para reproducir el audio */
-  onPlay?: () => void;
-  
-  /** Función para pausar el audio */
-  onPause?: () => void;
-  
-  /** Marcadores de beat existentes */
-  beatMarkers: BeatMarker[];
-  
-  /** Función para añadir un marcador de beat */
-  onAddBeatMarker?: (marker: Omit<BeatMarker, 'id'>) => void;
-  
-  /** Función para actualizar un marcador de beat */
-  onUpdateBeatMarker?: (id: string, updates: Partial<BeatMarker>) => void;
-  
-  /** Función para eliminar un marcador de beat */
-  onRemoveBeatMarker?: (id: string) => void;
-  
-  /** Marcadores de sección existentes */
-  sectionMarkers: SectionMarker[];
-  
-  /** Función para añadir un marcador de sección */
-  onAddSectionMarker?: (marker: Omit<SectionMarker, 'id'>) => void;
-  
-  /** Función para actualizar un marcador de sección */
-  onUpdateSectionMarker?: (id: string, updates: Partial<SectionMarker>) => void;
-  
-  /** Función para eliminar un marcador de sección */
-  onRemoveSectionMarker?: (id: string) => void;
+  duration: number;
+  isPlaying: boolean;
+  onSeek?: (time: number) => void;
+  onAddBeat?: (beat: Omit<Beat, 'id'>) => void;
+  onUpdateBeat?: (id: string, updates: Partial<Beat>) => void;
+  onDeleteBeat?: (id: string) => void;
+  onAddSection?: (section: Omit<Section, 'id'>) => void;
+  onUpdateSection?: (id: string, updates: Partial<Section>) => void;
+  onDeleteSection?: (id: string) => void;
+  beats: Beat[];
+  sections: Section[];
+  audioSrc?: string;
+  projectId?: string;
 }
 
-/**
- * Componente para analizar beats en una pista de audio
- * Permite detectar automáticamente beats y gestionar secciones musicales
- */
-export function BeatAnalyzer({
-  audioUrl,
-  duration,
+// Paleta de colores para las secciones
+const sectionColors = {
+  intro: '#3b82f6',    // blue-500
+  verse: '#ef4444',    // red-500
+  chorus: '#f59e0b',   // amber-500
+  bridge: '#8b5cf6',   // violet-500
+  outro: '#10b981',    // emerald-500
+  breakdown: '#ec4899', // pink-500
+  custom: '#6b7280'    // gray-500
+};
+
+const BeatAnalyzer: React.FC<BeatAnalyzerProps> = ({
   currentTime,
-  onTimeUpdate,
-  onPlay,
-  onPause,
-  beatMarkers = [],
-  onAddBeatMarker,
-  onUpdateBeatMarker,
-  onRemoveBeatMarker,
-  sectionMarkers = [],
-  onAddSectionMarker,
-  onUpdateSectionMarker,
-  onRemoveSectionMarker
-}: BeatAnalyzerProps) {
-  // Estado para el elemento de audio
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  
-  // Estado para el análisis de audio
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.7);
-  const [bpm, setBpm] = useState(120);
-  const [beatsPerBar, setBeatsPerBar] = useState(4);
-  const [sensitivity, setSensitivity] = useState(0.5);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [waveformData, setWaveformData] = useState<number[]>([]);
-  
-  // Estado para la edición de secciones
-  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
-  const [newSectionData, setNewSectionData] = useState<{
-    name: string;
-    type: SectionMarker['type'];
-    startTime: number;
-    endTime: number;
-    color?: string;
-  }>({
+  duration,
+  isPlaying,
+  onSeek,
+  onAddBeat,
+  onUpdateBeat,
+  onDeleteBeat,
+  onAddSection,
+  onUpdateSection,
+  onDeleteSection,
+  beats = [],
+  sections = [],
+  audioSrc,
+  projectId
+}) => {
+  // Estados
+  const [activeTab, setActiveTab] = useState<string>('visual');
+  const [visualizationMode, setVisualizationMode] = useState<'timeline' | 'grid'>('timeline');
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisProgress, setAnalysisProgress] = useState<number>(0);
+  const [detectedBPM, setDetectedBPM] = useState<number | null>(null);
+  const [manualBPM, setManualBPM] = useState<number>(120);
+  const [showAddSectionDialog, setShowAddSectionDialog] = useState<boolean>(false);
+  const [selectedBeatId, setSelectedBeatId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [showBeatMarkersOnly, setShowBeatMarkersOnly] = useState<boolean>(false);
+  const [tempSection, setTempSection] = useState<Omit<Section, 'id'>>({
     name: '',
+    startTime: currentTime,
+    endTime: currentTime + 10,
     type: 'verse',
-    startTime: 0,
-    endTime: 0,
-    color: '#6366f1' // Indigo por defecto
+    color: sectionColors.verse
   });
   
-  // Estado para expandir/colapsar paneles
-  const [showBeatSettings, setShowBeatSettings] = useState(true);
-  const [showSectionSettings, setShowSectionSettings] = useState(true);
+  // Referencias
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+  const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
   
-  // Crear elemento de audio cuando cambia la URL
+  // Inicializar elemento de audio
   useEffect(() => {
-    if (!audioUrl) return;
-    
-    const audio = new Audio(audioUrl);
-    audio.volume = volume;
-    audio.addEventListener('ended', handleAudioEnded);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audioRef.current = audio;
-    
-    // Cargar y analizar la forma de onda
-    loadWaveform(audioUrl);
-    
-    return () => {
-      audio.removeEventListener('ended', handleAudioEnded);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.pause();
-    };
-  }, [audioUrl]);
-  
-  // Actualizar volumen cuando cambia
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
+    if (audioSrc && !audioRef.current) {
+      audioRef.current = new Audio(audioSrc);
+    } else if (audioSrc && audioRef.current) {
+      audioRef.current.src = audioSrc;
     }
-  }, [volume]);
+  }, [audioSrc]);
   
-  // Actualizar el tiempo actual basado en props
-  useEffect(() => {
-    if (audioRef.current && !isPlaying && Math.abs(audioRef.current.currentTime - currentTime) > 0.5) {
-      audioRef.current.currentTime = currentTime;
-    }
-  }, [currentTime, isPlaying]);
-  
-  // Manejar la finalización del audio
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-    if (onPause) {
-      onPause();
-    }
-  };
-  
-  // Manejar la actualización del tiempo
-  const handleTimeUpdate = () => {
-    if (audioRef.current && onTimeUpdate) {
-      onTimeUpdate(audioRef.current.currentTime);
-    }
-  };
-  
-  // Cargar y analizar la forma de onda
-  const loadWaveform = async (url: string) => {
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-        // Obtener datos del canal izquierdo (o mono)
-        const channelData = buffer.getChannelData(0);
-        
-        // Reducir la cantidad de datos para visualización (tomar 1000 muestras)
-        const sampleCount = 1000;
-        const sampleSize = Math.floor(channelData.length / sampleCount);
-        const samples = [];
-        
-        for (let i = 0; i < sampleCount; i++) {
-          let sum = 0;
-          const startSample = i * sampleSize;
-          for (let j = 0; j < sampleSize; j++) {
-            sum += Math.abs(channelData[startSample + j]);
-          }
-          samples.push(sum / sampleSize);
-        }
-        
-        // Normalizar los datos a un rango de 0-1
-        const max = Math.max(...samples);
-        const normalizedSamples = samples.map(s => s / max);
-        
-        setWaveformData(normalizedSamples);
-        drawWaveform(normalizedSamples);
-      });
-    } catch (error) {
-      console.error('Error al cargar la forma de onda:', error);
-    }
-  };
-  
-  // Dibujar la forma de onda en el canvas
-  const drawWaveform = (data: number[]) => {
-    if (!waveformCanvasRef.current) return;
-    
-    const canvas = waveformCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    // Limpiar el canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Dibujar la línea central
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.moveTo(0, height / 2);
-    ctx.lineTo(width, height / 2);
-    ctx.stroke();
-    
-    // Dibujar la forma de onda
-    ctx.beginPath();
-    ctx.strokeStyle = '#6366f1'; // Indigo
-    
-    const barWidth = width / data.length;
-    
-    for (let i = 0; i < data.length; i++) {
-      const x = i * barWidth;
-      const amplitude = data[i] * (height / 2);
-      
-      // Dibujar línea desde el centro hacia arriba y abajo
-      ctx.moveTo(x, (height / 2) - amplitude);
-      ctx.lineTo(x, (height / 2) + amplitude);
-    }
-    
-    ctx.stroke();
-    
-    // Dibujar marcadores de beat
-    beatMarkers.forEach(marker => {
-      const x = (marker.time / duration) * width;
-      
-      ctx.beginPath();
-      ctx.strokeStyle = marker.type === 'downbeat' ? '#22c55e' : '#f59e0b';
-      ctx.lineWidth = marker.type === 'downbeat' ? 2 : 1;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-      ctx.lineWidth = 1;
-    });
-    
-    // Dibujar marcadores de sección
-    sectionMarkers.forEach(marker => {
-      const startX = (marker.startTime / duration) * width;
-      const endX = (marker.endTime / duration) * width;
-      
-      // Dibujar rectángulo semi-transparente para la sección
-      ctx.fillStyle = marker.color || getSectionColor(marker.type);
-      ctx.globalAlpha = 0.3;
-      ctx.fillRect(startX, 0, endX - startX, height);
-      ctx.globalAlpha = 1;
-      
-      // Dibujar líneas de inicio y fin
-      ctx.beginPath();
-      ctx.strokeStyle = marker.color || getSectionColor(marker.type);
-      ctx.lineWidth = 2;
-      ctx.moveTo(startX, 0);
-      ctx.lineTo(startX, height);
-      ctx.moveTo(endX, 0);
-      ctx.lineTo(endX, height);
-      ctx.stroke();
-      ctx.lineWidth = 1;
-      
-      // Dibujar nombre de la sección
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
-      const labelX = startX + ((endX - startX) / 2);
-      ctx.fillText(marker.label, labelX, 12);
-    });
-    
-    // Dibujar indicador de tiempo actual
-    const currentTimeX = (currentTime / duration) * width;
-    ctx.beginPath();
-    ctx.strokeStyle = '#ef4444'; // Rojo
-    ctx.lineWidth = 2;
-    ctx.moveTo(currentTimeX, 0);
-    ctx.lineTo(currentTimeX, height);
-    ctx.stroke();
-    ctx.lineWidth = 1;
-  };
-  
-  // Obtener color basado en el tipo de sección
-  const getSectionColor = (type: SectionMarker['type']): string => {
-    switch (type) {
-      case 'intro':
-        return '#22c55e'; // Verde
-      case 'verse':
-        return '#6366f1'; // Indigo
-      case 'chorus':
-        return '#f59e0b'; // Ámbar
-      case 'bridge':
-        return '#ec4899'; // Rosa
-      case 'outro':
-        return '#8b5cf6'; // Violeta
-      case 'custom':
-        return '#0ea5e9'; // Celeste
-      default:
-        return '#6366f1'; // Indigo por defecto
-    }
-  };
-  
-  // Reproducir/pausar el audio
-  const togglePlayback = () => {
-    if (!audioRef.current) return;
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-      if (onPause) onPause();
-    } else {
-      audioRef.current.play();
-      setIsPlaying(true);
-      if (onPlay) onPlay();
-    }
-  };
-  
-  // Buscar beats automáticamente
-  const detectBeats = () => {
-    if (!waveformData.length || !onAddBeatMarker) return;
-    
-    setIsAnalyzing(true);
-    
-    // Usar el umbral basado en la sensibilidad
-    const threshold = 0.5 - sensitivity * 0.3; // Sensibilidad inversa: menor threshold = más sensible
-    
-    // Detectar picos en la forma de onda
-    const peaks: number[] = [];
-    let beatCount = 0;
-    
-    for (let i = 2; i < waveformData.length - 2; i++) {
-      // Verificar si es un pico local
-      if (
-        waveformData[i] > threshold &&
-        waveformData[i] > waveformData[i-1] &&
-        waveformData[i] > waveformData[i-2] &&
-        waveformData[i] > waveformData[i+1] &&
-        waveformData[i] > waveformData[i+2]
-      ) {
-        const timePosition = (i / waveformData.length) * duration;
-        peaks.push(timePosition);
-      }
-    }
-    
-    // Eliminar beats existentes
-    beatMarkers.forEach(marker => {
-      if (onRemoveBeatMarker) {
-        onRemoveBeatMarker(marker.id);
-      }
-    });
-    
-    // Crear nuevos beats
-    peaks.forEach((time, index) => {
-      beatCount++;
-      const isDownbeat = beatCount % beatsPerBar === 1;
-      
-      onAddBeatMarker({
-        time,
-        type: isDownbeat ? 'downbeat' : 'beat',
-        intensity: waveformData[Math.floor((time / duration) * waveformData.length)] * 10,
-        label: isDownbeat ? `${Math.floor(beatCount / beatsPerBar) + 1}.1` : `${Math.floor(beatCount / beatsPerBar) + 1}.${beatCount % beatsPerBar}`
-      });
-    });
-    
-    // Actualizar BPM basado en el número de beats detectados
-    if (peaks.length > 1) {
-      const averageBPM = Math.round((peaks.length / duration) * 60);
-      setBpm(averageBPM);
-    }
-    
-    setIsAnalyzing(false);
-  };
-  
-  // Crear beats basados en BPM
-  const createBeatsFromBPM = () => {
-    if (!onAddBeatMarker) return;
-    
-    // Limpiar beats existentes
-    beatMarkers.forEach(marker => {
-      if (onRemoveBeatMarker) {
-        onRemoveBeatMarker(marker.id);
-      }
-    });
-    
-    // Calcular intervalo entre beats
-    const beatInterval = 60 / bpm;
-    const totalBeats = Math.floor(duration / beatInterval);
-    
-    // Crear nuevos beats
-    for (let i = 0; i < totalBeats; i++) {
-      const time = i * beatInterval;
-      const isDownbeat = i % beatsPerBar === 0;
-      
-      onAddBeatMarker({
-        time,
-        type: isDownbeat ? 'downbeat' : 'beat',
-        intensity: 5, // intensidad media
-        label: isDownbeat ? `${Math.floor(i / beatsPerBar) + 1}.1` : `${Math.floor(i / beatsPerBar) + 1}.${(i % beatsPerBar) + 1}`
-      });
-    }
-  };
-  
-  // Añadir un beat manual en la posición actual
-  const addBeatAtCurrentTime = () => {
-    if (!onAddBeatMarker) return;
-    
-    // Contar el total de downbeats para determinar el número de compás
-    const bars = beatMarkers.filter(marker => marker.type === 'downbeat').length;
-    
-    // Contar beats desde el último downbeat
-    const lastDownbeat = [...beatMarkers]
-      .filter(marker => marker.type === 'downbeat')
-      .sort((a, b) => b.time - a.time)[0];
-    
-    let beatsInCurrentBar = 0;
-    
-    if (lastDownbeat) {
-      beatsInCurrentBar = beatMarkers.filter(
-        marker => marker.time > lastDownbeat.time && marker.time <= currentTime
-      ).length;
-    }
-    
-    const isDownbeat = beatsInCurrentBar % beatsPerBar === 0;
-    
-    onAddBeatMarker({
-      time: currentTime,
-      type: isDownbeat ? 'downbeat' : 'beat',
-      intensity: 5, // intensidad media
-      label: isDownbeat ? `${bars + 1}.1` : `${bars}.${beatsInCurrentBar + 1}`
-    });
-  };
-  
-  // Iniciar la creación de una nueva sección
-  const startNewSection = () => {
-    setNewSectionData({
-      name: 'Nueva Sección',
-      type: 'verse',
-      startTime: currentTime,
-      endTime: Math.min(currentTime + 10, duration),
-      color: getSectionColor('verse')
-    });
-    setEditingSectionId('new');
-  };
-  
-  // Guardar la sección editada
-  const saveSection = () => {
-    if (editingSectionId === 'new' && onAddSectionMarker) {
-      onAddSectionMarker({
-        startTime: newSectionData.startTime,
-        endTime: newSectionData.endTime,
-        type: newSectionData.type,
-        label: newSectionData.name,
-        color: newSectionData.color
-      });
-    } else if (editingSectionId && onUpdateSectionMarker) {
-      onUpdateSectionMarker(editingSectionId, {
-        startTime: newSectionData.startTime,
-        endTime: newSectionData.endTime,
-        type: newSectionData.type,
-        label: newSectionData.name,
-        color: newSectionData.color
-      });
-    }
-    
-    setEditingSectionId(null);
-  };
-  
-  // Cancelar la edición de sección
-  const cancelSectionEdit = () => {
-    setEditingSectionId(null);
-  };
-  
-  // Editar una sección existente
-  const editSection = (section: SectionMarker) => {
-    setNewSectionData({
-      name: section.label,
-      type: section.type,
-      startTime: section.startTime,
-      endTime: section.endTime,
-      color: section.color
-    });
-    setEditingSectionId(section.id);
-  };
-  
-  // Eliminar una sección
-  const deleteSection = (id: string) => {
-    if (onRemoveSectionMarker) {
-      onRemoveSectionMarker(id);
-    }
-  };
-  
-  // Actualizar el canvas cuando cambian los datos relevantes
-  useEffect(() => {
-    drawWaveform(waveformData);
-  }, [waveformData, beatMarkers, sectionMarkers, currentTime, duration]);
-  
-  // Formatear tiempo en formato MM:SS.ss
+  // Formatear tiempo (mm:ss)
   const formatTime = (timeInSeconds: number): string => {
-    if (isNaN(timeInSeconds)) return '00:00.00';
-    
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
-    const milliseconds = Math.floor((timeInSeconds % 1) * 100);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+  
+  // Convertir tiempo a posición en la línea de tiempo
+  const timeToPosition = (time: number): number => {
+    return (time / duration) * 100;
+  };
+  
+  // Convertir posición a tiempo
+  const positionToTime = (position: number, width: number): number => {
+    return (position / width) * duration;
+  };
+  
+  // Manejar clic en la línea de tiempo
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineRef.current || !onSeek) return;
     
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const percentage = offsetX / rect.width;
+    
+    onSeek(percentage * duration);
+  };
+  
+  // Analizar beats automáticamente
+  const analyzeBeats = async () => {
+    if (!audioSrc) {
+      alert('Se necesita un archivo de audio para el análisis');
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    setAnalysisProgress(0);
+    
+    try {
+      // Simular análisis de beats
+      const simulateAnalysis = () => {
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 5;
+          setAnalysisProgress(Math.min(99, progress));
+          
+          if (progress >= 99) {
+            clearInterval(interval);
+            
+            // Generar beats aleatorios como simulación
+            const bpm = Math.floor(Math.random() * 40) + 100; // BPM entre 100 y 140
+            setDetectedBPM(bpm);
+            setManualBPM(bpm);
+            
+            const beatInterval = 60 / bpm;
+            const generatedBeats: Omit<Beat, 'id'>[] = [];
+            
+            // Crear un beat para cada pulso
+            for (let time = 0; time < duration; time += beatInterval) {
+              const beatStrength = Math.random();
+              const isMeasureStart = Math.floor(time / beatInterval) % 4 === 0;
+              
+              generatedBeats.push({
+                time,
+                type: isMeasureStart ? 'bar' : 'beat',
+                intensity: isMeasureStart ? 0.8 + (Math.random() * 0.2) : 0.3 + (Math.random() * 0.5),
+                label: isMeasureStart ? 'Compás' : undefined,
+                bpm
+              });
+            }
+            
+            // Añadir los beats al estado
+            if (onAddBeat) {
+              // Eliminar beats existentes si los hay
+              beats.forEach(beat => {
+                if (onDeleteBeat) {
+                  onDeleteBeat(beat.id);
+                }
+              });
+              
+              // Añadir nuevos beats
+              generatedBeats.forEach(beat => {
+                onAddBeat(beat);
+              });
+            }
+            
+            // Generar secciones automáticas basadas en la estructura típica de una canción
+            if (onAddSection) {
+              // Eliminar secciones existentes si las hay
+              sections.forEach(section => {
+                if (onDeleteSection) {
+                  onDeleteSection(section.id);
+                }
+              });
+              
+              // Estructura típica: Intro, Verso, Estribillo, Verso, Estribillo, Puente, Estribillo, Outro
+              const sectionDuration = duration / 8;
+              
+              const autoSections: Omit<Section, 'id'>[] = [
+                {
+                  name: 'Introducción',
+                  startTime: 0,
+                  endTime: sectionDuration,
+                  type: 'intro',
+                  color: sectionColors.intro
+                },
+                {
+                  name: 'Verso 1',
+                  startTime: sectionDuration,
+                  endTime: sectionDuration * 2,
+                  type: 'verse',
+                  color: sectionColors.verse
+                },
+                {
+                  name: 'Estribillo 1',
+                  startTime: sectionDuration * 2,
+                  endTime: sectionDuration * 3,
+                  type: 'chorus',
+                  color: sectionColors.chorus
+                },
+                {
+                  name: 'Verso 2',
+                  startTime: sectionDuration * 3,
+                  endTime: sectionDuration * 4,
+                  type: 'verse',
+                  color: sectionColors.verse
+                },
+                {
+                  name: 'Estribillo 2',
+                  startTime: sectionDuration * 4,
+                  endTime: sectionDuration * 5,
+                  type: 'chorus',
+                  color: sectionColors.chorus
+                },
+                {
+                  name: 'Puente',
+                  startTime: sectionDuration * 5,
+                  endTime: sectionDuration * 6,
+                  type: 'bridge',
+                  color: sectionColors.bridge
+                },
+                {
+                  name: 'Estribillo 3',
+                  startTime: sectionDuration * 6,
+                  endTime: sectionDuration * 7,
+                  type: 'chorus',
+                  color: sectionColors.chorus
+                },
+                {
+                  name: 'Outro',
+                  startTime: sectionDuration * 7,
+                  endTime: duration,
+                  type: 'outro',
+                  color: sectionColors.outro
+                }
+              ];
+              
+              // Añadir secciones
+              autoSections.forEach(section => {
+                onAddSection(section);
+              });
+            }
+            
+            setAnalysisProgress(100);
+            setTimeout(() => {
+              setIsAnalyzing(false);
+            }, 500);
+          }
+        }, 100);
+      };
+      
+      simulateAnalysis();
+    } catch (error) {
+      console.error('Error al analizar beats:', error);
+      setIsAnalyzing(false);
+    }
+  };
+  
+  // Generar beats manualmente basados en BPM
+  const generateBeatsFromBPM = () => {
+    if (!onAddBeat) return;
+    
+    // Limpiar beats existentes
+    beats.forEach(beat => {
+      if (onDeleteBeat) {
+        onDeleteBeat(beat.id);
+      }
+    });
+    
+    // Generar nuevos beats basados en el BPM manual
+    const beatInterval = 60 / manualBPM;
+    const beatsCount = Math.floor(duration / beatInterval);
+    
+    for (let i = 0; i < beatsCount; i++) {
+      const time = i * beatInterval;
+      const isMeasureStart = i % 4 === 0;
+      
+      const newBeat: Omit<Beat, 'id'> = {
+        time,
+        type: isMeasureStart ? 'bar' : 'beat',
+        intensity: isMeasureStart ? 0.8 : 0.5,
+        label: isMeasureStart ? 'Compás' : undefined,
+        bpm: manualBPM
+      };
+      
+      onAddBeat(newBeat);
+    }
+  };
+  
+  // Añadir sección
+  const handleAddSection = async () => {
+    if (!onAddSection) return;
+    
+    // Validar tiempos
+    if (tempSection.startTime >= tempSection.endTime) {
+      alert('El tiempo de inicio debe ser menor que el tiempo de fin');
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    // Crear nueva sección
+    onAddSection(tempSection);
+    
+    // Guardar en Firestore si hay projectId
+    if (projectId) {
+      try {
+        const sectionId = uuidv4();
+        const sectionRef = doc(db, `projects/${projectId}/sections/${sectionId}`);
+        await setDoc(sectionRef, {
+          ...tempSection,
+          createdAt: new Date()
+        });
+      } catch (error) {
+        console.error('Error al guardar sección:', error);
+      }
+    }
+    
+    // Reiniciar formulario
+    setTempSection({
+      name: '',
+      startTime: currentTime,
+      endTime: currentTime + 10,
+      type: 'verse',
+      color: sectionColors.verse
+    });
+    
+    setShowAddSectionDialog(false);
+    setIsSaving(false);
+  };
+  
+  // Actualizar sección
+  const handleUpdateSection = async (id: string, updates: Partial<Section>) => {
+    if (!onUpdateSection) return;
+    
+    setIsSaving(true);
+    
+    // Actualizar sección en el estado
+    onUpdateSection(id, updates);
+    
+    // Actualizar en Firestore si hay projectId
+    if (projectId) {
+      try {
+        const sectionRef = doc(db, `projects/${projectId}/sections/${id}`);
+        await updateDoc(sectionRef, {
+          ...updates,
+          updatedAt: new Date()
+        });
+      } catch (error) {
+        console.error('Error al actualizar sección:', error);
+      }
+    }
+    
+    setIsSaving(false);
+  };
+  
+  // Eliminar sección
+  const handleDeleteSection = async (id: string) => {
+    if (!onDeleteSection) return;
+    
+    setIsSaving(true);
+    
+    // Eliminar sección del estado
+    onDeleteSection(id);
+    
+    // Eliminar de Firestore si hay projectId
+    if (projectId) {
+      try {
+        const sectionRef = doc(db, `projects/${projectId}/sections/${id}`);
+        await deleteDoc(sectionRef);
+      } catch (error) {
+        console.error('Error al eliminar sección:', error);
+      }
+    }
+    
+    // Limpiar selección si era la sección seleccionada
+    if (selectedSectionId === id) {
+      setSelectedSectionId(null);
+    }
+    
+    setIsSaving(false);
+  };
+  
+  // Cuando cambie el tipo de sección, actualizar también el color
+  useEffect(() => {
+    if (tempSection.type) {
+      setTempSection(prev => ({
+        ...prev,
+        color: sectionColors[prev.type] || sectionColors.custom
+      }));
+    }
+  }, [tempSection.type]);
+  
+  // Obtener el beat activo en el tiempo actual
+  const getCurrentBeat = (): Beat | null => {
+    // Ordenar beats por tiempo
+    const sortedBeats = [...beats].sort((a, b) => a.time - b.time);
+    
+    // Encontrar el último beat antes del tiempo actual o el primero después
+    let closestBeat: Beat | null = null;
+    let minDistance = Infinity;
+    
+    for (const beat of sortedBeats) {
+      const distance = Math.abs(beat.time - currentTime);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestBeat = beat;
+      }
+    }
+    
+    // Solo considerar un beat como activo si está a menos de 0.2 segundos
+    return minDistance <= 0.2 ? closestBeat : null;
+  };
+  
+  // Obtener la sección activa en el tiempo actual
+  const getCurrentSection = (): Section | null => {
+    return sections.find(
+      section => currentTime >= section.startTime && currentTime < section.endTime
+    ) || null;
+  };
+  
+  // Renderizar marcadores de tiempo
+  const renderTimeMarkers = () => {
+    // Mostrar 10 marcadores
+    const markers = [];
+    const step = duration / 10;
+    
+    for (let i = 0; i <= 10; i++) {
+      const time = i * step;
+      const position = timeToPosition(time);
+      
+      markers.push(
+        <div
+          key={`marker-${i}`}
+          className="absolute top-0 text-xs text-gray-500"
+          style={{ left: `${position}%` }}
+        >
+          <div className="h-2 border-l border-gray-300 dark:border-gray-700"></div>
+          <div className="mt-1">{formatTime(time)}</div>
+        </div>
+      );
+    }
+    
+    return markers;
+  };
+  
+  // Renderizar línea de tiempo con beats y secciones
+  const renderTimeline = () => {
+    return (
+      <div className="relative h-[200px] border rounded-md overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-6 flex px-4 border-b">
+          {renderTimeMarkers()}
+        </div>
+        
+        <div
+          ref={timelineRef}
+          className="absolute top-6 bottom-0 left-0 right-0 cursor-pointer"
+          onClick={handleTimelineClick}
+        >
+          {/* Secciones */}
+          <div className="absolute top-0 h-12 w-full">
+            {!showBeatMarkersOnly && sections.map(section => (
+              <div
+                key={section.id}
+                className={cn(
+                  "absolute h-full rounded-sm border-2 flex items-center px-2 cursor-pointer",
+                  selectedSectionId === section.id && "ring-2 ring-white dark:ring-gray-950 ring-opacity-50"
+                )}
+                style={{
+                  left: `${timeToPosition(section.startTime)}%`,
+                  width: `${timeToPosition(section.endTime) - timeToPosition(section.startTime)}%`,
+                  backgroundColor: `${section.color}90`,
+                  borderColor: section.color
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSectionId(section.id);
+                }}
+              >
+                <div className="text-xs text-white font-medium truncate">
+                  {section.name || section.type}
+                </div>
+                
+                <div className="absolute right-1 top-1 flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSeek) onSeek(section.startTime);
+                    }}
+                    className="h-5 w-5 p-0 bg-white bg-opacity-20 text-white hover:bg-opacity-30"
+                  >
+                    <Play className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Beats */}
+          <div className="absolute top-14 h-[calc(100%-56px)] w-full">
+            {beats.map(beat => (
+              <div
+                key={beat.id}
+                className={cn(
+                  "absolute top-0 h-full",
+                  selectedBeatId === beat.id && "opacity-70"
+                )}
+                style={{ left: `${timeToPosition(beat.time)}%` }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedBeatId(beat.id);
+                  if (onSeek) onSeek(beat.time);
+                }}
+              >
+                <div
+                  className={cn(
+                    "w-0.5 h-full",
+                    beat.type === 'bar' ? "bg-orange-500" : "bg-orange-300"
+                  )}
+                ></div>
+                
+                <div
+                  className={cn(
+                    "w-3 h-3 -ml-1.5 -mt-1.5 rounded-full",
+                    beat.type === 'bar' ? "bg-orange-500" : "bg-orange-300"
+                  )}
+                  style={{ opacity: beat.intensity }}
+                ></div>
+                
+                {beat.type === 'bar' && (
+                  <div className="absolute top-4 left-1 text-xs text-orange-500">
+                    {beat.label}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {/* Marcador de tiempo actual */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10"
+            style={{ left: `${timeToPosition(currentTime)}%` }}
+          >
+            <div className="w-3 h-3 bg-blue-500 rounded-full -ml-1.5 -mt-1.5"></div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Renderizar en modo grid
+  const renderGrid = () => {
+    // Ordenar beats por tiempo
+    const sortedBeats = [...beats].sort((a, b) => a.time - b.time);
+    
+    return (
+      <div className="border rounded-md overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Tiempo</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead className="w-[100px]">Intensidad</TableHead>
+              <TableHead className="w-[100px]">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedBeats.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-10 text-gray-500">
+                  No hay beats detectados aún
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedBeats.map(beat => (
+                <TableRow
+                  key={beat.id}
+                  className={cn(
+                    "cursor-pointer",
+                    Math.abs(beat.time - currentTime) < 0.2 && "bg-blue-50 dark:bg-blue-900/20"
+                  )}
+                  onClick={() => {
+                    setSelectedBeatId(beat.id);
+                    if (onSeek) onSeek(beat.time);
+                  }}
+                >
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSeek) onSeek(beat.time);
+                      }}
+                      className="h-6 p-0 text-xs"
+                    >
+                      {formatTime(beat.time)}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <div
+                        className={cn(
+                          "w-3 h-3 rounded-full mr-2",
+                          beat.type === 'bar' ? "bg-orange-500" : "bg-orange-300"
+                        )}
+                      ></div>
+                      <span className="capitalize">
+                        {beat.type === 'bar' ? 'Compás' : 'Pulso'}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-orange-500 rounded-full"
+                        style={{ width: `${beat.intensity * 100}%` }}
+                      ></div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSeek) onSeek(beat.time);
+                        }}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Play className="h-3.5 w-3.5" />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onDeleteBeat) onDeleteBeat(beat.id);
+                        }}
+                        className="h-7 w-7 p-0 text-red-500"
+                      >
+                        <Trash className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+  
+  // Renderizar lista de secciones
+  const renderSections = () => {
+    // Ordenar secciones por tiempo de inicio
+    const sortedSections = [...sections].sort((a, b) => a.startTime - b.startTime);
+    
+    return (
+      <div className="border rounded-md overflow-hidden mt-4">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[150px]">Nombre</TableHead>
+              <TableHead className="w-[100px]">Tipo</TableHead>
+              <TableHead className="w-[120px]">Inicio</TableHead>
+              <TableHead className="w-[120px]">Fin</TableHead>
+              <TableHead className="w-[100px]">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedSections.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-10 text-gray-500">
+                  No hay secciones definidas
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedSections.map(section => (
+                <TableRow
+                  key={section.id}
+                  className={cn(
+                    "cursor-pointer",
+                    currentTime >= section.startTime && currentTime < section.endTime && "bg-orange-50 dark:bg-orange-900/20"
+                  )}
+                  onClick={() => setSelectedSectionId(section.id)}
+                >
+                  <TableCell>
+                    <div className="flex items-center">
+                      <div
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{ backgroundColor: section.color }}
+                      ></div>
+                      <span>{section.name || section.type}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="capitalize">
+                    {section.type}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSeek) onSeek(section.startTime);
+                      }}
+                      className="h-6 p-0 text-xs"
+                    >
+                      {formatTime(section.startTime)}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSeek) onSeek(section.endTime);
+                      }}
+                      className="h-6 p-0 text-xs"
+                    >
+                      {formatTime(section.endTime)}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSeek) onSeek(section.startTime);
+                        }}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Play className="h-3.5 w-3.5" />
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            setTempSection({
+                              ...section,
+                              name: section.name || '',
+                            });
+                            setShowAddSectionDialog(true);
+                          }}>
+                            <Edit className="h-4 w-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteSection(section.id)}
+                            className="text-red-500"
+                          >
+                            <Trash className="h-4 w-4 mr-2" /> Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    );
   };
   
   return (
-    <Card className="w-full bg-zinc-900 border-0 rounded-xl overflow-hidden shadow-xl">
-      <CardHeader className="pb-2 border-b border-zinc-800 flex flex-row items-center justify-between">
-        <CardTitle className="text-xl flex items-center text-white">
-          <Waveform className="h-5 w-5 mr-2 text-indigo-400" />
-          Analizador de Beats
-        </CardTitle>
-        
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline"
-            size="sm"
-            className="h-8 px-2 bg-zinc-800 hover:bg-zinc-700 border-zinc-700"
-            onClick={togglePlayback}
-          >
-            {isPlaying ? (
-              <Pause className="h-4 w-4 mr-1" />
-            ) : (
-              <Play className="h-4 w-4 mr-1" />
-            )}
-            {isPlaying ? 'Pausar' : 'Reproducir'}
-          </Button>
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl flex items-center">
+            <BarChart4 className="h-5 w-5 mr-2 text-orange-500" />
+            Análisis de Ritmo
+          </CardTitle>
+          
+          <div className="flex items-center space-x-2">
+            <Select
+              value={visualizationMode}
+              onValueChange={(value: 'timeline' | 'grid') => setVisualizationMode(value)}
+            >
+              <SelectTrigger className="h-8 w-[150px]">
+                <SelectValue placeholder="Modo de visualización" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="timeline">Línea de tiempo</SelectItem>
+                <SelectItem value="grid">Vista de rejilla</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={showBeatMarkersOnly ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => setShowBeatMarkersOnly(!showBeatMarkersOnly)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Metronome className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{showBeatMarkersOnly ? "Mostrar secciones" : "Solo mostrar beats"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddSectionDialog(true)}
+              className="h-8"
+            >
+              <PlusCircle className="h-4 w-4 mr-1" /> Añadir sección
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
       <CardContent className="p-0">
-        <div className="p-4">
-          <div className="h-20 relative mb-2 overflow-hidden rounded-md">
-            <canvas 
-              ref={waveformCanvasRef}
-              width={800}
-              height={80}
-              className="w-full h-full bg-zinc-800"
-            />
-            
-            <div className="absolute bottom-1 left-1 text-xs text-white bg-black/50 px-1 rounded">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </div>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start p-0 rounded-none border-b">
+            <TabsTrigger value="visual" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Visualización
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Análisis
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Secciones
+            </TabsTrigger>
+          </TabsList>
           
-          <div className="flex space-x-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <Volume2 className="h-4 w-4 text-zinc-400" />
-              <Slider
-                value={[volume * 100]}
-                min={0}
-                max={100}
-                step={1}
-                onValueChange={(values) => setVolume(values[0] / 100)}
-                className="w-24"
-              />
-            </div>
-          </div>
-          
-          {/* Panel de configuración de beats */}
-          <div className="mb-4 bg-zinc-800 rounded-md overflow-hidden">
-            <div 
-              className="flex items-center justify-between p-2 bg-zinc-700 cursor-pointer"
-              onClick={() => setShowBeatSettings(!showBeatSettings)}
-            >
-              <h3 className="text-sm font-medium flex items-center">
-                <Music2 className="h-4 w-4 mr-2" />
-                Configuración de Beats
-              </h3>
-              {showBeatSettings ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </div>
+          {/* Visualización */}
+          <TabsContent value="visual" className="p-4">
+            {visualizationMode === 'timeline' ? renderTimeline() : renderGrid()}
             
-            {showBeatSettings && (
-              <div className="p-3 space-y-3">
+            {/* Información del beat o sección activa */}
+            <div className="mt-4">
+              <div className="flex justify-between">
+                <div>
+                  <h3 className="text-sm font-medium mb-1">Beat actual</h3>
+                  {getCurrentBeat() ? (
+                    <div className="text-sm">
+                      <p>Tiempo: {formatTime(getCurrentBeat()!.time)}</p>
+                      <p>Tipo: {getCurrentBeat()!.type === 'bar' ? 'Compás' : 'Pulso'}</p>
+                      {getCurrentBeat()!.bpm && <p>BPM: {getCurrentBeat()!.bpm}</p>}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No hay beat en la posición actual</p>
+                  )}
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-1">Sección actual</h3>
+                  {getCurrentSection() ? (
+                    <div className="text-sm">
+                      <p className="font-medium">{getCurrentSection()!.name || getCurrentSection()!.type}</p>
+                      <p>{formatTime(getCurrentSection()!.startTime)} - {formatTime(getCurrentSection()!.endTime)}</p>
+                      <div className="flex items-center mt-1">
+                        <div
+                          className="w-3 h-3 rounded-full mr-1"
+                          style={{ backgroundColor: getCurrentSection()!.color }}
+                        ></div>
+                        <span className="capitalize">{getCurrentSection()!.type}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No hay sección en la posición actual</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* Análisis */}
+          <TabsContent value="analysis" className="p-4">
+            <div className="space-y-4">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <h3 className="text-lg font-medium mb-2">Análisis de BPM</h3>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="bpm" className="text-xs text-zinc-400 mb-1 block">
-                      BPM
-                    </Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="bpm"
-                        type="number"
-                        min={30}
-                        max={300}
-                        value={bpm}
-                        onChange={e => setBpm(parseInt(e.target.value, 10) || 120)}
-                        className="h-8 bg-zinc-900 border-zinc-700 text-sm"
-                      />
-                      <Label className="text-xs text-zinc-400">BPM</Label>
-                    </div>
+                    <Label htmlFor="detected-bpm">BPM Detectado</Label>
+                    <Input
+                      id="detected-bpm"
+                      value={detectedBPM !== null ? detectedBPM.toString() : 'No detectado'}
+                      readOnly
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Beats por minuto detectados automáticamente
+                    </p>
                   </div>
                   
                   <div>
-                    <Label htmlFor="beats-per-bar" className="text-xs text-zinc-400 mb-1 block">
-                      Beats por compás
-                    </Label>
-                    <Select
-                      value={beatsPerBar.toString()}
-                      onValueChange={value => setBeatsPerBar(parseInt(value, 10))}
-                    >
-                      <SelectTrigger id="beats-per-bar" className="h-8 bg-zinc-900 border-zinc-700">
-                        <SelectValue placeholder="Beats por compás" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2">2/4</SelectItem>
-                        <SelectItem value="3">3/4</SelectItem>
-                        <SelectItem value="4">4/4</SelectItem>
-                        <SelectItem value="6">6/8</SelectItem>
-                        <SelectItem value="8">8/8</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="manual-bpm">BPM Manual</Label>
+                    <div className="flex mt-1">
+                      <Input
+                        id="manual-bpm"
+                        type="number"
+                        value={manualBPM}
+                        onChange={(e) => setManualBPM(Math.max(30, Math.min(300, parseInt(e.target.value) || 120)))}
+                        min={30}
+                        max={300}
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={generateBeatsFromBPM}
+                        className="ml-2"
+                      >
+                        Aplicar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Ajusta manualmente el tempo y genera beats
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <Button
+                    onClick={analyzeBeats}
+                    disabled={isAnalyzing || !audioSrc}
+                    className="w-full"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Analizando... {Math.round(analysisProgress)}%
+                      </>
+                    ) : (
+                      <>
+                        <Wand className="h-4 w-4 mr-2" />
+                        Analizar automáticamente
+                      </>
+                    )}
+                  </Button>
+                  
+                  {!audioSrc && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Se necesita un archivo de audio para el análisis
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Información de Beats</h3>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                    <dl className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <dt>Número de beats:</dt>
+                        <dd className="font-medium">{beats.length}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>Compases:</dt>
+                        <dd className="font-medium">{beats.filter(b => b.type === 'bar').length}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>Pulsos:</dt>
+                        <dd className="font-medium">{beats.filter(b => b.type === 'beat').length}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>BPM promedio:</dt>
+                        <dd className="font-medium">
+                          {beats.length > 0 && beats[0].bpm ? beats[0].bpm : 'Desconocido'}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
                 </div>
                 
                 <div>
-                  <Label htmlFor="beat-sensitivity" className="text-xs text-zinc-400 mb-1 block">
-                    Sensibilidad
-                  </Label>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-zinc-400">Baja</span>
-                    <Slider
-                      id="beat-sensitivity"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[sensitivity]}
-                      onValueChange={values => setSensitivity(values[0])}
-                      className="flex-1"
-                    />
-                    <span className="text-xs text-zinc-400">Alta</span>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 bg-zinc-800 hover:bg-zinc-700 border-zinc-700"
-                    onClick={addBeatAtCurrentTime}
-                  >
-                    <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                    Añadir Beat
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 bg-zinc-800 hover:bg-zinc-700 border-zinc-700"
-                    onClick={createBeatsFromBPM}
-                  >
-                    <Music className="h-3.5 w-3.5 mr-1" />
-                    Generar con BPM
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 bg-amber-700 hover:bg-amber-600 border-amber-600 text-white"
-                    onClick={detectBeats}
-                    disabled={isAnalyzing || !waveformData.length}
-                  >
-                    <Waveform className="h-3.5 w-3.5 mr-1" />
-                    {isAnalyzing ? 'Analizando...' : 'Detectar Beats'}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Panel de secciones */}
-          <div className="mb-4 bg-zinc-800 rounded-md overflow-hidden">
-            <div 
-              className="flex items-center justify-between p-2 bg-zinc-700 cursor-pointer"
-              onClick={() => setShowSectionSettings(!showSectionSettings)}
-            >
-              <h3 className="text-sm font-medium flex items-center">
-                <Layers className="h-4 w-4 mr-2" />
-                Secciones
-              </h3>
-              {showSectionSettings ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </div>
-            
-            {showSectionSettings && (
-              <div className="p-3">
-                {editingSectionId ? (
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="section-name" className="text-xs text-zinc-400 mb-1 block">
-                        Nombre
-                      </Label>
-                      <Input
-                        id="section-name"
-                        value={newSectionData.name}
-                        onChange={e => setNewSectionData({...newSectionData, name: e.target.value})}
-                        className="h-8 bg-zinc-900 border-zinc-700 text-sm"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="section-type" className="text-xs text-zinc-400 mb-1 block">
-                        Tipo
-                      </Label>
-                      <Select
-                        value={newSectionData.type}
-                        onValueChange={value => setNewSectionData({
-                          ...newSectionData, 
-                          type: value as SectionMarker['type'],
-                          color: getSectionColor(value as SectionMarker['type'])
-                        })}
-                      >
-                        <SelectTrigger id="section-type" className="h-8 bg-zinc-900 border-zinc-700">
-                          <SelectValue placeholder="Tipo de sección" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="intro">Intro</SelectItem>
-                          <SelectItem value="verse">Verso</SelectItem>
-                          <SelectItem value="chorus">Coro</SelectItem>
-                          <SelectItem value="bridge">Puente</SelectItem>
-                          <SelectItem value="outro">Outro</SelectItem>
-                          <SelectItem value="custom">Personalizado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="section-color" className="text-xs text-zinc-400 mb-1 block">
-                        Color
-                      </Label>
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-6 h-6 rounded border border-zinc-600" 
-                          style={{backgroundColor: newSectionData.color}}
-                        />
-                        <Input
-                          id="section-color"
-                          type="color"
-                          value={newSectionData.color}
-                          onChange={e => setNewSectionData({...newSectionData, color: e.target.value})}
-                          className="w-12 h-8 p-0 bg-zinc-900 border-zinc-700"
-                        />
+                  <h3 className="text-sm font-medium mb-2">Información de Secciones</h3>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                    <dl className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <dt>Número de secciones:</dt>
+                        <dd className="font-medium">{sections.length}</dd>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="section-start" className="text-xs text-zinc-400 mb-1 block">
-                          Inicio ({formatTime(newSectionData.startTime)})
-                        </Label>
-                        <Slider
-                          id="section-start"
-                          min={0}
-                          max={duration}
-                          step={0.1}
-                          value={[newSectionData.startTime]}
-                          onValueChange={values => setNewSectionData({
-                            ...newSectionData, 
-                            startTime: values[0],
-                            endTime: Math.max(values[0] + 0.5, newSectionData.endTime)
-                          })}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="section-end" className="text-xs text-zinc-400 mb-1 block">
-                          Fin ({formatTime(newSectionData.endTime)})
-                        </Label>
-                        <Slider
-                          id="section-end"
-                          min={0}
-                          max={duration}
-                          step={0.1}
-                          value={[newSectionData.endTime]}
-                          onValueChange={values => setNewSectionData({
-                            ...newSectionData, 
-                            endTime: values[0],
-                            startTime: Math.min(values[0] - 0.5, newSectionData.startTime)
-                          })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2 justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={cancelSectionEdit}
-                        className="h-8"
-                      >
-                        Cancelar
-                      </Button>
-                      
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={saveSection}
-                        className="h-8 bg-indigo-600 hover:bg-indigo-700"
-                      >
-                        <SaveAll className="h-3.5 w-3.5 mr-1" />
-                        Guardar
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="mb-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-2 bg-zinc-800 hover:bg-zinc-700 border-zinc-700"
-                        onClick={startNewSection}
-                      >
-                        <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                        Nueva Sección
-                      </Button>
-                    </div>
-                    
-                    {sectionMarkers.length > 0 ? (
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {sectionMarkers.map(section => (
-                          <div 
-                            key={section.id}
-                            className="flex items-center justify-between p-2 bg-zinc-900 rounded"
-                          >
-                            <div className="flex items-center">
-                              <div 
-                                className="w-3 h-3 rounded-full mr-2" 
-                                style={{backgroundColor: section.color || getSectionColor(section.type)}}
-                              />
-                              <span className="text-sm">{section.label}</span>
-                              <span className="text-xs text-zinc-500 ml-2">
-                                {formatTime(section.startTime)} - {formatTime(section.endTime)}
-                              </span>
-                            </div>
-                            
-                            <div className="flex space-x-1">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0"
-                                      onClick={() => editSection(section)}
-                                    >
-                                      <Edit className="h-3.5 w-3.5 text-zinc-400" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Editar sección</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0"
-                                      onClick={() => deleteSection(section.id)}
-                                    >
-                                      <XCircle className="h-3.5 w-3.5 text-red-400" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Eliminar sección</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
+                      {Object.keys(sectionColors).map(type => {
+                        const count = sections.filter(s => s.type === type).length;
+                        if (count === 0) return null;
+                        return (
+                          <div key={type} className="flex justify-between">
+                            <dt className="flex items-center">
+                              <div
+                                className="w-2 h-2 rounded-full mr-1"
+                                style={{ backgroundColor: sectionColors[type] }}
+                              ></div>
+                              <span className="capitalize">{type}:</span>
+                            </dt>
+                            <dd className="font-medium">{count}</dd>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-3 text-zinc-500 text-sm">
-                        No hay secciones definidas
-                      </div>
-                    )}
+                        );
+                      })}
+                    </dl>
                   </div>
-                )}
+                </div>
               </div>
-            )}
+            </div>
+          </TabsContent>
+          
+          {/* Secciones */}
+          <TabsContent value="sections">
+            <div className="p-4">
+              {renderSections()}
+              
+              <div className="mt-4 flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAddSectionDialog(true)}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Añadir sección
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      
+      <CardFooter className="pt-2 text-xs text-gray-500">
+        <div className="flex justify-between w-full">
+          <div>
+            {beats.length} beats • {sections.length} secciones
+          </div>
+          <div>
+            {isSaving && "Guardando..."}
           </div>
         </div>
-      </CardContent>
+      </CardFooter>
+      
+      {/* Dialog para añadir/editar sección */}
+      <Dialog open={showAddSectionDialog} onOpenChange={setShowAddSectionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {tempSection.name ? 'Editar sección' : 'Añadir nueva sección'}
+            </DialogTitle>
+            <DialogDescription>
+              Define los parámetros para esta sección musical
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="section-name">Nombre</Label>
+                <Input
+                  id="section-name"
+                  value={tempSection.name}
+                  onChange={(e) => setTempSection({ ...tempSection, name: e.target.value })}
+                  placeholder="Ej: Verso 1, Estribillo, etc."
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="section-type">Tipo</Label>
+                <Select
+                  value={tempSection.type}
+                  onValueChange={(value: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'breakdown' | 'custom') => 
+                    setTempSection({ 
+                      ...tempSection, 
+                      type: value,
+                      color: sectionColors[value]
+                    })
+                  }
+                >
+                  <SelectTrigger id="section-type">
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="intro">Intro</SelectItem>
+                    <SelectItem value="verse">Verso</SelectItem>
+                    <SelectItem value="chorus">Estribillo</SelectItem>
+                    <SelectItem value="bridge">Puente</SelectItem>
+                    <SelectItem value="breakdown">Breakdown</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="section-start">Tiempo de inicio (s)</Label>
+                <div className="flex items-center">
+                  <Input
+                    id="section-start"
+                    type="number"
+                    value={tempSection.startTime}
+                    onChange={(e) => setTempSection({
+                      ...tempSection,
+                      startTime: Math.max(0, Math.min(tempSection.endTime - 1, parseFloat(e.target.value) || 0))
+                    })}
+                    min={0}
+                    max={tempSection.endTime - 1}
+                    step={0.1}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTempSection({
+                      ...tempSection,
+                      startTime: currentTime
+                    })}
+                    className="ml-2"
+                  >
+                    Actual
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="section-end">Tiempo de fin (s)</Label>
+                <div className="flex items-center">
+                  <Input
+                    id="section-end"
+                    type="number"
+                    value={tempSection.endTime}
+                    onChange={(e) => setTempSection({
+                      ...tempSection,
+                      endTime: Math.max(tempSection.startTime + 1, Math.min(duration, parseFloat(e.target.value) || 0))
+                    })}
+                    min={tempSection.startTime + 1}
+                    max={duration}
+                    step={0.1}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTempSection({
+                      ...tempSection,
+                      endTime: currentTime
+                    })}
+                    className="ml-2"
+                  >
+                    Actual
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="section-color">Color</Label>
+              <div className="grid grid-cols-7 gap-2 mt-1">
+                {Object.entries(sectionColors).map(([type, color]) => (
+                  <div
+                    key={type}
+                    className={cn(
+                      "w-full aspect-square rounded-md cursor-pointer transition-all",
+                      tempSection.color === color && "ring-2 ring-black dark:ring-white"
+                    )}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setTempSection({ ...tempSection, color })}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddSectionDialog(false);
+                setTempSection({
+                  name: '',
+                  startTime: currentTime,
+                  endTime: currentTime + 10,
+                  type: 'verse',
+                  color: sectionColors.verse
+                });
+              }}
+            >
+              Cancelar
+            </Button>
+            
+            <Button
+              onClick={handleAddSection}
+              disabled={tempSection.startTime >= tempSection.endTime || isSaving}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                tempSection.name ? 'Actualizar' : 'Añadir'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
-}
+};
+
+export default BeatAnalyzer;

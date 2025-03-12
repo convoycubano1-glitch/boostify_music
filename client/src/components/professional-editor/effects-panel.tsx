@@ -1,1154 +1,958 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Button
+} from '@/components/ui/button';
 import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
+  TabsTrigger
+} from '@/components/ui/tabs';
+import {
+  Slider
+} from '@/components/ui/slider';
+import {
+  Input
+} from '@/components/ui/input';
+import {
+  Label
+} from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  Slider,
-  Button,
-  Switch,
-  Label,
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-  Input
-} from '@/components/ui';
+  SelectValue
+} from '@/components/ui/select';
 import {
-  Sliders,
-  PanelTop,
-  Sparkles,
-  Palette,
-  Type,
-  Wand2,
+  Wand2 as MagicWand, // Usando Wand2 como reemplazo de MagicWand
   Plus,
-  Trash2,
-  Copy,
-  Eye,
-  EyeOff,
+  Trash,
+  Edit,
+  Play,
   Layers,
-  Move,
-  RotateCw,
-  Maximize,
-  Clock,
-  CheckCircle2,
-  XCircle
+  Filter,
+  LayoutGrid,
+  List,
+  Sparkles,
+  BarChart,
+  Loader2
 } from 'lucide-react';
-import { Effect } from '@/lib/professional-editor-types';
-import { useDroppable } from '@/hooks/use-droppable';
+import { cn } from '@/lib/utils';
+import { VisualEffect } from '@/lib/professional-editor-types';
+import { v4 as uuidv4 } from 'uuid';
+import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface EffectsPanelProps {
-  /** Efectos seleccionados actualmente */
-  effects: Effect[];
-  
-  /** Efecto seleccionado para editar */
-  selectedEffectId?: string;
-  
-  /** Función que se dispara cuando se selecciona un efecto */
-  onSelectEffect?: (id: string) => void;
-  
-  /** Función para añadir un nuevo efecto */
-  onAddEffect?: (effect: Omit<Effect, 'id'>) => void;
-  
-  /** Función para actualizar un efecto existente */
-  onUpdateEffect?: (id: string, updates: Partial<Effect>) => void;
-  
-  /** Función para eliminar un efecto */
-  onRemoveEffect?: (id: string) => void;
-  
-  /** Tiempo actual de reproducción (para efectos con tiempo) */
+  effects: VisualEffect[];
   currentTime: number;
-  
-  /** Duración total del proyecto */
   duration: number;
-  
-  /** ID del clip seleccionado actualmente */
-  selectedClipId?: string;
+  onAddEffect?: (effect: Omit<VisualEffect, 'id'>) => void;
+  onUpdateEffect?: (id: string, updates: Partial<VisualEffect>) => void;
+  onDeleteEffect?: (id: string) => void;
+  onSeek?: (time: number) => void;
+  projectId?: string;
 }
 
-/**
- * Panel de efectos para el editor profesional
- * Permite gestionar, añadir y configurar efectos visuales
- */
-export function EffectsPanel({
+// Tipos de efectos disponibles
+const effectTypes = [
+  { 
+    value: 'filter', 
+    label: 'Filtro', 
+    icon: <Filter className="h-4 w-4 mr-2" />,
+    description: 'Aplica filtros visuales como sepia, blanco y negro, etc.'
+  },
+  { 
+    value: 'overlay', 
+    label: 'Superposición', 
+    icon: <Layers className="h-4 w-4 mr-2" />,
+    description: 'Superpone elementos como viñetas, marcas de agua, etc.'
+  },
+  { 
+    value: 'transition', 
+    label: 'Transición', 
+    icon: <LayoutGrid className="h-4 w-4 mr-2" />,
+    description: 'Aplica transiciones entre clips como fundidos, disoluciones, etc.'
+  },
+  { 
+    value: 'zoom', 
+    label: 'Zoom', 
+    icon: <MagicWand className="h-4 w-4 mr-2" />,
+    description: 'Aplica efectos de acercamiento o alejamiento'
+  },
+  { 
+    value: 'crop', 
+    label: 'Recorte', 
+    icon: <Sparkles className="h-4 w-4 mr-2" />,
+    description: 'Recorta o reencuadra el contenido visual'
+  },
+  { 
+    value: 'blur', 
+    label: 'Desenfoque', 
+    icon: <BarChart className="h-4 w-4 mr-2" />,
+    description: 'Aplica efectos de desenfoque o nitidez'
+  },
+  { 
+    value: 'custom', 
+    label: 'Personalizado', 
+    icon: <MagicWand className="h-4 w-4 mr-2" />,
+    description: 'Efecto personalizado definido por el usuario'
+  }
+];
+
+// Colores para cada tipo de efecto
+const effectColors: Record<string, string> = {
+  filter: '#f43f5e',       // rose-500
+  overlay: '#f59e0b',      // amber-500
+  transition: '#3b82f6',   // blue-500
+  zoom: '#8b5cf6',         // violet-500
+  crop: '#10b981',         // emerald-500
+  blur: '#6366f1',         // indigo-500
+  custom: '#64748b'        // slate-500
+};
+
+const EffectsPanel: React.FC<EffectsPanelProps> = ({
   effects = [],
-  selectedEffectId,
-  onSelectEffect,
-  onAddEffect,
-  onUpdateEffect,
-  onRemoveEffect,
   currentTime,
   duration,
-  selectedClipId
-}: EffectsPanelProps) {
-  // Estado local
-  const [activeTab, setActiveTab] = useState<string>('filters');
-  const [newEffectType, setNewEffectType] = useState<string>('filter');
-  const [selectedEffect, setSelectedEffect] = useState<Effect | null>(null);
-  const [effectTypeFilter, setEffectTypeFilter] = useState<string>('all');
+  onAddEffect,
+  onUpdateEffect,
+  onDeleteEffect,
+  onSeek,
+  projectId
+}) => {
+  // Estados
+  const [activeTab, setActiveTab] = useState<string>('effects');
+  const [showAddDialog, setShowAddDialog] = useState<boolean>(false);
+  const [selectedEffectId, setSelectedEffectId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  // Configurar área droppable para efectos
-  const { droppableRef, droppableProps, isOver } = useDroppable({
-    id: 'effects-panel',
-    acceptTypes: ['effect:filter', 'effect:transform', 'effect:color', 'effect:text', 'effect:transition'],
-    onDrop: (data, position) => {
-      if (onAddEffect && data) {
-        onAddEffect({
-          name: data.name || 'Nuevo efecto',
-          type: data.type as any,
-          properties: data.properties || {},
-          startTime: currentTime,
-          endTime: Math.min(currentTime + 5, duration),
-          clipId: selectedClipId
-        });
-      }
-    }
+  // Nuevo efecto
+  const [newEffect, setNewEffect] = useState<Omit<VisualEffect, 'id'>>({
+    name: '',
+    type: 'filter',
+    startTime: currentTime,
+    duration: 5,
+    intensity: 0.5,
+    parameters: {},
   });
   
-  // Actualizar el efecto seleccionado cuando cambia el ID
-  useEffect(() => {
-    if (selectedEffectId) {
-      const effect = effects.find(e => e.id === selectedEffectId);
-      if (effect) {
-        setSelectedEffect(effect);
-      }
-    } else {
-      setSelectedEffect(null);
-    }
-  }, [selectedEffectId, effects]);
+  // Formatear tiempo (mm:ss)
+  const formatTime = (timeInSeconds: number): string => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
   
-  // Filtrar efectos por tipo
-  const filteredEffects = effectTypeFilter === 'all' 
-    ? effects 
-    : effects.filter(effect => effect.type === effectTypeFilter);
+  // Calcular posición en línea de tiempo
+  const timeToPosition = (time: number): number => {
+    return (time / duration) * 100;
+  };
   
-  // Funciones para gestionar efectos
-  const handleAddEffect = (type: string) => {
+  // Encontrar efectos activos en el tiempo actual
+  const getActiveEffects = (): VisualEffect[] => {
+    return effects.filter(
+      effect => currentTime >= effect.startTime && currentTime < (effect.startTime + effect.duration)
+    );
+  };
+  
+  // Manejar añadir efecto
+  const handleAddEffect = async () => {
     if (!onAddEffect) return;
     
-    const defaultProperties: Record<string, any> = {};
+    setIsSaving(true);
     
-    // Propiedades por defecto según el tipo de efecto
-    switch (type) {
-      case 'filter':
-        defaultProperties.filterType = 'blur';
-        defaultProperties.amount = 5;
-        defaultProperties.enabled = true;
-        break;
-      case 'transform':
-        defaultProperties.scale = 1;
-        defaultProperties.rotation = 0;
-        defaultProperties.positionX = 0;
-        defaultProperties.positionY = 0;
-        defaultProperties.enabled = true;
-        break;
-      case 'color':
-        defaultProperties.brightness = 0;
-        defaultProperties.contrast = 0;
-        defaultProperties.saturation = 0;
-        defaultProperties.hue = 0;
-        defaultProperties.enabled = true;
-        break;
-      case 'text':
-        defaultProperties.text = 'Texto de ejemplo';
-        defaultProperties.fontSize = 24;
-        defaultProperties.fontFamily = 'Arial';
-        defaultProperties.color = '#ffffff';
-        defaultProperties.positionX = 50;
-        defaultProperties.positionY = 50;
-        defaultProperties.alignment = 'center';
-        defaultProperties.enabled = true;
-        break;
-      case 'transition':
-        defaultProperties.transitionType = 'fade';
-        defaultProperties.duration = 1;
-        defaultProperties.easing = 'ease-in-out';
-        defaultProperties.enabled = true;
-        break;
+    // Añadir al estado local
+    onAddEffect(newEffect);
+    
+    // Guardar en Firestore si hay projectId
+    if (projectId) {
+      try {
+        const effectId = uuidv4();
+        const effectRef = doc(db, `projects/${projectId}/effects/${effectId}`);
+        await setDoc(effectRef, {
+          ...newEffect,
+          createdAt: new Date()
+        });
+      } catch (error) {
+        console.error("Error al guardar efecto:", error);
+      }
     }
     
-    onAddEffect({
-      name: `Nuevo ${getEffectTypeName(type)}`,
-      type: type as any,
-      properties: defaultProperties,
+    // Resetear formulario
+    setNewEffect({
+      name: '',
+      type: 'filter',
       startTime: currentTime,
-      endTime: Math.min(currentTime + 5, duration),
-      clipId: selectedClipId
+      duration: 5,
+      intensity: 0.5,
+      parameters: {}
     });
+    
+    setShowAddDialog(false);
+    setIsSaving(false);
   };
   
-  const handleRemoveEffect = (id: string) => {
-    if (onRemoveEffect) {
-      onRemoveEffect(id);
-      if (selectedEffectId === id) {
-        setSelectedEffect(null);
+  // Manejar actualización de efecto
+  const handleUpdateEffect = async (id: string, updates: Partial<VisualEffect>) => {
+    if (!onUpdateEffect) return;
+    
+    setIsSaving(true);
+    
+    // Actualizar en estado local
+    onUpdateEffect(id, updates);
+    
+    // Actualizar en Firestore si hay projectId
+    if (projectId) {
+      try {
+        const effectRef = doc(db, `projects/${projectId}/effects/${id}`);
+        await updateDoc(effectRef, {
+          ...updates,
+          updatedAt: new Date()
+        });
+      } catch (error) {
+        console.error("Error al actualizar efecto:", error);
       }
     }
-  };
-  
-  const handleDuplicateEffect = (effect: Effect) => {
-    if (onAddEffect) {
-      onAddEffect({
-        name: `${effect.name} (copia)`,
-        type: effect.type,
-        properties: { ...effect.properties },
-        startTime: effect.startTime,
-        endTime: effect.endTime,
-        clipId: effect.clipId
-      });
-    }
-  };
-  
-  const handleToggleEffectVisibility = (id: string, enabled: boolean) => {
-    if (onUpdateEffect) {
-      onUpdateEffect(id, {
-        properties: {
-          ...(selectedEffect?.properties || {}),
-          enabled: !enabled
-        }
-      });
-    }
-  };
-  
-  const handlePropertyChange = (propertyName: string, value: any) => {
-    if (!selectedEffect || !onUpdateEffect) return;
     
-    onUpdateEffect(selectedEffect.id, {
-      properties: {
-        ...selectedEffect.properties,
-        [propertyName]: value
+    setIsSaving(false);
+  };
+  
+  // Manejar eliminación de efecto
+  const handleDeleteEffect = async (id: string) => {
+    if (!onDeleteEffect) return;
+    
+    setIsSaving(true);
+    
+    // Eliminar del estado local
+    onDeleteEffect(id);
+    
+    // Eliminar de Firestore si hay projectId
+    if (projectId) {
+      try {
+        const effectRef = doc(db, `projects/${projectId}/effects/${id}`);
+        await deleteDoc(effectRef);
+      } catch (error) {
+        console.error("Error al eliminar efecto:", error);
       }
-    });
-  };
-  
-  const handleSetStartTime = () => {
-    if (!selectedEffect || !onUpdateEffect) return;
-    
-    onUpdateEffect(selectedEffect.id, {
-      startTime: currentTime
-    });
-  };
-  
-  const handleSetEndTime = () => {
-    if (!selectedEffect || !onUpdateEffect) return;
-    
-    onUpdateEffect(selectedEffect.id, {
-      endTime: currentTime
-    });
-  };
-  
-  // Obtener nombre legible para el tipo de efecto
-  const getEffectTypeName = (type: string): string => {
-    switch (type) {
-      case 'filter': return 'Filtro';
-      case 'transform': return 'Transformación';
-      case 'color': return 'Color';
-      case 'text': return 'Texto';
-      case 'transition': return 'Transición';
-      default: return 'Efecto';
     }
-  };
-  
-  // Obtener icono para el tipo de efecto
-  const getEffectIcon = (type: string) => {
-    switch (type) {
-      case 'filter': return <Sliders className="h-4 w-4" />;
-      case 'transform': return <Move className="h-4 w-4" />;
-      case 'color': return <Palette className="h-4 w-4" />;
-      case 'text': return <Type className="h-4 w-4" />;
-      case 'transition': return <Layers className="h-4 w-4" />;
-      default: return <Sparkles className="h-4 w-4" />;
+    
+    // Si era el efecto seleccionado, deseleccionar
+    if (id === selectedEffectId) {
+      setSelectedEffectId(null);
     }
+    
+    setIsSaving(false);
   };
   
-  // Formatear tiempo en MM:SS.ms
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 100);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
-  };
-  
-  // Componentes de configuración específicos para cada tipo de efecto
-  
-  // Configuración de filtros
-  const renderFilterConfig = () => {
-    if (!selectedEffect) return null;
-    
-    const { filterType = 'blur', amount = 5, enabled = true } = selectedEffect.properties;
-    
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="filter-type">Tipo de filtro</Label>
-          <Select
-            value={filterType}
-            onValueChange={value => handlePropertyChange('filterType', value)}
+  // Renderizar efectos en modo cuadrícula
+  const renderEffectsGrid = () => {
+    if (effects.length === 0) {
+      return (
+        <div className="py-10 text-center text-gray-500">
+          <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-20" />
+          <p>No hay efectos visuales</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddDialog(true)}
+            className="mt-4"
           >
-            <SelectTrigger id="filter-type">
-              <SelectValue placeholder="Seleccionar tipo de filtro" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="blur">Desenfoque (Blur)</SelectItem>
-              <SelectItem value="sharpen">Afilado (Sharpen)</SelectItem>
-              <SelectItem value="noise">Ruido</SelectItem>
-              <SelectItem value="grain">Granulado</SelectItem>
-              <SelectItem value="pixelate">Pixelado</SelectItem>
-              <SelectItem value="vignette">Viñeta</SelectItem>
-              <SelectItem value="sepia">Sepia</SelectItem>
-              <SelectItem value="grayscale">Escala de grises</SelectItem>
-              <SelectItem value="invert">Invertir</SelectItem>
-            </SelectContent>
-          </Select>
+            <Plus className="h-4 w-4 mr-1" /> Añadir efecto
+          </Button>
         </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="filter-amount">Intensidad</Label>
-            <span className="text-sm text-zinc-400">{amount}</span>
-          </div>
-          <Slider
-            id="filter-amount"
-            min={0}
-            max={100}
-            step={1}
-            value={[amount]}
-            onValueChange={values => handlePropertyChange('amount', values[0])}
-          />
-        </div>
-      </div>
-    );
-  };
-  
-  // Configuración de transformación
-  const renderTransformConfig = () => {
-    if (!selectedEffect) return null;
-    
-    const { 
-      scale = 1, 
-      rotation = 0, 
-      positionX = 0, 
-      positionY = 0, 
-      enabled = true 
-    } = selectedEffect.properties;
+      );
+    }
     
     return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="transform-scale">Escala</Label>
-            <span className="text-sm text-zinc-400">{scale.toFixed(2)}x</span>
-          </div>
-          <Slider
-            id="transform-scale"
-            min={0.1}
-            max={3}
-            step={0.01}
-            value={[scale]}
-            onValueChange={values => handlePropertyChange('scale', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="transform-rotation">Rotación</Label>
-            <span className="text-sm text-zinc-400">{rotation}°</span>
-          </div>
-          <Slider
-            id="transform-rotation"
-            min={-180}
-            max={180}
-            step={1}
-            value={[rotation]}
-            onValueChange={values => handlePropertyChange('rotation', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="transform-position-x">Posición X</Label>
-            <span className="text-sm text-zinc-400">{positionX}%</span>
-          </div>
-          <Slider
-            id="transform-position-x"
-            min={-100}
-            max={100}
-            step={1}
-            value={[positionX]}
-            onValueChange={values => handlePropertyChange('positionX', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="transform-position-y">Posición Y</Label>
-            <span className="text-sm text-zinc-400">{positionY}%</span>
-          </div>
-          <Slider
-            id="transform-position-y"
-            min={-100}
-            max={100}
-            step={1}
-            value={[positionY]}
-            onValueChange={values => handlePropertyChange('positionY', values[0])}
-          />
-        </div>
-      </div>
-    );
-  };
-  
-  // Configuración de color
-  const renderColorConfig = () => {
-    if (!selectedEffect) return null;
-    
-    const { 
-      brightness = 0, 
-      contrast = 0, 
-      saturation = 0, 
-      hue = 0, 
-      enabled = true 
-    } = selectedEffect.properties;
-    
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="color-brightness">Brillo</Label>
-            <span className="text-sm text-zinc-400">{brightness}</span>
-          </div>
-          <Slider
-            id="color-brightness"
-            min={-100}
-            max={100}
-            step={1}
-            value={[brightness]}
-            onValueChange={values => handlePropertyChange('brightness', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="color-contrast">Contraste</Label>
-            <span className="text-sm text-zinc-400">{contrast}</span>
-          </div>
-          <Slider
-            id="color-contrast"
-            min={-100}
-            max={100}
-            step={1}
-            value={[contrast]}
-            onValueChange={values => handlePropertyChange('contrast', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="color-saturation">Saturación</Label>
-            <span className="text-sm text-zinc-400">{saturation}</span>
-          </div>
-          <Slider
-            id="color-saturation"
-            min={-100}
-            max={100}
-            step={1}
-            value={[saturation]}
-            onValueChange={values => handlePropertyChange('saturation', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="color-hue">Matiz</Label>
-            <span className="text-sm text-zinc-400">{hue}°</span>
-          </div>
-          <Slider
-            id="color-hue"
-            min={-180}
-            max={180}
-            step={1}
-            value={[hue]}
-            onValueChange={values => handlePropertyChange('hue', values[0])}
-          />
-        </div>
-      </div>
-    );
-  };
-  
-  // Configuración de texto
-  const renderTextConfig = () => {
-    if (!selectedEffect) return null;
-    
-    const { 
-      text = 'Texto de ejemplo', 
-      fontSize = 24, 
-      fontFamily = 'Arial', 
-      color = '#ffffff', 
-      positionX = 50, 
-      positionY = 50, 
-      alignment = 'center',
-      enabled = true
-    } = selectedEffect.properties;
-    
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="text-content">Texto</Label>
-          <Input
-            id="text-content"
-            value={text}
-            onChange={e => handlePropertyChange('text', e.target.value)}
-            className="bg-zinc-800 border-zinc-700"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="text-font-family">Fuente</Label>
-          <Select
-            value={fontFamily}
-            onValueChange={value => handlePropertyChange('fontFamily', value)}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+        {effects.map(effect => (
+          <div
+            key={effect.id}
+            className={cn(
+              "border rounded-md p-3 cursor-pointer transition-all hover:border-gray-400",
+              selectedEffectId === effect.id && "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
+              currentTime >= effect.startTime && 
+              currentTime < (effect.startTime + effect.duration) && 
+              "bg-orange-50 dark:bg-orange-900/20"
+            )}
+            onClick={() => setSelectedEffectId(effect.id)}
           >
-            <SelectTrigger id="text-font-family">
-              <SelectValue placeholder="Seleccionar fuente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Arial">Arial</SelectItem>
-              <SelectItem value="Helvetica">Helvetica</SelectItem>
-              <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-              <SelectItem value="Courier New">Courier New</SelectItem>
-              <SelectItem value="Verdana">Verdana</SelectItem>
-              <SelectItem value="Georgia">Georgia</SelectItem>
-              <SelectItem value="Palatino">Palatino</SelectItem>
-              <SelectItem value="Tahoma">Tahoma</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="text-font-size">Tamaño</Label>
-            <span className="text-sm text-zinc-400">{fontSize}px</span>
+            <div className="flex items-center justify-between mb-1">
+              <div 
+                className="w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: effectColors[effect.type] }}
+              >
+                {effectTypes.find(t => t.value === effect.type)?.icon}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSeek) onSeek(effect.startTime);
+                }}
+                className="h-6 w-6 p-0"
+              >
+                <Play className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="text-sm font-medium truncate">
+              {effect.name || effectTypes.find(t => t.value === effect.type)?.label}
+            </div>
+            
+            <div className="text-xs text-gray-500 mt-1">
+              {formatTime(effect.startTime)} - {formatTime(effect.startTime + effect.duration)}
+            </div>
+            
+            <div className="flex space-x-1 mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewEffect({
+                    ...effect,
+                    name: effect.name || ''
+                  });
+                  setShowAddDialog(true);
+                }}
+                className="h-7 p-0 text-xs flex-1"
+              >
+                <Edit className="h-3 w-3 mr-1" /> Editar
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteEffect(effect.id);
+                }}
+                className="h-7 p-0 text-xs flex-1 text-red-500 hover:text-red-600"
+              >
+                <Trash className="h-3 w-3 mr-1" /> Eliminar
+              </Button>
+            </div>
           </div>
-          <Slider
-            id="text-font-size"
-            min={8}
-            max={72}
-            step={1}
-            value={[fontSize]}
-            onValueChange={values => handlePropertyChange('fontSize', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="text-color">Color</Label>
-          <div className="flex items-center gap-2">
+        ))}
+      </div>
+    );
+  };
+  
+  // Renderizar efectos en modo lista
+  const renderEffectsList = () => {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Tipo</TableHead>
+            <TableHead>Nombre</TableHead>
+            <TableHead className="w-[120px]">Tiempo</TableHead>
+            <TableHead className="w-[120px]">Duración</TableHead>
+            <TableHead className="w-[100px]">Intensidad</TableHead>
+            <TableHead className="w-[100px]">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {effects.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-10 text-gray-500">
+                <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>No hay efectos visuales</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddDialog(true)}
+                  className="mt-4"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Añadir efecto
+                </Button>
+              </TableCell>
+            </TableRow>
+          ) : (
+            effects.map(effect => (
+              <TableRow
+                key={effect.id}
+                className={cn(
+                  "cursor-pointer",
+                  selectedEffectId === effect.id && "bg-blue-50 dark:bg-blue-900/20",
+                  currentTime >= effect.startTime && 
+                  currentTime < (effect.startTime + effect.duration) && 
+                  "bg-orange-50 dark:bg-orange-900/20"
+                )}
+                onClick={() => setSelectedEffectId(effect.id)}
+              >
+                <TableCell>
+                  <div className="flex items-center">
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center mr-2"
+                      style={{ backgroundColor: effectColors[effect.type] }}
+                    >
+                      {effectTypes.find(t => t.value === effect.type)?.icon}
+                    </div>
+                    <span className="capitalize">
+                      {effectTypes.find(t => t.value === effect.type)?.label}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {effect.name || '-'}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSeek) onSeek(effect.startTime);
+                    }}
+                    className="h-6 p-0 text-xs"
+                  >
+                    {formatTime(effect.startTime)}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  {effect.duration}s
+                </TableCell>
+                <TableCell>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full"
+                      style={{ 
+                        width: `${effect.intensity * 100}%`,
+                        backgroundColor: effectColors[effect.type]
+                      }}
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNewEffect({
+                          ...effect,
+                          name: effect.name || ''
+                        });
+                        setShowAddDialog(true);
+                      }}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteEffect(effect.id);
+                      }}
+                      className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    );
+  };
+  
+  // Renderizar línea de tiempo
+  const renderTimeline = () => {
+    return (
+      <div className="relative h-[200px] border rounded-md overflow-hidden mt-4">
+        {/* Escala de tiempo */}
+        <div className="absolute top-0 left-0 right-0 h-6 border-b flex px-4">
+          {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1].map(percent => (
             <div
-              className="w-6 h-6 rounded border border-zinc-600"
-              style={{ backgroundColor: color }}
-            />
-            <Input
-              id="text-color"
-              type="color"
-              value={color}
-              onChange={e => handlePropertyChange('color', e.target.value)}
-              className="w-16 p-0 bg-zinc-800 border-zinc-700 h-8"
-            />
-          </div>
+              key={`time-${percent}`}
+              className="absolute text-xs text-gray-500"
+              style={{ left: `${percent * 100}%` }}
+            >
+              <div className="h-2 border-l border-gray-300 dark:border-gray-700"></div>
+              <div className="mt-1">{formatTime(percent * duration)}</div>
+            </div>
+          ))}
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="text-alignment">Alineación</Label>
-          <Select
-            value={alignment}
-            onValueChange={value => handlePropertyChange('alignment', value)}
+        {/* Efectos en la línea de tiempo */}
+        <div className="absolute top-8 left-0 right-0 bottom-0 px-4">
+          {effects.map((effect, index) => (
+            <div
+              key={effect.id}
+              className={cn(
+                "absolute h-8 rounded-md flex items-center px-2 cursor-pointer border-2 transition-all",
+                selectedEffectId === effect.id && "ring-2 ring-blue-500"
+              )}
+              style={{
+                left: `${timeToPosition(effect.startTime)}%`,
+                width: `${timeToPosition(effect.startTime + effect.duration) - timeToPosition(effect.startTime)}%`,
+                top: `${index % 5 * 40}px`,
+                backgroundColor: `${effectColors[effect.type]}80`,
+                borderColor: effectColors[effect.type]
+              }}
+              onClick={() => setSelectedEffectId(effect.id)}
+            >
+              <div className="flex items-center text-sm text-white truncate">
+                {effectTypes.find(t => t.value === effect.type)?.icon}
+                <span className="ml-1">{effect.name || effect.type}</span>
+              </div>
+            </div>
+          ))}
+          
+          {/* Marcador de tiempo actual */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-orange-500 z-10 pointer-events-none"
+            style={{ left: `${timeToPosition(currentTime)}%` }}
           >
-            <SelectTrigger id="text-alignment">
-              <SelectValue placeholder="Seleccionar alineación" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="left">Izquierda</SelectItem>
-              <SelectItem value="center">Centro</SelectItem>
-              <SelectItem value="right">Derecha</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="text-position-x">Posición X</Label>
-            <span className="text-sm text-zinc-400">{positionX}%</span>
+            <div className="w-3 h-3 bg-orange-500 rounded-full -ml-1.5"></div>
           </div>
-          <Slider
-            id="text-position-x"
-            min={0}
-            max={100}
-            step={1}
-            value={[positionX]}
-            onValueChange={values => handlePropertyChange('positionX', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="text-position-y">Posición Y</Label>
-            <span className="text-sm text-zinc-400">{positionY}%</span>
-          </div>
-          <Slider
-            id="text-position-y"
-            min={0}
-            max={100}
-            step={1}
-            value={[positionY]}
-            onValueChange={values => handlePropertyChange('positionY', values[0])}
-          />
-        </div>
-      </div>
-    );
-  };
-  
-  // Configuración de transiciones
-  const renderTransitionConfig = () => {
-    if (!selectedEffect) return null;
-    
-    const { 
-      transitionType = 'fade', 
-      duration = 1, 
-      easing = 'ease-in-out',
-      enabled = true 
-    } = selectedEffect.properties;
-    
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="transition-type">Tipo de transición</Label>
-          <Select
-            value={transitionType}
-            onValueChange={value => handlePropertyChange('transitionType', value)}
-          >
-            <SelectTrigger id="transition-type">
-              <SelectValue placeholder="Seleccionar tipo de transición" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fade">Fundido (Fade)</SelectItem>
-              <SelectItem value="wipe">Barrido (Wipe)</SelectItem>
-              <SelectItem value="slide">Deslizar (Slide)</SelectItem>
-              <SelectItem value="zoom">Zoom</SelectItem>
-              <SelectItem value="crossfade">Fundido cruzado</SelectItem>
-              <SelectItem value="dissolve">Disolver</SelectItem>
-              <SelectItem value="push">Empujar</SelectItem>
-              <SelectItem value="split">Dividir</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="transition-duration">Duración</Label>
-            <span className="text-sm text-zinc-400">{duration.toFixed(1)}s</span>
-          </div>
-          <Slider
-            id="transition-duration"
-            min={0.1}
-            max={10}
-            step={0.1}
-            value={[duration]}
-            onValueChange={values => handlePropertyChange('duration', values[0])}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="transition-easing">Suavizado</Label>
-          <Select
-            value={easing}
-            onValueChange={value => handlePropertyChange('easing', value)}
-          >
-            <SelectTrigger id="transition-easing">
-              <SelectValue placeholder="Seleccionar suavizado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="linear">Lineal</SelectItem>
-              <SelectItem value="ease">Suave</SelectItem>
-              <SelectItem value="ease-in">Suave al inicio</SelectItem>
-              <SelectItem value="ease-out">Suave al final</SelectItem>
-              <SelectItem value="ease-in-out">Suave al inicio y al final</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
     );
   };
   
   return (
-    <Card className="w-full bg-zinc-900 border-0 rounded-xl overflow-hidden shadow-xl">
-      <CardHeader className="pb-2 border-b border-zinc-800">
-        <CardTitle className="text-xl flex items-center text-white">
-          <Wand2 className="h-5 w-5 mr-2 text-indigo-400" />
-          Efectos
-        </CardTitle>
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl flex items-center">
+            <MagicWand className="h-5 w-5 mr-2 text-orange-500" />
+            Efectos Visuales
+          </CardTitle>
+          
+          <div className="flex items-center space-x-2">
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  "h-8 rounded-none border-0",
+                  viewMode === 'grid' ? "bg-orange-500 hover:bg-orange-600" : ""
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "h-8 rounded-none border-0 border-l",
+                  viewMode === 'list' ? "bg-orange-500 hover:bg-orange-600" : ""
+                )}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddDialog(true)}
+              className="h-8"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Añadir efecto
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       
       <CardContent className="p-0">
-        <Tabs defaultValue="effects" className="w-full">
-          <TabsList className="w-full bg-zinc-800 rounded-none mb-0 p-0 h-10">
-            <TabsTrigger
-              value="effects"
-              className="flex-1 rounded-none data-[state=active]:bg-zinc-700"
-            >
-              Efectos aplicados
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full justify-start p-0 rounded-none border-b">
+            <TabsTrigger value="effects" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Efectos
             </TabsTrigger>
-            <TabsTrigger
-              value="library"
-              className="flex-1 rounded-none data-[state=active]:bg-zinc-700"
-            >
-              Biblioteca
+            <TabsTrigger value="timeline" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Línea de Tiempo
+            </TabsTrigger>
+            <TabsTrigger value="active" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-orange-500">
+              Activos
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="effects" className="mt-0 border-0 p-0">
-            <div className="p-3 border-b border-zinc-800 bg-zinc-800 flex items-center space-x-2">
-              <span className="text-xs text-zinc-400">Filtrar por:</span>
-              <Select
-                value={effectTypeFilter}
-                onValueChange={setEffectTypeFilter}
+          {/* Pestaña de Efectos */}
+          <TabsContent value="effects">
+            {viewMode === 'grid' ? renderEffectsGrid() : renderEffectsList()}
+          </TabsContent>
+          
+          {/* Pestaña de Línea de Tiempo */}
+          <TabsContent value="timeline" className="p-4">
+            {renderTimeline()}
+            
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddDialog(true)}
+                className="w-full"
               >
-                <SelectTrigger id="effect-type-filter" className="h-7 text-xs bg-zinc-700 border-zinc-600 min-w-[120px]">
-                  <SelectValue placeholder="Tipo de efecto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="filter">Filtros</SelectItem>
-                  <SelectItem value="transform">Transformaciones</SelectItem>
-                  <SelectItem value="color">Color</SelectItem>
-                  <SelectItem value="text">Texto</SelectItem>
-                  <SelectItem value="transition">Transiciones</SelectItem>
-                </SelectContent>
-              </Select>
+                <Plus className="h-4 w-4 mr-1" /> Añadir efecto en {formatTime(currentTime)}
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Pestaña de Efectos Activos */}
+          <TabsContent value="active" className="p-4">
+            <div className="text-sm font-medium mb-2">
+              Efectos activos en {formatTime(currentTime)}
             </div>
             
-            <div
-              ref={droppableRef}
-              {...droppableProps}
-              className={`p-4 overflow-y-auto max-h-96 ${isOver ? 'bg-indigo-900/20' : ''}`}
-            >
-              {filteredEffects.length > 0 ? (
-                <ul className="space-y-2">
-                  {filteredEffects.map(effect => (
-                    <li
-                      key={effect.id}
-                      className={`p-2 rounded flex items-center justify-between cursor-pointer ${
-                        selectedEffectId === effect.id ? 'bg-indigo-800/30 ring-1 ring-indigo-500' : 'bg-zinc-800 hover:bg-zinc-750'
-                      }`}
-                      onClick={() => onSelectEffect && onSelectEffect(effect.id)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        {getEffectIcon(effect.type)}
+            {getActiveEffects().length === 0 ? (
+              <div className="py-8 text-center text-gray-500 border rounded-md">
+                <p>No hay efectos activos en el tiempo actual</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {getActiveEffects().map(effect => (
+                  <div
+                    key={effect.id}
+                    className="border rounded-md p-3 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
+                    onClick={() => setSelectedEffectId(effect.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div 
+                          className="w-6 h-6 rounded-full flex items-center justify-center mr-2"
+                          style={{ backgroundColor: effectColors[effect.type] }}
+                        >
+                          {effectTypes.find(t => t.value === effect.type)?.icon}
+                        </div>
                         <div>
-                          <div className="text-sm font-medium">{effect.name}</div>
-                          <div className="text-xs text-zinc-400">
-                            {formatTime(effect.startTime)} - {formatTime(effect.endTime)}
+                          <div className="font-medium">
+                            {effect.name || effectTypes.find(t => t.value === effect.type)?.label}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatTime(effect.startTime)} - {formatTime(effect.startTime + effect.duration)}
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex space-x-1">
                         <Button
-                          size="sm"
                           variant="ghost"
-                          className="h-7 w-7 p-0 hover:bg-zinc-700"
-                          onClick={e => {
+                          size="sm"
+                          onClick={(e) => {
                             e.stopPropagation();
-                            handleToggleEffectVisibility(effect.id, effect.properties.enabled);
+                            setNewEffect({
+                              ...effect,
+                              name: effect.name || ''
+                            });
+                            setShowAddDialog(true);
                           }}
+                          className="h-7 w-7 p-0"
                         >
-                          {effect.properties.enabled ? (
-                            <Eye className="h-3.5 w-3.5 text-zinc-300" />
-                          ) : (
-                            <EyeOff className="h-3.5 w-3.5 text-zinc-500" />
-                          )}
+                          <Edit className="h-3.5 w-3.5" />
                         </Button>
                         
                         <Button
-                          size="sm"
                           variant="ghost"
-                          className="h-7 w-7 p-0 hover:bg-zinc-700"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleDuplicateEffect(effect);
-                          }}
-                        >
-                          <Copy className="h-3.5 w-3.5 text-zinc-300" />
-                        </Button>
-                        
-                        <Button
                           size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0 hover:bg-zinc-700 hover:text-red-500"
-                          onClick={e => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            handleRemoveEffect(effect.id);
+                            handleDeleteEffect(effect.id);
                           }}
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash className="h-3.5 w-3.5" />
                         </Button>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-center py-8 text-zinc-500">
-                  {effects.length === 0 ? (
-                    <p>No hay efectos aplicados. Añade un efecto desde la biblioteca.</p>
-                  ) : (
-                    <p>No hay efectos de este tipo. Cambia el filtro o añade uno nuevo.</p>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {selectedEffect && (
-              <div className="p-4 bg-zinc-800 border-t border-zinc-700">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium mb-2">Ajustes de tiempo</h3>
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs bg-zinc-700 border-zinc-600 flex-1"
-                      onClick={handleSetStartTime}
-                    >
-                      <Clock className="h-3.5 w-3.5 mr-1" />
-                      Inicio = {formatTime(currentTime)}
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs bg-zinc-700 border-zinc-600 flex-1"
-                      onClick={handleSetEndTime}
-                    >
-                      <Clock className="h-3.5 w-3.5 mr-1" />
-                      Final = {formatTime(currentTime)}
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center text-xs mb-2">
-                    <div className="flex-1">
-                      <span className="text-zinc-400 mr-1">Duración:</span>
-                      <span>{formatTime(selectedEffect.endTime - selectedEffect.startTime)}</span>
                     </div>
                     
-                    <div className="text-right flex-1">
-                      <span className="text-zinc-400 mr-1">Estado:</span>
-                      {currentTime >= selectedEffect.startTime && currentTime <= selectedEffect.endTime ? (
-                        <span className="text-green-500 flex items-center">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Activo
-                        </span>
-                      ) : (
-                        <span className="text-zinc-500 flex items-center">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Inactivo
-                        </span>
-                      )}
+                    <div className="mt-2">
+                      <div className="text-xs text-gray-500 mb-1">Intensidad: {Math.round(effect.intensity * 100)}%</div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full"
+                          style={{ 
+                            width: `${effect.intensity * 100}%`,
+                            backgroundColor: effectColors[effect.type]
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Configuración específica del efecto seleccionado */}
-                <Accordion
-                  type="single"
-                  defaultValue="params"
-                  collapsible
-                  className="w-full"
-                >
-                  <AccordionItem value="params" className="border-none">
-                    <AccordionTrigger className="py-2 px-3 hover:no-underline bg-zinc-750 rounded-t text-sm font-medium">
-                      Parámetros de {selectedEffect.name}
-                    </AccordionTrigger>
-                    <AccordionContent className="px-3 py-2 bg-zinc-800 rounded-b border border-zinc-700">
-                      {selectedEffect.type === 'filter' && renderFilterConfig()}
-                      {selectedEffect.type === 'transform' && renderTransformConfig()}
-                      {selectedEffect.type === 'color' && renderColorConfig()}
-                      {selectedEffect.type === 'text' && renderTextConfig()}
-                      {selectedEffect.type === 'transition' && renderTransitionConfig()}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                ))}
               </div>
             )}
           </TabsContent>
+        </Tabs>
+      </CardContent>
+      
+      <CardFooter className="pt-2 text-xs text-gray-500">
+        <div className="flex justify-between w-full">
+          <div>
+            {effects.length} efectos • {getActiveEffects().length} activos
+          </div>
+          <div>
+            {isSaving && "Guardando..."}
+          </div>
+        </div>
+      </CardFooter>
+      
+      {/* Dialog para añadir/editar efecto */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {newEffect.name ? 'Editar efecto' : 'Añadir nuevo efecto'}
+            </DialogTitle>
+            <DialogDescription>
+              Define los parámetros para este efecto visual
+            </DialogDescription>
+          </DialogHeader>
           
-          <TabsContent value="library" className="mt-0 border-0 p-4">
-            <div className="mb-4">
-              <h3 className="text-sm font-medium mb-2">Añadir nuevo efecto</h3>
-              <div className="flex space-x-2">
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="effect-name">Nombre (opcional)</Label>
+                <Input
+                  id="effect-name"
+                  value={newEffect.name}
+                  onChange={(e) => setNewEffect({ ...newEffect, name: e.target.value })}
+                  placeholder="Ej: Filtro Sepia"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="effect-type">Tipo de efecto</Label>
                 <Select
-                  value={newEffectType}
-                  onValueChange={setNewEffectType}
-                  className="flex-1"
+                  value={newEffect.type}
+                  onValueChange={(value: 'filter' | 'overlay' | 'transition' | 'zoom' | 'crop' | 'blur' | 'custom') => 
+                    setNewEffect({ ...newEffect, type: value })
+                  }
                 >
-                  <SelectTrigger id="new-effect-type" className="bg-zinc-800 border-zinc-700">
-                    <SelectValue placeholder="Tipo de efecto" />
+                  <SelectTrigger id="effect-type">
+                    <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="filter">Filtro</SelectItem>
-                    <SelectItem value="transform">Transformación</SelectItem>
-                    <SelectItem value="color">Color</SelectItem>
-                    <SelectItem value="text">Texto</SelectItem>
-                    <SelectItem value="transition">Transición</SelectItem>
+                    {effectTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center">
+                          {type.icon}
+                          {type.label}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                
-                <Button 
-                  variant="outline"
-                  className="bg-indigo-700 border-indigo-600 hover:bg-indigo-600 hover:border-indigo-500"
-                  onClick={() => handleAddEffect(newEffectType)}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Añadir
-                </Button>
+                <p className="text-xs text-gray-500 mt-1">
+                  {effectTypes.find(t => t.value === newEffect.type)?.description}
+                </p>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Biblioteca de efectos</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="effect-startTime">Tiempo de inicio (s)</Label>
+                <div className="flex items-center">
+                  <Input
+                    id="effect-startTime"
+                    type="number"
+                    value={newEffect.startTime}
+                    onChange={(e) => setNewEffect({
+                      ...newEffect,
+                      startTime: Math.max(0, Math.min(duration - newEffect.duration, parseFloat(e.target.value) || 0))
+                    })}
+                    min={0}
+                    max={duration - newEffect.duration}
+                    step={0.1}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewEffect({
+                      ...newEffect,
+                      startTime: currentTime
+                    })}
+                    className="ml-2"
+                  >
+                    Actual
+                  </Button>
+                </div>
+              </div>
               
-              <Accordion
-                type="multiple"
-                className="w-full"
-              >
-                <AccordionItem value="filters" className="border-zinc-800">
-                  <AccordionTrigger className="hover:no-underline text-sm py-2 px-3 hover:bg-zinc-800 rounded">
-                    <div className="flex items-center">
-                      <Sliders className="h-4 w-4 mr-2" />
-                      Filtros
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-0">
-                    <div className="grid grid-cols-2 gap-2 p-2">
-                      {['blur', 'sharpen', 'noise', 'grain', 'pixelate', 'vignette', 'sepia', 'grayscale', 'invert'].map(filterType => (
-                        <div
-                          key={filterType}
-                          className="bg-zinc-800 rounded p-2 cursor-pointer hover:bg-zinc-700 flex items-center"
-                          onClick={() => {
-                            if (onAddEffect) {
-                              onAddEffect({
-                                name: `Filtro ${filterType}`,
-                                type: 'filter',
-                                properties: {
-                                  filterType,
-                                  amount: 50,
-                                  enabled: true
-                                },
-                                startTime: currentTime,
-                                endTime: Math.min(currentTime + 5, duration),
-                                clipId: selectedClipId
-                              });
-                            }
-                          }}
-                        >
-                          <div className="bg-indigo-600 rounded-full h-7 w-7 mr-2 flex items-center justify-center">
-                            <Sliders className="h-3.5 w-3.5" />
-                          </div>
-                          <span className="text-xs capitalize">{filterType}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="transforms" className="border-zinc-800">
-                  <AccordionTrigger className="hover:no-underline text-sm py-2 px-3 hover:bg-zinc-800 rounded">
-                    <div className="flex items-center">
-                      <Move className="h-4 w-4 mr-2" />
-                      Transformaciones
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-0">
-                    <div className="grid grid-cols-2 gap-2 p-2">
-                      {[
-                        { type: 'scale', name: 'Escala', icon: <Maximize className="h-3.5 w-3.5" /> },
-                        { type: 'rotation', name: 'Rotación', icon: <RotateCw className="h-3.5 w-3.5" /> },
-                        { type: 'position', name: 'Posición', icon: <Move className="h-3.5 w-3.5" /> }
-                      ].map(({ type, name, icon }) => (
-                        <div
-                          key={type}
-                          className="bg-zinc-800 rounded p-2 cursor-pointer hover:bg-zinc-700 flex items-center"
-                          onClick={() => {
-                            if (onAddEffect) {
-                              onAddEffect({
-                                name: `Transformación: ${name}`,
-                                type: 'transform',
-                                properties: {
-                                  transformType: type,
-                                  scale: type === 'scale' ? 1.2 : 1,
-                                  rotation: type === 'rotation' ? 45 : 0,
-                                  positionX: type === 'position' ? 10 : 0,
-                                  positionY: type === 'position' ? 10 : 0,
-                                  enabled: true
-                                },
-                                startTime: currentTime,
-                                endTime: Math.min(currentTime + 5, duration),
-                                clipId: selectedClipId
-                              });
-                            }
-                          }}
-                        >
-                          <div className="bg-green-600 rounded-full h-7 w-7 mr-2 flex items-center justify-center">
-                            {icon}
-                          </div>
-                          <span className="text-xs">{name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="colors" className="border-zinc-800">
-                  <AccordionTrigger className="hover:no-underline text-sm py-2 px-3 hover:bg-zinc-800 rounded">
-                    <div className="flex items-center">
-                      <Palette className="h-4 w-4 mr-2" />
-                      Ajustes de color
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-0">
-                    <div className="grid grid-cols-2 gap-2 p-2">
-                      {['brightness', 'contrast', 'saturation', 'hue', 'temperature', 'tint'].map(colorType => (
-                        <div
-                          key={colorType}
-                          className="bg-zinc-800 rounded p-2 cursor-pointer hover:bg-zinc-700 flex items-center"
-                          onClick={() => {
-                            if (onAddEffect) {
-                              onAddEffect({
-                                name: `Color: ${colorType}`,
-                                type: 'color',
-                                properties: {
-                                  colorType,
-                                  brightness: colorType === 'brightness' ? 20 : 0,
-                                  contrast: colorType === 'contrast' ? 20 : 0,
-                                  saturation: colorType === 'saturation' ? 20 : 0,
-                                  hue: colorType === 'hue' ? 20 : 0,
-                                  temperature: colorType === 'temperature' ? 20 : 0,
-                                  tint: colorType === 'tint' ? 20 : 0,
-                                  enabled: true
-                                },
-                                startTime: currentTime,
-                                endTime: Math.min(currentTime + 5, duration),
-                                clipId: selectedClipId
-                              });
-                            }
-                          }}
-                        >
-                          <div className="bg-amber-600 rounded-full h-7 w-7 mr-2 flex items-center justify-center">
-                            <Palette className="h-3.5 w-3.5" />
-                          </div>
-                          <span className="text-xs capitalize">{colorType}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="transitions" className="border-zinc-800">
-                  <AccordionTrigger className="hover:no-underline text-sm py-2 px-3 hover:bg-zinc-800 rounded">
-                    <div className="flex items-center">
-                      <Layers className="h-4 w-4 mr-2" />
-                      Transiciones
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-0">
-                    <div className="grid grid-cols-2 gap-2 p-2">
-                      {['fade', 'wipe', 'slide', 'zoom', 'crossfade', 'dissolve', 'push', 'split'].map(transitionType => (
-                        <div
-                          key={transitionType}
-                          className="bg-zinc-800 rounded p-2 cursor-pointer hover:bg-zinc-700 flex items-center"
-                          onClick={() => {
-                            if (onAddEffect) {
-                              onAddEffect({
-                                name: `Transición: ${transitionType}`,
-                                type: 'transition',
-                                properties: {
-                                  transitionType,
-                                  duration: 1,
-                                  easing: 'ease-in-out',
-                                  enabled: true
-                                },
-                                startTime: currentTime,
-                                endTime: Math.min(currentTime + 1, duration),
-                                clipId: selectedClipId
-                              });
-                            }
-                          }}
-                        >
-                          <div className="bg-purple-600 rounded-full h-7 w-7 mr-2 flex items-center justify-center">
-                            <Layers className="h-3.5 w-3.5" />
-                          </div>
-                          <span className="text-xs capitalize">{transitionType}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="text" className="border-zinc-800">
-                  <AccordionTrigger className="hover:no-underline text-sm py-2 px-3 hover:bg-zinc-800 rounded">
-                    <div className="flex items-center">
-                      <Type className="h-4 w-4 mr-2" />
-                      Texto
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-0">
-                    <div className="grid grid-cols-2 gap-2 p-2">
-                      {[
-                        { type: 'title', name: 'Título' },
-                        { type: 'subtitle', name: 'Subtítulo' },
-                        { type: 'caption', name: 'Leyenda' },
-                        { type: 'lower-third', name: 'Lower Third' }
-                      ].map(({ type, name }) => (
-                        <div
-                          key={type}
-                          className="bg-zinc-800 rounded p-2 cursor-pointer hover:bg-zinc-700 flex items-center"
-                          onClick={() => {
-                            if (onAddEffect) {
-                              onAddEffect({
-                                name: `Texto: ${name}`,
-                                type: 'text',
-                                properties: {
-                                  text: name,
-                                  fontSize: type === 'title' ? 36 : type === 'subtitle' ? 24 : 18,
-                                  fontFamily: 'Arial',
-                                  color: '#ffffff',
-                                  positionX: 50,
-                                  positionY: type === 'lower-third' ? 80 : 50,
-                                  alignment: 'center',
-                                  enabled: true
-                                },
-                                startTime: currentTime,
-                                endTime: Math.min(currentTime + 5, duration),
-                                clipId: selectedClipId
-                              });
-                            }
-                          }}
-                        >
-                          <div className="bg-blue-600 rounded-full h-7 w-7 mr-2 flex items-center justify-center">
-                            <Type className="h-3.5 w-3.5" />
-                          </div>
-                          <span className="text-xs">{name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              <div className="space-y-2">
+                <Label htmlFor="effect-duration">Duración (s)</Label>
+                <Input
+                  id="effect-duration"
+                  type="number"
+                  value={newEffect.duration}
+                  onChange={(e) => setNewEffect({
+                    ...newEffect,
+                    duration: Math.max(0.1, Math.min(duration - newEffect.startTime, parseFloat(e.target.value) || 0))
+                  })}
+                  min={0.1}
+                  max={duration - newEffect.startTime}
+                  step={0.1}
+                />
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
+            
+            <div className="space-y-2">
+              <Label htmlFor="effect-intensity">Intensidad: {Math.round(newEffect.intensity * 100)}%</Label>
+              <Slider
+                id="effect-intensity"
+                value={[newEffect.intensity * 100]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={([value]) => setNewEffect({
+                  ...newEffect,
+                  intensity: value / 100
+                })}
+              />
+            </div>
+            
+            {/* Parámetros específicos para cada tipo de efecto */}
+            {newEffect.type === 'filter' && (
+              <div className="space-y-2">
+                <Label>Parámetros de filtro</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Contraste</Label>
+                    <Slider
+                      value={[newEffect.parameters?.contrast || 50]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, contrast: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Saturación</Label>
+                    <Slider
+                      value={[newEffect.parameters?.saturation || 50]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, saturation: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {newEffect.type === 'zoom' && (
+              <div className="space-y-2">
+                <Label>Parámetros de zoom</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Factor</Label>
+                    <Slider
+                      value={[newEffect.parameters?.factor || 150]}
+                      min={100}
+                      max={300}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, factor: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Velocidad</Label>
+                    <Slider
+                      value={[newEffect.parameters?.speed || 50]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={([value]) => setNewEffect({
+                        ...newEffect,
+                        parameters: { ...newEffect.parameters, speed: value }
+                      })}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddDialog(false);
+                setNewEffect({
+                  name: '',
+                  type: 'filter',
+                  startTime: currentTime,
+                  duration: 5,
+                  intensity: 0.5,
+                  parameters: {}
+                });
+              }}
+            >
+              Cancelar
+            </Button>
+            
+            <Button
+              onClick={handleAddEffect}
+              disabled={isSaving}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                newEffect.name ? 'Actualizar' : 'Añadir'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
-}
+};
+
+export default EffectsPanel;

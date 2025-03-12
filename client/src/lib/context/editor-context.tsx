@@ -1,835 +1,1040 @@
-import React, { createContext, useContext, useState, useReducer, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { 
-  EditorState, 
-  Track, 
-  TimelineClip, 
-  Effect, 
-  BeatMarker, 
-  SectionMarker, 
-  AudioTrack,
-  Transcription,
-  CameraMovement,
-  EditorStateUtils
-} from '@/lib/professional-editor-types';
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  Timestamp, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db } from '../../firebase';
+import { useAuth } from '@/hooks/use-auth';
 
-// Tipos de acciones del editor
-export enum EditorActionType {
-  SET_PROJECT_NAME = 'SET_PROJECT_NAME',
-  SET_CURRENT_TIME = 'SET_CURRENT_TIME',
-  SET_DURATION = 'SET_DURATION',
-  SET_PLAYING = 'SET_PLAYING',
-  SET_ZOOM_LEVEL = 'SET_ZOOM_LEVEL',
-  
-  ADD_TRACK = 'ADD_TRACK',
-  REMOVE_TRACK = 'REMOVE_TRACK',
-  UPDATE_TRACK = 'UPDATE_TRACK',
-  
-  ADD_CLIP = 'ADD_CLIP',
-  REMOVE_CLIP = 'REMOVE_CLIP',
-  UPDATE_CLIP = 'UPDATE_CLIP',
-  
-  ADD_EFFECT = 'ADD_EFFECT',
-  REMOVE_EFFECT = 'REMOVE_EFFECT',
-  UPDATE_EFFECT = 'UPDATE_EFFECT',
-  
-  ADD_BEAT_MARKER = 'ADD_BEAT_MARKER',
-  REMOVE_BEAT_MARKER = 'REMOVE_BEAT_MARKER',
-  UPDATE_BEAT_MARKER = 'UPDATE_BEAT_MARKER',
-  
-  ADD_SECTION_MARKER = 'ADD_SECTION_MARKER',
-  REMOVE_SECTION_MARKER = 'REMOVE_SECTION_MARKER',
-  UPDATE_SECTION_MARKER = 'UPDATE_SECTION_MARKER',
-  
-  ADD_AUDIO_TRACK = 'ADD_AUDIO_TRACK',
-  REMOVE_AUDIO_TRACK = 'REMOVE_AUDIO_TRACK',
-  UPDATE_AUDIO_TRACK = 'UPDATE_AUDIO_TRACK',
-  
-  ADD_TRANSCRIPTION = 'ADD_TRANSCRIPTION',
-  REMOVE_TRANSCRIPTION = 'REMOVE_TRANSCRIPTION',
-  UPDATE_TRANSCRIPTION = 'UPDATE_TRANSCRIPTION',
-  
-  ADD_CAMERA_MOVEMENT = 'ADD_CAMERA_MOVEMENT',
-  REMOVE_CAMERA_MOVEMENT = 'REMOVE_CAMERA_MOVEMENT',
-  UPDATE_CAMERA_MOVEMENT = 'UPDATE_CAMERA_MOVEMENT',
-  
-  SELECT_CLIP = 'SELECT_CLIP',
-  SELECT_TRACK = 'SELECT_TRACK',
-  SELECT_EFFECT = 'SELECT_EFFECT',
-  
-  UNDO = 'UNDO',
-  REDO = 'REDO',
-  
-  UPDATE_SETTINGS = 'UPDATE_SETTINGS',
-  
-  LOAD_PROJECT = 'LOAD_PROJECT',
-  RESET_PROJECT = 'RESET_PROJECT',
-  
-  UPDATE_METADATA = 'UPDATE_METADATA'
+// Definición de tipos para el editor
+export interface AudioTrack {
+  id: string;
+  url: string;
+  name: string;
+  startTime: number;
+  endTime?: number; // Optional para compatibilidad
+  duration?: number; // Added para compatibilidad con MusicVideoWorkflow
+  volume?: number; // Optional
+  muted?: boolean; // Optional
+  waveformData?: any[]; // Added para compatibilidad con MusicVideoWorkflow
 }
 
-// Interfaz para acciones del editor
-export interface EditorAction {
-  type: EditorActionType;
-  payload?: any;
+export interface VideoClip {
+  id: string;
+  url: string;
+  name: string;
+  startTime: number;
+  endTime: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  opacity: number;
+  zIndex: number;
 }
 
-// Reducer para el estado del editor
-export function editorReducer(state: EditorState, action: EditorAction): EditorState {
-  const { type, payload } = action;
-  
-  // Crear copia del estado para modificaciones
-  const newState = { ...state };
-  
-  // Histórico de acciones (solo para acciones que modifican el proyecto)
-  const trackableActions = [
-    EditorActionType.ADD_TRACK,
-    EditorActionType.REMOVE_TRACK,
-    EditorActionType.UPDATE_TRACK,
-    EditorActionType.ADD_CLIP,
-    EditorActionType.REMOVE_CLIP,
-    EditorActionType.UPDATE_CLIP,
-    EditorActionType.ADD_EFFECT,
-    EditorActionType.REMOVE_EFFECT,
-    EditorActionType.UPDATE_EFFECT,
-    EditorActionType.ADD_BEAT_MARKER,
-    EditorActionType.REMOVE_BEAT_MARKER,
-    EditorActionType.UPDATE_BEAT_MARKER,
-    EditorActionType.ADD_SECTION_MARKER,
-    EditorActionType.REMOVE_SECTION_MARKER,
-    EditorActionType.UPDATE_SECTION_MARKER,
-    EditorActionType.ADD_AUDIO_TRACK,
-    EditorActionType.REMOVE_AUDIO_TRACK,
-    EditorActionType.UPDATE_AUDIO_TRACK,
-    EditorActionType.ADD_TRANSCRIPTION,
-    EditorActionType.REMOVE_TRANSCRIPTION,
-    EditorActionType.UPDATE_TRANSCRIPTION,
-    EditorActionType.ADD_CAMERA_MOVEMENT,
-    EditorActionType.REMOVE_CAMERA_MOVEMENT,
-    EditorActionType.UPDATE_CAMERA_MOVEMENT,
-    EditorActionType.SET_PROJECT_NAME,
-    EditorActionType.UPDATE_SETTINGS,
-    EditorActionType.UPDATE_METADATA
-  ];
-  
-  // Agregar acción al historial si es trackable y no es UNDO o REDO
-  if (
-    trackableActions.includes(type) && 
-    type !== EditorActionType.UNDO && 
-    type !== EditorActionType.REDO
-  ) {
-    // Si estamos en mitad del historial (después de un UNDO), descartar las acciones posteriores
-    if (state.historyIndex < state.history.length - 1) {
-      newState.history = state.history.slice(0, state.historyIndex + 1);
-    }
-    
-    // Añadir acción al historial
-    newState.history = [
-      ...newState.history, 
-      {
-        type: type.toString(),
-        payload,
-        timestamp: Date.now(),
-        description: getActionDescription(type, payload)
-      }
-    ];
-    
-    newState.historyIndex = newState.history.length - 1;
-  }
-  
-  // Procesar la acción
-  switch (type) {
-    case EditorActionType.SET_PROJECT_NAME:
-      return { ...newState, projectName: payload };
-      
-    case EditorActionType.SET_CURRENT_TIME:
-      return { ...newState, currentTime: payload };
-      
-    case EditorActionType.SET_DURATION:
-      return { ...newState, duration: payload };
-      
-    case EditorActionType.SET_PLAYING:
-      return { ...newState, isPlaying: payload };
-      
-    case EditorActionType.SET_ZOOM_LEVEL:
-      return { ...newState, zoomLevel: payload };
-      
-    case EditorActionType.ADD_TRACK: {
-      const newTrack: Track = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, tracks: [...newState.tracks, newTrack] };
-    }
-      
-    case EditorActionType.REMOVE_TRACK: {
-      const trackId = payload;
-      return { 
-        ...newState, 
-        tracks: newState.tracks.filter(track => track.id !== trackId),
-        // Eliminar clips asociados a la pista
-        clips: newState.clips.filter(clip => clip.trackId !== trackId)
-      };
-    }
-      
-    case EditorActionType.UPDATE_TRACK: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        tracks: newState.tracks.map(track => 
-          track.id === id ? { ...track, ...updates } : track
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_CLIP: {
-      const newClip: TimelineClip = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, clips: [...newState.clips, newClip] };
-    }
-      
-    case EditorActionType.REMOVE_CLIP: {
-      const clipId = payload;
-      return { 
-        ...newState, 
-        clips: newState.clips.filter(clip => clip.id !== clipId),
-        // Eliminar efectos asociados al clip
-        effects: newState.effects.filter(effect => effect.clipId !== clipId)
-      };
-    }
-      
-    case EditorActionType.UPDATE_CLIP: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        clips: newState.clips.map(clip => 
-          clip.id === id ? { ...clip, ...updates } : clip
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_EFFECT: {
-      const newEffect: Effect = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, effects: [...newState.effects, newEffect] };
-    }
-      
-    case EditorActionType.REMOVE_EFFECT: {
-      const effectId = payload;
-      return { 
-        ...newState, 
-        effects: newState.effects.filter(effect => effect.id !== effectId) 
-      };
-    }
-      
-    case EditorActionType.UPDATE_EFFECT: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        effects: newState.effects.map(effect => 
-          effect.id === id ? { ...effect, ...updates } : effect
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_BEAT_MARKER: {
-      const newMarker: BeatMarker = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, beatMarkers: [...newState.beatMarkers, newMarker] };
-    }
-      
-    case EditorActionType.REMOVE_BEAT_MARKER: {
-      const markerId = payload;
-      return { 
-        ...newState, 
-        beatMarkers: newState.beatMarkers.filter(marker => marker.id !== markerId) 
-      };
-    }
-      
-    case EditorActionType.UPDATE_BEAT_MARKER: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        beatMarkers: newState.beatMarkers.map(marker => 
-          marker.id === id ? { ...marker, ...updates } : marker
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_SECTION_MARKER: {
-      const newMarker: SectionMarker = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, sectionMarkers: [...newState.sectionMarkers, newMarker] };
-    }
-      
-    case EditorActionType.REMOVE_SECTION_MARKER: {
-      const markerId = payload;
-      return { 
-        ...newState, 
-        sectionMarkers: newState.sectionMarkers.filter(marker => marker.id !== markerId) 
-      };
-    }
-      
-    case EditorActionType.UPDATE_SECTION_MARKER: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        sectionMarkers: newState.sectionMarkers.map(marker => 
-          marker.id === id ? { ...marker, ...updates } : marker
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_AUDIO_TRACK: {
-      const newTrack: AudioTrack = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, audioTracks: [...newState.audioTracks, newTrack] };
-    }
-      
-    case EditorActionType.REMOVE_AUDIO_TRACK: {
-      const trackId = payload;
-      return { 
-        ...newState, 
-        audioTracks: newState.audioTracks.filter(track => track.id !== trackId) 
-      };
-    }
-      
-    case EditorActionType.UPDATE_AUDIO_TRACK: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        audioTracks: newState.audioTracks.map(track => 
-          track.id === id ? { ...track, ...updates } : track
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_TRANSCRIPTION: {
-      const newTranscription: Transcription = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, transcriptions: [...newState.transcriptions, newTranscription] };
-    }
-      
-    case EditorActionType.REMOVE_TRANSCRIPTION: {
-      const transcriptionId = payload;
-      return { 
-        ...newState, 
-        transcriptions: newState.transcriptions.filter(t => t.id !== transcriptionId) 
-      };
-    }
-      
-    case EditorActionType.UPDATE_TRANSCRIPTION: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        transcriptions: newState.transcriptions.map(t => 
-          t.id === id ? { ...t, ...updates } : t
-        )
-      };
-    }
-      
-    case EditorActionType.ADD_CAMERA_MOVEMENT: {
-      const newMovement: CameraMovement = {
-        id: payload.id || uuidv4(),
-        ...payload
-      };
-      return { ...newState, cameraMovements: [...newState.cameraMovements, newMovement] };
-    }
-      
-    case EditorActionType.REMOVE_CAMERA_MOVEMENT: {
-      const movementId = payload;
-      return { 
-        ...newState, 
-        cameraMovements: newState.cameraMovements.filter(m => m.id !== movementId) 
-      };
-    }
-      
-    case EditorActionType.UPDATE_CAMERA_MOVEMENT: {
-      const { id, ...updates } = payload;
-      return {
-        ...newState,
-        cameraMovements: newState.cameraMovements.map(m => 
-          m.id === id ? { ...m, ...updates } : m
-        )
-      };
-    }
-      
-    case EditorActionType.SELECT_CLIP:
-      return { ...newState, selectedClipId: payload };
-      
-    case EditorActionType.SELECT_TRACK:
-      return { ...newState, selectedTrackId: payload };
-      
-    case EditorActionType.SELECT_EFFECT:
-      return { ...newState, selectedEffectId: payload };
-      
-    case EditorActionType.UPDATE_SETTINGS:
-      return { 
-        ...newState, 
-        settings: { 
-          ...newState.settings, 
-          ...payload 
-        } 
-      };
-      
-    case EditorActionType.UPDATE_METADATA:
-      return { 
-        ...newState, 
-        metadata: { 
-          ...newState.metadata, 
-          ...payload 
-        } 
-      };
-      
-    case EditorActionType.UNDO: {
-      // No hacer nada si no hay acciones para deshacer
-      if (newState.historyIndex < 0) return state;
-      
-      // Obtener el estado antes de la última acción
-      const prevIndex = newState.historyIndex - 1;
-      return loadProjectState(prevIndex, state, newState.history);
-    }
-      
-    case EditorActionType.REDO: {
-      // No hacer nada si estamos en la acción más reciente
-      if (newState.historyIndex >= newState.history.length - 1) return state;
-      
-      // Obtener el estado después de deshacer
-      const nextIndex = newState.historyIndex + 1;
-      return loadProjectState(nextIndex, state, newState.history);
-    }
-      
-    case EditorActionType.LOAD_PROJECT:
-      return payload;
-      
-    case EditorActionType.RESET_PROJECT:
-      return EditorStateUtils.createNewProject();
-      
-    default:
-      return state;
-  }
+export interface TextElement {
+  id: string;
+  content: string;
+  startTime: number;
+  endTime: number;
+  x: number;
+  y: number;
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+  zIndex: number;
 }
 
-// Función auxiliar para obtener una descripción legible de una acción
-function getActionDescription(actionType: EditorActionType, payload: any): string {
-  switch (actionType) {
-    case EditorActionType.SET_PROJECT_NAME:
-      return `Cambiar nombre del proyecto a "${payload}"`;
-      
-    case EditorActionType.ADD_TRACK:
-      return `Añadir pista "${payload.name}"`;
-      
-    case EditorActionType.REMOVE_TRACK:
-      return `Eliminar pista`;
-      
-    case EditorActionType.UPDATE_TRACK:
-      return `Actualizar pista "${payload.name || ''}"`;
-      
-    case EditorActionType.ADD_CLIP:
-      return `Añadir clip "${payload.name}"`;
-      
-    case EditorActionType.REMOVE_CLIP:
-      return `Eliminar clip`;
-      
-    case EditorActionType.UPDATE_CLIP:
-      return `Actualizar clip`;
-      
-    case EditorActionType.ADD_EFFECT:
-      return `Añadir efecto "${payload.name}"`;
-      
-    case EditorActionType.REMOVE_EFFECT:
-      return `Eliminar efecto`;
-      
-    case EditorActionType.UPDATE_EFFECT:
-      return `Actualizar efecto`;
-      
-    case EditorActionType.ADD_BEAT_MARKER:
-      return `Añadir marcador de beat en ${payload.time.toFixed(2)}s`;
-      
-    case EditorActionType.ADD_SECTION_MARKER:
-      return `Añadir sección "${payload.label}"`;
-      
-    case EditorActionType.ADD_AUDIO_TRACK:
-      return `Añadir pista de audio "${payload.name}"`;
-      
-    case EditorActionType.ADD_TRANSCRIPTION:
-      return `Añadir transcripción`;
-      
-    case EditorActionType.ADD_CAMERA_MOVEMENT:
-      return `Añadir movimiento de cámara "${payload.type}"`;
-      
-    default:
-      return `Acción ${actionType}`;
-  }
+export interface Effect {
+  id: string;
+  type: string;
+  targetId: string;
+  startTime: number;
+  endTime: number;
+  parameters: Record<string, any>;
 }
 
-// Función para cargar un estado específico del historial
-function loadProjectState(index: number, currentState: EditorState, history: any[]): EditorState {
-  // Creamos un nuevo proyecto con valores iniciales
-  let newState = EditorStateUtils.createNewProject();
-  
-  // Preservamos la configuración actual
-  newState.settings = currentState.settings;
-  
-  // Aplicamos todas las acciones hasta el índice especificado
-  for (let i = 0; i <= index; i++) {
-    const historyItem = history[i];
-    const action = {
-      type: historyItem.type as EditorActionType,
-      payload: historyItem.payload
-    };
-    
-    newState = editorReducer(newState, action);
-  }
-  
-  // Actualizamos el índice del historial
-  newState.historyIndex = index;
-  newState.history = currentState.history;
-  
-  return newState;
+export interface Transcription {
+  id: string;
+  audioId: string;
+  text: string;
+  startTime: number;
+  endTime: number;
+  confidence: number;
 }
 
-// Contexto para el estado del editor y acciones
-interface EditorContextState {
-  state: EditorState;
-  dispatch: React.Dispatch<EditorAction>;
-  
-  // Acciones específicas para facilitar el uso
-  setProjectName: (name: string) => void;
-  setCurrentTime: (time: number) => void;
-  setDuration: (duration: number) => void;
-  setPlaying: (isPlaying: boolean) => void;
-  setZoomLevel: (level: number) => void;
-  
-  addTrack: (track: Omit<Track, 'id'>) => void;
-  removeTrack: (trackId: string) => void;
-  updateTrack: (trackId: string, updates: Partial<Track>) => void;
-  
-  addClip: (clip: Omit<TimelineClip, 'id'>) => void;
-  removeClip: (clipId: string) => void;
-  updateClip: (clipId: string, updates: Partial<TimelineClip>) => void;
-  
-  addEffect: (effect: Omit<Effect, 'id'>) => void;
-  removeEffect: (effectId: string) => void;
-  updateEffect: (effectId: string, updates: Partial<Effect>) => void;
-  
-  addBeatMarker: (marker: Omit<BeatMarker, 'id'>) => void;
-  removeBeatMarker: (markerId: string) => void;
-  updateBeatMarker: (markerId: string, updates: Partial<BeatMarker>) => void;
-  
-  addSectionMarker: (marker: Omit<SectionMarker, 'id'>) => void;
-  removeSectionMarker: (markerId: string) => void;
-  updateSectionMarker: (markerId: string, updates: Partial<SectionMarker>) => void;
-  
-  addAudioTrack: (track: Omit<AudioTrack, 'id'>) => void;
-  removeAudioTrack: (trackId: string) => void;
-  updateAudioTrack: (trackId: string, updates: Partial<AudioTrack>) => void;
-  
-  addTranscription: (transcription: Omit<Transcription, 'id'>) => void;
-  removeTranscription: (transcriptionId: string) => void;
-  updateTranscription: (transcriptionId: string, updates: Partial<Transcription>) => void;
-  
-  addCameraMovement: (movement: Omit<CameraMovement, 'id'>) => void;
-  removeCameraMovement: (movementId: string) => void;
-  updateCameraMovement: (movementId: string, updates: Partial<CameraMovement>) => void;
-  
-  selectClip: (clipId: string | null) => void;
-  selectTrack: (trackId: string | null) => void;
-  selectEffect: (effectId: string | null) => void;
-  
-  undo: () => void;
-  redo: () => void;
-  
-  updateSettings: (updates: Partial<EditorState['settings']>) => void;
-  updateMetadata: (updates: Record<string, any>) => void;
-  
-  loadProject: (project: EditorState) => void;
-  resetProject: () => void;
-  
-  getActiveEffects: () => Effect[];
-  getClipsInTimeRange: (startTime: number, endTime: number) => TimelineClip[];
-  getClipsInTrack: (trackId: string) => TimelineClip[];
-  
-  saveProject: () => void;
+export interface Asset {
+  id: string;
+  type: 'audio' | 'video' | 'image';
+  url: string;
+  name: string;
+  thumbnail?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
 }
 
-// Crear el contexto
-const EditorContext = createContext<EditorContextState | undefined>(undefined);
+export interface Prompt {
+  id: string;
+  text: string;
+  category: string;
+  timestamp: Date;
+}
 
-// Proveedor del contexto
-export function EditorProvider({ children }: { children: React.ReactNode }) {
-  // Estado inicial del editor
-  const initialState = EditorStateUtils.createNewProject();
+// Interfaz del proyecto de video musical
+export interface WorkflowStepData {
+  // Upload audio/video
+  audioFile?: string; // URL del audio subido
+  imageFiles?: { url: string; name: string; }[]; // URLs de imágenes subidas
+  bRollFiles?: { url: string; name: string; duration?: number; }[]; // URLs de video B-roll
+
+  // Transcription
+  transcription?: string; // Texto transcrito de la canción
+  transcriptionSegments?: {
+    start: number;
+    end: number;
+    text: string;
+  }[];
   
-  // Reducer para manejar el estado
-  const [state, dispatch] = useReducer(editorReducer, initialState);
+  // Script generation
+  script?: string; // Guion generado
+  scriptSegments?: {
+    start: number;
+    end: number;
+    text: string;
+    shotType?: string;
+  }[];
   
-  // Acciones específicas
-  const setProjectName = useCallback((name: string) => {
-    dispatch({ type: EditorActionType.SET_PROJECT_NAME, payload: name });
-  }, []);
-  
-  const setCurrentTime = useCallback((time: number) => {
-    dispatch({ type: EditorActionType.SET_CURRENT_TIME, payload: time });
-  }, []);
-  
-  const setDuration = useCallback((duration: number) => {
-    dispatch({ type: EditorActionType.SET_DURATION, payload: duration });
-  }, []);
-  
-  const setPlaying = useCallback((isPlaying: boolean) => {
-    dispatch({ type: EditorActionType.SET_PLAYING, payload: isPlaying });
-  }, []);
-  
-  const setZoomLevel = useCallback((level: number) => {
-    dispatch({ type: EditorActionType.SET_ZOOM_LEVEL, payload: level });
-  }, []);
-  
-  const addTrack = useCallback((track: Omit<Track, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_TRACK, payload: track });
-  }, []);
-  
-  const removeTrack = useCallback((trackId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_TRACK, payload: trackId });
-  }, []);
-  
-  const updateTrack = useCallback((trackId: string, updates: Partial<Track>) => {
-    dispatch({ type: EditorActionType.UPDATE_TRACK, payload: { id: trackId, ...updates } });
-  }, []);
-  
-  const addClip = useCallback((clip: Omit<TimelineClip, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_CLIP, payload: clip });
-  }, []);
-  
-  const removeClip = useCallback((clipId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_CLIP, payload: clipId });
-  }, []);
-  
-  const updateClip = useCallback((clipId: string, updates: Partial<TimelineClip>) => {
-    dispatch({ type: EditorActionType.UPDATE_CLIP, payload: { id: clipId, ...updates } });
-  }, []);
-  
-  const addEffect = useCallback((effect: Omit<Effect, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_EFFECT, payload: effect });
-  }, []);
-  
-  const removeEffect = useCallback((effectId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_EFFECT, payload: effectId });
-  }, []);
-  
-  const updateEffect = useCallback((effectId: string, updates: Partial<Effect>) => {
-    dispatch({ type: EditorActionType.UPDATE_EFFECT, payload: { id: effectId, ...updates } });
-  }, []);
-  
-  const addBeatMarker = useCallback((marker: Omit<BeatMarker, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_BEAT_MARKER, payload: marker });
-  }, []);
-  
-  const removeBeatMarker = useCallback((markerId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_BEAT_MARKER, payload: markerId });
-  }, []);
-  
-  const updateBeatMarker = useCallback((markerId: string, updates: Partial<BeatMarker>) => {
-    dispatch({ type: EditorActionType.UPDATE_BEAT_MARKER, payload: { id: markerId, ...updates } });
-  }, []);
-  
-  const addSectionMarker = useCallback((marker: Omit<SectionMarker, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_SECTION_MARKER, payload: marker });
-  }, []);
-  
-  const removeSectionMarker = useCallback((markerId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_SECTION_MARKER, payload: markerId });
-  }, []);
-  
-  const updateSectionMarker = useCallback((markerId: string, updates: Partial<SectionMarker>) => {
-    dispatch({ type: EditorActionType.UPDATE_SECTION_MARKER, payload: { id: markerId, ...updates } });
-  }, []);
-  
-  const addAudioTrack = useCallback((track: Omit<AudioTrack, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_AUDIO_TRACK, payload: track });
-  }, []);
-  
-  const removeAudioTrack = useCallback((trackId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_AUDIO_TRACK, payload: trackId });
-  }, []);
-  
-  const updateAudioTrack = useCallback((trackId: string, updates: Partial<AudioTrack>) => {
-    dispatch({ type: EditorActionType.UPDATE_AUDIO_TRACK, payload: { id: trackId, ...updates } });
-  }, []);
-  
-  const addTranscription = useCallback((transcription: Omit<Transcription, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_TRANSCRIPTION, payload: transcription });
-  }, []);
-  
-  const removeTranscription = useCallback((transcriptionId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_TRANSCRIPTION, payload: transcriptionId });
-  }, []);
-  
-  const updateTranscription = useCallback((transcriptionId: string, updates: Partial<Transcription>) => {
-    dispatch({ type: EditorActionType.UPDATE_TRANSCRIPTION, payload: { id: transcriptionId, ...updates } });
-  }, []);
-  
-  const addCameraMovement = useCallback((movement: Omit<CameraMovement, 'id'>) => {
-    dispatch({ type: EditorActionType.ADD_CAMERA_MOVEMENT, payload: movement });
-  }, []);
-  
-  const removeCameraMovement = useCallback((movementId: string) => {
-    dispatch({ type: EditorActionType.REMOVE_CAMERA_MOVEMENT, payload: movementId });
-  }, []);
-  
-  const updateCameraMovement = useCallback((movementId: string, updates: Partial<CameraMovement>) => {
-    dispatch({ type: EditorActionType.UPDATE_CAMERA_MOVEMENT, payload: { id: movementId, ...updates } });
-  }, []);
-  
-  const selectClip = useCallback((clipId: string | null) => {
-    dispatch({ type: EditorActionType.SELECT_CLIP, payload: clipId });
-  }, []);
-  
-  const selectTrack = useCallback((trackId: string | null) => {
-    dispatch({ type: EditorActionType.SELECT_TRACK, payload: trackId });
-  }, []);
-  
-  const selectEffect = useCallback((effectId: string | null) => {
-    dispatch({ type: EditorActionType.SELECT_EFFECT, payload: effectId });
-  }, []);
-  
-  const undo = useCallback(() => {
-    dispatch({ type: EditorActionType.UNDO });
-  }, []);
-  
-  const redo = useCallback(() => {
-    dispatch({ type: EditorActionType.REDO });
-  }, []);
-  
-  const updateSettings = useCallback((updates: Partial<EditorState['settings']>) => {
-    dispatch({ type: EditorActionType.UPDATE_SETTINGS, payload: updates });
-  }, []);
-  
-  const updateMetadata = useCallback((updates: Record<string, any>) => {
-    dispatch({ type: EditorActionType.UPDATE_METADATA, payload: updates });
-  }, []);
-  
-  const loadProject = useCallback((project: EditorState) => {
-    dispatch({ type: EditorActionType.LOAD_PROJECT, payload: project });
-  }, []);
-  
-  const resetProject = useCallback(() => {
-    dispatch({ type: EditorActionType.RESET_PROJECT });
-  }, []);
-  
-  // Métodos de utilidad
-  const getActiveEffects = useCallback(() => {
-    return EditorStateUtils.findActiveEffectsAtTime(state.effects, state.currentTime);
-  }, [state.effects, state.currentTime]);
-  
-  const getClipsInTimeRange = useCallback((startTime: number, endTime: number) => {
-    return EditorStateUtils.findClipsInTimeRange(state.clips, startTime, endTime);
-  }, [state.clips]);
-  
-  const getClipsInTrack = useCallback((trackId: string) => {
-    return EditorStateUtils.findClipsInTrack(state.clips, trackId);
-  }, [state.clips]);
-  
-  // Guardar proyecto (simulado - en implementación real se conectaría a una API)
-  const saveProject = useCallback(() => {
-    const projectData = JSON.stringify(state);
-    localStorage.setItem('editorProject', projectData);
-    
-    // En implementación real:
-    // 1. Mostrar indicador de guardado
-    // 2. Enviar datos a una API
-    // 3. Actualizar estado con resultado (ej: última fecha de guardado)
-    
-    console.log('Proyecto guardado localmente');
-  }, [state]);
-  
-  // Contexto completo
-  const contextValue: EditorContextState = {
-    state,
-    dispatch,
-    
-    setProjectName,
-    setCurrentTime,
-    setDuration,
-    setPlaying,
-    setZoomLevel,
-    
-    addTrack,
-    removeTrack,
-    updateTrack,
-    
-    addClip,
-    removeClip,
-    updateClip,
-    
-    addEffect,
-    removeEffect,
-    updateEffect,
-    
-    addBeatMarker,
-    removeBeatMarker,
-    updateBeatMarker,
-    
-    addSectionMarker,
-    removeSectionMarker,
-    updateSectionMarker,
-    
-    addAudioTrack,
-    removeAudioTrack,
-    updateAudioTrack,
-    
-    addTranscription,
-    removeTranscription,
-    updateTranscription,
-    
-    addCameraMovement,
-    removeCameraMovement,
-    updateCameraMovement,
-    
-    selectClip,
-    selectTrack,
-    selectEffect,
-    
-    undo,
-    redo,
-    
-    updateSettings,
-    updateMetadata,
-    
-    loadProject,
-    resetProject,
-    
-    getActiveEffects,
-    getClipsInTimeRange,
-    getClipsInTrack,
-    
-    saveProject
+  // Visual style
+  visualStyle?: {
+    cameraFormat?: 'landscape' | 'portrait' | 'square';
+    mood?: string;
+    colorPalette?: string;
+    characterStyle?: string;
+    visualIntensity?: number;
+    narrativeIntensity?: number;
+    referenceImageUrl?: string;
+    director?: string;
   };
   
-  return (
-    <EditorContext.Provider value={contextValue}>
-      {children}
-    </EditorContext.Provider>
-  );
+  // Beat sync
+  beatSync?: {
+    editingStyle?: 'dynamic' | 'steady' | 'minimal' | 'cinematic';
+    detectedBeats?: number[];
+  };
+  
+  // Prompt generation
+  generatedPrompts?: Prompt[];
+  
+  // Image generation
+  generatedImages?: string[]; // URLs de las imágenes generadas
+  generatedImagesDetails?: {
+    url: string;
+    prompt: string;
+    timestamp: number;
+  }[];
+  
+  // Camera movements
+  cameraMovements?: {
+    name?: string; // Nombre descriptivo del movimiento
+    type: 'pan' | 'zoom' | 'tilt' | 'dolly' | 'track';
+    startTime?: number; // Alias de start para compatibilidad
+    start: number;
+    end: number;
+    duration?: number; // Para compatibilidad con la interfaz de MusicVideoWorkflow
+    parameters?: Record<string, any>;
+  }[];
+  
+  // Video generation settings
+  videoSettings?: {
+    style?: string;
+    quality?: string;
+    resolution?: string;
+    includeVoiceover?: boolean;
+    includeCameraMovements?: boolean;
+    includeSubtitles?: boolean;
+  };
+  
+  // Lipsync data
+  lipsyncData?: {
+    enabled: boolean;
+    confidence: number;
+    segments: {
+      start: number;
+      end: number;
+      words: string;
+    }[];
+  };
+  
+  // Generated segments (for video parts)
+  generatedSegments?: {
+    id: string;
+    startTime: number;
+    duration: number;
+    prompt: string;
+    style: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+  }[];
+  
+  // Final rendering
+  videoGenerationModel?: 't2v-01' | 't2v-01-director' | 'i2v-01' | 's2v-01';
+  videoGenerationTaskId?: string;
+  generatedVideo?: string; // URL del video final
+  finalVideoUrl?: string; // Alias para generatedVideo con nombre más descriptivo
+  renderingStatus?: 'idle' | 'generating' | 'completed' | 'failed';
+  renderStatus?: 'idle' | 'generating' | 'completed' | 'failed'; // Alias para renderingStatus
+  renderingProgress?: number;
+  renderingError?: string;
+  processingTime?: number;
+  videoMetadata?: {
+    width: number;
+    height: number;
+    framerate: number;
+    duration: number;
+    format: string;
+  };
+  completed?: boolean;
 }
 
-// Hook para usar el contexto del editor
+export interface MusicVideoProject {
+  id: string;
+  name: string;
+  duration: number;
+  audioTracks: AudioTrack[];
+  videoClips: VideoClip[];
+  textElements: TextElement[];
+  effects: Effect[];
+  assets: Asset[];
+  prompts: Prompt[];
+  transcriptions: Transcription[];
+  currentStep: number;
+  completedSteps: number[];
+  workflowData: WorkflowStepData; // Datos específicos de cada paso del flujo de trabajo
+  lastModified: Date; // Fecha de última modificación
+  createdAt: Date; // Fecha de creación
+}
+
+// Estado del contexto del editor
+interface EditorContextState {
+  project: MusicVideoProject;
+  currentTime: number;
+  isPlaying: boolean;
+  selectedElements: string[];
+  view: 'timeline' | 'workflow' | 'preview';
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  lastSaved: Date | null;
+  persistenceMode: 'local' | 'firestore' | 'hybrid';
+}
+
+// Acciones que se pueden realizar en el editor
+interface EditorContextActions {
+  // Navegación y control
+  setCurrentTime: (time: number) => void;
+  setIsPlaying: (isPlaying: boolean) => void;
+  setView: (view: 'timeline' | 'workflow' | 'preview') => void;
+  
+  // Gestión de proyecto
+  updateProjectName: (name: string) => void;
+  updateProjectDuration: (duration: number) => void;
+  updateWorkflowData: (updates: Partial<WorkflowStepData>) => void;
+  
+  // Gestión de elementos
+  addAudioTrack: (track: Omit<AudioTrack, 'id'>) => void;
+  updateAudioTrack: (id: string, updates: Partial<AudioTrack>) => void;
+  removeAudioTrack: (id: string) => void;
+  
+  addVideoClip: (clip: Omit<VideoClip, 'id'>) => void;
+  updateVideoClip: (id: string, updates: Partial<VideoClip>) => void;
+  removeVideoClip: (id: string) => void;
+  
+  addTextElement: (element: Omit<TextElement, 'id'>) => void;
+  updateTextElement: (id: string, updates: Partial<TextElement>) => void;
+  removeTextElement: (id: string) => void;
+  
+  addEffect: (effect: Omit<Effect, 'id'>) => void;
+  updateEffect: (id: string, updates: Partial<Effect>) => void;
+  removeEffect: (id: string) => void;
+  
+  // Gestión de recursos
+  addAsset: (asset: Omit<Asset, 'id'>) => void;
+  removeAsset: (id: string) => void;
+  
+  // Gestión de prompts
+  addPrompt: (prompt: Omit<Prompt, 'id'>) => void;
+  updatePrompt: (id: string, updates: Partial<Prompt>) => void;
+  removePrompt: (id: string) => void;
+  
+  // Gestión de transcripciones
+  addTranscription: (transcription: Omit<Transcription, 'id'>) => void;
+  updateTranscription: (id: string, updates: Partial<Transcription>) => void;
+  removeTranscription: (id: string) => void;
+  
+  // Gestión de clips unificados
+  addClip: (clip: Omit<MediaClip, 'id'>) => string;
+  updateClip: (id: string, updates: Partial<MediaClip>) => void;
+  removeClip: (id: string) => void;
+  
+  // Gestión de selección
+  selectElement: (id: string) => void;
+  deselectElement: (id: string) => void;
+  clearSelection: () => void;
+  
+  // Gestión de pasos del flujo de trabajo
+  setCurrentStep: (step: number) => void;
+  markStepAsCompleted: (step: number) => void;
+  markStepAsIncomplete: (step: number) => void;
+  
+  // Sincronización de estado
+  importProject: (project: MusicVideoProject) => void;
+  exportProject: () => MusicVideoProject;
+  resetProject: () => void;
+}
+
+// Clip genérico unificado para manejar diferentes tipos de medios
+export interface MediaClip {
+  id: string;
+  type: 'video' | 'image';
+  url: string;
+  name: string;
+  startTime: number;
+  duration: number;
+  layer: number;
+  properties?: Record<string, any>;
+}
+
+// Tipo del contexto completo
+type EditorContextType = EditorContextState & EditorContextActions;
+
+// Proyecto vacío por defecto
+const defaultProject: MusicVideoProject = {
+  id: '',
+  name: 'Nuevo Proyecto',
+  duration: 180, // 3 minutos por defecto
+  audioTracks: [],
+  videoClips: [],
+  textElements: [],
+  effects: [],
+  assets: [],
+  prompts: [],
+  transcriptions: [],
+  currentStep: 0,
+  completedSteps: [],
+  workflowData: {}, // Datos específicos del flujo de trabajo de AI Video Creation
+  lastModified: new Date(),
+  createdAt: new Date(),
+};
+
+// Creación del contexto
+const EditorContext = createContext<EditorContextType | undefined>(undefined);
+
+// Hook personalizado para usar el contexto
 export function useEditor() {
   const context = useContext(EditorContext);
   if (context === undefined) {
     throw new Error('useEditor debe ser usado dentro de un EditorProvider');
   }
   return context;
+}
+
+// Proveedor del contexto
+export function EditorProvider({ children }: { children: React.ReactNode }) {
+  // Obtener información del usuario autenticado
+  const { user } = useAuth();
+  
+  // Colección para guardar clips unificados (MediaClip)
+  // Estos no forman parte del proyecto pero se usan para soportar la interfaz de Workflow
+  const [mediaClips, setMediaClips] = useState<MediaClip[]>([]);
+  
+  // Estado principal del editor
+  const [state, setState] = useState<EditorContextState>({
+    project: { ...defaultProject, id: `project-${Date.now()}` },
+    currentTime: 0,
+    isPlaying: false,
+    selectedElements: [],
+    view: 'workflow',
+    saveStatus: 'idle',
+    lastSaved: null,
+    persistenceMode: 'local'
+  });
+
+  // Función para generar IDs únicos
+  const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Guardar en localStorage cuando cambia el proyecto
+  useEffect(() => {
+    try {
+      localStorage.setItem('music-video-project', JSON.stringify(state.project));
+    } catch (error) {
+      console.error('Error guardando proyecto en localStorage:', error);
+    }
+  }, [state.project]);
+  
+  // Guardar en Firestore con debounce de 5 segundos
+  useEffect(() => {
+    // Solo guardar si hay un usuario autenticado
+    if (!user?.uid) return;
+    
+    // Crear una referencia al documento del proyecto
+    const projectRef = doc(db, 'musicVideoProjects', state.project.id);
+    
+    // Configurar un timer para el debounce
+    const timer = setTimeout(async () => {
+      try {
+        setState(prev => ({ ...prev, saveStatus: 'saving' }));
+        
+        // Preparar datos para guardar, transformando fechas a Timestamp
+        const projectToSave = {
+          ...state.project,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          prompts: state.project.prompts.map(prompt => ({
+            ...prompt,
+            timestamp: prompt.timestamp instanceof Date 
+              ? Timestamp.fromDate(prompt.timestamp) 
+              : prompt.timestamp
+          }))
+        };
+        
+        // Guardar en Firestore
+        await setDoc(projectRef, projectToSave, { merge: true });
+        
+        // Actualizar estado de guardado
+        setState(prev => ({ 
+          ...prev, 
+          saveStatus: 'saved',
+          lastSaved: new Date(),
+          persistenceMode: 'hybrid'
+        }));
+        
+        console.log('Proyecto guardado automáticamente en Firestore:', state.project.id);
+      } catch (error) {
+        console.error('Error guardando en Firestore:', error);
+        
+        // Establecer modo de persistencia local si hay un error de permisos
+        setState(prev => ({ 
+          ...prev, 
+          saveStatus: 'error',
+          persistenceMode: 'local'
+        }));
+        
+        // Seguir usando localStorage como respaldo
+        try {
+          localStorage.setItem('music-video-project', JSON.stringify(state.project));
+          console.log('Proyecto guardado localmente debido a error en Firestore');
+        } catch (localError) {
+          console.error('Error guardando proyecto en localStorage:', localError);
+        }
+      }
+    }, 5000); // Debounce de 5 segundos
+    
+    // Limpiar el timer en caso de cancelación
+    return () => clearTimeout(timer);
+  }, [state.project, user?.uid]);
+
+  // Cargar desde localStorage al iniciar
+  useEffect(() => {
+    try {
+      const savedProject = localStorage.getItem('music-video-project');
+      if (savedProject) {
+        const parsedProject = JSON.parse(savedProject);
+        setState(prev => ({
+          ...prev,
+          project: parsedProject
+        }));
+      }
+    } catch (error) {
+      console.error('Error cargando proyecto desde localStorage:', error);
+    }
+  }, []);
+  
+  // Cargar proyectos guardados desde Firestore
+  useEffect(() => {
+    // Solo cargar si hay un usuario autenticado
+    if (!user?.uid) return;
+    
+    const loadProjects = async () => {
+      try {
+        // Verificar si ya hay un proyecto cargado desde localStorage
+        if (state.project.id !== defaultProject.id) {
+          // Buscar el proyecto en Firestore para asegurar que es del usuario
+          const projectRef = doc(db, 'musicVideoProjects', state.project.id);
+          const projectSnap = await getDoc(projectRef);
+          
+          if (projectSnap.exists() && projectSnap.data()?.userId === user.uid) {
+            // El proyecto existe en Firestore y pertenece al usuario
+            console.log('Proyecto cargado desde Firestore:', state.project.id);
+            return;
+          }
+        }
+        
+        // Buscar el proyecto más reciente del usuario
+        // Nota: Este query requiere un índice compuesto en Firestore
+        // Si el error persiste, crear el índice manualmente en la consola de Firebase
+        try {
+          const projectsQuery = query(
+            collection(db, 'musicVideoProjects'),
+            where('userId', '==', user.uid),
+            orderBy('updatedAt', 'desc'),
+            limit(1)
+          );
+          
+          const indexQuerySnapshot = await getDocs(projectsQuery);
+          
+          if (!indexQuerySnapshot.empty) {
+            const projectData = indexQuerySnapshot.docs[0].data();
+            console.log('Cargando el proyecto más reciente desde Firestore:', projectData.id);
+            
+            // Transformar datos de Firestore a formato local
+            const processedProject = {
+              ...projectData,
+              prompts: projectData.prompts?.map((prompt: any) => ({
+                ...prompt,
+                timestamp: prompt.timestamp?.toDate() || new Date()
+              })) || []
+            };
+            
+            setState(prev => ({
+              ...prev,
+              project: processedProject as MusicVideoProject
+            }));
+            
+            // Guardar también en localStorage para tener copia local
+            localStorage.setItem('music-video-project', JSON.stringify(processedProject));
+          }
+        } catch (indexError) {
+          // Si hay un error con el índice, usar una consulta más simple
+          console.log('Error con la consulta indexada, intentando alternativa:', indexError);
+          
+          const simpleQuery = query(
+            collection(db, 'musicVideoProjects'),
+            where('userId', '==', user.uid),
+            limit(10)
+          );
+          
+          const simpleQuerySnapshot = await getDocs(simpleQuery);
+          
+          if (!simpleQuerySnapshot.empty) {
+            // Ordenar manualmente por updatedAt
+            const projects = simpleQuerySnapshot.docs
+              .map(doc => doc.data())
+              .sort((a, b) => {
+                const dateA = a.updatedAt?.toDate?.() || new Date(0);
+                const dateB = b.updatedAt?.toDate?.() || new Date(0);
+                return dateB.getTime() - dateA.getTime();
+              });
+            
+            if (projects.length > 0) {
+              const projectData = projects[0];
+              console.log('Cargando proyecto alternativo desde Firestore:', projectData.id);
+              
+              // Transformar datos de Firestore a formato local
+              const processedProject = {
+                ...projectData,
+                prompts: projectData.prompts?.map((prompt: any) => ({
+                  ...prompt,
+                  timestamp: prompt.timestamp?.toDate() || new Date()
+                })) || []
+              };
+              
+              setState(prev => ({
+                ...prev,
+                project: processedProject as MusicVideoProject
+              }));
+              
+              // Guardar también en localStorage para tener copia local
+              localStorage.setItem('music-video-project', JSON.stringify(processedProject));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando proyectos desde Firestore:', error);
+      }
+    };
+    
+    loadProjects();
+  }, [user?.uid]);
+
+  // Implementación de acciones del contexto
+  const setCurrentTime = (time: number) => {
+    setState(prev => ({ ...prev, currentTime: time }));
+  };
+
+  const setIsPlaying = (isPlaying: boolean) => {
+    setState(prev => ({ ...prev, isPlaying }));
+  };
+
+  const setView = (view: 'timeline' | 'workflow' | 'preview') => {
+    setState(prev => ({ ...prev, view }));
+  };
+
+  const updateProjectName = (name: string) => {
+    setState(prev => ({
+      ...prev,
+      project: { ...prev.project, name }
+    }));
+  };
+
+  const updateProjectDuration = (duration: number) => {
+    setState(prev => ({
+      ...prev,
+      project: { ...prev.project, duration }
+    }));
+  };
+  
+  // Función para actualizar datos específicos del workflow de AI Video Creation
+  const updateWorkflowData = (updates: Partial<WorkflowStepData>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        workflowData: {
+          ...prev.project.workflowData,
+          ...updates
+        },
+        lastModified: new Date()
+      },
+      saveStatus: 'idle' // Marcar como pendiente de guardar
+    }));
+  };
+
+  // Gestión de pistas de audio
+  const addAudioTrack = (track: Omit<AudioTrack, 'id'>) => {
+    const newTrack = { ...track, id: generateId('audio') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        audioTracks: [...prev.project.audioTracks, newTrack]
+      }
+    }));
+    return newTrack.id;
+  };
+
+  const updateAudioTrack = (id: string, updates: Partial<AudioTrack>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        audioTracks: prev.project.audioTracks.map(track => 
+          track.id === id ? { ...track, ...updates } : track
+        )
+      }
+    }));
+  };
+
+  const removeAudioTrack = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        audioTracks: prev.project.audioTracks.filter(track => track.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de clips de video
+  const addVideoClip = (clip: Omit<VideoClip, 'id'>) => {
+    const newClip = { ...clip, id: generateId('video') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        videoClips: [...prev.project.videoClips, newClip]
+      }
+    }));
+    return newClip.id;
+  };
+
+  const updateVideoClip = (id: string, updates: Partial<VideoClip>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        videoClips: prev.project.videoClips.map(clip => 
+          clip.id === id ? { ...clip, ...updates } : clip
+        )
+      }
+    }));
+  };
+
+  const removeVideoClip = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        videoClips: prev.project.videoClips.filter(clip => clip.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de elementos de texto
+  const addTextElement = (element: Omit<TextElement, 'id'>) => {
+    const newElement = { ...element, id: generateId('text') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        textElements: [...prev.project.textElements, newElement]
+      }
+    }));
+    return newElement.id;
+  };
+
+  const updateTextElement = (id: string, updates: Partial<TextElement>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        textElements: prev.project.textElements.map(element => 
+          element.id === id ? { ...element, ...updates } : element
+        )
+      }
+    }));
+  };
+
+  const removeTextElement = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        textElements: prev.project.textElements.filter(element => element.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de efectos
+  const addEffect = (effect: Omit<Effect, 'id'>) => {
+    const newEffect = { ...effect, id: generateId('effect') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        effects: [...prev.project.effects, newEffect]
+      }
+    }));
+    return newEffect.id;
+  };
+
+  const updateEffect = (id: string, updates: Partial<Effect>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        effects: prev.project.effects.map(effect => 
+          effect.id === id ? { ...effect, ...updates } : effect
+        )
+      }
+    }));
+  };
+
+  const removeEffect = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        effects: prev.project.effects.filter(effect => effect.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de recursos (assets)
+  const addAsset = (asset: Omit<Asset, 'id'>) => {
+    const newAsset = { ...asset, id: generateId('asset') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        assets: [...prev.project.assets, newAsset]
+      }
+    }));
+    return newAsset.id;
+  };
+
+  const removeAsset = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        assets: prev.project.assets.filter(asset => asset.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de prompts
+  const addPrompt = (prompt: Omit<Prompt, 'id'>) => {
+    const newPrompt = { ...prompt, id: generateId('prompt') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        prompts: [...prev.project.prompts, newPrompt]
+      }
+    }));
+    return newPrompt.id;
+  };
+
+  const updatePrompt = (id: string, updates: Partial<Prompt>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        prompts: prev.project.prompts.map(prompt => 
+          prompt.id === id ? { ...prompt, ...updates } : prompt
+        )
+      }
+    }));
+  };
+
+  const removePrompt = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        prompts: prev.project.prompts.filter(prompt => prompt.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de transcripciones
+  const addTranscription = (transcription: Omit<Transcription, 'id'>) => {
+    const newTranscription = { ...transcription, id: generateId('transcription') };
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        transcriptions: [...prev.project.transcriptions, newTranscription]
+      }
+    }));
+    return newTranscription.id;
+  };
+
+  const updateTranscription = (id: string, updates: Partial<Transcription>) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        transcriptions: prev.project.transcriptions.map(transcription => 
+          transcription.id === id ? { ...transcription, ...updates } : transcription
+        )
+      }
+    }));
+  };
+
+  const removeTranscription = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      project: {
+        ...prev.project,
+        transcriptions: prev.project.transcriptions.filter(transcription => transcription.id !== id)
+      }
+    }));
+  };
+
+  // Gestión de selección
+  const selectElement = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      selectedElements: prev.selectedElements.includes(id) 
+        ? prev.selectedElements 
+        : [...prev.selectedElements, id]
+    }));
+  };
+
+  const deselectElement = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      selectedElements: prev.selectedElements.filter(elementId => elementId !== id)
+    }));
+  };
+
+  const clearSelection = () => {
+    setState(prev => ({ ...prev, selectedElements: [] }));
+  };
+
+  // Gestión de pasos del workflow
+  const setCurrentStep = (step: number) => {
+    setState(prev => ({
+      ...prev,
+      project: { ...prev.project, currentStep: step }
+    }));
+  };
+
+  const markStepAsCompleted = (step: number) => {
+    setState(prev => {
+      const currentCompleted = new Set(prev.project.completedSteps);
+      currentCompleted.add(step);
+      return {
+        ...prev,
+        project: { 
+          ...prev.project, 
+          completedSteps: Array.from(currentCompleted).sort((a, b) => a - b)
+        }
+      };
+    });
+  };
+
+  const markStepAsIncomplete = (step: number) => {
+    setState(prev => ({
+      ...prev,
+      project: { 
+        ...prev.project, 
+        completedSteps: prev.project.completedSteps.filter(s => s !== step)
+      }
+    }));
+  };
+
+  // Importación y exportación
+  const importProject = (project: MusicVideoProject) => {
+    setState(prev => ({ ...prev, project }));
+  };
+
+  const exportProject = () => {
+    return state.project;
+  };
+
+  // Resetear el proyecto
+  const resetProject = () => {
+    setState(prev => ({
+      ...prev,
+      project: { ...defaultProject, id: `project-${Date.now()}` }
+    }));
+  };
+
+  // Implementación de métodos para MediaClip (unified clips)
+  const addClip = (clip: Omit<MediaClip, 'id'>): string => {
+    const newClip = { ...clip, id: generateId(`${clip.type}-clip`) };
+    setMediaClips(prev => [...prev, newClip]);
+    
+    // También agregar al sistema estándar basado en el tipo
+    if (clip.type === 'video') {
+      addVideoClip({
+        url: clip.url,
+        name: clip.name,
+        startTime: clip.startTime,
+        endTime: clip.startTime + clip.duration,
+        x: 0,
+        y: 0,
+        width: 1280, // valores predeterminados
+        height: 720,
+        opacity: 1,
+        zIndex: clip.layer || 1
+      });
+    }
+    
+    // Agregar como asset si no existe ya
+    const assetExists = state.project.assets.some(asset => 
+      asset.url === clip.url && asset.type === clip.type
+    );
+    
+    if (!assetExists) {
+      addAsset({
+        type: clip.type,
+        url: clip.url,
+        name: clip.name
+      });
+    }
+    
+    return newClip.id;
+  };
+  
+  const updateClip = (id: string, updates: Partial<MediaClip>) => {
+    setMediaClips(prev => 
+      prev.map(clip => clip.id === id ? { ...clip, ...updates } : clip)
+    );
+    
+    // También actualizar en el sistema estándar
+    const clip = mediaClips.find(c => c.id === id);
+    if (clip && clip.type === 'video') {
+      // Buscar el clip de video correspondiente para actualizar
+      const videoClip = state.project.videoClips.find(v => v.url === clip.url);
+      if (videoClip) {
+        updateVideoClip(videoClip.id, {
+          startTime: updates.startTime || clip.startTime,
+          endTime: (updates.startTime || clip.startTime) + (updates.duration || clip.duration)
+        });
+      }
+    }
+  };
+  
+  const removeClip = (id: string) => {
+    // Obtener el clip antes de eliminarlo
+    const clipToRemove = mediaClips.find(clip => clip.id === id);
+    
+    // Eliminar de la lista unificada
+    setMediaClips(prev => prev.filter(clip => clip.id !== id));
+    
+    // También eliminar del sistema estándar si se encuentra
+    if (clipToRemove) {
+      if (clipToRemove.type === 'video') {
+        // Buscar el clip de video correspondiente para eliminar
+        const videoClip = state.project.videoClips.find(v => v.url === clipToRemove.url);
+        if (videoClip) {
+          removeVideoClip(videoClip.id);
+        }
+      }
+    }
+  };
+
+  // Construimos el valor del contexto combinando estado y acciones
+  const contextValue: EditorContextType = {
+    ...state,
+    setCurrentTime,
+    setIsPlaying,
+    setView,
+    updateProjectName,
+    updateProjectDuration,
+    updateWorkflowData,
+    addAudioTrack,
+    updateAudioTrack,
+    removeAudioTrack,
+    addVideoClip,
+    updateVideoClip,
+    removeVideoClip,
+    addTextElement,
+    updateTextElement,
+    removeTextElement,
+    addEffect,
+    updateEffect,
+    removeEffect,
+    addAsset,
+    removeAsset,
+    addPrompt,
+    updatePrompt,
+    removePrompt,
+    addTranscription,
+    updateTranscription,
+    removeTranscription,
+    // Funciones de clips unificados
+    addClip,
+    updateClip,
+    removeClip,
+    // Funciones de selección
+    selectElement,
+    deselectElement,
+    clearSelection,
+    // Gestión de pasos del workflow
+    setCurrentStep,
+    markStepAsCompleted,
+    markStepAsIncomplete,
+    // Funciones de importación/exportación
+    importProject,
+    exportProject,
+    resetProject,
+  };
+
+  return (
+    <EditorContext.Provider value={contextValue}>
+      {children}
+    </EditorContext.Provider>
+  );
 }

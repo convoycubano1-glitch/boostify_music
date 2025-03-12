@@ -180,7 +180,12 @@ const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({
     endTime: currentTime + 3,
     type: 'verse',
     language: language || 'es',
-    style: defaultTextStyle
+    style: {
+      color: '#ffffff',
+      fontSize: 18,
+      fontWeight: 'normal',
+      position: 'bottom'
+    }
   });
   
   // Usar el tipo de transcripción según el idioma
