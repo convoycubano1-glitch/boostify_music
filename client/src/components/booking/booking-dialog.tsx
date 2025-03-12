@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { MusicianBookingForm } from "./musician-booking-form";
 import type { MusicianService } from "@/pages/producer-tools";
 

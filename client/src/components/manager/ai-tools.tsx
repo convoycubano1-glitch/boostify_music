@@ -3,7 +3,7 @@ import { Brain, Wand2, Calculator, ChartBar, ArrowRight, Loader2, MessageSquare,
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { Textarea } from "../ui/textarea";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
 import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Button } from "../../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../../ui/textarea";
 import { Slider } from "../../ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../../ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 
 import { 

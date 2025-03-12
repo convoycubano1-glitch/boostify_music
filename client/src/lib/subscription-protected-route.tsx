@@ -1,6 +1,6 @@
 import { useAuth } from "../hooks/use-auth";
 import { useSubscription } from "./context/subscription-context";
-import { SubscriptionPlan } from "@/lib/api/subscription-service";
+import { SubscriptionPlan } from "./api/subscription-service";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import React from "react";

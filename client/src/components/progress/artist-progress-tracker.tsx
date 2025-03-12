@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "../ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { Button } from "../ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { Trophy, Star, Music, Users, Mic2, Award, Target, TrendingUp } from "lucide-react";
 
 interface Milestone {

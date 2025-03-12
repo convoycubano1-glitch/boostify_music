@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { 
   Loader2, Wand2, Mic, Download, Split, Waves, Music, History, 
   Settings, AudioLines, Headphones, Info
@@ -12,13 +12,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../ui/collapsible";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Switch } from "../ui/switch";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { useIsMobile } from "../../hooks/use-mobile";
 
 // Importamos los estilos específicos para optimización móvil

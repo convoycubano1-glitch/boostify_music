@@ -2,7 +2,7 @@
 // para proporcionar una interfaz más sencilla y consistente
 
 import { useAuth } from "./use-auth";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useFirebaseAuth } from "./use-firebase-auth";
 
 export function useUser() {
   const { user } = useAuth();

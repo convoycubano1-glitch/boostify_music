@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { useToast } from "../../hooks/use-toast";
 import { messagingService, type Message, type Conversation } from "../../lib/messaging-service";
 import { auth } from "../../lib/firebase";

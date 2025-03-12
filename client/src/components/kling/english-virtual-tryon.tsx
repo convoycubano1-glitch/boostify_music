@@ -9,13 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Separator } from "../ui/separator";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { useToast } from "../../hooks/use-toast";
 import {
   Camera,

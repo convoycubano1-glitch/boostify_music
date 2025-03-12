@@ -8,7 +8,7 @@ import {
   Video as VideoIcon
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card } from '@/components/ui/card';
+import { Card } from '../ui/card';
 
 interface Video {
   id: string;

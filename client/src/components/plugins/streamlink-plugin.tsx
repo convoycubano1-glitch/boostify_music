@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
 import {
   Select,
@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import {
   Radio,
   Music,

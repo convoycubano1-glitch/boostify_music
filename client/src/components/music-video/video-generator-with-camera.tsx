@@ -6,11 +6,11 @@
  */
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../hooks/use-toast';
 import { Badge } from '../ui/badge';
 import { CameraMovements } from './camera-movements';
 import { useEditor } from '../../lib/context/editor-context';

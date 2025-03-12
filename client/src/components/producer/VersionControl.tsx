@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { 
   Play, 
   Pause, 
@@ -21,10 +21,10 @@ import {
   History
 } from "lucide-react";
 import { Slider } from "../ui/slider";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { useToast } from "../../hooks/use-toast";
 import { Badge } from "../ui/badge";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Progress } from "../ui/progress";
 import {
   Dialog,
@@ -35,7 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +49,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -57,7 +57,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { db, auth, storage } from "@/firebase";
+import { db, auth, storage } from "../../firebase";
 import { 
   collection, 
   addDoc, 

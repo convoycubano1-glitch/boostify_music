@@ -6,7 +6,7 @@
  */
 
 import { apiRequest } from '../queryClient';
-import { EditorState } from '@/lib/professional-editor-types';
+import { EditorState } from '../professional-editor-types';
 
 // Interfaz para compatibilidad con la API del servidor
 interface ProjectResponse {

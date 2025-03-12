@@ -3,11 +3,11 @@ import { useAuth } from "../hooks/use-auth";
 import { db } from "../lib/firebase";
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "./ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { DollarSign, FileText, ArrowUpRight, Download, CreditCard, Calendar, Clock, Filter, ChevronDown, BarChart, LineChart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +28,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "./ui/select";
 import {
   Popover,
   PopoverContent,

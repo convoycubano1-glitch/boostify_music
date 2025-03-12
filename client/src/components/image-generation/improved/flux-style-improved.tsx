@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
 import { Button } from '../../ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import {
   Select,
@@ -16,9 +16,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../../ui/select';
 import { Card, CardContent } from '../../ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '../../ui/radio-group';
 import { Brush, Music, Palette, HelpCircle } from 'lucide-react';
 
 interface FluxStyleImprovedProps {

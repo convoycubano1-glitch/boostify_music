@@ -1,5 +1,5 @@
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Star, MapPin, Package, Truck, Shield, CheckCircle } from "lucide-react";
 

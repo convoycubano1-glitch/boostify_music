@@ -6,11 +6,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { 
   ExternalLink, 
   Search, 

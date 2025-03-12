@@ -1,146 +1,117 @@
-#!/usr/bin/env node
-
 /**
- * Script mejorado para iniciar la aplicación
- * 
- * Este script garantiza la correcta resolución de los alias @/ en desarrollo
- * Registra un resolvedor personalizado para Node.js con soporte ESM
- * 
- * @author Replit AI
- * @version 1.0.0
+ * Script de inicio mejorado con resolución de alias @/
+ * Este script inicia la aplicación asegurando que el alias @/ funcione correctamente
  */
 
 import { spawn } from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import process from 'node:process';
+import './alias-resolver.mjs';
 
-// Configuración de directorios
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname);
-
-// Colores para la consola
-const color = {
+// Colores para la salida de la consola
+const colors = {
   reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
+  red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
-  cyan: '\x1b[36m',
-  red: '\x1b[31m'
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m'
 };
 
-/**
- * Muestra un mensaje en la consola con formato
- * @param {string} message - Mensaje a mostrar
- * @param {string} type - Tipo de mensaje (info, success, warn, error)
- */
-function log(message, type = 'info') {
-  const prefix = {
-    info: `${color.blue}ℹ${color.reset}`,
-    success: `${color.green}✓${color.reset}`,
-    warn: `${color.yellow}⚠${color.reset}`,
-    error: `${color.red}✗${color.reset}`
-  };
+// Función para iniciar un proceso y mostrar su salida con un prefijo coloreado
+function startProcess(command, args, prefix, color) {
+  console.log(`${color}Iniciando ${prefix}...${colors.reset}`);
   
-  console.log(`${prefix[type]} ${message}`);
-}
-
-/**
- * Inicia un proceso y captura su salida en tiempo real
- * @param {string} command - Comando a ejecutar
- * @param {string[]} args - Argumentos del comando
- * @param {string} label - Etiqueta para identificar la salida
- * @returns {Promise<number>} - Código de salida del proceso
- */
-function startProcess(command, args, label) {
-  return new Promise((resolve, reject) => {
-    log(`Iniciando ${label}: ${color.cyan}${command} ${args.join(' ')}${color.reset}`, 'info');
-    
-    const proc = spawn(command, args, {
-      stdio: 'pipe',
-      shell: true
-    });
-    
-    // Colorear la salida según el proceso
-    const prefixColor = label === 'servidor' ? color.green : color.cyan;
-    
-    proc.stdout.on('data', (data) => {
-      const lines = data.toString().trim().split('\n');
-      lines.forEach(line => {
-        if (line.trim()) {
-          console.log(`${prefixColor}[${label}]${color.reset} ${line}`);
+  // Usar shell:true para asegurar la carga adecuada de variables de entorno
+  const childProcess = spawn(command, args, {
+    stdio: ['inherit', 'pipe', 'pipe'],
+    shell: true,
+    env: { ...process.env, FORCE_COLOR: "true" }
+  });
+  
+  let hasStarted = false;
+  
+  childProcess.stdout.on('data', (data) => {
+    const lines = data.toString().trim().split('\n');
+    lines.forEach(line => {
+      if (line.trim()) {
+        console.log(`${color}[${prefix}]${colors.reset} ${line}`);
+        
+        // Marcar como iniciado cuando veamos estos patrones
+        if ((prefix === 'SERVIDOR' && line.includes('Server started')) ||
+            (prefix === 'CLIENTE' && line.includes('Local:'))) {
+          hasStarted = true;
         }
-      });
-    });
-    
-    proc.stderr.on('data', (data) => {
-      const lines = data.toString().trim().split('\n');
-      lines.forEach(line => {
-        if (line.trim()) {
-          console.error(`${color.yellow}[${label}]${color.reset} ${line}`);
-        }
-      });
-    });
-    
-    proc.on('close', (code) => {
-      if (code === 0) {
-        log(`Proceso ${label} finalizado correctamente`, 'success');
-        resolve(code);
-      } else {
-        log(`Proceso ${label} finalizado con código: ${code}`, 'error');
-        reject(new Error(`Proceso ${label} finalizado con código: ${code}`));
       }
     });
-    
-    proc.on('error', (err) => {
-      log(`Error al iniciar ${label}: ${err.message}`, 'error');
-      reject(err);
+  });
+  
+  childProcess.stderr.on('data', (data) => {
+    const lines = data.toString().trim().split('\n');
+    lines.forEach(line => {
+      if (line.trim()) {
+        // Para advertencias de ESLint/TypeScript de Vite, usar amarillo en lugar de rojo para diferenciar de errores reales
+        const isWarning = line.includes('warning') || line.includes('Warning');
+        const errorColor = isWarning ? colors.yellow : colors.red;
+        const errorType = isWarning ? 'ADVERTENCIA' : 'ERROR';
+        console.log(`${errorColor}[${prefix} ${errorType}]${colors.reset} ${line}`);
+      }
     });
   });
+  
+  // Establecer un tiempo de espera para verificar si el proceso ha iniciado
+  setTimeout(() => {
+    if (!hasStarted && !childProcess.killed) {
+      console.log(`${colors.yellow}[${prefix}] El proceso está tardando más de lo esperado en iniciar. Seguimos esperando...${colors.reset}`);
+    }
+  }, 10000);
+  
+  childProcess.on('exit', (code) => {
+    if (code !== 0 && code !== null) {
+      console.log(`${colors.red}[${prefix}] Proceso terminado con código ${code}${colors.reset}`);
+      
+      // Proporcionar consejos útiles de diagnóstico según el prefijo
+      if (prefix === 'SERVIDOR') {
+        console.log(`${colors.yellow}Consejos para solucionar errores del servidor:${colors.reset}`);
+        console.log(`1. Verificar errores de TypeScript en el código del servidor`);
+        console.log(`2. Verificar que todas las variables de entorno requeridas estén configuradas`);
+        console.log(`3. Verificar si el puerto ${process.env.PORT || '5000'} ya está en uso`);
+      } else if (prefix === 'CLIENTE') {
+        console.log(`${colors.yellow}Consejos para solucionar errores del cliente:${colors.reset}`);
+        console.log(`1. Verificar errores de TypeScript en el código del cliente`);
+        console.log(`2. Verificar que todas las variables de entorno requeridas estén configuradas`);
+      }
+    }
+  });
+  
+  return childProcess;
 }
 
-/**
- * Función principal para iniciar la aplicación
- */
-async function start() {
-  try {
-    log(`${color.bright}Iniciando aplicación con soporte de alias mejorado${color.reset}`, 'info');
-    
-    // Asegurarse de que el resolvedor de alias existe
-    try {
-      await fs.access(path.join(rootDir, 'alias-resolver.mjs'));
-      log('Resolvedor de alias encontrado', 'success');
-    } catch (error) {
-      log('Creando resolvedor de alias...', 'info');
-      
-      // Si no existe el archivo alias-resolver.mjs, podríamos crearlo aquí
-      // pero por ahora asumimos que ya existe después de ejecutar el script anterior
-      
-      log('Por favor ejecuta primero el script para crear el resolvedor de alias', 'error');
-      return 1;
-    }
-    
-    // Iniciar servidor node con tsx para TypeScript
-    log('Iniciando servidor con soporte de TypeScript...', 'info');
-    
-    try {
-      return await startProcess('node', ['--import=./alias-resolver.mjs', 'server/index.ts'], 'servidor');
-    } catch (error) {
-      log(`Error al iniciar el servidor: ${error.message}`, 'error');
-      return 1;
-    }
-  } catch (error) {
-    log(`Error general: ${error.message}`, 'error');
-    return 1;
-  }
-}
+// Intentar iniciar el servidor primero, luego iniciar el cliente
+console.log(`${colors.blue}Iniciando aplicación en modo desarrollo...${colors.reset}`);
 
-// Ejecutar la función principal
-start().then(exitCode => {
-  if (exitCode !== 0) {
-    process.exit(exitCode);
-  }
+// Iniciar servidor usando tsx para ejecución de TypeScript
+const server = startProcess('npx', ['tsx', 'server/index.ts'], 'SERVIDOR', colors.cyan);
+
+// Esperar un poco para que el servidor se inicialice antes de iniciar el cliente
+setTimeout(() => {
+  // Iniciar cliente usando vite con host 0.0.0.0 para acceso externo
+  const client = startProcess('cd', ['client', '&&', 'npx', 'vite', '--host', '0.0.0.0'], 'CLIENTE', colors.green);
+  
+  // Manejar terminación limpia
+  process.on('SIGINT', () => {
+    console.log('\nDeteniendo procesos...');
+    server.kill();
+    client.kill();
+    process.exit(0);
+  });
+}, 2000);
+
+// Manejar excepciones no capturadas
+process.on('uncaughtException', (err) => {
+  console.log(`${colors.red}Excepción no capturada:${colors.reset}`, err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.log(`${colors.red}Rechazo de promesa no manejado:${colors.reset}`, reason);
 });

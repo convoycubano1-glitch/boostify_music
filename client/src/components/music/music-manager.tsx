@@ -5,9 +5,9 @@ import { db, storage } from "../../lib/firebase";
 import { collection, addDoc, query, where, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage, UploadTaskSnapshot } from "firebase/storage";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Loader2, Play, Pause, Trash } from "lucide-react";
 
 interface Song {

@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { useSubscriptionFeature } from '../../hooks/use-subscription-feature';
 import { SubscriptionPlan } from '../../lib/api/subscription-service';
 import { Button } from '../ui/button';
-import { Card } from '@/components/ui/card';
+import { Card } from '../ui/card';
 import { AlertTriangle, Lock, ArrowRight } from 'lucide-react';
 
 // Subscription feature access control component properties

@@ -10,7 +10,7 @@ import {
   ProductionCollaborator 
 } from "../../lib/services/production-progress-service";
 import { Card } from "../ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { 
   CheckCircle2, 
   Clock, 
@@ -32,11 +32,11 @@ import {
   Loader2
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Badge } from "../ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Label } from "../ui/label";
 import {
   Dialog,
@@ -47,7 +47,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,7 +62,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import {
   Tooltip,
   TooltipContent,

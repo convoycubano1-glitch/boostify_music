@@ -1,7 +1,7 @@
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import {
   Select,
@@ -9,9 +9,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import { Switch } from "../ui/switch";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { useState } from "react";
 import { 
   Newspaper, 

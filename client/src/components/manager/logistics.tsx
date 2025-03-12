@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Truck, Download, Loader2, ChevronRight, Eye, Upload, CalendarDays, MapPin } from "lucide-react";
 import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useToast } from "../../hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VisuallyHidden } from "../ui/visually-hidden";
-import { downloadTextFile } from "@/lib/download-helper";
+import { downloadTextFile } from "../../lib/download-helper";
 
 interface LogisticsDocument {
   id: string;

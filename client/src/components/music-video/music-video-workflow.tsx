@@ -9,7 +9,7 @@ import {
 import { 
   Button, 
   buttonVariants
-} from '@/components/ui/button';
+} from '../ui/button';
 import { 
   Tabs, 
   TabsContent, 
@@ -21,7 +21,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip";
 import { 
   Music, 
   Video, 
@@ -41,14 +41,14 @@ import {
   Loader2
 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../hooks/use-toast';
 import { Input } from '../ui/input';
-import { Label } from '@/components/ui/label';
+import { Label } from '../ui/label';
 import { VideoGenerator, VideoGenerationSettings } from './video-generator';
 import { VideoGeneratorWithCamera } from './video-generator-with-camera';
 import { TimelineClip } from './timeline-editor';
 import { Progress } from '../ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge';
 import { ProgressSteps, Step } from './progress-steps';
 import { useEditor } from '../../lib/context/editor-context';
 

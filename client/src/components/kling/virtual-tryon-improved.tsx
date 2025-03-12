@@ -9,9 +9,9 @@ import React, { useState, useEffect } from 'react';
 import { useArtistImageWorkflow } from '../../services/artist-image-workflow-service';
 import { klingService, TryOnResult } from '../../services/kling/kling-service';
 import { Button } from '../ui/button';
-import { Label } from '@/components/ui/label';
+import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Shirt, Image, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 

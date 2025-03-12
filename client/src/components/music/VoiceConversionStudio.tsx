@@ -6,16 +6,16 @@ import {
   Sliders, Speaker, Mic, Activity, BarChart2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Slider } from '../ui/slider';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '../ui/progress';
 import { Label } from '../ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from '../../hooks/use-toast';
 import { Badge } from '../ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { 
   Dialog,
@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '../ui/dialog';
 
 import { voiceModelService } from '../../lib/services/voice-model-service';
 import type { VoiceModel, VoiceConversionRequest, VoiceConversionResponse, AudioEffect, VoiceConversionRecord } from '../../lib/types/voice-model-types';

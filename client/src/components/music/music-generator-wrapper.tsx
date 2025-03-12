@@ -2,7 +2,7 @@ import { GenreTemplateSelector, MusicGenreTemplate } from "./genre-templates/gen
 import { MusicGenerationAdvancedParams } from "./genre-templates/advanced-music-params";
 import { MusicGenerationSection } from "./genre-templates/music-generation-section";
 import { TabsContent } from "../ui/tabs";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 
 // Interfaz para las propiedades del wrapper del generador de música
 interface MusicGeneratorWrapperProps {

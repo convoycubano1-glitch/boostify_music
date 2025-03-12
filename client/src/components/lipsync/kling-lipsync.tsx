@@ -1,17 +1,17 @@
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { Slider } from "../ui/slider";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { Mic, Upload, AlertCircle, CheckCircle2, RefreshCcw, Play } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { apiRequest } from "../../lib/queryClient";
 import type { TimelineClip } from "@/components/music-video/timeline-editor";
 

@@ -8,7 +8,7 @@ import {
 } from '../ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../ui/button';
 import {
   Input
 } from '../ui/input';
@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../ui/select';
 import {
   Tooltip,
   TooltipContent,
@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../ui/dialog';
 import {
   Popover,
   PopoverContent,
@@ -49,7 +49,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuGroup
-} from '@/components/ui/context-menu';
+} from '../ui/context-menu';
 import {
   Eye,
   FileVideo,

@@ -1,10 +1,10 @@
 import { useState, useRef } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Checkbox } from "../ui/checkbox";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { useToast } from "../../hooks/use-toast";
 import { User, Loader2, Check, AlertCircle } from "lucide-react";
 import { getAuthToken } from "../../lib/auth";

@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { generateAudioWithFal } from "../../lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Progress } from "../ui/progress";
 import { Upload, Download, RefreshCcw, FolderOpen, Trash2, RotateCw, AlertCircle, Check, X } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
@@ -24,7 +24,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { onAuthStateChanged, User } from "firebase/auth";
 
 interface UploadProgress {

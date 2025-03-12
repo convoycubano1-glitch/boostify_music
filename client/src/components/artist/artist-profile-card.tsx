@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { MusicSection } from "./music-section";
 import { VideosSection } from "./videos-section";
 import {
@@ -64,7 +64,7 @@ import {
 
 // Importamos nuestros componentes de navegación
 import { SectionNavigation, SimpleSectionNavigation } from "../navigation/section-navigation";
-import { NavigationHeader, SimpleNavigationHeader } from "@/components/artist/section-navigation-wrapper";
+import { NavigationHeader, SimpleNavigationHeader } from "./section-navigation-wrapper";
 
 export interface ArtistProfileProps {
   artistId: string;

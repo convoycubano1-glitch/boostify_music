@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { 
   User, 
@@ -17,7 +17,7 @@ import {
   Filter 
 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 
 // Interfaz para los comentarios
 interface Comment {

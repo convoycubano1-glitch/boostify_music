@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Label } from '../ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '../ui/slider';
 import { Textarea } from '../ui/textarea';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../hooks/use-toast';
 import { Loader2, Video, Wand2, Info, Check, Film, Clock3 } from 'lucide-react';
 
 export interface VideoGeneratorProps {

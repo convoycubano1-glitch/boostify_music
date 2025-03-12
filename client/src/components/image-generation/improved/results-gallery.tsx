@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
 import { Button } from '../../ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '../../ui/card';
 import {
   Dialog,
   DialogContent,

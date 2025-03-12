@@ -3,13 +3,13 @@ import { useAuth } from "../hooks/use-auth";
 import { db } from "../lib/firebase";
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Badge } from "./ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Sparkles, Copy, CheckCircle2, RotateCcw, Loader2, Save, Trash2, Download, Share2, SquarePen, Facebook, Instagram, Twitter, Youtube, ArrowRight, Wand2, Mail, Globe, FileText, Video, Link, AlertCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +24,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "./ui/select";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "./ui/tooltip";
 
 interface AffiliateContentGeneratorProps {
   affiliateData: any;

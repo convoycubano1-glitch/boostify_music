@@ -7,14 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
 import { Loader2, Calendar, Target, BarChart2, CheckCircle2, X } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { db, auth } from "../../lib/firebase";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "firebase/firestore";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import {
   Select,
@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 
 interface Strategy {
   focus: string[];

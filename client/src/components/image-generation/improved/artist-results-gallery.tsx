@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../ui/button';
 import { 
   Download, 
   Image as ImageIcon, 

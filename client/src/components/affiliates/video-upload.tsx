@@ -7,11 +7,11 @@ import {
   DialogDescription,
   DialogFooter
 } from "../ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useToast } from "../../hooks/use-toast";
 import { storage, auth } from "../../firebase"; 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";

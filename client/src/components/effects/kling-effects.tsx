@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Button } from "../ui/button";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { useToast } from "../../hooks/use-toast";
 import { Loader2, Upload, Image as ImageIcon, PlayCircle, Wand2 } from 'lucide-react';
 import axios from 'axios';

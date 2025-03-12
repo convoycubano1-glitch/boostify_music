@@ -8,13 +8,13 @@ import {
 } from '../ui/card';
 import {
   Button
-} from '@/components/ui/button';
+} from '../ui/button';
 import {
   Input
 } from '../ui/input';
 import {
   Label
-} from '@/components/ui/label';
+} from '../ui/label';
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ import {
 } from '../ui/select';
 import {
   Slider
-} from '@/components/ui/slider';
+} from '../ui/slider';
 import {
   Tooltip,
   TooltipContent,
@@ -39,7 +39,7 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
+} from '../ui/table';
 import {
   Tabs,
   TabsContent,
@@ -54,7 +54,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from '../ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,

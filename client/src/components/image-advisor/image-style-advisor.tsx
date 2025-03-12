@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { 
   Loader2, Upload, Camera, Sparkles, Palette, UserCircle2, 
   Clock, History, Bookmark, ArrowLeft, CheckCircle, X, Trash2,
@@ -13,12 +13,12 @@ import {
 import { useToast } from "../../hooks/use-toast";
 import { motion } from "framer-motion";
 import { ScrollArea } from "../ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "../ui/separator";
 import { 
   Dialog, DialogContent, DialogDescription, 
   DialogHeader, DialogTitle, DialogTrigger, DialogFooter 
 } from "../ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../ui/tooltip";
 import { imageAdvisorService, SavedImageAdvice } from "../../lib/services/image-advisor-service";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Badge } from "../ui/badge";

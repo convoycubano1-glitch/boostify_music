@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Brain } from "lucide-react";
 
 interface BaseAgentProps {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Input } from "../../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Button } from "../../ui/button";
 import { Progress } from "../../ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { MusicGenreTemplate } from "./genre-data";
 import { GenreTemplateSelector } from "./genre-template-selector";

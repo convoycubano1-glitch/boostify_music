@@ -42,7 +42,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
+} from '../ui/accordion';
 
 import {
   DropdownMenu,
@@ -52,9 +52,9 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
-import { Switch } from '@/components/ui/switch';
+import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 
 export interface TrackListPanelProps {

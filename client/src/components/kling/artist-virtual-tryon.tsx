@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
 import { Progress } from '../ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { 
   AlertCircle, 
   CheckCircle, 

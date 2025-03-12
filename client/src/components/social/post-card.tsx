@@ -9,9 +9,9 @@ import {
   Avatar, 
   AvatarFallback, 
   AvatarImage 
-} from "@/components/ui/avatar";
+} from "../ui/avatar";
 import { Button } from "../ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/use-auth";
 import { 

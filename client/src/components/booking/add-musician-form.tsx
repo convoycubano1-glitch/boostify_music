@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { generateImageWithFal } from "../../lib/api/fal-ai";
 import { Loader2, Image as ImageIcon } from "lucide-react";
 import { db } from "../../lib/firebase";

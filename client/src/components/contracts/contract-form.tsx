@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { CONTRACT_TYPES, type ContractType } from "../../lib/openai";
 import { Button } from "../ui/button";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import {
   Form,
   FormControl,
@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import {
   Select,
@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 
 const formSchema = z.object({
   type: z.enum(Object.values(CONTRACT_TYPES) as [ContractType, ...ContractType[]]),

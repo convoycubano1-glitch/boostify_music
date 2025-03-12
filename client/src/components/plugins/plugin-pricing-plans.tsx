@@ -7,7 +7,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { auth } from '../../lib/firebase';
 import { useToast } from "../../hooks/use-toast";
 import { Badge } from "../ui/badge";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { 
   Calendar as CalendarIcon, 
   Download, 
@@ -12,12 +12,12 @@ import {
   ListTodo
 } from "lucide-react";
 import { Calendar } from "../ui/calendar";
-import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
+import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useToast } from "../../hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { useAuth } from "../../hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VisuallyHidden } from "../ui/visually-hidden";

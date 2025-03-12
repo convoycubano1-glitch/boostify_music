@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./ui/badge";
 import { Download, FileText, Video, Image, Link, ExternalLink, BookOpen, Lightbulb, TrendingUp, ThumbsUp } from "lucide-react";
 
 export function AffiliateResources() {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Loader2, Upload, Trash2 } from "lucide-react";
 import * as fal from "@fal-ai/serverless-client";
 import { useToast } from "../../hooks/use-toast";

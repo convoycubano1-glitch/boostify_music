@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/use-auth';
 import { useSubscription } from '../../lib/context/subscription-context';
 import { createCheckoutSession } from '../../lib/api/stripe-service';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';

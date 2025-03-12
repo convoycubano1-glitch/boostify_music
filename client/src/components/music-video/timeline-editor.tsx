@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Button } from "../ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import {
   Play, Pause, SkipBack, SkipForward,
   ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from "../ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import WaveSurfer from 'wavesurfer.js';
 import interact from 'interactjs';

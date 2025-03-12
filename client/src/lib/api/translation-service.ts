@@ -1,5 +1,5 @@
 import { openai } from "../openai";
-import { getAuthToken } from "@/lib/firebase";
+import { getAuthToken } from "../firebase";
 
 interface TranslationRequest {
   text: string;

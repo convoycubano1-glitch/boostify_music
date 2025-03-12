@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "../ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "../ui/card";
 import { useToast } from "../../hooks/use-toast";
 import { Lock, Play, Pause, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "../../lib/queryClient";
 import { useAuth } from "../../hooks/use-auth";
 
 const PREVIEW_LIMIT_SECONDS = 10;

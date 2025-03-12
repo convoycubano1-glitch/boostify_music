@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { BarChart, LineChart, TrendingUp, Users, DollarSign, Link, Clock } from "lucide-react";
 

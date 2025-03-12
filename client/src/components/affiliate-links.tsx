@@ -3,13 +3,13 @@ import { useAuth } from "../hooks/use-auth";
 import { db } from "../lib/firebase";
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./ui/badge";
 import { toast } from "sonner";
 import { AlertCircle, CheckCircle2, Loader2, Copy, Link, BarChart, Trash2, PlusCircle, ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -29,7 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "./ui/dialog";
 import {
   Select,
   SelectContent,
@@ -43,7 +43,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "./ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,

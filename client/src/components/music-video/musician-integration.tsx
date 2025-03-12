@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Slider } from "../ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../ui/switch";
 import { Loader2, Music2, User, Upload, Crown, Lock, CheckCircle2 } from "lucide-react";
 import { TimelineClip } from "./timeline-editor";
 import { useToast } from "../../hooks/use-toast";
 import { Checkbox } from "../ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Progress } from "../ui/progress";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 
 export interface MusicianClip {

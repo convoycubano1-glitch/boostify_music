@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "../ui/slider";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { ScrollArea } from "../ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { cn } from "../../lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";

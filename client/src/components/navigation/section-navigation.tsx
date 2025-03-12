@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Music2, Video as VideoIcon, Ticket, ShoppingBag, Share2, MessageCircle } from "lucide-react";
 
 interface SectionNavigationProps {

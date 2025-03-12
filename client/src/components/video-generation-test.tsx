@@ -4,15 +4,15 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from './ui/slider';
 import { useToast } from '../hooks/use-toast';
 import { generateVideo, checkVideoStatus, VideoStatusResponse, VideoGenerationOptions } from '../lib/api/video-service';
 import { Progress } from './ui/progress';
-import { Card } from '@/components/ui/card';
+import { Card } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Info } from 'lucide-react';
 
 export default function VideoGenerator() {

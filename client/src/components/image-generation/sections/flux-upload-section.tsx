@@ -7,9 +7,9 @@
 
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../ui/button';
 import { Textarea } from '../../ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import { useToast } from '../../../hooks/use-toast';
 import { 
   Image as ImageIcon, 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { translateText, detectLanguage } from "../../lib/api/translation-service";
 import { useToast } from "../../hooks/use-toast";
 import { Languages, ArrowRight, Loader2 } from "lucide-react";

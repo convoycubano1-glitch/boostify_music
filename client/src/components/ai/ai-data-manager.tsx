@@ -13,9 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 
 const AI_COLLECTIONS = [
   { id: 'Video_Director_AI', name: 'Video Director', color: '#FF6B6B' },

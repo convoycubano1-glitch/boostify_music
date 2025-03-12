@@ -5,7 +5,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useToast } from './use-toast';
-import { authService } from '@/services/auth-service';
+import { authService } from '../services/auth-service';
 
 export function useFirebaseAuth() {
   const [user, setUser] = useState<User | null>(null);

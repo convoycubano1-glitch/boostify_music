@@ -8,9 +8,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
 import { Button } from '../../ui/button';
-import { Card } from '@/components/ui/card';
+import { Card } from '../../ui/card';
 import { Label } from '../../ui/label';
-import { cn } from '@/lib/utils';
+import { cn } from '../../../lib/utils';
 import { UploadCloud, Image, AlertCircle } from 'lucide-react';
 
 interface FluxUploadImprovedProps {

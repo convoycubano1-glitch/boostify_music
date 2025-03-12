@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { useToast } from "../../hooks/use-toast";
 import { 
   Music4, Wand2, ImageIcon, Upload, Loader2, 
@@ -26,12 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { downloadTextFile } from "../../lib/download-helper";
 import { Slider } from "../ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { 
   Popover,
   PopoverContent,

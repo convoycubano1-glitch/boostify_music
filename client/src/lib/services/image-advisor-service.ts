@@ -1,6 +1,6 @@
 import { env } from "../../env";
 import { apiRequest } from "../queryClient";
-import { auth, db } from "@/firebase";
+import { auth, db } from "../../firebase";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, orderBy, Timestamp, serverTimestamp } from "firebase/firestore";
 
 interface ImageAdvice {

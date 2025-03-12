@@ -1,7 +1,7 @@
 import { Button } from "../ui/button";
 import { SiSpotify } from "react-icons/si";
 import { Card } from "../ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { useAuth } from "../../hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getSpotifyData } from "../../lib/spotify-store";

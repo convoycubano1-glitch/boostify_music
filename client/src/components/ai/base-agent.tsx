@@ -2,7 +2,7 @@
 
       import { useState } from "react";
       import { Card } from "../ui/card";
-      import { Button } from "@/components/ui/button";
+      import { Button } from "../ui/button";
       import { Loader2, HelpCircle } from "lucide-react";
       import { ProgressIndicator } from "./progress-indicator";
       import { useToast } from "../../hooks/use-toast";
@@ -12,7 +12,7 @@
         TooltipProvider,
         TooltipTrigger,
       } from "../ui/tooltip";
-      import { Label } from "@/components/ui/label";
+      import { Label } from "../ui/label";
       import { Input } from "../ui/input";
       import {
         Select,
@@ -20,7 +20,7 @@
         SelectItem,
         SelectTrigger,
         SelectValue,
-      } from "@/components/ui/select";
+      } from "../ui/select";
       import { motion } from "framer-motion";
 
       export interface AgentTheme {

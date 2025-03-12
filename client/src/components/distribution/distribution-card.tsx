@@ -1,5 +1,5 @@
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Music2, ExternalLink, Globe, DollarSign, Smartphone, Cloud } from "lucide-react";
 import { motion } from "framer-motion";
 

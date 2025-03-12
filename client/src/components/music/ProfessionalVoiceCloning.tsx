@@ -13,9 +13,9 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
 } from '../ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { Button } from '../ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
 import { 
   Mic, Upload, Wand2, Music2, BarChart3, History, 
   Settings, Plus, Server, Info, HelpCircle 

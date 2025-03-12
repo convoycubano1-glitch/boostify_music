@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "../ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { useToast } from "../../hooks/use-toast";
 import { RefreshCw, Upload, Camera, Sparkles, Wand2, X } from "lucide-react";
 

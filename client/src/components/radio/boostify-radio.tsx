@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "../ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
 import { Volume2, Mic, Play, Pause, Radio, X, SkipForward, RefreshCw, Search } from "lucide-react";
 import { cn } from "../../lib/utils";

@@ -1,5 +1,5 @@
 import { Progress } from "../ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Music2, Mic2, Radio } from "lucide-react";
