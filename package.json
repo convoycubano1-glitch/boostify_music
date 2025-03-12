@@ -10,7 +10,8 @@
     "server:dev": "nodemon --exec \"ts-node --project tsconfig.json server/index.ts\" --watch server",
     "client:dev": "cd client && vite",
     "prebuild": "rm -rf dist && mkdir dist",
-    "postbuild": "cp -r client/dist dist/client"
+    "postbuild": "cp -r client/dist dist/client",
+    "prod": "npm run build && npm run start" // Added production start script
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
