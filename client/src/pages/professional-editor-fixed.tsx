@@ -33,8 +33,7 @@ import {
   Clock,
   Volume2,
   Layers,
-  Image,
-  Bot
+  Image
 } from 'lucide-react';
 
 // Importar componentes del editor
@@ -49,7 +48,6 @@ import { TrackListPanel } from '../components/professional-editor/track-list-pan
 import { Track } from '../lib/professional-editor-types';
 import CutPanel from '../components/professional-editor/cut-panel';
 import TransitionsPanel from '../components/professional-editor/transitions-panel';
-import StandaloneEditorAgents from '../components/professional-editor/standalone-editor-agents';
 import { EditorProvider } from '../lib/context/editor-context';
 import { apiService } from '../lib/services/professional-editor-api-service';
 
@@ -305,18 +303,12 @@ export default function ProfessionalEditor() {
                 {/* Panel lateral derecho */}
                 <div className="w-1/4 bg-card rounded-lg shadow-lg overflow-hidden">
                   <Tabs defaultValue={selectedPanel} value={selectedPanel} className="w-full h-full" onValueChange={(value) => setSelectedPanel(value as string)}>
-                    <TabsList className="w-full grid grid-cols-6">
+                    <TabsList className="w-full grid grid-cols-5">
                       <TabsTrigger value="video">Video</TabsTrigger>
                       <TabsTrigger value="audio">Audio</TabsTrigger>
                       <TabsTrigger value="rhythm">Ritmo</TabsTrigger>
                       <TabsTrigger value="effects">Efectos</TabsTrigger>
                       <TabsTrigger value="text">Texto</TabsTrigger>
-                      <TabsTrigger value="agents">
-                        <div className="flex items-center gap-1">
-                          <Bot className="h-4 w-4" />
-                          <span>Agentes</span>
-                        </div>
-                      </TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="video" className="p-0 h-full">
@@ -345,10 +337,6 @@ export default function ProfessionalEditor() {
                     
                     <TabsContent value="transitions" className="p-0 h-full">
                       <TransitionsPanel />
-                    </TabsContent>
-                    
-                    <TabsContent value="agents" className="p-0 h-full">
-                      <StandaloneEditorAgents />
                     </TabsContent>
                   </Tabs>
                 </div>

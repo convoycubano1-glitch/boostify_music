@@ -95,27 +95,6 @@
 }
 
 @layer utilities {
-  /* Utility classes para el tema */
-  .bg-background {
-    background-color: hsl(var(--background));
-  }
-  
-  .text-foreground {
-    color: hsl(var(--foreground));
-  }
-  
-  .bg-card {
-    background-color: hsl(var(--card));
-  }
-  
-  .text-muted-foreground {
-    color: hsl(var(--muted-foreground));
-  }
-  
-  .bg-muted {
-    background-color: hsl(var(--muted));
-  }
-  
   /* Hide scrollbar for Chrome, Safari and Opera */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
