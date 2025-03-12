@@ -155,7 +155,14 @@ const ProfessionalEditor: React.FC = () => {
     return window.innerWidth < 768 ? 'mobile' : 'pc';
   });
   
-  // El componente ResizeHandleControl ahora se importa desde un archivo separado
+  // Funciones de utilidad para manejar la orientación de los controles
+  const getGripComponent = () => {
+    return editMode === 'mobile' ? (
+      <GripHorizontal className="h-4 w-4 text-zinc-400" />
+    ) : (
+      <GripVertical className="h-4 w-4 text-zinc-400" />
+    );
+  };
 
   // Referencias para elementos arrastables
   const panelRefs = useRef<{[key: string]: HTMLDivElement | null}>({
