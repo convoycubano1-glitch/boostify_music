@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [react(), runtimeErrorOverlay(), themePlugin()],
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'client', 'src'),
       "@db": path.resolve(__dirname, "db"),
       "@": path.resolve(__dirname, "client", "src"),
     },

@@ -99,7 +99,7 @@ export default function CourseDetailPage() {
       
       try {
         // Try FAL AI first
-        const { generateImageWithFal } = await import('@/lib/api/fal-ai');
+        const { generateImageWithFal } = await import('../lib/api/fal-ai');
         
         const result = await generateImageWithFal({
           prompt: enhancedPrompt,
