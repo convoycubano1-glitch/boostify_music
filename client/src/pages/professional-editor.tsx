@@ -52,6 +52,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../compone
 import BeatAnalyzer from '../components/professional-editor/beat-analyzer';
 import EffectsPanel from '../components/professional-editor/effects-panel';
 import VideoPreviewPanel from '../components/professional-editor/video-preview-panel';
+import ResizeHandleControl from '../components/professional-editor/resize-handle-control';
 import ProfessionalTimeline from '../components/professional-editor/fixed-timeline';
 import TranscriptionPanel from '../components/professional-editor/transcription-panel';
 import AudioTrackEditor from '../components/professional-editor/audio-track-editor';
@@ -154,12 +155,7 @@ const ProfessionalEditor: React.FC = () => {
     return window.innerWidth < 768 ? 'mobile' : 'pc';
   });
   
-  // Componente de utilidad para mostrar el control de redimensionamiento adecuado según el modo
-  const ResizeHandleControl = () => editMode === 'mobile' ? (
-    <GripHorizontal className="h-4 w-4 text-zinc-400" />
-  ) : (
-    <GripVertical className="h-4 w-4 text-zinc-400" />
-  );
+  // El componente ResizeHandleControl ahora se importa desde un archivo separado
 
   // Referencias para elementos arrastables
   const panelRefs = useRef<{[key: string]: HTMLDivElement | null}>({
@@ -777,10 +773,11 @@ const ProfessionalEditor: React.FC = () => {
         )}
         
         {/* Contenedor principal con paneles redimensionables */}
-        <div className="flex-grow relative">
+        <div className="flex-grow relative min-h-[500px] bg-zinc-950 border border-zinc-800 rounded-lg">
+          {/* Panel principal de edición con modo distinto para móvil */}
           <ResizablePanelGroup
             direction={editMode === 'mobile' ? "vertical" : "horizontal"}
-            className="h-full w-full rounded-lg border border-zinc-800"
+            className="h-full w-full rounded-lg overflow-hidden"
             onLayout={(sizes) => {
               // Solo guardar tamaños en modo escritorio
               if (editMode !== 'mobile') {
