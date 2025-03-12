@@ -153,6 +153,13 @@ const ProfessionalEditor: React.FC = () => {
     // Detectar automáticamente basado en el tamaño de la pantalla
     return window.innerWidth < 768 ? 'mobile' : 'pc';
   });
+  
+  // Componente de utilidad para mostrar el control de redimensionamiento adecuado según el modo
+  const ResizeHandleControl = () => editMode === 'mobile' ? (
+    <GripHorizontal className="h-4 w-4 text-zinc-400" />
+  ) : (
+    <GripVertical className="h-4 w-4 text-zinc-400" />
+  );
 
   // Referencias para elementos arrastables
   const panelRefs = useRef<{[key: string]: HTMLDivElement | null}>({
