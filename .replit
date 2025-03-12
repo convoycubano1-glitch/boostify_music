@@ -47,5 +47,5 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node start.js"
+args = "node start-alias-resolver.js"
 waitForPort = 5000

@@ -84,6 +84,3 @@ console.log("Firebase initialized with enhanced network resilience and multi-tab
 
 // Export the initialized services
 export { app, auth, db, storage };
-
-// Re-export auth helper from the proper location
-export { getAuthToken } from './auth';

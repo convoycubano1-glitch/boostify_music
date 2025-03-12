@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { useIsMobile } from "../../hooks/use-mobile";
 
 // Importamos los estilos específicos para optimización móvil
-import "@/styles/mobile-optimization.css";
+import "../../styles/mobile-optimization.css";
 
 /**
  * Componente ModernAudioSuite

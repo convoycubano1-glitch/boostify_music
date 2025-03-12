@@ -6,7 +6,7 @@ import { Progress } from "../components/ui/progress";
 import { Header } from "../components/layout/header";
 import { Loader2, CheckCircle2, Lock, BookOpen, Clock, Trophy, Star, Book, Lightbulb, FileText, Pencil, Link, List } from "lucide-react";
 import { motion } from "framer-motion";
-import { auth, db } from "../firebase";
+import { auth, db } from "../lib/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { useToast } from "../hooks/use-toast";
 import { getRelevantImage } from "../lib/unsplash-service";
@@ -382,7 +382,7 @@ export default function CourseDetailPage() {
       console.log("Generating image with Fal AI for lesson:", lessonTitle);
       
       // Import the generateImageWithFal function
-      const { generateImageWithFal } = await import('@/lib/api/fal-ai');
+      const { generateImageWithFal } = await import('../lib/api/fal-ai');
       
       const result = await generateImageWithFal({
         prompt: prompt,
@@ -479,7 +479,7 @@ export default function CourseDetailPage() {
       console.log("Generating section image with Fal AI, prompt:", enhancedPrompt.substring(0, 100) + "...");
       
       // Import the generateImageWithFal function
-      const { generateImageWithFal } = await import('@/lib/api/fal-ai');
+      const { generateImageWithFal } = await import('../lib/api/fal-ai');
       
       const result = await generateImageWithFal({
         prompt: enhancedPrompt,

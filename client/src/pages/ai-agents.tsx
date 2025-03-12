@@ -284,9 +284,9 @@ export default function AIAgentsPage() {
         
         try {
           // Importamos las funciones de Firebase aquí para evitar problemas 
-          const { db } = await import('@/lib/firebase');
+          const { db } = await import('../lib/firebase');
           const { collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
-          const { AGENT_COLLECTIONS } = await import('@/lib/api/openrouteraiagents');
+          const { AGENT_COLLECTIONS } = await import('../lib/api/openrouteraiagents');
           
           // Consultar historial reciente basado en las últimas interacciones
           const recentAgentTypes = new Set<string>();
@@ -412,7 +412,7 @@ export default function AIAgentsPage() {
     try {
       // Guardar en Firestore para usuarios autenticados
       const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+      const { db } = await import('../lib/firebase');
       
       const userPrefsRef = doc(db, 'userPreferences', user.uid);
       
@@ -510,7 +510,7 @@ export default function AIAgentsPage() {
     try {
       // Guardar en Firestore para usuarios autenticados
       const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+      const { db } = await import('../lib/firebase');
       
       // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
       const userId = user?.uid || 'anonymous';
