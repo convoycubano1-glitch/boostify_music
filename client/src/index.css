@@ -59,13 +59,23 @@
   animation-delay: 2s;
 }
 
+@layer components {
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+}
+
 @layer base {
   * {
-    @apply border-[hsl(var(--border))];
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    font-family: sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
   
   /* Hide any yellow banner notifications */
