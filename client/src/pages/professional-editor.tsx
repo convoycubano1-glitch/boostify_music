@@ -53,6 +53,8 @@ import BeatAnalyzer from '../components/professional-editor/beat-analyzer';
 import EffectsPanel from '../components/professional-editor/effects-panel';
 import VideoPreviewPanel from '../components/professional-editor/video-preview-panel';
 import ResizeHandleControl from '../components/professional-editor/resize-handle-control';
+import MobileAdapter from '../components/professional-editor/mobile-adapter';
+import MobileEditorLayout from '../components/professional-editor/mobile-editor-layout';
 import ProfessionalTimeline from '../components/professional-editor/fixed-timeline';
 import TranscriptionPanel from '../components/professional-editor/transcription-panel';
 import AudioTrackEditor from '../components/professional-editor/audio-track-editor';
